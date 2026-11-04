@@ -75,10 +75,10 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 |---|---|---|---|---|
 | T0 | doing | `claude/t0-tracer-513793` | 2026-11-05 | Build the tracer; ask the user for toolchain choices and the DSH location |
 | X1 | todo | — | — | Start any time (no deps) |
-| X2 | doing | `claude/x2-noise-b1b3cc` | 2026-11-05 | Ask the user about test vectors and deps; build Swift + TS Noise |
+| X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
 | X3 | todo | — | — | Start any time (no deps) |
 | X4 | todo | — | — | Start any time (no deps; needed before M2) |
-| S1 | todo | — | — | Wait for T0, X2 |
+| S1 | todo | — | — | Wait for T0 (X2 done) |
 | S2 | todo | — | — | Wait for T0 |
 | S3 | todo | — | — | Wait for T0 |
 | S4 | todo | — | — | Wait for T0, X1 |
@@ -622,6 +622,10 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - It replaces the auto-merge condition. A slice merges once its `[auto]` and `[ui]` items are ticked with resolving evidence, `[ui]` items were rerun by an independent reviewer, and pre-commit passes. It no longer waits for `[human]` ticks.
   - After the merge, §0 says `review` while `[human]` items are open (each one listed in §9), or `done` if there are none. A merged slice meets its dependents' Needs, even in `review`. Problems found while the user accepts are fixed forward on `main`.
   - No Done when item changed.
+- **2026-11-05 · X2 merged** as `e34a8bc`, status `done` (no `[human]` items).
+  - Checked before the merge: both `[auto]` items ticked with resolving pointers; `spikes/x2-noise/scripts/interop` rerun by the coordinating session in X2's worktree; all Swift and TS vector and cross-handshake tests green. No `[ui]` items.
+  - `.githooks/` has only `pre-commit`, which doesn't run on a merge commit, so `scripts/check-plan --base <pre-merge PLAN.md> --new PLAN.md` was run by hand: exit 0.
+  - Result: pairing `Noise_IKpsk1_25519_ChaChaPoly_SHA256`, reconnect `Noise_IK_25519_ChaChaPoly_SHA256` (provisional D6, §9). S1 ports the code instead of depending on `spikes/`. Open question for S1: is the Secure Enclave P-256 identity key still needed in M1?
 
 ## 9. Pending user confirmation
 
@@ -630,6 +634,7 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
 | 1 | — | rule | "Default choices" rule text and this section (the user approved the rules, not this wording) | `main` | see Plan log 2026-11-05 · default choices |
-| 2 | X2 | dependency | npm `@noble/ciphers` 2.4.0, `@noble/curves` 2.4.0, `@noble/hashes` 2.4.0 (spike only, `spikes/x2-noise/ts/`) | `claude/x2-noise-b1b3cc` | `3f4d72e` |
-| 3 | X2 | download | Noise test vectors: `cacophony.txt` (haskell-cryptography/cacophony @ `18b7348`) and `snow.txt` (mcginty/snow @ `d00b360`); sha256 in `spikes/x2-noise/vectors/SHA256SUMS`; a filtered subset is committed | `claude/x2-noise-b1b3cc` | `3f4d72e` |
+| 2 | X2 | dependency | npm `@noble/ciphers` 2.4.0, `@noble/curves` 2.4.0, `@noble/hashes` 2.4.0 (spike only, `spikes/x2-noise/ts/`) | `main` (merged `e34a8bc`) | `3f4d72e` |
+| 3 | X2 | download | Noise test vectors: `cacophony.txt` (haskell-cryptography/cacophony @ `18b7348`) and `snow.txt` (mcginty/snow @ `d00b360`); sha256 in `spikes/x2-noise/vectors/SHA256SUMS`; a filtered subset is committed | `main` (merged `e34a8bc`) | `3f4d72e` |
 | 4 | T0 | decisions + download | T0's 7 toolchain questions, now going ahead on its recommendations; DSH installed into `~/.dshm`, mock model server, no API keys. Rows are added per item once committed | `claude/t0-tracer-513793` | not committed yet |
+| 5 | X2 | decision | ARCHITECTURE D6 refined, *provisional*: pairing `Noise_IKpsk1_25519_ChaChaPoly_SHA256` (psk = the QR's one-time secret), reconnect `Noise_IK_25519_ChaChaPoly_SHA256`, mode + protocol version in the prologue, own Noise state machine on CryptoKit / `@noble/*` | `main` (merged `e34a8bc`) | `ce9ee4c` |
