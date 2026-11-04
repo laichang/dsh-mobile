@@ -317,7 +317,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [ ] [auto] Bridge maps `Interrupt { task_id }` to a DSH interrupt and reports status `interrupted` (`FakeDSH`) — Evidence:
 - [ ] [ui] Interrupt a long-running task: it stops within a few seconds and the card says so — Evidence:
 
-**Not**: TODO(user): is continuing an interrupted task (a new prompt in the same session) in or out of S5?
+**Not**: continuing an interrupted task with a new prompt in the same session (later, together with adding context mid-task).
 
 **Log**
 - —
@@ -523,3 +523,6 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
     - plan-guard and check-plan each keep a copy of the PROTECTED list; keep them in sync.
     - `shot:` and `cmd:` resolve against the working tree, not the index.
   - Next: the user reviews and commits the guard changes by hand (`CHECK_PLAN_ALLOW=1 git commit …`, since guard files are staged).
+- **2026-11-04 · S5 scope.**
+  - The user committed the guard fixes as `057acb1`.
+  - S5 stays "stop only". Continuing an interrupted task with a new prompt is out of S5; it's for later, together with adding context mid-task. This closes the S5 **Not** TODO.
