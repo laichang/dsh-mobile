@@ -1,0 +1,14 @@
+#!/bin/sh
+# Download the two Noise test-vector files at pinned commits into vectors/raw/
+# (gitignored), check their sha256, then write the filtered subset we commit.
+set -eu
+here="$(cd "$(dirname "$0")/.." && pwd)"
+raw="$here/vectors/raw"
+mkdir -p "$raw"
+fetch() { # url file
+  [ -f "$raw/$2" ] || curl -fsSL "$1" -o "$raw/$2"
+}
+fetch https://raw.githubusercontent.com/haskell-cryptography/cacophony/18b7348c54fd61fcd0c220298883de0d09c8364d/vectors/cacophony.txt cacophony.txt
+fetch https://raw.githubusercontent.com/mcginty/snow/d00b360cc61a7fe519ce7539974dca4f36c4654a/tests/vectors/snow.txt snow.txt
+(cd "$raw" && shasum -a 256 -c "$here/vectors/SHA256SUMS")
+python3 -I "$here/scripts/filter-vectors.py" "$raw" "$here/vectors/subset.json"
