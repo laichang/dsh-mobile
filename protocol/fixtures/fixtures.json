@@ -1,0 +1,23 @@
+{
+  "_comment": "Golden frames (ARCHITECTURE §6, PLAN §1 'Cross-language truth'). Each entry's `frame` is canonical protobuf JSON; <name>.binpb is its binary encoding. Swift and TS tests decode every .binpb, compare with `frame`, and re-encode to the same bytes. Add entries; never change existing ones. Write new .binpb files with `pnpm fixtures` in bridge/.",
+  "fixtures": [
+    { "name": "t0_hello_request",
+      "frame": { "request": { "id": "1", "hello": { "protocolVersion": 1 } } } },
+    { "name": "t0_hello_response",
+      "frame": { "response": { "requestId": "1", "hello": { "protocolVersion": 1, "capabilities": ["tasks.v1"] } } } },
+    { "name": "t0_create_task_request",
+      "frame": { "request": { "id": "2", "createTask": { "prompt": "用一句话介绍你自己。Introduce yourself in one sentence." } } } },
+    { "name": "t0_task_created_response",
+      "frame": { "response": { "requestId": "2", "taskCreated": { "taskId": "session-6f1c2a" } } } },
+    { "name": "t0_assistant_chunk_event",
+      "frame": { "event": { "assistantChunk": { "taskId": "session-6f1c2a", "seq": "1", "text": "你好，I'm a DSH agent 👋" } } } },
+    { "name": "t0_task_ended_completed_event",
+      "frame": { "event": { "taskEnded": { "taskId": "session-6f1c2a", "status": "TASK_STATUS_COMPLETED" } } } },
+    { "name": "t0_task_ended_failed_event",
+      "frame": { "event": { "taskEnded": { "taskId": "session-6f1c2a", "status": "TASK_STATUS_FAILED", "message": "error: rate limited" } } } },
+    { "name": "t0_error_response",
+      "frame": { "response": { "requestId": "3", "error": { "code": "hello/required", "message": "send Hello first" } } } },
+    { "name": "t0_large_ids",
+      "frame": { "event": { "assistantChunk": { "taskId": "t", "seq": "18446744073709551615" } } } }
+  ]
+}

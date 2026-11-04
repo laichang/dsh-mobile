@@ -1,0 +1,31 @@
+#!/bin/bash
+# Generate Swift + TS code from protocol/*.proto (ARCHITECTURE.md D15).
+#   scripts/codegen          regenerate into the committed locations
+#   scripts/codegen --check  fail if regenerating would change anything
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SWIFT_OUT="ios/DSHKit/Sources/DSHProtocol/Generated"
+TS_OUT="bridge/src/gen"
+
+[ -x "$ROOT/bridge/node_modules/.bin/buf" ] || { echo "codegen: run 'pnpm install' in bridge/ first" >&2; exit 1; }
+# protoc-gen-swift from the swift-protobuf version pinned in ios/DSHKit/Package.resolved.
+swift build --package-path "$ROOT/ios/DSHKit" -c release --product protoc-gen-swift >/dev/null
+SWIFT_BIN="$(swift build --package-path "$ROOT/ios/DSHKit" -c release --show-bin-path)"
+
+check=0; [ "${1:-}" = "--check" ] && check=1
+if [ $check = 1 ]; then
+  tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+  mkdir -p "$tmp/protocol"
+  cp "$ROOT"/protocol/*.proto "$ROOT"/protocol/buf.yaml "$tmp/protocol/"
+  sed -e "s#\.\./bridge/src/gen#$tmp/ts#" -e "s#\.\./ios/DSHKit/Sources/DSHProtocol/Generated#$tmp/swift#" \
+    "$ROOT/protocol/buf.gen.yaml" > "$tmp/protocol/buf.gen.yaml"
+  (cd "$tmp/protocol" && PATH="$ROOT/bridge/node_modules/.bin:$SWIFT_BIN:$PATH" buf generate)
+  if diff -r "$tmp/ts" "$ROOT/$TS_OUT" && diff -r "$tmp/swift" "$ROOT/$SWIFT_OUT"; then
+    echo "codegen: generated code is up to date"
+  else
+    echo "codegen: generated code is stale; run scripts/codegen and commit" >&2; exit 1
+  fi
+else
+  (cd "$ROOT/protocol" && PATH="$ROOT/bridge/node_modules/.bin:$SWIFT_BIN:$PATH" buf generate)
+  echo "codegen: wrote $TS_OUT and $SWIFT_OUT"
+fi
