@@ -1,17 +1,32 @@
-//
-//  dsh_mobileApp.swift
-//  dsh-mobile
-//
-//  Created by LAICHANG on 2026/11/4.
-//
-
+import DSHCore
 import SwiftUI
 
 @main
 struct dsh_mobileApp: App {
+    @State private var store = AppComposition.makeStore()
+    #if DEBUG
+    @State private var pairingLink: PairingLink?
+    #endif
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            #if DEBUG
+            Group {
+                // The stub replaces the screen rather than using a sheet, so XCUITest sees it.
+                if let link = pairingLink {
+                    PairingStubView(link: link) { pairingLink = nil }
+                } else {
+                    ContentView(store: store)
+                }
+            }
+            .onOpenURL { url in
+                if case .pair(let parameters) = DebugDeepLink.route(url) {
+                    pairingLink = PairingLink(parameters: parameters)
+                }
+            }
+            #else
+            ContentView(store: store)
+            #endif
         }
     }
 }
