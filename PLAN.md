@@ -208,7 +208,7 @@ Each spike ends in a short written conclusion (a working note, archived once act
 
 ### X2 · Spike: Noise interop
 
-**Status** review · **Needs** — · **Branch** `claude/x2-noise-b1b3cc`
+**Status** done · **Needs** — · **Branch** `claude/x2-noise-b1b3cc` (merged `e34a8bc`)
 
 **Why**: do a CryptoKit Swift Noise implementation and a TS `@noble/*` one interoperate? Which pattern (likely `IK` with the host static key from the QR)? (ARCHITECTURE §8.3) Unblocks S1.
 
