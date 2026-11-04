@@ -18,16 +18,19 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 - **A slice's section** belongs to that slice's owner, on the slice's branch.
 - **Subagents** hand results back; the owner records them in the Log.
 
-**Merging a slice** (the user's rule: "Auto-merge when complete")
-- The coordinating session merges a slice branch into `main` without asking each time, once all three hold:
-  1. every Done when item of the slice is ticked, and every evidence pointer resolves;
-  2. every `[ui]` item was rerun by a review subagent that didn't take part in development;
-  3. the pre-commit check passes.
-- Only the user ticks `[human]` items, so the user's tick on a slice's last `[human]` item is their sign-off on that slice.
-- Afterwards it tells the user in a sentence or two what was merged and where the evidence is.
-- If any condition fails, it doesn't merge, and tells the user what's missing.
-- Its bookkeeping commits on `main` (updating §0 and the Plan log) don't need asking either.
-- Still the user's call, every time: ticking `[human]` items, confirming `Dxx` entries in ARCHITECTURE.md and dependencies (see "Default choices" below), any push or PR, and guard-file changes (which the user commits by hand). Changes to the rules in this section are shown to the user before they're committed.
+**Merging a slice** (the user's rules: "Auto-merge when complete", then "Yes, switch" to "merge first, accept later")
+- The coordinating session merges a slice branch into `main` without asking, once all three hold. It doesn't wait for `[human]` items.
+  1. Every `[auto]` and `[ui]` item of the slice is ticked, and every evidence pointer resolves.
+  2. Every `[ui]` item was rerun and passed by a review subagent that didn't take part in development.
+  3. The pre-commit check passes.
+- After the merge, §0 says:
+  - `review` if the slice still has unticked `[human]` items. Each of those goes into §9 with the slice, the item, and the device or setup it needs, so the user can accept them in one sitting.
+  - `done` if it has no `[human]` items.
+- A slice in `review` becomes `done` once the user has ticked all its `[human]` items. If the user finds a problem while accepting, it's fixed forward on `main`, never by reverting the merge.
+- A merged slice meets its dependents' **Needs**, even while it's still in `review`.
+- Afterwards the coordinating session tells the user in a sentence or two what was merged and where the evidence is. If any condition fails, it doesn't merge, and tells the user what's missing.
+- Its bookkeeping commits on `main` (updating §0, the Plan log, and §9) don't need asking either.
+- Still the user's call, every time: ticking `[human]` items, confirming `Dxx` entries in ARCHITECTURE.md and dependencies (see "Default choices" below), any push or PR, and guard-file changes (which the user commits by hand). Changes to the rules in this section are shown to the user before they're committed, unless the user has already approved them.
 
 **Session settings** (the user's rule: "指定 opus 5.5 medium"): the coordinating session starts every tracer, slice, and spike session with model `claude-opus-5-5` and effort `medium`.
 
@@ -599,10 +602,14 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - New §9 "Pending user confirmation": the coordinating session's list of every provisional item, for the user to review at once.
   - The user hasn't seen this diff yet. It was committed because the user is out and the rule text is theirs. It's listed in §9 for review.
   - No Done when item changed.
+- **2026-11-05 · merge first, accept later** (the user approved this as "Yes, switch", relayed by the coordinating parent session).
+  - It replaces the auto-merge condition. A slice merges once its `[auto]` and `[ui]` items are ticked with resolving evidence, `[ui]` items were rerun by an independent reviewer, and pre-commit passes. It no longer waits for `[human]` ticks.
+  - After the merge, §0 says `review` while `[human]` items are open (each one listed in §9), or `done` if there are none. A merged slice meets its dependents' Needs, even in `review`. Problems found while the user accepts are fixed forward on `main`.
+  - No Done when item changed.
 
 ## 9. Pending user confirmation
 
-Kept by the coordinating session on `main`. These are the provisional `Dxx` entries, dependencies, and downloads (see "Default choices"), plus rule commits the user hasn't seen. The user reviews them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
+Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see "Default choices"), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see "Merging a slice"). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
