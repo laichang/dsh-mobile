@@ -5,6 +5,8 @@
 import Foundation
 import NoiseKit
 
+signal(SIGPIPE, SIG_IGN)
+
 func fail(_ msg: String) -> Never {
     FileHandle.standardError.write(Data("noise-peer(swift): \(msg)\n".utf8))
     exit(1)

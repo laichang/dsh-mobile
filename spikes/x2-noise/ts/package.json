@@ -7,7 +7,7 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test test/*.test.ts"
   },
   "dependencies": {
     "@noble/ciphers": "2.4.0",

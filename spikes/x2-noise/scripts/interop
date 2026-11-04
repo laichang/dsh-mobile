@@ -1,0 +1,12 @@
+#!/bin/sh
+# X2: run everything. Official Noise vectors (Swift + TS), then the Swift<->TS
+# cross-handshake in both directions (each side's test spawns the other side's peer
+# over stdin/stdout pipes; no sockets).
+# Needs: Swift 6.2+ (Xcode 26) and Node >= 22.18 (built-in TypeScript type stripping).
+set -eu
+here="$(cd "$(dirname "$0")/.." && pwd)"
+(cd "$here/ts" && npm ci --ignore-scripts --no-audit --no-fund)
+swift build --package-path "$here/swift"
+swift test --package-path "$here/swift"
+(cd "$here/ts" && npm test)
+echo "x2-noise: all Swift and TS tests passed"
