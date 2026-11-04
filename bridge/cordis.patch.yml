@@ -1,0 +1,6 @@
+# Bundle layer for the dsh-mobile bridge: mounts the plugin into the profile.
+# Defaults: 127.0.0.1:47801, cwd = home directory. Override with a profile cordis.yml entry
+# for id `dsh-mobile-bridge` (see bridge/README.md).
+- insert:
+    - id: dsh-mobile-bridge
+      name: '@dsh-mobile/bridge'

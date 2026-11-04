@@ -39,7 +39,7 @@ protocol/   .proto schema + codegen scripts (Swift + TS); the only contract betw
 gateway/    (deferred) shared push gateway, only if builds are ever distributed to others
 ```
 
-The current Xcode project moves under `ios/` when real code lands.
+The Xcode project lives in `ios/dsh-mobile.xcodeproj`.
 
 ### Round trip: user → executor → user
 
@@ -107,6 +107,8 @@ Solid arrows are the outbound path (user → executor), dashed arrows the return
 | D12 | **Workspace: per-host default + recent-workspace picker** | DSH sessions need a cwd. Prompt-based inference later. |
 | D13 | **1 task = 1 DSH session**; "quick answers" are short sessions rendered inline | One entry point (principle 3) without a second concept. |
 | D14 | **Strings in a String Catalog, zh-Hans + en; MIT license** | Matches upstream license. |
+| D15 | *Provisional, pending user confirmation (T0, 2026-11-05).* **Toolchain**: (a) codegen = `buf` + `protoc-gen-es` (pinned npm devDeps of `bridge/`) and `protoc-gen-swift` built by SwiftPM from the swift-protobuf version `ios/DSHKit` pins; one entry point, `scripts/codegen`. (b) Generated code **is committed**; `scripts/codegen --check` fails if regenerating changes anything. On merge conflicts in generated files, rerun codegen. (c) Bridge uses **pnpm**, pinned by `packageManager` (Node ≥ 24.9, as DSH requires); tests use the built-in `node:test`. (d) Swift: one local package **`ios/DSHKit`** with targets `DSHProtocol` (generated), `DSHCore` (connection, channels, store), `DSHTestSupport` (`FakeBridge`, debug-only); the app target holds views only. `swift test` runs `[auto]` items on the Mac without the shared Simulator. | Everything pinned in the repo, nothing installed globally. Xcode opens and builds without a codegen toolchain, and protocol changes show up in review. pnpm matches how DSH profiles install plugins. |
+| D16 | *Provisional, pending user confirmation (T0, 2026-11-05).* **Testability entry points, Debug builds only**: launch arguments `-DSHMFakeBridge YES` (in-process `FakeBridge` instead of the loopback bridge), `-DSHMPresetPrompt <text>` (pre-filled composer), `-DSHMBridgePort <port>` (loopback port, default 47801 in this worktree); accessibility identifiers `composer.prompt`, `composer.send`, `task.status`, `transcript.text`; URL scheme `dshm://pair?…` routed to a pairing stub (S1 replaces it). The scheme is declared only in the Debug Info.plist, the code is behind `#if DEBUG`, and `scripts/check-release-clean` proves a Release build has none of them. | Lets agents and XCUITest drive every slice in the Simulator without a camera or a real DSH, without shipping test hooks. |
 
 ## 4. iOS app (`ios/`)
 
@@ -167,7 +169,7 @@ A Cordis plugin installed into the user's DSH profile. Responsibilities:
 ## 8. Open risks / spikes before M1 coding
 
 1. **Approval answerer ownership**: upstream treats a "non-owning" answerer as `unavailable`. Verify that a plugin answerer can own approvals for all agents, and decide ordering versus the web/desktop UI answerers (who asks first, and does the web UI still see them).
-2. **Plugin listener**: confirm a Cordis plugin can open its own port, and see how the user installs and enables a bundle or plugin in their profile.
+2. **Plugin listener**: confirm a Cordis plugin can open its own port, and see how the user installs and enables a bundle or plugin in their profile. *Answered by T0 (2026-11-05):* yes. The bridge opens its own `ws` listener from `apply()`, and `dsh plugin --profile <p> add <dir>` installs it (needs `pnpm` on PATH); see `bridge/README.md`. In-process `ctx.sessionController` / `ctx.workspaceController` calls run as the owner, so no Peer is needed (`bridge/src/dsh.ts`).
 3. **Noise implementation**: a CryptoKit-based Swift implementation plus TS (`@noble/*`) must interoperate. Validate both against the official Noise test vectors before trusting either.
 4. **Upstream churn**: pin the supported DSH version range in the bridge; add a CI job against DSH `main`.
 5. **Streaming Markdown renderer**: choose an SPM package or build on `swift-markdown`, and benchmark incremental rendering of long transcripts.

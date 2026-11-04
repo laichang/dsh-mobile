@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Debug builds only (INFOPLIST_FILE is set for Debug alone). Merged with the generated keys.
+     Registers the reserved dshm:// scheme for the pairing deep link (ARCHITECTURE D16).
+     Release builds have no URL scheme; scripts/check-release-clean verifies that. -->
+<plist version="1.0">
+<dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>chang.dsh-mobile.debug</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>dshm</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

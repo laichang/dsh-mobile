@@ -1,0 +1,10 @@
+version: v2
+lint:
+  use:
+    - STANDARD
+  except:
+    # protocol/ stays flat (frame.proto + one file per slice).
+    - PACKAGE_DIRECTORY_MATCH
+breaking:
+  use:
+    - WIRE_JSON

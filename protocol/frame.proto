@@ -1,0 +1,103 @@
+// The only contract between the iOS app (ios/) and the bridge plugin (bridge/).
+// See ARCHITECTURE.md §6 and PLAN.md §1 "How slices stay independent".
+//
+// Evolution rules:
+// - Additive only. Never reuse or renumber a field; reserve removed ones.
+// - Request / Response / Event bodies reserve 20 field numbers per slice:
+//   T0 1–19, S1 20–39, S2 40–59, S3 60–79, S4 80–99, S5 100–119, S6 120–139,
+//   S7 140–159, S8 160–179, S9 180–199, S10 200–219, S11 220–239, S12 240–259.
+//   A slice adds its messages in protocol/<slice>.proto and only a one-line
+//   registration per oneof here.
+// - Each slice advertises a capability string in Hello.capabilities
+//   (e.g. "approvals.v1"); the app hides UI the bridge can't serve.
+
+syntax = "proto3";
+
+package dshm.v1;
+
+// One WebSocket binary message carries exactly one Frame (inside the
+// SecureChannel; plaintext only on loopback in T0).
+message Frame {
+  oneof kind {
+    Request request = 1;
+    Response response = 2;
+    Event event = 3;
+  }
+}
+
+// App → bridge. Correlated with its Response by `id`.
+message Request {
+  // Chosen by the sender, unique per connection, never 0.
+  uint64 id = 1;
+
+  oneof body {
+    // T0: 2–19
+    Hello hello = 2;
+    CreateTask create_task = 3;
+  }
+}
+
+// Bridge → app, answering the Request with the same id.
+message Response {
+  uint64 request_id = 1;
+
+  oneof body {
+    // T0: 2–19
+    Error error = 2;
+    Hello hello = 3;
+    TaskCreated task_created = 4;
+  }
+}
+
+// Bridge → app, unsolicited.
+message Event {
+  oneof body {
+    // T0: 1–19
+    AssistantChunk assistant_chunk = 1;
+    TaskEnded task_ended = 2;
+  }
+}
+
+// First request on every connection; the bridge answers with its own Hello.
+message Hello {
+  // Incremented on breaking changes; the bridge supports N and N-1.
+  uint32 protocol_version = 1;
+  repeated string capabilities = 2;
+}
+
+message Error {
+  // Stable, machine-readable, e.g. "hello/version-unsupported".
+  string code = 1;
+  // Human-readable detail; never shown as the only explanation.
+  string message = 2;
+}
+
+// Start a task: one DSH session + one prompt (ARCHITECTURE D13).
+message CreateTask {
+  string prompt = 1;
+}
+
+message TaskCreated {
+  string task_id = 1;
+}
+
+// A piece of assistant text, in order. `seq` starts at 1 per task and has no
+// gaps on one connection.
+message AssistantChunk {
+  string task_id = 1;
+  uint64 seq = 2;
+  string text = 3;
+}
+
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_COMPLETED = 1;
+  TASK_STATUS_FAILED = 2;
+}
+
+message TaskEnded {
+  string task_id = 1;
+  TaskStatus status = 2;
+  // Why it failed, when status is FAILED.
+  string message = 3;
+}

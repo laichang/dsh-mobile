@@ -1,0 +1,3 @@
+allowBuilds:
+  # buf ships prebuilt binaries as optional deps; its postinstall is not needed.
+  "@bufbuild/buf": false

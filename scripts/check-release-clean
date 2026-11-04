@@ -1,0 +1,34 @@
+#!/bin/bash
+# Proves a Release build carries none of the debug-only testability entry points
+# (ARCHITECTURE D16): FakeBridge, the -DSHM* launch arguments, and the dshm://pair deep link.
+# Also checks the Debug build *does* carry them, so a passing result means something.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DD=/tmp/dshm-release-check-dd
+MARKERS=(FakeBridge DSHMFakeBridge DSHMPresetPrompt DSHMBridgePort DebugDeepLink DebugLaunchOptions PairingStubView pairing.stub)
+
+build() {
+  xcodebuild build -project "$ROOT/ios/dsh-mobile.xcodeproj" -scheme dsh-mobile -configuration "$1" \
+    -destination 'generic/platform=iOS Simulator' -derivedDataPath "$DD" \
+    -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates CODE_SIGNING_ALLOWED=NO >/tmp/dshm-release-check-$1.log 2>&1 \
+    || { tail -20 /tmp/dshm-release-check-$1.log; exit 1; }
+  echo "$DD/Build/Products/$1-iphonesimulator/dsh-mobile.app"
+}
+
+scan() { # app → prints markers found in any Mach-O inside, and URL schemes
+  local app=$1 found=()
+  local binaries; binaries=$(find "$app" -type f -exec sh -c 'file -b "$1" | grep -q Mach-O' _ {} \; -print)
+  for m in "${MARKERS[@]}"; do
+    for b in $binaries; do grep -q -- "$m" < <(strings -a "$b") && { found+=("$m"); break; }; done
+  done
+  /usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes' "$app/Info.plist" >/dev/null 2>&1 && found+=("CFBundleURLTypes")
+  echo "${found[*]:-}"
+}
+
+release=$(scan "$(build Release)")
+debug=$(scan "$(build Debug)")
+echo "Debug carries:   ${debug:-<none>}"
+echo "Release carries: ${release:-<none>}"
+[ -n "$debug" ] || { echo "check-release-clean: Debug has no markers; the check is broken" >&2; exit 1; }
+[ -z "$release" ] || { echo "check-release-clean: FAIL, Release contains: $release" >&2; exit 1; }
+echo "check-release-clean: OK, Release contains none of the testability entry points"
