@@ -63,6 +63,12 @@ Defaults: `host: 127.0.0.1`, `port: 47801`, `cwd`: your home directory, used as 
 
 `node scripts/dsh-up.mjs` starts DSH 0.2.2-rc.1 from `~/.dshm/runtime` with `DSH_HOME=~/.dshm/home`, enables this bridge, and points DSH at DSH's mock LLM server, so no API key is needed. The script header lists its environment variables.
 
+This is the development host on the maintainer's Mac:
+- DSH is installed with npm (`@deepseek-ai/dsh@0.2.2-rc.1` and `@deepseek-ai/dsh-llm-mock-server@0.2.2-rc.1`) into `~/.dshm/runtime`.
+- `~/.dshm/bin/pnpm` is a shim for `corepack pnpm@11.28.5`; put it on `PATH` for `dsh plugin`.
+- The default `~/.dsh` is left untouched.
+- Other worktrees use their own `DSH_HOME` and ports. For example, X1/X4 use `~/.dshm/home-x1x4`, web port 3282 and bridge ports 47803–47809.
+
 ## Development
 
 | Command | What it does |
