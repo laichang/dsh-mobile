@@ -61,9 +61,9 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
-| T0 | todo | — | — | Start: move the Xcode project under `ios/` |
+| T0 | doing | `claude/t0-tracer-513793` | 2026-11-05 | Build the tracer; ask the user for toolchain choices and the DSH location |
 | X1 | todo | — | — | Start any time (no deps) |
-| X2 | todo | — | — | Start any time (no deps) |
+| X2 | doing | `claude/x2-noise-b1b3cc` | 2026-11-05 | Ask the user about test vectors and deps; build Swift + TS Noise |
 | X3 | todo | — | — | Start any time (no deps) |
 | X4 | todo | — | — | Start any time (no deps; needed before M2) |
 | S1 | todo | — | — | Wait for T0, X2 |
@@ -570,3 +570,15 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - Slice sessions edit only their own slice's section and its Log, on their own branch. "Before you stop" and "Who writes this file" in "How to use this file" say so; the Status field note now says the coordinating session brings §0 in line.
   - The user chose "Auto-merge when complete". The new "Merging a slice" rule: the coordinating session merges without asking once every Done when item is ticked with resolving evidence, every `[ui]` item was rerun by an independent reviewer, and pre-commit passes. It reports afterwards. Its bookkeeping commits for §0 and this log don't need asking either. Ticking `[human]` items, `Dxx` entries, any push or PR, and guard-file changes stay with the user.
   - No Done when item changed.
+- **2026-11-05 · T0 and X2 started.**
+  - Both run in their own sessions and worktrees, cut from `10d4639`: T0 on `claude/t0-tracer-513793`, X2 on `claude/x2-noise-b1b3cc`.
+  - Ports (each worktree uses only its own bridge port; the real DSH and the Simulator are shared, so tests that hit them run one at a time):
+
+    | Port | Owner | Use |
+    |---|---|---|
+    | 3080 | real DSH | DSH webserver (shared) |
+    | 47800 | `main` | bridge, for demos on `main` after merges |
+    | 47801 | T0 | bridge listener, app's loopback address |
+    | 47802 | X2 | cross-handshake socket, if needed |
+
+  - Next: start X1 + X4 as one session once T0's bridge runs inside DSH. Start X3 when the user has real-device time.
