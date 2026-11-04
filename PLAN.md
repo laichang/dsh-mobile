@@ -73,11 +73,11 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
-| T0 | doing | `claude/t0-tracer-513793` | 2026-11-05 | Build the tracer; ask the user for toolchain choices and the DSH location |
-| X1 | todo | — | — | Start any time (no deps) |
+| T0 | doing | `claude/t0-tracer-513793` | 2026-11-05 | Bridge runs inside real DSH (`c245373`); Swift side next |
+| X1 | todo | — | 2026-11-05 | Session proposed (with X4), waiting for the user to start it |
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
 | X3 | todo | — | — | Start any time (no deps) |
-| X4 | todo | — | — | Start any time (no deps; needed before M2) |
+| X4 | todo | — | 2026-11-05 | Session proposed (with X1), waiting for the user to start it |
 | S1 | todo | — | — | Wait for T0 (X2 done) |
 | S2 | todo | — | — | Wait for T0 |
 | S3 | todo | — | — | Wait for T0 |
@@ -626,6 +626,18 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - Checked before the merge: both `[auto]` items ticked with resolving pointers; `spikes/x2-noise/scripts/interop` rerun by the coordinating session in X2's worktree; all Swift and TS vector and cross-handshake tests green. No `[ui]` items.
   - `.githooks/` has only `pre-commit`, which doesn't run on a merge commit, so `scripts/check-plan --base <pre-merge PLAN.md> --new PLAN.md` was run by hand: exit 0.
   - Result: pairing `Noise_IKpsk1_25519_ChaChaPoly_SHA256`, reconnect `Noise_IK_25519_ChaChaPoly_SHA256` (provisional D6, §9). S1 ports the code instead of depending on `spikes/`. Open question for S1: is the Secure Enclave P-256 identity key still needed in M1?
+- **2026-11-05 · T0's bridge runs inside real DSH; X1 + X4 proposed.**
+  - T0 reports a full round trip on its branch (`c245373`): client → `ws 127.0.0.1:47801` → `Hello` / `CreateTask` → DSH session → streamed text → `TaskEnded COMPLETED`. It uses DSH 0.2.2-rc.1 in `~/.dshm/runtime` with the mock model server and no API key. The shared install's details are in `scripts/dsh-up.mjs` on T0's branch.
+  - That meets the start condition for X1 + X4. The app only starts sessions on the user's own words, so the session is a proposal card in the coordinating session, waiting for the user.
+  - More ports, plus a separate `DSH_HOME` for each DSH instance:
+
+    | Port | Owner | Use |
+    |---|---|---|
+    | 3281 | T0 | DSH web of T0's instance (`DSH_HOME=~/.dshm/home`) |
+    | 3282 | X1 + X4 | DSH web of the spikes' instance (`DSH_HOME=~/.dshm/home-x1x4`) |
+    | 47803–47809 | X1 + X4 | plugin listener, mock model server, release scripts |
+
+  - T0's `c245373` committed about 28 MB of `ios/DSHKit/.build/`, which `89f76df` removes only at the tip. T0 was asked to drop it from its branch history before review.
 
 ## 9. Pending user confirmation
 
