@@ -39,7 +39,7 @@ protocol/   .proto schema + codegen scripts (Swift + TS); the only contract betw
 gateway/    (deferred) shared push gateway, only if builds are ever distributed to others
 ```
 
-The current Xcode project moves under `ios/` when real code lands.
+The Xcode project lives in `ios/dsh-mobile.xcodeproj`.
 
 ### Round trip: user → executor → user
 

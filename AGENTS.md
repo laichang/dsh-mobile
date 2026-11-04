@@ -13,8 +13,8 @@ Read on demand, not all at once:
 
 ## Repo layout
 
-- `dsh-mobile/`: SwiftUI app source (currently just the Xcode template)
-- `dsh-mobile.xcodeproj/`: Xcode project
+- `ios/`: the iOS app (`ios/dsh-mobile.xcodeproj`, sources in `ios/dsh-mobile/`)
+- `protocol/`: the protobuf contract between the app and the bridge (`frame.proto`)
 - `scripts/check-plan`: guards PLAN.md's Done when items (see PLAN.md "How to use this file")
 - `.githooks/`: git hooks; `.claude/`: Claude Code hooks for this repo
 
