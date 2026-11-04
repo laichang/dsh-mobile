@@ -11,13 +11,27 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 4. Read `git log` since that slice's last Log entry.
 5. Confirm the T0 demo still runs. If it doesn't, fixing it comes first.
 
-**Before you stop**: append to the slice's Log what's done, what isn't, and the next step; update its row in §0; commit.
+**Before you stop**: append to the slice's Log what's done, what isn't, and the next step; commit on the slice's branch. Edit only your own slice's section (its fields, Done when, and Log). Never touch §0 or the §8 Plan log: parallel branches editing adjacent §0 rows conflict on merge. If §0 needs to change, say so in your Log and your report; the coordinating session updates it.
 
-**Who writes this file**: only the main session or the slice's owner. Subagents hand results back; the owner records them in the Log.
+**Who writes this file**
+- **§0 and the §8 Plan log** belong to the coordinating session, which edits them only on `main`. It updates them when a slice starts, is blocked, goes to review, or merges.
+- **A slice's section** belongs to that slice's owner, on the slice's branch.
+- **Subagents** hand results back; the owner records them in the Log.
+
+**Merging a slice** (the user's rule: "Auto-merge when complete")
+- The coordinating session merges a slice branch into `main` without asking each time, once all three hold:
+  1. every Done when item of the slice is ticked, and every evidence pointer resolves;
+  2. every `[ui]` item was rerun by a review subagent that didn't take part in development;
+  3. the pre-commit check passes.
+- Only the user ticks `[human]` items, so the user's tick on a slice's last `[human]` item is their sign-off on that slice.
+- Afterwards it tells the user in a sentence or two what was merged and where the evidence is.
+- If any condition fails, it doesn't merge, and tells the user what's missing.
+- Its bookkeeping commits on `main` (updating §0 and the Plan log) don't need asking either.
+- Still the user's call, every time: ticking `[human]` items, `Dxx` entries in ARCHITECTURE.md, any push or PR, and guard-file changes (which the user commits by hand). Changes to the rules in this section are shown to the user before they're committed.
 
 **Slice fields**, always in this order. Write "—" for an empty field; never drop one.
 `Status · Needs · Branch` on one line, then **Why**, **Cuts**, **Demo**, **Done when**, **Not**, **Log**.
-- **Status** is one of `todo` / `doing` / `blocked` / `review` / `done`, and matches §0.
+- **Status** is one of `todo` / `doing` / `blocked` / `review` / `done`. The slice owner sets it on the branch; the coordinating session brings §0 in line.
 - **Log** is append-only and dated: done, not done, next step, and anything learned along the way. Technical decisions go into ARCHITECTURE.md as a `Dxx` entry; the Log just says "see Dxx".
 
 **Done when items** are checkboxes: `- [ ] [tier] description — Evidence: …`
@@ -551,3 +565,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-05 · mid-task context.**
   - STORY.md now covers adding context mid-task (`cc91a02`).
   - Added spike X4 (no deps, doesn't block M1; ARCHITECTURE §8.6) and an M2 candidate slice, gated on X4.
+- **2026-11-05 · §0 ownership + auto-merge** (both approved by the user).
+  - Several slice branches editing adjacent §0 rows would conflict on merge. From now on §0 and this Plan log are written only by the coordinating session, on `main`, when a slice starts, is blocked, goes to review, or merges.
+  - Slice sessions edit only their own slice's section and its Log, on their own branch. "Before you stop" and "Who writes this file" in "How to use this file" say so; the Status field note now says the coordinating session brings §0 in line.
+  - The user chose "Auto-merge when complete". The new "Merging a slice" rule: the coordinating session merges without asking once every Done when item is ticked with resolving evidence, every `[ui]` item was rerun by an independent reviewer, and pre-commit passes. It reports afterwards. Its bookkeeping commits for §0 and this log don't need asking either. Ticking `[human]` items, `Dxx` entries, any push or PR, and guard-file changes stay with the user.
+  - No Done when item changed.
