@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+"""Claude Code PreToolUse hook (Bash): block ways around the repo's git hooks.
+
+Denies, in any git command:
+  * --no-verify, and `git commit -n` (its short form)
+  * overriding core.hooksPath to anything but .githooks
+  * CHECK_PLAN_ALLOW (the user's own escape hatch for approved PLAN.md rewrites)
+"""
+
+import json
+import re
+import shlex
+import sys
+
+
+def deny(reason):
+    print(json.dumps({"hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "deny",
+        "permissionDecisionReason": reason + " See AGENTS.md \"Hooks\". If a check blocks "
+                                    "you, ask the user in the conversation.",
+    }}))
+    sys.exit(0)
+
+
+def commit_short_n(tokens):
+    """True if `git ... commit` has a short-option cluster containing -n."""
+    try:
+        i = tokens.index("commit")
+    except ValueError:
+        return False
+    for t in tokens[i + 1:]:
+        if t == "--":
+            break
+        if re.fullmatch(r"-[A-Za-z]+", t):
+            # letters after an argument-taking option are its value (e.g. -mn)
+            for ch in t[1:]:
+                if ch == "n":
+                    return True
+                if ch in "mFCcSut":
+                    break
+    return False
+
+
+def main():
+    data = json.load(sys.stdin)
+    cmd = (data.get("tool_input") or {}).get("command", "")
+    if "git" not in cmd and "CHECK_PLAN_ALLOW" not in cmd:
+        return
+    if "CHECK_PLAN_ALLOW" in cmd:
+        deny("CHECK_PLAN_ALLOW is for the user only.")
+    if "--no-verify" in cmd:
+        deny("Blocked: --no-verify skips the repo's git hooks.")
+    if "core.hooksPath" in cmd and ("--unset" in cmd or "--remove-section" in cmd):
+        deny("Blocked: core.hooksPath must stay .githooks.")
+    for m in re.finditer(r"core\.hooksPath\s*=?\s*(\S*)", cmd):
+        if m.group(1).strip("'\"") not in (".githooks", ""):
+            deny("Blocked: core.hooksPath must stay .githooks.")
+    for part in re.split(r"&&|\|\||;|\||\n", cmd):
+        try:
+            tokens = shlex.split(part)
+        except ValueError:
+            tokens = part.split()
+        if "git" in tokens and commit_short_n(tokens[tokens.index("git"):]):
+            deny("Blocked: `git commit -n` is --no-verify.")
+
+
+if __name__ == "__main__":
+    main()

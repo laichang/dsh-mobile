@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+"""Claude Code PreToolUse hook (Edit|Write|MultiEdit) guarding PLAN.md.
+
+Computes PLAN.md as it would be after the tool call and runs scripts/check-plan
+against the current on-disk version (so it judges this edit, not earlier ones;
+the git pre-commit hook judges the cumulative change against HEAD).
+
+  * ticking a [human] item          -> deny (only the user ticks those)
+  * any other check-plan violation  -> NON_HUMAN_DECISION ("ask" or "deny")
+"""
+
+import json
+import os
+import sys
+import importlib.util
+from importlib.machinery import SourceFileLoader
+from pathlib import Path
+
+# "ask" pops a confirmation dialog for the user; verified on 2026-11-04 that it
+# still does in bypass-permissions mode (see PLAN.md §8 Plan log).
+NON_HUMAN_DECISION = "ask"
+
+ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path(__file__).resolve().parents[2])
+PLAN = ROOT / "PLAN.md"
+
+
+def decide(decision, reason):
+    print(json.dumps({"hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": decision,
+        "permissionDecisionReason": reason,
+    }}))
+    sys.exit(0)
+
+
+def proposed(tool, inp, current):
+    if tool == "Write":
+        return inp.get("content", "")
+    edits = inp.get("edits") if tool == "MultiEdit" else [inp]
+    text = current
+    for e in edits or []:
+        old, new = e.get("old_string", ""), e.get("new_string", "")
+        if not old or old not in text:
+            return None  # the tool itself will fail; nothing to judge
+        text = text.replace(old, new) if e.get("replace_all") else text.replace(old, new, 1)
+    return text
+
+
+def main():
+    data = json.load(sys.stdin)
+    tool, inp = data.get("tool_name"), data.get("tool_input") or {}
+    path = inp.get("file_path")
+    if not path:
+        return
+    try:
+        if Path(path).resolve() != PLAN.resolve():
+            return
+    except OSError:
+        return
+
+    current = PLAN.read_text() if PLAN.exists() else ""
+    new = proposed(tool, inp, current)
+    if new is None:
+        return
+
+    loader = SourceFileLoader("check_plan", str(ROOT / "scripts" / "check-plan"))
+    spec = importlib.util.spec_from_loader("check_plan", loader)
+    check = importlib.util.module_from_spec(spec)
+    loader.exec_module(check)
+    errors = check.check(current, new, agent=True)
+    if not errors:
+        return
+
+    human = [e for e in errors if e.startswith("HUMAN ITEM TICKED BY AGENT")]
+    body = "\n".join(errors)
+    if human:
+        decide("deny",
+               "PLAN.md: only the user ticks [human] items. Tell the user what you verified "
+               "and let them tick it themselves.\n\n" + body)
+    if NON_HUMAN_DECISION == "ask":
+        decide("ask",
+               "PLAN.md Done when items may only be ticked (with evidence) or added. "
+               "This edit changes existing items; approve only if you agreed to it in the "
+               "conversation.\n\n" + body)
+    decide("deny",
+           "PLAN.md Done when items may only be ticked (with evidence) or added. Don't retry: "
+           "ask the user in the conversation, showing the original text, the new text and "
+           "the reason, and let the user make the edit by hand.\n\n" + body)
+
+
+if __name__ == "__main__":
+    main()

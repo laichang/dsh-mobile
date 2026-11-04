@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+"""Guard PLAN.md's Done when items.
+
+Compares a base version of PLAN.md with a new one and allows only two kinds
+of change to checkbox items:
+  * tick:  "- [ ]" -> "- [x]" (with non-empty evidence)
+  * add:   a new item
+
+Anything else (delete, reword, re-tier, untick, move to another slice, edit
+the evidence of an already-ticked item) fails and prints old vs new.
+
+Usage:
+  scripts/check-plan --staged                 # HEAD vs index (pre-commit)
+  scripts/check-plan --new FILE|-             # HEAD vs FILE (or stdin)
+  scripts/check-plan --base FILE --new FILE   # explicit base
+  add --agent to also reject ticking any [human] item.
+
+A rewrite the user has approved is committed by the user, by hand:
+  CHECK_PLAN_ALLOW=1 git commit ...
+Agents must never set CHECK_PLAN_ALLOW (the Claude Code Bash hook blocks it).
+
+Exit 0 = OK, 1 = violations (printed to stdout), 2 = usage error.
+"""
+
+import argparse
+import os
+import collections
+import difflib
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+PLAN = "PLAN.md"
+ITEM_RE = re.compile(
+    r"^\s*- \[(?P<box>[ xX])\] \[(?P<tier>auto|ui|human)\] (?P<desc>.*?)"
+    r"(?:\s+—\s+(?:Evidence:|证据[:：])(?P<ev>.*))?\s*$"
+)
+CHECKBOX_RE = re.compile(r"^\s*- \[[ xX]\] ")
+HEADING_RE = re.compile(r"^#{2,4}\s+(?P<text>.+?)\s*$")
+SLICE_ID_RE = re.compile(r"^(?:\d+\.\s*)?(?P<id>T\d+|X\d+|S\d+)\b")
+EMPTY_EVIDENCE = {"", "—", "-", "–", "todo", "tbd", "n/a", "none"}
+
+
+class Item:
+    def __init__(self, section, line, lineno, m):
+        self.section = section
+        self.line = line.rstrip("\n")
+        self.lineno = lineno
+        self.checked = m.group("box") in "xX"
+        self.tier = m.group("tier")
+        self.desc = m.group("desc").strip()
+        self.has_marker = m.group("ev") is not None
+        self.evidence = (m.group("ev") or "").strip()
+
+    @property
+    def key(self):
+        return (self.section, self.tier, self.desc)
+
+    def evidence_empty(self):
+        return self.evidence.lower() in EMPTY_EVIDENCE
+
+
+def section_key(heading):
+    m = SLICE_ID_RE.match(heading)
+    return m.group("id") if m else heading
+
+
+def parse(text):
+    """Return (items, malformed_lines)."""
+    items, malformed = [], []
+    section = "(top)"
+    in_fence = False
+    for n, line in enumerate(text.splitlines(), 1):
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        h = HEADING_RE.match(line)
+        if h:
+            section = section_key(h.group("text"))
+            continue
+        if not CHECKBOX_RE.match(line):
+            continue
+        m = ITEM_RE.match(line)
+        if m:
+            items.append(Item(section, line, n, m))
+        else:
+            malformed.append((section, n, line.rstrip("\n")))
+    return items, malformed
+
+
+def git_show(spec):
+    r = subprocess.run(["git", "show", spec], capture_output=True, text=True)
+    return r.stdout if r.returncode == 0 else None
+
+
+def check(base_text, new_text, agent=False):
+    """Return a list of violation strings."""
+    errors = []
+    old_items, _ = parse(base_text or "")
+    new_items, malformed = parse(new_text)
+
+    for section, n, line in malformed:
+        errors.append(
+            f"MALFORMED (line {n}, {section}): checkbox without a valid "
+            f"[auto|ui|human] tier\n    {line}"
+        )
+
+    new_by_key = collections.defaultdict(list)
+    for it in new_items:
+        new_by_key[it.key].append(it)
+
+    unmatched_new = list(new_items)
+    for old in old_items:
+        candidates = new_by_key.get(old.key)
+        if not candidates:
+            guess = closest(old, unmatched_new)
+            errors.append(
+                f"DELETED OR REWRITTEN ({old.section}, was line {old.lineno}):\n"
+                f"    old: {old.line}\n"
+                f"    new (closest): {guess.line if guess else '(none)'}"
+            )
+            continue
+        new = candidates.pop(0)
+        unmatched_new.remove(new)
+        if old.checked and not new.checked:
+            errors.append(f"UNTICKED ({old.section}, line {new.lineno}):\n"
+                          f"    old: {old.line}\n    new: {new.line}")
+        elif old.checked and new.line.strip() != old.line.strip():
+            errors.append(f"TICKED ITEM CHANGED ({old.section}, line {new.lineno}):\n"
+                          f"    old: {old.line}\n    new: {new.line}")
+        elif not old.checked and new.checked:
+            errors += tick_errors(new, agent)
+
+    for new in unmatched_new:  # genuinely added items
+        if not new.has_marker:
+            errors.append(f"MISSING 'Evidence:' ({new.section}, line {new.lineno}):\n"
+                          f"    new: {new.line}")
+        if new.checked:
+            errors += tick_errors(new, agent)
+    return errors
+
+
+def tick_errors(item, agent):
+    errs = []
+    if item.evidence_empty():
+        errs.append(f"TICKED WITHOUT EVIDENCE ({item.section}, line {item.lineno}):\n"
+                    f"    new: {item.line}")
+    if agent and item.tier == "human":
+        errs.append(f"HUMAN ITEM TICKED BY AGENT ({item.section}, line {item.lineno}): "
+                    f"only the user ticks [human] items\n    new: {item.line}")
+    return errs
+
+
+def closest(old, pool):
+    same = [p for p in pool if p.section == old.section] or pool
+    if not same:
+        return None
+    return max(same, key=lambda p: difflib.SequenceMatcher(None, old.line, p.line).ratio())
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    src = ap.add_mutually_exclusive_group(required=True)
+    src.add_argument("--staged", action="store_true", help="check the staged PLAN.md against HEAD")
+    src.add_argument("--new", metavar="FILE", help="proposed PLAN.md content ('-' = stdin)")
+    ap.add_argument("--base", metavar="FILE", help="base PLAN.md (default: git HEAD)")
+    ap.add_argument("--agent", action="store_true", help="also reject ticking [human] items")
+    args = ap.parse_args(argv)
+
+    if args.base:
+        base = Path(args.base).read_text() if Path(args.base).exists() else ""
+    else:
+        base = git_show(f"HEAD:{PLAN}") or ""
+
+    if args.staged:
+        new = git_show(f":{PLAN}")
+        if new is None:  # PLAN.md not in the index
+            return 0
+    elif args.new == "-":
+        new = sys.stdin.read()
+    else:
+        new = Path(args.new).read_text()
+
+    errors = check(base, new, agent=args.agent)
+    if errors and args.staged and os.environ.get("CHECK_PLAN_ALLOW") == "1":
+        print("check-plan: CHECK_PLAN_ALLOW=1, committing these user-approved changes:\n")
+        print("\n".join(errors))
+        return 0
+    if errors:
+        print("check-plan: PLAN.md Done when items may only be ticked ([ ] -> [x] with "
+              "evidence) or added. Never deleted, reworded, re-tiered or unticked.\n")
+        print("\n".join(errors))
+        print("\nIf an item truly has to change, explain the original text, the new text "
+              "and the reason to the user, and let the user make the edit.")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

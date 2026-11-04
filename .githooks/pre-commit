@@ -1,0 +1,4 @@
+#!/bin/sh
+# Enabled with: git config core.hooksPath .githooks
+# Never bypass with --no-verify. See AGENTS.md "Hooks".
+exec "$(git rev-parse --show-toplevel)/scripts/check-plan" --staged
