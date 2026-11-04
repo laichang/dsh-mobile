@@ -15,6 +15,11 @@ Read on demand, not all at once:
 - `dsh-mobile/`: SwiftUI app source (currently just the Xcode template)
 - `dsh-mobile.xcodeproj/`: Xcode project
 
+## Code is truth
+
+- **Code is the source of truth.** The code should express the ideas in STORY.md and ARCHITECTURE.md, and every idea should map to code. If code and docs disagree, either fix the code or update the doc. Don't leave them out of sync.
+- **Archive working docs once they're done.** Any discussion, proposal, plan, or design note about the app (code, UX, architecture, etc.) is temporary. When it has been acted on or dropped, move it to `.archive/YYYYMMDD/<topic>.md`, using the date it was archived. Archived files are history, not guidance. Don't treat them as current; the code and the living docs (this file, STORY.md, ARCHITECTURE.md) are.
+
 ## Conventions
 
 - Write AGENTS.md and other agent-facing docs in English.
