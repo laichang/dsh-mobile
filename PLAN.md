@@ -27,9 +27,16 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 - Afterwards it tells the user in a sentence or two what was merged and where the evidence is.
 - If any condition fails, it doesn't merge, and tells the user what's missing.
 - Its bookkeeping commits on `main` (updating §0 and the Plan log) don't need asking either.
-- Still the user's call, every time: ticking `[human]` items, `Dxx` entries in ARCHITECTURE.md, any push or PR, and guard-file changes (which the user commits by hand). Changes to the rules in this section are shown to the user before they're committed.
+- Still the user's call, every time: ticking `[human]` items, confirming `Dxx` entries in ARCHITECTURE.md and dependencies (see "Default choices" below), any push or PR, and guard-file changes (which the user commits by hand). Changes to the rules in this section are shown to the user before they're committed.
 
 **Session settings** (the user's rule: "指定 opus 5.5 medium"): the coordinating session starts every tracer, slice, and spike session with model `claude-opus-5-5` and effort `medium`.
+
+**Default choices** (the user's rules: "决策先用默认方案：遇到选型时，会话按自己推荐的方案继续做，写进 ARCHITECTURE.md 时标成'provisional（暂定），待用户确认'", and for dependencies and downloads, "先全部放行，然后和 1 一样的解法")
+- **Decisions**: at a toolchain or design choice, a session doesn't wait for the user. It goes ahead with its own recommendation and records it in ARCHITECTURE.md as a `Dxx` entry marked **provisional, pending user confirmation**, with the alternatives it considered.
+- **Dependencies and downloads**: allowed without asking. Each is pinned (exact version, or commit plus checksum for downloads), recorded the same way as provisional, pending user confirmation, and named in the slice's Log.
+- Each session lists its new provisional items in its report to the coordinating session. The coordinating session keeps them in §9 "Pending user confirmation" with slice, branch, and commit, so the user can review them all at once.
+- A provisional item stays provisional until the user confirms it. When the user confirms or changes one, the session that owns it (or the coordinating session, on `main`) drops the marker or applies the change.
+- Every session brief carries these two rules.
 
 **Slice fields**, always in this order. Write "—" for an empty field; never drop one.
 `Status · Needs · Branch` on one line, then **Why**, **Cuts**, **Demo**, **Done when**, **Not**, **Log**.
@@ -587,3 +594,19 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-05 · session settings** (approved by the user).
   - The user's rule is "指定 opus 5.5 medium": every tracer, slice, and spike session runs on model `claude-opus-5-5` at effort `medium`. "Session settings" in "How to use this file" says so.
   - T0 and X2 already ran `claude-opus-5-5`; their effort went from `high` to `medium`, starting with each session's next turn.
+- **2026-11-05 · default choices** (the user's rules, relayed by the coordinating parent session while the user is out; the user replied "确认").
+  - Decisions: sessions go ahead with their own recommendation and mark the `Dxx` entry provisional, pending user confirmation. Dependencies and downloads: allowed, pinned, marked the same way. "Default choices" in "How to use this file" says so. The "still the user's call" line under "Merging a slice" now says *confirming* `Dxx` entries and dependencies.
+  - New §9 "Pending user confirmation": the coordinating session's list of every provisional item, for the user to review at once.
+  - The user hasn't seen this diff yet. It was committed because the user is out and the rule text is theirs. It's listed in §9 for review.
+  - No Done when item changed.
+
+## 9. Pending user confirmation
+
+Kept by the coordinating session on `main`. These are the provisional `Dxx` entries, dependencies, and downloads (see "Default choices"), plus rule commits the user hasn't seen. The user reviews them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
+
+| # | Slice | Kind | Item | Branch | Commit |
+|---|---|---|---|---|---|
+| 1 | — | rule | "Default choices" rule text and this section (the user approved the rules, not this wording) | `main` | see Plan log 2026-11-05 · default choices |
+| 2 | X2 | dependency | npm `@noble/ciphers` 2.4.0, `@noble/curves` 2.4.0, `@noble/hashes` 2.4.0 (spike only, `spikes/x2-noise/ts/`) | `claude/x2-noise-b1b3cc` | `3f4d72e` |
+| 3 | X2 | download | Noise test vectors: `cacophony.txt` (haskell-cryptography/cacophony @ `18b7348`) and `snow.txt` (mcginty/snow @ `d00b360`); sha256 in `spikes/x2-noise/vectors/SHA256SUMS`; a filtered subset is committed | `claude/x2-noise-b1b3cc` | `3f4d72e` |
+| 4 | T0 | decisions + download | T0's 7 toolchain questions, now going ahead on its recommendations; DSH installed into `~/.dshm`, mock model server, no API keys. Rows are added per item once committed | `claude/t0-tracer-513793` | not committed yet |
