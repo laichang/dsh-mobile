@@ -29,6 +29,8 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 - Its bookkeeping commits on `main` (updating §0 and the Plan log) don't need asking either.
 - Still the user's call, every time: ticking `[human]` items, `Dxx` entries in ARCHITECTURE.md, any push or PR, and guard-file changes (which the user commits by hand). Changes to the rules in this section are shown to the user before they're committed.
 
+**Session settings** (the user's rule: "指定 opus 5.5 medium"): the coordinating session starts every tracer, slice, and spike session with model `claude-opus-5-5` and effort `medium`.
+
 **Slice fields**, always in this order. Write "—" for an empty field; never drop one.
 `Status · Needs · Branch` on one line, then **Why**, **Cuts**, **Demo**, **Done when**, **Not**, **Log**.
 - **Status** is one of `todo` / `doing` / `blocked` / `review` / `done`. The slice owner sets it on the branch; the coordinating session brings §0 in line.
@@ -582,3 +584,6 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
     | 47802 | X2 | cross-handshake socket, if needed |
 
   - Next: start X1 + X4 as one session once T0's bridge runs inside DSH. Start X3 when the user has real-device time.
+- **2026-11-05 · session settings** (approved by the user).
+  - The user's rule is "指定 opus 5.5 medium": every tracer, slice, and spike session runs on model `claude-opus-5-5` at effort `medium`. "Session settings" in "How to use this file" says so.
+  - T0 and X2 already ran `claude-opus-5-5`; their effort went from `high` to `medium`, starting with each session's next turn.
