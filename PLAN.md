@@ -218,6 +218,16 @@ Each spike ends in a short written conclusion (a working note, archived once act
   - **For the coordinator:** §0 X2 → `review`. S1 should port the code, not depend on `spikes/`.
   - **Proposed** (user's call): refine ARCHITECTURE D6 with the concrete patterns and the prologue binding. Open question for S1: whether the Secure Enclave P-256 identity key is still needed in M1, since the IK static key already authenticates the device.
   - Next: S1 (after T0).
+- 2026-11-05: Provisional dependencies and downloads, pending user confirmation. All are under `spikes/x2-noise/` only.
+  - **npm** (`spikes/x2-noise/ts/package.json`, exact pins, installed with `--ignore-scripts`; commit 3f4d72e):
+    - `@noble/curves@2.4.0` from npmjs.com; its only dependency is `@noble/hashes`.
+    - `@noble/ciphers@2.4.0` from npmjs.com.
+    - `@noble/hashes@2.4.0` from npmjs.com.
+  - **Downloads** (gitignored raw files, sha256 in `vectors/SHA256SUMS`, filtered subset committed as `vectors/subset.json`; commit 3f4d72e):
+    - `cacophony.txt` from github.com/haskell-cryptography/cacophony `vectors/cacophony.txt` @ `18b7348c54fd61fcd0c220298883de0d09c8364d`.
+    - `snow.txt` from github.com/mcginty/snow `tests/vectors/snow.txt` @ `d00b360cc61a7fe519ce7539974dca4f36c4654a`.
+  - **SPM:** none.
+  - **Provisional decision:** ARCHITECTURE D6 now names the concrete Noise patterns and suite, marked "provisional — pending user review" (see the commit that adds this entry).
 
 ### X3 · Spike: streaming Markdown
 
