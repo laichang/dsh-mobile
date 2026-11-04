@@ -9,6 +9,7 @@ Read on demand, not all at once:
 1. **This file**: what the repo is and where to find more.
 2. **[STORY.md](STORY.md)** (in Chinese): product vision, the nine design principles, non-goals, and capabilities that depend on upstream DSH. Read it before making any product or UX decision; confirm with the user before going against it.
 3. **[ARCHITECTURE.md](ARCHITECTURE.md)**: tech stack, system shape (iOS app + DSH bridge plugin + protocol), key decisions with rationale, milestones, and open risks. Read it before writing code; update it when a decision changes.
+4. **[PLAN.md](PLAN.md)**: current build plan. A tracer bullet (T0) first, then near-independent vertical slices to M1. Read it before picking up work; it's a working doc and gets archived when M1 exits.
 
 ## Repo layout
 
