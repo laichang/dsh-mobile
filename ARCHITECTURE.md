@@ -13,6 +13,7 @@ Technical design for dsh-mobile. Product intent lives in [STORY.md](STORY.md); t
 | Approvals describe impact + risk | Request carries only `toolName`, `callId`, `reason` | We join with the streamed tool call and classify risk |
 | Milestone-level progress | Typed projections exist: `todos`, `plan`, `state`, `deliverables/presented`, errors | Map, don't summarize |
 | Model list / switch mid-task | `session/modelCatalog`, `session/selectModel` (mid-session OK) | Pass through as-is (principle 8) |
+| Add context mid-task: follow-up message, attachment, answer to an agent question (principles 4, 7) | **Not verified**: unknown whether a running session accepts a new message, and whether it is queued for the next turn or injected immediately | Spike before M2 (§8.6) |
 | Stable, typed wire API | Undocumented TS-only protocol: `POST /api/<ns>/<method>` + one WebSocket mux `/api/remote.mux`; no schema, no versioning | Never let the app speak it |
 
 ## 2. System shape
@@ -159,7 +160,7 @@ A Cordis plugin installed into the user's DSH profile. Responsibilities:
 | Milestone | Scope |
 |---|---|
 | **M1** | Pairing (QR + E2E), unified task list, composer (text, host, workspace, model + effort), milestone progress + native streaming detail, interrupt, mid-task model switch, **in-app approvals** held by the bridge (basic impact view). Foreground only. |
-| **M2** | Push via bridge → APNs (needs paid account), risk tiers, Face ID for top tier (no lock-screen approval), plan alignment + pre-authorization, pause timeout + re-confirm. |
+| **M2** | Push via bridge → APNs (needs paid account), risk tiers, Face ID for top tier (no lock-screen approval), plan alignment + pre-authorization, pause timeout + re-confirm. Mid-task context: follow-up messages and answers to agent questions (attachments with M3), pending §8.6. |
 | **M3** | Artifacts: Quick Look preview, share sheet out; Share Extension + attachment upload (share-in); photos as context. |
 | **M4** | Live Activities / Dynamic Island, voice task entry. Relay transport (v2 reachability). |
 
@@ -170,3 +171,6 @@ A Cordis plugin installed into the user's DSH profile. Responsibilities:
 3. **Noise implementation**: a CryptoKit-based Swift implementation plus TS (`@noble/*`) must interoperate. Validate both against the official Noise test vectors before trusting either.
 4. **Upstream churn**: pin the supported DSH version range in the bridge; add a CI job against DSH `main`.
 5. **Streaming Markdown renderer**: choose an SPM package or build on `swift-markdown`, and benchmark incremental rendering of long transcripts.
+6. **Mid-task context** (before M2, not blocking M1):
+   - Can the bridge add a message or attachment to a session that is still running? Is it queued for the next turn or injected immediately?
+   - How does an agent's open question to the user surface, as distinct from an approval request? It needs the same hold-and-notify treatment as approvals (principle 4).

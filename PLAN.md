@@ -51,6 +51,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | X1 | todo | — | — | Start any time (no deps) |
 | X2 | todo | — | — | Start any time (no deps) |
 | X3 | todo | — | — | Start any time (no deps) |
+| X4 | todo | — | — | Start any time (no deps; needed before M2) |
 | S1 | todo | — | — | Wait for T0, X2 |
 | S2 | todo | — | — | Wait for T0 |
 | S3 | todo | — | — | Wait for T0 |
@@ -96,6 +97,7 @@ flowchart LR
     X1[X1 · Spike: approval answerer]
     X2[X2 · Spike: Noise interop]
     X3[X3 · Spike: streaming Markdown]
+    X4[X4 · Spike: mid-task context]
 
     T0 --> S1[S1 · Pair + encrypt]
     T0 --> S2[S2 · Durable list + resume]
@@ -110,6 +112,7 @@ flowchart LR
     X2 -.-> S1
     X1 -.-> S4
     X3 -.-> S8
+    X4 -.-> M2([M2 · mid-task context])
 
     S1 --> S9[S9 · Multi-host]
     S1 --> S10[S10 · Control: devices + audit]
@@ -211,6 +214,25 @@ Each spike ends in a short written conclusion (a working note, archived once act
 - [ ] [human] Choice recorded in ARCHITECTURE D10 — Evidence:
 
 **Not**: production code.
+
+**Log**
+- —
+
+### X4 · Spike: mid-task context
+
+**Status** todo · **Needs** — · **Branch** —
+
+**Why**: STORY principles 4 and 7. Can the bridge add a follow-up message or attachment to a DSH session that is still running? Is it queued for the next turn or injected immediately? How does an agent's open question to the user surface, as distinct from an approval request? (ARCHITECTURE §8.6) Unblocks the M2 mid-task context slice; doesn't block M1.
+
+**Cuts**: throwaway plugin or script that sends a message into a running session and observes when the agent sees it.
+
+**Demo**: —
+
+**Done when**
+- [ ] [auto] A script sends a message into a running session of a real DSH and records whether it is queued or injected — Evidence:
+- [ ] [human] Queue-vs-inject behavior, attachment support, and how agent questions surface written down — Evidence:
+
+**Not**: production code · any M1 slice.
 
 **Log**
 - —
@@ -477,7 +499,7 @@ When all of these are ticked, archive this file and plan M2 the same way.
 
 | Milestone | Candidate slices | Gate |
 |---|---|---|
-| M2 | Push via `PushSender` → APNs · risk tiers + Face ID for the top tier · plan alignment + pre-authorization · pause timeout + re-confirm on resume | Paid Apple account |
+| M2 | Push via `PushSender` → APNs · risk tiers + Face ID for the top tier · plan alignment + pre-authorization · pause timeout + re-confirm on resume · mid-task context: follow-up messages + answering agent questions (attachments with M3; continues S5's interrupted tasks) | Paid Apple account; X4 result |
 | M3 | Quick Look + share-out · Share Extension + attachment upload · photos as context | Verify App Groups on the signing team first |
 | M4 | Live Activities / Dynamic Island · voice entry · relay `Transport` | Relay design note |
 
@@ -526,3 +548,6 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-04 · S5 scope.**
   - The user committed the guard fixes as `057acb1`.
   - S5 stays "stop only". Continuing an interrupted task with a new prompt is out of S5; it's for later, together with adding context mid-task. This closes the S5 **Not** TODO.
+- **2026-11-05 · mid-task context.**
+  - STORY.md now covers adding context mid-task (`cc91a02`).
+  - Added spike X4 (no deps, doesn't block M1; ARCHITECTURE §8.6) and an M2 candidate slice, gated on X4.
