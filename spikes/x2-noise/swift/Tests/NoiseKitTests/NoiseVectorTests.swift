@@ -138,6 +138,14 @@ func kp(_ s: String?) throws -> KeyPair? { try s.map { try KeyPair(privateKey: b
         #expect(throws: NoiseError.decryptFailed) { try i.readMessage(m2) }
     }
 
+    /// Noise allows either behavior for low-order points; CryptoKit and noble both reject an
+    /// all-zero result, so the two sides agree.
+    @Test func lowOrderPublicKeyRejected() throws {
+        var i = try HandshakeState(protocolName: "Noise_IK_25519_ChaChaPoly_SHA256", initiator: true,
+                                   s: KeyPair(), rs: Bytes(repeating: 0, count: 32))
+        #expect(throws: NoiseError.badKey("DH failed")) { try i.writeMessage() }
+    }
+
     /// IK: an initiator holding the wrong host key (a QR for another host, or a MITM) fails.
     @Test func wrongHostKeyFailsFirstMessage() throws {
         let host = KeyPair(), other = KeyPair(), phone = KeyPair()

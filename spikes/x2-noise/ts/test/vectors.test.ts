@@ -117,3 +117,11 @@ test('NoiseUnitTests tamperedTransportMessageIsRejected', () => {
   ct[0] ^= 1;
   assert.throws(() => r.transport!.receive.decrypt(ct), DecryptError);
 });
+
+// Noise allows either behavior for low-order points; CryptoKit and noble both reject an
+// all-zero result, so the two sides agree.
+test('NoiseUnitTests lowOrderPublicKeyRejected', () => {
+  const i = new HandshakeState({ protocolName: 'Noise_IK_25519_ChaChaPoly_SHA256', initiator: true,
+    s: generateKeyPair(), rs: new Uint8Array(32) });
+  assert.throws(() => i.writeMessage(), /DH failed/);
+});
