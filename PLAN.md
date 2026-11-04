@@ -73,23 +73,23 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
-| T0 | doing | `claude/t0-tracer-513793` | 2026-11-05 | Bridge runs inside real DSH (`c245373`); Swift side next |
+| T0 | review | merged `84db2e8` | 2026-11-05 | User accepts 3 `[human]` items (§9) |
 | X1 | todo | — | 2026-11-05 | Session proposed (with X4), waiting for the user to start it |
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
 | X3 | todo | — | — | Start any time (no deps) |
 | X4 | todo | — | 2026-11-05 | Session proposed (with X1), waiting for the user to start it |
-| S1 | todo | — | — | Wait for T0 (X2 done) |
-| S2 | todo | — | — | Wait for T0 |
-| S3 | todo | — | — | Wait for T0 |
-| S4 | todo | — | — | Wait for T0, X1 |
-| S5 | todo | — | — | Wait for T0 |
-| S6 | todo | — | — | Wait for T0 |
-| S7 | todo | — | — | Wait for T0 |
-| S8 | todo | — | — | Wait for T0, X3 |
+| S1 | todo | — | 2026-11-05 | Ready (T0 merged, X2 done); session to be proposed |
+| S2 | todo | — | 2026-11-05 | Ready (T0 merged); session to be proposed |
+| S3 | todo | — | 2026-11-05 | Ready (T0 merged); session to be proposed |
+| S4 | todo | — | 2026-11-05 | Wait for X1 (T0 merged) |
+| S5 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
+| S6 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
+| S7 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
+| S8 | todo | — | 2026-11-05 | Wait for X3 (T0 merged) |
 | S9 | todo | — | — | Wait for S1 |
 | S10 | todo | — | — | Wait for S1 |
 | S11 | todo | — | — | Wait for S1 |
-| S12 | todo | — | — | Wait for T0 |
+| S12 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
 
 ## 1. Approach
 
@@ -149,7 +149,7 @@ Solid = must land first. Dotted = spike result must exist first (a written concl
 
 ## 3. T0 · Tracer bullet
 
-**Status** review · **Needs** — · **Branch** `claude/t0-tracer-513793`
+**Status** review · **Needs** — · **Branch** `claude/t0-tracer-513793` (merged `84db2e8`)
 
 **Why**: prove every layer of the architecture end to end before building any feature. Type one sentence in the iOS Simulator; text streams back from a DSH agent running on the same Mac.
 
@@ -676,6 +676,15 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
     | 47803–47809 | X1 + X4 | plugin listener, mock model server, release scripts |
 
   - T0's `c245373` committed about 28 MB of `ios/DSHKit/.build/`, which `89f76df` removes only at the tip. T0 was asked to drop it from its branch history before review.
+- **2026-11-05 · T0 merged** as `84db2e8`, status `review` (3 `[human]` items open, listed in §9).
+  - Checked before the merge:
+    - All 6 `[auto]` and both `[ui]` items are ticked, with resolving pointers.
+    - T0's independent review subagent reran both `[ui]` items (see T0's Log).
+    - The coordinating session reran `scripts/demo/t0.sh` in T0's worktree: codegen check, bridge tests, 11 DSHKit tests, the bridge inside real DSH (mock LLM), and 4 XCUITests. All green, exit 0.
+    - `scripts/check-plan --base <pre-merge PLAN.md> --new PLAN.md`: exit 0.
+    - No `ios/DSHKit/.build/` objects are left in the branch history. The branch was rewritten, so the `c245373` cited in the entry above is now `28d1bda`.
+  - T0's Needs are met for S1 (X2 done), S2, S3, S5, S6, S7, and S12. S4 still waits for X1, S8 for X3.
+  - Next: propose sessions for S1, S2, S3, at most 3 at a time. The app starts each one only on the user's word.
 
 ## 9. Pending user confirmation
 
@@ -686,5 +695,12 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 1 | — | rule | "Default choices" rule text and this section (the user approved the rules, not this wording) | `main` | see Plan log 2026-11-05 · default choices |
 | 2 | X2 | dependency | npm `@noble/ciphers` 2.4.0, `@noble/curves` 2.4.0, `@noble/hashes` 2.4.0 (spike only, `spikes/x2-noise/ts/`) | `main` (merged `e34a8bc`) | `3f4d72e` |
 | 3 | X2 | download | Noise test vectors: `cacophony.txt` (haskell-cryptography/cacophony @ `18b7348`) and `snow.txt` (mcginty/snow @ `d00b360`); sha256 in `spikes/x2-noise/vectors/SHA256SUMS`; a filtered subset is committed | `main` (merged `e34a8bc`) | `3f4d72e` |
-| 4 | T0 | decisions + download | T0's 7 toolchain questions, now going ahead on its recommendations; DSH installed into `~/.dshm`, mock model server, no API keys. Rows are added per item once committed | `claude/t0-tracer-513793` | not committed yet |
+| 4 | T0 | decision | ARCHITECTURE D15 (toolchain: buf + protoc-gen-es / swift-protobuf codegen, pnpm bridge, `ios/DSHKit` package layout) and D16 (debug-only testability entry points), *provisional* | `main` (merged `84db2e8`) | `03cc202` |
 | 5 | X2 | decision | ARCHITECTURE D6 refined, *provisional*: pairing `Noise_IKpsk1_25519_ChaChaPoly_SHA256` (psk = the QR's one-time secret), reconnect `Noise_IK_25519_ChaChaPoly_SHA256`, mode + protocol version in the prologue, own Noise state machine on CryptoKit / `@noble/*` | `main` (merged `e34a8bc`) | `ce9ee4c` |
+| 6 | T0 | dependency | Bridge (`bridge/pnpm-lock.yaml`): runtime `@bufbuild/protobuf` 2.16.0, `ws` 8.22.1; dev `@bufbuild/buf` 1.75.0, `@bufbuild/protoc-gen-es` 2.16.0, `typescript` 7.0.2, `@types/node` 24.19.2, `@types/ws` 8.18.2; pnpm 11.28.5 via corepack | `main` (merged `84db2e8`) | `28d1bda` |
+| 7 | T0 | dependency | Swift: `apple/swift-protobuf` 1.39.0, revision `3d537cb` (`ios/DSHKit/Package.resolved`) | `main` (merged `84db2e8`) | `b54c8d5` |
+| 8 | T0 | download | npm `@deepseek-ai/dsh@0.2.2-rc.1` and `@deepseek-ai/dsh-llm-mock-server@0.2.2-rc.1` in `~/.dshm/runtime` (sha512 in T0's Log); shallow swift-protobuf 1.39.0 clone in `~/.dshm/mirrors/swift-protobuf` | outside the repo | `71dd78c` (Log) |
+| 9 | T0 | local setup | `~/.dshm/bin/pnpm` shim (corepack pnpm 11.28.5); SwiftPM cache entry seeded from the shallow clone; DSH location `~/.dshm` with `DSH_HOME=~/.dshm/home` (`~/.dsh` untouched) | outside the repo | `71dd78c` (Log) |
+| 10 | T0 | `[human]` | "Following `bridge/README.md` installs and enables the plugin in a DSH profile". Needs: this Mac with DSH 0.2.2-rc.1 (`~/.dshm`), about 10 minutes | `main` | `84db2e8` |
+| 11 | T0 | `[human]` | "Toolchain choices … recorded in ARCHITECTURE.md". Needs: reading D15 (confirms row 4) | `main` | `84db2e8` |
+| 12 | T0 | `[human]` | "Testability entry points … recorded in ARCHITECTURE.md". Needs: reading D16 (confirms row 4) | `main` | `84db2e8` |
