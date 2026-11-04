@@ -1,0 +1,17 @@
+{
+  "name": "x2-noise-ts",
+  "private": true,
+  "type": "module",
+  "description": "X2 spike: Noise (IK / IKpsk2 / XX, 25519 + ChaChaPoly/AESGCM + SHA256) on @noble/*",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@noble/ciphers": "2.4.0",
+    "@noble/curves": "2.4.0",
+    "@noble/hashes": "2.4.0"
+  }
+}

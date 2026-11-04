@@ -208,7 +208,7 @@ Each spike ends in a short written conclusion (a working note, archived once act
 
 ### X2 · Spike: Noise interop
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** `claude/x2-noise-b1b3cc`
 
 **Why**: do a CryptoKit Swift Noise implementation and a TS `@noble/*` one interoperate? Which pattern (likely `IK` with the host static key from the QR)? (ARCHITECTURE §8.3) Unblocks S1.
 
@@ -217,13 +217,29 @@ Each spike ends in a short written conclusion (a working note, archived once act
 **Demo**: —
 
 **Done when**
-- [ ] [auto] Swift and TS implementations both pass the official Noise test vectors — Evidence:
-- [ ] [auto] Swift and TS complete a handshake against each other in a test — Evidence:
+- [x] [auto] Swift and TS implementations both pass the official Noise test vectors — Evidence: test:NoiseVectorTests/officialVector · cmd:spikes/x2-noise/scripts/interop
+- [x] [auto] Swift and TS complete a handshake against each other in a test — Evidence: test:InteropTests/swiftInitiatorTsResponder · test:InteropTests/tsInitiatorSwiftResponder · cmd:spikes/x2-noise/scripts/interop
 
 **Not**: —
 
 **Log**
-- —
+- 2026-11-05: Done; status `review`. Conclusion in `spikes/x2-noise/README.md`.
+  - **Interop:** yes. Swift (CryptoKit only, no SPM deps) and TS (`@noble/curves`, `@noble/ciphers`, `@noble/hashes` 2.4.0, user-approved) both pass 12 official vectors: IK, IKpsk1, IKpsk2, XX × ChaChaPoly/AESGCM × SHA256, from cacophony @18b7348 and snow @d00b360 (download user-approved; sha256-pinned; filtered subset committed). They cross-handshake in both directions over stdio pipes (no socket, no Simulator), with transport messages; wrong secret and wrong host key are rejected. `spikes/x2-noise/scripts/interop` runs it all.
+  - **Recommendation:** pairing `Noise_IKpsk1_25519_ChaChaPoly_SHA256` (psk = the QR's one-time secret); reconnect `Noise_IK_25519_ChaChaPoly_SHA256`. Not `IKpsk2`: there a wrong secret passes the host's first read. Not `XX`: the QR already gives the host key.
+  - **CryptoKit lacks** BLAKE2 (so SHA256) and any Noise state machine (about 390 lines, ours). HKDF, nonce layout and the tag split are small glue.
+  - **For the coordinator:** §0 X2 → `review`. S1 should port the code, not depend on `spikes/`.
+  - **Proposed** (user's call): refine ARCHITECTURE D6 with the concrete patterns and the prologue binding. Open question for S1: whether the Secure Enclave P-256 identity key is still needed in M1, since the IK static key already authenticates the device.
+  - Next: S1 (after T0).
+- 2026-11-05: Provisional dependencies and downloads, pending user confirmation. All are under `spikes/x2-noise/` only.
+  - **npm** (`spikes/x2-noise/ts/package.json`, exact pins, installed with `--ignore-scripts`; commit 3f4d72e):
+    - `@noble/curves@2.4.0` from npmjs.com; its only dependency is `@noble/hashes`.
+    - `@noble/ciphers@2.4.0` from npmjs.com.
+    - `@noble/hashes@2.4.0` from npmjs.com.
+  - **Downloads** (gitignored raw files, sha256 in `vectors/SHA256SUMS`, filtered subset committed as `vectors/subset.json`; commit 3f4d72e):
+    - `cacophony.txt` from github.com/haskell-cryptography/cacophony `vectors/cacophony.txt` @ `18b7348c54fd61fcd0c220298883de0d09c8364d`.
+    - `snow.txt` from github.com/mcginty/snow `tests/vectors/snow.txt` @ `d00b360cc61a7fe519ce7539974dca4f36c4654a`.
+  - **SPM:** none.
+  - **Provisional decision:** ARCHITECTURE D6 now names the concrete Noise patterns and suite, marked "provisional — pending user review" (see the commit that adds this entry).
 
 ### X3 · Spike: streaming Markdown
 
