@@ -13,8 +13,11 @@ Read on demand, not all at once:
 
 ## Repo layout
 
-- `ios/`: the iOS app (`ios/dsh-mobile.xcodeproj`, sources in `ios/dsh-mobile/`)
-- `protocol/`: the protobuf contract between the app and the bridge (`frame.proto`)
+- `ios/`: the iOS app. `ios/dsh-mobile.xcodeproj` (views in `ios/dsh-mobile/`, XCUITests in `ios/dsh-mobileUITests/`) and the local SwiftPM package `ios/DSHKit` (protocol, connection, store, `FakeBridge`; `swift test`)
+- `bridge/`: the DSH companion plugin (TypeScript, pnpm; `FakeDSH` in `bridge/test/`). Install: `bridge/README.md`
+- `protocol/`: the protobuf contract between the app and the bridge (`frame.proto`, golden `fixtures/`). Regenerate code with `scripts/codegen`
+- `scripts/demo/<slice>.sh`: re-runnable demo per slice; `scripts/dsh-up.mjs` starts a local DSH + bridge with a mock model
+- `evidence/<slice>/`: screenshots cited by PLAN.md `shot:` pointers
 - `scripts/check-plan`: guards PLAN.md's Done when items (see PLAN.md "How to use this file")
 - `.githooks/`: git hooks; `.claude/`: Claude Code hooks for this repo
 
