@@ -78,9 +78,9 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
 | X3 | todo | — | — | Start any time (no deps) |
 | X4 | todo | — | 2026-11-05 | Session proposed (with X1), waiting for the user to start it |
-| S1 | todo | — | 2026-11-05 | Ready (T0 merged, X2 done); session to be proposed |
-| S2 | todo | — | 2026-11-05 | Ready (T0 merged); session to be proposed |
-| S3 | todo | — | 2026-11-05 | Ready (T0 merged); session to be proposed |
+| S1 | todo | — | 2026-11-05 | Ready (T0 merged, X2 done); session proposed, waiting for the user to start it |
+| S2 | todo | — | 2026-11-05 | Ready (T0 merged); session proposed, waiting for the user to start it |
+| S3 | todo | — | 2026-11-05 | Ready (T0 merged); session proposed, waiting for the user to start it |
 | S4 | todo | — | 2026-11-05 | Wait for X1 (T0 merged) |
 | S5 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
 | S6 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
@@ -685,6 +685,13 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
     - No `ios/DSHKit/.build/` objects are left in the branch history. The branch was rewritten, so the `c245373` cited in the entry above is now `28d1bda`.
   - T0's Needs are met for S1 (X2 done), S2, S3, S5, S6, S7, and S12. S4 still waits for X1, S8 for X3.
   - Next: propose sessions for S1, S2, S3, at most 3 at a time. The app starts each one only on the user's word.
+- **2026-11-05 · S1, S2, S3 proposed** as sessions, waiting for the user to start them (along with X1 + X4). Each slice gets its own bridge port, DSH instance, and Simulator device, so the three can run tests in parallel. All of them use the shared DSH install in `~/.dshm/runtime` read-only.
+
+    | Slice | Bridge port | DSH web | `DSH_HOME` | Simulator |
+    |---|---|---|---|---|
+    | S1 | 47810 | 3283 | `~/.dshm/home-s1` | `dshm-S1` |
+    | S2 | 47811 | 3284 | `~/.dshm/home-s2` | `dshm-S2` |
+    | S3 | 47812 | 3285 | `~/.dshm/home-s3` | `dshm-S3` |
 
 ## 9. Pending user confirmation
 
