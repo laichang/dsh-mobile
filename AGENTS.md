@@ -9,12 +9,14 @@ Read on demand, not all at once:
 1. **This file**: what the repo is and where to find more.
 2. **[STORY.md](STORY.md)** (in Chinese): product vision, the nine design principles, non-goals, and capabilities that depend on upstream DSH. Read it before making any product or UX decision; confirm with the user before going against it.
 3. **[ARCHITECTURE.md](ARCHITECTURE.md)**: tech stack, system shape (iOS app + DSH bridge plugin + protocol), key decisions with rationale, milestones, and open risks. Read it before writing code; update it when a decision changes.
-4. **[PLAN.md](PLAN.md)**: current build plan. A tracer bullet (T0) first, then near-independent vertical slices to M1. Read it before picking up work; it's a working doc and gets archived when M1 exits.
+4. **[PLAN.md](PLAN.md)**: current build plan. A tracer bullet (T0) first, then near-independent vertical slices to M1. Before picking up work, read its "How to use this file" section and the §0 status table. It's a working doc and gets archived when M1 exits.
 
 ## Repo layout
 
 - `dsh-mobile/`: SwiftUI app source (currently just the Xcode template)
 - `dsh-mobile.xcodeproj/`: Xcode project
+- `scripts/check-plan`: guards PLAN.md's Done when items (see PLAN.md "How to use this file")
+- `.githooks/`: git hooks; `.claude/`: Claude Code hooks for this repo
 
 ## Code is truth
 
@@ -24,3 +26,13 @@ Read on demand, not all at once:
 ## Conventions
 
 - Write AGENTS.md and other agent-facing docs in English.
+
+## Hooks
+
+After cloning, enable the repo's git hooks (this repo only):
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The pre-commit hook runs `scripts/check-plan`. **Never bypass it**: no `git commit --no-verify` / `-n`, no overriding `core.hooksPath`. If a check blocks you, ask the user in the conversation.
