@@ -70,6 +70,7 @@ public struct TaskSnapshot: Sendable, Equatable {
     public var message: String
     public var approvals: [Approval] = []
     public var approvalOnly = false
+    public var modelSelection: ModelSelection?
 
     public init(taskID: String, title: String, state: TaskState, createdAt: Date, updatedAt: Date, message: String = "") {
         self.taskID = taskID
@@ -95,6 +96,7 @@ public struct TaskSnapshot: Sendable, Equatable {
             message: s.message)
         approvals = s.pendingApprovals.map(Approval.init)
         approvalOnly = s.approvalOnly
+        modelSelection = s.hasModelSelection ? s.modelSelection : nil
     }
 }
 

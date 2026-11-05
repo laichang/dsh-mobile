@@ -105,9 +105,21 @@ public nonisolated struct Dshm_V1_TaskSummary: Sendable {
   /// A session started on another client appears only while it needs a decision.
   public var approvalOnly: Bool = false
 
+  /// Last selection reported by DSH, including when its event is older than the retained log.
+  public var modelSelection: Dshm_V1_ModelSelection {
+    get {_modelSelection ?? Dshm_V1_ModelSelection()}
+    set {_modelSelection = newValue}
+  }
+  /// Returns true if `modelSelection` has been explicitly set.
+  public var hasModelSelection: Bool {self._modelSelection != nil}
+  /// Clears the value of `modelSelection`. Subsequent reads from it will return its default value.
+  public mutating func clearModelSelection() {self._modelSelection = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
+
+  fileprivate var _modelSelection: Dshm_V1_ModelSelection? = nil
 }
 
 /// Request: every task this bridge knows, newest first.
@@ -227,7 +239,7 @@ nonisolated extension Dshm_V1_TaskState: SwiftProtobuf._ProtoNameProviding {
 
 nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TaskSummary"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -243,12 +255,17 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
       case 6: try { try decoder.decodeSingularStringField(value: &self.message) }()
       case 80: try { try decoder.decodeRepeatedMessageField(value: &self.pendingApprovals) }()
       case 81: try { try decoder.decodeSingularBoolField(value: &self.approvalOnly) }()
+      case 120: try { try decoder.decodeSingularMessageField(value: &self._modelSelection) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.taskID.isEmpty {
       try visitor.visitSingularStringField(value: self.taskID, fieldNumber: 1)
     }
@@ -273,6 +290,9 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     if self.approvalOnly != false {
       try visitor.visitSingularBoolField(value: self.approvalOnly, fieldNumber: 81)
     }
+    try { if let v = self._modelSelection {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 120)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -285,6 +305,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     if lhs.message != rhs.message {return false}
     if lhs.pendingApprovals != rhs.pendingApprovals {return false}
     if lhs.approvalOnly != rhs.approvalOnly {return false}
+    if lhs._modelSelection != rhs._modelSelection {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -10,6 +10,7 @@ syntax = "proto3";
 package dshm.v1;
 
 import "approvals.proto";
+import "models.proto";
 
 // Where a task stands, as the unified list shows it (STORY principle 4).
 enum TaskState {
@@ -35,6 +36,8 @@ message TaskSummary {
   repeated ApprovalPending pending_approvals = 80;
   // A session started on another client appears only while it needs a decision.
   bool approval_only = 81;
+  // Last selection reported by DSH, including when its event is older than the retained log.
+  ModelSelection model_selection = 120;
 }
 
 // Request: every task this bridge knows, newest first.

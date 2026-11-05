@@ -86,4 +86,43 @@ final class S4ApprovalUITests: XCTestCase {
         XCTAssertTrue(card.waitForNonExistence(timeout: 10))
         try await post("/fake-web/close")
     }
+
+    func testSwitchWhileHeldResumeThenInterrupt() throws {
+        try XCTSkipIf(env["DSHM_S4_COMMAND"] == nil, "needs scripts/demo/s4.sh")
+        let command = try XCTUnwrap(env["DSHM_S4_COMMAND"])
+        var app = launch(reset: true)
+        let picker = app.buttons["model.open"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 20))
+        picker.tap()
+        let low = app.buttons["model.effort.low"]
+        XCTAssertTrue(low.waitForExistence(timeout: 10))
+        low.tap()
+        app.buttons["model.apply"].tap()
+        send(app)
+        checkCommand(app, expected: command)
+
+        picker.tap()
+        let high = app.buttons["model.effort.high"]
+        XCTAssertTrue(high.waitForExistence(timeout: 10))
+        high.tap()
+        app.buttons["model.apply"].tap()
+        var transcript = app.descendants(matching: .any)["transcript.text"]
+        wait(for: [expectation(for: NSPredicate(format: "value CONTAINS %@", " · high]"), evaluatedWith: transcript)], timeout: 15)
+        checkCommand(app, expected: command)
+        app.terminate()
+
+        app = launch(reset: false)
+        checkCommand(app, expected: command)
+        let row = app.buttons.matching(identifier: "tasklist.row").matching(NSPredicate(format: "value == 'waitingOnUser'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 15), app.debugDescription)
+        row.tap()
+        transcript = app.descendants(matching: .any)["transcript.text"]
+        XCTAssertTrue((transcript.value as? String)?.contains(" · high]") == true)
+        let stop = app.buttons["task.interrupt"]
+        XCTAssertTrue(stop.waitForExistence(timeout: 10))
+        stop.tap()
+        waitForValue(app.descendants(matching: .any)["task.status"], in: ["interrupted"], timeout: 30)
+        XCTAssertTrue(app.buttons["approval.allow"].waitForNonExistence(timeout: 5))
+        saveShot("s4-interrupted-held-task")
+    }
 }

@@ -3,6 +3,12 @@
  * that outlive the connection that created them. All against FakeDSH.
  */
 import assert from 'node:assert/strict'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { ApprovalHolder } from '../src/approvals/holder.ts'
+import { ApprovalDecision, ApprovalOutcome } from '../src/gen/approvals_pb.ts'
+import { TaskHub } from '../src/s2/task-hub.ts'
 import { after, describe, test } from 'node:test'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import { WebSocket } from 'ws'
@@ -17,7 +23,7 @@ import { FakeDSH, type FakeDSHOptions } from './fake-dsh.ts'
 type RequestBody = NonNullable<MessageInitShape<typeof FrameSchema>['kind']> extends infer K
   ? K extends { case: 'request'; value: infer V } ? V extends { body?: infer B } ? B : never : never : never
 
-async function connect(port: number) {
+async function connect(port: number, capabilities: string[] = []) {
   const ws = new WebSocket(`ws://127.0.0.1:${port}${PLAINTEXT_PATH}`)
   ws.binaryType = 'nodebuffer'
   const frames: Frame[] = []
@@ -55,7 +61,7 @@ async function connect(port: number) {
     },
     close() { ws.close() },
   }
-  await client.call({ case: 'hello', value: { protocolVersion: 1 } })
+  await client.call({ case: 'hello', value: { protocolVersion: 1, capabilities } })
   return client
 }
 
@@ -268,5 +274,53 @@ test('legacyResumeAndListOmitTemporaryUpstreamApprovalRows', async () => {
     if (list.body.case === 'taskList') assert.deepEqual(list.body.value.tasks, [])
   } finally {
     client.close()
+  }
+})
+
+test('waitingTaskSwitchesModelResumesBothFieldsAndInterruptCancelsApproval', async t => {
+  const dir = mkdtempSync(join(tmpdir(), 'dshm-waiting-task-'))
+  t.after(() => rmSync(dir, { recursive: true, force: true }))
+  const dsh = new FakeDSH({ reply: ['slow response'], chunkDelayMs: 2000 })
+  const tasks = new DshTasks(dsh, dir)
+  const hub = new TaskHub(tasks, new HostLog(1))
+  const approvals = new ApprovalHolder(join(dir, 'audit.jsonl'), event => hub.approvalChanged(event))
+  const server = await startBridgeServer({ host: '127.0.0.1', channel: new PlaintextChannel(), port: 0, tasks, hub, approvals })
+  servers.push(server)
+  const writer = await connect(server.port, ['approvals.v1'])
+  const created = await writer.call({ case: 'createTask', value: { prompt: 'hold for approval' } })
+  assert.ok(created.body.case === 'taskCreated')
+  const taskId = created.body.value.taskId
+  const held = approvals.hold({
+    agent: { session: { id: taskId, deriveMessages: () => [] } }, toolName: 'bash',
+  }, async () => 'unavailable')
+  const selection = { provider: 'provider', model: 'model', reasoningEffort: 'high' }
+  const changed = await writer.call({ case: 'selectModel', value: { taskId, selection } })
+  assert.equal(changed.body.case, 'modelSelected')
+  await writer.until(() => hub.list()[0].modelSelection?.reasoningEffort === 'high')
+  writer.close()
+
+  const reader = await connect(server.port, ['approvals.v1'])
+  try {
+    const resumed = await reader.call({ case: 'resume', value: { logId: hub.log.logId, afterSeq: 0n } })
+    assert.ok(resumed.body.case === 'resumed' && resumed.body.value.reset)
+    const listing = await reader.call({ case: 'listTasks', value: {} })
+    assert.ok(listing.body.case === 'taskList')
+    const [row] = listing.body.value.tasks
+    assert.equal(row.state, TaskState.WAITING_ON_USER)
+    assert.equal(row.modelSelection?.reasoningEffort, 'high')
+    assert.equal(row.pendingApprovals.length, 1)
+    const approvalId = row.pendingApprovals[0].id
+    const interrupted = await reader.call({ case: 'interrupt', value: { taskId } })
+    assert.equal(interrupted.body.case, 'interruptAccepted')
+    assert.equal(await held, 'cancelled')
+    const stale = await reader.call({ case: 'answerApproval', value: { id: approvalId, decision: ApprovalDecision.ALLOW_ONCE } })
+    assert.ok(stale.body.case === 'error' && stale.body.value.code === 'approval/refused')
+    await reader.until(frames => endedCount(frames) === 1)
+    assert.ok(reader.events().some(e => e.body.case === 'approvalResolved' && e.body.value.outcome === ApprovalOutcome.CANCELLED))
+    assert.equal(hub.list()[0].state, TaskState.INTERRUPTED)
+    assert.equal(hub.list()[0].pendingApprovals.length, 0)
+  } finally {
+    approvals.close()
+    reader.close()
   }
 })

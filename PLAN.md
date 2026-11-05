@@ -443,9 +443,9 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [x] [auto] A pending approval survives a trimmed resume log and a stale answer cannot release a second request — Evidence: test:trimmedResumeRetainsPendingAndStaleAnswerCannotReleaseNextRequest
 - [x] [auto] An approval from an upstream session can be answered by the phone or the downstream owner, with one resolution — Evidence: test:upstreamSessionIsVisibleOnlyWhileAnApprovalIsHeld
 - [x] [ui] An approval created outside the phone appears after reconnect, and a web answer removes it from the phone — Evidence: test:S4ApprovalUITests/testUpstreamWebApprovalAppearsAfterReconnectAndWebAnswerWithdrawsIt · shot:evidence/S4/s4-upstream-reopened.png
-- [ ] [auto] A waiting task accepts a model switch, and interrupting it cancels its approval before a stale answer can grant permission — Evidence:
-- [ ] [auto] Resuming a waiting task restores its approval and selected model together — Evidence:
-- [ ] [ui] Switch effort on a held task, reopen it, then interrupt: the approval is withdrawn and the task is interrupted — Evidence:
+- [x] [auto] A waiting task accepts a model switch, and interrupting it cancels its approval before a stale answer can grant permission — Evidence: test:waitingTaskSwitchesModelResumesBothFieldsAndInterruptCancelsApproval
+- [x] [auto] Resuming a waiting task restores its approval and selected model together — Evidence: test:waitingTaskSwitchesModelResumesBothFieldsAndInterruptCancelsApproval
+- [x] [ui] Switch effort on a held task, reopen it, then interrupt: the approval is withdrawn and the task is interrupted — Evidence: test:S4ApprovalUITests/testSwitchWhileHeldResumeThenInterrupt · cmd:scripts/demo/s4.sh · shot:evidence/S4/s4-interrupted-held-task.png
 
 **Not**: risk tiers, Face ID, push (M2).
 
@@ -458,6 +458,8 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - **2026-11-05**: T0 passed on the assigned simulator (41 bridge, 46 Swift and 4 UI tests). Implemented the D17 holder, typed approval frames and fixtures, authenticated device audit, SwiftData caching and actionable cards. The host stores approval-only rows for upstream sessions until the final pending request closes. A bridge with a trimmed log can restore pending cards from its task snapshots. Older clients do not receive temporary rows.
   - `scripts/demo/s4.sh` runs the real DSH bridge and mock model. The deletion target is a disposable fixture ending in `tmp/x`; the app shows its exact command. The test verifies DSH actually reported rejection to the model and the file remained intact. X1's real remote-event gateway fixture handles the web answer in the upstream-session test. All three simulator tests passed. Final bridge suite: 46 tests. Swift: 46 tests. No new dependencies. One intermediate Swift run missed a transient milestone in an existing timing assertion; subsequent full suites passed.
   - Provisional D25 records the timeout, audit attribution, explicit request identity and the S2 snapshot choice. Independent UI rerun and merge belong to the coordinator.
+- **2026-11-05 · S4 × S5 × S6 integration.** Merged S4 into the integrated S5/S6 branch at `ef34e70`. Per-host Hello capabilities drive all three controls. A task waiting on an approval can switch models. The host's task snapshot restores both pending approvals and its last observed selection after a log reset. Interrupting a bridge task closes its pending approvals before acknowledging; an already-closed request cannot authorize execution. Upstream approval-only sessions expose the approval card without task controls.
+  - Verified on the assigned S4 simulator and real DSH: chose low effort, waited for the deletion request, switched to high while held, reopened the app, found the same command and high-effort transcript, then interrupted. The card disappeared, the task showed interrupted, and the fixture survived. Automatic checks: 51 bridge + 47 Swift tests; `scripts/demo/s4.sh` ran the 4 S4 UI cases. Independent review is the coordinator's next step. No new dependencies; D25 now records this integration.
 
 ### S5 · Interrupt
 

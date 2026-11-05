@@ -19,7 +19,8 @@ export interface TaskStarter {
   start(prompt: string, signal: AbortSignal, selection?: Selection): Promise<StartedTask>
 }
 
-type Summary = Omit<TaskSummary, '$typeName' | '$unknown' | 'pendingApprovals'> & { pendingApprovals: Pending[] }
+type Summary = Omit<TaskSummary, '$typeName' | '$unknown' | 'pendingApprovals' | 'modelSelection'>
+  & { pendingApprovals: Pending[]; modelSelection?: Selection }
 
 export class TaskHub {
   private readonly summaries = new Map<string, Summary>()
@@ -118,6 +119,8 @@ export class TaskHub {
         if (out.kind === 'text') {
           this.log.append(task.taskId, { case: 'assistantChunk', value: { taskId: task.taskId, seq: ++seq, text: out.text } })
         } else if (out.kind === 'model') {
+          summary.modelSelection = out.selection
+          summary.updatedAtMs = BigInt(this.now())
           this.log.append(task.taskId, { case: 'modelSelected', value: { taskId: task.taskId, selection: out.selection } })
         } else if (out.kind === 'milestone') {
           // S3: milestones are logged like any other event, so Resume replays them (S2 × S3 seam).
