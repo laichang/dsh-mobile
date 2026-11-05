@@ -13,7 +13,20 @@ extension XCTestCase {
         field.typeText(prompt)
         let send = app.buttons["composer.send"]
         XCTAssertTrue(send.isEnabled)
+        let matchingRows = app.buttons.matching(identifier: "tasklist.row")
+            .matching(NSPredicate(format: "label CONTAINS %@", prompt))
+        let priorCount = matchingRows.count
         send.tap()
+
+        // Short answers stay in the list (S8). This demo inspects the full session transcript.
+        let deadline = Date().addingTimeInterval(4)
+        while Date() < deadline, !app.descendants(matching: .any)["task.status"].exists {
+            if matchingRows.count > priorCount, matchingRows.firstMatch.isHittable {
+                matchingRows.firstMatch.tap()
+                break
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        }
 
         let status = app.descendants(matching: .any)["task.status"]
         let transcript = app.descendants(matching: .any)["transcript.text"]
