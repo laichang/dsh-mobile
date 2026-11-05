@@ -42,14 +42,8 @@ struct TaskDetailView: View {
                         ApprovalCard(approval: approval, hostKey: row.hostKey, store: store).padding(.horizontal)
                     }
                 }
-                let transcript = row?.transcript ?? ""
-                Text(transcript.isEmpty ? "Waiting for the agent…" : transcript)
-                    .foregroundStyle(transcript.isEmpty ? .secondary : .primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
+                TranscriptView(source: row?.transcript ?? "")
                     .padding()
-                    .accessibilityIdentifier("transcript.text")
-                    .accessibilityValue(transcript)
             }
             // Follow the stream at the bottom, but start a short transcript at the top.
             .defaultScrollAnchor(.bottom)

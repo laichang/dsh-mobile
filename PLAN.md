@@ -544,16 +544,17 @@ Each slice needs only T0, unless "Needs" says otherwise.
 **Demo**: a coding task's diff and test output read well on a phone. "Translate this sentence" just shows the answer.
 
 **Done when**
-- [ ] [ui] "Translate this sentence" just shows the answer inline, not a task page — Evidence:
+- [x] [ui] "Translate this sentence" just shows the answer inline, not a task page — Evidence: test:S8RichDetailUITests/testTranslationCompletesInline · cmd:scripts/demo/s8.sh · shot:evidence/S8/s8-inline-answer.png
 - [ ] [human] A coding task's diff and test output read well on a phone — Evidence:
 
-- [ ] [auto] Fragmented Markdown renders the same blocks as cached source, preserving code, diff, and terminal output — Evidence:
-- [ ] [ui] A streaming coding reply renders structured blocks and opens from the offline cache after relaunch (S2 × S8) — Evidence:
+- [x] [auto] Fragmented Markdown renders the same blocks as cached source, preserving code, diff, and terminal output — Evidence: test:TranscriptBlocksTests/fragmentedMarkdownMatchesCachedSource · test:TranscriptBlocksTests/unfinishedFenceUpdatesOnlyTheTail
+- [x] [ui] A streaming coding reply renders structured blocks and opens from the offline cache after relaunch (S2 × S8) — Evidence: test:S8RichDetailUITests/testCodingReplyStreamsFences · test:S8RichDetailUITests/testCachedRichDetailAfterRelaunch · cmd:scripts/demo/s8.sh · shot:evidence/S8/s8-rich-detail.png
 
 **Not**: WebView (D1).
 
 **Log**
 - **2026-11-05 · Started.** The isolated T0 demo passed with 42 bridge tests, 46 Swift tests, real DSH and four Simulator tests. Next: implement inline answers and retained native transcript blocks from D10.
+- **2026-11-05 · Owner verification.** `dd46ca0` implements D10’s retained Markdown blocks and D34’s inline answer routing without new dependencies. The real DSH demo passed 42 bridge tests, 48 DSHKit tests and three UI tests, with no skips. It streamed a diff and console output, then read the same blocks from SwiftData with the host stopped. T0’s four UI tests and S5’s real interrupt demo passed. Five focused UI regressions passed for S2 offline/cache, S3 milestones and T0. Next: independent UI rerun and merge. The user checks diff and test-output readability on a real iPhone connected to a paired host.
 
 ### S9 · Multi-host
 
