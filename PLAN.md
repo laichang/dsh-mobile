@@ -54,7 +54,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S9 | doing | claude/s9-multi-host | 2026-11-05 | Implement and verify |
 | S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
 | S11 | todo | — | 2026-11-05 | Ready (S1 merged) |
-| S12 | todo | — | 2026-11-05 | Ready (T0 merged); also pins D17's prepend ordering |
+| S12 | doing | claude/s12-upstream-guard | 2026-11-05 | Implement and verify |
 
 ## 1. Approach
 
@@ -835,6 +835,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-05 · S9.** Assigned claude/s9-multi-host, worktree /Users/bytedance/.codex/worktrees/s9-multi-host/dsh-mobile, simulator dshm-S9, DSHM_HOME ~/.dshm/home-s9, bridge 47817, web 3290. The owner uses the shared DSH runtime read-only.
 
 - **2026-11-05 · S10.** Independent integrated review at 1447dee passed 55 bridge and 48 Swift tests plus the real DSH UI. A paired phone saw the approval decision with identity, revoked the second client, and the original key received 4003 on reconnect. Verified S7 and S10 on the same Noise connection. Evidence: scripts/demo/s10.sh and evidence/S10/.
+
+- **2026-11-05 · S12.** Assigned claude/s12-upstream-guard, worktree /Users/bytedance/.codex/worktrees/s12-upstream-guard/dsh-mobile, simulator dshm-S12, DSHM_HOME ~/.dshm/home-s12, bridge 47818, web 3291. The owner uses the shared DSH runtime read-only.
 
 ## 9. Pending user confirmation
 
