@@ -4,4 +4,6 @@ public enum DSHProtocolInfo {
     public static let version: UInt32 = 1
     /// Capability the bridge advertises for T0's CreateTask / AssistantChunk / TaskEnded.
     public static let tasksCapability = "tasks.v1"
+    /// S2: ListTasks, Resume and `Event.host_seq` (protocol/s2.proto).
+    public static let resumeCapability = "resume.v1"
 }
