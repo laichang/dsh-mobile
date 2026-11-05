@@ -74,10 +74,10 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
 | T0 | review | merged `84db2e8` | 2026-11-05 | User accepts 3 `[human]` items (§9) |
-| X1 | review | merged `ccc8ff9` | 2026-11-05 | User accepts 1 `[human]` item (§9) |
+| X1 | done | merged `ccc8ff9` | 2026-11-05 | — (provisional D17 in §9) |
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
 | X3 | todo | — | — | Start any time (no deps) |
-| X4 | review | merged `ccc8ff9` | 2026-11-05 | User accepts 1 `[human]` item (§9) |
+| X4 | done | merged `ccc8ff9` | 2026-11-05 | — (provisional D18 in §9) |
 | S1 | doing | workflow `wf_219b7aa1-71c` → `claude/s1-pair-encrypt` | 2026-11-05 | Building in batch 1 |
 | S2 | doing | workflow `wf_219b7aa1-71c` → `claude/s2-durable-list` | 2026-11-05 | Building in batch 1 |
 | S3 | doing | workflow `wf_219b7aa1-71c` → `claude/s3-milestones` | 2026-11-05 | Building in batch 1 |
@@ -725,6 +725,7 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - Results: provisional D17 (approval holder goes first in the chain and fans a copy out to the web; first answer wins) and D18 (`SendMessage` steer/queue; agent questions have their own messages). ARCHITECTURE §1, §5.4, §8.1 and §8.6 are updated and marked provisional.
   - S4's Needs are now met.
   - S3 and S1 also wrote new `Dxx` entries starting at D17. They are renumbered after D18 when they merge.
+- **2026-11-05 · X1 and X4 accepted.** The user ticked both `[human]` items in `0eaa7e3` after reading a summary of the two conclusions, so both are now `done`. §9 rows 15 and 16 are removed. D17 and D18 stay provisional (rows 13 and 14) until the user confirms them.
 
 ## 9. Pending user confirmation
 
@@ -746,5 +747,3 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 12 | T0 | `[human]` | "Testability entry points … recorded in ARCHITECTURE.md". Needs: reading D16 (confirms row 4) | `main` | `84db2e8` |
 | 13 | X1 | decision | ARCHITECTURE D17, *provisional*: approval holder registers first in the chain, then fans a copy out to the web/desktop forwarder; first answer wins. Also the corrected §1 approvals row | `main` (merged `ccc8ff9`) | `e9d2fa6` |
 | 14 | X4 | decision | ARCHITECTURE D18, *provisional*: `SendMessage {task_id, mode STEER\|QUEUE, parts}`, default `STEER`; agent questions get their own `QuestionPending` / `AnswerQuestion` messages | `main` (merged `ccc8ff9`) | `e9d2fa6` |
-| 15 | X1 | `[human]` | "Ordering versus web/desktop answerers, and web UI visibility, written down". Needs: reading `spikes/x1-approval/README.md` | `main` | `ccc8ff9` |
-| 16 | X4 | `[human]` | "Queue-vs-inject behavior, attachment support, and how agent questions surface written down". Needs: reading `spikes/x4-midtask/README.md` | `main` | `ccc8ff9` |
