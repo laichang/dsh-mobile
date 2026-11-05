@@ -23,6 +23,7 @@ final class AppModel {
     }
 
     private(set) var store: TaskListStore?
+    private(set) var hasSavedHosts = false
     private static let preferredHostKey = "dshm.composerHostKey"
     var pairingRoute: PairingRoute?
     var showingScanner = false
@@ -64,6 +65,11 @@ final class AppModel {
         }
     }
 
+    func retrySavedHosts() {
+        store = makeStore()
+        store?.foreground()
+    }
+
     private func pairedConfig(_ host: PairedHost) -> TaskListStore.HostConfig? {
         guard let endpoint = host.addresses.first, let channel = try? pairing.reconnectChannel(to: host) else { return nil }
         return .init(key: "noise:\(host.id)", connection: HostConnection(endpoint: endpoint, channel: channel,
@@ -90,6 +96,7 @@ final class AppModel {
         }
         #endif
         let paired = pairing.hosts.load()
+        hasSavedHosts = !paired.isEmpty
         if !paired.isEmpty { return paired.compactMap(pairedConfig) }
         #if DEBUG
         let endpoint = HostEndpoint.localBridge(port: options.bridgePort ?? 47801)

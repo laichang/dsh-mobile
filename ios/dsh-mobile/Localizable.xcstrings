@@ -1,0 +1,366 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Addresses": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "地址"
+          }
+        }
+      }
+    },
+    "Bridge setup instructions": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "桥接插件安装说明"
+          }
+        }
+      }
+    },
+    "Camera unavailable. Use the link printed under the code.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "摄像头不可用。可以粘贴配对码下方的链接。"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        }
+      }
+    },
+    "Code expires": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配对码有效期"
+          }
+        }
+      }
+    },
+    "Connect your computer": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接你的电脑"
+          }
+        }
+      }
+    },
+    "Couldn't open your paired computers": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法打开已配对的电脑"
+          }
+        }
+      }
+    },
+    "Couldn't pair: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配对失败：%@"
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
+        }
+      }
+    },
+    "For a fresh code, run this command from the dsh-mobile project folder on your computer.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要获取新的配对码，请在电脑的 dsh-mobile 项目目录里运行以下命令。"
+          }
+        }
+      }
+    },
+    "Host": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "电脑"
+          }
+        }
+      }
+    },
+    "Host key": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主机密钥"
+          }
+        }
+      }
+    },
+    "Need a pairing code?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "找不到配对码？"
+          }
+        }
+      }
+    },
+    "No tasks yet": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有任务"
+          }
+        }
+      }
+    },
+    "On your computer, find the pairing code in the terminal where DSH started. Keep your phone on the same Wi-Fi or connect through a private network such as Tailscale.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在电脑启动 DSH 的终端中找到配对码。让手机和电脑连接同一 Wi-Fi，或使用 Tailscale 等专用网络。"
+          }
+        }
+      }
+    },
+    "One sentence for your agent": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入要完成的任务"
+          }
+        }
+      }
+    },
+    "Pair": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配对"
+          }
+        }
+      }
+    },
+    "Pair a computer": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配对电脑"
+          }
+        }
+      }
+    },
+    "Pair a host": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配对电脑"
+          }
+        }
+      }
+    },
+    "Paired with %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已与%@配对"
+          }
+        }
+      }
+    },
+    "Pairing lets this phone send tasks to that host. Everything between them is end-to-end encrypted; the code works once.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配对后，手机可以向这台电脑发送任务。连接采用端到端加密，配对码仅可使用一次。"
+          }
+        }
+      }
+    },
+    "Pairing…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在配对…"
+          }
+        }
+      }
+    },
+    "Paste the pairing link": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘贴配对链接"
+          }
+        }
+      }
+    },
+    "Point the camera at the pairing code.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将摄像头对准配对码。"
+          }
+        }
+      }
+    },
+    "Ready to pair": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可以配对"
+          }
+        }
+      }
+    },
+    "Say hello and describe one way you can help me on this computer.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打个招呼，并举例说明你能在这台电脑上帮我做什么。"
+          }
+        }
+      }
+    },
+    "Send": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发送"
+          }
+        }
+      }
+    },
+    "Send tasks from your phone, follow their progress, and answer approval requests. DeepSeek Harness runs the tasks on your computer.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在手机上发起任务、查看进度、处理审批。任务由电脑上的 DeepSeek Harness 执行。"
+          }
+        }
+      }
+    },
+    "Send your first task when you're ready.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "准备好后，发送你的第一个任务。"
+          }
+        }
+      }
+    },
+    "Tasks": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "任务"
+          }
+        }
+      }
+    },
+    "To get started, you need a computer running DeepSeek Harness (DSH) with the dsh-mobile bridge enabled.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请准备一台已运行 DeepSeek Harness（DSH）的电脑，并启用 dsh-mobile 桥接插件。"
+          }
+        }
+      }
+    },
+    "Try a first task": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "试试第一个任务"
+          }
+        }
+      }
+    },
+    "Try again": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试"
+          }
+        }
+      }
+    },
+    "Use": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用"
+          }
+        }
+      }
+    },
+    "You can edit the suggestion before sending it.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发送前，你可以编辑这条建议。"
+          }
+        }
+      }
+    },
+    "the host": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "电脑"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

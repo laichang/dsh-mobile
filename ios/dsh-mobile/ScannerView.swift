@@ -12,31 +12,45 @@ struct ScannerView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                if DataScannerViewController.isSupported, DataScannerViewController.isAvailable {
-                    QRScanner(found: found)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .frame(maxHeight: 420)
-                    Text("Point the camera at the QR code your DSH host shows (run `node bridge/lib/scripts/pair.js` on the host for a new one).")
-                        .font(.footnote).foregroundStyle(.secondary)
-                } else {
-                    Label("The camera isn't available here.", systemImage: "camera.slash")
-                        .foregroundStyle(.secondary)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("On your computer, find the pairing code in the terminal where DSH started. Keep your phone on the same Wi-Fi or connect through a private network such as Tailscale.")
+                        .accessibilityIdentifier("pairing.guide")
+                    if DataScannerViewController.isSupported, DataScannerViewController.isAvailable {
+                        QRScanner(found: found)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .frame(height: 240)
+                        Text("Point the camera at the pairing code.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    } else {
+                        Label("Camera unavailable. Use the link printed under the code.", systemImage: "camera.slash")
+                            .foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        TextField("Paste the pairing link", text: $pasted)
+                            .textFieldStyle(.roundedBorder)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .accessibilityIdentifier("pairing.paste")
+                        Button("Use") { found(pasted) }
+                            .disabled(pasted.isEmpty)
+                            .accessibilityIdentifier("pairing.pasteUse")
+                    }
+                    DisclosureGroup("Need a pairing code?") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("For a fresh code, run this command from the dsh-mobile project folder on your computer.")
+                            Text(verbatim: "node bridge/lib/scripts/pair.js")
+                                .font(.footnote.monospaced()).textSelection(.enabled)
+                            Link("Bridge setup instructions", destination: URL(string: "https://github.com/laichang/dsh-mobile/blob/main/bridge/README.md")!)
+                                .accessibilityIdentifier("pairing.setupInstructions")
+                        }
+                        .font(.footnote)
+                        .padding(.top, 6)
+                    }
                 }
-                HStack {
-                    TextField("or paste the dshm://pair link", text: $pasted)
-                        .textFieldStyle(.roundedBorder)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .accessibilityIdentifier("pairing.paste")
-                    Button("Use") { found(pasted) }
-                        .disabled(pasted.isEmpty)
-                        .accessibilityIdentifier("pairing.pasteUse")
-                }
-                Spacer()
+                .padding()
             }
-            .padding()
-            .navigationTitle("Scan pairing code")
+            .navigationTitle("Pair a computer")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
