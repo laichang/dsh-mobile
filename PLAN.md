@@ -55,7 +55,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
 | S11 | review | merged `12e1afc` | 2026-11-05 | User checks onboarding on a fresh install (§9) |
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | — (hosted CI follows user push/PR; confirmations in §9) |
-| S13 | todo | — | 2026-11-05 | Make existing DSH sessions and later turns visible on the phone |
+| S13 | doing | `codex/s13-visibility` | 2026-11-05 | Build and verify Web-to-phone updates and reconnect |
 
 ## 1. Approach
 
@@ -909,6 +909,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - The user can start the real-device acceptance with the bridge install guide and §6. §9 lists the remaining slice checks and provisional decisions, dependencies and downloads. The user also owns the push/PR and the resulting hosted Actions run. Keep this plan active until the real-device exit items are accepted.
 
 - **2026-11-05 · M1 scope update.** After real-device pairing, the user added S13 to cover Web-to-phone session visibility. M2 covers replies sent from the phone into the same session.
+
+- **2026-11-05 · S13 started.** Slice owner runs in an isolated worktree on `codex/s13-visibility`. Bridge port 47810, Web port 3283, DSH home `~/.dshm/home-s13`, Simulator `dshm-S13`. The coordinator will assign independent UI review before merge.
 
 ## 9. Pending user confirmation
 
