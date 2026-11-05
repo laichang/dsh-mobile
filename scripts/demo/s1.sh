@@ -114,8 +114,12 @@ TEST_RUNNER_DSHM_RESUME_PHASE=2 TEST_RUNNER_DSHM_GAP_PROMPT="$GAP_PROMPT" uitest
 step "UI: T0 demo (resets pairing, so it runs last)"
 uitest t0 -only-testing:dsh-mobileUITests/T0DemoUITests
 
-step "bridge device registry (store only; the UI is S10)"
-node -e 'const d=require(process.argv[1]); console.log(`${d.length} device(s): ` + d.map(x=>x.id).join(", "))' "$DSHM_HOME/dsh-mobile-bridge/devices.json"
+step "bridge device registry"
+node --input-type=module - "$DSHM_HOME/dsh-mobile-bridge" <<'JS'
+import { PairingStore } from './bridge/lib/src/pairing/store.js'
+const devices = new PairingStore(process.argv[2]).devices()
+console.log(devices.length + ' device(s): ' + devices.map(device => device.id).join(', '))
+JS
 
 if [ $SHOTS = 1 ]; then
   step "screenshots → evidence/S1 (1/3 size)"
