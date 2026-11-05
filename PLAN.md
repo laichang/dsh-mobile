@@ -41,7 +41,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | T0 | review | merged `84db2e8` | 2026-11-05 | User accepts 3 `[human]` items (§9) |
 | X1 | done | merged `ccc8ff9` | 2026-11-05 | — |
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
-| X3 | doing | claude/x3-markdown | 2026-11-05 | Implement and verify |
+| X3 | review | merged `7f1b4b8` | 2026-11-05 | User runs the benchmark on a real phone and confirms D10 (§9) |
 | X4 | done | merged `ccc8ff9` | 2026-11-05 | — |
 | S1 | review | merged `1f35fa2` (batch 1) | 2026-11-05 | User accepts 2 `[human]` items: real iPhone, packet capture (§9) |
 | S2 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D20, D23 in §9) |
@@ -50,7 +50,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S5 | done | merged `529bb16` | 2026-11-05 | — (provisional D28 in §9) |
 | S6 | doing | `claude/s6-models` | 2026-11-05 | Implement and verify in batch 2 |
 | S7 | todo | — | 2026-11-05 | Ready (T0 merged); batch 2 |
-| S8 | todo | — | 2026-11-05 | Wait for X3 (T0 merged) |
+| S8 | todo | — | 2026-11-05 | Ready (X3 merged with provisional D10) |
 | S9 | todo | — | 2026-11-05 | Ready (S1 merged) |
 | S10 | todo | — | 2026-11-05 | Ready (S1 merged) |
 | S11 | todo | — | 2026-11-05 | Ready (S1 merged) |
@@ -791,6 +791,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-05 · X3.** Assigned claude/x3-markdown, worktree /Users/bytedance/.codex/worktrees/x3-markdown/dsh-mobile, simulator dshm-X3, DSHM_HOME ~/.dshm/home-x3, bridge 47813, web 3286. The owner uses the shared DSH runtime read-only.
 
+- **2026-11-05 · X3.** Independent Simulator rerun at ca3d59d passed the 5,000-line, 61-update benchmark. Whole-prefix p95 was 13.36–19.16 ms; retained-block p95 was 1.10–1.36 ms. Results and real-device command: spikes/x3-markdown/README.md. S8 may build on the provisional D10 choice.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -819,3 +821,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 24 | S1 | `[human]` | "A fresh iPhone scans the QR and runs the T0 demo over Wi-Fi or Tailscale". Needs: a real iPhone, this Mac running `scripts/dsh-up.mjs` with the bridge reachable on the LAN or Tailscale, and the app installed with your free Apple team | `main` | `1f35fa2` |
 | 25 | S1 | `[human]` | "A packet capture of that session shows only ciphertext". Needs: the session from row 24, plus Wireshark or `tcpdump` on this Mac | `main` | `1f35fa2` |
 | 26 | S5 | decision | ARCHITECTURE D28, provisional: acknowledge the interrupt, then derive the terminal state from the durable DSH aborted/user event. | `main` | `529bb16` |
+| 27 | X3 | `[human]` | Benchmark 2 candidates on a 5,000-line transcript on a real iPhone. Run the signed test in spikes/x3-markdown/README.md. | `main` | `7f1b4b8` |
+| 28 | X3 | `[human]` / decision | Confirm provisional D10 streaming renderer choice after the device benchmark. | `main` | `7f1b4b8` |
