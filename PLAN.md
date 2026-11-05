@@ -610,7 +610,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S11 · First run
 
-**Status** todo · **Needs** S1 · **Branch** —
+**Status** doing · **Needs** S1 · **Branch** `claude/s11-first-run`
 
 **Why**: principle 6 (with no host paired, the app explains what it is and what's missing).
 
@@ -622,10 +622,13 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [ ] [human] With no host paired, the app explains what it is and what's missing — Evidence:
 - [ ] [human] Someone who has never seen DSH gets from install to their first answer without help, given a DSH that's already running — Evidence:
 
+- [ ] [ui] A fresh Release install explains what runs on the phone and computer, and shows where to get a pairing code in English and Simplified Chinese — Evidence:
+- [ ] [ui] Paste a real pairing link, edit the suggested first task, send it, and receive the reply over Noise — Evidence:
+
 **Not**: installing DSH for the user (STORY non-goal).
 
 **Log**
-- —
+- **2026-11-05 · Started.** Isolated T0 passed on dshm-S11 with 55 bridge tests, 50 Swift tests, the real DSH CLI and 4 UI tests; bridge 47819, web 3292, profile `~/.dshm/home-s11`. Next: first-run and encrypted pairing in a fresh Release install.
 
 ### S12 · Upstream guard
 
