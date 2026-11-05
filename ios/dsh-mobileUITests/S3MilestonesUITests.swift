@@ -53,8 +53,10 @@ final class S3MilestonesUITests: XCTestCase {
         var samples: [Sample] = []
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
-            let s = Sample(progress: card.value as? String ?? "", headline: card.label,
-                           transcript: transcript.value as? String ?? "")
+            // Transcript first: the reply only starts after the last todo is done, so if the card
+            // still shows less than 3/3 *after* this read, the transcript was empty at that point.
+            let text = transcript.value as? String ?? ""
+            let s = Sample(progress: card.value as? String ?? "", headline: card.label, transcript: text)
             if samples.last != s {
                 samples.append(s)
                 if s.progress == shotAt, !samples.dropLast().contains(where: { $0.progress == shotAt }) { saveShot(shotName) }

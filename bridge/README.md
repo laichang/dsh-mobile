@@ -67,6 +67,7 @@ This is the development host on the maintainer's Mac:
 - DSH is installed with npm (`@deepseek-ai/dsh@0.2.2-rc.1` and `@deepseek-ai/dsh-llm-mock-server@0.2.2-rc.1`) into `~/.dshm/runtime`.
 - `~/.dshm/bin/pnpm` is a shim for `corepack pnpm@11.28.5`; put it on `PATH` for `dsh plugin`.
 - The default `~/.dsh` is left untouched.
+- S3's milestone demo uses `node scripts/demo/s3-host.mjs` instead: the same setup with `DSH_HOME=~/.dshm/home-s3`, web port 3285 and bridge port 47812 (written to the profile's `cordis.patch.yml`), and DSH's mock LLM scripted to keep a three-item todo list (ARCHITECTURE D17). `scripts/demo/s3.sh` runs it.
 - Other worktrees use their own `DSH_HOME` and ports. For example, X1/X4 use `~/.dshm/home-x1x4`, web port 3282 and bridge ports 47803–47809.
 
 ## Development

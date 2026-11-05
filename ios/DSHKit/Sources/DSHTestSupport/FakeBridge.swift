@@ -44,7 +44,7 @@ public actor FakeBridge: BridgeTransport {
         }
 
         /// A three-todo task that ticks its todos off one by one (S3 demo, `-DSHMFakeMilestones YES`).
-        public static func threeTodos(delay: Duration = .milliseconds(900)) -> Script {
+        public static func threeTodos(delay: Duration = .milliseconds(1500)) -> Script {
             let items = FakeBridge.threeTodoItems
             func list(done: Int, active: Int?) -> [Todo] {
                 items.enumerated().map { i, content in
