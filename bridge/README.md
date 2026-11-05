@@ -11,7 +11,7 @@ S4 adds held approvals (`approvals.v1`). A paired phone or DSH web client can an
 
 ## Requirements
 
-- DSH **≥ 0.2.2-rc.1** (enforced by `engines.dsh`).
+- DSH **0.2.2-rc.1** for task APIs. On another release the bridge serves only pairing and the version handshake. The app shows the installed and supported versions so you can update the bridge on that host.
 - Node **≥ 24.9** (DSH's own requirement).
 - **pnpm** on `PATH`. `dsh plugin` runs `pnpm add` in the profile. The bridge pins pnpm 11.28.5 through `packageManager`, so `corepack pnpm` works.
 

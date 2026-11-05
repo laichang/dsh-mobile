@@ -68,6 +68,7 @@
       "frame": { "request": { "id": "8", "createTask": { "prompt": "Show the repo name", "workspace": "/work/app" } } } },
     { "name": "s10_revoke_request", "frame": { "request": { "id": "10", "revokeDevice": { "deviceId": "phone-a" } } } },
     { "name": "s10_device_list", "frame": { "response": { "requestId": "10", "deviceList": { "currentDeviceId": "phone-b", "devices": [{ "id": "phone-b", "pairedAtMs": "100", "lastSeenAtMs": "200" }] } } } },
-    { "name": "s10_audit_page", "frame": { "response": { "requestId": "11", "auditPage": { "entries": [{ "id": "revoke:1", "atMs": "300", "actor": "owner", "device": "phone-b", "action": "Device revoked", "detail": "phone-a" }] } } } }
+    { "name": "s10_audit_page", "frame": { "response": { "requestId": "11", "auditPage": { "entries": [{ "id": "revoke:1", "atMs": "300", "actor": "owner", "device": "phone-b", "action": "Device revoked", "detail": "phone-a" }] } } } },
+    { "name": "s12_unsupported_hello", "frame": { "response": { "requestId": "1", "hello": { "protocolVersion": 1, "dshVersion": "0.2.2-alpha.3", "supportedDshRange": "0.2.2-rc.1", "requiresBridgeUpdate": true } } } }
   ]
 }

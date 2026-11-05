@@ -1,0 +1,29 @@
+#!/bin/bash
+# Run the same compatibility contract on the pinned release and upstream's default branch.
+set -euo pipefail
+cd "$(dirname "$0")/../.."
+export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
+runtime="${DSHM_RUNTIME:-$HOME/.dshm/runtime}"
+export DSHM_RUNTIME="$runtime"
+export DSHM_PROBE_VERSION="$(node -p 'require(process.env.DSHM_RUNTIME + "/node_modules/@deepseek-ai/dsh/package.json").version')"
+export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47818}" DSHM_WEB_PORT="${DSHM_WEB_PORT:-3291}"
+scratch=$(mktemp -d)
+export DSHM_HOME="$scratch/profile" DSHM_S4_COMMAND="rm '$scratch/untouched'"
+printf '%s\n' 'keep' > "$scratch/untouched"
+pid=""
+cleanup() { if [ -n "$pid" ]; then kill "$pid" 2>/dev/null || true; wait "$pid" || true; fi; rm -rf "$scratch"; }
+trap cleanup EXIT
+source scripts/demo/lib.sh
+(cd bridge && corepack pnpm install --frozen-lockfile)
+demo_bridge_tests "$scratch/bridge-test.log"
+node scripts/demo/s4-host.mjs > "$scratch/host.log" 2>&1 &
+pid=$!
+for _ in $(seq 1 240); do
+  grep -q '^s4-host: ready ' "$scratch/host.log" && break
+  kill -0 "$pid" 2>/dev/null || break
+  sleep 0.5
+done
+control=$(awk '/^s4-host: ready / { print $3; exit }' "$scratch/host.log")
+[ -n "$control" ] || { tail -25 "$scratch/host.log"; exit 1; }
+node bridge/lib/scripts/probe-upstream.js "$control"
+test "$(cat "$scratch/untouched")" = keep

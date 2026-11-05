@@ -2,6 +2,7 @@
  * dsh-mobile bridge: a Cordis plugin installed into the user's DSH profile (ARCHITECTURE §5).
  * Install and enable: see bridge/README.md.
  */
+import { runtimeDshVersion, supportsDsh } from './compatibility.ts'
 import { ApprovalHolder, type ApprovalContext } from './approvals/holder.ts'
 import { TaskHub } from './s2/task-hub.ts'
 import { homedir } from 'node:os'
@@ -14,7 +15,9 @@ import { PairingStore } from './pairing/store.ts'
 import { startBridgeServer, type BridgeServer } from './server.ts'
 
 export const name = 'dsh-mobile-bridge'
-export const inject = ['sessionController', 'workspaceController', 'workspaceRegistry']
+const dshVersion = runtimeDshVersion()
+const supported = supportsDsh(dshVersion)
+export const inject = supported ? ['sessionController', 'workspaceController', 'workspaceRegistry'] : []
 
 export interface Config {
   /** Listen address. Default 0.0.0.0: every payload is Noise-encrypted (ARCHITECTURE D21). */
@@ -66,13 +69,13 @@ export function apply(ctx: PluginContext, config: Config = {}) {
     const tasks = new DshTasks(ctx, c.cwd)
     const hub = new TaskHub(tasks)
     const approvals = new ApprovalHolder(join(c.stateDir, 'approvals.jsonl'), event => hub.approvalChanged(event, !tasks.sessions.has(event.taskId)), c.approvalTimeoutMs)
-    const unregister = approvals.register(ctx)
+    const unregister = supported ? approvals.register(ctx) : undefined
     startBridgeServer({
       host: c.host,
       port: c.port,
       noise: new NoiseResponder(store, log),
       channel: c.devPlaintext ? new PlaintextChannel() : undefined,
-      tasks, hub, approvals,
+      tasks, hub, approvals, dshVersion,
       log,
     }).then(
       (s) => {
@@ -84,12 +87,12 @@ export function apply(ctx: PluginContext, config: Config = {}) {
         if (store.devices().length === 0) log(`\n${renderOffer(makeOffer(store))}`)
       },
       (error) => {
-        unregister()
+        unregister?.()
         approvals.close()
         if (logger) logger.warn(`failed to start: ${String(error)}`)
         else console.error(error)
       },
     )
-    return () => { disposed = true; unregister(); approvals.close(); void server?.close() }
+    return () => { disposed = true; unregister?.(); approvals.close(); void server?.close() }
   })
 }

@@ -28,6 +28,7 @@ public final class TaskListStore {
         case connecting
         case online
         case offline
+        case needsBridgeUpdate(version: String, supported: String)
 
         /// Stable token for UI tests (`host.status` accessibility value).
         public var token: String {
@@ -35,6 +36,7 @@ public final class TaskListStore {
             case .connecting: "connecting"
             case .online: "online"
             case .offline: "offline"
+            case .needsBridgeUpdate: "bridgeUpdateRequired"
             }
         }
     }
@@ -238,7 +240,11 @@ public final class TaskListStore {
         sendError = nil
         defer { isSending = false }
         guard await waitOnline(link) else {
-            sendError = "\(hostName(link.key)) is offline. The task was not sent."
+            if case .needsBridgeUpdate(let version, let supported) = link.reachability {
+                sendError = HostConnectionError.bridgeUpdateRequired(version: version, supported: supported).description
+            } else {
+                sendError = "\(hostName(link.key)) is offline. The task was not sent."
+            }
             return nil
         }
         do {
@@ -284,6 +290,7 @@ public final class TaskListStore {
         while clock.now < deadline {
             switch link.reachability {
             case .online: return true
+            case .needsBridgeUpdate: return false
             case .connecting: sawAttempt = true
             case .offline: if sawAttempt { return false }
             }
@@ -298,7 +305,11 @@ public final class TaskListStore {
         if firstConnectDelay > .zero { try? await Task.sleep(for: firstConnectDelay) }
         var delay = backoff.initial
         while !Task.isCancelled {
-            setReachability(.connecting, link)
+            var failure: Reachability = .offline
+            // Keep the update message visible while retrying an incompatible host.
+            if link.reachability == .offline || link.reachability == .online {
+                setReachability(.connecting, link)
+            }
             do {
                 try await link.connection.connect()
                 link.capabilities = await link.connection.capabilities
@@ -317,11 +328,15 @@ public final class TaskListStore {
                 }
                 delay = backoff.initial
                 await link.connection.waitUntilDisconnected()
+            } catch HostConnectionError.bridgeUpdateRequired(let version, let supported) {
+                link.capabilities = []
+                failure = .needsBridgeUpdate(version: version, supported: supported)
+                await link.connection.disconnect()
             } catch {
                 await link.connection.disconnect()
             }
             if Task.isCancelled { break }
-            setReachability(.offline, link)
+            setReachability(failure, link)
             await sleep(delay, link)
             delay = min(delay * 2, backoff.max)
         }
