@@ -1,5 +1,5 @@
 /**
- * The only file that knows DSH internals (ARCHITECTURE D4). It maps a dsh-mobile task onto one
+ * The phone dispatch adapter (ARCHITECTURE D4). It maps a dsh-mobile task onto one
  * DSH session (D13): create a session in its selected workspace, prompt it, follow its log, and turn
  * the follow stream into plain task output. Types are structural subsets of the DSH 0.2.2-rc.1
  * `sessionController` / `workspaceController` services, so `FakeDSH` can implement them in tests.

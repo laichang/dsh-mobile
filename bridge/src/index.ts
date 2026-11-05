@@ -4,6 +4,7 @@
  */
 import { runtimeDshVersion, supportsDsh } from './compatibility.ts'
 import { ApprovalHolder, type ApprovalContext } from './approvals/holder.ts'
+import { SessionDirectory, type SessionReader } from './sessions/directory.ts'
 import { TaskHub } from './s2/task-hub.ts'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -53,7 +54,9 @@ export function resolveConfig(config: Config = {}, env: NodeJS.ProcessEnv = proc
   }
 }
 
-interface PluginContext extends DshServices, ApprovalContext {
+type PluginContext = DshServices & ApprovalContext & {
+  sessionController: SessionReader
+  on(name: 'session/event', callback: (session: { id: string }, event: Parameters<SessionDirectory['changed']>[1]) => void): () => void
   effect(setup: () => () => void): void
   logger?(name: string): { info(...args: unknown[]): void; warn(...args: unknown[]): void }
 }
@@ -68,6 +71,8 @@ export function apply(ctx: PluginContext, config: Config = {}) {
     const store = new PairingStore(c.stateDir)
     const tasks = new DshTasks(ctx, c.cwd)
     const hub = new TaskHub(tasks)
+    const sessions = supported ? new SessionDirectory(ctx.sessionController, hub, log) : undefined
+    const stopSessions = sessions && ctx.on('session/event', (session, event) => sessions.changed(session.id, event))
     const approvals = new ApprovalHolder(join(c.stateDir, 'approvals.jsonl'), event => hub.approvalChanged(event, !tasks.sessions.has(event.taskId)), c.approvalTimeoutMs)
     const unregister = supported ? approvals.register(ctx) : undefined
     startBridgeServer({
@@ -75,7 +80,7 @@ export function apply(ctx: PluginContext, config: Config = {}) {
       port: c.port,
       noise: new NoiseResponder(store, log),
       channel: c.devPlaintext ? new PlaintextChannel() : undefined,
-      tasks, hub, approvals, dshVersion,
+      tasks, hub, approvals, sessions, dshVersion,
       log,
     }).then(
       (s) => {
@@ -87,12 +92,13 @@ export function apply(ctx: PluginContext, config: Config = {}) {
         if (store.devices().length === 0) log(`\n${renderOffer(makeOffer(store))}`)
       },
       (error) => {
+        stopSessions?.(); sessions?.close()
         unregister?.()
         approvals.close()
         if (logger) logger.warn(`failed to start: ${String(error)}`)
         else console.error(error)
       },
     )
-    return () => { disposed = true; unregister?.(); approvals.close(); void server?.close() }
+    return () => { disposed = true; stopSessions?.(); sessions?.close(); unregister?.(); approvals.close(); void server?.close() }
   })
 }

@@ -115,11 +115,35 @@ public nonisolated struct Dshm_V1_TaskSummary: Sendable {
   /// Clears the value of `modelSelection`. Subsequent reads from it will return its default value.
   public mutating func clearModelSelection() {self._modelSelection = nil}
 
+  /// Committed DSH journal cursor; changes invalidate a cached detail page.
+  public var sessionRevision: UInt64 {
+    get {_sessionRevision ?? 0}
+    set {_sessionRevision = newValue}
+  }
+  /// Returns true if `sessionRevision` has been explicitly set.
+  public var hasSessionRevision: Bool {self._sessionRevision != nil}
+  /// Clears the value of `sessionRevision`. Subsequent reads from it will return its default value.
+  public mutating func clearSessionRevision() {self._sessionRevision = nil}
+
+  public var externalSession: Bool = false
+
+  /// Short result for the latest turn. Empty suppresses a stale or long inline answer.
+  public var latestReply: String {
+    get {_latestReply ?? String()}
+    set {_latestReply = newValue}
+  }
+  /// Returns true if `latestReply` has been explicitly set.
+  public var hasLatestReply: Bool {self._latestReply != nil}
+  /// Clears the value of `latestReply`. Subsequent reads from it will return its default value.
+  public mutating func clearLatestReply() {self._latestReply = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _modelSelection: Dshm_V1_ModelSelection? = nil
+  fileprivate var _sessionRevision: UInt64? = nil
+  fileprivate var _latestReply: String? = nil
 }
 
 /// Request: every task this bridge knows, newest first.
@@ -239,7 +263,7 @@ nonisolated extension Dshm_V1_TaskState: SwiftProtobuf._ProtoNameProviding {
 
 nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TaskSummary"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0\u{4}L\u{2}session_revision\0\u{3}external_session\0\u{3}latest_reply\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -256,6 +280,9 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
       case 80: try { try decoder.decodeRepeatedMessageField(value: &self.pendingApprovals) }()
       case 81: try { try decoder.decodeSingularBoolField(value: &self.approvalOnly) }()
       case 120: try { try decoder.decodeSingularMessageField(value: &self._modelSelection) }()
+      case 260: try { try decoder.decodeSingularUInt64Field(value: &self._sessionRevision) }()
+      case 261: try { try decoder.decodeSingularBoolField(value: &self.externalSession) }()
+      case 262: try { try decoder.decodeSingularStringField(value: &self._latestReply) }()
       default: break
       }
     }
@@ -293,6 +320,15 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     try { if let v = self._modelSelection {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 120)
     } }()
+    try { if let v = self._sessionRevision {
+      try visitor.visitSingularUInt64Field(value: v, fieldNumber: 260)
+    } }()
+    if self.externalSession != false {
+      try visitor.visitSingularBoolField(value: self.externalSession, fieldNumber: 261)
+    }
+    try { if let v = self._latestReply {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 262)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -306,6 +342,9 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     if lhs.pendingApprovals != rhs.pendingApprovals {return false}
     if lhs.approvalOnly != rhs.approvalOnly {return false}
     if lhs._modelSelection != rhs._modelSelection {return false}
+    if lhs._sessionRevision != rhs._sessionRevision {return false}
+    if lhs.externalSession != rhs.externalSession {return false}
+    if lhs._latestReply != rhs._latestReply {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

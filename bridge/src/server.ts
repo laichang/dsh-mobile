@@ -20,6 +20,7 @@ import { auditPage, deviceList } from './devices/manage.ts'
 import { hostname } from 'node:os'
 import type { SecureChannel } from './channel.ts'
 import { FrameSchema, type Frame, type Request, type ResponseSchema } from './gen/frame_pb.ts'
+import type { SessionDirectory } from './sessions/directory.ts'
 import { MILESTONES_CAPABILITY } from './milestones/wire.ts'
 import { HandshakeRejected, type NoiseResponder } from './pairing/handshake.ts'
 import type { LoggedEvent } from './s2/host-log.ts'
@@ -49,6 +50,7 @@ export interface BridgeServerOptions {
   hostName?: string
   /** Inject a hub (tests); by default the server makes one around `tasks`. */
   hub?: TaskHub
+  sessions?: SessionDirectory
   approvals?: ApprovalHolder
   log?: (message: string) => void
 }
@@ -104,6 +106,7 @@ function serveConnection(
   const supported = supportsDsh(options.dshVersion)
   let device = 'dev loopback'
   let helloDone = false
+  let clientSessions = false
   let clientApprovals = false
   let codec: FrameCodec | undefined
 
@@ -129,6 +132,14 @@ function serveConnection(
   const fail = (requestId: bigint, code: string, message: string) =>
     respond(requestId, { case: 'error', value: { code, message } })
   const forward = (event: LoggedEvent) => {
+    if (!clientSessions && event.body?.case === 'taskUpserted' && event.body.value.task?.externalSession) {
+      const task = event.body.value.task
+      if (!clientApprovals || !task.pendingApprovals?.length) return
+      send({ kind: { case: 'event', value: { hostSeq: event.seq, body: { case: 'taskUpserted', value: {
+        task: { ...task, title: '', approvalOnly: true },
+      } } } } })
+      return
+    }
     // Older apps cannot withdraw temporary upstream approval rows.
     if (!clientApprovals && (event.body?.case === 'approvalPending' || event.body?.case === 'approvalResolved'
       || (event.body?.case === 'taskUpserted' && event.body.value.task?.approvalOnly))) return
@@ -150,12 +161,14 @@ function serveConnection(
           return fail(id, 'hello/version-unsupported', `bridge speaks protocol ${PROTOCOL_VERSION}, got ${v}`)
         }
         helloDone = true
+        clientSessions = !!options.sessions && request.body.value.capabilities.includes('sessions.v1')
         clientApprovals = request.body.value.capabilities.includes('approvals.v1')
         return respond(id, {
           case: 'hello',
           value: { protocolVersion: PROTOCOL_VERSION, dshVersion: options.dshVersion,
             supportedDshRange: SUPPORTED_DSH, requiresBridgeUpdate: !supported, capabilities: supported ? [
             ...CAPABILITIES,
+            ...(options.sessions ? ['sessions.v1'] : []),
             ...(options.tasks.modelCatalog && options.tasks.selectModel ? ['models.v1'] : []),
             ...(options.approvals ? ['approvals.v1'] : []),
             ...(options.tasks.listWorkspaces ? ['workspaces.v1'] : []),
@@ -271,12 +284,25 @@ function serveConnection(
           return fail(id, 'approval/refused', error instanceof Error ? error.message : String(error))
         }
       }
+      case 'readSession': {
+        if (!helloDone || !clientSessions || !options.sessions) return fail(id, 'request/unsupported', 'Session history unavailable.')
+        const req = request.body.value
+        try {
+          return respond(id, { case: 'sessionPage', value: await options.sessions.read(req.taskId, req.beforeSeq, req.throughSeq) })
+        } catch (error) { return fail(id, 'session/read-failed', String(error)) }
+      }
       case 'listTasks': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
-        return respond(id, { case: 'taskList', value: { tasks: hub.list().filter(task => clientApprovals || !task.approvalOnly), logId: hub.log.logId, hostName } })
+        return respond(id, { case: 'taskList', value: { tasks: hub.list().filter(task => clientApprovals || !task.approvalOnly)
+          .flatMap(task => !clientSessions && task.externalSession ? (clientApprovals && task.pendingApprovals.length
+            ? [{ ...task, title: '', approvalOnly: true }] : []) : [task]), logId: hub.log.logId, hostName } })
       }
       case 'resume': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
+        if (clientSessions) {
+          try { await options.sessions!.reconcile() }
+          catch (error) { return fail(id, 'session/list-failed', String(error)) }
+        }
         // Replay and subscribe in one synchronous step, so no event falls between them.
         const { logId, afterSeq } = request.body.value
         unsubscribe?.()

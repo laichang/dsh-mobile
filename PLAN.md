@@ -670,7 +670,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S13 · Cross-client session visibility
 
-**Status** todo · **Needs** S2 · **Branch** —
+**Status** doing · **Needs** S2 · **Branch** `codex/s13-visibility`
 
 **Why**: STORY principle 4. A user who starts work in DSH Web or on the desktop can pick up the phone and see what happened in the same session.
 
@@ -679,15 +679,16 @@ Each slice needs only T0, unless "Needs" says otherwise.
 **Demo**: Open a session in the Web default workspace, read it on the phone, then send a second Web message while the phone has that session open.
 
 **Done when**
-- [ ] [auto] A Web session created before pairing and another created after pairing each appear once under their host and DSH session ID. A session started on the phone also appears only once. — Evidence:
-- [ ] [ui] Send “网页第一条” in the Web default workspace. Open the session on the phone and read the message and assistant reply. Send “网页第二条” in the same Web session and see the open detail view update without refreshing. — Evidence:
-- [ ] [ui] While the phone is disconnected, continue the same session on the Web. After reconnect, the phone shows each missed message once and in order. — Evidence:
+- [x] [auto] A Web session created before pairing and another created after pairing each appear once under their host and DSH session ID. A session started on the phone also appears only once. — Evidence: test:webSessionsBeforeAndAfterPairingAndPhoneTaskHaveOneHostRowEach
+- [x] [ui] Send “网页第一条” in the Web default workspace. Open the session on the phone and read the message and assistant reply. Send “网页第二条” in the same Web session and see the open detail view update without refreshing. — Evidence: test:S13SessionVisibilityUITests/testWebTurnsUpdateOpenDetailAndResumeAfterDisconnect · cmd:scripts/demo/s13.sh · shot:evidence/S13/s13-live-turn.png
+- [x] [ui] While the phone is disconnected, continue the same session on the Web. After reconnect, the phone shows each missed message once and in order. — Evidence: test:S13SessionVisibilityUITests/testWebTurnsUpdateOpenDetailAndResumeAfterDisconnect · cmd:scripts/demo/s13.sh · shot:evidence/S13/s13-reconnected.png
 - [ ] [human] On a paired iPhone and Mac, repeat the two-message Web demo and verify that the phone shows the same session and its latest reply. — Evidence:
 
 **Not**: Sending a reply from the phone into an existing session belongs to M2 (§7).
 
 **Log**
 - **2026-11-05 · Planned.** A message sent in the Mac's Web default workspace did not appear on the paired iPhone. The user confirmed cross-client session visibility as an M1 requirement.
+- **2026-11-05 · Implemented.** Real DSH Web created a session in its default workspace before the phone connected. The open phone detail showed both messages for each online turn. The demo cut the bridge socket, submitted two more Web turns and restored the same detail with all eight messages exactly once, in order. The bridge and Swift suites passed. New provisional decision: D50 (durable session listing and journal pages); no new dependency or download. Next: independent Simulator rerun, then coordinator integration; the paired iPhone acceptance remains open.
 
 ## 6. M1 exit
 

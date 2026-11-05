@@ -44,7 +44,8 @@ export class TaskHub {
     const at = BigInt(this.now())
     const summary: Summary = {
       taskId: task.taskId, title: prompt, state: TaskState.RUNNING,
-      createdAtMs: at, updatedAtMs: at, message: '', approvalOnly: false, pendingApprovals: this.approvalsFor(task.taskId),
+      createdAtMs: at, updatedAtMs: at, message: '', approvalOnly: false, externalSession: false,
+      sessionRevision: this.summaries.get(task.taskId)?.sessionRevision, pendingApprovals: this.approvalsFor(task.taskId),
     }
     if (summary.pendingApprovals.length) summary.state = TaskState.WAITING_ON_USER
     this.summaries.set(task.taskId, summary)
@@ -80,7 +81,7 @@ export class TaskHub {
     if (!summary && external && !('outcome' in event)) {
       const at = BigInt(this.now())
       summary = { taskId: event.taskId, title: '', state: TaskState.WAITING_ON_USER, createdAtMs: at,
-        updatedAtMs: at, message: '', approvalOnly: true, pendingApprovals: [] }
+        updatedAtMs: at, message: '', approvalOnly: true, externalSession: false, pendingApprovals: [] }
       this.summaries.set(event.taskId, summary)
     }
     if (!summary) return // create() snapshots requests that arrived while DSH accepted our prompt.
@@ -98,6 +99,32 @@ export class TaskHub {
 
   private approvalsFor(taskId: string) {
     return [...this.pending.values()].filter(request => request.taskId === taskId)
+  }
+
+  sessionRevision(taskId: string): number | undefined {
+    const revision = this.summaries.get(taskId)?.sessionRevision
+    return revision === undefined ? undefined : Number(revision)
+  }
+
+  /** The DSH session ID is also CreateTask's ID, even if the journal arrives before its response. */
+  observeSession(taskId: string, revision: bigint, title: string, state: TaskState, message: string,
+    updatedAt: bigint, createdAt: bigint, latestReply?: string, renamedTitle?: string) {
+    const old = this.summaries.get(taskId)
+    if (old?.sessionRevision !== undefined && old.sessionRevision >= revision) return
+    const pending = this.approvalsFor(taskId)
+    const summary: Summary = old ?? { taskId, title, createdAtMs: createdAt, updatedAtMs: updatedAt,
+      state, message, externalSession: true, approvalOnly: false, pendingApprovals: pending }
+    if (summary.approvalOnly) summary.externalSession = true
+    summary.approvalOnly = false
+    if (renamedTitle) summary.title = renamedTitle
+    else if (!summary.title || summary.title === taskId) summary.title = title
+    summary.latestReply = latestReply
+    summary.sessionRevision = revision
+    summary.updatedAtMs = summary.updatedAtMs > updatedAt ? summary.updatedAtMs : updatedAt
+    summary.state = pending.length ? TaskState.WAITING_ON_USER : state
+    summary.message = message
+    this.summaries.set(taskId, summary)
+    this.upserted(summary)
   }
 
   /** Every known task, newest first. */

@@ -67,11 +67,22 @@ public final class TaskListStore {
         public var transcript: String
         public var createdAt: Date
         public var updatedAt: Date
-        /// S3 milestones, from the cache (S2 x S3 seam): the list row shows the card.
+        public var latestReply: String?
+        public var sessionRevision: UInt64?
+        public var externalSession: Bool
         public var approvalOnly: Bool
         public var approvals: [Approval]
+        /// S3 milestones, from the cache (S2 x S3 seam): the list row shows the card.
         public var milestones: MilestoneTimeline
         public var modelSelection: ModelSelection?
+
+        /// Chunks stream the first phone turn. Its committed journal restores text after a truncated replay.
+        public func singleTurnTranscript(_ messages: [Dshm_V1_SessionMessage]) -> String {
+            guard state.isTerminal else { return transcript }
+            let reply = messages.filter { !$0.fromUser }.map(\.text).joined(separator: "\n\n")
+            return reply.isEmpty || transcript.contains(reply) ? transcript : reply
+        }
+
     }
 
     public struct Sections: Equatable, Sendable {
@@ -499,12 +510,20 @@ public final class TaskListStore {
     }
 
     /// Newer host state wins; an older snapshot never moves a finished task back to running.
-    private func merge(_ snapshot: TaskSnapshot, into task: CachedTask) {
+    func merge(_ snapshot: TaskSnapshot, into task: CachedTask) {
+        let previousRevision = task.sessionRevision
+        if let current = previousRevision, let incoming = snapshot.sessionRevision, incoming < UInt64(current) { return }
+        let newerTurn = snapshot.sessionRevision.map { $0 > UInt64(previousRevision ?? 0) } ?? false
         if !snapshot.title.isEmpty { task.title = snapshot.title }
+        if let revision = snapshot.sessionRevision {
+            task.sessionRevision = max(task.sessionRevision ?? 0, Int64(revision))
+            task.externalSession = snapshot.externalSession
+            task.latestReply = snapshot.latestReply
+        }
         task.createdAt = snapshot.createdAt
         task.approvalOnly = snapshot.approvalOnly
         let regresses = task.state.isTerminal && !snapshot.state.isTerminal
-        if snapshot.updatedAt > task.updatedAt || (snapshot.updatedAt == task.updatedAt && !regresses) {
+        if newerTurn || snapshot.updatedAt > task.updatedAt || (snapshot.updatedAt == task.updatedAt && !regresses) {
             task.approvals = snapshot.approvals
             if let selection = snapshot.modelSelection { applyModel(selection, to: task) }
             task.state = snapshot.state
@@ -519,6 +538,23 @@ public final class TaskListStore {
             task.modelSelectionData = data
             task.transcript += selection.transcriptLine
         }
+    }
+
+    public func cachedHistory(for row: TaskRow) -> Dshm_V1_SessionPage? {
+        let record = taskRecord(hostKey: row.hostKey, taskID: row.taskID, title: row.title)
+        return record.sessionHistory.flatMap { try? Dshm_V1_SessionPage(serializedBytes: $0) }
+    }
+
+    public func readHistory(for row: TaskRow) async throws -> Dshm_V1_SessionPage? {
+        let cached = cachedHistory(for: row)
+        guard let revision = row.sessionRevision, cached.map({ $0.throughSeq < revision }) ?? true,
+              let link = links.first(where: { $0.key == row.hostKey }), link.reachability == .online,
+              link.capabilities?.contains("sessions.v1") == true else { return cached }
+        let page = try await link.connection.readSession(row.taskID)
+        try Task.checkCancellation()
+        taskRecord(hostKey: row.hostKey, taskID: row.taskID, title: row.title).sessionHistory = try page.serializedData()
+        scheduleSave()
+        return page
     }
 
     // MARK: - Cache
@@ -593,6 +629,7 @@ public final class TaskListStore {
                 key: t.key, hostKey: t.hostKey, hostName: names[t.hostKey] ?? t.hostKey, taskID: t.taskID,
                 title: t.title, state: t.state, message: t.message, transcript: t.transcript,
                 createdAt: t.createdAt, updatedAt: t.updatedAt,
+                latestReply: t.latestReply, sessionRevision: t.sessionRevision.map(UInt64.init), externalSession: t.externalSession,
                 approvalOnly: t.approvalOnly, approvals: supportsApprovals == false ? [] : t.approvals,
                 milestones: timeline(of: t),
                 modelSelection: t.modelSelectionData.flatMap { try? ModelSelection(serializedBytes: $0) })

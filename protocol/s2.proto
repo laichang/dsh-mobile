@@ -38,6 +38,11 @@ message TaskSummary {
   bool approval_only = 81;
   // Last selection reported by DSH, including when its event is older than the retained log.
   ModelSelection model_selection = 120;
+  // Committed DSH journal cursor; changes invalidate a cached detail page.
+  optional uint64 session_revision = 260;
+  bool external_session = 261;
+  // Short result for the latest turn. Empty suppresses a stale or long inline answer.
+  optional string latest_reply = 262;
 }
 
 // Request: every task this bridge knows, newest first.

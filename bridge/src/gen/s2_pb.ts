@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file s2.proto.
  */
 export const file_s2: GenFile = /*@__PURE__*/
-  fileDesc("CghzMi5wcm90bxIHZHNobS52MSKNAgoLVGFza1N1bW1hcnkSDwoHdGFza19pZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIhCgVzdGF0ZRgDIAEoDjISLmRzaG0udjEuVGFza1N0YXRlEhUKDWNyZWF0ZWRfYXRfbXMYBCABKAMSFQoNdXBkYXRlZF9hdF9tcxgFIAEoAxIPCgdtZXNzYWdlGAYgASgJEjMKEXBlbmRpbmdfYXBwcm92YWxzGFAgAygLMhguZHNobS52MS5BcHByb3ZhbFBlbmRpbmcSFQoNYXBwcm92YWxfb25seRhRIAEoCBIwCg9tb2RlbF9zZWxlY3Rpb24YeCABKAsyFy5kc2htLnYxLk1vZGVsU2VsZWN0aW9uIgsKCUxpc3RUYXNrcyJSCghUYXNrTGlzdBIjCgV0YXNrcxgBIAMoCzIULmRzaG0udjEuVGFza1N1bW1hcnkSDgoGbG9nX2lkGAIgASgJEhEKCWhvc3RfbmFtZRgDIAEoCSIrCgZSZXN1bWUSDgoGbG9nX2lkGAEgASgJEhEKCWFmdGVyX3NlcRgCIAEoBCJfCgdSZXN1bWVkEg4KBmxvZ19pZBgBIAEoCRIQCghoZWFkX3NlcRgCIAEoBBIRCglob3N0X25hbWUYAyABKAkSDQoFcmVzZXQYBCABKAgSEAoIcmVwbGF5ZWQYBSABKAQiMgoMVGFza1Vwc2VydGVkEiIKBHRhc2sYASABKAsyFC5kc2htLnYxLlRhc2tTdW1tYXJ5IhoKCExvZ1Jlc2V0Eg4KBmxvZ19pZBgBIAEoCSqsAQoJVGFza1N0YXRlEhoKFlRBU0tfU1RBVEVfVU5TUEVDSUZJRUQQABIWChJUQVNLX1NUQVRFX1JVTk5JTkcQARIeChpUQVNLX1NUQVRFX1dBSVRJTkdfT05fVVNFUhACEhgKFFRBU0tfU1RBVEVfQ09NUExFVEVEEAMSFQoRVEFTS19TVEFURV9GQUlMRUQQBBIaChZUQVNLX1NUQVRFX0lOVEVSUlVQVEVEEAViBnByb3RvMw", [file_approvals, file_models]);
+  fileDesc("CghzMi5wcm90bxIHZHNobS52MSKKAwoLVGFza1N1bW1hcnkSDwoHdGFza19pZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIhCgVzdGF0ZRgDIAEoDjISLmRzaG0udjEuVGFza1N0YXRlEhUKDWNyZWF0ZWRfYXRfbXMYBCABKAMSFQoNdXBkYXRlZF9hdF9tcxgFIAEoAxIPCgdtZXNzYWdlGAYgASgJEjMKEXBlbmRpbmdfYXBwcm92YWxzGFAgAygLMhguZHNobS52MS5BcHByb3ZhbFBlbmRpbmcSFQoNYXBwcm92YWxfb25seRhRIAEoCBIwCg9tb2RlbF9zZWxlY3Rpb24YeCABKAsyFy5kc2htLnYxLk1vZGVsU2VsZWN0aW9uEh4KEHNlc3Npb25fcmV2aXNpb24YhAIgASgESACIAQESGQoQZXh0ZXJuYWxfc2Vzc2lvbhiFAiABKAgSGgoMbGF0ZXN0X3JlcGx5GIYCIAEoCUgBiAEBQhMKEV9zZXNzaW9uX3JldmlzaW9uQg8KDV9sYXRlc3RfcmVwbHkiCwoJTGlzdFRhc2tzIlIKCFRhc2tMaXN0EiMKBXRhc2tzGAEgAygLMhQuZHNobS52MS5UYXNrU3VtbWFyeRIOCgZsb2dfaWQYAiABKAkSEQoJaG9zdF9uYW1lGAMgASgJIisKBlJlc3VtZRIOCgZsb2dfaWQYASABKAkSEQoJYWZ0ZXJfc2VxGAIgASgEIl8KB1Jlc3VtZWQSDgoGbG9nX2lkGAEgASgJEhAKCGhlYWRfc2VxGAIgASgEEhEKCWhvc3RfbmFtZRgDIAEoCRINCgVyZXNldBgEIAEoCBIQCghyZXBsYXllZBgFIAEoBCIyCgxUYXNrVXBzZXJ0ZWQSIgoEdGFzaxgBIAEoCzIULmRzaG0udjEuVGFza1N1bW1hcnkiGgoITG9nUmVzZXQSDgoGbG9nX2lkGAEgASgJKqwBCglUYXNrU3RhdGUSGgoWVEFTS19TVEFURV9VTlNQRUNJRklFRBAAEhYKElRBU0tfU1RBVEVfUlVOTklORxABEh4KGlRBU0tfU1RBVEVfV0FJVElOR19PTl9VU0VSEAISGAoUVEFTS19TVEFURV9DT01QTEVURUQQAxIVChFUQVNLX1NUQVRFX0ZBSUxFRBAEEhoKFlRBU0tfU1RBVEVfSU5URVJSVVBURUQQBWIGcHJvdG8z", [file_approvals, file_models]);
 
 /**
  * @generated from message dshm.v1.TaskSummary
@@ -81,6 +81,25 @@ export type TaskSummary = Message<"dshm.v1.TaskSummary"> & {
    * @generated from field: dshm.v1.ModelSelection model_selection = 120;
    */
   modelSelection?: ModelSelection | undefined;
+
+  /**
+   * Committed DSH journal cursor; changes invalidate a cached detail page.
+   *
+   * @generated from field: optional uint64 session_revision = 260;
+   */
+  sessionRevision?: bigint | undefined;
+
+  /**
+   * @generated from field: bool external_session = 261;
+   */
+  externalSession: boolean;
+
+  /**
+   * Short result for the latest turn. Empty suppresses a stale or long inline answer.
+   *
+   * @generated from field: optional string latest_reply = 262;
+   */
+  latestReply?: string | undefined;
 };
 
 /**
