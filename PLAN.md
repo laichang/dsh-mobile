@@ -758,13 +758,23 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 - [x] [ui] The first message creates the session, and the same page shows the reply — Evidence: test:T1ShellUITests/testFirstMessageCreatesSessionOnSamePage · cmd:scripts/demo/t1.sh · shot:evidence/T1/t1-first-message-reply.png
 - [x] [ui] A drag from the left edge opens the drawer and pushes the page. A release with low velocity closes it again. — Evidence: test:T1ShellUITests/testEdgeDragOpensDrawerAndSlowReleaseCloses · cmd:scripts/demo/t1.sh · shot:evidence/T1/t1-drawer-open.png
 - [x] [ui] The session page has no back button. The milestone timeline opens as a sheet. — Evidence: test:T1ShellUITests/testNoBackButtonAndTimelineSheet · cmd:scripts/demo/t1.sh · shot:evidence/T1/t1-session-page.png · shot:evidence/T1/t1-timeline-sheet.png
-- [ ] [ui] All M1 UITest files pass on the new shell, with no accessibility identifier renamed — Evidence:
+- [x] [ui] All M1 UITest files pass on the new shell, with no accessibility identifier renamed — Evidence: cmd:scripts/demo/t1.sh --all · test:T1ShellUITests · test:S9MultiHostUITests/testTwoHostsShareTheListAndTheOfflineHostIsNamed
 - [x] [auto] ARCHITECTURE.md has the new `Dxx` for first-message routing, and D34 says "superseded" — Evidence: commit:7f4b8cd
 - [ ] [human] The user accepts that the app always uses dark mode — Evidence:
 
 **Not**: Drawer animation (S23). Unread marks and workspace levels (S14). Restyled cards (S15, S18).
 
-**Log**: —
+**Log**
+- **2026-11-06 · built, to review.**
+  - Done (commits `7f4b8cd`, `2d0125e`, then this one): `DSHTheme`; `ShellView` push drawer (edge zone 24 pt; release settles open when `offset + velocity × 0.15` is past the middle); `ShellModel` with `ShellPage` and one `SheetRoute` enum (milestones, workspace, model, devices); blank new session on launch with "host · workspace" above the composer; thin session page (user bubble, `TranscriptView`, milestone card, stop in the send position, no back button); thin drawer (新建会话, 所有任务, sessions by host, `host.manage`, `pairing.scan`). `TaskDetailView` and `RootView` are gone; there is no `NavigationStack` outside sheets. The app forces dark mode.
+  - Decision: see **D51** (first-message routing; supersedes D34). *Provisional, pending user confirmation.*
+  - UITests: `UITestSupport` has `openDrawer`, `closeDrawer`, `openSession`, `openAllTasks`, `newSession`. Every M1 UITest file moved to the shell; no accessibility identifier renamed. Under D51, the S8/S9 "short answer shows inline" checks now look at the 所有任务 row; the reply itself shows on the session page.
+  - Verification: `scripts/demo/t1.sh --all` exit 0 on `dshm-T1`: T1 + all FakeBridge UITests 14/14, then t0.sh and s1.sh … s13.sh with real DSH, 40/40 UITests. 0 failed, 0 skipped. Each demo also ran bridge tests (57/57, 0 skipped) and `swift test` (58 tests in 14 suites). `t1.sh --all` restores other slices' `evidence/` after their demos rewrite it.
+  - Provisional resource (pending coordinator confirmation): S9's second host in `t1.sh --all` uses bridge 47830 and web 3303 (`DSHM_SECOND_BRIDGE_PORT`, `DSHM_SECOND_WEB_PORT`). No new dependencies.
+  - Learned: assigning `ShellModel.page` inside `withTransaction` lost the change while the composer re-rendered; assign it directly. One earlier run of `testNoBackButtonAndTimelineSheet` waited 4 × 60 s for "animations complete"; it did not happen again (34.6 s in the final run).
+  - Not done: the `[human]` dark-mode item (the user decides).
+  - For the coordinator: §0 T1 → `review` after an independent rerun of the `[ui]` items (`scripts/demo/t1.sh`, `scripts/demo/t1.sh --all`); add D51 and the 47830/3303 ports to §9.
+  - Next: independent `[ui]` rerun, merge, then S14–S22 can start.
 
 ### S14 · Drawer
 
