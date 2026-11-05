@@ -12,13 +12,13 @@ import { PairingStore } from './pairing/store.ts'
 import { startBridgeServer, type BridgeServer } from './server.ts'
 
 export const name = 'dsh-mobile-bridge'
-export const inject = ['sessionController', 'workspaceController']
+export const inject = ['sessionController', 'workspaceController', 'workspaceRegistry']
 
 export interface Config {
   /** Listen address. Default 0.0.0.0: every payload is Noise-encrypted (ARCHITECTURE D21). */
   host?: string
   port?: number
-  /** Fixed workspace directory for new tasks (S7 adds a picker). */
+  /** Default workspace directory for tasks without an explicit choice. */
   cwd?: string
   /** Host key, pairing offers and device registry. Default `$DSH_HOME/dsh-mobile-bridge`. */
   stateDir?: string

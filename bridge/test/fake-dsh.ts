@@ -51,6 +51,10 @@ class Channel<T> {
 export class FakeDSH implements DshServices {
   readonly interrupts: string[] = []
   readonly workspaces: string[] = []
+  readonly sessionWorkspaces: string[] = []
+  readonly workspaceRegistry = {
+    list: () => this.workspaces.map((path, index) => ({ path, updatedAt: new Date(index).toISOString() })),
+  }
   readonly prompts: { sessionId: string; text: string }[] = []
   private sessions = new Map<string, { followers: Channel<FollowFrame>[]; seq: number; turn: number }>()
   private nextId = 1
@@ -85,7 +89,8 @@ export class FakeDSH implements DshServices {
       this.emitEvent(sessionId, 'model/selection', selection)
       return { selected: selection }
     },
-    create: async (_request: { workspaceId: string }) => {
+    create: async (request: { workspaceId: string }) => {
+      this.sessionWorkspaces.push(request.workspaceId)
       if (this.options.createError) throw new Error(this.options.createError)
       const sessionId = `session-${this.nextId++}`
       this.sessions.set(sessionId, { followers: [], seq: 0, turn: 0 })

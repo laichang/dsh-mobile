@@ -50,6 +50,26 @@ async function bridgeWith(options: FakeDSHOptions = {}) {
 const ended = (fs: Frame[]) => fs.some((f) => f.kind.case === 'event' && f.kind.value.body.case === 'taskEnded')
 
 describe('BridgeAgainstFakeDSH', () => {
+  test('chosenWorkspaceBecomesSessionCwdWithModelAndRecentPaths', async () => {
+    const { dsh, client } = await bridgeWith()
+    try {
+      client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
+      client.send({ kind: { case: 'request', value: { id: 2n, body: { case: 'createTask', value: {
+        prompt: 'hi', workspace: '/tmp/another-repo', modelSelection: { provider: 'provider', model: 'model', reasoningEffort: 'low' },
+      } } } } })
+      await client.until(ended)
+      assert.deepEqual(dsh.workspaces, ['/tmp/another-repo'])
+      assert.deepEqual(dsh.sessionWorkspaces, ['ws-1'])
+      assert.ok(client.frames.some(f => f.kind.case === 'event' && f.kind.value.body.case === 'modelSelected'))
+      client.send({ kind: { case: 'request', value: { id: 3n, body: { case: 'listWorkspaces', value: {} } } } })
+      await client.until(fs => fs.some(f => f.kind.case === 'response' && f.kind.value.requestId === 3n))
+      const reply = client.frames.at(-1)!.kind
+      assert.ok(reply.case === 'response' && reply.value.body.case === 'workspaceList')
+      assert.equal(reply.value.body.value.defaultPath, '/tmp/dshm-ws')
+      assert.deepEqual(reply.value.body.value.recentPaths, ['/tmp/another-repo'])
+    } finally { client.close() }
+  })
+
   test('hostCatalogPreservesGroupsNamesEffortsAndDefault', async () => {
     const { dsh, client } = await bridgeWith()
     client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
@@ -125,7 +145,7 @@ describe('BridgeAgainstFakeDSH', () => {
     const [hello, created, ...events] = client.frames
     assert.equal(hello.kind.case, 'response')
     assert.equal(hello.kind.value?.body.case, 'hello')
-    assert.deepEqual(hello.kind.case === 'response' && hello.kind.value.body.case === 'hello' && hello.kind.value.body.value.capabilities, ['tasks.v1', 'milestones.v1', 'resume.v1', 'interrupt.v1', 'models.v1'])
+    assert.deepEqual(hello.kind.case === 'response' && hello.kind.value.body.case === 'hello' && hello.kind.value.body.value.capabilities, ['tasks.v1', 'milestones.v1', 'resume.v1', 'interrupt.v1', 'models.v1', 'workspaces.v1'])
 
     assert.ok(created.kind.case === 'response' && created.kind.value.body.case === 'taskCreated')
     assert.equal(created.kind.value.requestId, 2n)

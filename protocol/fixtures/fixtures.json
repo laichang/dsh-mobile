@@ -53,6 +53,10 @@
     { "name": "s6_model_catalog_response",
       "frame": { "response": { "requestId": "7", "modelCatalog": { "defaultSelection": { "provider": "provider", "model": "model" }, "groups": [{ "id": "provider", "name": "Provider Name", "models": [{ "id": "model", "name": "Model Name", "efforts": [{ "id": "high", "name": "High" }] }] }] } } } },
     { "name": "s6_model_selected_event",
-      "frame": { "event": { "hostSeq": "9", "modelSelected": { "taskId": "session-1", "selection": { "provider": "provider", "model": "model", "reasoningEffort": "low" } } } } }
+      "frame": { "event": { "hostSeq": "9", "modelSelected": { "taskId": "session-1", "selection": { "provider": "provider", "model": "model", "reasoningEffort": "low" } } } } },
+    { "name": "s7_workspace_list_response",
+      "frame": { "response": { "requestId": "7", "workspaceList": { "defaultPath": "/home/user", "recentPaths": ["/work/app"] } } } },
+    { "name": "s7_create_in_workspace_request",
+      "frame": { "request": { "id": "8", "createTask": { "prompt": "Show the repo name", "workspace": "/work/app" } } } }
   ]
 }

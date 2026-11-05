@@ -209,9 +209,15 @@ public actor HostConnection {
     }
 
     /// Starts a task; its output arrives on `events`.
-    public func createTask(prompt: String, selection: ModelSelection? = nil) async throws -> String {
+    public func createTask(prompt: String, selection: ModelSelection? = nil, workspace: String? = nil) async throws -> String {
         var create = Dshm_V1_CreateTask()
         create.prompt = prompt
+        if let workspace {
+            guard capabilities.contains("workspaces.v1") else {
+                throw HostConnectionError.bridge(code: "workspace/unavailable", message: "This host cannot select the requested workspace.")
+            }
+            create.workspace = workspace
+        }
         if let selection {
             guard capabilities.contains("models.v1") else {
                 throw HostConnectionError.bridge(code: "model/unavailable", message: "This host cannot select the requested model.")
@@ -221,6 +227,12 @@ public actor HostConnection {
         let response = try await request(.createTask(create))
         guard case .taskCreated(let created)? = response.body else { throw HostConnectionError.unexpectedResponse }
         return created.taskID
+    }
+
+    public func listWorkspaces() async throws -> Dshm_V1_WorkspaceList {
+        let response = try await request(.listWorkspaces(.init()))
+        guard case .workspaceList(let list)? = response.body else { throw HostConnectionError.unexpectedResponse }
+        return list
     }
 
     public func interrupt(taskID: String) async throws {

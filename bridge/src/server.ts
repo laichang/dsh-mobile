@@ -134,8 +134,9 @@ function serveConnection(
         helloDone = true
         return respond(id, {
           case: 'hello',
-          value: { protocolVersion: PROTOCOL_VERSION, capabilities: options.tasks.modelCatalog && options.tasks.selectModel
-            ? [...CAPABILITIES, 'models.v1'] : [...CAPABILITIES] },
+          value: { protocolVersion: PROTOCOL_VERSION, capabilities: [...CAPABILITIES,
+            ...(options.tasks.modelCatalog && options.tasks.selectModel ? ['models.v1'] : []),
+            ...(options.tasks.listWorkspaces ? ['workspaces.v1'] : [])] },
         })
       }
       case 'createTask': {
@@ -149,10 +150,13 @@ function serveConnection(
           if (request.body.value.modelSelection && !options.tasks.selectModel) {
             return fail(id, 'model/unavailable', 'This host cannot select the requested model.')
           }
+          if (request.body.value.workspace !== undefined && !options.tasks.listWorkspaces) {
+            return fail(id, 'workspace/unavailable', 'This host cannot select a workspace.')
+          }
           await hub.create(prompt, (taskId) => {
             ownTasks.add(taskId)
             respond(id, { case: 'taskCreated', value: { taskId } })
-          }, request.body.value.modelSelection)
+          }, request.body.value.modelSelection, request.body.value.workspace)
         } catch (error) {
           log(`create task failed: ${String(error)}`)
           return fail(id, 'task/create-failed', error instanceof Error ? error.message : String(error))
@@ -166,6 +170,15 @@ function serveConnection(
           return respond(id, { case: 'interruptAccepted', value: {} })
         } catch (error) {
           return fail(id, 'task/interrupt-failed', error instanceof Error ? error.message : String(error))
+        }
+      }
+      case 'listWorkspaces': {
+        if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
+        if (!options.tasks.listWorkspaces) return fail(id, 'request/unsupported', 'This host cannot list workspaces.')
+        try {
+          return respond(id, { case: 'workspaceList', value: options.tasks.listWorkspaces() })
+        } catch (error) {
+          return fail(id, 'workspace/list-failed', error instanceof Error ? error.message : String(error))
         }
       }
       case 'getModelCatalog':
