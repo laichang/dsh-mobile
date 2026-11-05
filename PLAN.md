@@ -74,13 +74,13 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
 | T0 | review | merged `84db2e8` | 2026-11-05 | User accepts 3 `[human]` items (§9) |
-| X1 | todo | — | 2026-11-05 | Session proposed (with X4), waiting for the user to start it |
+| X1 | doing | workflow `wf_219b7aa1-71c` → `claude/x1x4-spikes` | 2026-11-05 | Building with X4 in batch 1 |
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
 | X3 | todo | — | — | Start any time (no deps) |
-| X4 | todo | — | 2026-11-05 | Session proposed (with X1), waiting for the user to start it |
-| S1 | todo | — | 2026-11-05 | Ready (T0 merged, X2 done); session proposed, waiting for the user to start it |
-| S2 | todo | — | 2026-11-05 | Ready (T0 merged); session proposed, waiting for the user to start it |
-| S3 | todo | — | 2026-11-05 | Ready (T0 merged); session proposed, waiting for the user to start it |
+| X4 | doing | workflow `wf_219b7aa1-71c` → `claude/x1x4-spikes` | 2026-11-05 | Building with X1 in batch 1 |
+| S1 | doing | workflow `wf_219b7aa1-71c` → `claude/s1-pair-encrypt` | 2026-11-05 | Building in batch 1 |
+| S2 | doing | workflow `wf_219b7aa1-71c` → `claude/s2-durable-list` | 2026-11-05 | Building in batch 1 |
+| S3 | doing | workflow `wf_219b7aa1-71c` → `claude/s3-milestones` | 2026-11-05 | Building in batch 1 |
 | S4 | todo | — | 2026-11-05 | Wait for X1 (T0 merged) |
 | S5 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
 | S6 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
@@ -692,6 +692,10 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
     | S1 | 47810 | 3283 | `~/.dshm/home-s1` | `dshm-S1` |
     | S2 | 47811 | 3284 | `~/.dshm/home-s2` | `dshm-S2` |
     | S3 | 47812 | 3285 | `~/.dshm/home-s3` | `dshm-S3` |
+- **2026-11-05 · execution moves from sessions to a workflow** (the user: "先用 workflow 跑一批").
+  - Why: the app starts a new session only from the user's own words, so the S1–S3 and X1 + X4 cards sat unstarted while the user was out. A Workflow script started from the main session runs the slices as background agents instead; it doesn't need the user to start each one.
+  - Batch 1 is `wf_219b7aa1-71c`: X1 + X4, S1, S2, S3, each in its own worktree and branch, with the ports, `DSH_HOME`s and Simulators from the entry above. Agents run on `claude-opus-5-5` at effort `medium`, the same as "Session settings". A slice with `[ui]` items is then rerun by a separate review agent that didn't build it. Merging, §0 and §9 stay with the coordinating side on `main`, which is now the main session; the rules in "Merging a slice" are unchanged.
+  - The X1 + X4, S1, S2 and S3 session cards in the coordinating session are superseded; don't start them.
 
 ## 9. Pending user confirmation
 
