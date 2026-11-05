@@ -53,7 +53,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S8 | review | merged `8e9fa87` | 2026-11-05 | User checks real iPhone readability (§9) |
 | S9 | review | merged `575bf62` | 2026-11-05 | User tests two real Macs (§9) |
 | S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
-| S11 | doing | claude/s11-first-run | 2026-11-05 | Implement and verify |
+| S11 | review | merged `12e1afc` | 2026-11-05 | User checks onboarding on a fresh install (§9) |
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | — (hosted CI follows user push/PR; confirmations in §9) |
 
 ## 1. Approach
@@ -873,6 +873,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-05 · S12.** Independent review at 557afd1 passed 56 bridge and 56 Swift tests and the real alpha.3 simulator UI. Both local CI jobs ran against the pinned release and upstream fcc0ad46, with a single audit record for phone-first and web-first answers. Hosted execution awaits a user push or pull request. The upstream installer temporarily replaced three global Git hooks; originals were restored from its backups, both affected staged trees rescanned successfully, and an isolated clean build preserved all three hashes.
 
+- **2026-11-05 · S11.** Independent Release run at 3f60373 passed 55 bridge, 55 Swift and three UI scenarios. English and Simplified Chinese onboarding, a real Noise pairing and edited first task, peer task retention and recovery of a saved host were checked. Evidence: scripts/demo/s11.sh and evidence/S11/.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -915,3 +917,6 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 38 | S12 | download | Real UI fixture @deepseek-ai/dsh@0.2.2-alpha.3, sha512 in the S12 Log. | `main` | `ed3f7bf` |
 | 39 | S12 | dependency | CI-only actions/checkout v7.0.1 at 3d3c42e5aac5ba805825da76410c181273ba90b1 and actions/setup-node v7.0.0 at 820762786026740c76f36085b0efc47a31fe5020. | `main` | `ed3f7bf` |
 | 40 | S12 | download | DSH default branch at fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159; archive SHA-256 a169c6128a7fd7d142291ce5abc4764e95b42f0c922110e271211b4b6b2f6fa1. | `main` | `ed3f7bf` |
+| 41 | S11 | decision | D49, provisional: first-run pairing guide, editable first task suggestion and recovery for unusable saved hosts. | `main` | merged `12e1afc` |
+| 42 | S11 | `[human]` | On a fresh install, check that the app explains its purpose and the need for a reachable DSH host. | `main` | `12e1afc` |
+| 43 | S11 | `[human]` | Have someone unfamiliar with DSH pair with an already-running host and obtain the first answer without help. | `main` | `12e1afc` |
