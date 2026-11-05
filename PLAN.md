@@ -427,7 +427,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S4 · Approvals (in-app, held)
 
-**Status** todo · **Needs** T0, X1 · **Branch** —
+**Status** doing · **Needs** T0, X1 · **Branch** `claude/s4-approvals`
 
 **Why**: principle 5. Approvals pause and never default-allow. ARCHITECTURE §5.4.
 
@@ -441,10 +441,18 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [ ] [ui] Prompt "delete `/tmp/x`": the card shows the exact command, you deny it, and the task continues without running it — Evidence:
 - [ ] [ui] With the app closed, the request waits; reopening the app shows it — Evidence:
 
+- [ ] [auto] A pending approval survives a trimmed resume log and a stale answer cannot release a second request — Evidence:
+- [ ] [auto] An approval from an upstream session can be answered by the phone or the downstream owner, with one resolution — Evidence:
+- [ ] [ui] An approval created outside the phone appears after reconnect, and a web answer removes it from the phone — Evidence:
+
 **Not**: risk tiers, Face ID, push (M2).
 
 **Log**
-- —
+- **2026-11-05**: Started on `claude/s4-approvals`; requested coordinator status: blocked. Read AGENTS, WORKFLOW, PLAN §0/S4, ARCHITECTURE, STORY, X1 conclusion, and recent git history. No implementation or acceptance items completed.
+  - T0 attempted with assigned environment (`DSHM_BRIDGE_PORT=47810`, `DSHM_WEB_PORT=3283`, `DSHM_HOME=/Users/bytedance/.dshm/home-s4`, `DSHM_SIM=dshm-S4`, `DSHM_DD=/tmp/dshm-s4-dd`). An untracked `/tmp/dshm-s4-t0.sh` copy substitutes only the repository root and `/tmp/dshm-t0` log prefix; tracked T0 script unchanged. Output: `/tmp/dshm-s4-t0-run.log`.
+  - Environment blockers: dependency installation cannot complete; offline retry reports missing locked tarballs (including `@noble/curves@2.4.0`). `xcrun simctl list devices available` fails with CoreSimulator connection denied and log access `Operation not permitted`. Assigned home-s4 directory is absent and outside this session's writable roots. Shared runtime exists and was not changed.
+  - This session has restricted network/filesystem access and approval policy `never`; it cannot provision the assigned home or access Simulator services. Next: coordinator relaunches S4 with working assigned resources and sufficient execution permissions, reruns T0, then implements all S4 auto/UI items, capability gating, bidirectional fixtures, and S2 replay seam. D25–D27 remain unallocated; no new dependencies or provisional decisions. Git staging also failed: the sandbox denies creating `/Users/bytedance/dsh-mobile/.git/worktrees/dsh-mobile/index.lock`; no commit was possible. `.githooks/pre-commit` was invoked but there were no staged changes.
+- **2026-11-05**: Resumed on the assigned worktree with network and Simulator access. The assigned T0 codegen, bridge, Swift and real DSH CLI checks passed. Added the S2 resume seam above before implementation.
 
 ### S5 · Interrupt
 
