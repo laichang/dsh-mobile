@@ -512,7 +512,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S8 · Rich detail
 
-**Status** todo · **Needs** T0, X3 · **Branch** —
+**Status** doing · **Needs** T0, X3 · **Branch** `claude/s8-rich-detail`
 
 **Why**: D1 (native streaming detail), D13 (quick answers inline).
 
@@ -524,10 +524,13 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [ ] [ui] "Translate this sentence" just shows the answer inline, not a task page — Evidence:
 - [ ] [human] A coding task's diff and test output read well on a phone — Evidence:
 
+- [ ] [auto] Fragmented Markdown renders the same blocks as cached source, preserving code, diff, and terminal output — Evidence:
+- [ ] [ui] A streaming coding reply renders structured blocks and opens from the offline cache after relaunch (S2 × S8) — Evidence:
+
 **Not**: WebView (D1).
 
 **Log**
-- —
+- **2026-11-05 · Started.** The isolated T0 demo passed with 42 bridge tests, 46 Swift tests, real DSH and four Simulator tests. Next: implement inline answers and retained native transcript blocks from D10.
 
 ### S9 · Multi-host
 
