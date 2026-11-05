@@ -54,7 +54,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S9 | review | merged `575bf62` | 2026-11-05 | User tests two real Macs (§9) |
 | S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
 | S11 | review | merged `12e1afc` | 2026-11-05 | User checks onboarding on a fresh install (§9) |
-| S12 | done | merged `ed3f7bf` | 2026-11-05 | — (hosted CI follows user push/PR; confirmations in §9) |
+| S12 | done | merged `ed3f7bf` | 2026-11-05 | Hosted compatibility checks deferred; local runner available (§8) |
 | S13 | review | merged `c56d47f` | 2026-11-05 | User verifies the same Web session and latest reply on a paired iPhone (§9) |
 
 ## 1. Approach
@@ -914,6 +914,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-05 · S13 started.** Slice owner runs in an isolated worktree on `codex/s13-visibility`. Bridge port 47810, Web port 3283, DSH home `~/.dshm/home-s13`, Simulator `dshm-S13`. The coordinator will assign independent UI review before merge.
 
 - **2026-11-05 · S13 merged.** An independent reviewer reran `scripts/demo/s13.sh` on `dshm-S13` at `08de88d`. All 57 bridge tests, 58 Swift tests and both UI acceptance scenarios passed. Four Web turns shared a single session. After a socket outage, the open phone detail showed eight messages once each in order. Merged as `c56d47f`. The real-device check and D50 remain open. Screenshots: `evidence/S13/`.
+
+- **2026-11-05 · S12 hosted checks deferred.** The user chose to publish without the GitHub Actions workflow. Pushes, pull requests and the weekly schedule no longer start the S12 compatibility checks. The local runner remains at `scripts/ci/bridge-upstream`.
 
 ## 9. Pending user confirmation
 
