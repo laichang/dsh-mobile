@@ -20,19 +20,20 @@ import Testing
     }
 
     @Test func streamsTaskToCompletionAgainstFakeBridge() async throws {
-        let store = makeStore(.init(reply: ["你好", "，", "world"], chunkDelay: .milliseconds(20)))
+        let (pause, release) = AsyncStream<Void>.makeStream()
+        defer { release.finish() }
+        var script = FakeBridge.Script(reply: ["你好", "，", "world"], chunkDelay: .zero)
+        script.afterFirstChunk = { for await _ in pause {} }
+        let store = makeStore(script)
         #expect(store.canSend)
-        var seen: [String] = []
         let send = Task { await store.send() }
-        try await waitUntil {
-            if seen.last != store.transcript { seen.append(store.transcript) }
-            return store.status == .completed
-        }
+        try await waitUntil { store.transcript == "你好" }
+        #expect(store.status.token == "running")
+        release.finish()
         await send.value
+        try await waitUntil { store.status == .completed }
         #expect(store.transcript == "你好，world")
         #expect(store.status.token == "completed")
-        // It streamed: the transcript grew through intermediate values, not in one jump.
-        #expect(seen.contains("你好"))
         #expect(store.canSend)
     }
 

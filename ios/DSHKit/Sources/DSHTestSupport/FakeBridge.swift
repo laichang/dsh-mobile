@@ -27,6 +27,8 @@ public final class FakeBridge: BridgeTransport {
     public struct Script: Sendable {
         public var reply: [String]
         public var chunkDelay: Duration
+        /// Lets a test inspect the streamed prefix before the remaining chunks are delivered.
+        public var afterFirstChunk: (@Sendable () async -> Void)?
         public var failWith: String?
         /// S3: milestones sent before the reply, `milestoneDelay` apart. When there are any, a
         /// closing FINISHED (or FAILED, with `failWith`) follows the reply, as the real bridge does.
@@ -345,6 +347,7 @@ public final class FakeHost: Sendable {
                 return true
             }
             if !alive { return }
+            if i == 0 { await script.afterFirstChunk?() }
         }
         if !script.milestones.isEmpty {
             let closing = script.failWith.map { FakeBridge.Step(.failed, $0, todos: lastTodos) }

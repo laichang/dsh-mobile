@@ -53,7 +53,9 @@ const relay = (stream, out) => stream.on('data', (b) => out.write(String(b).repl
 relay(host.stdout, process.stdout)
 relay(host.stderr, process.stderr)
 
-const stop = async () => { host.kill('SIGTERM'); await mock.close(); process.exit(0) }
+// Keep the wrapper alive until DSH finishes flushing its profile, so the caller can remove it.
+let stopping = false
+const stop = () => { stopping = true; host.kill('SIGTERM') }
 process.on('SIGINT', stop)
 process.on('SIGTERM', stop)
-host.on('exit', async (code) => { await mock.close(); process.exit(code ?? 1) })
+host.on('exit', async (code) => { await mock.close(); process.exit(stopping ? 0 : (code ?? 1)) })

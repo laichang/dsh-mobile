@@ -63,6 +63,7 @@ struct TaskListView: View {
                         } label: {
                             Label("Devices and audit", systemImage: "person.badge.key")
                         }
+                        .accessibilityLabel("Devices and audit on \(host.name)")
                         .accessibilityIdentifier("host.manage")
                     }
                 }

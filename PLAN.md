@@ -574,13 +574,14 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [x] [auto] Pair a second host over Noise, dispatch to either host and retain the first host’s connection and cached task — Evidence: test:pairingASecondHostPreservesTheFirstConnectionAndRoutesEachPrompt
 - [x] [auto] Only configured hosts contribute cached tasks, including a paired host that is offline — Evidence: test:cachedTasksAppearOnlyForConfiguredHostsEvenWhenOffline · test:offlineSelectionNeverSendsToAnotherHost
 
-- [ ] [ui] Two paired Noise hosts show their own devices, and short answers from both selected hosts stay inline — Evidence:
+- [x] [ui] Two paired Noise hosts show their own devices, and short answers from both selected hosts stay inline — Evidence: test:S9PairedHostsUITests/testPairedDevicesAndInlineAnswersStayWithTheirHost · cmd:scripts/demo/s9.sh
 
 **Not**: prompt-based host guess (later).
 
 **Log**
 - **2026-11-05**: Started on `claude/s9-multi-host` using ports 47817/3290, profile `~/.dshm/home-s9`, simulator `dshm-S9`. Isolated T0 passed 52 bridge tests, 48 Swift tests, the real DSH CLI and four UI tests.
 - **2026-11-05**: Implementation `064a868` uses every paired Noise host, remembers the composer selection and keeps offline tasks visible only for configured hosts (D43, provisional). The no-fallback, separate model/workspace choices, same-name hosts and encrypted second pairing checks passed. `scripts/demo/s9.sh --shots` passed 52 bridge, 53 Swift and one two-host UI test with zero skips. The viewer saw both tasks together and verified that the offline target remained selected across a relaunch. The Release marker check passed. No new dependencies or downloads. Ready for independent UI review. The real two-Mac check is open.
+- **2026-11-05**: Integrated S8/S10 on the S9 branch. The new real DSH test pairs two isolated profiles over Noise using the same phone identity. A distinct CLI peer appears only on its own host, and both selected hosts return their own inline reply. `scripts/demo/s9.sh --shots` passed 55 bridge tests, 55 Swift tests and both multi-host UI tests with zero skips. The fake-host screenshots use fixture host names. The real-host screenshot stays in the local test result. `1726b40` makes the T0 stream assertion deterministic by pausing the fake after its first chunk. No new dependency or decision. Independent integrated review is next.
 
 ### S10 · Control: devices + audit
 
