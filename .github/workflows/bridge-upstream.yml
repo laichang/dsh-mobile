@@ -35,6 +35,13 @@ jobs:
           npm install --prefix "$RUNNER_TEMP/runtime" --no-fund --no-audit @deepseek-ai/dsh@0.2.2-rc.1 @deepseek-ai/dsh-llm-mock-server@0.2.2-rc.1
       - name: Build upstream default branch
         if: matrix.source == 'default-branch'
+        # Upstream's dependency installer configures git hooks outside CI. Give its
+        # checkout a private Git config and opt out of its optional hook installation.
+        env:
+          CI: 'true'
+          LEFTHOOK: '0'
+          GIT_CONFIG_GLOBAL: ${{ runner.temp }}/upstream.gitconfig
+          GIT_CONFIG_NOSYSTEM: '1'
         run: |
           git clone --depth=1 https://github.com/deepseek-ai/deepseek-harness.git "$RUNNER_TEMP/upstream"
           git -C "$RUNNER_TEMP/upstream" rev-parse HEAD
