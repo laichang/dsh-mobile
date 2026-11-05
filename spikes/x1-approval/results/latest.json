@@ -1,11 +1,11 @@
 {
-  "startedAt": "2026-11-05T02:16:19.967Z",
+  "startedAt": "2026-11-05T02:21:54.111Z",
   "dsh": "0.2.2-rc.1 (mock LLM)",
   "scenarios": [
     {
       "name": "A-no-plugin-answerer",
       "mode": "off",
-      "sessionId": "session-8bffc3d8-aaea-474c-8b81-aa7f6ecde321",
+      "sessionId": "session-cf5163cc-1ca2-4e25-bdd2-d7522e2feb23",
       "listenerOrder": [
         "other(Include)"
       ],
@@ -14,7 +14,7 @@
         "gatewayPending": [
           {
             "event": "approval/request",
-            "agentId": "session-8bffc3d8-aaea-474c-8b81-aa7f6ecde321"
+            "agentId": "session-cf5163cc-1ca2-4e25-bdd2-d7522e2feb23"
           }
         ],
         "liveWebClient": false,
@@ -28,14 +28,14 @@
         "turnEnded": false,
         "asked": [
           {
-            "id": "77e13711-f632-46a4-8b13-bd6e5405e2f7",
+            "id": "3b4d6450-1ccc-4ec4-969e-f11baab9a8a3",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE"
           }
         ]
       },
-      "startedAt": 1793844988830,
+      "startedAt": 1793845321847,
       "after": {
         "released": [],
         "gatewayPending": [],
@@ -44,14 +44,14 @@
         ],
         "turnEnded": true,
         "toolResults": [
-          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: tool call aborted before dispatch\"}],\"isError\":true,\"id\":\"d630cfe4-64ef-42f4-bb9e-e083b1b01bfa\"},\"error\":{\"name\":\"AbortError\",\"code\":\"ABORTED_BEFORE_DISPATCH\"}}"
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: tool call aborted before dispatch\"}],\"isError\":true,\"id\":\"32d244f1-4317-43ea-b88a-bad53d35979a\"},\"error\":{\"name\":\"AbortError\",\"code\":\"ABORTED_BEFORE_DISPATCH\"}}"
         ]
       }
     },
     {
       "name": "B-append",
       "mode": "append",
-      "sessionId": "session-8ab6ca62-bd43-45e8-8544-ee12bc71de36",
+      "sessionId": "session-e7054a78-8af9-4a25-a8e1-f0392555bebb",
       "listenerOrder": [
         "other(Include)",
         "x1-spike"
@@ -61,7 +61,7 @@
         "gatewayPending": [
           {
             "event": "approval/request",
-            "agentId": "session-8ab6ca62-bd43-45e8-8544-ee12bc71de36"
+            "agentId": "session-e7054a78-8af9-4a25-a8e1-f0392555bebb"
           }
         ],
         "liveWebClient": false,
@@ -75,14 +75,14 @@
         "turnEnded": false,
         "asked": [
           {
-            "id": "94dd98d5-9c85-437c-9b91-f139e2eecb8d",
+            "id": "d40c99ce-875c-4177-aae3-77722bd27bdc",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE"
           }
         ]
       },
-      "startedAt": 1793844990826,
+      "startedAt": 1793845324076,
       "after": {
         "released": [],
         "gatewayPending": [],
@@ -91,14 +91,14 @@
         ],
         "turnEnded": true,
         "toolResults": [
-          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: tool call aborted before dispatch\"}],\"isError\":true,\"id\":\"ee16f8c0-3f07-47f3-b003-7be9f89396c1\"},\"error\":{\"name\":\"AbortError\",\"code\":\"ABORTED_BEFORE_DISPATCH\"}}"
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: tool call aborted before dispatch\"}],\"isError\":true,\"id\":\"558709d9-fb25-4bb7-8488-274468508e84\"},\"error\":{\"name\":\"AbortError\",\"code\":\"ABORTED_BEFORE_DISPATCH\"}}"
         ]
       }
     },
     {
       "name": "C-prepend-allow",
       "mode": "prepend",
-      "sessionId": "session-f16a4108-3528-47d1-84d7-c568d9d8c339",
+      "sessionId": "session-ab2349bb-f3df-48ed-8e55-64d7b178a0b6",
       "listenerOrder": [
         "x1-spike",
         "other(Include)"
@@ -110,7 +110,7 @@
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE",
             "sameSession": true,
-            "agentId": "session-f16a4108-3528-47d1-84d7-c568d9d8c339",
+            "agentId": "session-ab2349bb-f3df-48ed-8e55-64d7b178a0b6",
             "agentShape": {
               "keys": [
                 "loopCtx",
@@ -165,25 +165,25 @@
         "turnEnded": false,
         "asked": [
           {
-            "id": "54b9a306-da8e-4d23-8e06-75c3fa0def5d",
+            "id": "0e535145-3b36-488b-b172-1e5296c11bf9",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE"
           }
         ]
       },
-      "startedAt": 1793844992731,
-      "releaseOutput": "released 3db9b98d-10f4-4db3-8f09-01a7afdd8a90 → allowed-once",
+      "startedAt": 1793845325974,
+      "releaseOutput": "released bae9bf89-d592-4636-ade9-ecb53b2a7daa → allowed-once",
       "after": {
         "released": [
           {
-            "id": "3db9b98d-10f4-4db3-8f09-01a7afdd8a90",
-            "sessionId": "session-f16a4108-3528-47d1-84d7-c568d9d8c339",
-            "agentId": "session-f16a4108-3528-47d1-84d7-c568d9d8c339",
+            "id": "bae9bf89-d592-4636-ade9-ecb53b2a7daa",
+            "sessionId": "session-ab2349bb-f3df-48ed-8e55-64d7b178a0b6",
+            "agentId": "session-ab2349bb-f3df-48ed-8e55-64d7b178a0b6",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE",
-            "parkedAt": "2026-11-05T02:16:32.986Z",
+            "parkedAt": "2026-11-05T02:22:06.286Z",
             "mode": "prepend",
             "agentShape": {
               "keys": [
@@ -229,7 +229,7 @@
             },
             "outcome": "allowed-once",
             "answeredBy": "script",
-            "releasedAt": "2026-11-05T02:16:34.742Z"
+            "releasedAt": "2026-11-05T02:22:08.032Z"
           }
         ],
         "gatewayPending": [],
@@ -238,14 +238,14 @@
         ],
         "turnEnded": true,
         "toolResults": [
-          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"dee5324a-2e85-40b7-abf7-2c188a739f28\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"23bd1d6a-79a9-4743-99a7-4f2e03d3eeec\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
         ]
       }
     },
     {
       "name": "D-prepend-reject",
       "mode": "prepend",
-      "sessionId": "session-22dccd29-54c0-4724-b655-3e160a5a4b15",
+      "sessionId": "session-a7dcd4e7-a672-4c7b-8a89-a77b12b845db",
       "listenerOrder": [
         "x1-spike",
         "other(Include)"
@@ -257,7 +257,7 @@
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE",
             "sameSession": true,
-            "agentId": "session-22dccd29-54c0-4724-b655-3e160a5a4b15",
+            "agentId": "session-a7dcd4e7-a672-4c7b-8a89-a77b12b845db",
             "agentShape": {
               "keys": [
                 "loopCtx",
@@ -312,24 +312,24 @@
         "turnEnded": false,
         "asked": [
           {
-            "id": "bebd1d92-f198-4666-8e14-4d17194c8076",
+            "id": "446c04fe-c623-484a-a868-3b1640518a37",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE"
           }
         ]
       },
-      "startedAt": 1793844994966,
+      "startedAt": 1793845328289,
       "after": {
         "released": [
           {
-            "id": "f2047f16-973e-4b2d-b5a4-a09c3088a30d",
-            "sessionId": "session-22dccd29-54c0-4724-b655-3e160a5a4b15",
-            "agentId": "session-22dccd29-54c0-4724-b655-3e160a5a4b15",
+            "id": "93dc7571-9f40-428b-b907-1f464e543774",
+            "sessionId": "session-a7dcd4e7-a672-4c7b-8a89-a77b12b845db",
+            "agentId": "session-a7dcd4e7-a672-4c7b-8a89-a77b12b845db",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE",
-            "parkedAt": "2026-11-05T02:16:35.224Z",
+            "parkedAt": "2026-11-05T02:22:08.556Z",
             "mode": "prepend",
             "agentShape": {
               "keys": [
@@ -375,7 +375,7 @@
             },
             "outcome": "rejected",
             "answeredBy": "script",
-            "releasedAt": "2026-11-05T02:16:36.955Z"
+            "releasedAt": "2026-11-05T02:22:10.298Z"
           }
         ],
         "gatewayPending": [],
@@ -384,14 +384,14 @@
         ],
         "turnEnded": true,
         "toolResults": [
-          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: the user rejected tool \\\"bash\\\"\"}],\"isError\":true,\"id\":\"580f5600-20db-486f-ba93-a397ae43dc6a\"}}"
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: the user rejected tool \\\"bash\\\"\"}],\"isError\":true,\"id\":\"b876df78-0dfe-4a10-8a42-5f23ba868141\"}}"
         ]
       }
     },
     {
       "name": "E-real-sandbox-escalation",
       "mode": "prepend",
-      "sessionId": "session-cab9757f-5a7d-4037-b093-66e229860fbb",
+      "sessionId": "session-690e205a-d7f4-4155-8a8e-596cb6462ff8",
       "listenerOrder": [
         "x1-spike",
         "other(Include)"
@@ -403,7 +403,7 @@
             "callId": "mock-call-1",
             "reason": "escalate sandbox to danger-full-access: X1 spike: prove a real sandbox escalation reaches the plugin answerer",
             "sameSession": true,
-            "agentId": "session-cab9757f-5a7d-4037-b093-66e229860fbb",
+            "agentId": "session-690e205a-d7f4-4155-8a8e-596cb6462ff8",
             "agentShape": {
               "keys": [
                 "loopCtx",
@@ -458,24 +458,24 @@
         "turnEnded": false,
         "asked": [
           {
-            "id": "a856b46b-f22a-4873-b5cd-ee7291b0be50",
+            "id": "6003cb29-f048-4af3-94b6-c8a44c948665",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "escalate sandbox to danger-full-access: X1 spike: prove a real sandbox escalation reaches the plugin answerer"
           }
         ]
       },
-      "startedAt": 1793844997191,
+      "startedAt": 1793845330544,
       "after": {
         "released": [
           {
-            "id": "7d904485-db5c-4434-a441-07de2f82455a",
-            "sessionId": "session-cab9757f-5a7d-4037-b093-66e229860fbb",
-            "agentId": "session-cab9757f-5a7d-4037-b093-66e229860fbb",
+            "id": "85bef39a-92a4-40c6-9179-bc6e68fce0af",
+            "sessionId": "session-690e205a-d7f4-4155-8a8e-596cb6462ff8",
+            "agentId": "session-690e205a-d7f4-4155-8a8e-596cb6462ff8",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "escalate sandbox to danger-full-access: X1 spike: prove a real sandbox escalation reaches the plugin answerer",
-            "parkedAt": "2026-11-05T02:16:37.439Z",
+            "parkedAt": "2026-11-05T02:22:10.839Z",
             "mode": "prepend",
             "agentShape": {
               "keys": [
@@ -521,7 +521,7 @@
             },
             "outcome": "allowed-once",
             "answeredBy": "script",
-            "releasedAt": "2026-11-05T02:16:39.222Z"
+            "releasedAt": "2026-11-05T02:22:12.595Z"
           }
         ],
         "gatewayPending": [],
@@ -530,14 +530,14 @@
         ],
         "turnEnded": true,
         "toolResults": [
-          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-ESCALATED tool ran\\n\"}],\"isError\":false,\"id\":\"50fc7db5-46f5-48c1-8f84-ff9fad5e59dd\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-ESCALATED tool ran\\n\"}],\"isError\":false,\"id\":\"f3a57a38-e618-4566-8bac-219ef985b3a3\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
         ]
       }
     },
     {
       "name": "F-fanout-phone-wins",
       "mode": "fanout",
-      "sessionId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9",
+      "sessionId": "session-93d9f515-5c67-4887-bfd3-e02c5f0248d2",
       "listenerOrder": [
         "x1-spike",
         "other(Include)"
@@ -549,7 +549,7 @@
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE",
             "sameSession": true,
-            "agentId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9",
+            "agentId": "session-93d9f515-5c67-4887-bfd3-e02c5f0248d2",
             "agentShape": {
               "keys": [
                 "loopCtx",
@@ -597,7 +597,7 @@
         "gatewayPending": [
           {
             "event": "approval/request",
-            "agentId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9"
+            "agentId": "session-93d9f515-5c67-4887-bfd3-e02c5f0248d2"
           }
         ],
         "liveWebClient": false,
@@ -611,24 +611,24 @@
         "turnEnded": false,
         "asked": [
           {
-            "id": "748bdbfe-d11c-470d-a242-370ad9e0a988",
+            "id": "9cd21c6b-ae95-406c-8a38-7574c0313c12",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE"
           }
         ]
       },
-      "startedAt": 1793844999500,
+      "startedAt": 1793845332865,
       "after": {
         "released": [
           {
-            "id": "502e1aa5-4ab2-458c-934e-4a325dafd027",
-            "sessionId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9",
-            "agentId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9",
+            "id": "ac1eff70-582b-479c-8e5f-13ae5b7ae3e4",
+            "sessionId": "session-93d9f515-5c67-4887-bfd3-e02c5f0248d2",
+            "agentId": "session-93d9f515-5c67-4887-bfd3-e02c5f0248d2",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE",
-            "parkedAt": "2026-11-05T02:16:39.754Z",
+            "parkedAt": "2026-11-05T02:22:13.156Z",
             "mode": "fanout",
             "agentShape": {
               "keys": [
@@ -674,7 +674,7 @@
             },
             "outcome": "allowed-once",
             "answeredBy": "script",
-            "releasedAt": "2026-11-05T02:16:41.615Z"
+            "releasedAt": "2026-11-05T02:22:14.918Z"
           }
         ],
         "gatewayPending": [],
@@ -683,14 +683,14 @@
         ],
         "turnEnded": true,
         "toolResults": [
-          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"9ce1e1f0-72d0-4bf9-ba98-81de5e60024f\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"0a80c086-f13e-41ae-8455-453f2476bd5b\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
         ]
       }
     },
     {
       "name": "G-cancel-while-parked",
       "mode": "prepend",
-      "sessionId": "session-f3af7ad0-e78a-413b-bcc9-1e3517f97c4b",
+      "sessionId": "session-fed41b18-fe39-4005-b275-c8ac2122ccff",
       "listenerOrder": [
         "x1-spike",
         "other(Include)"
@@ -702,7 +702,7 @@
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE",
             "sameSession": true,
-            "agentId": "session-f3af7ad0-e78a-413b-bcc9-1e3517f97c4b",
+            "agentId": "session-fed41b18-fe39-4005-b275-c8ac2122ccff",
             "agentShape": {
               "keys": [
                 "loopCtx",
@@ -757,24 +757,24 @@
         "turnEnded": false,
         "asked": [
           {
-            "id": "dec32cfe-9e10-4fc4-b063-355ade11bea3",
+            "id": "25fcde12-658a-4049-b09a-c1081b594626",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE"
           }
         ]
       },
-      "startedAt": 1793845001898,
+      "startedAt": 1793845335157,
       "after": {
         "released": [
           {
-            "id": "c29af536-5aa7-4bb1-9161-d4ea91b4107e",
-            "sessionId": "session-f3af7ad0-e78a-413b-bcc9-1e3517f97c4b",
-            "agentId": "session-f3af7ad0-e78a-413b-bcc9-1e3517f97c4b",
+            "id": "c716b34c-9a96-4945-8245-2adfc6d97da7",
+            "sessionId": "session-fed41b18-fe39-4005-b275-c8ac2122ccff",
+            "agentId": "session-fed41b18-fe39-4005-b275-c8ac2122ccff",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE",
-            "parkedAt": "2026-11-05T02:16:42.215Z",
+            "parkedAt": "2026-11-05T02:22:15.420Z",
             "mode": "prepend",
             "agentShape": {
               "keys": [
@@ -820,7 +820,7 @@
             },
             "outcome": "cancelled",
             "answeredBy": "request-signal",
-            "releasedAt": "2026-11-05T02:16:43.803Z"
+            "releasedAt": "2026-11-05T02:22:17.048Z"
           }
         ],
         "gatewayPending": [],
@@ -829,14 +829,14 @@
         ],
         "turnEnded": true,
         "toolResults": [
-          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: tool call aborted before dispatch\"}],\"isError\":true,\"id\":\"2a51e3e3-5964-46f8-8d0d-77ad1c00a8be\"},\"error\":{\"name\":\"AbortError\",\"code\":\"ABORTED_BEFORE_DISPATCH\"}}"
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: tool call aborted before dispatch\"}],\"isError\":true,\"id\":\"2ac8c424-f5b3-47fa-a4bc-344e840101f7\"},\"error\":{\"name\":\"AbortError\",\"code\":\"ABORTED_BEFORE_DISPATCH\"}}"
         ]
       }
     },
     {
       "name": "H-subagent",
       "mode": "prepend",
-      "sessionId": "session-71dd14ce-5ad6-4923-bc06-022b8722f290",
+      "sessionId": "session-d817714f-7d5d-4491-93ff-f551cfc20d9d",
       "listenerOrder": [
         "x1-spike",
         "other(Include)"
@@ -853,7 +853,7 @@
         "turnEnded": true,
         "asked": []
       },
-      "startedAt": 1793845003813,
+      "startedAt": 1793845337055,
       "traffic": [
         {
           "routed": "parentCall",
@@ -862,7 +862,7 @@
         {
           "routed": "done",
           "firstUser": "X1 scenario H-subagentCurrent runtime context. This snapshot",
-          "lastToolResult": "started subagent 6df1d55d-9617-4921-af9a-322d405bf83a"
+          "lastToolResult": "started subagent 45537bab-4a57-4f1e-a772-be3309a8b9a3"
         },
         {
           "routed": "childCall",
@@ -876,42 +876,42 @@
         {
           "routed": "done",
           "firstUser": "X1 scenario H-subagentCurrent runtime context. This snapshot",
-          "lastToolResult": "started subagent 6df1d55d-9617-4921-af9a-322d405bf83a"
+          "lastToolResult": "started subagent 45537bab-4a57-4f1e-a772-be3309a8b9a3"
         }
       ],
       "rootEvents": [
-        "agent/inbox/spliced {\"target\":\"next-turn\",\"start\":0,\"inserted\":[{\"content\":[{\"type\":\"text\",\"text\":\"X1 scenario H-subagent\"}],\"source\":{\"kind\":\"user\",\"rpcId\":\"25c25409-3eb3-4e85-b6a",
+        "agent/inbox/spliced {\"target\":\"next-turn\",\"start\":0,\"inserted\":[{\"content\":[{\"type\":\"text\",\"text\":\"X1 scenario H-subagent\"}],\"source\":{\"kind\":\"user\",\"rpcId\":\"42cc2471-95e5-45f0-aac",
         "turn/start {\"turn\":1}",
         "agent/inbox/spliced {\"target\":\"next-turn\",\"start\":0,\"removedCount\":1,\"inserted\":[]}",
         "step/start {\"turn\":1,\"step\":1}",
         "system/message {\"turn\":1,\"step\":1,\"message\":{\"role\":\"system\",\"content\":[{\"type\":\"text\",\"text\":\"You are an AI agent powered by DeepSeek Harness.\\n\\nYou are a coding agent power",
-        "user/message {\"content\":[{\"type\":\"text\",\"text\":\"X1 scenario H-subagent\"}],\"source\":{\"kind\":\"user\",\"rpcId\":\"25c25409-3eb3-4e85-b6a8-f2816d629f68\"},\"role\":\"user\",\"id\":\"6330254",
+        "user/message {\"content\":[{\"type\":\"text\",\"text\":\"X1 scenario H-subagent\"}],\"source\":{\"kind\":\"user\",\"rpcId\":\"42cc2471-95e5-45f0-aac8-eb0c126848fa\"},\"role\":\"user\",\"id\":\"e92b294",
         "user/message {\"content\":[{\"type\":\"text\",\"text\":\"Current runtime context. This snapshot supersedes earlier runtime-context snapshots.\\n\\nCurrent working directory: \\\"/private",
         "user/message {\"content\":[{\"type\":\"text\",\"text\":\"<system-reminder>\\nA skill is a reusable set of task-specific instructions. The following skills are available in this sessio",
-        "user/message {\"content\":[{\"type\":\"text\",\"text\":\"Time sampled while preparing turn 1, step 1: 2026-11-05T10:16:44+08:00[Asia/Shanghai]\\nBrowser time zone for this request: un",
+        "user/message {\"content\":[{\"type\":\"text\",\"text\":\"Time sampled while preparing turn 1, step 1: 2026-11-05T10:22:17+08:00[Asia/Shanghai]\\nBrowser time zone for this request: un",
         "request/header {\"header\":{\"config\":{\"provider\":\"deepseek-official\",\"model\":\"deepseek-flash\",\"maxTokens\":256000,\"reasoningEffort\":\"high\"},\"adapterDefaults\":{\"reasoningEffort\":t",
         "request/context {\"provider\":\"deepseek-official\",\"model\":\"deepseek-flash\",\"contextWindow\":1048576,\"systemPromptUpdate\":\"in-history\"}",
         "session/title {\"title\":\"X1 scenario H-subagent\",\"messageSeqs\":[8],\"source\":{\"kind\":\"fallback\"}}",
         "session/title-llm-request {\"titleProvider\":\"session-title-first-prompt-llm\",\"messageSeqs\":[8],\"route\":{\"provider\":\"deepseek-official\",\"model\":\"deepseek-flash\"},\"system\":\"Create a concise",
-        "session-log-deepseek/delivery-accepted {\"sessionId\":\"session-71dd14ce-5ad6-4923-bc06-022b8722f290\",\"sessionFormatVersion\":4,\"throughSeq\":15}",
+        "session-log-deepseek/delivery-accepted {\"sessionId\":\"session-d817714f-7d5d-4491-93ff-f551cfc20d9d\",\"sessionFormatVersion\":4,\"throughSeq\":15}",
         "session/title {\"title\":\"side call\",\"messageSeqs\":[8],\"source\":{\"kind\":\"provider\",\"provider\":\"session-title-first-prompt-llm\",\"model\":{\"provider\":\"deepseek-official\",\"model\":\"",
-        "session-log-deepseek/delivery-accepted {\"sessionId\":\"session-71dd14ce-5ad6-4923-bc06-022b8722f290\",\"sessionFormatVersion\":4,\"throughSeq\":15}",
+        "session-log-deepseek/delivery-accepted {\"sessionId\":\"session-d817714f-7d5d-4491-93ff-f551cfc20d9d\",\"sessionFormatVersion\":4,\"throughSeq\":15}",
         "assistant/message {\"turn\":1,\"step\":1,\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool-call\",\"id\":\"mock-call-1\",\"name\":\"subagent\",\"arguments\":\"{\\\"description\\\":\\\"X1 child ga",
         "tool/call {\"turn\":1,\"step\":1,\"callId\":\"mock-call-1\",\"name\":\"subagent\",\"arguments\":\"{\\\"description\\\":\\\"X1 child gated echo\\\",\\\"prompt\\\":\\\"X1-CHILD: run the gated echo with",
-        "subagent/catalog {\"version\":0,\"childId\":\"6df1d55d-9617-4921-af9a-322d405bf83a\",\"childCreatedAt\":1793845004113,\"mode\":\"continuable\",\"label\":\"X1 child gated echo\"}",
+        "subagent/catalog {\"version\":0,\"childId\":\"45537bab-4a57-4f1e-a772-be3309a8b9a3\",\"childCreatedAt\":1793845337426,\"mode\":\"continuable\",\"label\":\"X1 child gated echo\"}",
         "tool/result {\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"started",
         "step/end {\"turn\":1,\"step\":1}",
         "step/start {\"turn\":1,\"step\":2}",
-        "session-log-deepseek/delivery-accepted {\"sessionId\":\"session-71dd14ce-5ad6-4923-bc06-022b8722f290\",\"sessionFormatVersion\":4,\"throughSeq\":24}",
+        "session-log-deepseek/delivery-accepted {\"sessionId\":\"session-d817714f-7d5d-4491-93ff-f551cfc20d9d\",\"sessionFormatVersion\":4,\"throughSeq\":24}",
         "assistant/message {\"turn\":1,\"step\":2,\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"H-subagent done\"}],\"source\":{\"kind\":\"model\",\"provider\":\"deepseek-official\",\"m",
         "step/end {\"turn\":1,\"step\":2}",
         "turn/end {\"turn\":1,\"reason\":{\"kind\":\"completed\"}}",
-        "agent/inbox/spliced {\"target\":\"next-turn\",\"start\":0,\"inserted\":[{\"content\":[{\"type\":\"text\",\"text\":\"Background subagent 6df1d55d-9617-4921-af9a-322d405bf83a finished and will do no ",
+        "agent/inbox/spliced {\"target\":\"next-turn\",\"start\":0,\"inserted\":[{\"content\":[{\"type\":\"text\",\"text\":\"Background subagent 45537bab-4a57-4f1e-a772-be3309a8b9a3 finished and will do no ",
         "turn/start {\"turn\":2}",
         "agent/inbox/spliced {\"target\":\"next-turn\",\"start\":0,\"removedCount\":1,\"inserted\":[]}",
         "step/start {\"turn\":2,\"step\":1}",
-        "user/message {\"content\":[{\"type\":\"text\",\"text\":\"Background subagent 6df1d55d-9617-4921-af9a-322d405bf83a finished and will do no further work unless you send it more.\"},{\"ty",
-        "session-log-deepseek/delivery-accepted {\"sessionId\":\"session-71dd14ce-5ad6-4923-bc06-022b8722f290\",\"sessionFormatVersion\":4,\"throughSeq\":33}",
+        "user/message {\"content\":[{\"type\":\"text\",\"text\":\"Background subagent 45537bab-4a57-4f1e-a772-be3309a8b9a3 finished and will do no further work unless you send it more.\"},{\"ty",
+        "session-log-deepseek/delivery-accepted {\"sessionId\":\"session-d817714f-7d5d-4491-93ff-f551cfc20d9d\",\"sessionFormatVersion\":4,\"throughSeq\":33}",
         "assistant/message {\"turn\":2,\"step\":1,\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"H-subagent done\"}],\"source\":{\"kind\":\"model\",\"provider\":\"deepseek-official\",\"m",
         "step/end {\"turn\":2,\"step\":1}",
         "turn/end {\"turn\":2,\"reason\":{\"kind\":\"completed\"}}"
@@ -924,14 +924,14 @@
         "decided": [],
         "turnEnded": true,
         "toolResults": [
-          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"started subagent 6df1d55d-9617-4921-af9a-322d405bf83a\"}],\"isError\":false,\"id\":\"425f03c9-3a9e-45e0-b3d5-06e7082f181c\"}}"
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"started subagent 45537bab-4a57-4f1e-a772-be3309a8b9a3\"}],\"isError\":false,\"id\":\"4fff0128-ecfd-4403-a8c5-7b9473619acb\"}}"
         ]
       }
     },
     {
       "name": "J-web-opens-late",
       "mode": "off",
-      "sessionId": "session-8ccb6b44-b097-440f-ab1f-abfc3ac59d31",
+      "sessionId": "session-80977719-34fc-4b81-918b-8c466d4dc3c2",
       "listenerOrder": [
         "other(Include)"
       ],
@@ -940,7 +940,7 @@
         "gatewayPending": [
           {
             "event": "approval/request",
-            "agentId": "session-8ccb6b44-b097-440f-ab1f-abfc3ac59d31"
+            "agentId": "session-80977719-34fc-4b81-918b-8c466d4dc3c2"
           }
         ],
         "liveWebClient": false,
@@ -954,14 +954,14 @@
         "turnEnded": false,
         "asked": [
           {
-            "id": "1ec32d32-cdba-463c-846d-45a229055ff8",
+            "id": "b9c80af3-db5e-4ad8-b17a-750371d7924a",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE"
           }
         ]
       },
-      "startedAt": 1793845006381,
+      "startedAt": 1793845339621,
       "after": {
         "released": [],
         "gatewayPending": [],
@@ -970,14 +970,14 @@
         ],
         "turnEnded": true,
         "toolResults": [
-          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"40caf822-825f-4580-9663-bb85bb69079b\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"3939db8b-1bd7-42c8-a928-4663ae9e0e7c\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
         ]
       }
     },
     {
       "name": "K-fanout-web-wins",
       "mode": "fanout",
-      "sessionId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
+      "sessionId": "session-cb788608-49bf-4612-bba8-c602b5a53062",
       "listenerOrder": [
         "x1-spike",
         "other(Include)"
@@ -989,7 +989,7 @@
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE",
             "sameSession": true,
-            "agentId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
+            "agentId": "session-cb788608-49bf-4612-bba8-c602b5a53062",
             "agentShape": {
               "keys": [
                 "loopCtx",
@@ -1037,7 +1037,7 @@
         "gatewayPending": [
           {
             "event": "approval/request",
-            "agentId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9"
+            "agentId": "session-cb788608-49bf-4612-bba8-c602b5a53062"
           }
         ],
         "liveWebClient": true,
@@ -1051,24 +1051,24 @@
         "turnEnded": false,
         "asked": [
           {
-            "id": "dffbbd2d-6b57-4643-a9af-6e3295e860e6",
+            "id": "dcf39fe0-c182-413a-8737-a7bed2725178",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE"
           }
         ]
       },
-      "startedAt": 1793845008492,
+      "startedAt": 1793845341738,
       "after": {
         "released": [
           {
-            "id": "6d22f32f-992e-4589-9dbf-472b3fcab622",
-            "sessionId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
-            "agentId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
+            "id": "06de45c9-ab0a-41b5-9da3-89f0f59a80ed",
+            "sessionId": "session-cb788608-49bf-4612-bba8-c602b5a53062",
+            "agentId": "session-cb788608-49bf-4612-bba8-c602b5a53062",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE",
-            "parkedAt": "2026-11-05T02:16:48.739Z",
+            "parkedAt": "2026-11-05T02:22:22.123Z",
             "mode": "fanout",
             "agentShape": {
               "keys": [
@@ -1115,7 +1115,7 @@
             "downstream": "rejected",
             "outcome": "rejected",
             "answeredBy": "downstream",
-            "releasedAt": "2026-11-05T02:16:50.395Z"
+            "releasedAt": "2026-11-05T02:22:23.751Z"
           }
         ],
         "gatewayPending": [],
@@ -1124,14 +1124,14 @@
         ],
         "turnEnded": true,
         "toolResults": [
-          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: the user rejected tool \\\"bash\\\"\"}],\"isError\":true,\"id\":\"1562eb9c-58ff-4c48-bf7c-b775f8de350d\"}}"
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: the user rejected tool \\\"bash\\\"\"}],\"isError\":true,\"id\":\"12f51d79-6657-4f55-815d-d5aa77ef122a\"}}"
         ]
       }
     },
     {
       "name": "L-fanout-phone-wins-tab-open",
       "mode": "fanout",
-      "sessionId": "session-48460d79-572f-4fb7-8a16-e85563f80eec",
+      "sessionId": "session-3c78b995-609e-48cd-9d57-ea9de3e89fe6",
       "listenerOrder": [
         "x1-spike",
         "other(Include)"
@@ -1143,7 +1143,7 @@
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE",
             "sameSession": true,
-            "agentId": "session-48460d79-572f-4fb7-8a16-e85563f80eec",
+            "agentId": "session-3c78b995-609e-48cd-9d57-ea9de3e89fe6",
             "agentShape": {
               "keys": [
                 "loopCtx",
@@ -1191,7 +1191,7 @@
         "gatewayPending": [
           {
             "event": "approval/request",
-            "agentId": "session-48460d79-572f-4fb7-8a16-e85563f80eec"
+            "agentId": "session-3c78b995-609e-48cd-9d57-ea9de3e89fe6"
           }
         ],
         "liveWebClient": true,
@@ -1205,24 +1205,24 @@
         "turnEnded": false,
         "asked": [
           {
-            "id": "5c29e968-710a-4a4d-8761-4f6ddd8b1222",
+            "id": "f5be461a-fa99-483b-97ff-930382a401ce",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE"
           }
         ]
       },
-      "startedAt": 1793845010559,
+      "startedAt": 1793845343915,
       "after": {
         "released": [
           {
-            "id": "c3125c79-8bdc-4b81-b0ec-7bf5f052bad6",
-            "sessionId": "session-48460d79-572f-4fb7-8a16-e85563f80eec",
-            "agentId": "session-48460d79-572f-4fb7-8a16-e85563f80eec",
+            "id": "708868c6-642b-4c70-976e-52deb8fb28ce",
+            "sessionId": "session-3c78b995-609e-48cd-9d57-ea9de3e89fe6",
+            "agentId": "session-3c78b995-609e-48cd-9d57-ea9de3e89fe6",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE",
-            "parkedAt": "2026-11-05T02:16:50.784Z",
+            "parkedAt": "2026-11-05T02:22:24.212Z",
             "mode": "fanout",
             "agentShape": {
               "keys": [
@@ -1268,7 +1268,7 @@
             },
             "outcome": "allowed-once",
             "answeredBy": "script",
-            "releasedAt": "2026-11-05T02:16:52.440Z"
+            "releasedAt": "2026-11-05T02:22:26.018Z"
           }
         ],
         "gatewayPending": [],
@@ -1277,7 +1277,7 @@
         ],
         "turnEnded": true,
         "toolResults": [
-          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"b6cc80ee-3706-4f5d-828b-7cf8fc93dae7\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"c99ab03c-ac58-4cbc-b9f8-758e600edf89\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
         ]
       }
     }
@@ -1296,7 +1296,7 @@
       "detail": [
         {
           "event": "approval/request",
-          "agentId": "session-8bffc3d8-aaea-474c-8b81-aa7f6ecde321"
+          "agentId": "session-cf5163cc-1ca2-4e25-bdd2-d7522e2feb23"
         }
       ]
     },
@@ -1341,7 +1341,7 @@
       "detail": [
         {
           "event": "approval/request",
-          "agentId": "session-8ab6ca62-bd43-45e8-8544-ee12bc71de36"
+          "agentId": "session-e7054a78-8af9-4a25-a8e1-f0392555bebb"
         }
       ]
     },
@@ -1364,7 +1364,7 @@
           "callId": "mock-call-1",
           "reason": "X1 spike gate: tool arguments contain X1-GATE",
           "sameSession": true,
-          "agentId": "session-f16a4108-3528-47d1-84d7-c568d9d8c339",
+          "agentId": "session-ab2349bb-f3df-48ed-8e55-64d7b178a0b6",
           "agentShape": {
             "keys": [
               "loopCtx",
@@ -1443,7 +1443,7 @@
       "name": "the gated tool actually ran",
       "pass": true,
       "detail": [
-        "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"dee5324a-2e85-40b7-abf7-2c188a739f28\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+        "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"23bd1d6a-79a9-4743-99a7-4f2e03d3eeec\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
       ]
     },
     {
@@ -1459,7 +1459,7 @@
       "name": "model sees a rejection, tool did not run",
       "pass": true,
       "detail": [
-        "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: the user rejected tool \\\"bash\\\"\"}],\"isError\":true,\"id\":\"580f5600-20db-486f-ba93-a397ae43dc6a\"}}"
+        "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: the user rejected tool \\\"bash\\\"\"}],\"isError\":true,\"id\":\"b876df78-0dfe-4a10-8a42-5f23ba868141\"}}"
       ]
     },
     {
@@ -1472,7 +1472,7 @@
           "callId": "mock-call-1",
           "reason": "escalate sandbox to danger-full-access: X1 spike: prove a real sandbox escalation reaches the plugin answerer",
           "sameSession": true,
-          "agentId": "session-cab9757f-5a7d-4037-b093-66e229860fbb",
+          "agentId": "session-690e205a-d7f4-4155-8a8e-596cb6462ff8",
           "agentShape": {
             "keys": [
               "loopCtx",
@@ -1523,7 +1523,7 @@
       "name": "escalated command ran after release",
       "pass": true,
       "detail": [
-        "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-ESCALATED tool ran\\n\"}],\"isError\":false,\"id\":\"50fc7db5-46f5-48c1-8f84-ff9fad5e59dd\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+        "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-ESCALATED tool ran\\n\"}],\"isError\":false,\"id\":\"f3a57a38-e618-4566-8bac-219ef985b3a3\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
       ]
     },
     {
@@ -1536,7 +1536,7 @@
           "callId": "mock-call-1",
           "reason": "X1 spike gate: tool arguments contain X1-GATE",
           "sameSession": true,
-          "agentId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9",
+          "agentId": "session-93d9f515-5c67-4887-bfd3-e02c5f0248d2",
           "agentShape": {
             "keys": [
               "loopCtx",
@@ -1589,7 +1589,7 @@
       "detail": [
         {
           "event": "approval/request",
-          "agentId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9"
+          "agentId": "session-93d9f515-5c67-4887-bfd3-e02c5f0248d2"
         }
       ]
     },
@@ -1629,13 +1629,13 @@
       "name": "outcome cancelled via the request signal",
       "pass": true,
       "detail": {
-        "id": "c29af536-5aa7-4bb1-9161-d4ea91b4107e",
-        "sessionId": "session-f3af7ad0-e78a-413b-bcc9-1e3517f97c4b",
-        "agentId": "session-f3af7ad0-e78a-413b-bcc9-1e3517f97c4b",
+        "id": "c716b34c-9a96-4945-8245-2adfc6d97da7",
+        "sessionId": "session-fed41b18-fe39-4005-b275-c8ac2122ccff",
+        "agentId": "session-fed41b18-fe39-4005-b275-c8ac2122ccff",
         "toolName": "bash",
         "callId": "mock-call-1",
         "reason": "X1 spike gate: tool arguments contain X1-GATE",
-        "parkedAt": "2026-11-05T02:16:42.215Z",
+        "parkedAt": "2026-11-05T02:22:15.420Z",
         "mode": "prepend",
         "agentShape": {
           "keys": [
@@ -1681,7 +1681,7 @@
         },
         "outcome": "cancelled",
         "answeredBy": "request-signal",
-        "releasedAt": "2026-11-05T02:16:43.803Z"
+        "releasedAt": "2026-11-05T02:22:17.048Z"
       }
     },
     {
@@ -1711,7 +1711,7 @@
         "gatewayPending": [
           {
             "event": "approval/request",
-            "agentId": "session-8ccb6b44-b097-440f-ab1f-abfc3ac59d31"
+            "agentId": "session-80977719-34fc-4b81-918b-8c466d4dc3c2"
           }
         ],
         "liveWebClient": false,
@@ -1725,7 +1725,7 @@
         "turnEnded": false,
         "asked": [
           {
-            "id": "1ec32d32-cdba-463c-846d-45a229055ff8",
+            "id": "b9c80af3-db5e-4ad8-b17a-750371d7924a",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE"
@@ -1744,7 +1744,7 @@
         {
           "type": "waterfall",
           "event": "approval/request",
-          "eventId": "ff1032a2-d714-41a6-9d42-ca66a8d88e7f",
+          "eventId": "7c46fd6d-3272-4a35-b4f2-66dcde81277e",
           "toolName": "bash"
         }
       ]
@@ -1768,7 +1768,7 @@
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE",
             "sameSession": true,
-            "agentId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
+            "agentId": "session-cb788608-49bf-4612-bba8-c602b5a53062",
             "agentShape": {
               "keys": [
                 "loopCtx",
@@ -1816,7 +1816,7 @@
         "gatewayPending": [
           {
             "event": "approval/request",
-            "agentId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9"
+            "agentId": "session-cb788608-49bf-4612-bba8-c602b5a53062"
           }
         ],
         "liveWebClient": true,
@@ -1830,7 +1830,7 @@
         "turnEnded": false,
         "asked": [
           {
-            "id": "dffbbd2d-6b57-4643-a9af-6e3295e860e6",
+            "id": "dcf39fe0-c182-413a-8737-a7bed2725178",
             "toolName": "bash",
             "callId": "mock-call-1",
             "reason": "X1 spike gate: tool arguments contain X1-GATE"
@@ -1843,13 +1843,13 @@
       "name": "phone copy is withdrawn (nothing parked), answeredBy downstream",
       "pass": true,
       "detail": {
-        "id": "6d22f32f-992e-4589-9dbf-472b3fcab622",
-        "sessionId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
-        "agentId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
+        "id": "06de45c9-ab0a-41b5-9da3-89f0f59a80ed",
+        "sessionId": "session-cb788608-49bf-4612-bba8-c602b5a53062",
+        "agentId": "session-cb788608-49bf-4612-bba8-c602b5a53062",
         "toolName": "bash",
         "callId": "mock-call-1",
         "reason": "X1 spike gate: tool arguments contain X1-GATE",
-        "parkedAt": "2026-11-05T02:16:48.739Z",
+        "parkedAt": "2026-11-05T02:22:22.123Z",
         "mode": "fanout",
         "agentShape": {
           "keys": [
@@ -1896,7 +1896,7 @@
         "downstream": "rejected",
         "outcome": "rejected",
         "answeredBy": "downstream",
-        "releasedAt": "2026-11-05T02:16:50.395Z"
+        "releasedAt": "2026-11-05T02:22:23.751Z"
       }
     },
     {
@@ -1915,12 +1915,12 @@
         {
           "type": "waterfall",
           "event": "approval/request",
-          "eventId": "01e6569e-3f30-400b-a4b5-47a34052e42c",
+          "eventId": "1dc17de2-4dde-4cd1-bd84-72ca0372260e",
           "toolName": "bash"
         },
         {
           "type": "cancel",
-          "eventId": "01e6569e-3f30-400b-a4b5-47a34052e42c"
+          "eventId": "1dc17de2-4dde-4cd1-bd84-72ca0372260e"
         },
         {
           "type": "emit",
