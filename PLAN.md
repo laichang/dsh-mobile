@@ -843,37 +843,42 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-05 · S5.** Merged `529bb16` after an independent rerun at b3ad3a8. All 42 bridge tests, 46 Swift tests and the real DSH UI test passed with zero skips. The reviewer verified the interrupted stream, list and offline reopened milestone. Evidence: scripts/demo/s5.sh and evidence/S5/s5-interrupted-detail.png. The merge PLAN comparison passed.
 
-- **2026-11-05 · X3.** Assigned claude/x3-markdown, worktree /Users/bytedance/.codex/worktrees/x3-markdown/dsh-mobile, simulator dshm-X3, DSHM_HOME ~/.dshm/home-x3, bridge 47813, web 3286. The owner uses the shared DSH runtime read-only.
+- **2026-11-05 · X3.** Assigned claude/x3-markdown, worktree ~/.codex/worktrees/x3-markdown/dsh-mobile, simulator dshm-X3, DSHM_HOME ~/.dshm/home-x3, bridge 47813, web 3286. The owner uses the shared DSH runtime read-only.
 
 - **2026-11-05 · X3.** Independent Simulator rerun at ca3d59d passed the 5,000-line, 61-update benchmark. Whole-prefix p95 was 13.36–19.16 ms; retained-block p95 was 1.10–1.36 ms. Results and real-device command: spikes/x3-markdown/README.md. S8 may build on the provisional D10 choice.
 
-- **2026-11-05 · S8.** Assigned claude/s8-rich-detail, worktree /Users/bytedance/.codex/worktrees/s8-rich-detail/dsh-mobile, simulator dshm-S8, DSHM_HOME ~/.dshm/home-s8, bridge 47814, web 3287. The owner uses the shared DSH runtime read-only.
+- **2026-11-05 · S8.** Assigned claude/s8-rich-detail, worktree ~/.codex/worktrees/s8-rich-detail/dsh-mobile, simulator dshm-S8, DSHM_HOME ~/.dshm/home-s8, bridge 47814, web 3287. The owner uses the shared DSH runtime read-only.
 
 - **2026-11-05 · S6.** Merged after an independent rerun on both the owner branch and integrated tree at 8cc6e11. Integration preserves interrupt and model selection and lets a user explicitly return to the host default after a bridge downgrade. Both real DSH demos passed, with 45 bridge and 47 DSHKit tests. Evidence: scripts/demo/s6.sh and evidence/S6/s6-effort-switch.png.
 
-- **2026-11-05 · S7.** Assigned claude/s7-workspaces, worktree /Users/bytedance/.codex/worktrees/s7-workspaces/dsh-mobile, simulator dshm-S7, DSHM_HOME ~/.dshm/home-s7, bridge 47815, web 3288. The owner uses the shared DSH runtime read-only.
+- **2026-11-05 · S7.** Assigned claude/s7-workspaces, worktree ~/.codex/worktrees/s7-workspaces/dsh-mobile, simulator dshm-S7, DSHM_HOME ~/.dshm/home-s7, bridge 47815, web 3288. The owner uses the shared DSH runtime read-only.
 
 - **2026-11-05 · S4.** Merged after independent real DSH reviews at 24512be and integrated dfad6fc. All 51 bridge + 47 DSHKit tests and four real UI scenarios passed with zero skips. The tests cover API/Web requests, closed-app resume, first answer, and interrupt after a mid-approval model switch. The temporary target file survived both denial and interruption. Evidence: scripts/demo/s4.sh and evidence/S4/.
 
-- **2026-11-05 · S10.** Assigned claude/s10-devices-audit, worktree /Users/bytedance/.codex/worktrees/s10-devices-audit/dsh-mobile, simulator dshm-S10, DSHM_HOME ~/.dshm/home-s10, bridge 47816, web 3289. The owner uses the shared DSH runtime read-only.
+- **2026-11-05 · S10.** Assigned claude/s10-devices-audit, worktree ~/.codex/worktrees/s10-devices-audit/dsh-mobile, simulator dshm-S10, DSHM_HOME ~/.dshm/home-s10, bridge 47816, web 3289. The owner uses the shared DSH runtime read-only.
 
 - **2026-11-05 · S7.** Independent review at a4063fa used a fresh DerivedData build and the real DSH. The identical prompt read Amber and Violet from different Git repos, and the recent directory list updated. All 52 bridge, 48 Swift and the UI test passed. Evidence: scripts/demo/s7.sh and evidence/S7/.
 
-- **2026-11-05 · S9.** Assigned claude/s9-multi-host, worktree /Users/bytedance/.codex/worktrees/s9-multi-host/dsh-mobile, simulator dshm-S9, DSHM_HOME ~/.dshm/home-s9, bridge 47817, web 3290. The owner uses the shared DSH runtime read-only.
+- **2026-11-05 · S9.** Assigned claude/s9-multi-host, worktree ~/.codex/worktrees/s9-multi-host/dsh-mobile, simulator dshm-S9, DSHM_HOME ~/.dshm/home-s9, bridge 47817, web 3290. The owner uses the shared DSH runtime read-only.
 
 - **2026-11-05 · S10.** Independent integrated review at 1447dee passed 55 bridge and 48 Swift tests plus the real DSH UI. A paired phone saw the approval decision with identity, revoked the second client, and the original key received 4003 on reconnect. Verified S7 and S10 on the same Noise connection. Evidence: scripts/demo/s10.sh and evidence/S10/.
 
-- **2026-11-05 · S12.** Assigned claude/s12-upstream-guard, worktree /Users/bytedance/.codex/worktrees/s12-upstream-guard/dsh-mobile, simulator dshm-S12, DSHM_HOME ~/.dshm/home-s12, bridge 47818, web 3291. The owner uses the shared DSH runtime read-only.
+- **2026-11-05 · S12.** Assigned claude/s12-upstream-guard, worktree ~/.codex/worktrees/s12-upstream-guard/dsh-mobile, simulator dshm-S12, DSHM_HOME ~/.dshm/home-s12, bridge 47818, web 3291. The owner uses the shared DSH runtime read-only.
 
 - **2026-11-05 · S8.** Independent integrated run at d6c4886 passed 52 bridge, 50 Swift and three real DSH UI tests with zero skips. Verified inline translation, streamed diff and terminal output, and offline reopening. S4–S7 demos also passed during integration. Evidence: scripts/demo/s8.sh and evidence/S8/.
 
-- **2026-11-05 · S11.** Assigned claude/s11-first-run, worktree /Users/bytedance/.codex/worktrees/s11-first-run/dsh-mobile, simulator dshm-S11, DSHM_HOME ~/.dshm/home-s11, bridge 47819, web 3292. The owner uses the shared DSH runtime read-only.
+- **2026-11-05 · S11.** Assigned claude/s11-first-run, worktree ~/.codex/worktrees/s11-first-run/dsh-mobile, simulator dshm-S11, DSHM_HOME ~/.dshm/home-s11, bridge 47819, web 3292. The owner uses the shared DSH runtime read-only.
 
 - **2026-11-05 · S9.** Independent integrated rerun at 286c6f7 passed 55 bridge, 55 Swift, and both UI tests without skips. Two isolated real Noise profiles had distinct peer lists and correct inline replies. The first-chunk test now uses a release gate. Evidence: scripts/demo/s9.sh and evidence/S9/.
 
 - **2026-11-05 · S12.** Independent review at 557afd1 passed 56 bridge and 56 Swift tests and the real alpha.3 simulator UI. Both local CI jobs ran against the pinned release and upstream fcc0ad46, with a single audit record for phone-first and web-first answers. Hosted execution awaits a user push or pull request. The upstream installer temporarily replaced three global Git hooks; originals were restored from its backups, both affected staged trees rescanned successfully, and an isolated clean build preserved all three hashes.
 
 - **2026-11-05 · S11.** Independent Release run at 3f60373 passed 55 bridge, 55 Swift and three UI scenarios. English and Simplified Chinese onboarding, a real Noise pairing and edited first task, peer task retention and recovery of a saved host were checked. Evidence: scripts/demo/s11.sh and evidence/S11/.
+
+- **2026-11-05 · M1 coordinator handoff.** All 17 slices are merged. §0 has 11 done and 6 in review; every remaining slice acceptance item is human-only. All 36 automatic and 28 Simulator acceptance items have evidence. The 6 exit items in §6 and the 11 human items in the slice sections remain open.
+  - On the combined app, S1, S2 and S3 demos passed, including the T0 UI, real Noise pairing, offline/reopen and milestone transitions. The final combined suites passed 56 bridge and 56 DSHKit tests with no skips. The Release binary passed the debug-marker check.
+  - The regression run found two stale test assumptions. S1 now reads device counts through PairingStore for both registry formats. S2 and S3 select English when asserting English milestone text; S11 separately covered Simplified Chinese and English in Release.
+  - The user can start the real-device acceptance with the bridge install guide and §6. §9 lists the remaining slice checks and provisional decisions, dependencies and downloads. The user also owns the push/PR and the resulting hosted Actions run. Keep this plan active until the real-device exit items are accepted.
 
 ## 9. Pending user confirmation
 
