@@ -8,6 +8,11 @@
  * Env: DSHM_RUNTIME (default ~/.dshm/runtime: npm install @deepseek-ai/dsh@0.2.2-rc.1
  * @deepseek-ai/dsh-llm-mock-server@0.2.2-rc.1), DSHM_HOME (default ~/.dshm/home, the DSH_HOME),
  * DSHM_WEB_PORT (3281). Needs Node >= 24.9 and a pnpm on PATH (DSH's `dsh plugin` calls it).
+ *
+ * Bridge (read by bridge/src/index.ts resolveConfig): DSHM_BRIDGE_PORT (47801), DSHM_BRIDGE_HOST
+ * and DSHM_BRIDGE_DEV_PLAINTEXT. This development host defaults to 127.0.0.1 with the dev-only
+ * plaintext path on (T0's demo uses it) next to Noise. For a real iPhone (S1), run with
+ * DSHM_BRIDGE_HOST=0.0.0.0 DSHM_BRIDGE_DEV_PLAINTEXT=0 and pair with `node bridge/lib/scripts/pair.js`.
  */
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
@@ -26,7 +31,12 @@ const die = (m) => { console.error(`dsh-up: ${m}`); process.exit(1) }
 if (!existsSync(DSH)) die(`no DSH at ${DSH}; see the header of this script`)
 if (!existsSync(join(ROOT, 'bridge/lib/src/index.js'))) die('build the bridge first: (cd bridge && pnpm build)')
 
-const env = { ...process.env, DSH_HOME }
+const env = {
+  ...process.env,
+  DSH_HOME,
+  DSHM_BRIDGE_HOST: process.env.DSHM_BRIDGE_HOST ?? '127.0.0.1',
+  DSHM_BRIDGE_DEV_PLAINTEXT: process.env.DSHM_BRIDGE_DEV_PLAINTEXT ?? '1',
+}
 const add = spawnSync(DSH, ['plugin', '--profile', 'web', 'add', join(ROOT, 'bridge')], { env, encoding: 'utf8' })
 if (add.status !== 0) die(`dsh plugin add failed:\n${add.stdout}${add.stderr}`)
 console.log(`dsh-up: bridge enabled in ${DSH_HOME}/profiles/web`)
