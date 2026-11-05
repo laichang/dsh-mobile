@@ -642,7 +642,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [x] [auto] CI runs bridge tests against the pinned DSH, plus a non-blocking job against DSH `main` — Evidence: cmd:scripts/ci/bridge-upstream · commit:74e9f1e
 - [x] [auto] The bridge approval holder runs before the existing web answerer, fans out, and releases once on either answer (D17) — Evidence: cmd:scripts/ci/bridge-upstream · commit:ac8a0aa
 - [x] [ui] Against an unsupported DSH, the app shows "host needs bridge update" instead of breaking — Evidence: test:S12UpstreamUITests/testUnsupportedHostDisplaysBridgeUpdateAndKeepsPrompt · cmd:scripts/demo/s12.sh · shot:evidence/S12/s12-update-required.png
-- [ ] [auto] An unsupported host retains its draft and choices while another paired host can dispatch (S9 × S12) — Evidence:
+- [x] [auto] An unsupported host retains its draft and choices while another paired host can dispatch (S9 × S12) — Evidence: test:unsupportedHostRetainsDraftAndChoicesWhileAnotherHostDispatches · commit:d0ae9b5
 
 **Not**: blocking CI on DSH `main`.
 
@@ -653,6 +653,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - **2026-11-05 · Local verification.** Clean upstream source build passed all 8 upstream build gates. Both pinned and source-built DSH passed the CI command: 56 bridge tests, one held tool observed on both clients, and a single audit entry whether the phone or web answered first. The fixture survived both denials. The real older DSH accepted the plugin, returned its actual installed version and refused execution. On the Simulator the warning included the supported version and preserved the draft. The UI demo passed 56 bridge + 48 Swift + 1 UI, zero skips. GitHub-hosted runs await a user push or PR.
 - **2026-11-05 · Install isolation.** During local upstream setup, lefthook's installer replaced three machine-level hooks with wrappers. The original scripts were restored from the installer's byte-identical backups. The restored scanner passed on the exact staged trees of both commits made in that interval. `74e9f1e` isolates the upstream CI checkout's Git config and explicitly disables optional dependency hook installation. A second clean install, source build (8/8 gates), 56 bridge tests and the live D17 probe passed with the three original hook checksums unchanged.
 - **Next:** independent review on the Simulator, then coordinator merge.
+- **2026-11-05 · Integrated.** `d0ae9b5` preserves S9’s selected host and names it when its bridge needs an update. The two-host regression checks that the selected host keeps its draft, model and workspace, no task is misrouted, and the compatible host can dispatch. Integrated tests passed: 56 bridge, 56 Swift and one real older-DSH UI. Both CI commands passed on the pinned release and the source-built default branch at `fcc0ad46`. The three original hook checksums stayed unchanged.
 
 ## 6. M1 exit
 
