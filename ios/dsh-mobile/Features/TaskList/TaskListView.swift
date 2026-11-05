@@ -1,4 +1,5 @@
 import DSHCore
+import DSHProtocol
 import SwiftUI
 
 /// S2 · the home screen: every task from every host in one list (STORY principle 4), grouped as
