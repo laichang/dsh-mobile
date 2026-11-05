@@ -497,7 +497,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S7 · Workspaces
 
-**Status** todo · **Needs** T0 · **Branch** —
+**Status** doing · **Needs** T0 · **Branch** `claude/s7-workspaces`
 
 **Why**: D12 (DSH sessions need a cwd).
 
@@ -509,10 +509,12 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [ ] [auto] `CreateTask.workspace` becomes the DSH session cwd (`FakeDSH`) — Evidence:
 - [ ] [ui] The same prompt run in two different repos gives correct, different answers — Evidence:
 
+- [ ] [auto] Explicit workspace and model selections both reach the same DSH session (S6 × S7) — Evidence:
+
 **Not**: inferring the workspace from the prompt.
 
 **Log**
-- —
+- **2026-11-05 · Start.** Isolated T0 passed on dshm-S7: 45 bridge tests, 47 Swift tests, 4 UI tests, real DSH round trip. Resources: bridge 47815, web 3288, profile ~/.dshm/home-s7. Implementing the workspace picker and the S6 seam.
 
 ### S8 · Rich detail
 
