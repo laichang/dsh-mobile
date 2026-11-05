@@ -554,7 +554,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S9 · Multi-host
 
-**Status** todo · **Needs** S1 · **Branch** —
+**Status** doing · **Needs** S1 · **Branch** `claude/s9-multi-host`
 
 **Why**: principles 1–3 (one phone, many hosts, all hosts treated the same, smart default).
 
@@ -567,10 +567,13 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [ ] [ui] With two hosts (`FakeBridge` ×2), tasks from both appear in one list; one taken offline is named — Evidence:
 - [ ] [human] Two real Macs, tasks from both in one list; take one offline and it's named — Evidence:
 
+- [ ] [auto] Pair a second host over Noise, dispatch to either host and retain the first host’s connection and cached task — Evidence:
+- [ ] [auto] Only configured hosts contribute cached tasks, including a paired host that is offline — Evidence:
+
 **Not**: prompt-based host guess (later).
 
 **Log**
-- —
+- **2026-11-05**: Started on `claude/s9-multi-host` using ports 47817/3290, profile `~/.dshm/home-s9`, simulator `dshm-S9`. Isolated T0 passed 52 bridge tests, 48 Swift tests, the real DSH CLI and four UI tests.
 
 ### S10 · Control: devices + audit
 
