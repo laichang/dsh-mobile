@@ -361,11 +361,7 @@ public final class TaskListStore {
             task.logID = host.logID
         case .modelSelected(let taskID, let selection):
             let task = taskRecord(hostKey: link.key, taskID: taskID, title: "")
-            let data = try? selection.serializedData()
-            if task.modelSelectionData != data {
-                task.modelSelectionData = data
-                task.transcript += selection.transcriptLine
-            }
+            applyModel(selection, to: task)
             task.logID = host.logID
         case .ended(let taskID, let status, let message):
             let task = taskRecord(hostKey: link.key, taskID: taskID, title: "")
@@ -429,9 +425,18 @@ public final class TaskListStore {
         let regresses = task.state.isTerminal && !snapshot.state.isTerminal
         if snapshot.updatedAt > task.updatedAt || (snapshot.updatedAt == task.updatedAt && !regresses) {
             task.approvals = snapshot.approvals
+            if let selection = snapshot.modelSelection { applyModel(selection, to: task) }
             task.state = snapshot.state
             task.message = snapshot.message
             task.updatedAt = snapshot.updatedAt
+        }
+    }
+
+    private func applyModel(_ selection: ModelSelection, to task: CachedTask) {
+        let data = try? selection.serializedData()
+        if task.modelSelectionData != data {
+            task.modelSelectionData = data
+            task.transcript += selection.transcriptLine
         }
     }
 
