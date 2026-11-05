@@ -37,6 +37,7 @@ public nonisolated enum Dshm_V1_TaskState: SwiftProtobuf.Enum, Swift.CaseIterabl
   case waitingOnUser // = 2
   case completed // = 3
   case failed // = 4
+  case interrupted // = 5
   case UNRECOGNIZED(Int)
 
   public init() {
@@ -50,6 +51,7 @@ public nonisolated enum Dshm_V1_TaskState: SwiftProtobuf.Enum, Swift.CaseIterabl
     case 2: self = .waitingOnUser
     case 3: self = .completed
     case 4: self = .failed
+    case 5: self = .interrupted
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
@@ -61,6 +63,7 @@ public nonisolated enum Dshm_V1_TaskState: SwiftProtobuf.Enum, Swift.CaseIterabl
     case .waitingOnUser: return 2
     case .completed: return 3
     case .failed: return 4
+    case .interrupted: return 5
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -72,6 +75,7 @@ public nonisolated enum Dshm_V1_TaskState: SwiftProtobuf.Enum, Swift.CaseIterabl
     .waitingOnUser,
     .completed,
     .failed,
+    .interrupted,
   ]
 
 }
@@ -212,7 +216,7 @@ public nonisolated struct Dshm_V1_LogReset: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_TaskState: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TASK_STATE_UNSPECIFIED\0\u{1}TASK_STATE_RUNNING\0\u{1}TASK_STATE_WAITING_ON_USER\0\u{1}TASK_STATE_COMPLETED\0\u{1}TASK_STATE_FAILED\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TASK_STATE_UNSPECIFIED\0\u{1}TASK_STATE_RUNNING\0\u{1}TASK_STATE_WAITING_ON_USER\0\u{1}TASK_STATE_COMPLETED\0\u{1}TASK_STATE_FAILED\0\u{1}TASK_STATE_INTERRUPTED\0")
 }
 
 nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {

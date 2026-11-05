@@ -300,6 +300,11 @@ public final class FakeHost: Sendable {
                 resumed.replayed = UInt64(replay.count)
                 bridge.deliver(Self.response(id, .resumed(resumed)))
                 conn.resumed = true
+            case .interrupt?:
+                var error = Dshm_V1_Error()
+                error.code = "request/unsupported"
+                error.message = "This fake host does not advertise interrupt.v1"
+                bridge.deliver(Self.response(id, .error(error)))
             case nil:
                 break
             }
@@ -376,6 +381,7 @@ public final class FakeHost: Sendable {
         case .retrying: .retrying
         case .failed: .failed
         case .finished: .finished
+        case .interrupted: .interrupted
         }
         m.text = step.text
         m.todos = step.todos.map { t in

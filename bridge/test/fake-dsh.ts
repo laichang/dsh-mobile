@@ -48,6 +48,7 @@ class Channel<T> {
 }
 
 export class FakeDSH implements DshServices {
+  readonly interrupts: string[] = []
   readonly workspaces: string[] = []
   readonly prompts: { sessionId: string; text: string }[] = []
   private sessions = new Map<string, { followers: Channel<FollowFrame>[]; seq: number; turn: number }>()
@@ -68,6 +69,13 @@ export class FakeDSH implements DshServices {
       const sessionId = `session-${this.nextId++}`
       this.sessions.set(sessionId, { followers: [], seq: 0, turn: 0 })
       return { sessionId }
+    },
+
+    cancel: (request: { sessionId: string }) => {
+      const session = this.session(request.sessionId)
+      this.interrupts.push(request.sessionId)
+      this.emitEvent(request.sessionId, 'turn/end', { turn: session.turn, reason: { kind: 'aborted', reason: { kind: 'user' } } })
+      return { accepted: true as const }
     },
 
     prompt: async (
@@ -119,6 +127,7 @@ export class FakeDSH implements DshServices {
     this.emit(sessionId, { type: 'assistant-stream', frame: { type: 'start' } })
     for (const text of reply) {
       if (delay > 0) await new Promise((r) => setTimeout(r, delay))
+      if (this.interrupts.includes(sessionId)) return
       this.emit(sessionId, { type: 'assistant-stream', frame: { type: 'chunk', chunk: { type: 'text-delta', index: 0, text } } })
     }
     this.emit(sessionId, { type: 'assistant-stream', frame: { type: 'end' } })

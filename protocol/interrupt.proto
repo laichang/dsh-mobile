@@ -1,0 +1,10 @@
+// S5 · Interrupt a running task on its host. Capability "interrupt.v1".
+syntax = "proto3";
+package dshm.v1;
+
+message Interrupt {
+  string task_id = 1;
+}
+
+// DSH accepted the stop request. TaskEnded carries the actual outcome.
+message InterruptAccepted {}

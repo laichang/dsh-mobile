@@ -8,14 +8,14 @@
  *   todo/write   → PLANNED (the list's items changed), TODO_DONE / TODO_STARTED per status change
  *   plan/mode    → PLAN_MODE_ENTERED / PLAN_MODE_LEFT (when `active` flips)
  *   llm/retry    → RETRYING (a model request failed; DSH retries it)
- *   turn/end     → FINISHED (completed) or FAILED (every other reason)
+ *   turn/end     → FINISHED (completed) or INTERRUPTED (user cancellation) or FAILED
  * Everything else is ignored. Payloads that don't have the expected shape are ignored too, so a
  * DSH upgrade degrades to fewer milestones rather than a broken task.
  */
 
 export type MilestoneKindName =
   | 'started' | 'planned' | 'todoStarted' | 'todoDone'
-  | 'planModeEntered' | 'planModeLeft' | 'retrying' | 'failed' | 'finished'
+  | 'planModeEntered' | 'planModeLeft' | 'retrying' | 'failed' | 'finished' | 'interrupted'
 
 export type TodoStatusName = 'pending' | 'in_progress' | 'completed'
 
@@ -62,6 +62,10 @@ export function describeFailure(kind: string, error: unknown): string {
   return error === undefined ? kind : `${kind}: ${String(error)}`
 }
 
+export function isUserInterrupt(reason: { kind?: unknown; reason?: { kind?: unknown } } | undefined): boolean {
+  return reason?.kind === 'aborted' && reason.reason?.kind === 'user'
+}
+
 /** Maps the events of one task (one DSH session, D13; the first turn) into milestones. */
 export class MilestoneMapper {
   private todos: TodoItem[] = []
@@ -105,8 +109,9 @@ export class MilestoneMapper {
       case 'turn/end': {
         if (!this.ours(turnOf())) return []
         this.ended = true
-        const reason = data?.reason as { kind?: unknown; error?: unknown } | undefined
+        const reason = data?.reason as { kind?: unknown; error?: unknown; reason?: { kind?: unknown } } | undefined
         const kind = typeof reason?.kind === 'string' ? reason.kind : 'unknown'
+        if (isUserInterrupt(reason)) return [at('interrupted')]
         return kind === 'completed' ? [at('finished')] : [at('failed', describeFailure(kind, reason?.error))]
       }
       default:

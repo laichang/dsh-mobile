@@ -1,4 +1,5 @@
 import DSHCore
+import DSHProtocol
 import SwiftUI
 
 /// S2 · one task: its state and the transcript so far, from the cache. While the host is
@@ -6,6 +7,8 @@ import SwiftUI
 struct TaskDetailView: View {
     let store: TaskListStore
     let taskKey: String
+    @State private var requestingStop = false
+    @State private var stopError: String?
 
     var body: some View {
         let row = store.task(taskKey)
@@ -43,6 +46,26 @@ struct TaskDetailView: View {
             .defaultScrollAnchor(.bottom)
             .defaultScrollAnchor(.top, for: .alignment)
         }
+        .toolbar {
+            if let row, !row.state.isTerminal, let host,
+               host.reachability == .online, host.capabilities.contains(DSHProtocolInfo.interruptCapability) {
+                Button("Stop", systemImage: "stop.circle", role: .destructive) {
+                    requestingStop = true
+                    Task {
+                        defer { requestingStop = false }
+                        do { try await store.interrupt(row) }
+                        catch { stopError = String(describing: error) }
+                    }
+                }
+                .disabled(requestingStop)
+                .accessibilityIdentifier("task.interrupt")
+            }
+        }
+        .alert("Couldn’t stop the task", isPresented: Binding(get: { stopError != nil }, set: { if !$0 { stopError = nil } })) {
+            Button("OK") { stopError = nil }
+        } message: {
+            Text(stopError ?? "")
+        }
         .navigationTitle(row?.title ?? "Task")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -70,6 +93,7 @@ struct TaskDetailView: View {
         case .running:
             if host?.reachability == .offline { return "Was running on \(where_), which is offline. It will catch up when \(where_) is back." }
             return "Running on \(where_)"
+        case .interrupted: return "Interrupted on \(where_)"
         case .waitingOnUser: return "Waiting on you (\(where_))"
         case .completed: return "Done on \(where_)"
         case .failed: return "Failed: \(row.message.isEmpty ? "the task failed" : row.message)"
@@ -85,6 +109,7 @@ extension TaskState {
         case .waitingOnUser: "waiting"
         case .completed: "completed"
         case .failed: "failed"
+        case .interrupted: "interrupted"
         }
     }
 }

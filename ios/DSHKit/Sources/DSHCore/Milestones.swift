@@ -20,7 +20,7 @@ public struct Todo: Sendable, Equatable, Hashable, Codable {
 /// or empty; the app labels each kind itself and never summarizes.
 public struct Milestone: Sendable, Equatable, Identifiable, Codable {
     public enum Kind: String, Sendable, Equatable, Codable {
-        case started, planned, todoStarted, todoDone, planModeEntered, planModeLeft, retrying, failed, finished
+        case started, planned, todoStarted, todoDone, planModeEntered, planModeLeft, retrying, failed, finished, interrupted
     }
 
     public var taskID: String
@@ -84,6 +84,7 @@ extension Milestone {
         case .retrying: kind = .retrying
         case .failed: kind = .failed
         case .finished: kind = .finished
+        case .interrupted: kind = .interrupted
         case .unspecified, .UNRECOGNIZED: return nil
         }
         let todos = m.todos.map { t -> Todo in

@@ -29,6 +29,7 @@ enum MilestoneKind {
   // A model request failed and DSH is retrying it (DSH `llm/retry`). `text` is DSH's failure
   // message. The task is still running; the next milestone says how it went on.
   MILESTONE_KIND_RETRYING = 9;
+  MILESTONE_KIND_INTERRUPTED = 10;
 }
 
 enum TodoStatus {

@@ -17,6 +17,7 @@ package dshm.v1;
 
 import "milestones.proto";
 import "s2.proto";
+import "interrupt.proto";
 
 // One WebSocket binary message carries exactly one Frame (inside the
 // SecureChannel; plaintext only on loopback in T0).
@@ -40,6 +41,7 @@ message Request {
     // S2: 40–59 (s2.proto)
     ListTasks list_tasks = 40;
     Resume resume = 41;
+    Interrupt interrupt = 100;
   }
 }
 
@@ -55,6 +57,7 @@ message Response {
     // S2: 40–59 (s2.proto)
     TaskList task_list = 40;
     Resumed resumed = 41;
+    InterruptAccepted interrupt_accepted = 100;
   }
 }
 
@@ -110,6 +113,7 @@ enum TaskStatus {
   TASK_STATUS_UNSPECIFIED = 0;
   TASK_STATUS_COMPLETED = 1;
   TASK_STATUS_FAILED = 2;
+  TASK_STATUS_INTERRUPTED = 3;
 }
 
 message TaskEnded {

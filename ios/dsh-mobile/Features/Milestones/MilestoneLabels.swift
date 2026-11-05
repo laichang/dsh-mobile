@@ -16,6 +16,7 @@ extension Milestone {
         case .retrying: "Model request failed, retrying"
         case .failed: "Failed"
         case .finished: "Done"
+        case .interrupted: "Interrupted"
         }
     }
 
@@ -30,6 +31,7 @@ extension Milestone {
         case .retrying: "arrow.clockwise.circle"
         case .failed: "exclamationmark.triangle.fill"
         case .finished: "checkmark.seal.fill"
+        case .interrupted: "stop.circle"
         }
     }
 
@@ -64,12 +66,13 @@ extension Todo.Status {
 extension MilestoneTimeline {
     /// The card's one line: the step being worked on, else what the latest milestone says.
     var headline: String {
-        if let active = activeTodo, current?.kind != .finished, current?.kind != .failed { return active.content }
+        if let active = activeTodo, current?.kind != .finished, current?.kind != .failed, current?.kind != .interrupted { return active.content }
         guard let current else { return "" }
         switch current.kind {
         case .failed, .retrying:
             return current.text.isEmpty ? String(localized: "Failed") : current.text
         case .finished: return String(localized: "Done")
+        case .interrupted: return String(localized: "Interrupted")
         case .planModeEntered: return String(localized: "Planning")
         case .planModeLeft: return String(localized: "Plan ready")
         case .planned: return String(localized: "Planned \(todos.count) steps")

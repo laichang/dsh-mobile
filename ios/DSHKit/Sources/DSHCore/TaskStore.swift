@@ -12,6 +12,7 @@ public final class TaskStore {
         case running(taskID: String)
         case completed
         case failed(String)
+        case interrupted
 
         /// Stable token for UI tests (`task.status` accessibility value).
         public var token: String {
@@ -21,6 +22,7 @@ public final class TaskStore {
             case .running: "running"
             case .completed: "completed"
             case .failed: "failed"
+            case .interrupted: "interrupted"
             }
         }
     }
@@ -48,7 +50,7 @@ public final class TaskStore {
         guard !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
         switch status {
         case .connecting, .running: return false
-        case .idle, .completed, .failed: return true
+        case .idle, .completed, .failed, .interrupted: return true
         }
     }
 
@@ -94,7 +96,11 @@ public final class TaskStore {
         case .ended(let taskID, let endStatus, let message):
             guard currentTaskID == nil || currentTaskID == taskID else { return }
             currentTaskID = taskID
-            status = endStatus == .completed ? .completed : .failed(message.isEmpty ? "the task failed" : message)
+            status = switch endStatus {
+            case .completed: .completed
+            case .failed: .failed(message.isEmpty ? "the task failed" : message)
+            case .interrupted: .interrupted
+            }
         case .milestone(let milestone):
             guard currentTaskID == nil || currentTaskID == milestone.taskID else { return }
             currentTaskID = milestone.taskID

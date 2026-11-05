@@ -15,7 +15,23 @@ public enum TaskEvent: Sendable, Equatable {
 }
 
 public enum TaskEndStatus: Sendable, Equatable {
-    case completed, failed
+    case completed, failed, interrupted
+
+    var state: TaskState {
+        switch self {
+        case .completed: .completed
+        case .failed: .failed
+        case .interrupted: .interrupted
+        }
+    }
+
+    init(wire: Dshm_V1_TaskStatus) {
+        self = switch wire {
+        case .completed: .completed
+        case .interrupted: .interrupted
+        default: .failed
+        }
+    }
 }
 
 /// One event from a host, with its place in the host's event log (S2, ARCHITECTURE D20).
@@ -36,8 +52,9 @@ public enum TaskState: String, Sendable, Equatable, CaseIterable {
     case waitingOnUser
     case completed
     case failed
+    case interrupted
 
-    public var isTerminal: Bool { self == .completed || self == .failed }
+    public var isTerminal: Bool { self == .completed || self == .failed || self == .interrupted }
 }
 
 /// A task as the host reports it (`TaskSummary` in protocol/s2.proto).
@@ -60,6 +77,7 @@ public struct TaskSnapshot: Sendable, Equatable {
 
     init(_ s: Dshm_V1_TaskSummary) {
         let state: TaskState = switch s.state {
+        case .interrupted: .interrupted
         case .waitingOnUser: .waitingOnUser
         case .completed: .completed
         case .failed: .failed
@@ -198,6 +216,13 @@ public actor HostConnection {
         return created.taskID
     }
 
+    public func interrupt(taskID: String) async throws {
+        var command = Dshm_V1_Interrupt()
+        command.taskID = taskID
+        let response = try await request(.interrupt(command))
+        guard case .interruptAccepted? = response.body else { throw HostConnectionError.unexpectedResponse }
+    }
+
     /// S2: every task the host knows, newest first.
     public func listTasks() async throws -> TaskListing {
         let response = try await request(.listTasks(Dshm_V1_ListTasks()))
@@ -302,7 +327,7 @@ public actor HostConnection {
         case .assistantChunk(let c)?:
             return .chunk(taskID: c.taskID, seq: c.seq, text: c.text)
         case .taskEnded(let e)?:
-            return .ended(taskID: e.taskID, status: e.status == .completed ? .completed : .failed, message: e.message)
+            return .ended(taskID: e.taskID, status: TaskEndStatus(wire: e.status), message: e.message)
         case .taskUpserted(let u)?:
             return .upserted(TaskSnapshot(u.task))
         case .logReset(let r)?:
