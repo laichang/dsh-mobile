@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { after, describe, test } from 'node:test'
+import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import { WebSocket } from 'ws'
 import { PlaintextChannel } from '../src/channel.ts'
@@ -16,6 +17,7 @@ after(async () => { await Promise.all(servers.map((s) => s.close())) })
 /** Runs one task through the real bridge server against FakeDSH; returns every frame received. */
 async function runTask(options: FakeDSHOptions): Promise<Frame[]> {
   const server = await startBridgeServer({
+    dshVersion: SUPPORTED_DSH,
     host: '127.0.0.1', port: 0, channel: new PlaintextChannel(), tasks: new DshTasks(new FakeDSH(options), '/tmp/dshm-ws'),
   })
   servers.push(server)

@@ -1,0 +1,57 @@
+name: Bridge upstream compatibility
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '15 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bridge:
+    name: Bridge against DSH ${{ matrix.source }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    continue-on-error: ${{ matrix.source == 'default-branch' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        source: [pinned, default-branch]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.14.0'
+      - name: Install pinned pnpm
+        run: corepack enable && corepack prepare pnpm@11.28.5 --activate
+      - name: Install pinned DSH and mock
+        if: matrix.source == 'pinned'
+        run: |
+          mkdir -p "$RUNNER_TEMP/runtime"
+          npm install --prefix "$RUNNER_TEMP/runtime" --no-fund --no-audit @deepseek-ai/dsh@0.2.2-rc.1 @deepseek-ai/dsh-llm-mock-server@0.2.2-rc.1
+      - name: Build upstream default branch
+        if: matrix.source == 'default-branch'
+        # Upstream's dependency installer configures git hooks outside CI. Give its
+        # checkout a private Git config and opt out of its optional hook installation.
+        env:
+          CI: 'true'
+          LEFTHOOK: '0'
+          GIT_CONFIG_GLOBAL: ${{ runner.temp }}/upstream.gitconfig
+          GIT_CONFIG_NOSYSTEM: '1'
+        run: |
+          git clone --depth=1 https://github.com/deepseek-ai/deepseek-harness.git "$RUNNER_TEMP/upstream"
+          git -C "$RUNNER_TEMP/upstream" rev-parse HEAD
+          cd "$RUNNER_TEMP/upstream"
+          corepack pnpm install --frozen-lockfile
+          corepack pnpm run build:artifacts
+          mkdir -p "$RUNNER_TEMP/runtime/node_modules/"{.bin,@deepseek-ai}
+          ln -s "$PWD/apps/cli" "$RUNNER_TEMP/runtime/node_modules/@deepseek-ai/dsh"
+          ln -s "$PWD/apps/cli/lib/bin.js" "$RUNNER_TEMP/runtime/node_modules/.bin/dsh"
+          ln -s "$PWD/packages/test-support/llm-mock-server" "$RUNNER_TEMP/runtime/node_modules/@deepseek-ai/dsh-llm-mock-server"
+          chmod +x "$PWD/apps/cli/lib/bin.js"
+      - name: Bridge tests and live approval ordering
+        run: DSHM_RUNTIME="$RUNNER_TEMP/runtime" scripts/ci/bridge-upstream

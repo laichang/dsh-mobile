@@ -157,6 +157,7 @@ public enum FakeHostError: Error, Equatable {
 /// `bridge/src/s2/`. Tests can make it unreachable, drop connections, or restart it.
 public final class FakeHost: Sendable {
     public let hostName: String
+    private let incompatibleDsh: (installed: String, supported: String)?
     /// Task ids are unique across FakeHost instances (like DSH session ids), so a task cached by
     /// an earlier app launch never collides with a new one that happens to be numbered the same.
     private let taskIDPrefix = "fake-\(UUID().uuidString.prefix(8).lowercased())-task"
@@ -182,7 +183,9 @@ public final class FakeHost: Sendable {
 
     private let state = Mutex(State())
 
-    public init(script: FakeBridge.Script = .init(), hostName: String = "FakeBridge Mac", reachable: Bool = true) {
+    public init(script: FakeBridge.Script = .init(), hostName: String = "FakeBridge Mac", reachable: Bool = true,
+                incompatibleDsh: (installed: String, supported: String)? = nil) {
+        self.incompatibleDsh = incompatibleDsh
         self.script = script
         self.hostName = hostName
         state.withLock { $0.reachable = reachable }
@@ -255,7 +258,13 @@ public final class FakeHost: Sendable {
                 conn.helloDone = true
                 var hello = Dshm_V1_Hello()
                 hello.protocolVersion = DSHProtocolInfo.version
-                hello.capabilities = [DSHProtocolInfo.tasksCapability, DSHProtocolInfo.milestonesCapability, DSHProtocolInfo.resumeCapability]
+                if let incompatibleDsh {
+                    hello.dshVersion = incompatibleDsh.installed
+                    hello.supportedDshRange = incompatibleDsh.supported
+                    hello.requiresBridgeUpdate = true
+                } else {
+                    hello.capabilities = [DSHProtocolInfo.tasksCapability, DSHProtocolInfo.milestonesCapability, DSHProtocolInfo.resumeCapability]
+                }
                 bridge.deliver(Self.response(id, .hello(hello)))
             case .createTask(let create)?:
                 s.prompts.append(create.prompt)

@@ -638,15 +638,21 @@ Each slice needs only T0, unless "Needs" says otherwise.
 **Demo**: point the bridge at an unsupported DSH; the app shows "host needs bridge update" instead of breaking.
 
 **Done when**
-- [ ] [auto] Bridge reports the supported DSH range and an unsupported DSH in `Hello` — Evidence:
-- [ ] [auto] CI runs bridge tests against the pinned DSH, plus a non-blocking job against DSH `main` — Evidence:
-- [ ] [auto] The bridge approval holder runs before the existing web answerer, fans out, and releases once on either answer (D17) — Evidence:
-- [ ] [ui] Against an unsupported DSH, the app shows "host needs bridge update" instead of breaking — Evidence:
+- [x] [auto] Bridge reports the supported DSH range and an unsupported DSH in `Hello` — Evidence: test:helloReportsSupportedRangeAndBlocksUnsupportedDshBeforeDispatch
+- [x] [auto] CI runs bridge tests against the pinned DSH, plus a non-blocking job against DSH `main` — Evidence: cmd:scripts/ci/bridge-upstream · commit:74e9f1e
+- [x] [auto] The bridge approval holder runs before the existing web answerer, fans out, and releases once on either answer (D17) — Evidence: cmd:scripts/ci/bridge-upstream · commit:ac8a0aa
+- [x] [ui] Against an unsupported DSH, the app shows "host needs bridge update" instead of breaking — Evidence: test:S12UpstreamUITests/testUnsupportedHostDisplaysBridgeUpdateAndKeepsPrompt · cmd:scripts/demo/s12.sh · shot:evidence/S12/s12-update-required.png
+- [ ] [auto] An unsupported host retains its draft and choices while another paired host can dispatch (S9 × S12) — Evidence:
 
 **Not**: blocking CI on DSH `main`.
 
 **Log**
 - **2026-11-05 · Started.** Isolated T0 passed with the installed DSH CLI, 55 bridge tests, 48 Swift tests and 4 Simulator UI tests. Use `dshm-S12`, bridge 47818 and web 3291.
+- **2026-11-05 · Implementation.** `ac8a0aa` adds the bridge range, Hello fields, iOS recovery status and CI compatibility jobs. See provisional D46. No new app or bridge runtime dependency. The baseline release is already in the T0 log.
+- **2026-11-05 · External inputs for confirmation.** The older-runtime UI test installed npm `@deepseek-ai/dsh@0.2.2-alpha.3` (integrity `sha512-ffV06fOgiOeIJOmA3EgPj+U6azJrsLACiscLj9t+AfM7p9p14bMzErWRhgeC8nizBTyQ2ckxkPQtj4Pqon8mGw==`) outside the repo. CI uses `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1` (v7.0.1) and `actions/setup-node@820762786026740c76f36085b0efc47a31fe5020` (v7.0.0). The advisory lane follows upstream's default branch (currently `master`) and logs its exact commit. Tested `fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159`; SHA-256 of `git archive HEAD` was `a169c6128a7fd7d142291ce5abc4764e95b42f0c922110e271211b4b6b2f6fa1`.
+- **2026-11-05 · Local verification.** Clean upstream source build passed all 8 upstream build gates. Both pinned and source-built DSH passed the CI command: 56 bridge tests, one held tool observed on both clients, and a single audit entry whether the phone or web answered first. The fixture survived both denials. The real older DSH accepted the plugin, returned its actual installed version and refused execution. On the Simulator the warning included the supported version and preserved the draft. The UI demo passed 56 bridge + 48 Swift + 1 UI, zero skips. GitHub-hosted runs await a user push or PR.
+- **2026-11-05 · Install isolation.** During local upstream setup, lefthook's installer replaced three machine-level hooks with wrappers. The original scripts were restored from the installer's byte-identical backups. The restored scanner passed on the exact staged trees of both commits made in that interval. `74e9f1e` isolates the upstream CI checkout's Git config and explicitly disables optional dependency hook installation. A second clean install, source build (8/8 gates), 56 bridge tests and the live D17 probe passed with the three original hook checksums unchanged.
+- **Next:** independent review on the Simulator, then coordinator merge.
 
 ## 6. M1 exit
 
