@@ -49,7 +49,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S4 | done | merged `acbf2c0` | 2026-11-05 | — (provisional D25 in §9) |
 | S5 | done | merged `529bb16` | 2026-11-05 | — (provisional D28 in §9) |
 | S6 | done | merged `d62fd6d` | 2026-11-05 | — (provisional D31 in §9) |
-| S7 | doing | claude/s7-workspaces | 2026-11-05 | Implement and verify |
+| S7 | done | merged `21aabd8` | 2026-11-05 | — (provisional D37 in §9) |
 | S8 | doing | claude/s8-rich-detail | 2026-11-05 | Implement and verify |
 | S9 | todo | — | 2026-11-05 | Ready (S1 merged) |
 | S10 | doing | claude/s10-devices-audit | 2026-11-05 | Implement and verify |
@@ -826,6 +826,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-05 · S10.** Assigned claude/s10-devices-audit, worktree /Users/bytedance/.codex/worktrees/s10-devices-audit/dsh-mobile, simulator dshm-S10, DSHM_HOME ~/.dshm/home-s10, bridge 47816, web 3289. The owner uses the shared DSH runtime read-only.
 
+- **2026-11-05 · S7.** Independent review at a4063fa used a fresh DerivedData build and the real DSH. The identical prompt read Amber and Violet from different Git repos, and the recent directory list updated. All 52 bridge, 48 Swift and the UI test passed. Evidence: scripts/demo/s7.sh and evidence/S7/.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -858,3 +860,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 28 | X3 | `[human]` / decision | Confirm provisional D10 streaming renderer choice after the device benchmark. | `main` | `7f1b4b8` |
 | 29 | S6 | decision | ARCHITECTURE D31, provisional: host catalog/default passthrough, pre-prompt selection, and transcript replay of durable model selections. | `main` | merged `d62fd6d` |
 | 30 | S4 | decision | ARCHITECTURE D25, provisional: fail-closed timeout, per-device audit, resume snapshot and temporary pending cards for upstream sessions. | `main` | merged `acbf2c0` |
+| 31 | S7 | decision | D37, provisional: DSH registry supplies canonical host paths and recents; explicit paths are validated by DSH and sent with the model selection. | `main` | merged `21aabd8` |
