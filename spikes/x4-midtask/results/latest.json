@@ -1,0 +1,706 @@
+{
+  "startedAt": "2026-11-05T02:21:18.952Z",
+  "dsh": "0.2.2-rc.1 (mock LLM)",
+  "scenarios": [
+    {
+      "name": "1-during-tool",
+      "sessionId": "session-7703ff2f-5e83-4999-b5ae-4fc652360586",
+      "steer": {
+        "at": 1793845286546,
+        "value": {
+          "accepted": true
+        }
+      },
+      "queue": {
+        "at": 1793845286549,
+        "value": {
+          "accepted": true
+        }
+      },
+      "stateWhile": {
+        "cursor": 22,
+        "active": true,
+        "running": true,
+        "queue": [
+          {
+            "id": "c762d6cd-28b7-4516-93bf-6019184b2227",
+            "placement": "queued",
+            "rpcId": "d5cc4c51-c599-4b3e-82f4-81528595dc47",
+            "content": [
+              {
+                "type": "text",
+                "text": "X4-QUEUE-1 do this next"
+              }
+            ]
+          },
+          {
+            "id": "0285a21f-e095-4b55-b2ff-c339df0ca8e4",
+            "placement": "steering",
+            "rpcId": "293982b7-ff74-4c86-88b8-44b5ce99a079",
+            "content": [
+              {
+                "type": "text",
+                "text": "X4-STEER-1 please also note this"
+              }
+            ]
+          }
+        ],
+        "pendingInput": []
+      },
+      "requests": [
+        {
+          "i": 0,
+          "routed": "sleepCall",
+          "markers": []
+        },
+        {
+          "i": 1,
+          "routed": "done",
+          "markers": [
+            "X4-STEER-1"
+          ]
+        },
+        {
+          "i": 2,
+          "routed": "done",
+          "markers": [
+            "X4-STEER-1",
+            "X4-QUEUE-1"
+          ]
+        }
+      ],
+      "placement": [
+        {
+          "marker": "X4-STEER-1",
+          "inbox": "next-step",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-QUEUE-1",
+          "inbox": "next-turn",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-STEER-1",
+          "logged": true,
+          "turn": 1,
+          "step": 2
+        },
+        {
+          "marker": "X4-QUEUE-1",
+          "logged": true,
+          "turn": 2,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "name": "3-steer-idle",
+      "sessionId": "session-7703ff2f-5e83-4999-b5ae-4fc652360586",
+      "idle": {
+        "at": 1793845290816,
+        "value": {
+          "accepted": true
+        }
+      },
+      "requests": [
+        {
+          "i": 0,
+          "routed": "done",
+          "markers": [
+            "X4-STEER-1",
+            "X4-QUEUE-1",
+            "X4-STEER-IDLE"
+          ]
+        }
+      ],
+      "placement": [
+        {
+          "marker": "X4-STEER-IDLE",
+          "inbox": "next-step",
+          "atTurn": 2,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-STEER-IDLE",
+          "logged": true,
+          "turn": 3,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "name": "2-during-stream",
+      "sessionId": "session-a282005a-9df0-4899-b352-596e283c367f",
+      "steer": {
+        "at": 1793845291515,
+        "value": {
+          "accepted": true
+        }
+      },
+      "requests": [
+        {
+          "i": 0,
+          "routed": "slow",
+          "markers": []
+        },
+        {
+          "i": 1,
+          "routed": "done",
+          "markers": [
+            "X4-STEER-STREAM"
+          ]
+        }
+      ],
+      "placement": [
+        {
+          "marker": "X4-STEER-STREAM",
+          "inbox": "next-step",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-STEER-STREAM",
+          "logged": true,
+          "turn": 1,
+          "step": 2
+        }
+      ],
+      "assistant": [
+        {
+          "interrupted": false,
+          "text": "X4 streaming a long answer, chunk by chunk, slowly."
+        },
+        {
+          "interrupted": false,
+          "text": "X4 done after steer"
+        }
+      ],
+      "turnEnds": [
+        "{\"turn\":1,\"reason\":{\"kind\":\"completed\"}}"
+      ]
+    },
+    {
+      "name": "4-attachments",
+      "sessionId": "session-ab222d13-9051-47f3-ac0d-97b48f3dea5c",
+      "file": {
+        "at": 1793845296328,
+        "value": {
+          "accepted": true
+        }
+      },
+      "image": {
+        "at": 1793845296330,
+        "value": {
+          "accepted": true
+        }
+      },
+      "step2UserBlocks": [
+        {
+          "type": "tool_result"
+        },
+        {
+          "type": "text",
+          "text": "X4-STEER-FILE see attached"
+        },
+        {
+          "type": "text",
+          "text": "[File \"x4-notes.txt\" (31 bytes, sha256:dcfab051): verbatim read-only copy saved at \"/Users/laichang/.dshm/home-x1x4/attachments/v1/files/dc/dcfab051e33b1a47d1092579b9d8f725b8478fa8e06eb313e01921105b678065/x4-notes.txt\". Read that path with your file tools when its contents are needed; copy it to a writable location before modifying it. When delegating file work, include this saved path in the dele"
+        },
+        {
+          "type": "text",
+          "text": "X4-STEER-IMAGE see image"
+        },
+        {
+          "type": "text",
+          "text": "Image \"x4.png\" (sha256:497790947d4666760ce38f3c00e852c71fdb66cae849bae8e9ede352719e1581); request preview 1x1px. Normalized copy (read-only; may be resized or re-encoded): \"/Users/laichang/.dshm/home-x1x4/attachments/v1/objects/49/497790947d4666760ce38f3c00e852c71fdb66cae849bae8e9ede352719e1581\" (1x1px, image/png). Source dimensions, format, and byte size may differ. Copy to a writable path ending"
+        },
+        {
+          "type": "image",
+          "mediaType": "image/png",
+          "sourceType": "base64"
+        }
+      ],
+      "placement": [
+        {
+          "marker": "X4-STEER-FILE",
+          "inbox": "next-step",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-STEER-IMAGE",
+          "inbox": "next-step",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-STEER-FILE",
+          "logged": true,
+          "turn": 1,
+          "step": 2
+        },
+        {
+          "marker": "X4-STEER-IMAGE",
+          "logged": true,
+          "turn": 1,
+          "step": 2
+        }
+      ],
+      "imageAccepted": true
+    },
+    {
+      "name": "5a-question-no-plugin",
+      "sessionId": "session-9b9048be-11ab-4b1f-adff-09b7af728ef7",
+      "gatewayPending": [
+        {
+          "event": "user-questions/request",
+          "agentId": "session-9b9048be-11ab-4b1f-adff-09b7af728ef7"
+        }
+      ],
+      "sessionState": {
+        "running": true,
+        "pendingInput": [
+          "question"
+        ]
+      }
+    },
+    {
+      "name": "5b-question-plugin",
+      "sessionId": "session-1b12c41d-7812-45b3-9f6c-4233cbe24eb3",
+      "parked": {
+        "id": "14994c2c-4ba6-40ea-b1f3-705fc2ae0a71",
+        "sessionId": "session-1b12c41d-7812-45b3-9f6c-4233cbe24eb3",
+        "requestKeys": [
+          "questions",
+          "agent",
+          "signal"
+        ],
+        "callId": null,
+        "questions": [
+          {
+            "id": "q1",
+            "question": "X4-QUESTION: which branch should I use?",
+            "header": "Branch",
+            "options": [
+              {
+                "label": "main (Recommended)",
+                "description": "the default"
+              },
+              {
+                "label": "dev",
+                "description": "the other one"
+              }
+            ]
+          }
+        ],
+        "wait": null,
+        "parkedAt": "2026-11-05T02:21:42.952Z"
+      },
+      "steer": {
+        "at": 1793845303037,
+        "value": {
+          "accepted": true
+        }
+      },
+      "stillParkedAfterSteer": 1,
+      "step2": {
+        "lastToolResult": "{\"answers\":[{\"id\":\"q1\",\"selected\":[\"main (Recommended)\"]}]}",
+        "markers": [
+          "X4-STEER-DURING-QUESTION"
+        ]
+      },
+      "placement": [
+        {
+          "marker": "X4-STEER-DURING-QUESTION",
+          "inbox": "next-step",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-STEER-DURING-QUESTION",
+          "logged": true,
+          "turn": 1,
+          "step": 2
+        }
+      ],
+      "gatewayPendingWhileParked": []
+    }
+  ],
+  "checks": [
+    {
+      "scenario": "1",
+      "name": "prompt(steer) and prompt(queue) are accepted while the turn runs",
+      "pass": true,
+      "detail": {
+        "steer": {
+          "at": 1793845286546,
+          "value": {
+            "accepted": true
+          }
+        },
+        "queue": {
+          "at": 1793845286549,
+          "value": {
+            "accepted": true
+          }
+        }
+      }
+    },
+    {
+      "scenario": "1",
+      "name": "steer is injected into the SAME turn: next step after the tool result",
+      "pass": true,
+      "detail": [
+        {
+          "marker": "X4-STEER-1",
+          "inbox": "next-step",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-QUEUE-1",
+          "inbox": "next-turn",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-STEER-1",
+          "logged": true,
+          "turn": 1,
+          "step": 2
+        },
+        {
+          "marker": "X4-QUEUE-1",
+          "logged": true,
+          "turn": 2,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "scenario": "1",
+      "name": "steer reaches the model in turn 1 step 2 (2nd agent-loop request)",
+      "pass": true,
+      "detail": [
+        {
+          "i": 0,
+          "routed": "sleepCall",
+          "markers": []
+        },
+        {
+          "i": 1,
+          "routed": "done",
+          "markers": [
+            "X4-STEER-1"
+          ]
+        },
+        {
+          "i": 2,
+          "routed": "done",
+          "markers": [
+            "X4-STEER-1",
+            "X4-QUEUE-1"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "1",
+      "name": "queue waits for a NEW turn (turn 2)",
+      "pass": true,
+      "detail": [
+        {
+          "marker": "X4-STEER-1",
+          "inbox": "next-step",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-QUEUE-1",
+          "inbox": "next-turn",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-STEER-1",
+          "logged": true,
+          "turn": 1,
+          "step": 2
+        },
+        {
+          "marker": "X4-QUEUE-1",
+          "logged": true,
+          "turn": 2,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "scenario": "1",
+      "name": "queue is not in turn 1 step 2",
+      "pass": true,
+      "detail": {
+        "i": 1,
+        "routed": "done",
+        "markers": [
+          "X4-STEER-1"
+        ]
+      }
+    },
+    {
+      "scenario": "3",
+      "name": "steer into an idle session starts a new turn (turn 3)",
+      "pass": true,
+      "detail": [
+        {
+          "marker": "X4-STEER-1",
+          "inbox": "next-step",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-QUEUE-1",
+          "inbox": "next-turn",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-STEER-1",
+          "logged": true,
+          "turn": 1,
+          "step": 2
+        },
+        {
+          "marker": "X4-QUEUE-1",
+          "logged": true,
+          "turn": 2,
+          "step": 1
+        },
+        {
+          "marker": "X4-STEER-IDLE",
+          "inbox": "next-step",
+          "atTurn": 2,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-STEER-IDLE",
+          "logged": true,
+          "turn": 3,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "scenario": "2",
+      "name": "streaming step is not cut off by a steer (first answer completes)",
+      "pass": true,
+      "detail": [
+        {
+          "interrupted": false,
+          "text": "X4 streaming a long answer, chunk by chunk, slowly."
+        },
+        {
+          "interrupted": false,
+          "text": "X4 done after steer"
+        }
+      ]
+    },
+    {
+      "scenario": "2",
+      "name": "steer runs as a further step of the same turn",
+      "pass": true,
+      "detail": [
+        {
+          "marker": "X4-STEER-STREAM",
+          "inbox": "next-step",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-STEER-STREAM",
+          "logged": true,
+          "turn": 1,
+          "step": 2
+        }
+      ]
+    },
+    {
+      "scenario": "4",
+      "name": "a staged file is accepted in a steer",
+      "pass": true,
+      "detail": {
+        "at": 1793845296328,
+        "value": {
+          "accepted": true
+        }
+      }
+    },
+    {
+      "scenario": "4",
+      "name": "the file reaches the model in the same turn (reference or contents in step 2)",
+      "pass": true,
+      "detail": [
+        {
+          "type": "tool_result"
+        },
+        {
+          "type": "text",
+          "text": "X4-STEER-FILE see attached"
+        },
+        {
+          "type": "text",
+          "text": "[File \"x4-notes.txt\" (31 bytes, sha256:dcfab051): verbatim read-only copy saved at \"/Users/laichang/.dshm/home-x1x4/attachments/v1/files/dc/dcfab051e33b1a47d1092579b9d8f725b8478fa8e06eb313e01921105b678065/x4-notes.txt\". Read that path with your file tools when its contents are needed; copy it to a writable location before modifying it. When delegating file work, include this saved path in the dele"
+        },
+        {
+          "type": "text",
+          "text": "X4-STEER-IMAGE see image"
+        },
+        {
+          "type": "text",
+          "text": "Image \"x4.png\" (sha256:497790947d4666760ce38f3c00e852c71fdb66cae849bae8e9ede352719e1581); request preview 1x1px. Normalized copy (read-only; may be resized or re-encoded): \"/Users/laichang/.dshm/home-x1x4/attachments/v1/objects/49/497790947d4666760ce38f3c00e852c71fdb66cae849bae8e9ede352719e1581\" (1x1px, image/png). Source dimensions, format, and byte size may differ. Copy to a writable path ending"
+        },
+        {
+          "type": "image",
+          "mediaType": "image/png",
+          "sourceType": "base64"
+        }
+      ]
+    },
+    {
+      "scenario": "4",
+      "name": "an inline image steer gets a definite answer (accepted, or a typed refusal)",
+      "pass": true,
+      "detail": {
+        "at": 1793845296330,
+        "value": {
+          "accepted": true
+        }
+      }
+    },
+    {
+      "scenario": "4",
+      "name": "the image reaches the model in the same turn as an image block plus a saved-path note",
+      "pass": true,
+      "detail": [
+        {
+          "type": "tool_result"
+        },
+        {
+          "type": "text",
+          "text": "X4-STEER-FILE see attached"
+        },
+        {
+          "type": "text",
+          "text": "[File \"x4-notes.txt\" (31 bytes, sha256:dcfab051): verbatim read-only copy saved at \"/Users/laichang/.dshm/home-x1x4/attachments/v1/files/dc/dcfab051e33b1a47d1092579b9d8f725b8478fa8e06eb313e01921105b678065/x4-notes.txt\". Read that path with your file tools when its contents are needed; copy it to a writable location before modifying it. When delegating file work, include this saved path in the dele"
+        },
+        {
+          "type": "text",
+          "text": "X4-STEER-IMAGE see image"
+        },
+        {
+          "type": "text",
+          "text": "Image \"x4.png\" (sha256:497790947d4666760ce38f3c00e852c71fdb66cae849bae8e9ede352719e1581); request preview 1x1px. Normalized copy (read-only; may be resized or re-encoded): \"/Users/laichang/.dshm/home-x1x4/attachments/v1/objects/49/497790947d4666760ce38f3c00e852c71fdb66cae849bae8e9ede352719e1581\" (1x1px, image/png). Source dimensions, format, and byte size may differ. Copy to a writable path ending"
+        },
+        {
+          "type": "image",
+          "mediaType": "image/png",
+          "sourceType": "base64"
+        }
+      ]
+    },
+    {
+      "scenario": "5a",
+      "name": "question is held as a pending web event `user-questions/request` (not approval/request)",
+      "pass": true,
+      "detail": [
+        {
+          "event": "user-questions/request",
+          "agentId": "session-9b9048be-11ab-4b1f-adff-09b7af728ef7"
+        }
+      ]
+    },
+    {
+      "scenario": "5a",
+      "name": "web state marks input-required as a question, distinct from approval",
+      "pass": true,
+      "detail": [
+        "question"
+      ]
+    },
+    {
+      "scenario": "5b",
+      "name": "plugin parks the question with its questions/options",
+      "pass": true,
+      "detail": {
+        "id": "14994c2c-4ba6-40ea-b1f3-705fc2ae0a71",
+        "sessionId": "session-1b12c41d-7812-45b3-9f6c-4233cbe24eb3",
+        "requestKeys": [
+          "questions",
+          "agent",
+          "signal"
+        ],
+        "callId": null,
+        "questions": [
+          {
+            "id": "q1",
+            "question": "X4-QUESTION: which branch should I use?",
+            "header": "Branch",
+            "options": [
+              {
+                "label": "main (Recommended)",
+                "description": "the default"
+              },
+              {
+                "label": "dev",
+                "description": "the other one"
+              }
+            ]
+          }
+        ],
+        "wait": null,
+        "parkedAt": "2026-11-05T02:21:42.952Z"
+      }
+    },
+    {
+      "scenario": "5b",
+      "name": "web does not see it while the plugin holds it",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "scenario": "5b",
+      "name": "a steer does not release the question (still parked)",
+      "pass": true,
+      "detail": 1
+    },
+    {
+      "scenario": "5b",
+      "name": "model gets the answer as the tool result",
+      "pass": true,
+      "detail": "{\"answers\":[{\"id\":\"q1\",\"selected\":[\"main (Recommended)\"]}]}"
+    },
+    {
+      "scenario": "5b",
+      "name": "steer sent during the question lands in the step after the answer",
+      "pass": true,
+      "detail": [
+        {
+          "marker": "X4-STEER-DURING-QUESTION",
+          "inbox": "next-step",
+          "atTurn": 1,
+          "atStep": 1
+        },
+        {
+          "marker": "X4-STEER-DURING-QUESTION",
+          "logged": true,
+          "turn": 1,
+          "step": 2
+        }
+      ]
+    }
+  ],
+  "passed": true
+}

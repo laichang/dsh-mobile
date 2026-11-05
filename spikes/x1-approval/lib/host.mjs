@@ -52,7 +52,7 @@ export async function startHost({ plugins, ready, log = () => {} }) {
       let key = 'side'
       if (agentLoop) { try { key = pick(parsed) } catch { key = 'main' } if (!mocks[key]) key = 'main' }
       const target = new URL(agentLoop ? mocks[key].baseURL : side.baseURL)
-      traffic.push({ at: Date.now(), routed: key, path: req.url, users: agentLoop ? userTexts(parsed) : undefined, lastToolResult: agentLoop ? lastToolResult(parsed) : undefined })
+      traffic.push({ at: Date.now(), routed: key, path: req.url, users: agentLoop ? userTexts(parsed) : undefined, lastToolResult: agentLoop ? lastToolResult(parsed) : undefined, userBlocks: agentLoop ? newUserBlocks(parsed) : undefined })
       const out = httpRequest({
         host: target.hostname, port: target.port, method: req.method, path: req.url,
         headers: { ...req.headers, host: target.host },
@@ -137,6 +137,24 @@ export function lastToolResult(body) {
   for (const m of body?.messages ?? []) for (const c of Array.isArray(m.content) ? m.content : []) {
     if (c.type !== 'tool_result') continue
     out = typeof c.content === 'string' ? c.content : (c.content ?? []).map((x) => x.text ?? '').join('')
+  }
+  return out
+}
+
+/** User-side blocks after the last assistant message (what is new for this step), summarized. */
+export function newUserBlocks(body) {
+  const msgs = body?.messages ?? []
+  let i = msgs.length
+  while (i > 0 && msgs[i - 1].role !== 'assistant') i--
+  const out = []
+  for (const m of msgs.slice(i)) {
+    const blocks = typeof m.content === 'string' ? [{ type: 'text', text: m.content }] : m.content ?? []
+    for (const b of blocks) {
+      if (b.type === 'text') out.push({ type: 'text', text: b.text.slice(0, 400) })
+      else if (b.type === 'image') out.push({ type: 'image', mediaType: b.source?.media_type, sourceType: b.source?.type })
+      else if (b.type === 'tool_result') out.push({ type: 'tool_result' })
+      else out.push({ type: b.type })
+    }
   }
   return out
 }
