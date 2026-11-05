@@ -12,6 +12,7 @@
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import { WebSocketServer, type WebSocket } from 'ws'
 import type { ApprovalHolder } from './approvals/holder.ts'
+import { SUPPORTED_DSH, supportsDsh } from './compatibility.ts'
 import { ApprovalDecision } from './gen/approvals_pb.ts'
 import { deviceId } from './pairing/store.ts'
 import { CloseCode } from './pairing/wire.ts'
@@ -43,6 +44,7 @@ export interface BridgeServerOptions {
   /** Pairing + reconnect over Noise on every other path. */
   noise?: NoiseResponder
   tasks: TaskStarter
+  dshVersion: string
   /** The host's name in TaskList / Resumed (default: this machine's hostname). */
   hostName?: string
   /** Inject a hub (tests); by default the server makes one around `tasks`. */
@@ -99,6 +101,7 @@ function serveConnection(
   log: (m: string) => void,
 ) {
   const { hub, hostName } = host
+  const supported = supportsDsh(options.dshVersion)
   let device = 'dev loopback'
   let helloDone = false
   let clientApprovals = false
@@ -137,6 +140,9 @@ function serveConnection(
 
   const handle = async (request: Request) => {
     const id = request.id
+    if (!supported && request.body.case !== 'hello') {
+      return fail(id, 'host/bridge-update', 'The host needs a bridge update.')
+    }
     switch (request.body.case) {
       case 'hello': {
         const v = request.body.value.protocolVersion
@@ -147,13 +153,14 @@ function serveConnection(
         clientApprovals = request.body.value.capabilities.includes('approvals.v1')
         return respond(id, {
           case: 'hello',
-          value: { protocolVersion: PROTOCOL_VERSION, capabilities: [
+          value: { protocolVersion: PROTOCOL_VERSION, dshVersion: options.dshVersion,
+            supportedDshRange: SUPPORTED_DSH, requiresBridgeUpdate: !supported, capabilities: supported ? [
             ...CAPABILITIES,
             ...(options.tasks.modelCatalog && options.tasks.selectModel ? ['models.v1'] : []),
             ...(options.approvals ? ['approvals.v1'] : []),
             ...(options.tasks.listWorkspaces ? ['workspaces.v1'] : []),
             ...(host.authenticated.has(socket) ? ['devices.v1'] : []),
-          ] },
+          ] : [] },
         })
       }
       case 'createTask': {

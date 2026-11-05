@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { after, describe, test } from 'node:test'
+import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import { WebSocket } from 'ws'
 import { PlaintextChannel, isLoopbackAddress } from '../src/channel.ts'
@@ -38,9 +39,10 @@ async function connect(port: number) {
 const servers: BridgeServer[] = []
 after(async () => { await Promise.all(servers.map((s) => s.close())) })
 
-async function bridgeWith(options: FakeDSHOptions = {}) {
+async function bridgeWith(options: FakeDSHOptions = {}, dshVersion = SUPPORTED_DSH) {
   const dsh = new FakeDSH(options)
   const server = await startBridgeServer({
+    dshVersion,
     host: '127.0.0.1', port: 0, channel: new PlaintextChannel(), tasks: new DshTasks(dsh, '/tmp/dshm-ws'),
   })
   servers.push(server)
@@ -50,6 +52,31 @@ async function bridgeWith(options: FakeDSHOptions = {}) {
 const ended = (fs: Frame[]) => fs.some((f) => f.kind.case === 'event' && f.kind.value.body.case === 'taskEnded')
 
 describe('BridgeAgainstFakeDSH', () => {
+  test('helloReportsSupportedRangeAndBlocksUnsupportedDshBeforeDispatch', async () => {
+    for (const version of [SUPPORTED_DSH, '0.2.2-alpha.3', 'unknown']) {
+      const { dsh, client } = await bridgeWith({}, version)
+      try {
+        client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
+        await client.until(fs => fs.length === 1)
+        const response = client.frames[0].kind
+        assert.ok(response.case === 'response' && response.value.body.case === 'hello')
+        const hello = response.value.body.value
+        assert.equal(hello.dshVersion, version)
+        assert.equal(hello.supportedDshRange, SUPPORTED_DSH)
+        assert.equal(hello.requiresBridgeUpdate, version !== SUPPORTED_DSH)
+        if (hello.requiresBridgeUpdate) {
+          assert.deepEqual(hello.capabilities, [])
+          client.send({ kind: { case: 'request', value: { id: 2n, body: { case: 'createTask', value: { prompt: 'no dispatch' } } } } })
+          await client.until(fs => fs.length === 2)
+          const refusal = client.frames[1].kind
+          assert.ok(refusal.case === 'response' && refusal.value.body.case === 'error')
+          assert.equal(refusal.value.body.value.code, 'host/bridge-update')
+          assert.deepEqual(dsh.workspaces, [])
+        }
+      } finally { client.close() }
+    }
+  })
+
   test('chosenWorkspaceBecomesSessionCwdWithModelAndRecentPaths', async () => {
     const { dsh, client } = await bridgeWith()
     try {
@@ -249,7 +276,7 @@ describe('PlaintextChannelBridge', () => {
     for (const host of ['0.0.0.0', '192.168.1.10', '10.0.0.1', '::', 'example.com', 'localhost']) {
       assert.throws(() => channel.assertListenAddress(host), /refuses non-loopback/, host)
       await assert.rejects(
-        startBridgeServer({ host, port: 0, channel, tasks: new DshTasks(new FakeDSH(), '/tmp') }),
+        startBridgeServer({ dshVersion: SUPPORTED_DSH, host, port: 0, channel, tasks: new DshTasks(new FakeDSH(), '/tmp') }),
         /refuses non-loopback/, host)
     }
     for (const host of ['127.0.0.1', '127.1.2.3', '::1', '[::1]']) assert.ok(isLoopbackAddress(host), host)

@@ -10,6 +10,7 @@ import { ApprovalHolder } from '../src/approvals/holder.ts'
 import { ApprovalDecision, ApprovalOutcome } from '../src/gen/approvals_pb.ts'
 import { TaskHub } from '../src/s2/task-hub.ts'
 import { after, describe, test } from 'node:test'
+import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import { WebSocket } from 'ws'
 import { PlaintextChannel } from '../src/channel.ts'
@@ -71,6 +72,7 @@ after(async () => { await Promise.all(servers.map((s) => s.close())) })
 async function bridgeWith(options: FakeDSHOptions = {}) {
   const dsh = new FakeDSH(options)
   const server = await startBridgeServer({
+    dshVersion: SUPPORTED_DSH,
     host: '127.0.0.1', port: 0, channel: new PlaintextChannel(), tasks: new DshTasks(dsh, '/tmp/dshm-ws'),
     hostName: 'test-mac',
   })
@@ -284,7 +286,7 @@ test('waitingTaskSwitchesModelResumesBothFieldsAndInterruptCancelsApproval', asy
   const tasks = new DshTasks(dsh, dir)
   const hub = new TaskHub(tasks, new HostLog(1))
   const approvals = new ApprovalHolder(join(dir, 'audit.jsonl'), event => hub.approvalChanged(event))
-  const server = await startBridgeServer({ host: '127.0.0.1', channel: new PlaintextChannel(), port: 0, tasks, hub, approvals })
+  const server = await startBridgeServer({ dshVersion: SUPPORTED_DSH, host: '127.0.0.1', channel: new PlaintextChannel(), port: 0, tasks, hub, approvals })
   servers.push(server)
   const writer = await connect(server.port, ['approvals.v1'])
   const created = await writer.call({ case: 'createTask', value: { prompt: 'hold for approval' } })

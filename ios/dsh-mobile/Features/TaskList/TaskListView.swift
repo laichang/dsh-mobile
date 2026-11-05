@@ -112,6 +112,11 @@ struct HostStatusRow: View {
                 .foregroundStyle(color)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.subheadline.weight(.medium))
+                if case .needsBridgeUpdate(let version, let supported) = host.reachability {
+                    Text("Installed DSH: \(version). Supported DSH: \(supported).")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 if host.reachability == .offline, let last = host.lastConnectedAt {
                     Text("Last connected \(last, format: .relative(presentation: .named))")
                         .font(.caption)
@@ -129,6 +134,7 @@ struct HostStatusRow: View {
         case .online: "\(host.name) · connected"
         case .connecting: "Connecting to \(host.name)…"
         case .offline: "\(host.name) is offline"
+        case .needsBridgeUpdate: "\(host.name) needs a bridge update"
         }
     }
 
@@ -137,6 +143,7 @@ struct HostStatusRow: View {
         case .online: "desktopcomputer"
         case .connecting: "arrow.triangle.2.circlepath"
         case .offline: "wifi.exclamationmark"
+        case .needsBridgeUpdate: "arrow.down.circle"
         }
     }
 
@@ -144,7 +151,7 @@ struct HostStatusRow: View {
         switch host.reachability {
         case .online: .green
         case .connecting: .secondary
-        case .offline: .orange
+        case .offline, .needsBridgeUpdate: .orange
         }
     }
 }

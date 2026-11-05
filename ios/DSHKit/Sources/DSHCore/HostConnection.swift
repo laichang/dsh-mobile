@@ -119,6 +119,7 @@ public struct TaskListing: Sendable, Equatable {
 public enum HostConnectionError: Error, Equatable, CustomStringConvertible {
     case notConnected
     case bridge(code: String, message: String)
+    case bridgeUpdateRequired(version: String, supported: String)
     case unexpectedResponse
     case disconnected
 
@@ -126,6 +127,7 @@ public enum HostConnectionError: Error, Equatable, CustomStringConvertible {
         switch self {
         case .notConnected: "not connected to the bridge"
         case .bridge(let code, let message): "\(code): \(message)"
+        case .bridgeUpdateRequired(let version, let supported): "This host needs a bridge update. DSH \(version) is installed. This bridge supports \(supported)."
         case .unexpectedResponse: "the bridge sent an unexpected response"
         case .disconnected: "the connection to the bridge closed"
         }
@@ -210,6 +212,9 @@ public actor HostConnection {
             hello.capabilities = [DSHProtocolInfo.approvalsCapability]
             let response = try await request(.hello(hello))
             guard case .hello(let theirs)? = response.body else { throw HostConnectionError.unexpectedResponse }
+            if theirs.requiresBridgeUpdate {
+                throw HostConnectionError.bridgeUpdateRequired(version: theirs.dshVersion, supported: theirs.supportedDshRange)
+            }
             capabilities = theirs.capabilities
         } catch {
             await teardown(generation: gen)

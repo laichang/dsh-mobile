@@ -493,6 +493,13 @@ public nonisolated struct Dshm_V1_Hello: Sendable {
 
   public var capabilities: [String] = []
 
+  /// Host response only. Older bridges omit these fields.
+  public var dshVersion: String = String()
+
+  public var supportedDshRange: String = String()
+
+  public var requiresBridgeUpdate: Bool = false
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -1351,7 +1358,7 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
 nonisolated extension Dshm_V1_Hello: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Hello"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}protocol_version\0\u{1}capabilities\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}protocol_version\0\u{1}capabilities\0\u{4}n\u{3}dsh_version\0\u{3}supported_dsh_range\0\u{3}requires_bridge_update\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1361,6 +1368,9 @@ nonisolated extension Dshm_V1_Hello: SwiftProtobuf.Message, SwiftProtobuf._Messa
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularUInt32Field(value: &self.protocolVersion) }()
       case 2: try { try decoder.decodeRepeatedStringField(value: &self.capabilities) }()
+      case 240: try { try decoder.decodeSingularStringField(value: &self.dshVersion) }()
+      case 241: try { try decoder.decodeSingularStringField(value: &self.supportedDshRange) }()
+      case 242: try { try decoder.decodeSingularBoolField(value: &self.requiresBridgeUpdate) }()
       default: break
       }
     }
@@ -1373,12 +1383,24 @@ nonisolated extension Dshm_V1_Hello: SwiftProtobuf.Message, SwiftProtobuf._Messa
     if !self.capabilities.isEmpty {
       try visitor.visitRepeatedStringField(value: self.capabilities, fieldNumber: 2)
     }
+    if !self.dshVersion.isEmpty {
+      try visitor.visitSingularStringField(value: self.dshVersion, fieldNumber: 240)
+    }
+    if !self.supportedDshRange.isEmpty {
+      try visitor.visitSingularStringField(value: self.supportedDshRange, fieldNumber: 241)
+    }
+    if self.requiresBridgeUpdate != false {
+      try visitor.visitSingularBoolField(value: self.requiresBridgeUpdate, fieldNumber: 242)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Dshm_V1_Hello, rhs: Dshm_V1_Hello) -> Bool {
     if lhs.protocolVersion != rhs.protocolVersion {return false}
     if lhs.capabilities != rhs.capabilities {return false}
+    if lhs.dshVersion != rhs.dshVersion {return false}
+    if lhs.supportedDshRange != rhs.supportedDshRange {return false}
+    if lhs.requiresBridgeUpdate != rhs.requiresBridgeUpdate {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

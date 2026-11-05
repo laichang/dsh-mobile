@@ -7,6 +7,7 @@ import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { after, describe, test } from 'node:test'
+import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import { WebSocket } from 'ws'
 import { PlaintextChannel } from '../src/channel.ts'
@@ -231,6 +232,7 @@ function sendRaw(port: number, bytes: Uint8Array): Promise<{ code: number; reaso
 
 async function noiseBridge(store: PairingStore, plaintext = false) {
   const server = await startBridgeServer({
+    dshVersion: SUPPORTED_DSH,
     host: '127.0.0.1', port: 0, noise: new NoiseResponder(store),
     channel: plaintext ? new PlaintextChannel() : undefined,
     tasks: new DshTasks(new FakeDSH({ reply: ['secret', ' ', 'reply'] }), '/tmp/dshm-ws'),
@@ -423,6 +425,7 @@ describe('PlaintextChannelDevOnly', () => {
 
   test('devPlaintextRequiresLoopbackListener', async () => {
     await assert.rejects(startBridgeServer({
+      dshVersion: SUPPORTED_DSH,
       host: '0.0.0.0', port: 0, noise: new NoiseResponder(tempStore()), channel: new PlaintextChannel(),
       tasks: new DshTasks(new FakeDSH(), '/tmp'),
     }), /refuses non-loopback/)

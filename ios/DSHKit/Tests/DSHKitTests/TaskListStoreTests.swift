@@ -170,6 +170,34 @@ import Testing
         #expect(home.prompts.isEmpty)
     }
 
+    @Test func unsupportedHostRetainsDraftAndChoicesWhileAnotherHostDispatches() async throws {
+        let home = FakeHost(hostName: "Home Mac")
+        let office = FakeHost(hostName: "Office Mac", incompatibleDsh: ("0.2.2-alpha.3", "0.2.2-rc.1"))
+        let store = TaskListStore(container: try TaskCache.container(inMemory: true), hosts: [
+            .init(key: "home", connection: .init(endpoint: .localBridge(), channel: PlaintextChannel(), transport: home.factory), name: home.hostName),
+            .init(key: "office", connection: .init(endpoint: .localBridge(), channel: PlaintextChannel(), transport: office.factory), name: office.hostName)
+        ], prompt: "Use this repo", preferredHostKey: "office")
+        let selection = ModelSelection(provider: "office", model: "office-model", effort: nil)
+        store.composerSelections["office"] = selection
+        store.chooseWorkspace("/office/repo", hostKey: "office")
+        store.foreground()
+        defer { store.background() }
+        try await waitUntil {
+            store.hosts.first { $0.key == "home" }?.reachability == .online
+                && store.hosts.first { $0.key == "office" }?.reachability == .needsBridgeUpdate(version: "0.2.2-alpha.3", supported: "0.2.2-rc.1")
+        }
+        #expect(await store.send() == nil)
+        #expect(store.sendError?.contains("Office Mac needs a bridge update") == true)
+        #expect(store.prompt == "Use this repo")
+        #expect(office.prompts.isEmpty && home.prompts.isEmpty)
+        store.chooseHost("home")
+        #expect(await store.send() != nil)
+        #expect(home.prompts == ["Use this repo"])
+        #expect(office.prompts.isEmpty)
+        #expect(store.composerSelections["office"] == selection)
+        #expect(store.composerWorkspaces["office"] == "/office/repo")
+    }
+
     @Test func offlineSelectionNeverSendsToAnotherHost() async throws {
         let home = FakeHost(hostName: "Home Mac"), office = FakeHost(reachable: false)
         func config(_ key: String, name: String, host: FakeHost) -> TaskListStore.HostConfig {

@@ -103,6 +103,10 @@ message Hello {
   // Incremented on breaking changes; the bridge supports N and N-1.
   uint32 protocol_version = 1;
   repeated string capabilities = 2;
+  // Host response only. Older bridges omit these fields.
+  string dsh_version = 240;
+  string supported_dsh_range = 241;
+  bool requires_bridge_update = 242;
 }
 
 message Error {
