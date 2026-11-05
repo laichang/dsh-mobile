@@ -25,6 +25,7 @@ public enum DebugLaunchOptions {
         public var presetPrompt: String?
         public var bridgePort: Int?
         public var fakeMilestones = false
+        public var multipleFakeHosts = false
         public var fakeBridgeOffline = false
         public var resetStore = false
         public var connectDelay: Double?
@@ -64,7 +65,8 @@ public enum DebugLaunchOptions {
         let yes = ["YES", "1", "true"]
         if let v = values[fakeBridgeKey] {
             options.useFakeBridge = yes.contains(v) || v == "offline"
-            options.fakeBridgeOffline = v == "offline"
+            options.multipleFakeHosts = v == "multi" || v == "multi-office-offline"
+            options.fakeBridgeOffline = v == "offline" || v == "multi-office-offline"
         }
         if let v = values[resetStoreKey] { options.resetStore = yes.contains(v) }
         options.connectDelay = values[connectDelayKey].flatMap(Double.init)

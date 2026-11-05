@@ -568,16 +568,19 @@ Each slice needs only T0, unless "Needs" says otherwise.
 **Demo**: two Macs, tasks from both in one list; take one offline and it's named.
 
 **Done when**
-- [ ] [ui] With two hosts (`FakeBridge` ×2), tasks from both appear in one list; one taken offline is named — Evidence:
+- [x] [ui] With two hosts (`FakeBridge` ×2), tasks from both appear in one list; one taken offline is named — Evidence: test:S9MultiHostUITests/testTwoHostsShareTheListAndTheOfflineHostIsNamed · cmd:scripts/demo/s9.sh · shot:evidence/S9/s9-two-hosts.png · shot:evidence/S9/s9-office-offline.png
 - [ ] [human] Two real Macs, tasks from both in one list; take one offline and it's named — Evidence:
 
-- [ ] [auto] Pair a second host over Noise, dispatch to either host and retain the first host’s connection and cached task — Evidence:
-- [ ] [auto] Only configured hosts contribute cached tasks, including a paired host that is offline — Evidence:
+- [x] [auto] Pair a second host over Noise, dispatch to either host and retain the first host’s connection and cached task — Evidence: test:pairingASecondHostPreservesTheFirstConnectionAndRoutesEachPrompt
+- [x] [auto] Only configured hosts contribute cached tasks, including a paired host that is offline — Evidence: test:cachedTasksAppearOnlyForConfiguredHostsEvenWhenOffline · test:offlineSelectionNeverSendsToAnotherHost
+
+- [ ] [ui] Two paired Noise hosts show their own devices, and short answers from both selected hosts stay inline — Evidence:
 
 **Not**: prompt-based host guess (later).
 
 **Log**
 - **2026-11-05**: Started on `claude/s9-multi-host` using ports 47817/3290, profile `~/.dshm/home-s9`, simulator `dshm-S9`. Isolated T0 passed 52 bridge tests, 48 Swift tests, the real DSH CLI and four UI tests.
+- **2026-11-05**: Implementation `064a868` uses every paired Noise host, remembers the composer selection and keeps offline tasks visible only for configured hosts (D43, provisional). The no-fallback, separate model/workspace choices, same-name hosts and encrypted second pairing checks passed. `scripts/demo/s9.sh --shots` passed 52 bridge, 53 Swift and one two-host UI test with zero skips. The viewer saw both tasks together and verified that the offline target remained selected across a relaunch. The Release marker check passed. No new dependencies or downloads. Ready for independent UI review. The real two-Mac check is open.
 
 ### S10 · Control: devices + audit
 

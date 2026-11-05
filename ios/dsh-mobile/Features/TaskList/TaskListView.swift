@@ -226,10 +226,21 @@ struct TaskStateIcon: View {
 struct ComposerView: View {
     @Bindable var store: TaskListStore
     let opened: (String) -> Void
+    @FocusState private var editingPrompt: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if let key = store.composerHostKey {
+                if store.hosts.count > 1 {
+                    Picker("Send to", selection: Binding(get: { key }, set: { store.chooseHost($0) })) {
+                        ForEach(store.hosts) { host in
+                            Text(host.name).tag(host.key)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .accessibilityIdentifier("composer.host")
+                    .disabled(store.isSending)
+                }
                 if let host = store.hosts.first(where: { $0.key == key && $0.reachability == .online }) {
                     if host.capabilities.contains("workspaces.v1") {
                         WorkspaceControl(store: store, hostKey: key)
@@ -254,6 +265,7 @@ struct ComposerView: View {
             HStack(alignment: .bottom, spacing: 8) {
                 TextField("One sentence for your agent", text: $store.prompt, axis: .vertical)
                     .lineLimit(1...5)
+                    .focused($editingPrompt)
                     .textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier("composer.prompt")
                     .onSubmit(send)
@@ -275,7 +287,10 @@ struct ComposerView: View {
 
     private func send() {
         Task {
-            if let key = await store.send() { opened(key) }
+            if let key = await store.send() {
+                editingPrompt = false
+                opened(key)
+            }
         }
     }
 }
