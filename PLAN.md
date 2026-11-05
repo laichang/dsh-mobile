@@ -41,7 +41,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | T0 | review | merged `84db2e8` | 2026-11-05 | User accepts 3 `[human]` items (§9) |
 | X1 | done | merged `ccc8ff9` | 2026-11-05 | — |
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
-| X3 | todo | — | — | Start any time (no deps) |
+| X3 | doing | claude/x3-markdown | 2026-11-05 | Implement and verify |
 | X4 | done | merged `ccc8ff9` | 2026-11-05 | — |
 | S1 | review | merged `1f35fa2` (batch 1) | 2026-11-05 | User accepts 2 `[human]` items: real iPhone, packet capture (§9) |
 | S2 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D20, D23 in §9) |
@@ -787,6 +787,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-05 · Batch 2 execution fallback.** The three CLI workspaces could not fetch missing dependencies or access CoreSimulator under their child sandbox. The coordinator transferred each slice to a Codex subagent in the same branch and worktree, with the same resources. Each owner reruns T0 before implementing its slice.
 
 - **2026-11-05 · S5.** Merged `529bb16` after an independent rerun at b3ad3a8. All 42 bridge tests, 46 Swift tests and the real DSH UI test passed with zero skips. The reviewer verified the interrupted stream, list and offline reopened milestone. Evidence: scripts/demo/s5.sh and evidence/S5/s5-interrupted-detail.png. The merge PLAN comparison passed.
+
+- **2026-11-05 · X3.** Assigned claude/x3-markdown, worktree /Users/bytedance/.codex/worktrees/x3-markdown/dsh-mobile, simulator dshm-X3, DSHM_HOME ~/.dshm/home-x3, bridge 47813, web 3286. The owner uses the shared DSH runtime read-only.
 
 ## 9. Pending user confirmation
 
