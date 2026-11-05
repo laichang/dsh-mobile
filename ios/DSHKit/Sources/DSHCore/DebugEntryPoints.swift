@@ -10,16 +10,20 @@ public enum DebugLaunchOptions {
     public static let presetPromptKey = "DSHMPresetPrompt"
     /// `-DSHMBridgePort <port>`: loopback bridge port (default 47801).
     public static let bridgePortKey = "DSHMBridgePort"
+    /// `-DSHMResetPairing YES`: forget paired hosts and the device key at launch (S1 UI tests).
+    public static let resetPairingKey = "DSHMResetPairing"
 
     public struct Options: Equatable, Sendable {
         public var useFakeBridge = false
         public var presetPrompt: String?
         public var bridgePort: Int?
+        public var resetPairing = false
 
-        public init(useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil) {
+        public init(useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil, resetPairing: Bool = false) {
             self.useFakeBridge = useFakeBridge
             self.presetPrompt = presetPrompt
             self.bridgePort = bridgePort
+            self.resetPairing = resetPairing
         }
     }
 
@@ -40,11 +44,13 @@ public enum DebugLaunchOptions {
         if let v = values[fakeBridgeKey] { options.useFakeBridge = ["YES", "1", "true"].contains(v) }
         options.presetPrompt = values[presetPromptKey]
         options.bridgePort = values[bridgePortKey].flatMap(Int.init)
+        if let v = values[resetPairingKey] { options.resetPairing = ["YES", "1", "true"].contains(v) }
         return options
     }
 }
 
-/// Routes for the reserved `dshm://` scheme. S1 replaces the pairing stub with real pairing.
+/// Routes for the reserved `dshm://` scheme, which only Debug builds register. `dshm://pair?…`
+/// carries a `PairingOffer` (S1); Release builds get the same offer from the QR scanner.
 public enum DebugDeepLink: Equatable, Sendable {
     case pair(parameters: [String: String])
 

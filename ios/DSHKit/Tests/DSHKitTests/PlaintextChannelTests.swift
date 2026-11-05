@@ -1,7 +1,10 @@
+#if DEBUG
 import DSHCore
 import Foundation
 import Testing
 
+/// PlaintextChannel exists only in Debug builds (scripts/check-release-clean) and only reaches
+/// loopback literals.
 @Suite struct PlaintextChannelTests {
     @Test(arguments: ["192.168.1.10", "10.0.0.1", "0.0.0.0", "8.8.8.8", "::", "fe80::1", "example.com", "localhost", ""])
     func refusesNonLoopbackAddress(host: String) {
@@ -28,6 +31,8 @@ import Testing
         #expect(await opened.value == 0)
     }
 }
+
+#endif
 
 actor Counter {
     var value = 0

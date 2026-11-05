@@ -28,15 +28,21 @@ public enum HostConnectionError: Error, Equatable, CustomStringConvertible {
     }
 }
 
-/// One connection to one host's bridge (ARCHITECTURE §4). Owns the transport, correlates
-/// requests with responses, and publishes events. T0: no reconnect, no resume.
+/// One connection to one host's bridge (ARCHITECTURE §4). Owns the transport, runs the
+/// channel's handshake, correlates requests with responses, and publishes events. Frames are
+/// sealed and sent in order from one outbox, so Noise nonces never go out of order.
+/// No reconnect, no resume yet (S2).
 public actor HostConnection {
     public let endpoint: HostEndpoint
+    public nonisolated let channelName: String
     private let channel: any SecureChannel
     private let makeTransport: BridgeTransportFactory
 
     private var transport: (any BridgeTransport)?
+    private var cipher: (any FrameCipher)?
+    private var outbox: AsyncStream<(UInt64, Data)>.Continuation?
     private var receiveLoop: Task<Void, Never>?
+    private var sendLoop: Task<Void, Never>?
     private var nextRequestID: UInt64 = 1
     private var pending: [UInt64: CheckedContinuation<Dshm_V1_Response, any Error>] = [:]
     private let eventContinuation: AsyncStream<TaskEvent>.Continuation
@@ -49,20 +55,43 @@ public actor HostConnection {
     public init(endpoint: HostEndpoint, channel: any SecureChannel, transport: @escaping BridgeTransportFactory) {
         self.endpoint = endpoint
         self.channel = channel
+        self.channelName = channel.name
         self.makeTransport = transport
         (events, eventContinuation) = AsyncStream.makeStream(of: TaskEvent.self)
     }
 
-    /// Validates the endpoint against the channel, opens the transport, and exchanges Hello.
+    /// Validates the endpoint against the channel, opens the transport, runs the channel's
+    /// handshake, and exchanges Hello.
     public func connect() async throws {
         if transport != nil { return }
         try channel.validate(endpoint)
-        let t = try await makeTransport(endpoint)
+        let t = try await makeTransport(endpoint.webSocketURL(path: channel.path))
+        let established: any FrameCipher
+        do {
+            established = try await channel.establish(over: t)
+        } catch {
+            await t.close()
+            throw error
+        }
         transport = t
-        receiveLoop = Task { await self.receive(from: t) }
+        cipher = established
+        let (stream, continuation) = AsyncStream.makeStream(of: (UInt64, Data).self)
+        outbox = continuation
+        sendLoop = Task {
+            for await (id, bytes) in stream {
+                do { try await t.send(bytes) } catch { self.resolve(id, with: .failure(error)) }
+            }
+        }
+        receiveLoop = Task { await self.receive(from: t, cipher: established) }
         var hello = Dshm_V1_Hello()
         hello.protocolVersion = DSHProtocolInfo.version
-        let response = try await request(.hello(hello))
+        let response: Dshm_V1_Response
+        do {
+            response = try await request(.hello(hello))
+        } catch {
+            await disconnect()
+            throw error
+        }
         guard case .hello(let theirs)? = response.body else { throw HostConnectionError.unexpectedResponse }
         capabilities = theirs.capabilities
     }
@@ -78,15 +107,19 @@ public actor HostConnection {
 
     public func disconnect() async {
         receiveLoop?.cancel()
+        outbox?.finish()
+        outbox = nil
+        sendLoop = nil
         await transport?.close()
         transport = nil
+        cipher = nil
         failPending(HostConnectionError.disconnected)
     }
 
     // MARK: - Internals
 
     private func request(_ body: Dshm_V1_Request.OneOf_Body) async throws -> Dshm_V1_Response {
-        guard let transport else { throw HostConnectionError.notConnected }
+        guard let outbox, let cipher else { throw HostConnectionError.notConnected }
         let id = nextRequestID
         nextRequestID += 1
         var frame = Dshm_V1_Frame()
@@ -94,12 +127,11 @@ public actor HostConnection {
         request.id = id
         request.body = body
         frame.request = request
-        let bytes = try channel.seal(try frame.serializedBytes())
+        // Sealed here, inside the actor, and queued in the same step: outbox order = nonce order.
+        let bytes = try cipher.seal(try frame.serializedBytes())
         let response = try await withCheckedThrowingContinuation { continuation in
             pending[id] = continuation
-            Task {
-                do { try await transport.send(bytes) } catch { self.resolve(id, with: .failure(error)) }
-            }
+            outbox.yield((id, bytes))
         }
         if case .error(let e)? = response.body { throw HostConnectionError.bridge(code: e.code, message: e.message) }
         return response
@@ -115,11 +147,11 @@ public actor HostConnection {
         for continuation in waiting.values { continuation.resume(throwing: error) }
     }
 
-    private func receive(from transport: any BridgeTransport) async {
+    private func receive(from transport: any BridgeTransport, cipher: any FrameCipher) async {
         while !Task.isCancelled {
             let frame: Dshm_V1_Frame
             do {
-                let bytes = try channel.open(try await transport.receive())
+                let bytes = try cipher.open(try await transport.receive())
                 frame = try Dshm_V1_Frame(serializedBytes: bytes)
             } catch {
                 break
@@ -141,7 +173,12 @@ public actor HostConnection {
                 break
             }
         }
-        self.transport = nil
+        if self.transport as AnyObject? === transport as AnyObject? {
+            self.transport = nil
+            self.cipher = nil
+            outbox?.finish()
+            outbox = nil
+        }
         failPending(HostConnectionError.disconnected)
     }
 }

@@ -8,6 +8,7 @@
 import { create, toBinary } from '@bufbuild/protobuf'
 import { FrameSchema } from '../src/gen/frame_pb.ts'
 import { HandshakeState, hex, keyPairFromSecret } from '../src/pairing/noise.ts'
+import { offerURL } from '../src/pairing/offer.ts'
 import { Mode, PAIR_PROTOCOL, RECONNECT_PROTOCOL, encodeFirstMessage, header, prologue } from '../src/pairing/wire.ts'
 
 export interface Transcript {
@@ -73,7 +74,19 @@ function transcript(name: string, mode: Mode): Transcript {
   }
 }
 
-export function makeTranscripts(): { transcripts: Transcript[] } {
-  return { transcripts: [transcript('pair', Mode.Pair), transcript('reconnect', Mode.Reconnect)] }
+/** The pair transcript's offer as the QR's `dshm://pair?…` URL (parsed by PairingOffer.swift). */
+function offer(): string {
+  return offerURL({
+    hostName: 'Mac mini (S1)',
+    addresses: ['192.168.1.5:47801', '[fd7a:115c:a1e0::1]:47801', '100.64.0.7:47801'],
+    hostKey: keyPairFromSecret(fill(0x11)).publicKey,
+    offerId: fill(0x55, 16),
+    secret: fill(0x66),
+    expiresAt: 1_893_456_000_000,
+  })
+}
+
+export function makeTranscripts(): { offerURL: string; transcripts: Transcript[] } {
+  return { offerURL: offer(), transcripts: [transcript('pair', Mode.Pair), transcript('reconnect', Mode.Reconnect)] }
 }
 
