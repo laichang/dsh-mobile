@@ -1,0 +1,27 @@
+syntax = "proto3";
+package dshm.v1;
+
+message ListDevices {}
+message RevokeDevice { string device_id = 1; }
+message PairedDevice {
+  string id = 1;
+  int64 paired_at_ms = 2;
+  int64 last_seen_at_ms = 3;
+}
+message DeviceList {
+  string current_device_id = 1;
+  repeated PairedDevice devices = 2;
+}
+message ListAudit { string before_id = 1; }
+message AuditEntry {
+  string id = 1;
+  int64 at_ms = 2;
+  string actor = 3;
+  string device = 4;
+  string action = 5;
+  string detail = 6;
+}
+message AuditPage {
+  repeated AuditEntry entries = 1;
+  string next_before_id = 2;
+}

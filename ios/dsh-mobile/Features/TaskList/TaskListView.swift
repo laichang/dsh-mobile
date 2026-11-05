@@ -40,6 +40,14 @@ struct TaskListView: View {
                 ForEach(store.hosts) { host in
                     HostStatusRow(host: host)
                     HostChannelRow(host: host)
+                    if let connection = store.deviceManagement(for: host.key) {
+                        NavigationLink {
+                            DeviceManagementView(host: host.name, connection: connection)
+                        } label: {
+                            Label("Devices and audit", systemImage: "person.badge.key")
+                        }
+                        .accessibilityIdentifier("host.manage")
+                    }
                 }
             }
             if store.tasks.isEmpty {

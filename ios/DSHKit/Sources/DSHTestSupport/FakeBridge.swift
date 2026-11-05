@@ -300,7 +300,7 @@ public final class FakeHost: Sendable {
                 resumed.replayed = UInt64(replay.count)
                 bridge.deliver(Self.response(id, .resumed(resumed)))
                 conn.resumed = true
-            case .answerApproval?, .interrupt?, .getModelCatalog?, .selectModel?, .listWorkspaces?:
+            case .answerApproval?, .interrupt?, .getModelCatalog?, .selectModel?, .listWorkspaces?, .listDevices?, .listAudit?, .revokeDevice?:
                 var error = Dshm_V1_Error()
                 error.code = "request/unsupported"
                 error.message = "This test host does not advertise this capability."
