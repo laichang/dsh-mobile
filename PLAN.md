@@ -49,7 +49,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S4 | doing | `claude/s4-approvals` | 2026-11-05 | Implement and verify in batch 2 |
 | S5 | done | merged `529bb16` | 2026-11-05 | — (provisional D28 in §9) |
 | S6 | done | merged `d62fd6d` | 2026-11-05 | — (provisional D31 in §9) |
-| S7 | todo | — | 2026-11-05 | Ready (T0 merged); batch 2 |
+| S7 | doing | claude/s7-workspaces | 2026-11-05 | Implement and verify |
 | S8 | doing | claude/s8-rich-detail | 2026-11-05 | Implement and verify |
 | S9 | todo | — | 2026-11-05 | Ready (S1 merged) |
 | S10 | todo | — | 2026-11-05 | Ready (S1 merged) |
@@ -800,6 +800,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-05 · S8.** Assigned claude/s8-rich-detail, worktree /Users/bytedance/.codex/worktrees/s8-rich-detail/dsh-mobile, simulator dshm-S8, DSHM_HOME ~/.dshm/home-s8, bridge 47814, web 3287. The owner uses the shared DSH runtime read-only.
 
 - **2026-11-05 · S6.** Merged after an independent rerun on both the owner branch and integrated tree at 8cc6e11. Integration preserves interrupt and model selection and lets a user explicitly return to the host default after a bridge downgrade. Both real DSH demos passed, with 45 bridge and 47 DSHKit tests. Evidence: scripts/demo/s6.sh and evidence/S6/s6-effort-switch.png.
+
+- **2026-11-05 · S7.** Assigned claude/s7-workspaces, worktree /Users/bytedance/.codex/worktrees/s7-workspaces/dsh-mobile, simulator dshm-S7, DSHM_HOME ~/.dshm/home-s7, bridge 47815, web 3288. The owner uses the shared DSH runtime read-only.
 
 ## 9. Pending user confirmation
 
