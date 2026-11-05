@@ -571,7 +571,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S10 · Control: devices + audit
 
-**Status** todo · **Needs** S1 · **Branch** —
+**Status** doing · **Needs** S1 · **Branch** `claude/s10-devices-audit`
 
 **Why**: principle 9.
 
@@ -585,10 +585,12 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [ ] [ui] Revoke a device from the management screen; its next connection is refused — Evidence:
 - [ ] [ui] Audit view shows who, when, which device, and what for pairing events — Evidence:
 
+- [ ] [ui] An approval denied on the phone is visible in the audit view with the authenticated device and exact operation (S4 × S10) — Evidence:
+
 **Not**: —
 
 **Log**
-- —
+- **2026-11-05 · Started.** Isolated T0 passed on dshm-S10 with the pinned DSH runtime; ports 47816 and 3289, profile ~/.dshm/home-s10. Implementing device management and the approval audit seam.
 
 ### S11 · First run
 
