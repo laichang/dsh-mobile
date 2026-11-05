@@ -183,6 +183,15 @@ struct ComposerView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
+            if let key = store.composerHostKey {
+                if store.modelHosts.contains(key) {
+                    ModelControl(store: store, hostKey: key, task: nil)
+                } else if let choice = store.composerSelections[key],
+                          store.hosts.contains(where: { $0.key == key && $0.reachability == .online && !$0.capabilities.contains("models.v1") }) {
+                    Text("This host cannot select \(choice.model).")
+                    Button("Use host default") { store.useHostDefault(hostKey: key) }
+                }
+            }
             if let error = store.sendError {
                 Text(error)
                     .font(.footnote)

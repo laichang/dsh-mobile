@@ -8,6 +8,7 @@ public enum TaskEvent: Sendable, Equatable {
     case ended(taskID: String, status: TaskEndStatus, message: String)
     /// S3: the next step on the task's milestone timeline. Arrives before `.ended`.
     case milestone(Milestone)
+    case modelSelected(taskID: String, selection: ModelSelection)
     /// S2: a task was created or changed state.
     case upserted(TaskSnapshot)
     /// S2: the app's resume cursor didn't apply; a replay of log `logID` from its start follows.
@@ -208,9 +209,15 @@ public actor HostConnection {
     }
 
     /// Starts a task; its output arrives on `events`.
-    public func createTask(prompt: String) async throws -> String {
+    public func createTask(prompt: String, selection: ModelSelection? = nil) async throws -> String {
         var create = Dshm_V1_CreateTask()
         create.prompt = prompt
+        if let selection {
+            guard capabilities.contains("models.v1") else {
+                throw HostConnectionError.bridge(code: "model/unavailable", message: "This host cannot select the requested model.")
+            }
+            create.modelSelection = selection
+        }
         let response = try await request(.createTask(create))
         guard case .taskCreated(let created)? = response.body else { throw HostConnectionError.unexpectedResponse }
         return created.taskID
@@ -221,6 +228,21 @@ public actor HostConnection {
         command.taskID = taskID
         let response = try await request(.interrupt(command))
         guard case .interruptAccepted? = response.body else { throw HostConnectionError.unexpectedResponse }
+    }
+
+    public func modelCatalog() async throws -> ModelCatalog {
+        let response = try await request(.getModelCatalog(.init()))
+        guard case .modelCatalog(let catalog)? = response.body else { throw HostConnectionError.unexpectedResponse }
+        return catalog
+    }
+
+    public func selectModel(_ selection: ModelSelection, taskID: String) async throws {
+        var select = Dshm_V1_SelectModel()
+        select.taskID = taskID
+        select.selection = selection
+        let response = try await request(.selectModel(select))
+        guard case .modelSelected(let accepted)? = response.body,
+              accepted.taskID == taskID, accepted.selection == selection else { throw HostConnectionError.unexpectedResponse }
     }
 
     /// S2: every task the host knows, newest first.
@@ -332,6 +354,8 @@ public actor HostConnection {
             return .upserted(TaskSnapshot(u.task))
         case .logReset(let r)?:
             return .logReset(logID: r.logID)
+        case .modelSelected(let m)?:
+            return .modelSelected(taskID: m.taskID, selection: m.selection)
         case .milestoneAdded(let m)?:
             return Milestone(m).map { .milestone($0) }
         case nil:

@@ -37,6 +37,7 @@ public final class CachedTask {
     public var createdAt: Date
     public var updatedAt: Date
     public var transcript: String
+    public var modelSelectionData: Data?
     /// Highest `AssistantChunk.seq` appended to `transcript`, so a replay never appends twice.
     public var lastChunkSeq: Int64
     /// The host log that last touched this task. A task whose log is gone can't make progress.
