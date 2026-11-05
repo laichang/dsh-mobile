@@ -41,6 +41,10 @@ public final class CachedTask {
     public var lastChunkSeq: Int64
     /// The host log that last touched this task. A task whose log is gone can't make progress.
     public var logID: String
+    /// The task's milestone timeline (S3), a JSON-encoded `MilestoneTimeline`; empty when it has
+    /// none. Each `MilestoneAdded` carries the whole todo list, so the card needs only the latest;
+    /// the whole timeline is kept for the detail view (S2 x S3 seam, D23).
+    public var milestonesData: Data = Data()
 
     public init(hostKey: String, taskID: String, title: String, createdAt: Date) {
         self.key = Self.key(hostKey: hostKey, taskID: taskID)
@@ -54,6 +58,7 @@ public final class CachedTask {
         self.transcript = ""
         self.lastChunkSeq = 0
         self.logID = ""
+        self.milestonesData = Data()
     }
 
     public var state: TaskState {
@@ -62,6 +67,14 @@ public final class CachedTask {
     }
 
     public static func key(hostKey: String, taskID: String) -> String { "\(hostKey)\n\(taskID)" }
+
+    public var milestones: MilestoneTimeline {
+        get {
+            guard !milestonesData.isEmpty else { return MilestoneTimeline() }
+            return (try? JSONDecoder().decode(MilestoneTimeline.self, from: milestonesData)) ?? MilestoneTimeline()
+        }
+        set { milestonesData = newValue.isEmpty ? Data() : (try? JSONEncoder().encode(newValue)) ?? Data() }
+    }
 }
 
 public enum TaskCache {

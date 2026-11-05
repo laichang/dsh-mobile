@@ -14,6 +14,21 @@ struct TaskDetailView: View {
             statusRow(row, host: host)
                 .padding(.horizontal)
                 .padding(.vertical, 8)
+            if let timeline = row?.milestones, !timeline.isEmpty {
+                // S3: milestone summary by default; the timeline on demand. From the cache, so it
+                // shows after kill/reopen too (S2 x S3 seam).
+                NavigationLink {
+                    MilestoneTimelineView(timeline: store.task(taskKey)?.milestones ?? timeline)
+                } label: {
+                    MilestoneCard(timeline: timeline)
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(timeline.headline)
+                .accessibilityValue(timeline.progressToken)
+                .accessibilityIdentifier("milestone.card")
+                .padding(.horizontal)
+            }
             ScrollView {
                 let transcript = row?.transcript ?? ""
                 Text(transcript.isEmpty ? "Waiting for the agent…" : transcript)

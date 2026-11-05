@@ -2,8 +2,8 @@ import DSHProtocol
 import Foundation
 
 /// One item of the agent's todo list, as DSH holds it (S3, protocol/milestones.proto).
-public struct Todo: Sendable, Equatable, Hashable {
-    public enum Status: String, Sendable, Equatable, Hashable {
+public struct Todo: Sendable, Equatable, Hashable, Codable {
+    public enum Status: String, Sendable, Equatable, Hashable, Codable {
         case pending, inProgress, completed
     }
 
@@ -18,8 +18,8 @@ public struct Todo: Sendable, Equatable, Hashable {
 
 /// One step on a task's milestone timeline (ARCHITECTURE D11, D19). `text` is DSH's own words,
 /// or empty; the app labels each kind itself and never summarizes.
-public struct Milestone: Sendable, Equatable, Identifiable {
-    public enum Kind: String, Sendable, Equatable {
+public struct Milestone: Sendable, Equatable, Identifiable, Codable {
+    public enum Kind: String, Sendable, Equatable, Codable {
         case started, planned, todoStarted, todoDone, planModeEntered, planModeLeft, retrying, failed, finished
     }
 
@@ -43,8 +43,9 @@ public struct Milestone: Sendable, Equatable, Identifiable {
     }
 }
 
-/// A task's milestones in order, and what the task card shows from them.
-public struct MilestoneTimeline: Sendable, Equatable {
+/// A task's milestones in order, and what the task card shows from them. Codable: S2's cache
+/// keeps each task's timeline (`CachedTask.milestonesData`).
+public struct MilestoneTimeline: Sendable, Equatable, Codable {
     public private(set) var milestones: [Milestone] = []
 
     public init(_ milestones: [Milestone] = []) {

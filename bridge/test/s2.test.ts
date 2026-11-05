@@ -216,3 +216,42 @@ describe('ResumeAgainstFakeDSH', () => {
     assert.equal(f.kind.value.body.value.code, 'hello/required')
   })
 })
+
+/** S2 × S3 seam (S2 landed second): milestones are host-log events, so Resume replays them. */
+describe('ResumeReplaysMilestones', () => {
+  test('resumeAfterSeqReplaysTheMissedMilestonesOnce', async () => {
+    const steps = (...s: string[]) => ({ todos: s.map((status, i) => ({ content: `Step ${i + 1}`, status })) })
+    const { server } = await bridgeWith({
+      reply: ['ok'],
+      events: [
+        { type: 'todo/write', data: steps('in_progress', 'pending') },
+        { type: 'todo/write', data: steps('completed', 'in_progress') },
+        { type: 'todo/write', data: steps('completed', 'completed') },
+      ],
+    })
+    const writer = await connect(server.port)
+    await writer.call({ case: 'createTask', value: { prompt: 'two steps' } })
+    await writer.until((fs) => endedCount(fs) === 1)
+    writer.close()
+    const logged = writer.events()
+    const milestones = logged.filter((e) => e.body.case === 'milestoneAdded')
+    assert.ok(milestones.length >= 4, `milestones: ${milestones.length}`)
+    assert.ok(milestones.every((e) => e.hostSeq > 0n), 'every milestone is numbered in the host log')
+    // Resume from just after the second milestone: exactly the later events, milestones included.
+    const cursor = milestones[1].hostSeq
+    const reader = await connect(server.port)
+    const listing = await reader.call({ case: 'listTasks', value: {} })
+    assert.ok(listing.body.case === 'taskList')
+    const resumed = await reader.call({ case: 'resume', value: { logId: listing.body.value.logId, afterSeq: cursor } })
+    assert.ok(resumed.body.case === 'resumed' && !resumed.body.value.reset)
+    reader.close()
+    const replayed = reader.events()
+    assert.deepEqual(replayed.map((e) => e.hostSeq), logged.filter((e) => e.hostSeq > cursor).map((e) => e.hostSeq))
+    const replayedMilestones = replayed.flatMap((e) => (e.body.case === 'milestoneAdded' ? [e.body.value] : []))
+    assert.deepEqual(
+      replayedMilestones.map((m) => m.seq),
+      milestones.slice(2).map((e) => (e.body.case === 'milestoneAdded' ? e.body.value.seq : -1n)))
+    // The latest milestone carries the whole todo list, so it alone is enough for the card.
+    assert.equal(replayedMilestones.at(-1)?.todos.length, 2)
+  })
+})

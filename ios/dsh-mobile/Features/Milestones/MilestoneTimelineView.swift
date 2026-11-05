@@ -3,8 +3,7 @@ import SwiftUI
 
 /// S3 detail: the task's whole milestone timeline, newest last, with the todo list on top.
 struct MilestoneTimelineView: View {
-    let store: TaskStore
-    private var timeline: MilestoneTimeline { store.milestones }
+    let timeline: MilestoneTimeline
 
     var body: some View {
         List {

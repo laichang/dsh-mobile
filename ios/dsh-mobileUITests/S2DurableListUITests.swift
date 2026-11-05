@@ -146,4 +146,50 @@ final class S2DurableListUITests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(identifier: "tasklist.row").firstMatch.exists, app.debugDescription)
         saveShot("s2-offline-real-host")
     }
+
+    /// S2 × S3 seam (S2 landed second): list rows show the milestone card, and after kill/reopen
+    /// with the host unreachable the card and the timeline still come from the cache.
+    func testCachedMilestonesAfterKillAndReopenWithFakeBridge() {
+        let prompt = "Milestone cache check"
+        var app = launch(["-DSHMFakeBridge", "YES", "-DSHMFakeMilestones", "YES", "-DSHMResetStore", "YES"])
+        send(app, prompt)
+        var card = app.descendants(matching: .any)["milestone.card"]
+        XCTAssertTrue(card.waitForExistence(timeout: 20), app.debugDescription)
+        let status = app.descendants(matching: .any)["task.status"]
+        poll(30, "the task to complete") { value(status) == "completed" && value(card) == "3/3" }
+
+        // The list row shows the card too.
+        app.navigationBars.buttons.firstMatch.tap()
+        var row = app.buttons.matching(identifier: "tasklist.row").firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(row.label.contains(prompt), row.label)
+        XCTAssertTrue(row.label.contains("3 of 3"), row.label)
+        // Let the coalesced save land (terminate() skips the background phase).
+        RunLoop.current.run(until: Date().addingTimeInterval(1))
+        app.terminate()
+
+        // Reopen with the host unreachable: nothing can come from the bridge, only the cache.
+        app = launch(["-DSHMFakeBridge", "offline"])
+        let host = app.descendants(matching: .any)["host.status"]
+        XCTAssertTrue(host.waitForExistence(timeout: 10))
+        poll(15, "the host to show as offline") { value(host) == "offline" }
+        row = app.buttons.matching(identifier: "tasklist.row").firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(row.label.contains(prompt), row.label)
+        XCTAssertTrue(row.label.contains("3 of 3"), row.label)
+        saveShot("s2-cached-milestones-list")
+
+        row.tap()
+        card = app.descendants(matching: .any)["milestone.card"]
+        XCTAssertTrue(card.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertEqual(value(card), "3/3")
+        XCTAssertEqual(card.label, "Done")
+        card.tap()
+        let timeline = app.descendants(matching: .any)["milestone.timeline"]
+        XCTAssertTrue(timeline.waitForExistence(timeout: 5), app.debugDescription)
+        let first = app.descendants(matching: .any)["milestone.row.1"]
+        XCTAssertTrue(first.waitForExistence(timeout: 3))
+        XCTAssertEqual(value(first), "started")
+        saveShot("s2-cached-milestones-timeline")
+    }
 }

@@ -55,9 +55,10 @@ uitest() { # name, then -only-testing targets
   grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/$name.log"
 }
 
-step "UI: offline host is named (FakeBridge, no DSH); T0's FakeBridge demo still passes"
+step "UI: offline host is named; cached milestones after kill/reopen (S3 seam) (FakeBridge, no DSH); T0's FakeBridge demo still passes"
 uitest fake \
   -only-testing:dsh-mobileUITests/S2DurableListUITests/testOfflineHostIsNamedWithFakeBridge \
+  -only-testing:dsh-mobileUITests/S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge \
   -only-testing:dsh-mobileUITests/T0DemoUITests/testDemoWithFakeBridge
 
 HOST_PID=""

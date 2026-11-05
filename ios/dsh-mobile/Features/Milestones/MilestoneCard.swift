@@ -7,6 +7,8 @@ struct MilestoneCard: View {
     let timeline: MilestoneTimeline
     /// Rows shown on the card; the timeline shows them all.
     var maxTodos = 5
+    /// False in the task list, where the row's own disclosure indicator already says "opens".
+    var showsChevron = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -23,7 +25,9 @@ struct MilestoneCard: View {
                         .font(.footnote.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
-                Image(systemName: "chevron.right").font(.footnote).foregroundStyle(.tertiary)
+                if showsChevron {
+                    Image(systemName: "chevron.right").font(.footnote).foregroundStyle(.tertiary)
+                }
             }
             if !timeline.todos.isEmpty {
                 ProgressView(value: Double(timeline.completedCount), total: Double(timeline.todos.count))

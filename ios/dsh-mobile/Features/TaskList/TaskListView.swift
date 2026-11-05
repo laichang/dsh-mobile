@@ -108,14 +108,20 @@ struct TaskRowView: View {
     let row: TaskListStore.TaskRow
 
     var body: some View {
-        HStack(spacing: 10) {
-            TaskStateIcon(state: row.state)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(row.title.isEmpty ? row.taskID : row.title)
-                    .lineLimit(2)
-                Text(row.hostName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                TaskStateIcon(state: row.state)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(row.title.isEmpty ? row.taskID : row.title)
+                        .lineLimit(2)
+                    Text(row.hostName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            // S3's card, from the cache (S2 x S3 seam): progress shows in the list, offline too.
+            if !row.milestones.isEmpty {
+                MilestoneCard(timeline: row.milestones, maxTodos: 3, showsChevron: false)
             }
         }
         .accessibilityElement(children: .combine)

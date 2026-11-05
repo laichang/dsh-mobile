@@ -155,6 +155,9 @@ public enum FakeHostError: Error, Equatable {
 /// `bridge/src/s2/`. Tests can make it unreachable, drop connections, or restart it.
 public final class FakeHost: Sendable {
     public let hostName: String
+    /// Task ids are unique across FakeHost instances (like DSH session ids), so a task cached by
+    /// an earlier app launch never collides with a new one that happens to be numbered the same.
+    private let taskIDPrefix = "fake-\(UUID().uuidString.prefix(8).lowercased())-task"
     private let script: FakeBridge.Script
 
     private struct Connection {
@@ -254,7 +257,7 @@ public final class FakeHost: Sendable {
             case .createTask(let create)?:
                 s.prompts.append(create.prompt)
                 s.tasksCreated += 1
-                let taskID = "fake-task-\(s.tasksCreated)"
+                let taskID = "\(taskIDPrefix)-\(s.tasksCreated)"
                 conn.ownTasks.insert(taskID)
                 var created = Dshm_V1_TaskCreated()
                 created.taskID = taskID

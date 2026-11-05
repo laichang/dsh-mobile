@@ -59,6 +59,8 @@ public final class TaskListStore {
         public var transcript: String
         public var createdAt: Date
         public var updatedAt: Date
+        /// S3 milestones, from the cache (S2 x S3 seam): the list row shows the card.
+        public var milestones: MilestoneTimeline
     }
 
     public struct Sections: Equatable, Sendable {
@@ -82,6 +84,8 @@ public final class TaskListStore {
     @ObservationIgnored private let links: [Link]
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     @ObservationIgnored private let firstConnectDelay: Duration
+    /// Decoded `CachedTask.milestones`, so `refresh()` doesn't decode every task's JSON each time.
+    @ObservationIgnored private var timelines: [String: MilestoneTimeline] = [:]
 
     @MainActor
     private final class Link {
@@ -303,7 +307,16 @@ public final class TaskListStore {
             task.state = status == .completed ? .completed : .failed
             task.message = message
             task.logID = host.logID
-        case .logReset, .milestone:
+        case .milestone(let milestone):
+            let task = taskRecord(hostKey: link.key, taskID: milestone.taskID, title: "")
+            var timeline = timeline(of: task)
+            // Replays can repeat milestones; the timeline keeps only newer seqs.
+            if timeline.add(milestone) {
+                task.milestones = timeline
+                timelines[task.key] = timeline
+            }
+            task.logID = host.logID
+        case .logReset:
             break
         }
         scheduleSave()
@@ -400,7 +413,14 @@ public final class TaskListStore {
             TaskRow(
                 key: t.key, hostKey: t.hostKey, hostName: names[t.hostKey] ?? t.hostKey, taskID: t.taskID,
                 title: t.title, state: t.state, message: t.message, transcript: t.transcript,
-                createdAt: t.createdAt, updatedAt: t.updatedAt)
+                createdAt: t.createdAt, updatedAt: t.updatedAt, milestones: timeline(of: t))
         }
+    }
+
+    private func timeline(of task: CachedTask) -> MilestoneTimeline {
+        if let cached = timelines[task.key] { return cached }
+        let decoded = task.milestones
+        timelines[task.key] = decoded
+        return decoded
     }
 }
