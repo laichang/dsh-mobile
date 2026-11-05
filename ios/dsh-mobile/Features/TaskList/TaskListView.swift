@@ -218,7 +218,7 @@ struct TaskRowView: View {
             }
             // S3's card, from the cache (S2 x S3 seam): progress shows in the list, offline too.
             if row.showsInlineAnswer {
-                Text(TranscriptBlocks.markdown(row.transcript))
+                Text(TranscriptBlocks.markdown(row.inlineReply))
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else if !row.milestones.isEmpty {
                 MilestoneCard(timeline: row.milestones, maxTodos: 3, showsChevron: false)
@@ -230,10 +230,12 @@ struct TaskRowView: View {
 }
 
 private extension TaskListStore.TaskRow {
+    var inlineReply: String { latestReply ?? transcript }
+
     var showsInlineAnswer: Bool {
-        state == .completed && !transcript.isEmpty && transcript.prefix(281).count <= 280 &&
-            transcript.split(whereSeparator: \.isNewline).count <= 3 &&
-            !transcript.contains("```") && !transcript.contains("~~~") &&
+        state == .completed && !inlineReply.isEmpty && inlineReply.prefix(281).count <= 280 &&
+            inlineReply.split(whereSeparator: \.isNewline).count <= 3 &&
+            !inlineReply.contains("```") && !inlineReply.contains("~~~") &&
             milestones.milestones.allSatisfy { $0.kind == .started || $0.kind == .finished }
     }
 }

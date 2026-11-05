@@ -37,6 +37,10 @@ public final class CachedTask {
     public var createdAt: Date
     public var updatedAt: Date
     public var transcript: String
+    public var latestReply: String?
+    public var sessionRevision: Int64?
+    public var externalSession: Bool = false
+    public var sessionHistory: Data?
     public var modelSelectionData: Data?
     /// Highest `AssistantChunk.seq` appended to `transcript`, so a replay never appends twice.
     public var lastChunkSeq: Int64

@@ -18,6 +18,7 @@ package dshm.v1;
 import "approvals.proto";
 import "milestones.proto";
 import "s2.proto";
+import "sessions.proto";
 import "devices.proto";
 import "interrupt.proto";
 import "models.proto";
@@ -53,6 +54,7 @@ message Request {
     ListDevices list_devices = 200;
     RevokeDevice revoke_device = 201;
     ListAudit list_audit = 202;
+    ReadSession read_session = 260;
   }
 }
 
@@ -75,6 +77,7 @@ message Response {
     ModelSelected model_selected = 121;
     DeviceList device_list = 200;
     AuditPage audit_page = 202;
+    SessionPage session_page = 260;
   }
 }
 

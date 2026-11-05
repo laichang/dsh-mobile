@@ -71,6 +71,9 @@ public struct TaskSnapshot: Sendable, Equatable {
     public var approvals: [Approval] = []
     public var approvalOnly = false
     public var modelSelection: ModelSelection?
+    public var sessionRevision: UInt64?
+    public var externalSession = false
+    public var latestReply: String?
 
     public init(taskID: String, title: String, state: TaskState, createdAt: Date, updatedAt: Date, message: String = "") {
         self.taskID = taskID
@@ -94,6 +97,9 @@ public struct TaskSnapshot: Sendable, Equatable {
             createdAt: Date(timeIntervalSince1970: Double(s.createdAtMs) / 1000),
             updatedAt: Date(timeIntervalSince1970: Double(s.updatedAtMs) / 1000),
             message: s.message)
+        sessionRevision = s.hasSessionRevision ? s.sessionRevision : nil
+        externalSession = s.externalSession
+        latestReply = s.hasLatestReply ? s.latestReply : nil
         approvals = s.pendingApprovals.map(Approval.init)
         approvalOnly = s.approvalOnly
         modelSelection = s.hasModelSelection ? s.modelSelection : nil
@@ -209,7 +215,7 @@ public actor HostConnection {
         do {
             var hello = Dshm_V1_Hello()
             hello.protocolVersion = DSHProtocolInfo.version
-            hello.capabilities = [DSHProtocolInfo.approvalsCapability]
+            hello.capabilities = [DSHProtocolInfo.approvalsCapability, "sessions.v1"]
             let response = try await request(.hello(hello))
             guard case .hello(let theirs)? = response.body else { throw HostConnectionError.unexpectedResponse }
             if theirs.requiresBridgeUpdate {
@@ -300,6 +306,29 @@ public actor HostConnection {
         let response = try await request(.answerApproval(answer))
         guard case .approvalResolved(let result)? = response.body, result.id == id,
               result.outcome == (allow ? .allowed : .denied) else { throw HostConnectionError.unexpectedResponse }
+    }
+
+    /// Read backwards at one DSH event cut so a concurrent Web turn cannot shift page boundaries.
+    public func readSession(_ id: String) async throws -> Dshm_V1_SessionPage {
+        var requestPage = Dshm_V1_ReadSession()
+        requestPage.taskID = id
+        var pages: [[Dshm_V1_SessionMessage]] = []
+        while true {
+            try Task.checkCancellation()
+            let response = try await request(.readSession(requestPage))
+            guard case .sessionPage(let page) = response.body else { throw HostConnectionError.unexpectedResponse }
+            pages.append(page.messages)
+            requestPage.throughSeq = page.throughSeq
+            guard page.hasNextBeforeSeq else { break }
+            guard !requestPage.hasBeforeSeq || page.nextBeforeSeq < requestPage.beforeSeq else {
+                throw HostConnectionError.unexpectedResponse
+            }
+            requestPage.beforeSeq = page.nextBeforeSeq
+        }
+        var result = Dshm_V1_SessionPage()
+        result.throughSeq = requestPage.throughSeq
+        result.messages = pages.reversed().flatMap { $0 }
+        return result
     }
 
     /// S2: every task the host knows, newest first.

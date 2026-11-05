@@ -9,6 +9,17 @@ struct TaskDetailView: View {
     let taskKey: String
     @State private var requestingStop = false
     @State private var stopError: String?
+    @State private var history: Dshm_V1_SessionPage?
+    @State private var historyError: String?
+    @State private var retry = 0
+
+    private struct HistoryRequest: Equatable {
+        var key: String
+        var revision: UInt64?
+        var online: Bool
+        var retry: Int
+    }
+
 
     var body: some View {
         let row = store.task(taskKey)
@@ -42,12 +53,54 @@ struct TaskDetailView: View {
                         ApprovalCard(approval: approval, hostKey: row.hostKey, store: store).padding(.horizontal)
                     }
                 }
-                TranscriptView(source: row?.transcript ?? "")
+                if let row {
+                    let messages = history?.messages ?? []
+                    let showJournal = row.externalSession || messages.filter(\.fromUser).count > 1
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(messages.filter { showJournal || $0.fromUser }, id: \.seq) { message in
+                            if message.fromUser {
+                                Text(verbatim: message.text)
+                                    .fontWeight(.medium)
+                                    .textSelection(.enabled)
+                                    .accessibilityIdentifier("session.message.user")
+                            } else {
+                                TranscriptView(source: message.text)
+                                    .accessibilityElement(children: .ignore)
+                                    .accessibilityLabel(message.text)
+                                    .accessibilityIdentifier("session.message.assistant")
+                            }
+                        }
+                        if !showJournal {
+                            TranscriptView(source: row.singleTurnTranscript(messages))
+                        } else if history == nil && historyError == nil {
+                            if host?.reachability == .online { ProgressView() }
+                            else { Text("Connect to this host to load the conversation.").foregroundStyle(.secondary) }
+                        }
+                        if let historyError {
+                            Text(historyError).font(.footnote)
+                            Button("Retry") { retry += 1 }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
+                }
             }
             // Follow the stream at the bottom, but start a short transcript at the top.
             .defaultScrollAnchor(.bottom)
             .defaultScrollAnchor(.top, for: .alignment)
+        }
+        .task(id: HistoryRequest(key: taskKey, revision: row?.sessionRevision,
+                                 online: host?.reachability == .online, retry: retry)) {
+            guard let row else { return }
+            historyError = nil
+            history = store.cachedHistory(for: row)
+            do {
+                let result = try await store.readHistory(for: row)
+                try Task.checkCancellation()
+                history = result
+            } catch {
+                if !Task.isCancelled { historyError = String(describing: error) }
+            }
         }
         .toolbar {
             if let row, !row.state.isTerminal, let host,
