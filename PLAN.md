@@ -50,7 +50,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S5 | done | merged `529bb16` | 2026-11-05 | — (provisional D28 in §9) |
 | S6 | done | merged `d62fd6d` | 2026-11-05 | — (provisional D31 in §9) |
 | S7 | done | merged `21aabd8` | 2026-11-05 | — (provisional D37 in §9) |
-| S8 | doing | claude/s8-rich-detail | 2026-11-05 | Implement and verify |
+| S8 | review | merged `8e9fa87` | 2026-11-05 | User checks real iPhone readability (§9) |
 | S9 | doing | claude/s9-multi-host | 2026-11-05 | Implement and verify |
 | S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
 | S11 | todo | — | 2026-11-05 | Ready (S1 merged) |
@@ -842,6 +842,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-05 · S12.** Assigned claude/s12-upstream-guard, worktree /Users/bytedance/.codex/worktrees/s12-upstream-guard/dsh-mobile, simulator dshm-S12, DSHM_HOME ~/.dshm/home-s12, bridge 47818, web 3291. The owner uses the shared DSH runtime read-only.
 
+- **2026-11-05 · S8.** Independent integrated run at d6c4886 passed 52 bridge, 50 Swift and three real DSH UI tests with zero skips. Verified inline translation, streamed diff and terminal output, and offline reopening. S4–S7 demos also passed during integration. Evidence: scripts/demo/s8.sh and evidence/S8/.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -876,3 +878,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 30 | S4 | decision | ARCHITECTURE D25, provisional: fail-closed timeout, per-device audit, resume snapshot and temporary pending cards for upstream sessions. | `main` | merged `acbf2c0` |
 | 31 | S7 | decision | D37, provisional: DSH registry supplies canonical host paths and recents; explicit paths are validated by DSH and sent with the model selection. | `main` | merged `21aabd8` |
 | 32 | S10 | decision | D40, provisional: Noise-authenticated device management, registry revocation with active socket closure, and combined pairing/approval audit. | `main` | merged `4a983eb` |
+| 33 | S8 | decision | D34, provisional: short answers remain in the list based on actual reply size and task events. | `main` | merged `8e9fa87` |
+| 34 | S8 | `[human]` | Check a coding task’s diff and terminal output for readability on a real iPhone. | `main` | `8e9fa87` |
