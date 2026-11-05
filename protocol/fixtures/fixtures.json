@@ -47,6 +47,12 @@
     { "name": "s5_interrupt_accepted_response",
       "frame": { "response": { "requestId": "5", "interruptAccepted": {} } } },
     { "name": "s5_interrupted_end_event",
-      "frame": { "event": { "hostSeq": "12", "taskEnded": { "taskId": "session-1", "status": "TASK_STATUS_INTERRUPTED" } } } }
+      "frame": { "event": { "hostSeq": "12", "taskEnded": { "taskId": "session-1", "status": "TASK_STATUS_INTERRUPTED" } } } },
+    { "name": "s6_select_model_request",
+      "frame": { "request": { "id": "6", "selectModel": { "taskId": "session-1", "selection": { "provider": "provider", "model": "model", "reasoningEffort": "high" } } } } },
+    { "name": "s6_model_catalog_response",
+      "frame": { "response": { "requestId": "7", "modelCatalog": { "defaultSelection": { "provider": "provider", "model": "model" }, "groups": [{ "id": "provider", "name": "Provider Name", "models": [{ "id": "model", "name": "Model Name", "efforts": [{ "id": "high", "name": "High" }] }] }] } } } },
+    { "name": "s6_model_selected_event",
+      "frame": { "event": { "hostSeq": "9", "modelSelected": { "taskId": "session-1", "selection": { "provider": "provider", "model": "model", "reasoningEffort": "low" } } } } }
   ]
 }

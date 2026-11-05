@@ -6,6 +6,7 @@
  * S3: `events` adds durable projection events (`todo/write`, `plan/mode`, `llm/retry`, …) to every
  * turn, between `turn/start` and the reply, each with its own `seq` and `time`.
  */
+import type { Selection } from '../src/models/catalog.ts'
 import type { DshServices, FollowFrame } from '../src/dsh.ts'
 
 export interface FakeDSHOptions {
@@ -63,7 +64,27 @@ export class FakeDSH implements DshServices {
     },
   }
 
+  readonly catalog = {
+    groups: [{ id: 'provider', name: 'Provider Name', models: [{
+      id: 'model', name: 'Model Name', reasoning: {
+        efforts: [{ id: 'low', name: 'Low' }, { id: 'high', name: 'High' }], defaultEffort: 'low',
+      },
+    }] }],
+    default: { provider: 'provider', model: 'model', reasoningEffort: 'low' },
+    routableProviders: ['provider'], failures: [],
+  }
+
   sessionController = {
+    modelCatalog: async () => this.catalog,
+    selectModel: async ({ sessionId, ...selection }: Selection & { sessionId: string }) => {
+      this.session(sessionId)
+      if (selection.provider !== 'provider' || selection.model !== 'model'
+          || (selection.reasoningEffort !== undefined && !['low', 'high'].includes(selection.reasoningEffort))) {
+        throw new Error('Select an available model before sending a message.')
+      }
+      this.emitEvent(sessionId, 'model/selection', selection)
+      return { selected: selection }
+    },
     create: async (_request: { workspaceId: string }) => {
       if (this.options.createError) throw new Error(this.options.createError)
       const sessionId = `session-${this.nextId++}`

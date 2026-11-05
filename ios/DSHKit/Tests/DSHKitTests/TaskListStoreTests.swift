@@ -87,6 +87,23 @@ import Testing
         #expect(store.task(key)?.transcript == Self.fullReply)
     }
 
+    @Test func explicitModelRequiresUserChoiceWhenReconnectedHostLacksModelSupport() async throws {
+        let store = try launch(FakeHost())
+        let key = try #require(store.composerHostKey)
+        let choice = ModelSelection(provider: "previous-host-provider", model: "previous-model", effort: nil)
+        store.composerSelections[key] = choice
+        store.foreground()
+        defer { store.background() }
+        try await waitUntil("reconnected") { store.hosts.first?.reachability == .online }
+        #expect(!store.modelHosts.contains(key))
+        #expect(await store.send() == nil)
+        #expect(store.tasks.isEmpty)
+        #expect(store.composerSelections[key] == choice)
+        store.useHostDefault(hostKey: key)
+        #expect(store.sendError == nil)
+        #expect(await store.send() != nil)
+    }
+
     @Test func unreachableHostIsNamedAsOffline() async throws {
         let host = FakeHost(script: .init(reply: ["ok"], chunkDelay: .milliseconds(5)))
         let store = try launch(host)

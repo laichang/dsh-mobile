@@ -18,6 +18,7 @@ package dshm.v1;
 import "milestones.proto";
 import "s2.proto";
 import "interrupt.proto";
+import "models.proto";
 
 // One WebSocket binary message carries exactly one Frame (inside the
 // SecureChannel; plaintext only on loopback in T0).
@@ -42,6 +43,8 @@ message Request {
     ListTasks list_tasks = 40;
     Resume resume = 41;
     Interrupt interrupt = 100;
+    GetModelCatalog get_model_catalog = 120;
+    SelectModel select_model = 121;
   }
 }
 
@@ -58,6 +61,8 @@ message Response {
     TaskList task_list = 40;
     Resumed resumed = 41;
     InterruptAccepted interrupt_accepted = 100;
+    ModelCatalog model_catalog = 120;
+    ModelSelected model_selected = 121;
   }
 }
 
@@ -72,6 +77,7 @@ message Event {
     // S2: 40–59 (s2.proto)
     TaskUpserted task_upserted = 41;
     LogReset log_reset = 42;
+    ModelSelected model_selected = 120;
   }
   // S2: per-host monotonic sequence number in the bridge's event log (s2.proto), from 1.
   // 0 when the event isn't logged (LogReset).
@@ -95,6 +101,7 @@ message Error {
 // Start a task: one DSH session + one prompt (ARCHITECTURE D13).
 message CreateTask {
   string prompt = 1;
+  ModelSelection model_selection = 120;
 }
 
 message TaskCreated {

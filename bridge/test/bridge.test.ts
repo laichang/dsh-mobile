@@ -50,6 +50,71 @@ async function bridgeWith(options: FakeDSHOptions = {}) {
 const ended = (fs: Frame[]) => fs.some((f) => f.kind.case === 'event' && f.kind.value.body.case === 'taskEnded')
 
 describe('BridgeAgainstFakeDSH', () => {
+  test('hostCatalogPreservesGroupsNamesEffortsAndDefault', async () => {
+    const { dsh, client } = await bridgeWith()
+    client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
+    client.send({ kind: { case: 'request', value: { id: 2n, body: { case: 'getModelCatalog', value: {} } } } })
+    await client.until(fs => fs.length === 2)
+    client.close()
+    const reply = client.frames[1].kind
+    assert.ok(reply.case === 'response' && reply.value.body.case === 'modelCatalog')
+    const catalog = reply.value.body.value
+    assert.equal(catalog.groups[0].name, dsh.catalog.groups[0].name)
+    const model = catalog.groups[0].models[0]
+    assert.equal(model.name, dsh.catalog.groups[0].models[0].name)
+    assert.equal(model.defaultEffort, 'low')
+    assert.deepEqual(model.efforts.map(e => [e.id, e.name]), [['low', 'Low'], ['high', 'High']])
+    assert.equal(catalog.defaultSelection?.provider, dsh.catalog.default.provider)
+    assert.equal(catalog.defaultSelection?.model, dsh.catalog.default.model)
+    assert.equal(catalog.defaultSelection?.reasoningEffort, dsh.catalog.default.reasoningEffort)
+  })
+
+  test('unavailableModelDoesNotPromptOrSubstitute', async () => {
+    const { dsh, client } = await bridgeWith()
+    client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
+    client.send({ kind: { case: 'request', value: { id: 2n, body: { case: 'createTask', value: {
+      prompt: 'hi', modelSelection: { provider: 'provider', model: 'gone' },
+    } } } } })
+    await client.until(fs => fs.length === 2)
+    client.close()
+    const reply = client.frames[1].kind
+    assert.ok(reply.case === 'response' && reply.value.body.case === 'error')
+    assert.match(reply.value.body.value.message, /available model/)
+    assert.deepEqual(dsh.prompts, [])
+  })
+
+  test('modelSwitchReplaysInOrderAndRejectedSelectionDoesNotChangeTask', async () => {
+    const { client } = await bridgeWith({ reply: ['done'], chunkDelayMs: 300 })
+    const selection = { provider: 'provider', model: 'model', reasoningEffort: 'low' }
+    client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
+    client.send({ kind: { case: 'request', value: { id: 2n, body: { case: 'createTask', value: {
+      prompt: 'hi', modelSelection: selection,
+    } } } } })
+    await client.until(fs => fs.some(f => f.kind.case === 'event' && f.kind.value.body.case === 'modelSelected'))
+    const created = client.frames[1].kind
+    assert.ok(created.case === 'response' && created.value.body.case === 'taskCreated')
+    const taskId = created.value.body.value.taskId
+    const select = (id: bigint, model: string) => client.send({ kind: { case: 'request', value: { id, body: {
+      case: 'selectModel', value: { taskId, selection: { ...selection, model, reasoningEffort: 'high' } },
+    } } } })
+    select(3n, 'gone')
+    await client.until(fs => fs.some(f => f.kind.case === 'response' && f.kind.value.requestId === 3n))
+    const rejected = client.frames.find(f => f.kind.case === 'response' && f.kind.value.requestId === 3n)!.kind
+    assert.ok(rejected.case === 'response' && rejected.value.body.case === 'error')
+    assert.equal(rejected.value.body.value.code, 'model/unavailable')
+    select(4n, 'model')
+    await client.until(ended)
+    const beforeReplay = client.frames.length
+    client.send({ kind: { case: 'request', value: { id: 5n, body: { case: 'resume', value: {} } } } })
+    await client.until(fs => fs.some(f => f.kind.case === 'response' && f.kind.value.requestId === 5n))
+    client.close()
+    const changes = (frames: Frame[]) => frames.flatMap(f => f.kind.case === 'event' && f.kind.value.body.case === 'modelSelected'
+      ? [[f.kind.value.hostSeq, f.kind.value.body.value.selection?.reasoningEffort]] : [])
+    const live = changes(client.frames.slice(0, beforeReplay))
+    assert.deepEqual(live.map(change => change[1]), ['low', 'high'])
+    assert.deepEqual(changes(client.frames.slice(beforeReplay)), live)
+  })
+
   test('createTaskStreamsChunksThenTaskEnded', async () => {
     const { dsh, client } = await bridgeWith({ reply: ['你好', '，', 'world'] })
     client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
@@ -60,7 +125,7 @@ describe('BridgeAgainstFakeDSH', () => {
     const [hello, created, ...events] = client.frames
     assert.equal(hello.kind.case, 'response')
     assert.equal(hello.kind.value?.body.case, 'hello')
-    assert.deepEqual(hello.kind.case === 'response' && hello.kind.value.body.case === 'hello' && hello.kind.value.body.value.capabilities, ['tasks.v1', 'milestones.v1', 'resume.v1', 'interrupt.v1'])
+    assert.deepEqual(hello.kind.case === 'response' && hello.kind.value.body.case === 'hello' && hello.kind.value.body.value.capabilities, ['tasks.v1', 'milestones.v1', 'resume.v1', 'interrupt.v1', 'models.v1'])
 
     assert.ok(created.kind.case === 'response' && created.kind.value.body.case === 'taskCreated')
     assert.equal(created.kind.value.requestId, 2n)

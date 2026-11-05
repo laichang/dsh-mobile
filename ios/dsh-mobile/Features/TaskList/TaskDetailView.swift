@@ -17,6 +17,10 @@ struct TaskDetailView: View {
             statusRow(row, host: host)
                 .padding(.horizontal)
                 .padding(.vertical, 8)
+            if let row, !row.state.isTerminal, store.modelHosts.contains(row.hostKey) {
+                ModelControl(store: store, hostKey: row.hostKey, task: row)
+                    .padding(.horizontal)
+            }
             if let timeline = row?.milestones, !timeline.isEmpty {
                 // S3: milestone summary by default; the timeline on demand. From the cache, so it
                 // shows after kill/reopen too (S2 x S3 seam).

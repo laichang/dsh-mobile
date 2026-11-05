@@ -4,6 +4,7 @@
  * the follow stream into plain task output. Types are structural subsets of the DSH 0.2.2-rc.1
  * `sessionController` / `workspaceController` services, so `FakeDSH` can implement them in tests.
  */
+import { catalogFrame, type HostCatalog, type Selection } from './models/catalog.ts'
 import { randomUUID } from 'node:crypto'
 import { MilestoneMapper, describeFailure, isUserInterrupt, type Milestone } from './milestones/mapper.ts'
 
@@ -20,6 +21,8 @@ export type FollowFrame =
 
 /** Subset of `ctx.sessionController` (`@deepseek-ai/dsh-api-session-controller`). */
 export interface SessionControllerLike {
+  modelCatalog(): Promise<HostCatalog>
+  selectModel(request: Selection & { sessionId: string }): Promise<{ selected: Selection }>
   create(request: { workspaceId: string }): Promise<{ sessionId: string }>
   cancel(request: { sessionId: string }): { accepted: true }
   prompt(
@@ -40,6 +43,7 @@ export interface DshServices {
 /** What a running task produces, in order. Exactly one `end`, always last. */
 export type TaskOutput =
   | { kind: 'text'; text: string }
+  | { kind: 'model'; selection: Selection }
   | { kind: 'milestone'; milestone: Milestone }
   | { kind: 'end'; status: 'completed' | 'interrupted' | 'failed'; message?: string }
 
@@ -56,7 +60,19 @@ export class DshTasks {
     this.dsh.sessionController.cancel({ sessionId: taskId })
   }
 
-  async start(prompt: string, signal: AbortSignal): Promise<StartedTask> {
+  async modelCatalog() {
+    return catalogFrame(await this.dsh.sessionController.modelCatalog())
+  }
+
+  async selectModel(taskId: string, selection: Selection): Promise<Selection> {
+    const { provider, model, reasoningEffort } = selection
+    const { selected } = await this.dsh.sessionController.selectModel({
+      sessionId: taskId, provider, model, ...(reasoningEffort === undefined ? {} : { reasoningEffort }),
+    })
+    return selected
+  }
+
+  async start(prompt: string, signal: AbortSignal, selection?: Selection): Promise<StartedTask> {
     const { workspace } = await this.dsh.workspaceController.create({ path: this.cwd })
     const { sessionId } = await this.dsh.sessionController.create({ workspaceId: workspace.workspaceId })
 
@@ -66,8 +82,14 @@ export class DshTasks {
     const iterator = follow[Symbol.asyncIterator]()
     const first = await iterator.next() // the opening snapshot
 
-    await this.dsh.sessionController.prompt(
-      { requestId: randomUUID(), sessionId, mode: 'queue', content: [{ type: 'text', text: prompt }] }, signal)
+    try {
+      if (selection) await this.selectModel(sessionId, selection)
+      await this.dsh.sessionController.prompt(
+        { requestId: randomUUID(), sessionId, mode: 'queue', content: [{ type: 'text', text: prompt }] }, signal)
+    } catch (error) {
+      await iterator.return?.()
+      throw error
+    }
 
     return { taskId: sessionId, output: mapFollow(first, iterator) }
   }
@@ -87,6 +109,10 @@ async function* mapFollow(
           yield { kind: 'text', text: chunk.text }
         }
       } else if (f.type === 'event') {
+        if (f.event.type === 'model/selection') {
+          const selection = f.event.data as Selection
+          yield { kind: 'model', selection }
+        }
         for (const milestone of milestones.map(f.event)) yield { kind: 'milestone', milestone }
         const data = f.event.data as { turn?: number; reason?: { kind?: string; error?: unknown; reason?: { kind?: string } } } | null
         if (f.event.type === 'turn/start' && turn === undefined) turn = data?.turn

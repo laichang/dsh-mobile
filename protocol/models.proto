@@ -1,0 +1,57 @@
+syntax = "proto3";
+package dshm.v1;
+
+message ModelSelection {
+  string provider = 1;
+  string model = 2;
+  optional string reasoning_effort = 3;
+}
+
+message ModelEffort {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+}
+
+message CatalogModel {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  repeated ModelEffort efforts = 4;
+  optional string default_effort = 5;
+  string badge_text = 6;
+  map<string, string> badge_translations = 7;
+  string badge_tone = 8;
+}
+
+message ModelGroup {
+  string id = 1;
+  string name = 2;
+  repeated CatalogModel models = 3;
+}
+
+message ModelCatalogFailure {
+  string id = 1;
+  string name = 2;
+  string message = 3;
+}
+
+message GetModelCatalog {}
+
+message ModelCatalog {
+  ModelSelection default_selection = 1;
+  repeated ModelGroup groups = 2;
+  repeated ModelCatalogFailure failures = 3;
+  repeated string routable_providers = 4;
+}
+
+message SelectModel {
+  string task_id = 1;
+  ModelSelection selection = 2;
+}
+
+// The acknowledged selection in a response, or a durable DSH model/selection in the host log.
+message ModelSelected {
+  string task_id = 1;
+  ModelSelection selection = 2;
+}
