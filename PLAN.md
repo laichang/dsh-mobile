@@ -55,6 +55,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
 | S11 | review | merged `12e1afc` | 2026-11-05 | User checks onboarding on a fresh install (§9) |
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | — (hosted CI follows user push/PR; confirmations in §9) |
+| S13 | todo | — | 2026-11-05 | Make existing DSH sessions and later turns visible on the phone |
 
 ## 1. Approach
 
@@ -99,15 +100,19 @@ flowchart LR
     T0 --> S7[S7 · Workspaces]
     T0 --> S8[S8 · Rich detail]
     T0 --> S12[S12 · Upstream guard]
+    S2 --> S13[S13 · Cross-client session visibility]
 
     X2 -.-> S1
     X1 -.-> S4
     X3 -.-> S8
-    X4 -.-> M2([M2 · mid-task context])
+    X4 -.-> M2([M2 · Reply in the same session])
 
     S1 --> S9[S9 · Multi-host]
     S1 --> S10[S10 · Control: devices + audit]
     S1 --> S11[S11 · First run]
+
+    S3 & S4 & S5 & S6 & S7 & S8 & S9 & S10 & S11 & S12 & S13 --> M1([M1 · Real-device acceptance])
+    M1 --> M2
 ```
 
 Solid = must land first. Dotted = spike result must exist first (a written conclusion, not code). Spikes depend on nothing and can start today, in parallel with T0.
@@ -663,6 +668,27 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - **Next:** independent review on the Simulator, then coordinator merge.
 - **2026-11-05 · Integrated.** `d0ae9b5` preserves S9’s selected host and names it when its bridge needs an update. The two-host regression checks that the selected host keeps its draft, model and workspace, no task is misrouted, and the compatible host can dispatch. Integrated tests passed: 56 bridge, 56 Swift and one real older-DSH UI. Both CI commands passed on the pinned release and the source-built default branch at `fcc0ad46`. The three original hook checksums stayed unchanged.
 
+### S13 · Cross-client session visibility
+
+**Status** todo · **Needs** S2 · **Branch** —
+
+**Why**: STORY principle 4. A user who starts work in DSH Web or on the desktop can pick up the phone and see what happened in the same session.
+
+**Cuts**: Show sessions from each paired host in the task list, keyed by host and DSH session ID. Show message history and results in the detail view. Apply later turns to the same row and recover missed updates on reconnect.
+
+**Demo**: Open a session in the Web default workspace, read it on the phone, then send a second Web message while the phone has that session open.
+
+**Done when**
+- [ ] [auto] A Web session created before pairing and another created after pairing each appear once under their host and DSH session ID. A session started on the phone also appears only once. — Evidence:
+- [ ] [ui] Send “网页第一条” in the Web default workspace. Open the session on the phone and read the message and assistant reply. Send “网页第二条” in the same Web session and see the open detail view update without refreshing. — Evidence:
+- [ ] [ui] While the phone is disconnected, continue the same session on the Web. After reconnect, the phone shows each missed message once and in order. — Evidence:
+- [ ] [human] On a paired iPhone and Mac, repeat the two-message Web demo and verify that the phone shows the same session and its latest reply. — Evidence:
+
+**Not**: Sending a reply from the phone into an existing session belongs to M2 (§7).
+
+**Log**
+- **2026-11-05 · Planned.** A message sent in the Mac's Web default workspace did not appear on the paired iPhone. The user confirmed cross-client session visibility as an M1 requirement.
+
 ## 6. M1 exit
 
 From a real iPhone over Tailscale, against a home Mac. All items are human-only.
@@ -674,7 +700,7 @@ From a real iPhone over Tailscale, against a home Mac. All items are human-only.
 - [ ] [human] Raise reasoning effort mid-task (S6). Kill the app, reopen, and find nothing lost (S2) — Evidence:
 - [ ] [human] Get the PR link in the result — Evidence:
 
-When all of these are ticked, archive this file and plan M2 the same way.
+When all of these are ticked and S13 is done, archive this file and plan M2 the same way.
 
 ## 7. After M1 (coarse, re-slice when we get there)
 
@@ -683,6 +709,8 @@ When all of these are ticked, archive this file and plan M2 the same way.
 | M2 | Push via `PushSender` → APNs · risk tiers + Face ID for the top tier · plan alignment + pre-authorization · pause timeout + re-confirm on resume · mid-task context: follow-up messages + answering agent questions (attachments with M3; continues S5's interrupted tasks) | Paid Apple account; X4 result |
 | M3 | Quick Look + share-out · Share Extension + attachment upload · photos as context | Verify App Groups on the signing team first |
 | M4 | Live Activities / Dynamic Island · voice entry · relay `Transport` | Relay design note |
+
+For M2, a reply sent from the phone's session detail view goes into that same DSH session and appears there on the Web. Sending from the home screen creates a new task.
 
 ## 8. Plan log
 
@@ -879,6 +907,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - On the combined app, S1, S2 and S3 demos passed, including the T0 UI, real Noise pairing, offline/reopen and milestone transitions. The final combined suites passed 56 bridge and 56 DSHKit tests with no skips. The Release binary passed the debug-marker check.
   - The regression run found two stale test assumptions. S1 now reads device counts through PairingStore for both registry formats. S2 and S3 select English when asserting English milestone text; S11 separately covered Simplified Chinese and English in Release.
   - The user can start the real-device acceptance with the bridge install guide and §6. §9 lists the remaining slice checks and provisional decisions, dependencies and downloads. The user also owns the push/PR and the resulting hosted Actions run. Keep this plan active until the real-device exit items are accepted.
+
+- **2026-11-05 · M1 scope update.** After real-device pairing, the user added S13 to cover Web-to-phone session visibility. M2 covers replies sent from the phone into the same session.
 
 ## 9. Pending user confirmation
 
