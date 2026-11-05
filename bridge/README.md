@@ -6,6 +6,9 @@ Status (S1): the listener (`0.0.0.0:47801` by default) is end-to-end encrypted w
 
 S2 adds `ListTasks` and `Resume` (capability `resume.v1`): tasks keep running when the app disconnects, and every event is numbered in a per-host log so the app can fetch exactly what it missed (ARCHITECTURE D20). The log is kept in memory; restarting DSH starts a new one.
 
+S4 adds held approvals (`approvals.v1`). A paired phone or DSH web client can answer a request once. Set `approvalTimeoutMs` in the bridge plugin config to change the 24-hour default. The bridge rejects expired approvals and records decisions in `approvals.jsonl` in its state directory. Requests from other DSH sessions appear on the phone while they need a decision.
+
+
 ## Requirements
 
 - DSH **≥ 0.2.2-rc.1** (enforced by `engines.dsh`).

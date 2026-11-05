@@ -436,14 +436,17 @@ Each slice needs only T0, unless "Needs" says otherwise.
 **Demo**: prompt "delete `/tmp/x`". The phone shows the exact command, you deny it, and the task continues without running it. Repeat with the app closed: the request waits, and when you reopen the app it's there.
 
 **Done when**
-- [ ] [auto] A held request that times out is cancelled with `ApprovalResolved(timeout)`, never allowed — Evidence:
-- [ ] [auto] Every answer writes an audit record (who, when, which device, what) — Evidence:
-- [ ] [ui] Prompt "delete `/tmp/x`": the card shows the exact command, you deny it, and the task continues without running it — Evidence:
-- [ ] [ui] With the app closed, the request waits; reopening the app shows it — Evidence:
+- [x] [auto] A held request that times out is cancelled with `ApprovalResolved(timeout)`, never allowed — Evidence: test:approvalTimeoutRejectsAndEmitsTimeout
+- [x] [auto] Every answer writes an audit record (who, when, which device, what) — Evidence: test:firstAnswerAuditsWhatWhenWhoAndDevice
+- [x] [ui] Prompt "delete `/tmp/x`": the card shows the exact command, you deny it, and the task continues without running it — Evidence: test:S4ApprovalUITests/testDenyExactCommandAndContinue · cmd:scripts/demo/s4.sh · shot:evidence/S4/s4-detail-pending.png · shot:evidence/S4/s4-denied.png
+- [x] [ui] With the app closed, the request waits; reopening the app shows it — Evidence: test:S4ApprovalUITests/testApprovalWaitsWhileClosedAndReturnsOnList · shot:evidence/S4/s4-reopened-waiting.png
 
-- [ ] [auto] A pending approval survives a trimmed resume log and a stale answer cannot release a second request — Evidence:
-- [ ] [auto] An approval from an upstream session can be answered by the phone or the downstream owner, with one resolution — Evidence:
-- [ ] [ui] An approval created outside the phone appears after reconnect, and a web answer removes it from the phone — Evidence:
+- [x] [auto] A pending approval survives a trimmed resume log and a stale answer cannot release a second request — Evidence: test:trimmedResumeRetainsPendingAndStaleAnswerCannotReleaseNextRequest
+- [x] [auto] An approval from an upstream session can be answered by the phone or the downstream owner, with one resolution — Evidence: test:upstreamSessionIsVisibleOnlyWhileAnApprovalIsHeld
+- [x] [ui] An approval created outside the phone appears after reconnect, and a web answer removes it from the phone — Evidence: test:S4ApprovalUITests/testUpstreamWebApprovalAppearsAfterReconnectAndWebAnswerWithdrawsIt · shot:evidence/S4/s4-upstream-reopened.png
+- [ ] [auto] A waiting task accepts a model switch, and interrupting it cancels its approval before a stale answer can grant permission — Evidence:
+- [ ] [auto] Resuming a waiting task restores its approval and selected model together — Evidence:
+- [ ] [ui] Switch effort on a held task, reopen it, then interrupt: the approval is withdrawn and the task is interrupted — Evidence:
 
 **Not**: risk tiers, Face ID, push (M2).
 
@@ -453,6 +456,9 @@ Each slice needs only T0, unless "Needs" says otherwise.
   - Environment blockers: dependency installation cannot complete; offline retry reports missing locked tarballs (including `@noble/curves@2.4.0`). `xcrun simctl list devices available` fails with CoreSimulator connection denied and log access `Operation not permitted`. Assigned home-s4 directory is absent and outside this session's writable roots. Shared runtime exists and was not changed.
   - This session has restricted network/filesystem access and approval policy `never`; it cannot provision the assigned home or access Simulator services. Next: coordinator relaunches S4 with working assigned resources and sufficient execution permissions, reruns T0, then implements all S4 auto/UI items, capability gating, bidirectional fixtures, and S2 replay seam. D25–D27 remain unallocated; no new dependencies or provisional decisions. Git staging also failed: the sandbox denies creating `/Users/bytedance/dsh-mobile/.git/worktrees/dsh-mobile/index.lock`; no commit was possible. `.githooks/pre-commit` was invoked but there were no staged changes.
 - **2026-11-05**: Resumed on the assigned worktree with network and Simulator access. The assigned T0 codegen, bridge, Swift and real DSH CLI checks passed. Added the S2 resume seam above before implementation.
+- **2026-11-05**: T0 passed on the assigned simulator (41 bridge, 46 Swift and 4 UI tests). Implemented the D17 holder, typed approval frames and fixtures, authenticated device audit, SwiftData caching and actionable cards. The host stores approval-only rows for upstream sessions until the final pending request closes. A bridge with a trimmed log can restore pending cards from its task snapshots. Older clients do not receive temporary rows.
+  - `scripts/demo/s4.sh` runs the real DSH bridge and mock model. The deletion target is a disposable fixture ending in `tmp/x`; the app shows its exact command. The test verifies DSH actually reported rejection to the model and the file remained intact. X1's real remote-event gateway fixture handles the web answer in the upstream-session test. All three simulator tests passed. Final bridge suite: 46 tests. Swift: 46 tests. No new dependencies. One intermediate Swift run missed a transient milestone in an existing timing assertion; subsequent full suites passed.
+  - Provisional D25 records the timeout, audit attribution, explicit request identity and the S2 snapshot choice. Independent UI rerun and merge belong to the coordinator.
 
 ### S5 · Interrupt
 

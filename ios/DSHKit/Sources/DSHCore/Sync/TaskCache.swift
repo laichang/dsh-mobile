@@ -42,6 +42,8 @@ public final class CachedTask {
     public var lastChunkSeq: Int64
     /// The host log that last touched this task. A task whose log is gone can't make progress.
     public var logID: String
+    public var approvalOnly: Bool = false
+    public var approvalData: Data = Data()
     /// The task's milestone timeline (S3), a JSON-encoded `MilestoneTimeline`; empty when it has
     /// none. Each `MilestoneAdded` carries the whole todo list, so the card needs only the latest;
     /// the whole timeline is kept for the detail view (S2 x S3 seam, D23).
@@ -68,6 +70,11 @@ public final class CachedTask {
     }
 
     public static func key(hostKey: String, taskID: String) -> String { "\(hostKey)\n\(taskID)" }
+
+    public var approvals: [Approval] {
+        get { (try? JSONDecoder().decode([Approval].self, from: approvalData)) ?? [] }
+        set { approvalData = newValue.isEmpty ? Data() : (try? JSONEncoder().encode(newValue)) ?? Data() }
+    }
 
     public var milestones: MilestoneTimeline {
         get {

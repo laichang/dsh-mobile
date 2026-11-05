@@ -165,6 +165,14 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .resume(newValue)}
   }
 
+  public var answerApproval: Dshm_V1_AnswerApproval {
+    get {
+      if case .answerApproval(let v)? = body {return v}
+      return Dshm_V1_AnswerApproval()
+    }
+    set {body = .answerApproval(newValue)}
+  }
+
   public var interrupt: Dshm_V1_Interrupt {
     get {
       if case .interrupt(let v)? = body {return v}
@@ -198,6 +206,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     /// S2: 40–59 (s2.proto)
     case listTasks(Dshm_V1_ListTasks)
     case resume(Dshm_V1_Resume)
+    case answerApproval(Dshm_V1_AnswerApproval)
     case interrupt(Dshm_V1_Interrupt)
     case getModelCatalog(Dshm_V1_GetModelCatalog)
     case selectModel(Dshm_V1_SelectModel)
@@ -259,6 +268,14 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .resumed(newValue)}
   }
 
+  public var approvalResolved: Dshm_V1_ApprovalResolved {
+    get {
+      if case .approvalResolved(let v)? = body {return v}
+      return Dshm_V1_ApprovalResolved()
+    }
+    set {body = .approvalResolved(newValue)}
+  }
+
   public var interruptAccepted: Dshm_V1_InterruptAccepted {
     get {
       if case .interruptAccepted(let v)? = body {return v}
@@ -293,6 +310,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     /// S2: 40–59 (s2.proto)
     case taskList(Dshm_V1_TaskList)
     case resumed(Dshm_V1_Resumed)
+    case approvalResolved(Dshm_V1_ApprovalResolved)
     case interruptAccepted(Dshm_V1_InterruptAccepted)
     case modelCatalog(Dshm_V1_ModelCatalog)
     case modelSelected(Dshm_V1_ModelSelected)
@@ -353,6 +371,22 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .logReset(newValue)}
   }
 
+  public var approvalPending: Dshm_V1_ApprovalPending {
+    get {
+      if case .approvalPending(let v)? = body {return v}
+      return Dshm_V1_ApprovalPending()
+    }
+    set {body = .approvalPending(newValue)}
+  }
+
+  public var approvalResolved: Dshm_V1_ApprovalResolved {
+    get {
+      if case .approvalResolved(let v)? = body {return v}
+      return Dshm_V1_ApprovalResolved()
+    }
+    set {body = .approvalResolved(newValue)}
+  }
+
   public var modelSelected: Dshm_V1_ModelSelected {
     get {
       if case .modelSelected(let v)? = body {return v}
@@ -376,6 +410,8 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     /// S2: 40–59 (s2.proto)
     case taskUpserted(Dshm_V1_TaskUpserted)
     case logReset(Dshm_V1_LogReset)
+    case approvalPending(Dshm_V1_ApprovalPending)
+    case approvalResolved(Dshm_V1_ApprovalResolved)
     case modelSelected(Dshm_V1_ModelSelected)
 
   }
@@ -580,7 +616,7 @@ nonisolated extension Dshm_V1_Frame: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
 nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Request"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0\u{4}%list_tasks\0\u{1}resume\0\u{2};interrupt\0\u{4}\u{14}get_model_catalog\0\u{3}select_model\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0\u{4}%list_tasks\0\u{1}resume\0\u{4}'answer_approval\0\u{2}\u{14}interrupt\0\u{4}\u{14}get_model_catalog\0\u{3}select_model\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -639,6 +675,19 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
         if let v = v {
           if hadOneofValue {try decoder.handleConflictingOneOf()}
           self.body = .resume(v)
+        }
+      }()
+      case 80: try {
+        var v: Dshm_V1_AnswerApproval?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .answerApproval(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .answerApproval(v)
         }
       }()
       case 100: try {
@@ -710,6 +759,10 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
       guard case .resume(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 41)
     }()
+    case .answerApproval?: try {
+      guard case .answerApproval(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 80)
+    }()
     case .interrupt?: try {
       guard case .interrupt(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 100)
@@ -737,7 +790,7 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
 
 nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Response"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0\u{4}$task_list\0\u{1}resumed\0\u{4};interrupt_accepted\0\u{4}\u{14}model_catalog\0\u{3}model_selected\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0\u{4}$task_list\0\u{1}resumed\0\u{4}'approval_resolved\0\u{4}\u{14}interrupt_accepted\0\u{4}\u{14}model_catalog\0\u{3}model_selected\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -809,6 +862,19 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
         if let v = v {
           if hadOneofValue {try decoder.handleConflictingOneOf()}
           self.body = .resumed(v)
+        }
+      }()
+      case 80: try {
+        var v: Dshm_V1_ApprovalResolved?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .approvalResolved(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .approvalResolved(v)
         }
       }()
       case 100: try {
@@ -884,6 +950,10 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
       guard case .resumed(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 41)
     }()
+    case .approvalResolved?: try {
+      guard case .approvalResolved(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 80)
+    }()
     case .interruptAccepted?: try {
       guard case .interruptAccepted(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 100)
@@ -911,7 +981,7 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
 
 nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Event"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}&host_seq\0\u{3}task_upserted\0\u{3}log_reset\0\u{4}\u{12}milestone_added\0\u{4}<model_selected\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}&host_seq\0\u{3}task_upserted\0\u{3}log_reset\0\u{4}\u{12}milestone_added\0\u{4}\u{14}approval_pending\0\u{3}approval_resolved\0\u{4}'model_selected\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -985,6 +1055,32 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
           self.body = .milestoneAdded(v)
         }
       }()
+      case 80: try {
+        var v: Dshm_V1_ApprovalPending?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .approvalPending(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .approvalPending(v)
+        }
+      }()
+      case 81: try {
+        var v: Dshm_V1_ApprovalResolved?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .approvalResolved(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .approvalResolved(v)
+        }
+      }()
       case 120: try {
         var v: Dshm_V1_ModelSelected?
         var hadOneofValue = false
@@ -1034,6 +1130,14 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
     case .milestoneAdded?: try {
       guard case .milestoneAdded(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 60)
+    }()
+    case .approvalPending?: try {
+      guard case .approvalPending(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 80)
+    }()
+    case .approvalResolved?: try {
+      guard case .approvalResolved(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 81)
     }()
     case .modelSelected?: try {
       guard case .modelSelected(let v)? = self.body else { preconditionFailure() }

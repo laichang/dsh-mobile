@@ -11,6 +11,9 @@
  */
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import { WebSocketServer, type WebSocket } from 'ws'
+import type { ApprovalHolder } from './approvals/holder.ts'
+import { ApprovalDecision } from './gen/approvals_pb.ts'
+import { deviceId } from './pairing/store.ts'
 import { hostname } from 'node:os'
 import type { SecureChannel } from './channel.ts'
 import { FrameSchema, type Frame, type Request, type ResponseSchema } from './gen/frame_pb.ts'
@@ -42,6 +45,7 @@ export interface BridgeServerOptions {
   hostName?: string
   /** Inject a hub (tests); by default the server makes one around `tasks`. */
   hub?: TaskHub
+  approvals?: ApprovalHolder
   log?: (message: string) => void
 }
 
@@ -93,7 +97,9 @@ function serveConnection(
   log: (m: string) => void,
 ) {
   const { hub, hostName } = host
+  let device = 'dev loopback'
   let helloDone = false
+  let clientApprovals = false
   let codec: FrameCodec | undefined
 
   const path = new URL(url, 'ws://bridge').pathname
@@ -117,8 +123,12 @@ function serveConnection(
     send({ kind: { case: 'response', value: { requestId, body } } })
   const fail = (requestId: bigint, code: string, message: string) =>
     respond(requestId, { case: 'error', value: { code, message } })
-  const forward = (event: LoggedEvent) =>
+  const forward = (event: LoggedEvent) => {
+    // Older apps cannot withdraw temporary upstream approval rows.
+    if (!clientApprovals && (event.body?.case === 'approvalPending' || event.body?.case === 'approvalResolved'
+      || (event.body?.case === 'taskUpserted' && event.body.value.task?.approvalOnly))) return
     send({ kind: { case: 'event', value: { hostSeq: event.seq, body: event.body } } })
+  }
   const subscribeOwnTasks = () => {
     unsubscribe ??= hub.log.subscribe((event) => { if (ownTasks.has(event.taskId)) forward(event) })
   }
@@ -132,10 +142,14 @@ function serveConnection(
           return fail(id, 'hello/version-unsupported', `bridge speaks protocol ${PROTOCOL_VERSION}, got ${v}`)
         }
         helloDone = true
+        clientApprovals = request.body.value.capabilities.includes('approvals.v1')
         return respond(id, {
           case: 'hello',
-          value: { protocolVersion: PROTOCOL_VERSION, capabilities: options.tasks.modelCatalog && options.tasks.selectModel
-            ? [...CAPABILITIES, 'models.v1'] : [...CAPABILITIES] },
+          value: { protocolVersion: PROTOCOL_VERSION, capabilities: [
+            ...CAPABILITIES,
+            ...(options.tasks.modelCatalog && options.tasks.selectModel ? ['models.v1'] : []),
+            ...(options.approvals ? ['approvals.v1'] : []),
+          ] },
         })
       }
       case 'createTask': {
@@ -162,7 +176,9 @@ function serveConnection(
       case 'interrupt': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
         try {
-          hub.interrupt(request.body.value.taskId)
+          const taskId = request.body.value.taskId
+          hub.interrupt(taskId)
+          options.approvals?.cancelTask(taskId, device)
           return respond(id, { case: 'interruptAccepted', value: {} })
         } catch (error) {
           return fail(id, 'task/interrupt-failed', error instanceof Error ? error.message : String(error))
@@ -192,9 +208,23 @@ function serveConnection(
           return fail(id, 'model/unavailable', error instanceof Error ? error.message : String(error))
         }
       }
+      case 'answerApproval': {
+        if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
+        if (!options.approvals) return fail(id, 'request/unsupported', 'approvals unavailable')
+        const answer = request.body.value
+        if (answer.decision !== ApprovalDecision.DENY && answer.decision !== ApprovalDecision.ALLOW_ONCE) {
+          return fail(id, 'approval/invalid', 'choose allow once or deny')
+        }
+        try {
+          const resolved = options.approvals.answer(answer.id, answer.decision === ApprovalDecision.ALLOW_ONCE, device)
+          return respond(id, { case: 'approvalResolved', value: resolved })
+        } catch (error) {
+          return fail(id, 'approval/refused', error instanceof Error ? error.message : String(error))
+        }
+      }
       case 'listTasks': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
-        return respond(id, { case: 'taskList', value: { tasks: hub.list(), logId: hub.log.logId, hostName } })
+        return respond(id, { case: 'taskList', value: { tasks: hub.list().filter(task => clientApprovals || !task.approvalOnly), logId: hub.log.logId, hostName } })
       }
       case 'resume': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
@@ -229,6 +259,7 @@ function serveConnection(
         const { reply, session } = options.noise!.accept(bytes)
         socket.send(reply)
         codec = session
+        device = deviceId(session.remoteStatic)
       } catch (error) {
         if (error instanceof HandshakeRejected) {
           log(`refused a connection: ${error.reason}`)

@@ -9,6 +9,8 @@ syntax = "proto3";
 
 package dshm.v1;
 
+import "approvals.proto";
+
 // Where a task stands, as the unified list shows it (STORY principle 4).
 enum TaskState {
   TASK_STATE_UNSPECIFIED = 0;
@@ -29,6 +31,10 @@ message TaskSummary {
   int64 updated_at_ms = 5;
   // Why it failed, when state is FAILED.
   string message = 6;
+  // S4: current requests, including any older than the retained log.
+  repeated ApprovalPending pending_approvals = 80;
+  // A session started on another client appears only while it needs a decision.
+  bool approval_only = 81;
 }
 
 // Request: every task this bridge knows, newest first.
