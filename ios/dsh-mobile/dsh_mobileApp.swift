@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct dsh_mobileApp: App {
     @State private var app = AppModel()
+    @State private var showFirstTask = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
@@ -33,31 +34,56 @@ struct dsh_mobileApp: App {
     // from onOpenURL didn't show up in XCUITest's accessibility tree (T0 Log).
     @ViewBuilder private var root: some View {
         if let route = app.pairingRoute {
-            PairingView(route: route) { app.closePairing() }
+            PairingView(route: route) {
+                let wasUnpaired = !app.hasSavedHosts
+                app.closePairing()
+                showFirstTask = wasUnpaired && app.hasSavedHosts
+            }
         } else if let store = app.store {
-            RootView(store: store) { app.showingScanner = true }
+            RootView(store: store, showFirstTask: $showFirstTask) { app.showingScanner = true }
                 .id(ObjectIdentifier(store))
+        } else if app.hasSavedHosts {
+            ContentUnavailableView {
+                Label("Couldn't open your paired computers", systemImage: "lock.trianglebadge.exclamationmark")
+            } actions: {
+                Button("Try again") { app.retrySavedHosts() }
+                Button("Pair a computer") { app.showingScanner = true }
+            }
         } else {
             WelcomeView { app.showingScanner = true }
         }
     }
 }
 
-/// Release builds with no paired host: pairing is the only thing to do (STORY principle 6).
+/// With no paired computer, explain what the phone can do and how to connect it.
 struct WelcomeView: View {
     let pair: () -> Void
 
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "qrcode.viewfinder").font(.system(size: 56)).foregroundStyle(.tint)
-            Text("Pair with your DSH host").font(.title2.bold())
-            Text("On the machine that runs DSH, the dsh-mobile bridge prints a QR code. Scan it to pair; everything between this phone and the host is end-to-end encrypted.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-            Button("Scan pairing code", action: pair)
-                .buttonStyle(.borderedProminent)
-                .accessibilityIdentifier("pairing.scan")
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Image(systemName: "desktopcomputer")
+                    .font(.system(size: 48))
+                    .foregroundStyle(.tint)
+                    .accessibilityHidden(true)
+                Text("Connect your computer")
+                    .font(.largeTitle.bold())
+                    .accessibilityAddTraits(.isHeader)
+                Text("Send tasks from your phone, follow their progress, and answer approval requests. DeepSeek Harness runs the tasks on your computer.")
+                    .font(.body)
+                    .accessibilityIdentifier("firstRun.purpose")
+                Text("To get started, you need a computer running DeepSeek Harness (DSH) with the dsh-mobile bridge enabled.")
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("firstRun.requiresHost")
+                Button("Pair a computer", action: pair)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .accessibilityIdentifier("pairing.scan")
+            }
+            .frame(maxWidth: 480, alignment: .leading)
+            .padding(28)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
-        .padding(32)
+        .defaultScrollAnchor(.center, for: .alignment)
     }
 }

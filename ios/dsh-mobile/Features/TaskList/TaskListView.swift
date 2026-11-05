@@ -8,6 +8,7 @@ import SwiftUI
 /// The toolbar opens the QR scanner to pair a host (S1).
 struct RootView: View {
     @Bindable var store: TaskListStore
+    @Binding var showFirstTask: Bool
     let pair: () -> Void
     @State private var path: [String] = []
     @State private var submitted: String?
@@ -15,7 +16,7 @@ struct RootView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ScrollViewReader { scroll in
-                TaskListView(store: store)
+                TaskListView(store: store, showFirstTask: showFirstTask)
                     .onChange(of: submitted.flatMap { store.task($0) }?.showsInlineAnswer) { _, visible in
                         if visible == true, let submitted {
                             scroll.scrollTo(submitted, anchor: .center)
@@ -24,7 +25,10 @@ struct RootView: View {
             }
             .navigationTitle("Tasks")
             .safeAreaInset(edge: .bottom) {
-                ComposerView(store: store) { key in submitted = key }
+                ComposerView(store: store) { key in
+                    showFirstTask = false
+                    submitted = key
+                }
             }
             .navigationDestination(for: String.self) { key in
                 TaskDetailView(store: store, taskKey: key)
@@ -49,6 +53,7 @@ struct RootView: View {
 
 struct TaskListView: View {
     let store: TaskListStore
+    let showFirstTask: Bool
 
     var body: some View {
         let sections = store.sections
@@ -68,10 +73,26 @@ struct TaskListView: View {
                     }
                 }
             }
-            if store.tasks.isEmpty {
-                Text("No tasks yet. Send one below.")
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("tasklist.empty")
+            if store.tasks.isEmpty || showFirstTask {
+                Section {
+                    if store.prompt.isEmpty {
+                        Button {
+                            store.prompt = String(localized: "Say hello and describe one way you can help me on this computer.")
+                        } label: {
+                            Label("Try a first task", systemImage: "text.bubble")
+                        }
+                        .accessibilityIdentifier("firstRun.suggestion")
+                        Text("You can edit the suggestion before sending it.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    } else {
+                        Text("Send your first task when you're ready.")
+                            .foregroundStyle(.secondary)
+                    }
+                } header: {
+                    if store.tasks.isEmpty {
+                        Text("No tasks yet").accessibilityIdentifier("tasklist.empty")
+                    }
+                }
             }
             taskSection("Waiting on me", sections.waitingOnMe, id: "waiting")
             taskSection("Running", sections.running, id: "running")
