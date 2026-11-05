@@ -1,0 +1,99 @@
+#!/bin/bash
+# Set up a Mac for dsh-mobile development, then prove the T0 round trip runs (WORKFLOW.md §2).
+# Safe to run again: each step checks first and skips what is already in place.
+#
+#   scripts/bootstrap              set up, then run scripts/demo/t0.sh (real DSH + mock LLM)
+#   scripts/bootstrap --no-demo    set up only
+#
+# What it installs or changes (all outside the repo live under ~/.dshm; ~/.dsh is not touched):
+#   - Node 24.14.0 through nvm (nvm must be installed; the demos look for this exact version)
+#   - ~/.dshm/bin/pnpm: shim for corepack pnpm 11.28.5 (DSH's `dsh plugin` needs pnpm on PATH)
+#   - ~/.dshm/runtime: npm @deepseek-ai/dsh and @deepseek-ai/dsh-llm-mock-server, both 0.2.2-rc.1
+#   - git config core.hooksPath .githooks (this repo only)
+#   - bridge/node_modules and bridge/lib (pnpm install --frozen-lockfile, pnpm build)
+# It does not need a model API key: scripts/dsh-up.mjs points DSH at the mock LLM.
+# Needs, and only checks: Xcode 26 with an iOS 26 Simulator runtime, a Simulator named
+# "iPhone 17 Pro" (the demos' default), network access to npm and GitHub.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+NODE_VERSION=24.14.0
+PNPM_VERSION=11.28.5
+DSH_VERSION=0.2.2-rc.1
+DSHM="$HOME/.dshm"
+DEMO=1
+for a in "$@"; do case "$a" in --no-demo) DEMO=0 ;; *) echo "unknown arg $a" >&2; exit 2 ;; esac; done
+
+step() { printf '\n== %s\n' "$*"; }
+ok() { printf '   ok: %s\n' "$*"; }
+die() { printf '\nbootstrap: %s\n' "$*" >&2; exit 1; }
+
+step "Xcode 26 and an iOS 26 Simulator runtime"
+command -v xcodebuild >/dev/null || die "install Xcode 26, then run: sudo xcode-select -s /Applications/Xcode.app"
+XCODE_MAJOR="$(xcodebuild -version | awk '/^Xcode/{split($2,v,"."); print v[1]}')"
+[ "${XCODE_MAJOR:-0}" -ge 26 ] || die "Xcode 26 or later is needed (found $(xcodebuild -version | head -1))"
+xcrun simctl list runtimes | grep -q "iOS 26" || die "install an iOS 26 Simulator runtime: xcodebuild -downloadPlatform iOS"
+ok "$(xcodebuild -version | head -1)"
+if xcrun simctl list devices available | grep -q "iPhone 17 Pro ("; then ok "Simulator \"iPhone 17 Pro\""
+else echo "   warning: no Simulator named \"iPhone 17 Pro\"; set DSHM_SIM=<name or UDID> for the demos"; fi
+
+step "Node $NODE_VERSION (nvm)"
+NODE_BIN="$HOME/.nvm/versions/node/v$NODE_VERSION/bin"
+if [ ! -x "$NODE_BIN/node" ]; then
+  export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+  [ -s "$NVM_DIR/nvm.sh" ] || die "install nvm (https://github.com/nvm-sh/nvm), then run this script again"
+  # shellcheck disable=SC1091
+  . "$NVM_DIR/nvm.sh"
+  nvm install "$NODE_VERSION" >/dev/null
+fi
+export PATH="$NODE_BIN:$DSHM/bin:$PATH"
+ok "node $(node --version)"
+
+step "pnpm $PNPM_VERSION shim in $DSHM/bin"
+mkdir -p "$DSHM/bin"
+if [ ! -x "$DSHM/bin/pnpm" ]; then
+  cat > "$DSHM/bin/pnpm" <<EOF
+#!/bin/sh
+# Shim for DSH's \`dsh plugin\`, which needs \`pnpm\` on PATH. Uses corepack's cached pnpm $PNPM_VERSION.
+exec corepack pnpm@$PNPM_VERSION "\$@"
+EOF
+  chmod +x "$DSHM/bin/pnpm"
+fi
+COREPACK_ENABLE_DOWNLOAD_PROMPT=0 pnpm --version >/dev/null
+ok "pnpm $(COREPACK_ENABLE_DOWNLOAD_PROMPT=0 pnpm --version)"
+
+step "DSH $DSH_VERSION and its mock LLM server in $DSHM/runtime"
+RT="$DSHM/runtime"
+have_pkg() { [ "$(node -p "try{require('$RT/node_modules/$1/package.json').version}catch{''}")" = "$DSH_VERSION" ]; }
+if have_pkg @deepseek-ai/dsh && have_pkg @deepseek-ai/dsh-llm-mock-server; then ok "already installed"
+else
+  mkdir -p "$RT"
+  [ -f "$RT/package.json" ] || (cd "$RT" && npm init -y >/dev/null)
+  (cd "$RT" && npm install --save-exact --no-fund --no-audit \
+    "@deepseek-ai/dsh@$DSH_VERSION" "@deepseek-ai/dsh-llm-mock-server@$DSH_VERSION")
+  ok "installed"
+fi
+
+step "git hooks (core.hooksPath .githooks)"
+git config core.hooksPath .githooks
+ok "$(git config core.hooksPath)"
+
+step "bridge: install and build"
+(cd bridge && COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack pnpm install --frozen-lockfile >/dev/null \
+  && COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack pnpm build >/dev/null)
+ok "bridge/lib built"
+
+if command -v codex >/dev/null; then
+  step "Codex (manual steps, WORKFLOW.md §2.1)"
+  echo "   Codex is installed. Run codex update, trust this project, then /hooks to trust codex-guard."
+  echo "   Then run .codex/hooks/codex-guard-test."
+fi
+
+if [ $DEMO = 1 ]; then
+  step "T0 demo (scripts/demo/t0.sh): codegen check, tests, real DSH + mock LLM, XCUITests"
+  scripts/demo/t0.sh
+  printf '\nbootstrap: done. The T0 round trip runs on this Mac.\n'
+else
+  printf '\nbootstrap: done (demo skipped). Run scripts/demo/t0.sh to prove the round trip.\n'
+fi

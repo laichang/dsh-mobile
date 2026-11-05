@@ -4,42 +4,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 
 ## How to use this file
 
-**Before you start work**
-1. Read [AGENTS.md](AGENTS.md).
-2. Check the §0 status table.
-3. Read the slice you're picking up, including its Log.
-4. Read `git log` since that slice's last Log entry.
-5. Confirm the T0 demo still runs. If it doesn't, fixing it comes first.
-
-**Before you stop**: append to the slice's Log what's done, what isn't, and the next step; commit on the slice's branch. Edit only your own slice's section (its fields, Done when, and Log). Never touch §0 or the §8 Plan log: parallel branches editing adjacent §0 rows conflict on merge. If §0 needs to change, say so in your Log and your report; the coordinating session updates it.
-
-**Who writes this file**
-- **§0 and the §8 Plan log** belong to the coordinating session, which edits them only on `main`. It updates them when a slice starts, is blocked, goes to review, or merges.
-- **A slice's section** belongs to that slice's owner, on the slice's branch.
-- **Subagents** hand results back; the owner records them in the Log.
-
-**Merging a slice** (the user's rules: "Auto-merge when complete", then "Yes, switch" to "merge first, accept later")
-- The coordinating session merges a slice branch into `main` without asking, once all three hold. It doesn't wait for `[human]` items.
-  1. Every `[auto]` and `[ui]` item of the slice is ticked, and every evidence pointer resolves.
-  2. Every `[ui]` item was rerun and passed by a review subagent that didn't take part in development.
-  3. The pre-commit check passes.
-- After the merge, §0 says:
-  - `review` if the slice still has unticked `[human]` items. Each of those goes into §9 with the slice, the item, and the device or setup it needs, so the user can accept them in one sitting.
-  - `done` if it has no `[human]` items.
-- A slice in `review` becomes `done` once the user has ticked all its `[human]` items. If the user finds a problem while accepting, it's fixed forward on `main`, never by reverting the merge.
-- A merged slice meets its dependents' **Needs**, even while it's still in `review`.
-- Afterwards the coordinating session tells the user in a sentence or two what was merged and where the evidence is. If any condition fails, it doesn't merge, and tells the user what's missing.
-- Its bookkeeping commits on `main` (updating §0, the Plan log, and §9) don't need asking either.
-- Still the user's call, every time: ticking `[human]` items, confirming `Dxx` entries in ARCHITECTURE.md and dependencies (see "Default choices" below), any push or PR, and guard-file changes (which the user commits by hand). Changes to the rules in this section are shown to the user before they're committed, unless the user has already approved them.
-
-**Session settings** (the user's rule: "指定 opus 5.5 medium"): the coordinating session starts every tracer, slice, and spike session with model `claude-opus-5-5` and effort `medium`.
-
-**Default choices** (the user's rules: "决策先用默认方案：遇到选型时，会话按自己推荐的方案继续做，写进 ARCHITECTURE.md 时标成'provisional（暂定），待用户确认'", and for dependencies and downloads, "先全部放行，然后和 1 一样的解法")
-- **Decisions**: at a toolchain or design choice, a session doesn't wait for the user. It goes ahead with its own recommendation and records it in ARCHITECTURE.md as a `Dxx` entry marked **provisional, pending user confirmation**, with the alternatives it considered.
-- **Dependencies and downloads**: allowed without asking. Each is pinned (exact version, or commit plus checksum for downloads), recorded the same way as provisional, pending user confirmation, and named in the slice's Log.
-- Each session lists its new provisional items in its report to the coordinating session. The coordinating session keeps them in §9 "Pending user confirmation" with slice, branch, and commit, so the user can review them all at once.
-- A provisional item stays provisional until the user confirms it. When the user confirms or changes one, the session that owns it (or the coordinating session, on `main`) drops the marker or applies the change.
-- Every session brief carries these two rules.
+**Process rules** live in [WORKFLOW.md](WORKFLOW.md): set up a Mac, roles and ownership (who writes §0, §8, §9, and each slice section), start and stop a work session, the long-horizon run, resources for each slice, status titles, session settings, default choices, merging a slice, and what stays with the user. Read it before you pick up work. This section keeps only the format of this file and the rules for Done when items.
 
 **Slice fields**, always in this order. Write "—" for an empty field; never drop one.
 `Status · Needs · Branch` on one line, then **Why**, **Cuts**, **Demo**, **Done when**, **Not**, **Log**.
@@ -801,14 +766,19 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
     - `~/.dshm/home-s1` holds test devices from repeated runs.
   - Also updated: the two spike READMEs now say D17 and D18 are confirmed.
   - **Next:** batch 2. Ready now: S4, S5, S6, S7, S9, S10, S11, S12. X3 runs a Simulator benchmark, with the real-device check left as `[human]`.
+- **2026-11-05 · process rules move to WORKFLOW.md** (asked for by the user before a move to another Mac).
+  - "How to use this file" kept only the slice format and the Done when rules. Before you start / stop, Who writes this file, Merging a slice, Session settings and Default choices moved to the new WORKFLOW.md, rewritten in ASD-STE100-style English. The rules themselves are unchanged.
+  - New in WORKFLOW.md: `scripts/bootstrap` for a new Mac (§2), the long-horizon run (§5: the user starts the coordinator once and does not click session cards; the coordinator falls back to a workflow or `codex exec` when the app refuses a session start), resources for each slice (§6), status titles (§7), and Codex support (§12, §13).
+  - Codex guards: `.codex/hooks.json` runs `.codex/hooks/codex-guard` before `Bash` and `apply_patch`. It reuses `git-guard` and `check-plan`, and denies where Claude Code asks (Codex doesn't support `ask` yet). `.codex/hooks.json` and `.codex/hooks/*` joined `PROTECTED` in `scripts/check-plan` and `plan-guard`. Verified: `.codex/hooks/codex-guard-test` (16 cases, 0 failures), and a live `codex exec` run (codex-cli 0.146.0) in a scratch worktree, where the hook blocked a `[human]` tick, a guard-file edit and a `--no-verify` commit. The user commits these guard files by hand.
+  - No Done when item changed.
 
 ## 9. Pending user confirmation
 
-Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see "Default choices"), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see "Merging a slice"). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
+Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
-| 1 | — | rule | "Default choices" rule text and this section (the user approved the rules, not this wording) | `main` | see Plan log 2026-11-05 · default choices |
+| 1 | — | rule | "Default choices" rule text (now WORKFLOW.md §9) and this section (the user approved the rules, not this wording) | `main` | see Plan log 2026-11-05 · default choices |
 | 2 | X2 | dependency | npm `@noble/ciphers` 2.4.0, `@noble/curves` 2.4.0, `@noble/hashes` 2.4.0 (spike only, `spikes/x2-noise/ts/`) | `main` (merged `e34a8bc`) | `3f4d72e` |
 | 3 | X2 | download | Noise test vectors: `cacophony.txt` (haskell-cryptography/cacophony @ `18b7348`) and `snow.txt` (mcginty/snow @ `d00b360`); sha256 in `spikes/x2-noise/vectors/SHA256SUMS`; a filtered subset is committed | `main` (merged `e34a8bc`) | `3f4d72e` |
 | 4 | T0 | decision | ARCHITECTURE D15 (toolchain: buf + protoc-gen-es / swift-protobuf codegen, pnpm bridge, `ios/DSHKit` package layout) and D16 (debug-only testability entry points), *provisional* | `main` (merged `84db2e8`) | `03cc202` |
