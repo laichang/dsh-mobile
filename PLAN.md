@@ -358,7 +358,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [ ] [human] A packet capture of that session shows only ciphertext — Evidence:
 - [x] [auto] The Swift and TS Noise ports pass the official vectors and agree byte for byte on golden pairing and reconnect transcripts and the offer URL — Evidence: test:NoiseVectors/officialVector · test:NoiseVectorsBridge/officialVectors · test:NoiseChannelTests/goldenTranscripts · test:NoiseGoldenTranscripts/transcriptsMatchFixture · test:PairingOfferTests/parsesGoldenOfferURL · cmd:scripts/demo/s1.sh
 - [x] [auto] The bridge registers a device only after a completed pairing handshake, and a key it doesn't know can't reconnect — Evidence: test:PairingBridge/deviceRegisteredOnlyAfterFirstTransportMessage · test:PairingBridge/unpairedDeviceCannotReconnect · test:PairingTests/unpairedPhoneCannotReconnect · cmd:scripts/demo/s1.sh
-- [ ] [ui] Seam with S2 (S1 landed second): after kill/reopen the app reconnects over `NoiseChannel` (IK) and still resumes from its cursor; the gap is filled from the bridge — Evidence:
+- [x] [ui] Seam with S2 (S1 landed second): after kill/reopen the app reconnects over `NoiseChannel` (IK) and still resumes from its cursor; the gap is filled from the bridge — Evidence: test:S1PairingUITests/testResumeOverNoisePhase2GapFilled · test:S1PairingUITests/testResumeOverNoisePhase1KillWhileConnected · test:NoiseResumeTests/killAndReopenReconnectsOverNoiseAndResumesFromTheCursor · test:ResumeOverNoise/ikReconnectResumesFromTheCursor · cmd:scripts/demo/s1.sh · shot:evidence/S1/s1-resumed-over-noise-list.png · shot:evidence/S1/s1-resumed-over-noise-detail.png
 
 **Not**: QR inside the DSH UI (terminal first) · device registry UI (S10).
 
@@ -375,6 +375,11 @@ Each slice needs only T0, unless "Needs" says otherwise.
   - Not done: the two `[human]` items (real iPhone over Wi-Fi/Tailscale: run `DSHM_BRIDGE_HOST=0.0.0.0 DSHM_BRIDGE_DEV_PLAINTEXT=0 node scripts/dsh-up.mjs` or the plugin in a real profile, then `pair.js` and scan; packet capture of that session). Camera scanning is untested (Simulator has no camera). Known limits: one address on reconnect; Noise's 65535-byte message cap (M3 artifacts need chunking); the hand-rolled Noise is unaudited.
   - For the coordinator: §0 S1 → `review` after an independent rerun of the `[ui]` item (`scripts/demo/s1.sh`); add D20, D21 and the four npm deps to §9; the two `[human]` items go to §9 (real iPhone + Wi-Fi/Tailscale; Wireshark/tcpdump on the Mac).
   - Next: independent `[ui]` rerun, merge, then the user's `[human]` acceptance on a real iPhone.
+- **2026-11-05 · batch 1 integration** (branch `claude/batch1-integration`, merged last, after S3 and S2).
+  - Renumbering: the entries this Log calls **D20** and **D21** are now **D21** (pairing and the encrypted wire) and **D22** (no Secure Enclave key in M1) in ARCHITECTURE.md (main keeps D17/D18, S3 took D19, S2 took D20). Still *provisional, pending user confirmation*.
+  - S2 replaced T0's `ContentView`: S1's host channel row (`host.channel`) and pairing button (`pairing.scan`) now live on S2's task list; `AppModel` builds S2's `TaskListStore` for the paired host (or the Debug dev paths) and swaps it on pairing. `HostConnection` keeps both S1's outbox/cipher and S2's reconnect generations. `FakeNoiseHost` now fronts S2's `FakeHost`. `scripts/demo/s2-host.mjs` and `s3-host.mjs` enable the bridge's dev plaintext path on loopback. See **D24** (*provisional, pending user confirmation*).
+  - Seam with S2 (S1 landed second, so S1 owns it): added and ticked "resume over Noise". `scripts/demo/s1.sh` now kills the paired app, runs a task on the bridge from the CLI, and reopens: a fresh IK handshake, then `Resume` from the cursor brings the missed task with its transcript. s1.sh now runs only S1 and T0 UI tests (it used to run the whole scheme, which now includes S2/S3 real-DSH tests that need their own hosts) and fails on any skipped test.
+  - Full `scripts/demo/s1.sh --shots` run on the integration branch: exit 0, refreshed `evidence/S1/`.
 
 ### S2 · Durable list + resume
 
