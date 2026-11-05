@@ -56,7 +56,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S11 | review | merged `12e1afc` | 2026-11-05 | User checks onboarding on a fresh install (§9) |
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | Hosted compatibility checks deferred; local runner available (§8) |
 | S13 | review | merged `c56d47f` | 2026-11-05 | User verifies the same Web session and latest reply on a paired iPhone (§9) |
-| T1 | todo | — | 2026-11-05 | Start the new UI shell first (§5, "UI to the design board") |
+| T1 | doing | `claude/t1-ui-shell` | 2026-11-05 | Slice owner builds the shell (§8) |
 | S14 | todo | — | 2026-11-05 | Wait for T1 |
 | S15 | todo | — | 2026-11-05 | Wait for T1 |
 | S16 | todo | — | 2026-11-05 | Wait for T1 |
@@ -1200,6 +1200,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - D34 no longer applies after T1 (no list routing after the first message). D23 (b) changes in S16. §9 rows 33 and 21 stay until the user confirms the new entries.
   - The M1 exit now happens on the new UI (§2, §6). §6 tells when each open `[human]` item is ready.
   - The user approved three item rewordings: §6 "open the detail view" → "open the session"; §6 "Kill the app, reopen" → "… Open the task from the drawer …"; S9 "in one list" → "in 所有任务 … the drawer and the hosts sheet name it". The new UI has no single home list and no separate detail view.
+
+- **2026-11-05 · T1 assigned.** New long-horizon run (coordinator on `main`). Branch `claude/t1-ui-shell`, own worktree from the session, simulator `dshm-T1`, DSHM_HOME `~/.dshm/home-t1`, bridge 47810, web 3283. The owner uses the shared DSH runtime read-only. S14–S23 wait for T1.
 
 ## 9. Pending user confirmation
 
