@@ -904,3 +904,6 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 35 | S9 | decision | D43, provisional: persistent target key, host-keyed connections and rows only for configured paired hosts. | `main` | merged `575bf62` |
 | 36 | S9 | `[human]` | Use two real Macs, send a task to each, then disconnect one and verify its name and cached task in the unified list. | `main` | `575bf62` |
 | 37 | S12 | decision | D46, provisional: exact supported DSH release, version-only Hello for other hosts, per-host error and retained draft. | `main` | merged `ed3f7bf` |
+| 38 | S12 | download | Real UI fixture @deepseek-ai/dsh@0.2.2-alpha.3, sha512 in the S12 Log. | `main` | `ed3f7bf` |
+| 39 | S12 | dependency | CI-only actions/checkout v7.0.1 at 3d3c42e5aac5ba805825da76410c181273ba90b1 and actions/setup-node v7.0.0 at 820762786026740c76f36085b0efc47a31fe5020. | `main` | `ed3f7bf` |
+| 40 | S12 | download | DSH default branch at fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159; archive SHA-256 a169c6128a7fd7d142291ce5abc4764e95b42f0c922110e271211b4b6b2f6fa1. | `main` | `ed3f7bf` |
