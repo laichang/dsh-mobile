@@ -345,7 +345,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S2 · Durable list + resume
 
-**Status** todo · **Needs** T0 · **Branch** —
+**Status** doing · **Needs** T0 · **Branch** `claude/s2-durable-list`
 
 **Why**: principle 4 (unified list; nothing lost across disconnects), D9.
 
@@ -355,7 +355,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 **Demo**: start a task, kill the app, wait, reopen. The list and transcript are intact, and the gap is filled from the bridge.
 
 **Done when**
-- [ ] [auto] Bridge `Resume { after_seq }` returns exactly the events after `after_seq` — Evidence:
+- [x] [auto] Bridge `Resume { after_seq }` returns exactly the events after `after_seq` — Evidence: test:ResumeAgainstFakeDSH/resumeReturnsExactlyTheEventsAfterSeq · test:HostLog/sinceReturnsExactlyTheEventsAfterSeq · test:ResumeAgainstFakeDSH/taskOutlivesTheConnectionThatCreatedIt · commit:73ca56c
 - [ ] [ui] Start a task, kill the app, wait, reopen: the list and transcript are intact and the gap is filled from the bridge — Evidence:
 - [ ] [ui] With the host unreachable, the list names that host as offline — Evidence:
 
