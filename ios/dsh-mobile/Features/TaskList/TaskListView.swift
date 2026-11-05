@@ -192,6 +192,13 @@ struct ComposerView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if let key = store.composerHostKey {
+                if let host = store.hosts.first(where: { $0.key == key && $0.reachability == .online }) {
+                    if host.capabilities.contains("workspaces.v1") {
+                        WorkspaceControl(store: store, hostKey: key)
+                    } else if store.composerWorkspaces[key] != nil {
+                        Button("Use default workspace on this host") { store.chooseWorkspace(nil, hostKey: key) }
+                    }
+                }
                 if store.modelHosts.contains(key) {
                     ModelControl(store: store, hostKey: key, task: nil)
                 } else if let choice = store.composerSelections[key],

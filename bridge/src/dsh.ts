@@ -1,11 +1,12 @@
 /**
  * The only file that knows DSH internals (ARCHITECTURE D4). It maps a dsh-mobile task onto one
- * DSH session (D13): create a session in a fixed workspace, prompt it, follow its log, and turn
+ * DSH session (D13): create a session in its selected workspace, prompt it, follow its log, and turn
  * the follow stream into plain task output. Types are structural subsets of the DSH 0.2.2-rc.1
  * `sessionController` / `workspaceController` services, so `FakeDSH` can implement them in tests.
  */
 import { catalogFrame, type HostCatalog, type Selection } from './models/catalog.ts'
 import { randomUUID } from 'node:crypto'
+import { isAbsolute } from 'node:path'
 import { MilestoneMapper, describeFailure, isUserInterrupt, type Milestone } from './milestones/mapper.ts'
 
 /** Subset of `ctx.workspaceController` (`@deepseek-ai/dsh-api-workspace-controller`). */
@@ -37,6 +38,7 @@ export interface SessionControllerLike {
 
 export interface DshServices {
   sessionController: SessionControllerLike
+  workspaceRegistry: { list(): readonly { path: string; updatedAt: string }[] }
   workspaceController: WorkspaceControllerLike
 }
 
@@ -52,11 +54,19 @@ export interface StartedTask {
   output: AsyncIterable<TaskOutput>
 }
 
-/** Starts tasks on DSH. `cwd` is the fixed workspace directory for T0 (S7 adds a picker). */
+/** Starts tasks on DSH. `cwd` is the default when the phone sends no workspace. */
 export class DshTasks {
   readonly sessions = new Set<string>()
 
   constructor(private readonly dsh: DshServices, private readonly cwd: string) {}
+
+  listWorkspaces() {
+    const recentPaths = this.dsh.workspaceRegistry.list()
+      .filter(workspace => workspace.path !== this.cwd)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .map(workspace => workspace.path)
+    return { defaultPath: this.cwd, recentPaths }
+  }
 
   interrupt(taskId: string): void {
     this.dsh.sessionController.cancel({ sessionId: taskId })
@@ -74,8 +84,9 @@ export class DshTasks {
     return selected
   }
 
-  async start(prompt: string, signal: AbortSignal, selection?: Selection): Promise<StartedTask> {
-    const { workspace } = await this.dsh.workspaceController.create({ path: this.cwd })
+  async start(prompt: string, signal: AbortSignal, selection?: Selection, path = this.cwd): Promise<StartedTask> {
+    if (!isAbsolute(path)) throw new Error('Choose an absolute workspace path on this host.')
+    const { workspace } = await this.dsh.workspaceController.create({ path })
     const { sessionId } = await this.dsh.sessionController.create({ workspaceId: workspace.workspaceId })
 
     // Open the follow before prompting, so the turn's first frames can't be missed.

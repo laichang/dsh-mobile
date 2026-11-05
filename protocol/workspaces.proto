@@ -1,0 +1,9 @@
+syntax = "proto3";
+package dshm.v1;
+
+message ListWorkspaces {}
+
+message WorkspaceList {
+  string default_path = 1;
+  repeated string recent_paths = 2; // DSH directories, newest first, excluding the default.
+}

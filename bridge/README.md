@@ -2,7 +2,7 @@
 
 A [Cordis](https://github.com/cordiverse/cordis) plugin that runs inside your own DeepSeek Harness (DSH) host and lets the dsh-mobile iOS app talk to it. It opens its **own** WebSocket listener and speaks the protobuf protocol in [`../protocol/frame.proto`](../protocol/frame.proto). The app never talks to DSH's native API (ARCHITECTURE D4).
 
-Status (S1): the listener (`0.0.0.0:47801` by default) is end-to-end encrypted with Noise (ARCHITECTURE D6, D21). A phone pairs once by scanning a QR the bridge prints, then reconnects with its own key. One request so far (`CreateTask`): it creates a DSH session in a fixed workspace, prompts it with DSH's default model, and streams the assistant text back.
+Status (S1): the listener (`0.0.0.0:47801` by default) is end-to-end encrypted with Noise (ARCHITECTURE D6, D21). A phone pairs once by scanning a QR the bridge prints, then reconnects with its own key. `CreateTask` creates a DSH session and streams its reply. The S7 composer can choose the host's default workspace, a recent workspace, or the absolute path of another existing directory on that host.
 
 S2 adds `ListTasks` and `Resume` (capability `resume.v1`): tasks keep running when the app disconnects, and every event is numbered in a per-host log so the app can fetch exactly what it missed (ARCHITECTURE D20). The log is kept in memory; restarting DSH starts a new one.
 
@@ -62,7 +62,7 @@ To remove it, run `dsh plugin --profile web remove @dsh-mobile/bridge`.
 
 ## Configuration
 
-Defaults: `host: 0.0.0.0`, `port: 47801`, `cwd`: your home directory (the workspace for new tasks), `stateDir: $DSH_HOME/dsh-mobile-bridge`, `devPlaintext: false`. To change them, add an entry with id `dsh-mobile-bridge` to the profile's `cordis.yml`:
+Defaults: `host: 0.0.0.0`, `port: 47801`, `cwd`: your home directory (the default workspace for new tasks), `stateDir: $DSH_HOME/dsh-mobile-bridge`, `devPlaintext: false`. To change them, add an entry with id `dsh-mobile-bridge` to the profile's `cordis.yml`:
 
 ```yaml
 - id: dsh-mobile-bridge

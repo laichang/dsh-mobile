@@ -14,9 +14,10 @@ import { milestoneAdded } from '../milestones/wire.ts'
 
 export interface TaskStarter {
   interrupt(taskId: string): void
+  listWorkspaces?: DshTasks['listWorkspaces']
   modelCatalog?: DshTasks['modelCatalog']
   selectModel?: DshTasks['selectModel']
-  start(prompt: string, signal: AbortSignal, selection?: Selection): Promise<StartedTask>
+  start(prompt: string, signal: AbortSignal, selection?: Selection, workspace?: string): Promise<StartedTask>
 }
 
 type Summary = Omit<TaskSummary, '$typeName' | '$unknown' | 'pendingApprovals' | 'modelSelection'>
@@ -38,8 +39,8 @@ export class TaskHub {
    * Starts a task. `onCreated` runs synchronously once the task id is known and before any of
    * the task's events are logged, so the caller can answer `CreateTask` first.
    */
-  async create(prompt: string, onCreated: (taskId: string) => void = () => {}, selection?: Selection): Promise<string> {
-    const task = await this.starter.start(prompt, this.abort.signal, selection)
+  async create(prompt: string, onCreated: (taskId: string) => void = () => {}, selection?: Selection, workspace?: string): Promise<string> {
+    const task = await this.starter.start(prompt, this.abort.signal, selection, workspace)
     const at = BigInt(this.now())
     const summary: Summary = {
       taskId: task.taskId, title: prompt, state: TaskState.RUNNING,
