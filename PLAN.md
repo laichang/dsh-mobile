@@ -78,18 +78,18 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
 | X3 | todo | — | — | Start any time (no deps) |
 | X4 | done | merged `ccc8ff9` | 2026-11-05 | — |
-| S1 | doing | workflow `wf_219b7aa1-71c` → `claude/s1-pair-encrypt` | 2026-11-05 | Building in batch 1 |
-| S2 | doing | workflow `wf_219b7aa1-71c` → `claude/s2-durable-list` | 2026-11-05 | Building in batch 1 |
-| S3 | doing | workflow `wf_219b7aa1-71c` → `claude/s3-milestones` | 2026-11-05 | Building in batch 1 |
-| S4 | todo | — | 2026-11-05 | Ready (T0 merged, X1 merged); next batch |
-| S5 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
-| S6 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
-| S7 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
+| S1 | review | merged `1f35fa2` (batch 1) | 2026-11-05 | User accepts 2 `[human]` items: real iPhone, packet capture (§9) |
+| S2 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D20, D23 in §9) |
+| S3 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D19 in §9) |
+| S4 | todo | — | 2026-11-05 | Ready (T0, X1 merged); batch 2 |
+| S5 | todo | — | 2026-11-05 | Ready (T0 merged); batch 2 |
+| S6 | todo | — | 2026-11-05 | Ready (T0 merged); batch 2 |
+| S7 | todo | — | 2026-11-05 | Ready (T0 merged); batch 2 |
 | S8 | todo | — | 2026-11-05 | Wait for X3 (T0 merged) |
-| S9 | todo | — | — | Wait for S1 |
-| S10 | todo | — | — | Wait for S1 |
-| S11 | todo | — | — | Wait for S1 |
-| S12 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
+| S9 | todo | — | 2026-11-05 | Ready (S1 merged) |
+| S10 | todo | — | 2026-11-05 | Ready (S1 merged) |
+| S11 | todo | — | 2026-11-05 | Ready (S1 merged) |
+| S12 | todo | — | 2026-11-05 | Ready (T0 merged); also pins D17's prepend ordering |
 
 ## 1. Approach
 
@@ -783,6 +783,24 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - S3 and S1 also wrote new `Dxx` entries starting at D17. They are renumbered after D18 when they merge.
 - **2026-11-05 · X1 and X4 accepted.** The user ticked both `[human]` items in `0eaa7e3` after reading a summary of the two conclusions, so both are now `done`. §9 rows 15 and 16 are removed. D17 and D18 stay provisional (rows 13 and 14) until the user confirms them.
 - **2026-11-05 · D17 and D18 confirmed by the user** ("一起确认"). ARCHITECTURE.md drops their provisional markers, along with the related §1, §5.4, §8.1 and §8.6 notes. §9 rows 13 and 14 are removed. The S1 and S3 branches also number new entries from D17; those get renumbered when they merge.
+- **2026-11-05 · batch 1 merged: S1, S2, S3** (`main` fast-forwarded to `1f35fa2`). S2 and S3 are `done`. S1 is `review`, with 2 `[human]` items open (§9).
+  - **Build:** workflow `wf_5740da3d-b68`. Each slice was built in its own worktree, and a review agent that hadn't built it reran its `[ui]` items. All three passed.
+  - **Integration:** workflow `wf_ab6e2118-9f3`, on branch `claude/batch1-integration` cut from `main`. The slices were merged in the order S3 (`eb429a9`), S2 (`3ce2088`), S1 (`f7c3c4d`).
+  - **Seams**, each owned by the slice that landed second, added to its Done when, then built and ticked:
+    - S2 × S3, cached milestones: list rows and the detail view show the milestone card from the cache after kill/reopen (D23).
+    - S1 × S2, resume over Noise: kill/reopen reconnects with an IK handshake and resumes from the cursor (D24).
+  - **Renumbered:** S3 D17 → D19, S2 D17 → D20, S1 D20 → D21 and D21 → D22. Each slice appended a Log line for this; older Log entries keep the old numbers.
+  - **Demo scripts fixed:** `scripts/demo/lib.sh` installs bridge dependencies before `codegen --check`, and fails on skipped tests; each run gets its own DerivedData.
+  - **Integration bug:** FakeHost task ids collided across app launches. They now carry a per-instance prefix (D23).
+  - **Checked before the merge:**
+    - The integrator reran `check-release-clean`, `t0.sh`, `s1.sh`, `s2.sh` and `s3.sh` from clean builds. All exited 0: 41 bridge tests, 46 DSHKit tests, nothing skipped.
+    - A separate review agent reran every `[ui]` item of T0, S1, S2 and S3 at `1f35fa2`, including both seam items. All passed.
+    - `scripts/check-plan --base <main PLAN.md> --new PLAN.md` exited 0. Dxx numbers are unique, with no dangling references. No build products are in the diff.
+  - **Side effects:**
+    - The DSH profiles in `~/.dshm/home*` now point at a review worktree's `bridge/`. The next demo run re-adds its own path.
+    - `~/.dshm/home-s1` holds test devices from repeated runs.
+  - Also updated: the two spike READMEs now say D17 and D18 are confirmed.
+  - **Next:** batch 2. Ready now: S4, S5, S6, S7, S9, S10, S11, S12. X3 runs a Simulator benchmark, with the real-device check left as `[human]`.
 
 ## 9. Pending user confirmation
 
@@ -802,3 +820,12 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 10 | T0 | `[human]` | "Following `bridge/README.md` installs and enables the plugin in a DSH profile". Needs: this Mac with DSH 0.2.2-rc.1 (`~/.dshm`), about 10 minutes | `main` | `84db2e8` |
 | 11 | T0 | `[human]` | "Toolchain choices … recorded in ARCHITECTURE.md". Needs: reading D15 (confirms row 4) | `main` | `84db2e8` |
 | 12 | T0 | `[human]` | "Testability entry points … recorded in ARCHITECTURE.md". Needs: reading D16 (confirms row 4) | `main` | `84db2e8` |
+| 17 | S3 | decision | ARCHITECTURE D19, *provisional*: milestone mapping from DSH session events (turn/start, todo/write, plan/mode, llm/retry, turn/end), `MilestoneAdded` carries the whole todo list, card + timeline UI | `main` (merged `1f35fa2`) | `debb402` |
+| 18 | S2 | decision | ARCHITECTURE D20, *provisional*: in-memory per-host event log (`log_id` + `host_seq`), `ListTasks` / `Resume` / `LogReset`, SwiftData cache + cursor, reconnect backoff 0.5 s → 30 s, refresh on foreground | `main` (merged `1f35fa2`) | `2b14fd0` |
+| 19 | S1 | decision | ARCHITECTURE D21, *provisional*: pairing offer URL, 10-minute single-use offers, wire header in the Noise prologue, close codes 4000–4003, bridge listens on 0.0.0.0 Noise-only (plaintext only in dev, on loopback `/plaintext`) | `main` (merged `1f35fa2`) | `4181b8f` |
+| 20 | S1 | decision | ARCHITECTURE D22, *provisional*: no Secure Enclave identity key in M1; one Keychain X25519 Noise static key per device; the SE signing key returns with Face ID approvals in M2 | `main` (merged `1f35fa2`) | `4181b8f` |
+| 21 | S2 × S3 | decision | ARCHITECTURE D23, *provisional*: milestones are written into the host log and cached with the task; the card shows in list rows and in the detail view | `main` (merged `1f35fa2`) | `67bb77c` |
+| 22 | S1 × S2 | decision | ARCHITECTURE D24, *provisional*: one TaskListStore per host, swapped on pairing; every reconnect is a fresh IK handshake followed by `Resume` | `main` (merged `1f35fa2`) | `08abaa6` |
+| 23 | S1 | dependency | Bridge runtime: `@noble/curves`, `@noble/ciphers`, `@noble/hashes` 2.4.0 (previously spike-only, row 2), `uqr` 0.1.3 (terminal QR) | `main` (merged `1f35fa2`) | `6b1f0bf` |
+| 24 | S1 | `[human]` | "A fresh iPhone scans the QR and runs the T0 demo over Wi-Fi or Tailscale". Needs: a real iPhone, this Mac running `scripts/dsh-up.mjs` with the bridge reachable on the LAN or Tailscale, and the app installed with your free Apple team | `main` | `1f35fa2` |
+| 25 | S1 | `[human]` | "A packet capture of that session shows only ciphertext". Needs: the session from row 24, plus Wireshark or `tcpdump` on this Mac | `main` | `1f35fa2` |

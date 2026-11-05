@@ -29,9 +29,9 @@ Both were accepted in a `steer` and reached the model in the same turn's next st
 
 ## ARCHITECTURE.md changes this implies
 
-- **§1, mid-task context row:** now verified (steer vs queue, attachments, question seam). Marked provisional.
-- **§8.6:** marked as answered by X4 (provisional).
-- **D18** (*provisional, pending user confirmation*):
+- **§1, mid-task context row:** now verified (steer vs queue, attachments, question seam). Confirmed by the user on 2026-11-05.
+- **§8.6:** marked as answered by X4 (confirmed by the user on 2026-11-05).
+- **D18** (confirmed by the user on 2026-11-05):
   - The facade exposes `SendMessage { task_id, mode: STEER | QUEUE, parts }`. The app defaults to `STEER`, because a follow-up written while the agent works is meant for this task now.
   - Agent questions go through the same bridge holder as approvals, as their own `QuestionPending` / `AnswerQuestion` messages, not as approvals.
 

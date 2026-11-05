@@ -17,9 +17,9 @@ Working note for PLAN.md X1 (answers ARCHITECTURE §8.1, feeds S4). Archive it t
 
 ## ARCHITECTURE.md changes this implies
 
-- **§1, approvals row:** the claim "No answering client ⇒ immediately `unavailable`" is wrong for `dsh web`. With no browser tab open, the gateway forwarder holds the request indefinitely and delivers it when a tab connects (scenario J). `unavailable` happens only when no terminal answerer is composed at all. Corrected there, marked provisional.
-- **§5.4 approval holder:** register **prepend + fan-out**, recorded as **D17** (*provisional, pending user confirmation*), with the alternatives considered.
-- **§8.1:** marked as answered by X1 (provisional).
+- **§1, approvals row:** the claim "No answering client ⇒ immediately `unavailable`" is wrong for `dsh web`. With no browser tab open, the gateway forwarder holds the request indefinitely and delivers it when a tab connects (scenario J). `unavailable` happens only when no terminal answerer is composed at all. Corrected there (confirmed by the user on 2026-11-05).
+- **§5.4 approval holder:** register **prepend + fan-out**, recorded as **D17** (confirmed by the user on 2026-11-05), with the alternatives considered.
+- **§8.1:** marked as answered by X1 (confirmed by the user on 2026-11-05).
 
 ## What a held request looks like
 
