@@ -8,10 +8,85 @@ public enum TaskEvent: Sendable, Equatable {
     case ended(taskID: String, status: TaskEndStatus, message: String)
     /// S3: the next step on the task's milestone timeline. Arrives before `.ended`.
     case milestone(Milestone)
+    /// S2: a task was created or changed state.
+    case upserted(TaskSnapshot)
+    /// S2: the app's resume cursor didn't apply; a replay of log `logID` from its start follows.
+    case logReset(logID: String)
 }
 
 public enum TaskEndStatus: Sendable, Equatable {
     case completed, failed
+}
+
+/// One event from a host, with its place in the host's event log (S2, ARCHITECTURE D20).
+public struct HostEvent: Sendable, Equatable {
+    /// Per-host monotonic sequence number; 0 when the event isn't logged (`.logReset`).
+    public var hostSeq: UInt64
+    public var event: TaskEvent
+
+    public init(hostSeq: UInt64 = 0, _ event: TaskEvent) {
+        self.hostSeq = hostSeq
+        self.event = event
+    }
+}
+
+/// Where a task stands in the unified list (STORY principle 4).
+public enum TaskState: String, Sendable, Equatable, CaseIterable {
+    case running
+    case waitingOnUser
+    case completed
+    case failed
+
+    public var isTerminal: Bool { self == .completed || self == .failed }
+}
+
+/// A task as the host reports it (`TaskSummary` in protocol/s2.proto).
+public struct TaskSnapshot: Sendable, Equatable {
+    public var taskID: String
+    public var title: String
+    public var state: TaskState
+    public var createdAt: Date
+    public var updatedAt: Date
+    public var message: String
+
+    public init(taskID: String, title: String, state: TaskState, createdAt: Date, updatedAt: Date, message: String = "") {
+        self.taskID = taskID
+        self.title = title
+        self.state = state
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.message = message
+    }
+
+    init(_ s: Dshm_V1_TaskSummary) {
+        let state: TaskState = switch s.state {
+        case .waitingOnUser: .waitingOnUser
+        case .completed: .completed
+        case .failed: .failed
+        case .running, .unspecified, .UNRECOGNIZED: .running
+        }
+        self.init(
+            taskID: s.taskID, title: s.title, state: state,
+            createdAt: Date(timeIntervalSince1970: Double(s.createdAtMs) / 1000),
+            updatedAt: Date(timeIntervalSince1970: Double(s.updatedAtMs) / 1000),
+            message: s.message)
+    }
+}
+
+/// The answer to `Resume` (protocol/s2.proto `Resumed`).
+public struct ResumeResult: Sendable, Equatable {
+    public var logID: String
+    public var headSeq: UInt64
+    public var hostName: String
+    public var reset: Bool
+    public var replayed: UInt64
+}
+
+/// The answer to `ListTasks`.
+public struct TaskListing: Sendable, Equatable {
+    public var tasks: [TaskSnapshot]
+    public var logID: String
+    public var hostName: String
 }
 
 public enum HostConnectionError: Error, Equatable, CustomStringConvertible {
@@ -31,20 +106,25 @@ public enum HostConnectionError: Error, Equatable, CustomStringConvertible {
 }
 
 /// One connection to one host's bridge (ARCHITECTURE §4). Owns the transport, correlates
-/// requests with responses, and publishes events. T0: no reconnect, no resume.
+/// requests with responses, and publishes events. It can be connected again after it drops;
+/// reconnect policy and the resume cursor live in `HostSync` (S2).
 public actor HostConnection {
     public let endpoint: HostEndpoint
     private let channel: any SecureChannel
     private let makeTransport: BridgeTransportFactory
 
     private var transport: (any BridgeTransport)?
+    private var connecting: Task<Void, any Error>?
+    /// Bumped per transport, so a finished receive loop never tears down a newer connection.
+    private var generation = 0
     private var receiveLoop: Task<Void, Never>?
     private var nextRequestID: UInt64 = 1
     private var pending: [UInt64: CheckedContinuation<Dshm_V1_Response, any Error>] = [:]
-    private let eventContinuation: AsyncStream<TaskEvent>.Continuation
+    private var disconnectWaiters: [CheckedContinuation<Void, Never>] = []
+    private let eventContinuation: AsyncStream<HostEvent>.Continuation
 
-    /// Every task event from this host, for as long as the connection lives.
-    public nonisolated let events: AsyncStream<TaskEvent>
+    /// Every event from this host, across reconnects, for as long as the connection object lives.
+    public nonisolated let events: AsyncStream<HostEvent>
     /// Capabilities from the bridge's Hello; empty until connected.
     public private(set) var capabilities: [String] = []
 
@@ -52,21 +132,38 @@ public actor HostConnection {
         self.endpoint = endpoint
         self.channel = channel
         self.makeTransport = transport
-        (events, eventContinuation) = AsyncStream.makeStream(of: TaskEvent.self)
+        (events, eventContinuation) = AsyncStream.makeStream(of: HostEvent.self)
     }
+
+    public var isConnected: Bool { transport != nil && connecting == nil }
 
     /// Validates the endpoint against the channel, opens the transport, and exchanges Hello.
     public func connect() async throws {
+        if let connecting { return try await connecting.value }
         if transport != nil { return }
+        let attempt = Task { try await self.open() }
+        connecting = attempt
+        defer { connecting = nil }
+        try await attempt.value
+    }
+
+    private func open() async throws {
         try channel.validate(endpoint)
         let t = try await makeTransport(endpoint)
+        generation += 1
+        let gen = generation
         transport = t
-        receiveLoop = Task { await self.receive(from: t) }
-        var hello = Dshm_V1_Hello()
-        hello.protocolVersion = DSHProtocolInfo.version
-        let response = try await request(.hello(hello))
-        guard case .hello(let theirs)? = response.body else { throw HostConnectionError.unexpectedResponse }
-        capabilities = theirs.capabilities
+        receiveLoop = Task { await self.receive(from: t, generation: gen) }
+        do {
+            var hello = Dshm_V1_Hello()
+            hello.protocolVersion = DSHProtocolInfo.version
+            let response = try await request(.hello(hello))
+            guard case .hello(let theirs)? = response.body else { throw HostConnectionError.unexpectedResponse }
+            capabilities = theirs.capabilities
+        } catch {
+            await teardown(generation: gen)
+            throw error
+        }
     }
 
     /// Starts a task; its output arrives on `events`.
@@ -78,14 +175,47 @@ public actor HostConnection {
         return created.taskID
     }
 
+    /// S2: every task the host knows, newest first.
+    public func listTasks() async throws -> TaskListing {
+        let response = try await request(.listTasks(Dshm_V1_ListTasks()))
+        guard case .taskList(let list)? = response.body else { throw HostConnectionError.unexpectedResponse }
+        return TaskListing(tasks: list.tasks.map(TaskSnapshot.init), logID: list.logID, hostName: list.hostName)
+    }
+
+    /// S2: asks for every logged event after `afterSeq` of log `logID`, then live events. The
+    /// replayed events reach `events` before this returns.
+    public func resume(logID: String, afterSeq: UInt64) async throws -> ResumeResult {
+        var resume = Dshm_V1_Resume()
+        resume.logID = logID
+        resume.afterSeq = afterSeq
+        let response = try await request(.resume(resume))
+        guard case .resumed(let r)? = response.body else { throw HostConnectionError.unexpectedResponse }
+        return ResumeResult(logID: r.logID, headSeq: r.headSeq, hostName: r.hostName, reset: r.reset, replayed: r.replayed)
+    }
+
+    /// Returns once the current transport is gone (immediately if there is none).
+    public func waitUntilDisconnected() async {
+        if transport == nil { return }
+        await withCheckedContinuation { disconnectWaiters.append($0) }
+    }
+
     public func disconnect() async {
-        receiveLoop?.cancel()
-        await transport?.close()
-        transport = nil
-        failPending(HostConnectionError.disconnected)
+        await teardown(generation: generation)
     }
 
     // MARK: - Internals
+
+    private func teardown(generation gen: Int) async {
+        guard gen == generation, let t = transport else { return }
+        transport = nil
+        receiveLoop?.cancel()
+        receiveLoop = nil
+        await t.close()
+        failPending(HostConnectionError.disconnected)
+        let waiters = disconnectWaiters
+        disconnectWaiters = []
+        for waiter in waiters { waiter.resume() }
+    }
 
     private func request(_ body: Dshm_V1_Request.OneOf_Body) async throws -> Dshm_V1_Response {
         guard let transport else { throw HostConnectionError.notConnected }
@@ -117,7 +247,7 @@ public actor HostConnection {
         for continuation in waiting.values { continuation.resume(throwing: error) }
     }
 
-    private func receive(from transport: any BridgeTransport) async {
+    private func receive(from transport: any BridgeTransport, generation gen: Int) async {
         while !Task.isCancelled {
             let frame: Dshm_V1_Frame
             do {
@@ -126,26 +256,35 @@ public actor HostConnection {
             } catch {
                 break
             }
+            guard gen == generation else { break }
             switch frame.kind {
             case .response(let response)?:
                 resolve(response.requestID, with: .success(response))
             case .event(let event)?:
-                switch event.body {
-                case .assistantChunk(let c)?:
-                    eventContinuation.yield(.chunk(taskID: c.taskID, seq: c.seq, text: c.text))
-                case .taskEnded(let e)?:
-                    let status: TaskEndStatus = e.status == .completed ? .completed : .failed
-                    eventContinuation.yield(.ended(taskID: e.taskID, status: status, message: e.message))
-                case .milestoneAdded(let m)?:
-                    if let milestone = Milestone(m) { eventContinuation.yield(.milestone(milestone)) }
-                case nil:
-                    break
+                if let e = Self.taskEvent(event.body) {
+                    eventContinuation.yield(HostEvent(hostSeq: event.hostSeq, e))
                 }
             case .request?, nil:
                 break
             }
         }
-        self.transport = nil
-        failPending(HostConnectionError.disconnected)
+        await teardown(generation: gen)
+    }
+
+    private static func taskEvent(_ body: Dshm_V1_Event.OneOf_Body?) -> TaskEvent? {
+        switch body {
+        case .assistantChunk(let c)?:
+            return .chunk(taskID: c.taskID, seq: c.seq, text: c.text)
+        case .taskEnded(let e)?:
+            return .ended(taskID: e.taskID, status: e.status == .completed ? .completed : .failed, message: e.message)
+        case .taskUpserted(let u)?:
+            return .upserted(TaskSnapshot(u.task))
+        case .logReset(let r)?:
+            return .logReset(logID: r.logID)
+        case .milestoneAdded(let m)?:
+            return Milestone(m).map { .milestone($0) }
+        case nil:
+            return nil
+        }
     }
 }

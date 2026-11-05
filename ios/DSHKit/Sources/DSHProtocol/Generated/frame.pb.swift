@@ -144,12 +144,32 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .createTask(newValue)}
   }
 
+  /// S2: 40–59 (s2.proto)
+  public var listTasks: Dshm_V1_ListTasks {
+    get {
+      if case .listTasks(let v)? = body {return v}
+      return Dshm_V1_ListTasks()
+    }
+    set {body = .listTasks(newValue)}
+  }
+
+  public var resume: Dshm_V1_Resume {
+    get {
+      if case .resume(let v)? = body {return v}
+      return Dshm_V1_Resume()
+    }
+    set {body = .resume(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
     /// T0: 2–19
     case hello(Dshm_V1_Hello)
     case createTask(Dshm_V1_CreateTask)
+    /// S2: 40–59 (s2.proto)
+    case listTasks(Dshm_V1_ListTasks)
+    case resume(Dshm_V1_Resume)
 
   }
 
@@ -191,6 +211,23 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .taskCreated(newValue)}
   }
 
+  /// S2: 40–59 (s2.proto)
+  public var taskList: Dshm_V1_TaskList {
+    get {
+      if case .taskList(let v)? = body {return v}
+      return Dshm_V1_TaskList()
+    }
+    set {body = .taskList(newValue)}
+  }
+
+  public var resumed: Dshm_V1_Resumed {
+    get {
+      if case .resumed(let v)? = body {return v}
+      return Dshm_V1_Resumed()
+    }
+    set {body = .resumed(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -198,6 +235,9 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     case error(Dshm_V1_Error)
     case hello(Dshm_V1_Hello)
     case taskCreated(Dshm_V1_TaskCreated)
+    /// S2: 40–59 (s2.proto)
+    case taskList(Dshm_V1_TaskList)
+    case resumed(Dshm_V1_Resumed)
 
   }
 
@@ -238,6 +278,27 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .milestoneAdded(newValue)}
   }
 
+  /// S2: 40–59 (s2.proto)
+  public var taskUpserted: Dshm_V1_TaskUpserted {
+    get {
+      if case .taskUpserted(let v)? = body {return v}
+      return Dshm_V1_TaskUpserted()
+    }
+    set {body = .taskUpserted(newValue)}
+  }
+
+  public var logReset: Dshm_V1_LogReset {
+    get {
+      if case .logReset(let v)? = body {return v}
+      return Dshm_V1_LogReset()
+    }
+    set {body = .logReset(newValue)}
+  }
+
+  /// S2: per-host monotonic sequence number in the bridge's event log (s2.proto), from 1.
+  /// 0 when the event isn't logged (LogReset).
+  public var hostSeq: UInt64 = 0
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -246,6 +307,9 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     case taskEnded(Dshm_V1_TaskEnded)
     /// S3: 60–79
     case milestoneAdded(Dshm_V1_MilestoneAdded)
+    /// S2: 40–59 (s2.proto)
+    case taskUpserted(Dshm_V1_TaskUpserted)
+    case logReset(Dshm_V1_LogReset)
 
   }
 
@@ -310,7 +374,7 @@ public nonisolated struct Dshm_V1_TaskCreated: Sendable {
 }
 
 /// A piece of assistant text, in order. `seq` starts at 1 per task and has no
-/// gaps on one connection.
+/// gaps (since S2 the bridge numbers it per task, not per connection).
 public nonisolated struct Dshm_V1_AssistantChunk: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -438,7 +502,7 @@ nonisolated extension Dshm_V1_Frame: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
 nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Request"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0\u{4}%list_tasks\0\u{1}resume\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -473,6 +537,32 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.body = .createTask(v)
         }
       }()
+      case 40: try {
+        var v: Dshm_V1_ListTasks?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .listTasks(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .listTasks(v)
+        }
+      }()
+      case 41: try {
+        var v: Dshm_V1_Resume?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .resume(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .resume(v)
+        }
+      }()
       default: break
       }
     }
@@ -495,6 +585,14 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
       guard case .createTask(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
     }()
+    case .listTasks?: try {
+      guard case .listTasks(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 40)
+    }()
+    case .resume?: try {
+      guard case .resume(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 41)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -510,7 +608,7 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
 
 nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Response"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0\u{4}$task_list\0\u{1}resumed\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -558,6 +656,32 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
           self.body = .taskCreated(v)
         }
       }()
+      case 40: try {
+        var v: Dshm_V1_TaskList?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .taskList(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .taskList(v)
+        }
+      }()
+      case 41: try {
+        var v: Dshm_V1_Resumed?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .resumed(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .resumed(v)
+        }
+      }()
       default: break
       }
     }
@@ -584,6 +708,14 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
       guard case .taskCreated(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
     }()
+    case .taskList?: try {
+      guard case .taskList(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 40)
+    }()
+    case .resumed?: try {
+      guard case .resumed(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 41)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -599,7 +731,7 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
 
 nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Event"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}:milestone_added\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}&host_seq\0\u{3}task_upserted\0\u{3}log_reset\0\u{4}\u{12}milestone_added\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -631,6 +763,33 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
         if let v = v {
           if hadOneofValue {try decoder.handleConflictingOneOf()}
           self.body = .taskEnded(v)
+        }
+      }()
+      case 40: try { try decoder.decodeSingularUInt64Field(value: &self.hostSeq) }()
+      case 41: try {
+        var v: Dshm_V1_TaskUpserted?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .taskUpserted(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .taskUpserted(v)
+        }
+      }()
+      case 42: try {
+        var v: Dshm_V1_LogReset?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .logReset(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .logReset(v)
         }
       }()
       case 60: try {
@@ -665,17 +824,32 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
       guard case .taskEnded(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     }()
+    default: break
+    }
+    if self.hostSeq != 0 {
+      try visitor.visitSingularUInt64Field(value: self.hostSeq, fieldNumber: 40)
+    }
+    switch self.body {
+    case .taskUpserted?: try {
+      guard case .taskUpserted(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 41)
+    }()
+    case .logReset?: try {
+      guard case .logReset(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 42)
+    }()
     case .milestoneAdded?: try {
       guard case .milestoneAdded(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 60)
     }()
-    case nil: break
+    default: break
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Dshm_V1_Event, rhs: Dshm_V1_Event) -> Bool {
     if lhs.body != rhs.body {return false}
+    if lhs.hostSeq != rhs.hostSeq {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

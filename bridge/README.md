@@ -4,6 +4,8 @@ A [Cordis](https://github.com/cordiverse/cordis) plugin that runs inside your ow
 
 T0 status: plaintext on loopback only (`127.0.0.1:47801`), one request (`CreateTask`): it creates a DSH session in a fixed workspace, prompts it with DSH's default model, and streams the assistant text back. Pairing and encryption come in S1.
 
+S2 adds `ListTasks` and `Resume` (capability `resume.v1`): tasks keep running when the app disconnects, and every event is numbered in a per-host log so the app can fetch exactly what it missed (ARCHITECTURE D20). The log is kept in memory; restarting DSH starts a new one.
+
 ## Requirements
 
 - DSH **≥ 0.2.2-rc.1** (enforced by `engines.dsh`).

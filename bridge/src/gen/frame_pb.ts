@@ -19,13 +19,15 @@ import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2"
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { MilestoneAdded } from "./milestones_pb.js";
 import { file_milestones } from "./milestones_pb.js";
+import type { ListTasks, LogReset, Resume, Resumed, TaskList, TaskUpserted } from "./s2_pb.js";
+import { file_s2 } from "./s2_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file frame.proto.
  */
 export const file_frame: GenFile = /*@__PURE__*/
-  fileDesc("CgtmcmFtZS5wcm90bxIHZHNobS52MSJ8CgVGcmFtZRIjCgdyZXF1ZXN0GAEgASgLMhAuZHNobS52MS5SZXF1ZXN0SAASJQoIcmVzcG9uc2UYAiABKAsyES5kc2htLnYxLlJlc3BvbnNlSAASHwoFZXZlbnQYAyABKAsyDi5kc2htLnYxLkV2ZW50SABCBgoEa2luZCJqCgdSZXF1ZXN0EgoKAmlkGAEgASgEEh8KBWhlbGxvGAIgASgLMg4uZHNobS52MS5IZWxsb0gAEioKC2NyZWF0ZV90YXNrGAMgASgLMhMuZHNobS52MS5DcmVhdGVUYXNrSABCBgoEYm9keSKWAQoIUmVzcG9uc2USEgoKcmVxdWVzdF9pZBgBIAEoBBIfCgVlcnJvchgCIAEoCzIOLmRzaG0udjEuRXJyb3JIABIfCgVoZWxsbxgDIAEoCzIOLmRzaG0udjEuSGVsbG9IABIsCgx0YXNrX2NyZWF0ZWQYBCABKAsyFC5kc2htLnYxLlRhc2tDcmVhdGVkSABCBgoEYm9keSKhAQoFRXZlbnQSMgoPYXNzaXN0YW50X2NodW5rGAEgASgLMhcuZHNobS52MS5Bc3Npc3RhbnRDaHVua0gAEigKCnRhc2tfZW5kZWQYAiABKAsyEi5kc2htLnYxLlRhc2tFbmRlZEgAEjIKD21pbGVzdG9uZV9hZGRlZBg8IAEoCzIXLmRzaG0udjEuTWlsZXN0b25lQWRkZWRIAEIGCgRib2R5IjcKBUhlbGxvEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFAoMY2FwYWJpbGl0aWVzGAIgAygJIiYKBUVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCSIcCgpDcmVhdGVUYXNrEg4KBnByb21wdBgBIAEoCSIeCgtUYXNrQ3JlYXRlZBIPCgd0YXNrX2lkGAEgASgJIjwKDkFzc2lzdGFudENodW5rEg8KB3Rhc2tfaWQYASABKAkSCwoDc2VxGAIgASgEEgwKBHRleHQYAyABKAkiUgoJVGFza0VuZGVkEg8KB3Rhc2tfaWQYASABKAkSIwoGc3RhdHVzGAIgASgOMhMuZHNobS52MS5UYXNrU3RhdHVzEg8KB21lc3NhZ2UYAyABKAkqXAoKVGFza1N0YXR1cxIbChdUQVNLX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFVRBU0tfU1RBVFVTX0NPTVBMRVRFRBABEhYKElRBU0tfU1RBVFVTX0ZBSUxFRBACYgZwcm90bzM", [file_milestones]);
+  fileDesc("CgtmcmFtZS5wcm90bxIHZHNobS52MSJ8CgVGcmFtZRIjCgdyZXF1ZXN0GAEgASgLMhAuZHNobS52MS5SZXF1ZXN0SAASJQoIcmVzcG9uc2UYAiABKAsyES5kc2htLnYxLlJlc3BvbnNlSAASHwoFZXZlbnQYAyABKAsyDi5kc2htLnYxLkV2ZW50SABCBgoEa2luZCK3AQoHUmVxdWVzdBIKCgJpZBgBIAEoBBIfCgVoZWxsbxgCIAEoCzIOLmRzaG0udjEuSGVsbG9IABIqCgtjcmVhdGVfdGFzaxgDIAEoCzITLmRzaG0udjEuQ3JlYXRlVGFza0gAEigKCmxpc3RfdGFza3MYKCABKAsyEi5kc2htLnYxLkxpc3RUYXNrc0gAEiEKBnJlc3VtZRgpIAEoCzIPLmRzaG0udjEuUmVzdW1lSABCBgoEYm9keSLjAQoIUmVzcG9uc2USEgoKcmVxdWVzdF9pZBgBIAEoBBIfCgVlcnJvchgCIAEoCzIOLmRzaG0udjEuRXJyb3JIABIfCgVoZWxsbxgDIAEoCzIOLmRzaG0udjEuSGVsbG9IABIsCgx0YXNrX2NyZWF0ZWQYBCABKAsyFC5kc2htLnYxLlRhc2tDcmVhdGVkSAASJgoJdGFza19saXN0GCggASgLMhEuZHNobS52MS5UYXNrTGlzdEgAEiMKB3Jlc3VtZWQYKSABKAsyEC5kc2htLnYxLlJlc3VtZWRIAEIGCgRib2R5IosCCgVFdmVudBIyCg9hc3Npc3RhbnRfY2h1bmsYASABKAsyFy5kc2htLnYxLkFzc2lzdGFudENodW5rSAASKAoKdGFza19lbmRlZBgCIAEoCzISLmRzaG0udjEuVGFza0VuZGVkSAASMgoPbWlsZXN0b25lX2FkZGVkGDwgASgLMhcuZHNobS52MS5NaWxlc3RvbmVBZGRlZEgAEi4KDXRhc2tfdXBzZXJ0ZWQYKSABKAsyFS5kc2htLnYxLlRhc2tVcHNlcnRlZEgAEiYKCWxvZ19yZXNldBgqIAEoCzIRLmRzaG0udjEuTG9nUmVzZXRIABIQCghob3N0X3NlcRgoIAEoBEIGCgRib2R5IjcKBUhlbGxvEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFAoMY2FwYWJpbGl0aWVzGAIgAygJIiYKBUVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCSIcCgpDcmVhdGVUYXNrEg4KBnByb21wdBgBIAEoCSIeCgtUYXNrQ3JlYXRlZBIPCgd0YXNrX2lkGAEgASgJIjwKDkFzc2lzdGFudENodW5rEg8KB3Rhc2tfaWQYASABKAkSCwoDc2VxGAIgASgEEgwKBHRleHQYAyABKAkiUgoJVGFza0VuZGVkEg8KB3Rhc2tfaWQYASABKAkSIwoGc3RhdHVzGAIgASgOMhMuZHNobS52MS5UYXNrU3RhdHVzEg8KB21lc3NhZ2UYAyABKAkqXAoKVGFza1N0YXR1cxIbChdUQVNLX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFVRBU0tfU1RBVFVTX0NPTVBMRVRFRBABEhYKElRBU0tfU1RBVFVTX0ZBSUxFRBACYgZwcm90bzM", [file_milestones, file_s2]);
 
 /**
  * One WebSocket binary message carries exactly one Frame (inside the
@@ -95,6 +97,20 @@ export type Request = Message<"dshm.v1.Request"> & {
      */
     value: CreateTask;
     case: "createTask";
+  } | {
+    /**
+     * S2: 40–59 (s2.proto)
+     *
+     * @generated from field: dshm.v1.ListTasks list_tasks = 40;
+     */
+    value: ListTasks;
+    case: "listTasks";
+  } | {
+    /**
+     * @generated from field: dshm.v1.Resume resume = 41;
+     */
+    value: Resume;
+    case: "resume";
   } | { case: undefined; value?: undefined };
 };
 
@@ -139,6 +155,20 @@ export type Response = Message<"dshm.v1.Response"> & {
      */
     value: TaskCreated;
     case: "taskCreated";
+  } | {
+    /**
+     * S2: 40–59 (s2.proto)
+     *
+     * @generated from field: dshm.v1.TaskList task_list = 40;
+     */
+    value: TaskList;
+    case: "taskList";
+  } | {
+    /**
+     * @generated from field: dshm.v1.Resumed resumed = 41;
+     */
+    value: Resumed;
+    case: "resumed";
   } | { case: undefined; value?: undefined };
 };
 
@@ -180,7 +210,29 @@ export type Event = Message<"dshm.v1.Event"> & {
      */
     value: MilestoneAdded;
     case: "milestoneAdded";
+  } | {
+    /**
+     * S2: 40–59 (s2.proto)
+     *
+     * @generated from field: dshm.v1.TaskUpserted task_upserted = 41;
+     */
+    value: TaskUpserted;
+    case: "taskUpserted";
+  } | {
+    /**
+     * @generated from field: dshm.v1.LogReset log_reset = 42;
+     */
+    value: LogReset;
+    case: "logReset";
   } | { case: undefined; value?: undefined };
+
+  /**
+   * S2: per-host monotonic sequence number in the bridge's event log (s2.proto), from 1.
+   * 0 when the event isn't logged (LogReset).
+   *
+   * @generated from field: uint64 host_seq = 40;
+   */
+  hostSeq: bigint;
 };
 
 /**
@@ -280,7 +332,7 @@ export const TaskCreatedSchema: GenMessage<TaskCreated> = /*@__PURE__*/
 
 /**
  * A piece of assistant text, in order. `seq` starts at 1 per task and has no
- * gaps on one connection.
+ * gaps (since S2 the bridge numbers it per task, not per connection).
  *
  * @generated from message dshm.v1.AssistantChunk
  */

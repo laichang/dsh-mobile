@@ -6,4 +6,6 @@ public enum DSHProtocolInfo {
     public static let tasksCapability = "tasks.v1"
     /// S3: the bridge sends `MilestoneAdded` events (protocol/milestones.proto).
     public static let milestonesCapability = "milestones.v1"
+    /// S2: ListTasks, Resume and `Event.host_seq` (protocol/s2.proto).
+    public static let resumeCapability = "resume.v1"
 }

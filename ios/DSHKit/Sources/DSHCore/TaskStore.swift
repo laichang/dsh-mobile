@@ -1,7 +1,8 @@
 import Foundation
 import Observation
 
-/// State behind the T0 screen: one composer, one task at a time, in memory only.
+/// State behind T0's single screen: one composer, one task at a time, in memory only. Since S2
+/// the app uses `TaskListStore` (durable list + resume); this stays as T0's minimal client.
 @MainActor
 @Observable
 public final class TaskStore {
@@ -74,7 +75,7 @@ public final class TaskStore {
         let events = connection.events
         eventsTask = Task { [weak self] in
             for await event in events {
-                self?.apply(event)
+                self?.apply(event.event)
             }
         }
     }
@@ -95,6 +96,8 @@ public final class TaskStore {
             currentTaskID = milestone.taskID
             if case .connecting = status { status = .running(taskID: milestone.taskID) }
             milestones.add(milestone)
+        case .upserted, .logReset:
+            break
         }
     }
 }

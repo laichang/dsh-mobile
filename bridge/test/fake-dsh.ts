@@ -17,6 +17,8 @@ export interface FakeDSHOptions {
   createError?: string
   /** Durable events the agent appends during the turn, in order (S3). `turn` is added to `data`. */
   events?: { type: string; data: Record<string, unknown> }[]
+  /** Wait this long before each text delta (default 0: the whole turn runs at once). */
+  chunkDelayMs?: number
 }
 
 /** `time` of the first event; each later event is one second on. */
@@ -76,7 +78,7 @@ export class FakeDSH implements DshServices {
       this.prompts.push({ sessionId: request.sessionId, text: request.content.map((c) => c.text).join('') })
       const turn = ++s.turn
       // Run the turn asynchronously, like the real agent loop: prompt() returns on admission.
-      setImmediate(() => this.runTurn(request.sessionId, turn))
+      setImmediate(() => void this.runTurn(request.sessionId, turn))
       return { accepted: true as const }
     },
 
@@ -109,12 +111,14 @@ export class FakeDSH implements DshServices {
     for (const ch of s.followers) ch.push(f)
   }
 
-  private runTurn(sessionId: string, turn: number) {
+  private async runTurn(sessionId: string, turn: number) {
     const reply = this.options.reply ?? ['Hello', ' from', ' FakeDSH.']
     this.emitEvent(sessionId, 'turn/start', { turn })
     for (const e of this.options.events ?? []) this.emitEvent(sessionId, e.type, { turn, ...e.data })
+    const delay = this.options.chunkDelayMs ?? 0
     this.emit(sessionId, { type: 'assistant-stream', frame: { type: 'start' } })
     for (const text of reply) {
+      if (delay > 0) await new Promise((r) => setTimeout(r, delay))
       this.emit(sessionId, { type: 'assistant-stream', frame: { type: 'chunk', chunk: { type: 'text-delta', index: 0, text } } })
     }
     this.emit(sessionId, { type: 'assistant-stream', frame: { type: 'end' } })
