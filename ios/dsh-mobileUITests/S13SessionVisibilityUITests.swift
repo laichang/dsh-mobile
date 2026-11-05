@@ -10,6 +10,7 @@ final class S13SessionVisibilityUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMBridgePort", port, "-DSHMResetStore", "YES", "-DSHMResetPairing", "YES"]
         app.launch()
+        openAllTasks(app)
 
         let rows = app.buttons.matching(identifier: "tasklist.row")
         let row = rows.matching(NSPredicate(format: "label CONTAINS %@", "网页第一条")).firstMatch

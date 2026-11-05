@@ -20,14 +20,17 @@ final class S8RichDetailUITests: XCTestCase {
         try XCTSkipUnless(env["DSHM_S8_REPLY"] == "translation", "run scripts/demo/s8.sh")
         let app = launch(prompt: translation)
         app.buttons["composer.send"].tap()
+        // T1 (D51): the first message turns the new session into the session page, with the reply.
+        let status = app.descendants(matching: .any)["task.status"]
+        XCTAssertTrue(status.waitForExistence(timeout: 5), app.debugDescription)
+        waitForValue(status, in: ["completed"], timeout: 12)
+        XCTAssertTrue((app.descendants(matching: .any)["transcript.text"].value as? String ?? "").contains("Hello."))
+        // The short answer shows inline in its row in 所有任务 (the 280-character rule).
+        openAllTasks(app)
         let row = app.buttons.matching(identifier: "tasklist.row").matching(NSPredicate(format: "label CONTAINS 'Hello.'")).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 12), app.debugDescription)
+        XCTAssertTrue(row.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertEqual(row.value as? String, "completed")
-        // Wait beyond routing's grace period: the answer stays beside the composer.
-        RunLoop.current.run(until: Date().addingTimeInterval(2.2))
         XCTAssertTrue(row.isHittable)
-        XCTAssertTrue(app.textFields["composer.prompt"].exists)
-        XCTAssertFalse(app.descendants(matching: .any)["task.status"].exists)
         saveShot("s8-inline-answer")
     }
 
@@ -50,7 +53,9 @@ final class S8RichDetailUITests: XCTestCase {
     func testCachedRichDetailAfterRelaunch() throws {
         try XCTSkipUnless(env["DSHM_S8_REPLY"] == "offline", "run scripts/demo/s8.sh")
         let app = launch()
+        openDrawer(app)
         waitForValue(app.descendants(matching: .any)["host.status"], in: ["offline"], timeout: 20)
+        app.buttons["drawer.allTasks"].tap()
         let row = app.buttons.matching(identifier: "tasklist.row").matching(NSPredicate(format: "label CONTAINS %@", coding)).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 5))
         row.tap()

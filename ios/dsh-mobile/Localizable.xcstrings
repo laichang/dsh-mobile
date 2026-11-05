@@ -11,6 +11,16 @@
         }
       }
     },
+    "All tasks": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所有任务"
+          }
+        }
+      }
+    },
     "Bridge setup instructions": {
       "localizations": {
         "zh-Hans": {
@@ -37,6 +47,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "取消"
+          }
+        }
+      }
+    },
+    "Close the drawer": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭抽屉"
           }
         }
       }
@@ -81,12 +101,42 @@
         }
       }
     },
+    "Default workspace": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "默认工作区"
+          }
+        }
+      }
+    },
+    "Devices and audit": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设备与审计"
+          }
+        }
+      }
+    },
     "Done": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "完成"
+          }
+        }
+      }
+    },
+    "Follow-ups come in a later version": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "补充消息将在后续版本支持"
           }
         }
       }
@@ -131,6 +181,16 @@
         }
       }
     },
+    "New session": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新会话"
+          }
+        }
+      }
+    },
     "No tasks yet": {
       "localizations": {
         "zh-Hans": {
@@ -157,6 +217,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "输入要完成的任务"
+          }
+        }
+      }
+    },
+    "Open the drawer": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开抽屉"
           }
         }
       }
@@ -271,6 +341,16 @@
         }
       }
     },
+    "Send a task from a new session.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在新会话里发送任务。"
+          }
+        }
+      }
+    },
     "Send tasks from your phone, follow their progress, and answer approval requests. DeepSeek Harness runs the tasks on your computer.": {
       "localizations": {
         "zh-Hans": {
@@ -291,12 +371,42 @@
         }
       }
     },
+    "Session": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会话"
+          }
+        }
+      }
+    },
+    "Stop": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止"
+          }
+        }
+      }
+    },
     "Tasks": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "任务"
+          }
+        }
+      }
+    },
+    "This host has no device management.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这台电脑不支持设备管理。"
           }
         }
       }
@@ -347,6 +457,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "发送前，你可以编辑这条建议。"
+          }
+        }
+      }
+    },
+    "drawer.newSession": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New session"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建会话"
           }
         }
       }

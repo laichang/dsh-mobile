@@ -48,9 +48,16 @@ final class S11FirstRunUITests: XCTestCase {
         XCTAssertTrue(done.waitForExistence(timeout: 15))
         done.tap()
 
+        openDrawer(app)
         let channel = app.descendants(matching: .any)["host.channel"]
         XCTAssertTrue(channel.waitForExistence(timeout: 10))
         XCTAssertEqual(channel.value as? String, "noise")
+        // The earlier session from another device is in the drawer, under its host.
+        let existing = app.buttons.matching(identifier: "drawer.session")
+            .matching(NSPredicate(format: "label CONTAINS %@", "Earlier task from another device"))
+        XCTAssertTrue(existing.firstMatch.waitForExistence(timeout: 8))
+        XCTAssertEqual(app.buttons.matching(identifier: "drawer.session").count, 1)
+        closeDrawer(app)
         let suggestion = app.buttons["firstRun.suggestion"]
         XCTAssertTrue(suggestion.waitForExistence(timeout: 10))
         saveShot("s11-first-task")
@@ -58,10 +65,6 @@ final class S11FirstRunUITests: XCTestCase {
         let composer = app.textFields["composer.prompt"]
         let draft = try XCTUnwrap(composer.value as? String)
         XCTAssertTrue(draft.contains("Say hello"))
-        let existing = app.buttons.matching(identifier: "tasklist.row")
-            .matching(NSPredicate(format: "label CONTAINS %@", "Earlier task from another device"))
-        XCTAssertTrue(existing.firstMatch.waitForExistence(timeout: 8))
-        XCTAssertEqual(app.buttons.matching(identifier: "tasklist.row").count, 1)
         composer.tap()
         composer.typeText(" Keep it brief.")
         let edited = try XCTUnwrap(composer.value as? String)
@@ -69,21 +72,17 @@ final class S11FirstRunUITests: XCTestCase {
         app.buttons["composer.send"].tap()
         let row = app.buttons.matching(identifier: "tasklist.row").matching(NSPredicate(format: "label CONTAINS %@", edited)).firstMatch
         let detail = app.descendants(matching: .any)["task.status"]
-        if !detail.waitForExistence(timeout: 3) {
-            let settled = expectation(for: NSPredicate { _, _ in
-                detail.exists || (row.exists && row.value as? String == "completed")
-            }, evaluatedWith: app)
-            wait(for: [settled], timeout: 30)
-            if !detail.exists { row.tap() }
-        }
+        XCTAssertTrue(detail.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertEqual(waitForValue(detail, in: ["completed", "failed"], timeout: 30), "completed")
         let transcript = app.descendants(matching: .any)["transcript.text"]
         XCTAssertTrue((transcript.value as? String ?? "").contains("streamed through the dsh-mobile bridge"))
         app.terminate()
         app.launch()
-        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        XCTAssertTrue(composer.waitForExistence(timeout: 10))
         XCTAssertFalse(suggestion.exists)
         XCTAssertFalse(purpose.exists)
+        openAllTasks(app)
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
     }
 
     func testSavedHostWithoutAnAddressOffersRecovery() throws {

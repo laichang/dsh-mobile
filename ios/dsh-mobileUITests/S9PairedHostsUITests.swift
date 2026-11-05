@@ -20,6 +20,7 @@ final class S9PairedHostsUITests: XCTestCase {
         for index in 0...1 {
             let port = try XCTUnwrap(env["DSHM_S9_PORT_\(index)"])
             // The two distinct Noise keys have the same system hostname; their endpoints distinguish them.
+            openDrawer(app)
             let manage = app.buttons.matching(identifier: "host.manage")
                 .matching(NSPredicate(format: "label ENDSWITH %@", ":\(port))")).firstMatch
             XCTAssertTrue(manage.waitForExistence(timeout: 15), app.debugDescription)
@@ -30,7 +31,8 @@ final class S9PairedHostsUITests: XCTestCase {
             if let currentDevice { XCTAssertEqual(current.label, currentDevice) }
             currentDevice = current.label
             XCTAssertEqual(app.staticTexts["device.id.\(peer)"].exists, index == 0)
-            app.navigationBars.buttons.element(boundBy: 0).tap()
+            app.buttons["sheet.done"].tap()
+            newSession(app)
 
             let picker = app.buttons["composer.host"]
             if index == 1 {
@@ -43,13 +45,15 @@ final class S9PairedHostsUITests: XCTestCase {
             input.tap()
             input.typeText(prompt)
             app.buttons["composer.send"].tap()
+            // T1 (D51): the reply shows on the session page; the short answer shows inline in 所有任务.
+            waitForValue(app.descendants(matching: .any)["task.status"], in: ["completed"], timeout: 15)
+            XCTAssertEqual(app.staticTexts["page.subtitle"].label, hostName)
+            openAllTasks(app)
             let row = app.buttons.matching(identifier: "tasklist.row")
                 .matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", prompt, "Hello from host \(index).")).firstMatch
             XCTAssertTrue(row.waitForExistence(timeout: 15), app.debugDescription)
             XCTAssertEqual(row.value as? String, "completed")
-            RunLoop.current.run(until: .now.addingTimeInterval(2.2))
-            XCTAssertTrue(input.exists)
-            XCTAssertFalse(app.descendants(matching: .any)["task.status"].exists)
+            XCTAssertTrue(row.label.contains(hostName), row.label)
         }
         saveShot("s9-paired-inline")
     }

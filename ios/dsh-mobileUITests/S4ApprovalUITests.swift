@@ -46,6 +46,7 @@ final class S4ApprovalUITests: XCTestCase {
         send(app)
         app.terminate()
         app = launch(reset: false)
+        openAllTasks(app)
         checkCommand(app, expected: command)
         saveShot("s4-reopened-waiting")
         app.buttons["approval.deny"].firstMatch.tap()
@@ -74,11 +75,13 @@ final class S4ApprovalUITests: XCTestCase {
         }
 
         var app = launch(reset: true)
+        openDrawer(app)
         waitForValue(app.descendants(matching: .any)["host.status"], in: ["online"], timeout: 20)
         app.terminate()
         try await post("/fake-web/open")
         try await post("/task", ["prompt": "delete /tmp/x from the web session"])
         app = launch(reset: false)
+        openAllTasks(app)
         checkCommand(app, expected: command)
         saveShot("s4-upstream-reopened")
         try await post("/fake-web/answer", ["outcome": "rejected"])
@@ -112,6 +115,7 @@ final class S4ApprovalUITests: XCTestCase {
         app.terminate()
 
         app = launch(reset: false)
+        openAllTasks(app)
         checkCommand(app, expected: command)
         let row = app.buttons.matching(identifier: "tasklist.row").matching(NSPredicate(format: "value == 'waitingOnUser'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 15), app.debugDescription)

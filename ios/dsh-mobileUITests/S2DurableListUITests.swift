@@ -68,7 +68,9 @@ final class S2DurableListUITests: XCTestCase {
         // Reopen, holding the connection back so the cache can be checked first (XCUITest is slow,
         // so the hold is generous).
         app = launch(["-DSHMBridgePort", port, "-DSHMConnectDelay", "20"])
+        openDrawer(app)
         XCTAssertEqual(value(app.descendants(matching: .any)["host.status"]), "connecting")
+        app.buttons["drawer.allTasks"].tap()
         let row = app.buttons.matching(identifier: "tasklist.row").firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(row.label.contains(prompt), row.label)
@@ -89,35 +91,36 @@ final class S2DurableListUITests: XCTestCase {
         XCTAssertEqual(value(transcript), Self.mockText)
         saveShot("s2-gap-filled")
 
-        app.navigationBars.buttons.firstMatch.tap()
+        openAllTasks(app)
         XCTAssertTrue(app.descendants(matching: .any)["tasklist.done"].waitForExistence(timeout: 5) ||
                       app.staticTexts["Done"].exists, app.debugDescription)
-        XCTAssertEqual(app.descendants(matching: .any)["host.status"].value as? String, "online")
         saveShot("s2-list-after-resume")
+        openDrawer(app)
+        XCTAssertEqual(app.descendants(matching: .any)["host.status"].value as? String, "online")
     }
 
     func testOfflineHostIsNamedWithFakeBridge() {
         // First run: a task completes against the in-process FakeBridge host.
         var app = launch(["-DSHMFakeBridge", "YES", "-DSHMResetStore", "YES"])
         send(app, "Offline check")
-        let created = app.buttons.matching(identifier: "tasklist.row").firstMatch
-        XCTAssertTrue(created.waitForExistence(timeout: 5))
-        created.tap()
         let status = app.descendants(matching: .any)["task.status"]
         poll(30, "the task to complete") { value(status) == "completed" }
         app.terminate()
 
         // Next launch: the same host is unreachable. The list stays, and names the host.
         app = launch(["-DSHMFakeBridge", "offline"])
+        openDrawer(app)
         let host = app.descendants(matching: .any)["host.status"]
         XCTAssertTrue(host.waitForExistence(timeout: 10))
         poll(15, "the host to show as offline") { value(host) == "offline" }
         XCTAssertTrue(host.label.contains("FakeBridge Mac is offline"), host.label)
+        app.buttons["drawer.allTasks"].tap()
         let row = app.buttons.matching(identifier: "tasklist.row").firstMatch
-        XCTAssertTrue(row.exists)
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
         XCTAssertTrue(row.label.contains("Offline check"), row.label)
 
         // Sending names the offline host instead of failing silently.
+        newSession(app)
         send(app, "Will not go out")
         let error = app.descendants(matching: .any)["composer.error"]
         XCTAssertTrue(error.waitForExistence(timeout: 15))
@@ -129,13 +132,15 @@ final class S2DurableListUITests: XCTestCase {
         try XCTSkipUnless(env["DSHM_EXPECT_OFFLINE"] == "1", "runs after testKillAndReopenAgainstRealDSH with the host stopped")
         let name = try XCTUnwrap(env["DSHM_HOST_NAME"])
         let app = launch(["-DSHMBridgePort", port])
+        openDrawer(app)
         let host = app.descendants(matching: .any)["host.status"]
         XCTAssertTrue(host.waitForExistence(timeout: 10))
         poll(15, "the host to show as offline") { value(host) == "offline" }
         XCTAssertTrue(host.label.contains("\(name) is offline"), host.label)
         XCTAssertTrue(host.label.contains("Last connected"), host.label)
         // The cached list from the previous run is still there.
-        XCTAssertTrue(app.buttons.matching(identifier: "tasklist.row").firstMatch.exists, app.debugDescription)
+        app.buttons["drawer.allTasks"].tap()
+        XCTAssertTrue(app.buttons.matching(identifier: "tasklist.row").firstMatch.waitForExistence(timeout: 5), app.debugDescription)
         saveShot("s2-offline-real-host")
     }
 
@@ -151,7 +156,7 @@ final class S2DurableListUITests: XCTestCase {
         poll(30, "the task to complete") { value(status) == "completed" && value(card) == "3/3" }
 
         // The list row shows the card too.
-        app.navigationBars.buttons.firstMatch.tap()
+        openAllTasks(app)
         var row = app.buttons.matching(identifier: "tasklist.row").firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(row.label.contains(prompt), row.label)
@@ -162,9 +167,11 @@ final class S2DurableListUITests: XCTestCase {
 
         // Reopen with the host unreachable: nothing can come from the bridge, only the cache.
         app = launch(["-DSHMFakeBridge", "offline"])
+        openDrawer(app)
         let host = app.descendants(matching: .any)["host.status"]
         XCTAssertTrue(host.waitForExistence(timeout: 10))
         poll(15, "the host to show as offline") { value(host) == "offline" }
+        app.buttons["drawer.allTasks"].tap()
         row = app.buttons.matching(identifier: "tasklist.row").firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(row.label.contains(prompt), row.label)

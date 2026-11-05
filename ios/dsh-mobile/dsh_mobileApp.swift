@@ -10,6 +10,8 @@ struct dsh_mobileApp: App {
     var body: some Scene {
         WindowGroup {
             root
+                // DESIGN.md "Visual language": the app always uses dark mode (T1).
+                .preferredColorScheme(.dark)
                 .sheet(isPresented: $app.showingScanner) {
                     ScannerView(found: { app.openPairingCode($0) }, cancel: { app.showingScanner = false })
                 }
@@ -40,7 +42,7 @@ struct dsh_mobileApp: App {
                 showFirstTask = wasUnpaired && app.hasSavedHosts
             }
         } else if let store = app.store {
-            RootView(store: store, showFirstTask: $showFirstTask) { app.showingScanner = true }
+            ShellView(store: store, showFirstTask: $showFirstTask) { app.showingScanner = true }
                 .id(ObjectIdentifier(store))
         } else if app.hasSavedHosts {
             ContentUnavailableView {

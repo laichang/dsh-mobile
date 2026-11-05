@@ -21,7 +21,7 @@ final class S5InterruptUITests: XCTestCase {
         XCTAssertFalse(stop.exists)
         XCTAssertFalse((transcript.value as? String ?? "").contains("through the dsh-mobile bridge."))
         saveShot("s5-interrupted-detail")
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        openAllTasks(app)
         let row = app.buttons.matching(identifier: "tasklist.row").matching(NSPredicate(format: "value == 'interrupted'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 4), app.debugDescription)
         XCTAssertTrue(row.label.contains("Interrupted"), row.label)
@@ -29,6 +29,7 @@ final class S5InterruptUITests: XCTestCase {
         app.terminate()
         app.launchArguments = ["-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47811", "-DSHMConnectDelay", "10"]
         app.launch()
+        openAllTasks(app)
         XCTAssertTrue(row.waitForExistence(timeout: 5), app.debugDescription)
         row.tap()
         waitForValue(status, in: ["interrupted"], timeout: 4)
