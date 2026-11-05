@@ -7,7 +7,7 @@ import { DshTasks } from '../src/dsh.ts'
 import { FrameSchema, type Frame } from '../src/gen/frame_pb.ts'
 import { MilestoneKind, TodoStatus, type MilestoneAdded } from '../src/gen/milestones_pb.ts'
 import { MilestoneMapper } from '../src/milestones/mapper.ts'
-import { startBridgeServer, type BridgeServer } from '../src/server.ts'
+import { PLAINTEXT_PATH, startBridgeServer, type BridgeServer } from '../src/server.ts'
 import { FAKE_DSH_EPOCH_MS, FakeDSH, type FakeDSHOptions } from './fake-dsh.ts'
 
 const servers: BridgeServer[] = []
@@ -19,7 +19,7 @@ async function runTask(options: FakeDSHOptions): Promise<Frame[]> {
     host: '127.0.0.1', port: 0, channel: new PlaintextChannel(), tasks: new DshTasks(new FakeDSH(options), '/tmp/dshm-ws'),
   })
   servers.push(server)
-  const ws = new WebSocket(`ws://127.0.0.1:${server.port}`)
+  const ws = new WebSocket(`ws://127.0.0.1:${server.port}${PLAINTEXT_PATH}`)
   ws.binaryType = 'nodebuffer'
   const frames: Frame[] = []
   const done = new Promise<void>((resolve, reject) => {

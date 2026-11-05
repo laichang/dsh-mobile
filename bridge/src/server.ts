@@ -1,7 +1,13 @@
 /**
  * The bridge's own WebSocket listener (ARCHITECTURE §5.1). One binary WebSocket message carries
- * one `Frame` through the SecureChannel. T0 serves Hello and CreateTask; S2 adds ListTasks and
- * Resume, and tasks now belong to the host's `TaskHub`, not to the connection (D20).
+ * one `Frame` through the connection's channel. T0 serves Hello and CreateTask; S2 adds ListTasks
+ * and Resume, and tasks now belong to the host's `TaskHub`, not to the connection (D20).
+ *
+ * Channels (S1, ARCHITECTURE D6/D21):
+ * - Noise on every path except `PLAINTEXT_PATH`: the first message is the handshake
+ *   (src/pairing/wire.ts), then each message is one Noise transport message.
+ * - Plaintext on `PLAINTEXT_PATH`, only when a PlaintextChannel is configured, which in turn
+ *   only listens on loopback (development and T0's demo).
  */
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import { WebSocketServer, type WebSocket } from 'ws'
@@ -9,6 +15,7 @@ import { hostname } from 'node:os'
 import type { SecureChannel } from './channel.ts'
 import { FrameSchema, type Frame, type Request, type ResponseSchema } from './gen/frame_pb.ts'
 import { MILESTONES_CAPABILITY } from './milestones/wire.ts'
+import { HandshakeRejected, type NoiseResponder } from './pairing/handshake.ts'
 import type { LoggedEvent } from './s2/host-log.ts'
 import { TaskHub, type TaskStarter } from './s2/task-hub.ts'
 
@@ -19,12 +26,17 @@ type ResponseBody = MessageInitShape<typeof ResponseSchema>['body']
 export const PROTOCOL_VERSION = 1
 /** `resume.v1`: ListTasks, Resume and `Event.host_seq` (S2). `milestones.v1`: MilestoneAdded (S3). */
 export const CAPABILITIES = ['tasks.v1', MILESTONES_CAPABILITY, 'resume.v1'] as const
+/** Where the dev-only plaintext channel is served. */
+export const PLAINTEXT_PATH = '/plaintext'
 
 export interface BridgeServerOptions {
   host: string
   /** 0 picks a free port (tests). */
   port: number
-  channel: SecureChannel
+  /** Dev-only plaintext on PLAINTEXT_PATH; refuses non-loopback listen addresses. */
+  channel?: SecureChannel
+  /** Pairing + reconnect over Noise on every other path. */
+  noise?: NoiseResponder
   tasks: TaskStarter
   /** The host's name in TaskList / Resumed (default: this machine's hostname). */
   hostName?: string
@@ -40,7 +52,8 @@ export interface BridgeServer {
 }
 
 export async function startBridgeServer(options: BridgeServerOptions): Promise<BridgeServer> {
-  options.channel.assertListenAddress(options.host)
+  if (!options.channel && !options.noise) throw new Error('the bridge needs a channel: noise, plaintext, or both')
+  options.channel?.assertListenAddress(options.host)
   const log = options.log ?? (() => {})
   const wss = new WebSocketServer({ host: options.host, port: options.port })
   await new Promise<void>((resolve, reject) => {
@@ -49,11 +62,12 @@ export async function startBridgeServer(options: BridgeServerOptions): Promise<B
   })
   const address = wss.address()
   const port = typeof address === 'object' && address ? address.port : options.port
-  log(`listening on ${options.host}:${port} (${options.channel.name})`)
+  const channels = [options.noise && 'noise', options.channel && `${options.channel.name} on ${PLAINTEXT_PATH}`]
+  log(`listening on ${options.host}:${port} (${channels.filter(Boolean).join(', ')})`)
 
   const hub = options.hub ?? new TaskHub(options.tasks)
   const host = { hub, hostName: options.hostName ?? hostname() }
-  wss.on('connection', (socket) => serveConnection(socket, options.channel, host, log))
+  wss.on('connection', (socket, req) => serveConnection(socket, req.url ?? '/', options, host, log))
 
   return {
     port,
@@ -68,11 +82,27 @@ export async function startBridgeServer(options: BridgeServerOptions): Promise<B
   }
 }
 
+/** Seals and opens the frames of one connection. */
+interface FrameCodec {
+  seal(plaintext: Uint8Array): Uint8Array
+  open(ciphertext: Uint8Array): Uint8Array
+}
+
 function serveConnection(
-  socket: WebSocket, channel: SecureChannel, host: { hub: TaskHub; hostName: string }, log: (m: string) => void,
+  socket: WebSocket, url: string, options: BridgeServerOptions, host: { hub: TaskHub; hostName: string },
+  log: (m: string) => void,
 ) {
   const { hub, hostName } = host
   let helloDone = false
+  let codec: FrameCodec | undefined
+
+  const path = new URL(url, 'ws://bridge').pathname
+  if (path === PLAINTEXT_PATH) {
+    if (!options.channel) return socket.close(1008, 'plaintext disabled')
+    codec = options.channel
+  } else if (!options.noise) {
+    return socket.close(1008, `plaintext only, on ${PLAINTEXT_PATH}`)
+  }
   // Which logged events this connection receives. Before Resume (a T0-style client): only the
   // events of tasks it created here. After Resume: every event, in host_seq order.
   const ownTasks = new Set<string>()
@@ -80,8 +110,8 @@ function serveConnection(
   let unsubscribe: (() => void) | undefined
 
   const send = (frame: MessageInitShape<typeof FrameSchema>) => {
-    if (socket.readyState !== socket.OPEN) return
-    socket.send(channel.seal(toBinary(FrameSchema, create(FrameSchema, frame))))
+    if (socket.readyState !== socket.OPEN || !codec) return
+    socket.send(codec.seal(toBinary(FrameSchema, create(FrameSchema, frame))))
   }
   const respond = (requestId: bigint, body: ResponseBody) =>
     send({ kind: { case: 'response', value: { requestId, body } } })
@@ -155,10 +185,26 @@ function serveConnection(
 
   socket.on('message', (data, isBinary) => {
     if (!isBinary) return socket.close(1003, 'binary frames only')
+    const bytes = new Uint8Array(Array.isArray(data) ? Buffer.concat(data) : Buffer.from(data as ArrayBuffer))
+    if (!codec) {
+      // First message on a Noise connection: the handshake.
+      try {
+        const { reply, session } = options.noise!.accept(bytes)
+        socket.send(reply)
+        codec = session
+      } catch (error) {
+        if (error instanceof HandshakeRejected) {
+          log(`refused a connection: ${error.reason}`)
+          return socket.close(error.code, error.reason)
+        }
+        log(`handshake error: ${String(error)}`)
+        return socket.close(1011, 'handshake error')
+      }
+      return
+    }
     let frame: Frame
     try {
-      const bytes = Array.isArray(data) ? Buffer.concat(data) : Buffer.from(data as ArrayBuffer)
-      frame = fromBinary(FrameSchema, channel.open(new Uint8Array(bytes)))
+      frame = fromBinary(FrameSchema, codec.open(bytes))
     } catch {
       return socket.close(1007, 'undecodable frame')
     }

@@ -16,18 +16,7 @@ final class S3MilestonesUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    private var env: [String: String] { ProcessInfo.processInfo.environment }
 
-    private func saveShot(_ name: String) {
-        let shot = XCUIScreen.main.screenshot()
-        let attachment = XCTAttachment(screenshot: shot)
-        attachment.name = name
-        attachment.lifetime = .keepAlways
-        add(attachment)
-        if let dir = env["DSHM_SHOT_DIR"] {
-            try? shot.pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent("\(name).png"))
-        }
-    }
 
     private func send(_ app: XCUIApplication, prompt: String) {
         let field = app.textFields["composer.prompt"]

@@ -5,12 +5,12 @@ import { WebSocket } from 'ws'
 import { PlaintextChannel, isLoopbackAddress } from '../src/channel.ts'
 import { DshTasks } from '../src/dsh.ts'
 import { FrameSchema, TaskStatus, type Frame } from '../src/gen/frame_pb.ts'
-import { startBridgeServer, type BridgeServer } from '../src/server.ts'
+import { PLAINTEXT_PATH, startBridgeServer, type BridgeServer } from '../src/server.ts'
 import { FakeDSH, type FakeDSHOptions } from './fake-dsh.ts'
 
 /** A minimal test client: send Requests, collect every Frame received. */
 async function connect(port: number) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}`)
+  const ws = new WebSocket(`ws://127.0.0.1:${port}${PLAINTEXT_PATH}`)
   ws.binaryType = 'nodebuffer'
   const frames: Frame[] = []
   const waiters: (() => void)[] = []

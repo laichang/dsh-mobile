@@ -11,14 +11,14 @@ import { DshTasks } from '../src/dsh.ts'
 import { FrameSchema, TaskStatus, type Event, type Frame, type Response } from '../src/gen/frame_pb.ts'
 import { TaskState } from '../src/gen/s2_pb.ts'
 import { HostLog } from '../src/s2/host-log.ts'
-import { startBridgeServer, type BridgeServer } from '../src/server.ts'
+import { PLAINTEXT_PATH, startBridgeServer, type BridgeServer } from '../src/server.ts'
 import { FakeDSH, type FakeDSHOptions } from './fake-dsh.ts'
 
 type RequestBody = NonNullable<MessageInitShape<typeof FrameSchema>['kind']> extends infer K
   ? K extends { case: 'request'; value: infer V } ? V extends { body?: infer B } ? B : never : never : never
 
 async function connect(port: number) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}`)
+  const ws = new WebSocket(`ws://127.0.0.1:${port}${PLAINTEXT_PATH}`)
   ws.binaryType = 'nodebuffer'
   const frames: Frame[] = []
   const waiters: (() => void)[] = []
@@ -205,7 +205,7 @@ describe('ResumeAgainstFakeDSH', () => {
 
   test('resumeBeforeHelloIsRefused', async () => {
     const { server } = await bridgeWith()
-    const ws = new WebSocket(`ws://127.0.0.1:${server.port}`)
+    const ws = new WebSocket(`ws://127.0.0.1:${server.port}${PLAINTEXT_PATH}`)
     ws.binaryType = 'nodebuffer'
     await new Promise((resolve) => ws.once('open', resolve))
     const got = new Promise<Frame>((resolve) => ws.once('message', (d: Buffer) => resolve(fromBinary(FrameSchema, new Uint8Array(d)))))

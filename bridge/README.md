@@ -2,7 +2,7 @@
 
 A [Cordis](https://github.com/cordiverse/cordis) plugin that runs inside your own DeepSeek Harness (DSH) host and lets the dsh-mobile iOS app talk to it. It opens its **own** WebSocket listener and speaks the protobuf protocol in [`../protocol/frame.proto`](../protocol/frame.proto). The app never talks to DSH's native API (ARCHITECTURE D4).
 
-T0 status: plaintext on loopback only (`127.0.0.1:47801`), one request (`CreateTask`): it creates a DSH session in a fixed workspace, prompts it with DSH's default model, and streams the assistant text back. Pairing and encryption come in S1.
+Status (S1): the listener (`0.0.0.0:47801` by default) is end-to-end encrypted with Noise (ARCHITECTURE D6, D21). A phone pairs once by scanning a QR the bridge prints, then reconnects with its own key. One request so far (`CreateTask`): it creates a DSH session in a fixed workspace, prompts it with DSH's default model, and streams the assistant text back.
 
 S2 adds `ListTasks` and `Resume` (capability `resume.v1`): tasks keep running when the app disconnects, and every event is numbered in a per-host log so the app can fetch exactly what it missed (ARCHITECTURE D20). The log is kept in memory; restarting DSH starts a new one.
 
@@ -36,12 +36,21 @@ S2 adds `ListTasks` and `Resume` (capability `resume.v1`): tasks keep running wh
    dsh web
    ```
 
-   The plugin starts with the host and listens on `127.0.0.1:47801`. Check with `lsof -nP -iTCP:47801 -sTCP:LISTEN`.
+   The plugin starts with the host and listens on `0.0.0.0:47801`. Check with `lsof -nP -iTCP:47801 -sTCP:LISTEN`. While no phone is paired yet, it prints a pairing QR in DSH's log.
 
-4. Talk to it without the app:
+4. Pair the phone. For a fresh QR at any time (single use, valid 10 minutes):
 
    ```sh
-   node bridge/lib/scripts/client.js "Say hello in one sentence."
+   DSH_HOME=~/.dsh node bridge/lib/scripts/pair.js
+   ```
+
+   In dsh-mobile, tap the QR button and scan it, then tap **Pair**. The QR lists every external IPv4 address of the host (Wi-Fi, Ethernet, Tailscale's `100.x`); the phone tries them in order, so it works on the same Wi-Fi or over Tailscale. The link printed under the QR can be pasted into the app instead.
+
+5. Talk to it without the app (the CLI pairs like a phone):
+
+   ```sh
+   node bridge/lib/scripts/client.js --identity /tmp/cli-id.json --pair "$(DSH_HOME=~/.dsh node bridge/lib/scripts/pair.js --url-only)" "Say hello in one sentence."
+   node bridge/lib/scripts/client.js --identity /tmp/cli-id.json "Again, reconnecting with the saved key."
    ```
 
    The reply streams to stdout. The command exits 0 when the task completes.
@@ -50,7 +59,7 @@ To remove it, run `dsh plugin --profile web remove @dsh-mobile/bridge`.
 
 ## Configuration
 
-Defaults: `host: 127.0.0.1`, `port: 47801`, `cwd`: your home directory, used as the workspace for new tasks. To change them, add an entry with id `dsh-mobile-bridge` to the profile's `cordis.yml`:
+Defaults: `host: 0.0.0.0`, `port: 47801`, `cwd`: your home directory (the workspace for new tasks), `stateDir: $DSH_HOME/dsh-mobile-bridge`, `devPlaintext: false`. To change them, add an entry with id `dsh-mobile-bridge` to the profile's `cordis.yml`:
 
 ```yaml
 - id: dsh-mobile-bridge
@@ -59,11 +68,15 @@ Defaults: `host: 127.0.0.1`, `port: 47801`, `cwd`: your home directory, used as 
     cwd: /Users/me/projects
 ```
 
-`host` must be a loopback literal (`127.x.x.x` or `::1`) while the bridge only has the plaintext channel. Any other address is refused at startup.
+The environment variables `DSHM_BRIDGE_HOST`, `DSHM_BRIDGE_PORT`, `DSHM_BRIDGE_STATE_DIR` and `DSHM_BRIDGE_DEV_PLAINTEXT=1` fill in whatever `cordis.yml` leaves out (`scripts/dsh-up.mjs` uses them).
+
+**Pairing state** lives in `stateDir` (mode 0700, files 0600): `host-key.json` (the host's Noise private key; keep it private, deleting it unpairs every phone), `offers.json`, `devices.json` (the device registry; listing and revoking in the app is S10), and `listener.json` (the addresses `pair.js` puts in the QR).
+
+**Plaintext** (`devPlaintext: true`) is for development only: it serves unencrypted frames on the `/plaintext` path, and the bridge refuses to start with it unless `host` is a loopback literal (`127.x.x.x` or `::1`). Only Debug builds of the app have a plaintext channel.
 
 ## Local acceptance host (for development)
 
-`node scripts/dsh-up.mjs` starts DSH 0.2.2-rc.1 from `~/.dshm/runtime` with `DSH_HOME=~/.dshm/home`, enables this bridge, and points DSH at DSH's mock LLM server, so no API key is needed. The script header lists its environment variables.
+`node scripts/dsh-up.mjs` starts DSH 0.2.2-rc.1 from `~/.dshm/runtime` with `DSH_HOME=~/.dshm/home`, enables this bridge, and points DSH at DSH's mock LLM server, so no API key is needed. The script header lists its environment variables. Unlike the defaults above, it binds the bridge to `127.0.0.1` with `devPlaintext` on, so the Simulator can use both T0's plaintext path and Noise; for a real iPhone run it with `DSHM_BRIDGE_HOST=0.0.0.0 DSHM_BRIDGE_DEV_PLAINTEXT=0`. S1's demo is `scripts/demo/s1.sh`.
 
 This is the development host on the maintainer's Mac:
 - DSH is installed with npm (`@deepseek-ai/dsh@0.2.2-rc.1` and `@deepseek-ai/dsh-llm-mock-server@0.2.2-rc.1`) into `~/.dshm/runtime`.
@@ -76,13 +89,15 @@ This is the development host on the maintainer's Mac:
 
 | Command | What it does |
 |---|---|
-| `pnpm test` | Builds, then runs `node:test`: golden fixtures, bridge against `FakeDSH`, PlaintextChannel |
+| `pnpm test` | Builds, then runs `node:test`: golden fixtures, Noise vectors and transcripts, bridge and pairing against `FakeDSH`, PlaintextChannel |
 | `pnpm build` | `tsc` → `lib/` (what DSH loads) |
 | `pnpm fixtures` | Writes `.binpb` files for new entries in `protocol/fixtures/fixtures.json` |
+| `pnpm noise-fixtures` | Rewrites `protocol/fixtures/noise/transcripts.json` (golden Noise transcripts from fixed keys) |
 | `../scripts/codegen` | Regenerates `src/gen/` (and the Swift side) from `protocol/*.proto` |
 
 Layout:
 - `src/dsh.ts` is the only file that knows DSH internals.
 - `src/server.ts` is the listener and the frame protocol.
-- `src/channel.ts` is the `SecureChannel` seam.
+- `src/channel.ts` is the dev-only `PlaintextChannel`.
+- `src/pairing/` is Noise (`noise.ts`, ported from the X2 spike), the wire header (`wire.ts`), the handshake (`handshake.ts`), offers and the QR (`offer.ts`, `announce.ts`) and the on-disk store (`store.ts`).
 - `test/fake-dsh.ts` is `FakeDSH`.

@@ -35,7 +35,7 @@ const add = spawnSync(DSH, ['plugin', '--profile', 'web', 'add', join(ROOT, 'bri
 if (add.status !== 0) die(`dsh plugin add failed:\n${add.stdout}${add.stderr}`)
 mkdirSync(profile, { recursive: true })
 writeFileSync(join(profile, 'cordis.patch.yml'),
-  `# Written by scripts/demo/s2-host.mjs\n- id: dsh-mobile-bridge\n  config:\n    port: ${BRIDGE_PORT}\n`)
+  `# Written by scripts/demo/s2-host.mjs\n- id: dsh-mobile-bridge\n  config:\n    port: ${BRIDGE_PORT}\n    # Loopback only, with S1's dev-only plaintext path (the app's unpaired Debug path).\n    host: 127.0.0.1\n    devPlaintext: true\n`)
 console.log(`s2-host: bridge enabled in ${profile} on port ${BRIDGE_PORT}`)
 
 const { startMockLlmServer } = await import(

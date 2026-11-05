@@ -4,8 +4,10 @@ import SwiftUI
 /// S2 · the home screen: every task from every host in one list (STORY principle 4), grouped as
 /// running / waiting on me / done, with the composer at the bottom. Hosts that can't be reached
 /// are named (principle 3). The list comes from the local cache, so it shows while offline.
+/// The toolbar opens the QR scanner to pair a host (S1).
 struct RootView: View {
     @Bindable var store: TaskListStore
+    let pair: () -> Void
     @State private var path: [String] = []
 
     var body: some View {
@@ -18,6 +20,11 @@ struct RootView: View {
                 .navigationDestination(for: String.self) { key in
                     TaskDetailView(store: store, taskKey: key)
                 }
+                .toolbar {
+                    Button(action: pair) { Image(systemName: "qrcode.viewfinder") }
+                        .accessibilityLabel("Pair a host")
+                        .accessibilityIdentifier("pairing.scan")
+                }
         }
     }
 }
@@ -29,7 +36,10 @@ struct TaskListView: View {
         let sections = store.sections
         List {
             Section {
-                ForEach(store.hosts) { HostStatusRow(host: $0) }
+                ForEach(store.hosts) { host in
+                    HostStatusRow(host: host)
+                    HostChannelRow(host: host)
+                }
             }
             if store.tasks.isEmpty {
                 Text("No tasks yet. Send one below.")
@@ -101,6 +111,27 @@ struct HostStatusRow: View {
         case .connecting: .secondary
         case .offline: .orange
         }
+    }
+}
+
+/// Which channel the host is reached over (S1): end-to-end encrypted (Noise), or plaintext on
+/// Debug's loopback dev path. `host.channel` value = the channel name.
+struct HostChannelRow: View {
+    let host: TaskListStore.HostStatus
+
+    var body: some View {
+        let encrypted = host.channelName == "noise"
+        HStack(spacing: 6) {
+            Image(systemName: encrypted ? "lock.fill" : "lock.open")
+                .foregroundStyle(encrypted ? .green : .orange)
+            Text(encrypted ? "End-to-end encrypted" : "Plaintext (dev, loopback only)")
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(encrypted ? "\(host.name), encrypted" : "\(host.name), plaintext")
+        .accessibilityValue(host.channelName)
+        .accessibilityIdentifier("host.channel")
     }
 }
 

@@ -1,8 +1,8 @@
 import Foundation
 import Observation
 
-/// State behind T0's single screen: one composer, one task at a time, in memory only. Since S2
-/// the app uses `TaskListStore` (durable list + resume); this stays as T0's minimal client.
+/// State behind T0's single-task screen: one composer, one task at a time, in memory only. Since
+/// S2 the app uses `TaskListStore` (durable list + resume); this stays as T0's minimal client.
 @MainActor
 @Observable
 public final class TaskStore {
@@ -39,6 +39,10 @@ public final class TaskStore {
         self.connection = connection
         self.prompt = prompt
     }
+
+    /// "noise" or (Debug) "plaintext": shown in the status row, checked by UI tests.
+    public var channelName: String { connection.channelName }
+    public var endpoint: HostEndpoint { connection.endpoint }
 
     public var canSend: Bool {
         guard !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }

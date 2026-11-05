@@ -44,6 +44,8 @@ public final class TaskListStore {
         public var name: String
         public var reachability: Reachability
         public var lastConnectedAt: Date?
+        /// The connection's channel (S1): "noise", or "plaintext" on Debug's loopback dev path.
+        public var channelName: String
     }
 
     /// A task as the views show it (a value copy of `CachedTask`).
@@ -406,7 +408,8 @@ public final class TaskListStore {
             let record = hostRecords.first { $0.key == link.key }
             return HostStatus(
                 key: link.key, name: record?.name ?? link.key,
-                reachability: link.reachability, lastConnectedAt: record?.lastConnectedAt)
+                reachability: link.reachability, lastConnectedAt: record?.lastConnectedAt,
+                channelName: link.connection.channelName)
         }
         let descriptor = FetchDescriptor<CachedTask>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         tasks = ((try? context.fetch(descriptor)) ?? []).map { t in

@@ -16,7 +16,6 @@ final class S2DurableListUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    private var env: [String: String] { ProcessInfo.processInfo.environment }
     private var port: String { env["DSHM_BRIDGE_PORT"] ?? "47811" }
 
     private func launch(_ arguments: [String]) -> XCUIApplication {
@@ -48,16 +47,6 @@ final class S2DurableListUITests: XCTestCase {
 
     private func value(_ element: XCUIElement) -> String { element.value as? String ?? "" }
 
-    private func saveShot(_ name: String) {
-        let shot = XCUIScreen.main.screenshot()
-        let attachment = XCTAttachment(screenshot: shot)
-        attachment.name = name
-        attachment.lifetime = .keepAlways
-        add(attachment)
-        if let dir = env["DSHM_SHOT_DIR"] {
-            try? shot.pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent("\(name).png"))
-        }
-    }
 
     func testKillAndReopenAgainstRealDSH() throws {
         try XCTSkipUnless(env["DSHM_REAL_DSH"] == "1", "needs scripts/demo/s2-host.mjs; run scripts/demo/s2.sh")

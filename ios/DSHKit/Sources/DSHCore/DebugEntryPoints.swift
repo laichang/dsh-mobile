@@ -17,6 +17,8 @@ public enum DebugLaunchOptions {
     public static let resetStoreKey = "DSHMResetStore"
     /// `-DSHMConnectDelay <seconds>` (S2): show the cache for a while before the first connection.
     public static let connectDelayKey = "DSHMConnectDelay"
+    /// `-DSHMResetPairing YES`: forget paired hosts and the device key at launch (S1 UI tests).
+    public static let resetPairingKey = "DSHMResetPairing"
 
     public struct Options: Equatable, Sendable {
         public var useFakeBridge = false
@@ -26,11 +28,13 @@ public enum DebugLaunchOptions {
         public var fakeBridgeOffline = false
         public var resetStore = false
         public var connectDelay: Double?
+        public var resetPairing = false
 
         public init(
             useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil,
             fakeMilestones: Bool = false,
-            fakeBridgeOffline: Bool = false, resetStore: Bool = false, connectDelay: Double? = nil
+            fakeBridgeOffline: Bool = false, resetStore: Bool = false, connectDelay: Double? = nil,
+            resetPairing: Bool = false
         ) {
             self.useFakeBridge = useFakeBridge
             self.presetPrompt = presetPrompt
@@ -39,6 +43,7 @@ public enum DebugLaunchOptions {
             self.fakeBridgeOffline = fakeBridgeOffline
             self.resetStore = resetStore
             self.connectDelay = connectDelay
+            self.resetPairing = resetPairing
         }
     }
 
@@ -66,11 +71,13 @@ public enum DebugLaunchOptions {
         options.presetPrompt = values[presetPromptKey]
         options.bridgePort = values[bridgePortKey].flatMap(Int.init)
         if let v = values[fakeMilestonesKey] { options.fakeMilestones = yes.contains(v) }
+        if let v = values[resetPairingKey] { options.resetPairing = yes.contains(v) }
         return options
     }
 }
 
-/// Routes for the reserved `dshm://` scheme. S1 replaces the pairing stub with real pairing.
+/// Routes for the reserved `dshm://` scheme, which only Debug builds register. `dshm://pair?…`
+/// carries a `PairingOffer` (S1); Release builds get the same offer from the QR scanner.
 public enum DebugDeepLink: Equatable, Sendable {
     case pair(parameters: [String: String])
 

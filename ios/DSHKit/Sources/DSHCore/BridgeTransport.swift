@@ -3,16 +3,21 @@ import Foundation
 /// One bidirectional message pipe to a bridge. Real: a WebSocket. Tests: `FakeBridge`.
 public protocol BridgeTransport: Sendable {
     func send(_ message: Data) async throws
-    /// Next binary message; throws when the connection closes.
+    /// Next binary message; throws when the connection closes (`BridgeTransportError.closed`
+    /// when the bridge said why).
     func receive() async throws -> Data
     func close() async
 }
 
-/// Opens a transport to an endpoint; injected into `HostConnection`.
-public typealias BridgeTransportFactory = @Sendable (HostEndpoint) async throws -> any BridgeTransport
+/// Opens a transport to a bridge URL (`HostEndpoint.webSocketURL(path:)`); injected into
+/// `HostConnection`.
+public typealias BridgeTransportFactory = @Sendable (URL) async throws -> any BridgeTransport
 
-public enum BridgeTransportError: Error {
+public enum BridgeTransportError: Error, Equatable {
     case unexpectedTextMessage
+    /// The bridge closed the WebSocket with this code and reason (bridge/src/pairing/wire.ts
+    /// `CloseCode` for Noise refusals).
+    case closed(code: Int, reason: String)
 }
 
 /// `URLSessionWebSocketTask` with binary messages only.
@@ -24,8 +29,8 @@ public final class WebSocketTransport: BridgeTransport {
         task.resume()
     }
 
-    public static let factory: BridgeTransportFactory = { endpoint in
-        WebSocketTransport(url: endpoint.webSocketURL)
+    public static let factory: BridgeTransportFactory = { url in
+        WebSocketTransport(url: url)
     }
 
     public func send(_ message: Data) async throws {
@@ -33,7 +38,18 @@ public final class WebSocketTransport: BridgeTransport {
     }
 
     public func receive() async throws -> Data {
-        switch try await task.receive() {
+        let message: URLSessionWebSocketTask.Message
+        do {
+            message = try await task.receive()
+        } catch {
+            // The close frame's code is set by the time receive fails on it.
+            if task.closeCode != .invalid {
+                let reason = task.closeReason.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+                throw BridgeTransportError.closed(code: task.closeCode.rawValue, reason: reason)
+            }
+            throw error
+        }
+        switch message {
         case .data(let data): return data
         case .string: throw BridgeTransportError.unexpectedTextMessage
         @unknown default: throw BridgeTransportError.unexpectedTextMessage

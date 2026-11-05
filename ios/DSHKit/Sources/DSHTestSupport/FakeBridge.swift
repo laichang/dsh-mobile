@@ -188,7 +188,7 @@ public final class FakeHost: Sendable {
 
     /// Opens a connection to this host; throws while it's unreachable.
     public var factory: BridgeTransportFactory {
-        { [self] _ in try self.open() }
+        { [self] _ in try self.connection() }
     }
 
     public var prompts: [String] { state.withLock { $0.prompts } }
@@ -229,7 +229,8 @@ public final class FakeHost: Sendable {
 
     // MARK: - Internals
 
-    private func open() throws -> FakeBridge {
+    /// Opens one connection (a `FakeBridge`) to this host; throws while it's unreachable.
+    func connection() throws -> FakeBridge {
         let bridge = FakeBridge(host: self)
         try state.withLock { s in
             guard s.reachable else { throw FakeHostError.unreachable }
