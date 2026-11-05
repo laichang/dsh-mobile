@@ -23,7 +23,7 @@ const BRIDGE_PORT = Number(process.env.DSHM_BRIDGE_PORT ?? 47811)
 const CHUNK_DELAY_MS = Number(process.env.DSHM_MOCK_CHUNK_DELAY_MS ?? 250)
 const DSH = join(RUNTIME, 'node_modules/.bin/dsh')
 // Same text as scripts/dsh-up.mjs MOCK_TEXT; the UI tests compare against it.
-export const MOCK_TEXT = '你好！I am a DSH agent on your Mac. This reply is streamed through the dsh-mobile bridge.'
+export const MOCK_TEXT = process.env.DSHM_MOCK_TEXT ?? '你好！I am a DSH agent on your Mac. This reply is streamed through the dsh-mobile bridge.'
 
 const die = (m) => { console.error(`s2-host: ${m}`); process.exit(1) }
 if (!existsSync(DSH)) die(`no DSH at ${DSH}; see the header of scripts/dsh-up.mjs`)
