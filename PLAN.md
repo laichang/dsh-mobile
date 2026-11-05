@@ -50,7 +50,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S5 | done | merged `529bb16` | 2026-11-05 | — (provisional D28 in §9) |
 | S6 | doing | `claude/s6-models` | 2026-11-05 | Implement and verify in batch 2 |
 | S7 | todo | — | 2026-11-05 | Ready (T0 merged); batch 2 |
-| S8 | todo | — | 2026-11-05 | Ready (X3 merged with provisional D10) |
+| S8 | doing | claude/s8-rich-detail | 2026-11-05 | Implement and verify |
 | S9 | todo | — | 2026-11-05 | Ready (S1 merged) |
 | S10 | todo | — | 2026-11-05 | Ready (S1 merged) |
 | S11 | todo | — | 2026-11-05 | Ready (S1 merged) |
@@ -792,6 +792,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-05 · X3.** Assigned claude/x3-markdown, worktree /Users/bytedance/.codex/worktrees/x3-markdown/dsh-mobile, simulator dshm-X3, DSHM_HOME ~/.dshm/home-x3, bridge 47813, web 3286. The owner uses the shared DSH runtime read-only.
 
 - **2026-11-05 · X3.** Independent Simulator rerun at ca3d59d passed the 5,000-line, 61-update benchmark. Whole-prefix p95 was 13.36–19.16 ms; retained-block p95 was 1.10–1.36 ms. Results and real-device command: spikes/x3-markdown/README.md. S8 may build on the provisional D10 choice.
+
+- **2026-11-05 · S8.** Assigned claude/s8-rich-detail, worktree /Users/bytedance/.codex/worktrees/s8-rich-detail/dsh-mobile, simulator dshm-S8, DSHM_HOME ~/.dshm/home-s8, bridge 47814, web 3287. The owner uses the shared DSH runtime read-only.
 
 ## 9. Pending user confirmation
 
