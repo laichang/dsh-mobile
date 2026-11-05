@@ -78,17 +78,41 @@ grep -q "pairing secret used" "$LOGS/reuse.err" && cat "$LOGS/reuse.err"
 step "CLI: T0's dev plaintext path still answers on loopback"
 node bridge/lib/scripts/client.js --port "$PORT" "plaintext, loopback only" >/dev/null && echo "client: plaintext OK"
 
-step "UI tests in the Simulator ($SIM): S1 pairing + T0"
+step "UI tests in the Simulator ($SIM): S1 pairing, resume over Noise (S2 seam), T0"
 SHOT_DIR="$(mktemp -d)"
+DD="${DSHM_DD:-/tmp/dshm-s1-dd}"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR" TEST_RUNNER_DSHM_BRIDGE_PORT="$PORT" TEST_RUNNER_DSHM_REAL_DSH=1
 export TEST_RUNNER_DSHM_PAIR_URL="$(pair_url)"
 export TEST_RUNNER_DSHM_EXPIRED_PAIR_URL="$(pair_url --ttl-minutes 0)"
-xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
-  -derivedDataPath /tmp/dshm-s1-dd -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/uitest.log" 2>&1 || { grep -E "error:|Test Case|XCTAssert" "$LOGS/uitest.log"; exit 1; }
-grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/uitest.log"
-if grep -E "Test Case.*S1PairingUITests.*skipped" "$LOGS/uitest.log"; then echo "S1 UI tests were skipped" >&2; exit 1; fi
+xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+  -derivedDataPath "$DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
+  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+uitest() { # name, then -only-testing targets; fails on any failed or skipped test
+  local name=$1; shift
+  xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+    -derivedDataPath "$DD" "$@" > "$LOGS/uitest-$name.log" 2>&1 \
+    || { grep -E "error:|Test Case|XCTAssert" "$LOGS/uitest-$name.log"; exit 1; }
+  grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/uitest-$name.log"
+  if grep -qE "Test Case.*skipped|Test Suite.*[1-9][0-9]* skipped|with [1-9][0-9]* tests? skipped" "$LOGS/uitest-$name.log"; then
+    echo "UI tests were skipped ($name)" >&2; exit 1
+  fi
+}
+uitest pairing \
+  -only-testing:dsh-mobileUITests/S1PairingUITests/testExpiredPairingLinkIsRefused \
+  -only-testing:dsh-mobileUITests/S1PairingUITests/testPairViaDeepLinkThenDemoOverNoise \
+  -only-testing:dsh-mobileUITests/S1PairingUITests/testRelaunchReconnectsOverNoise
+
+step "UI: kill the paired app; a task runs on the bridge meanwhile; reopen: IK reconnect + resume fills the gap"
+TEST_RUNNER_DSHM_RESUME_PHASE=1 uitest resume1 \
+  -only-testing:dsh-mobileUITests/S1PairingUITests/testResumeOverNoisePhase1KillWhileConnected
+GAP_PROMPT="While the app was closed $(date +%s)"
+node bridge/lib/scripts/client.js --port "$PORT" "$GAP_PROMPT" >/dev/null && echo "client: ran \"$GAP_PROMPT\" while the app was closed"
+TEST_RUNNER_DSHM_RESUME_PHASE=2 TEST_RUNNER_DSHM_GAP_PROMPT="$GAP_PROMPT" uitest resume2 \
+  -only-testing:dsh-mobileUITests/S1PairingUITests/testResumeOverNoisePhase2GapFilled
+
+step "UI: T0 demo (resets pairing, so it runs last)"
+uitest t0 -only-testing:dsh-mobileUITests/T0DemoUITests
 
 step "bridge device registry (store only; the UI is S10)"
 node -e 'const d=require(process.argv[1]); console.log(`${d.length} device(s): ` + d.map(x=>x.id).join(", "))' "$DSHM_HOME/dsh-mobile-bridge/devices.json"

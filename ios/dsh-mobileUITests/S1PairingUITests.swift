@@ -87,4 +87,47 @@ final class S1PairingUITests: XCTestCase {
         XCTAssertTrue(status.label.contains("expired"), status.label)
         saveShot("s1-expired-code-refused")
     }
+
+    // MARK: - S1 × S2 seam: kill/reopen over Noise resumes from the cursor
+
+    /// Phase 1 of 2 (scripts/demo/s1.sh, TEST_RUNNER_DSHM_RESUME_PHASE=1, after the pairing tests):
+    /// the paired app connects over Noise, catches up, and is killed. s1.sh then runs a task on the
+    /// bridge from the CLI while the app is gone.
+    func testResumeOverNoisePhase1KillWhileConnected() throws {
+        try XCTSkipUnless(env["DSHM_RESUME_PHASE"] == "1", "run scripts/demo/s1.sh")
+        let app = XCUIApplication()
+        app.launch()
+        let channel = app.descendants(matching: .any)["host.channel"]
+        XCTAssertTrue(channel.waitForExistence(timeout: 10))
+        XCTAssertEqual(channel.value as? String, "noise")
+        let host = app.descendants(matching: .any)["host.status"]
+        XCTAssertEqual(waitForValue(host, in: ["online"], timeout: 30), "online", host.label)
+        // Let the cursor's coalesced save land (terminate() skips the background phase).
+        RunLoop.current.run(until: Date().addingTimeInterval(1))
+        app.terminate()
+    }
+
+    /// Phase 2 of 2 (TEST_RUNNER_DSHM_RESUME_PHASE=2, TEST_RUNNER_DSHM_GAP_PROMPT = the CLI task's
+    /// prompt): reopened, the app reconnects with a fresh IK handshake (no pairing step) and
+    /// resumes from its cursor; the task it missed arrives with its whole transcript, which only
+    /// the replay carries (ListTasks has no text).
+    func testResumeOverNoisePhase2GapFilled() throws {
+        try XCTSkipUnless(env["DSHM_RESUME_PHASE"] == "2", "run scripts/demo/s1.sh")
+        let prompt = try XCTUnwrap(env["DSHM_GAP_PROMPT"])
+        let app = XCUIApplication()
+        app.launch()
+        let channel = app.descendants(matching: .any)["host.channel"]
+        XCTAssertTrue(channel.waitForExistence(timeout: 10))
+        XCTAssertEqual(channel.value as? String, "noise")
+        let row = app.buttons.matching(NSPredicate(format: "identifier == 'tasklist.row' AND label CONTAINS %@", prompt)).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 30), app.debugDescription)
+        saveShot("s1-resumed-over-noise-list")
+        row.tap()
+        let status = app.descendants(matching: .any)["task.status"]
+        XCTAssertEqual(waitForValue(status, in: ["completed"], timeout: 30), "completed", status.label)
+        let transcript = app.descendants(matching: .any)["transcript.text"]
+        XCTAssertTrue((transcript.value as? String ?? "").contains("streamed through the dsh-mobile bridge"),
+                      transcript.value as? String ?? "")
+        saveShot("s1-resumed-over-noise-detail")
+    }
 }

@@ -14,6 +14,8 @@ public actor FakeNoiseHost {
     public private(set) var devices: [[UInt8]] = []
     /// Connections refused, with the close reason the bridge would send.
     public private(set) var refusals: [String] = []
+    /// Completed IK reconnect handshakes (S1 x S2 seam tests).
+    public private(set) var reconnects = 0
     private let now: @Sendable () -> Date
 
     public init(hostName: String = "Fake Mac", now: @escaping @Sendable () -> Date = { .now }) {
@@ -68,6 +70,7 @@ public actor FakeNoiseHost {
                                              prologue: PairingWire.prologue(Array(first[..<2])), s: hostKey)
             do { _ = try hs.readMessage(Array(first[2...])) } catch { throw refuse(.handshakeFailed, "handshake failed") }
             guard devices.contains(hs.remoteStatic!) else { throw refuse(.deviceUnknown, "device not paired") }
+            reconnects += 1
             let reply = try hs.writeMessage()
             return (reply, hs.transport!, hs.remoteStatic!)
         }

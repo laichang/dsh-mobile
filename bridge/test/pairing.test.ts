@@ -389,3 +389,48 @@ describe('PlaintextChannelDevOnly', () => {
     c.close()
   })
 })
+
+/** S1 × S2 seam (S1 landed second): the durable list's Resume works over a Noise reconnect. */
+describe('ResumeOverNoise', () => {
+  test('ikReconnectResumesFromTheCursor', async () => {
+    const store = tempStore()
+    const server = await noiseBridge(store)
+    const phone = generateKeyPair()
+    const reconnect = () => NoiseInitiator.reconnect({ s: phone, hostKey: store.hostKey().publicKey })
+    const pairing = await noiseClient(server.port, pairWith(store, phone))
+    assert.ok(pairing.session)
+    pairing.send(hello)
+    await pairing.until((fs) => fs.some((f) => f.kind.case === 'response'))
+    pairing.close()
+    assert.equal(store.devices().length, 1)
+
+    // First IK connection: Resume from nothing, then a task; remember the cursor mid-way.
+    const first = await noiseClient(server.port, reconnect())
+    assert.ok(first.session, 'IK handshake completes')
+    first.send(hello)
+    first.send({ kind: { case: 'request', value: { id: 2n, body: { case: 'resume', value: { logId: '', afterSeq: 0n } } } } })
+    await first.until((fs) => fs.some((f) => f.kind.case === 'response' && f.kind.value.body.case === 'resumed'))
+    first.send({ kind: { case: 'request', value: { id: 3n, body: { case: 'createTask', value: { prompt: 'hi' } } } } })
+    await first.until(ended)
+    first.close()
+    const logged = first.frames.flatMap((f) => (f.kind.case === 'event' ? [f.kind.value] : []))
+    const resumed = first.frames.find((f) => f.kind.case === 'response' && f.kind.value.body.case === 'resumed')!
+    assert.ok(resumed.kind.case === 'response' && resumed.kind.value.body.case === 'resumed')
+    const logId = resumed.kind.value.body.value.logId
+    const cursor = logged[1].hostSeq
+    assert.ok(cursor > 0n)
+
+    // The phone was killed after `cursor`; a new IK handshake, then Resume: exactly the gap.
+    const second = await noiseClient(server.port, reconnect())
+    assert.ok(second.session, 'second IK handshake completes')
+    second.send(hello)
+    second.send({ kind: { case: 'request', value: { id: 2n, body: { case: 'resume', value: { logId, afterSeq: cursor } } } } })
+    await second.until((fs) => fs.some((f) => f.kind.case === 'response' && f.kind.value.body.case === 'resumed'))
+    second.close()
+    const gap = second.frames.flatMap((f) => (f.kind.case === 'event' ? [f.kind.value] : []))
+    assert.deepEqual(gap.map((e) => e.hostSeq), logged.filter((e) => e.hostSeq > cursor).map((e) => e.hostSeq))
+    assert.equal(gap.at(-1)?.body.case, 'taskEnded')
+    const again = second.frames.find((f) => f.kind.case === 'response' && f.kind.value.body.case === 'resumed')!
+    assert.ok(again.kind.case === 'response' && again.kind.value.body.case === 'resumed' && !again.kind.value.body.value.reset)
+  })
+})
