@@ -53,7 +53,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S8 | review | merged `8e9fa87` | 2026-11-05 | User checks real iPhone readability (§9) |
 | S9 | doing | claude/s9-multi-host | 2026-11-05 | Implement and verify |
 | S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
-| S11 | todo | — | 2026-11-05 | Ready (S1 merged) |
+| S11 | doing | claude/s11-first-run | 2026-11-05 | Implement and verify |
 | S12 | doing | claude/s12-upstream-guard | 2026-11-05 | Implement and verify |
 
 ## 1. Approach
@@ -843,6 +843,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-05 · S12.** Assigned claude/s12-upstream-guard, worktree /Users/bytedance/.codex/worktrees/s12-upstream-guard/dsh-mobile, simulator dshm-S12, DSHM_HOME ~/.dshm/home-s12, bridge 47818, web 3291. The owner uses the shared DSH runtime read-only.
 
 - **2026-11-05 · S8.** Independent integrated run at d6c4886 passed 52 bridge, 50 Swift and three real DSH UI tests with zero skips. Verified inline translation, streamed diff and terminal output, and offline reopening. S4–S7 demos also passed during integration. Evidence: scripts/demo/s8.sh and evidence/S8/.
+
+- **2026-11-05 · S11.** Assigned claude/s11-first-run, worktree /Users/bytedance/.codex/worktrees/s11-first-run/dsh-mobile, simulator dshm-S11, DSHM_HOME ~/.dshm/home-s11, bridge 47819, web 3292. The owner uses the shared DSH runtime read-only.
 
 ## 9. Pending user confirmation
 
