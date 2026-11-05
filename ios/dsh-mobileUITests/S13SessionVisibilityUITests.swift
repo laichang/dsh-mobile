@@ -12,9 +12,10 @@ final class S13SessionVisibilityUITests: XCTestCase {
         app.launch()
 
         let rows = app.buttons.matching(identifier: "tasklist.row")
-        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 25), app.debugDescription)
+        let row = rows.matching(NSPredicate(format: "label CONTAINS %@", "网页第一条")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 25), app.debugDescription)
         XCTAssertEqual(rows.count, 1)
-        rows.firstMatch.tap()
+        row.tap()
         let messages = app.descendants(matching: .any).matching(NSPredicate(
             format: "identifier IN %@", ["session.message.user", "session.message.assistant"]))
         let reply = "已收到。"
