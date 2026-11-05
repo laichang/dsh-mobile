@@ -52,7 +52,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S7 | doing | claude/s7-workspaces | 2026-11-05 | Implement and verify |
 | S8 | doing | claude/s8-rich-detail | 2026-11-05 | Implement and verify |
 | S9 | todo | — | 2026-11-05 | Ready (S1 merged) |
-| S10 | todo | — | 2026-11-05 | Ready (S1 merged) |
+| S10 | doing | claude/s10-devices-audit | 2026-11-05 | Implement and verify |
 | S11 | todo | — | 2026-11-05 | Ready (S1 merged) |
 | S12 | todo | — | 2026-11-05 | Ready (T0 merged); also pins D17's prepend ordering |
 
@@ -820,6 +820,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-05 · S7.** Assigned claude/s7-workspaces, worktree /Users/bytedance/.codex/worktrees/s7-workspaces/dsh-mobile, simulator dshm-S7, DSHM_HOME ~/.dshm/home-s7, bridge 47815, web 3288. The owner uses the shared DSH runtime read-only.
 
 - **2026-11-05 · S4.** Merged after independent real DSH reviews at 24512be and integrated dfad6fc. All 51 bridge + 47 DSHKit tests and four real UI scenarios passed with zero skips. The tests cover API/Web requests, closed-app resume, first answer, and interrupt after a mid-approval model switch. The temporary target file survived both denial and interruption. Evidence: scripts/demo/s4.sh and evidence/S4/.
+
+- **2026-11-05 · S10.** Assigned claude/s10-devices-audit, worktree /Users/bytedance/.codex/worktrees/s10-devices-audit/dsh-mobile, simulator dshm-S10, DSHM_HOME ~/.dshm/home-s10, bridge 47816, web 3289. The owner uses the shared DSH runtime read-only.
 
 ## 9. Pending user confirmation
 
