@@ -5,13 +5,7 @@ import SwiftData
 import DSHTestSupport
 #endif
 
-/// Builds the object graph and swaps it when pairing changes (PLAN S1), around S2's durable
-/// task list: one `TaskListStore` over the SwiftData cache, with one host.
-/// - A paired host: Noise (`IK` reconnect) over a WebSocket to its first address. Every
-///   reconnect runs a fresh IK handshake, then `Resume` from the cached cursor (S1 x S2 seam).
-/// - No paired host, Release: nothing to talk to; the app asks to pair.
-/// - No paired host, Debug: T0's plaintext dev path to the bridge on this Mac's loopback.
-/// S9 replaces "one host" with every paired host.
+/// Each paired host syncs over its own Noise connection into the shared task list.
 @MainActor
 @Observable
 final class AppModel {
@@ -29,7 +23,7 @@ final class AppModel {
     }
 
     private(set) var store: TaskListStore?
-    private(set) var host: PairedHost?
+    private static let preferredHostKey = "dshm.composerHostKey"
     var pairingRoute: PairingRoute?
     var showingScanner = false
 
@@ -49,47 +43,60 @@ final class AppModel {
             try? hosts.removeAll()
             try? keys.reset()
         }
-        if options.resetStore { try? TaskCache.erase(container) }
+        if options.resetStore {
+            try? TaskCache.erase(container)
+            UserDefaults.standard.removeObject(forKey: Self.preferredHostKey)
+        }
         if options.useFakeBridge { transport = FakeBridge.factory() }
         presetPrompt = options.presetPrompt ?? ""
         if let seconds = options.connectDelay { connectDelay = .milliseconds(Int(seconds * 1000)) }
         #endif
         pairing = Pairing(keys: keys, hosts: hosts, transport: transport)
-        host = hosts.load().last
         store = makeStore()
     }
 
-    var hostLabel: String {
-        if let host { return host.name.isEmpty ? host.addresses.first?.description ?? "host" : host.name }
-        return "this Mac (dev, loopback)"
-    }
-
     private func makeStore() -> TaskListStore? {
-        guard let config = makeHost() else { return nil }
-        return TaskListStore(container: container, hosts: [config], prompt: presetPrompt, firstConnectDelay: connectDelay)
+        let hosts = hostConfigs()
+        guard !hosts.isEmpty else { return nil }
+        return TaskListStore(container: container, hosts: hosts, prompt: presetPrompt, firstConnectDelay: connectDelay,
+                             preferredHostKey: UserDefaults.standard.string(forKey: Self.preferredHostKey)) { key in
+            UserDefaults.standard.set(key, forKey: Self.preferredHostKey)
+        }
     }
 
-    /// The one host this build talks to, keyed for the cache (`<kind>:<who>`).
-    private func makeHost() -> TaskListStore.HostConfig? {
+    private func pairedConfig(_ host: PairedHost) -> TaskListStore.HostConfig? {
+        guard let endpoint = host.addresses.first, let channel = try? pairing.reconnectChannel(to: host) else { return nil }
+        return .init(key: "noise:\(host.id)", connection: HostConnection(endpoint: endpoint, channel: channel,
+                     transport: pairing.transport), name: host.name.isEmpty ? endpoint.description : host.name)
+    }
+
+    private func hostConfigs() -> [TaskListStore.HostConfig] {
         #if DEBUG
         let options = DebugLaunchOptions.parse(ProcessInfo.processInfo.arguments)
+        if options.multipleFakeHosts {
+            return ["Office Mac", "Home Mac"].enumerated().map { index, name in
+                let endpoint = HostEndpoint.localBridge(port: 47801 + index)
+                let fake = FakeHost(script: .init(reply: ["Reply ", "from ", name], chunkDelay: .seconds(1)),
+                                    hostName: name, reachable: index != 0 || !options.fakeBridgeOffline)
+                return .init(key: "fake:\(name)", connection: HostConnection(endpoint: endpoint,
+                             channel: PlaintextChannel(), transport: fake.factory), name: name)
+            }
+        }
         if options.useFakeBridge {
             let endpoint = HostEndpoint.localBridge()
             let fake = FakeHost(script: options.fakeMilestones ? .threeTodos() : .init(), reachable: !options.fakeBridgeOffline)
-            return .init(key: "fake:\(endpoint)",
-                         connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: fake.factory))
+            return [.init(key: "fake:\(endpoint)",
+                          connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: fake.factory))]
         }
         #endif
-        if let host, let endpoint = host.addresses.first, let channel = try? pairing.reconnectChannel(to: host) {
-            return .init(key: "noise:\(host.id)",
-                         connection: HostConnection(endpoint: endpoint, channel: channel, transport: pairing.transport))
-        }
+        let paired = pairing.hosts.load()
+        if !paired.isEmpty { return paired.compactMap(pairedConfig) }
         #if DEBUG
         let endpoint = HostEndpoint.localBridge(port: options.bridgePort ?? 47801)
-        return .init(key: "bridge:\(endpoint)",
-                     connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: pairing.transport))
+        return [.init(key: "bridge:\(endpoint)",
+                      connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: pairing.transport))]
         #else
-        return nil
+        return []
         #endif
     }
 
@@ -105,12 +112,13 @@ final class AppModel {
 
     func closePairing() {
         if case .offer(let model)? = pairingRoute, case .paired(let paired) = model.state {
-            host = paired
-            // The old store's connection goes; the new one starts syncing right away (the scene
-            // is already active, so no scene-phase change will start it).
-            store?.background()
-            store = makeStore()
-            store?.foreground()
+            if let store, store.hosts.contains(where: { $0.channelName == "noise" }), let config = pairedConfig(paired) {
+                store.connectPairedHost(config)
+            } else {
+                store?.background()
+                store = makeStore()
+                store?.foreground()
+            }
         }
         pairingRoute = nil
     }

@@ -71,6 +71,38 @@ import Testing
         #expect(bridge.head == headWhileAway) // the reopen added nothing to the host's log
     }
 
+    @Test func pairingASecondHostPreservesTheFirstConnectionAndRoutesEachPrompt() async throws {
+        let homeNoise = FakeNoiseHost(hostName: "Home Mac"), officeNoise = FakeNoiseHost(hostName: "Office Mac")
+        let home = FakeHost(hostName: "Home Mac"), office = FakeHost(hostName: "Office Mac")
+        let homePairing = Pairing(keys: keys, hosts: hosts, transport: homeNoise.factory(host: home))
+        let officePairing = Pairing(keys: keys, hosts: hosts, transport: officeNoise.factory(host: office))
+        let homeHost = try await homePairing.pair(await homeNoise.makeOffer())
+        let store = try launch(homePairing, homeHost, homePairing.transport)
+        store.foreground()
+        defer { store.background() }
+        let homeTask = try #require(await store.send())
+
+        let officeHost = try await officePairing.pair(await officeNoise.makeOffer())
+        let officeKey = "noise:\(officeHost.id)"
+        let officeConnection = HostConnection(endpoint: officeHost.addresses[0],
+            channel: try officePairing.reconnectChannel(to: officeHost), transport: officePairing.transport)
+        store.connectPairedHost(.init(key: officeKey, connection: officeConnection, name: officeHost.name))
+        #expect(hosts.load().map(\.id) == [homeHost.id, officeHost.id])
+        #expect(store.composerHostKey == "noise:\(homeHost.id)")
+        store.chooseHost(officeKey)
+        store.prompt = "Run on office"
+        let officeTask = try #require(await store.send())
+        try await waitUntil("both tasks complete") {
+            store.task(homeTask)?.state == .completed && store.task(officeTask)?.state == .completed
+        }
+        #expect(home.prompts == ["Count to five."])
+        #expect(office.prompts == ["Run on office"])
+        #expect(store.task(homeTask)?.hostName == "Home Mac")
+        #expect(store.task(officeTask)?.hostName == "Office Mac")
+        #expect(await homeNoise.reconnects == 1)
+        #expect(await officeNoise.reconnects == 1)
+    }
+
     @Test func droppedNoiseConnectionReconnectsAndReplaysOnlyTheGap() async throws {
         let noise = FakeNoiseHost()
         let bridge = FakeHost(script: .init(reply: Self.reply, chunkDelay: .milliseconds(40)))

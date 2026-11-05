@@ -119,6 +119,79 @@ import Testing
         #expect(await store.send() != nil)
     }
 
+    @Test func cachedTasksAppearOnlyForConfiguredHostsEvenWhenOffline() async throws {
+        let container = try TaskCache.container(inMemory: true)
+        let context = ModelContext(container)
+        for host in ["old-loopback", "paired-mac"] {
+            let row = CachedTask(hostKey: host, taskID: "same-id", title: host, createdAt: .now)
+            if host == "old-loopback" { row.approvalOnly = true }
+            context.insert(row)
+        }
+        try context.save()
+        let link = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(),
+                                  transport: FakeHost(reachable: false).factory)
+        let store = TaskListStore(container: container, hosts: [.init(key: "paired-mac", connection: link, name: "Paired Mac")])
+        store.foreground()
+        defer { store.background() }
+        try await waitUntil { store.hosts.first?.reachability == .offline }
+        #expect(store.offlineHosts.map(\.name) == ["Paired Mac"])
+        #expect(store.tasks.map(\.title) == ["paired-mac"])
+    }
+
+    @Test func hostsWithTheSameNameRemainDistinguishable() throws {
+        let links = [47801, 47802].map { port in
+            let endpoint = HostEndpoint.localBridge(port: port)
+            let connection = HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: FakeHost().factory)
+            return TaskListStore.HostConfig(key: endpoint.description, connection: connection, name: "Mac")
+        }
+        let store = TaskListStore(container: try TaskCache.container(inMemory: true), hosts: links)
+        #expect(store.hosts.map(\.name) == ["Mac (127.0.0.1:47801)", "Mac (127.0.0.1:47802)"])
+    }
+
+    @Test func composerChoicesStayWithTheirHost() async throws {
+        let home = FakeHost(), office = FakeHost()
+        let store = TaskListStore(container: try TaskCache.container(inMemory: true), hosts: [
+            .init(key: "home", connection: .init(endpoint: .localBridge(), channel: PlaintextChannel(), transport: home.factory)),
+            .init(key: "office", connection: .init(endpoint: .localBridge(), channel: PlaintextChannel(), transport: office.factory))
+        ], prompt: "Run on office", preferredHostKey: "home")
+        store.foreground()
+        defer { store.background() }
+        let selection = ModelSelection(provider: "home-provider", model: "home-model", effort: nil)
+        store.composerSelections["home"] = selection
+        store.chooseWorkspace("/home/project", hostKey: "home")
+        store.chooseHost("office")
+        #expect(await store.send() != nil)
+        #expect(office.prompts == ["Run on office"])
+        store.chooseHost("home")
+        #expect(store.composerSelections["home"] == selection)
+        #expect(store.composerWorkspaces["home"] == "/home/project")
+        store.prompt = "Requires the chosen model and workspace"
+        #expect(await store.send() == nil)
+        #expect(home.prompts.isEmpty)
+    }
+
+    @Test func offlineSelectionNeverSendsToAnotherHost() async throws {
+        let home = FakeHost(hostName: "Home Mac"), office = FakeHost(reachable: false)
+        func config(_ key: String, name: String, host: FakeHost) -> TaskListStore.HostConfig {
+            .init(key: key, connection: HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(),
+                                                       transport: host.factory), name: name)
+        }
+        let store = TaskListStore(container: try TaskCache.container(inMemory: true),
+                                  hosts: [config("home", name: "Home Mac", host: home),
+                                          config("office", name: "Office Mac", host: office)],
+                                  prompt: "Selected host only", preferredHostKey: "office")
+        store.sendWaitsFor = .milliseconds(150)
+        store.foreground()
+        defer { store.background() }
+        try await waitUntil { store.hosts.first?.reachability == .online && store.offlineHosts.count == 1 }
+        #expect(await store.send() == nil)
+        #expect(store.sendError?.contains("Office Mac") == true)
+        #expect(home.prompts.isEmpty)
+        home.setReachable(false)
+        try await waitUntil { store.offlineHosts.count == 2 }
+        #expect(Set(store.offlineHosts.map(\.name)) == ["Home Mac", "Office Mac"])
+    }
+
     @Test func unreachableHostIsNamedAsOffline() async throws {
         let host = FakeHost(script: .init(reply: ["ok"], chunkDelay: .milliseconds(5)))
         let store = try launch(host)
