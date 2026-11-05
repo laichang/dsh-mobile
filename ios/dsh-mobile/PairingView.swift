@@ -89,10 +89,10 @@ private struct OfferPairingView: View {
 
     private var statusText: String {
         switch model.state {
-        case .reviewing: "Ready to pair"
-        case .pairing: "Pairing…"
-        case .paired(let host): "Paired with \(host.name.isEmpty ? "the host" : host.name)"
-        case .failed(let message): "Couldn't pair: \(message)"
+        case .reviewing: String(localized: "Ready to pair")
+        case .pairing: String(localized: "Pairing…")
+        case .paired(let host): String(localized: "Paired with \(host.name.isEmpty ? String(localized: "the host") : host.name)")
+        case .failed(let message): String(localized: "Couldn't pair: \(message)")
         }
     }
 
