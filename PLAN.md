@@ -51,7 +51,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S6 | done | merged `d62fd6d` | 2026-11-05 | — (provisional D31 in §9) |
 | S7 | done | merged `21aabd8` | 2026-11-05 | — (provisional D37 in §9) |
 | S8 | doing | claude/s8-rich-detail | 2026-11-05 | Implement and verify |
-| S9 | todo | — | 2026-11-05 | Ready (S1 merged) |
+| S9 | doing | claude/s9-multi-host | 2026-11-05 | Implement and verify |
 | S10 | doing | claude/s10-devices-audit | 2026-11-05 | Implement and verify |
 | S11 | todo | — | 2026-11-05 | Ready (S1 merged) |
 | S12 | todo | — | 2026-11-05 | Ready (T0 merged); also pins D17's prepend ordering |
@@ -827,6 +827,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-05 · S10.** Assigned claude/s10-devices-audit, worktree /Users/bytedance/.codex/worktrees/s10-devices-audit/dsh-mobile, simulator dshm-S10, DSHM_HOME ~/.dshm/home-s10, bridge 47816, web 3289. The owner uses the shared DSH runtime read-only.
 
 - **2026-11-05 · S7.** Independent review at a4063fa used a fresh DerivedData build and the real DSH. The identical prompt read Amber and Violet from different Git repos, and the recent directory list updated. All 52 bridge, 48 Swift and the UI test passed. Evidence: scripts/demo/s7.sh and evidence/S7/.
+
+- **2026-11-05 · S9.** Assigned claude/s9-multi-host, worktree /Users/bytedance/.codex/worktrees/s9-multi-host/dsh-mobile, simulator dshm-S9, DSHM_HOME ~/.dshm/home-s9, bridge 47817, web 3290. The owner uses the shared DSH runtime read-only.
 
 ## 9. Pending user confirmation
 
