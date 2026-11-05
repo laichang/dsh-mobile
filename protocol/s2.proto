@@ -1,0 +1,74 @@
+// S2 · Durable list + resume (PLAN.md §5, ARCHITECTURE D9, D17).
+// Field numbers 40–59 in Request / Response / Event are S2's; frame.proto only registers them.
+//
+// The bridge numbers every Event it logs with a per-host monotonic `Event.host_seq` inside one
+// event log, named by `log_id`. The app remembers (log_id, last host_seq) and, after any
+// reconnect, sends `Resume` to receive exactly the events it missed, then live events.
+
+syntax = "proto3";
+
+package dshm.v1;
+
+// Where a task stands, as the unified list shows it (STORY principle 4).
+enum TaskState {
+  TASK_STATE_UNSPECIFIED = 0;
+  TASK_STATE_RUNNING = 1;
+  // Needs a decision from the user (approvals, S4). Nothing sets it before S4.
+  TASK_STATE_WAITING_ON_USER = 2;
+  TASK_STATE_COMPLETED = 3;
+  TASK_STATE_FAILED = 4;
+}
+
+message TaskSummary {
+  string task_id = 1;
+  // What the user asked for (the prompt), as sent.
+  string title = 2;
+  TaskState state = 3;
+  int64 created_at_ms = 4;
+  int64 updated_at_ms = 5;
+  // Why it failed, when state is FAILED.
+  string message = 6;
+}
+
+// Request: every task this bridge knows, newest first.
+message ListTasks {}
+
+// Response to ListTasks.
+message TaskList {
+  repeated TaskSummary tasks = 1;
+  string log_id = 2;
+  // The host's own name (e.g. its hostname), so the app can name it when it is offline.
+  string host_name = 3;
+}
+
+// Request: send me every logged event after `after_seq` of log `log_id`, then keep me
+// subscribed to live events. `log_id` empty and `after_seq` 0 on first contact.
+// If the bridge can't continue from there (other log, or the events were trimmed), it first
+// sends a `LogReset` event, then replays everything it still has.
+message Resume {
+  string log_id = 1;
+  uint64 after_seq = 2;
+}
+
+// Response to Resume, sent after the replayed events.
+message Resumed {
+  string log_id = 1;
+  // The last host_seq in the log when the replay ended (0 if the log is empty).
+  uint64 head_seq = 2;
+  string host_name = 3;
+  // True when a LogReset preceded the replay.
+  bool reset = 4;
+  // How many events were replayed.
+  uint64 replayed = 5;
+}
+
+// Event: a task was created or changed state.
+message TaskUpserted {
+  TaskSummary task = 1;
+}
+
+// Event: the app's cursor doesn't apply; what follows is a replay of log `log_id` from its
+// oldest retained event. Carries no host_seq.
+message LogReset {
+  string log_id = 1;
+}
