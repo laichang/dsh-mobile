@@ -778,6 +778,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - S5: `claude/s5-interrupt`, `dshm-S5`, `~/.dshm/home-s5`, bridge 47811, web 3284.
   - S6: `claude/s6-models`, `dshm-S6`, `~/.dshm/home-s6`, bridge 47812, web 3285.
 
+- **2026-11-05 · Batch 2 execution fallback.** The three CLI workspaces could not fetch missing dependencies or access CoreSimulator under their child sandbox. The coordinator transferred each slice to a Codex subagent in the same branch and worktree, with the same resources. Each owner reruns T0 before implementing its slice.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
