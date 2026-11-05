@@ -456,9 +456,9 @@ Each slice needs only T0, unless "Needs" says otherwise.
 **Demo**: interrupt a long-running task; it stops within a few seconds and the card says so.
 
 **Done when**
-- [ ] [auto] Bridge maps `Interrupt { task_id }` to a DSH interrupt and reports status `interrupted` (`FakeDSH`) — Evidence:
-- [ ] [ui] Interrupt a long-running task: it stops within a few seconds and the card says so — Evidence:
-- [ ] [ui] Reopen after an interrupt: the cached task and its milestone still say interrupted (S2 × S3 × S5) — Evidence:
+- [x] [auto] Bridge maps `Interrupt { task_id }` to a DSH interrupt and reports status `interrupted` (`FakeDSH`) — Evidence: test:interruptCallsDSHAndReportsInterrupted
+- [x] [ui] Interrupt a long-running task: it stops within a few seconds and the card says so — Evidence: test:S5InterruptUITests/testInterruptLongRunningTask · cmd:scripts/demo/s5.sh · shot:evidence/S5/s5-interrupted-detail.png
+- [x] [ui] Reopen after an interrupt: the cached task and its milestone still say interrupted (S2 × S3 × S5) — Evidence: test:S5InterruptUITests/testInterruptLongRunningTask · cmd:scripts/demo/s5.sh · shot:evidence/S5/s5-interrupted-detail.png
 
 **Not**: continuing an interrupted task with a new prompt in the same session (later, together with adding context mid-task).
 
@@ -468,6 +468,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - **2026-11-05 · Environment blocked before implementation.** T0 did not reach tests: dependency installation stalled; an offline recovery attempt failed with `ERR_PNPM_NO_OFFLINE_TARBALL` (including `@noble/hashes@2.4.0`). `xcrun simctl list devices booted` failed with CoreSimulator connection refusal and an explicit sandbox denial opening its log. The assigned DSH home does not exist and is outside this session's writable roots. WORKFLOW §2 and §4 require a passing local T0 before slice work. No acceptance items are ticked; no dependencies or provisional design decisions were added. Next: coordinator supplies a session with access to the assigned simulator, DSH home, dependency cache/network, and worktree git metadata; rerun the isolated T0 command, then implement and verify S5. Existing machine-wide ByteSec hooksPath is unchanged.
 
 - **2026-11-05 · Baseline restored.** The replacement owner ran T0 in the assigned worktree and profile. All 41 bridge tests, 46 Swift tests and 4 UI tests passed, including the real DSH round trip. Implementation resumed.
+- **2026-11-05 · Implementation and owner verification.** `c5b1739` adds `interrupt.v1`, the host stop command and interrupted state/milestone through the S2 cache. See provisional D28. No new dependency or download. `scripts/demo/s5.sh --shots` passed 42 bridge tests, 46 DSHKit tests and the real DSH Simulator test, with zero skips. The UI test stopped a streaming task, checked its partial reply and list row, then relaunched without a connection and read its interrupted state and milestone. Independent UI rerun and merge are with the coordinator.
 
 ### S6 · Models
 
