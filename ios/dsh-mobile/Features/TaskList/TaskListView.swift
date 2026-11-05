@@ -12,12 +12,12 @@ struct RootView: View {
         NavigationStack(path: $path) {
             TaskListView(store: store)
                 .navigationTitle("Tasks")
+                .safeAreaInset(edge: .bottom) {
+                    ComposerView(store: store) { key in path = [key] }
+                }
                 .navigationDestination(for: String.self) { key in
                     TaskDetailView(store: store, taskKey: key)
                 }
-        }
-        .safeAreaInset(edge: .bottom) {
-            ComposerView(store: store) { key in path = [key] }
         }
     }
 }
@@ -46,13 +46,14 @@ struct TaskListView: View {
     @ViewBuilder
     private func taskSection(_ title: LocalizedStringKey, _ rows: [TaskListStore.TaskRow], id: String) -> some View {
         if !rows.isEmpty {
-            Section(title) {
+            Section {
                 ForEach(rows) { row in
                     NavigationLink(value: row.key) { TaskRowView(row: row) }
                         .accessibilityIdentifier("tasklist.row")
                 }
+            } header: {
+                Text(title).accessibilityIdentifier("tasklist.\(id)")
             }
-            .accessibilityIdentifier("tasklist.\(id)")
         }
     }
 }

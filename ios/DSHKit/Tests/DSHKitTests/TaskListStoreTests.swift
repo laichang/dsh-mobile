@@ -6,7 +6,7 @@ import Testing
 
 /// S2 · durable list + resume against `FakeHost` (PLAN.md §5).
 @MainActor
-@Suite struct TaskListStoreTests {
+@Suite(.serialized) struct TaskListStoreTests {
     let storeURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("dshm-s2-\(UUID().uuidString).store")
 

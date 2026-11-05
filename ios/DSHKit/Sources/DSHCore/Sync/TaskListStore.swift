@@ -199,15 +199,22 @@ public final class TaskListStore {
         }
     }
 
+    /// Waits for the host to be online: through a connection attempt in progress, or one
+    /// started now if the host was offline. False once that attempt fails, or on timeout.
     private func waitOnline(_ link: Link) async -> Bool {
         if link.reachability == .offline { foreground() }
         let clock = ContinuousClock()
         let deadline = clock.now + sendWaitsFor
-        while link.reachability != .online {
-            if clock.now >= deadline { return false }
-            try? await Task.sleep(for: .milliseconds(50))
+        var sawAttempt = false
+        while clock.now < deadline {
+            switch link.reachability {
+            case .online: return true
+            case .connecting: sawAttempt = true
+            case .offline: if sawAttempt { return false }
+            }
+            try? await Task.sleep(for: .milliseconds(20))
         }
-        return true
+        return false
     }
 
     // MARK: - Sync loop

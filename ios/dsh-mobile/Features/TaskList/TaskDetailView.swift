@@ -24,7 +24,9 @@ struct TaskDetailView: View {
                     .accessibilityIdentifier("transcript.text")
                     .accessibilityValue(transcript)
             }
+            // Follow the stream at the bottom, but start a short transcript at the top.
             .defaultScrollAnchor(.bottom)
+            .defaultScrollAnchor(.top, for: .alignment)
         }
         .navigationTitle(row?.title ?? "Task")
         .navigationBarTitleDisplayMode(.inline)
