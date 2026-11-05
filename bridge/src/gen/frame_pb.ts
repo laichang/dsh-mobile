@@ -21,13 +21,15 @@ import type { MilestoneAdded } from "./milestones_pb.js";
 import { file_milestones } from "./milestones_pb.js";
 import type { ListTasks, LogReset, Resume, Resumed, TaskList, TaskUpserted } from "./s2_pb.js";
 import { file_s2 } from "./s2_pb.js";
+import type { GetModelCatalog, ModelCatalog, ModelSelected, ModelSelection, SelectModel } from "./models_pb.js";
+import { file_models } from "./models_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file frame.proto.
  */
 export const file_frame: GenFile = /*@__PURE__*/
-  fileDesc("CgtmcmFtZS5wcm90bxIHZHNobS52MSJ8CgVGcmFtZRIjCgdyZXF1ZXN0GAEgASgLMhAuZHNobS52MS5SZXF1ZXN0SAASJQoIcmVzcG9uc2UYAiABKAsyES5kc2htLnYxLlJlc3BvbnNlSAASHwoFZXZlbnQYAyABKAsyDi5kc2htLnYxLkV2ZW50SABCBgoEa2luZCK3AQoHUmVxdWVzdBIKCgJpZBgBIAEoBBIfCgVoZWxsbxgCIAEoCzIOLmRzaG0udjEuSGVsbG9IABIqCgtjcmVhdGVfdGFzaxgDIAEoCzITLmRzaG0udjEuQ3JlYXRlVGFza0gAEigKCmxpc3RfdGFza3MYKCABKAsyEi5kc2htLnYxLkxpc3RUYXNrc0gAEiEKBnJlc3VtZRgpIAEoCzIPLmRzaG0udjEuUmVzdW1lSABCBgoEYm9keSLjAQoIUmVzcG9uc2USEgoKcmVxdWVzdF9pZBgBIAEoBBIfCgVlcnJvchgCIAEoCzIOLmRzaG0udjEuRXJyb3JIABIfCgVoZWxsbxgDIAEoCzIOLmRzaG0udjEuSGVsbG9IABIsCgx0YXNrX2NyZWF0ZWQYBCABKAsyFC5kc2htLnYxLlRhc2tDcmVhdGVkSAASJgoJdGFza19saXN0GCggASgLMhEuZHNobS52MS5UYXNrTGlzdEgAEiMKB3Jlc3VtZWQYKSABKAsyEC5kc2htLnYxLlJlc3VtZWRIAEIGCgRib2R5IosCCgVFdmVudBIyCg9hc3Npc3RhbnRfY2h1bmsYASABKAsyFy5kc2htLnYxLkFzc2lzdGFudENodW5rSAASKAoKdGFza19lbmRlZBgCIAEoCzISLmRzaG0udjEuVGFza0VuZGVkSAASMgoPbWlsZXN0b25lX2FkZGVkGDwgASgLMhcuZHNobS52MS5NaWxlc3RvbmVBZGRlZEgAEi4KDXRhc2tfdXBzZXJ0ZWQYKSABKAsyFS5kc2htLnYxLlRhc2tVcHNlcnRlZEgAEiYKCWxvZ19yZXNldBgqIAEoCzIRLmRzaG0udjEuTG9nUmVzZXRIABIQCghob3N0X3NlcRgoIAEoBEIGCgRib2R5IjcKBUhlbGxvEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFAoMY2FwYWJpbGl0aWVzGAIgAygJIiYKBUVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCSIcCgpDcmVhdGVUYXNrEg4KBnByb21wdBgBIAEoCSIeCgtUYXNrQ3JlYXRlZBIPCgd0YXNrX2lkGAEgASgJIjwKDkFzc2lzdGFudENodW5rEg8KB3Rhc2tfaWQYASABKAkSCwoDc2VxGAIgASgEEgwKBHRleHQYAyABKAkiUgoJVGFza0VuZGVkEg8KB3Rhc2tfaWQYASABKAkSIwoGc3RhdHVzGAIgASgOMhMuZHNobS52MS5UYXNrU3RhdHVzEg8KB21lc3NhZ2UYAyABKAkqXAoKVGFza1N0YXR1cxIbChdUQVNLX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFVRBU0tfU1RBVFVTX0NPTVBMRVRFRBABEhYKElRBU0tfU1RBVFVTX0ZBSUxFRBACYgZwcm90bzM", [file_milestones, file_s2]);
+  fileDesc("CgtmcmFtZS5wcm90bxIHZHNobS52MSJ8CgVGcmFtZRIjCgdyZXF1ZXN0GAEgASgLMhAuZHNobS52MS5SZXF1ZXN0SAASJQoIcmVzcG9uc2UYAiABKAsyES5kc2htLnYxLlJlc3BvbnNlSAASHwoFZXZlbnQYAyABKAsyDi5kc2htLnYxLkV2ZW50SABCBgoEa2luZCKcAgoHUmVxdWVzdBIKCgJpZBgBIAEoBBIfCgVoZWxsbxgCIAEoCzIOLmRzaG0udjEuSGVsbG9IABIqCgtjcmVhdGVfdGFzaxgDIAEoCzITLmRzaG0udjEuQ3JlYXRlVGFza0gAEigKCmxpc3RfdGFza3MYKCABKAsyEi5kc2htLnYxLkxpc3RUYXNrc0gAEiEKBnJlc3VtZRgpIAEoCzIPLmRzaG0udjEuUmVzdW1lSAASNQoRZ2V0X21vZGVsX2NhdGFsb2cYeCABKAsyGC5kc2htLnYxLkdldE1vZGVsQ2F0YWxvZ0gAEiwKDHNlbGVjdF9tb2RlbBh5IAEoCzIULmRzaG0udjEuU2VsZWN0TW9kZWxIAEIGCgRib2R5IsUCCghSZXNwb25zZRISCgpyZXF1ZXN0X2lkGAEgASgEEh8KBWVycm9yGAIgASgLMg4uZHNobS52MS5FcnJvckgAEh8KBWhlbGxvGAMgASgLMg4uZHNobS52MS5IZWxsb0gAEiwKDHRhc2tfY3JlYXRlZBgEIAEoCzIULmRzaG0udjEuVGFza0NyZWF0ZWRIABImCgl0YXNrX2xpc3QYKCABKAsyES5kc2htLnYxLlRhc2tMaXN0SAASIwoHcmVzdW1lZBgpIAEoCzIQLmRzaG0udjEuUmVzdW1lZEgAEi4KDW1vZGVsX2NhdGFsb2cYeCABKAsyFS5kc2htLnYxLk1vZGVsQ2F0YWxvZ0gAEjAKDm1vZGVsX3NlbGVjdGVkGHkgASgLMhYuZHNobS52MS5Nb2RlbFNlbGVjdGVkSABCBgoEYm9keSK9AgoFRXZlbnQSMgoPYXNzaXN0YW50X2NodW5rGAEgASgLMhcuZHNobS52MS5Bc3Npc3RhbnRDaHVua0gAEigKCnRhc2tfZW5kZWQYAiABKAsyEi5kc2htLnYxLlRhc2tFbmRlZEgAEjIKD21pbGVzdG9uZV9hZGRlZBg8IAEoCzIXLmRzaG0udjEuTWlsZXN0b25lQWRkZWRIABIuCg10YXNrX3Vwc2VydGVkGCkgASgLMhUuZHNobS52MS5UYXNrVXBzZXJ0ZWRIABImCglsb2dfcmVzZXQYKiABKAsyES5kc2htLnYxLkxvZ1Jlc2V0SAASMAoObW9kZWxfc2VsZWN0ZWQYeCABKAsyFi5kc2htLnYxLk1vZGVsU2VsZWN0ZWRIABIQCghob3N0X3NlcRgoIAEoBEIGCgRib2R5IjcKBUhlbGxvEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFAoMY2FwYWJpbGl0aWVzGAIgAygJIiYKBUVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCSJOCgpDcmVhdGVUYXNrEg4KBnByb21wdBgBIAEoCRIwCg9tb2RlbF9zZWxlY3Rpb24YeCABKAsyFy5kc2htLnYxLk1vZGVsU2VsZWN0aW9uIh4KC1Rhc2tDcmVhdGVkEg8KB3Rhc2tfaWQYASABKAkiPAoOQXNzaXN0YW50Q2h1bmsSDwoHdGFza19pZBgBIAEoCRILCgNzZXEYAiABKAQSDAoEdGV4dBgDIAEoCSJSCglUYXNrRW5kZWQSDwoHdGFza19pZBgBIAEoCRIjCgZzdGF0dXMYAiABKA4yEy5kc2htLnYxLlRhc2tTdGF0dXMSDwoHbWVzc2FnZRgDIAEoCSpcCgpUYXNrU3RhdHVzEhsKF1RBU0tfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVVEFTS19TVEFUVVNfQ09NUExFVEVEEAESFgoSVEFTS19TVEFUVVNfRkFJTEVEEAJiBnByb3RvMw", [file_milestones, file_s2, file_models]);
 
 /**
  * One WebSocket binary message carries exactly one Frame (inside the
@@ -111,6 +113,18 @@ export type Request = Message<"dshm.v1.Request"> & {
      */
     value: Resume;
     case: "resume";
+  } | {
+    /**
+     * @generated from field: dshm.v1.GetModelCatalog get_model_catalog = 120;
+     */
+    value: GetModelCatalog;
+    case: "getModelCatalog";
+  } | {
+    /**
+     * @generated from field: dshm.v1.SelectModel select_model = 121;
+     */
+    value: SelectModel;
+    case: "selectModel";
   } | { case: undefined; value?: undefined };
 };
 
@@ -169,6 +183,18 @@ export type Response = Message<"dshm.v1.Response"> & {
      */
     value: Resumed;
     case: "resumed";
+  } | {
+    /**
+     * @generated from field: dshm.v1.ModelCatalog model_catalog = 120;
+     */
+    value: ModelCatalog;
+    case: "modelCatalog";
+  } | {
+    /**
+     * @generated from field: dshm.v1.ModelSelected model_selected = 121;
+     */
+    value: ModelSelected;
+    case: "modelSelected";
   } | { case: undefined; value?: undefined };
 };
 
@@ -224,6 +250,12 @@ export type Event = Message<"dshm.v1.Event"> & {
      */
     value: LogReset;
     case: "logReset";
+  } | {
+    /**
+     * @generated from field: dshm.v1.ModelSelected model_selected = 120;
+     */
+    value: ModelSelected;
+    case: "modelSelected";
   } | { case: undefined; value?: undefined };
 
   /**
@@ -304,6 +336,11 @@ export type CreateTask = Message<"dshm.v1.CreateTask"> & {
    * @generated from field: string prompt = 1;
    */
   prompt: string;
+
+  /**
+   * @generated from field: dshm.v1.ModelSelection model_selection = 120;
+   */
+  modelSelection?: ModelSelection | undefined;
 };
 
 /**

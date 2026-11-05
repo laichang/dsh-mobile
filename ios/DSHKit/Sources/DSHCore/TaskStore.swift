@@ -100,7 +100,7 @@ public final class TaskStore {
             currentTaskID = milestone.taskID
             if case .connecting = status { status = .running(taskID: milestone.taskID) }
             milestones.add(milestone)
-        case .upserted, .logReset:
+        case .upserted, .logReset, .modelSelected:
             break
         }
     }

@@ -134,7 +134,8 @@ function serveConnection(
         helloDone = true
         return respond(id, {
           case: 'hello',
-          value: { protocolVersion: PROTOCOL_VERSION, capabilities: [...CAPABILITIES] },
+          value: { protocolVersion: PROTOCOL_VERSION, capabilities: options.tasks.modelCatalog && options.tasks.selectModel
+            ? [...CAPABILITIES, 'models.v1'] : [...CAPABILITIES] },
         })
       }
       case 'createTask': {
@@ -145,15 +146,42 @@ function serveConnection(
         try {
           // The task id is known before any of its events are logged: answer first, then the
           // subscription forwards its events (T0 clients rely on TaskCreated preceding them).
+          if (request.body.value.modelSelection && !options.tasks.selectModel) {
+            return fail(id, 'model/unavailable', 'This host cannot select the requested model.')
+          }
           await hub.create(prompt, (taskId) => {
             ownTasks.add(taskId)
             respond(id, { case: 'taskCreated', value: { taskId } })
-          })
+          }, request.body.value.modelSelection)
         } catch (error) {
           log(`create task failed: ${String(error)}`)
           return fail(id, 'task/create-failed', error instanceof Error ? error.message : String(error))
         }
         return
+      }
+      case 'getModelCatalog':
+      case 'selectModel': {
+        if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
+        if (!options.tasks.modelCatalog || !options.tasks.selectModel) {
+          return fail(id, 'request/unsupported', 'This host cannot select a model.')
+        }
+        if (request.body.case === 'getModelCatalog') {
+          try {
+            return respond(id, { case: 'modelCatalog', value: await options.tasks.modelCatalog() })
+          } catch (error) {
+            return fail(id, 'model/catalog-failed', error instanceof Error ? error.message : String(error))
+          }
+        }
+        const { taskId, selection } = request.body.value
+        if (!selection || !hub.isActive(taskId)) {
+          return fail(id, 'model/invalid-task', 'Select a model for a running task on this host.')
+        }
+        try {
+          const accepted = await options.tasks.selectModel(taskId, selection)
+          return respond(id, { case: 'modelSelected', value: { taskId, selection: accepted } })
+        } catch (error) {
+          return fail(id, 'model/unavailable', error instanceof Error ? error.message : String(error))
+        }
       }
       case 'listTasks': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')

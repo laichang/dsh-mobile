@@ -41,6 +41,12 @@
     { "name": "s2_chunk_with_host_seq_event",
       "frame": { "event": { "hostSeq": "43", "assistantChunk": { "taskId": "session-2", "seq": "7", "text": "完成" } } } },
     { "name": "s2_log_reset_event",
-      "frame": { "event": { "logReset": { "logId": "0d2f3c1e-6a7b-4c8d-9e0f-112233445566" } } } }
+      "frame": { "event": { "logReset": { "logId": "0d2f3c1e-6a7b-4c8d-9e0f-112233445566" } } } },
+    { "name": "s6_select_model_request",
+      "frame": { "request": { "id": "6", "selectModel": { "taskId": "session-1", "selection": { "provider": "provider", "model": "model", "reasoningEffort": "high" } } } } },
+    { "name": "s6_model_catalog_response",
+      "frame": { "response": { "requestId": "7", "modelCatalog": { "defaultSelection": { "provider": "provider", "model": "model" }, "groups": [{ "id": "provider", "name": "Provider Name", "models": [{ "id": "model", "name": "Model Name", "efforts": [{ "id": "high", "name": "High" }] }] }] } } } },
+    { "name": "s6_model_selected_event",
+      "frame": { "event": { "hostSeq": "9", "modelSelected": { "taskId": "session-1", "selection": { "provider": "provider", "model": "model", "reasoningEffort": "low" } } } } }
   ]
 }

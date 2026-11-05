@@ -179,6 +179,9 @@ struct ComposerView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
+            if let key = store.composerHostKey, store.modelHosts.contains(key) {
+                ModelControl(store: store, hostKey: key, task: nil)
+            }
             if let error = store.sendError {
                 Text(error)
                     .font(.footnote)

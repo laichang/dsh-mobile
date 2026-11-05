@@ -4,14 +4,17 @@
  * long as the bridge runs, keeps a summary per task for `ListTasks`, and writes every event
  * into the `HostLog` that `Resume` replays from.
  */
+import type { Selection } from '../models/catalog.ts'
 import { TaskStatus } from '../gen/frame_pb.ts'
 import { TaskState, type TaskSummary } from '../gen/s2_pb.ts'
-import type { StartedTask } from '../dsh.ts'
+import type { DshTasks, StartedTask } from '../dsh.ts'
 import { HostLog } from './host-log.ts'
 import { milestoneAdded } from '../milestones/wire.ts'
 
 export interface TaskStarter {
-  start(prompt: string, signal: AbortSignal): Promise<StartedTask>
+  modelCatalog?: DshTasks['modelCatalog']
+  selectModel?: DshTasks['selectModel']
+  start(prompt: string, signal: AbortSignal, selection?: Selection): Promise<StartedTask>
 }
 
 type Summary = Omit<TaskSummary, '$typeName' | '$unknown'>
@@ -31,8 +34,8 @@ export class TaskHub {
    * Starts a task. `onCreated` runs synchronously once the task id is known and before any of
    * the task's events are logged, so the caller can answer `CreateTask` first.
    */
-  async create(prompt: string, onCreated: (taskId: string) => void = () => {}): Promise<string> {
-    const task = await this.starter.start(prompt, this.abort.signal)
+  async create(prompt: string, onCreated: (taskId: string) => void = () => {}, selection?: Selection): Promise<string> {
+    const task = await this.starter.start(prompt, this.abort.signal, selection)
     const at = BigInt(this.now())
     const summary: Summary = {
       taskId: task.taskId, title: prompt, state: TaskState.RUNNING,
@@ -44,6 +47,12 @@ export class TaskHub {
     const pump = this.pump(task, summary).finally(() => this.running.delete(pump))
     this.running.add(pump)
     return task.taskId
+  }
+
+  /** Includes tasks paused for user input. */
+  isActive(taskId: string): boolean {
+    const state = this.summaries.get(taskId)?.state
+    return state === TaskState.RUNNING || state === TaskState.WAITING_ON_USER
   }
 
   /** Every known task, newest first. */
@@ -65,6 +74,8 @@ export class TaskHub {
       for await (const out of task.output) {
         if (out.kind === 'text') {
           this.log.append(task.taskId, { case: 'assistantChunk', value: { taskId: task.taskId, seq: ++seq, text: out.text } })
+        } else if (out.kind === 'model') {
+          this.log.append(task.taskId, { case: 'modelSelected', value: { taskId: task.taskId, selection: out.selection } })
         } else if (out.kind === 'milestone') {
           // S3: milestones are logged like any other event, so Resume replays them (S2 × S3 seam).
           this.log.append(task.taskId, { case: 'milestoneAdded', value: milestoneAdded(task.taskId, ++milestoneSeq, out.milestone) })

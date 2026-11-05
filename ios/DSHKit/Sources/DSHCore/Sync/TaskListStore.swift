@@ -63,12 +63,38 @@ public final class TaskListStore {
         public var updatedAt: Date
         /// S3 milestones, from the cache (S2 x S3 seam): the list row shows the card.
         public var milestones: MilestoneTimeline
+        public var modelSelection: ModelSelection?
     }
 
     public struct Sections: Equatable, Sendable {
         public var running: [TaskRow] = []
         public var waitingOnMe: [TaskRow] = []
         public var done: [TaskRow] = []
+    }
+
+    public private(set) var modelHosts: Set<String> = []
+    public private(set) var catalogs: [String: ModelCatalog] = [:]
+    public private(set) var catalogErrors: [String: String] = [:]
+    public var composerSelections: [String: ModelSelection] = [:]
+    public var composerHostKey: String? { links.first?.key }
+
+    public func refreshCatalog(hostKey: String) async {
+        guard modelHosts.contains(hostKey), let link = links.first(where: { $0.key == hostKey }) else { return }
+        do {
+            let catalog = try await link.connection.modelCatalog()
+            catalogs[hostKey] = catalog
+            catalogErrors[hostKey] = nil
+        } catch {
+            catalogErrors[hostKey] = String(describing: error)
+        }
+    }
+
+    public func selectModel(_ selection: ModelSelection, for row: TaskRow) async throws {
+        guard modelHosts.contains(row.hostKey), let link = links.first(where: { $0.key == row.hostKey }) else {
+            throw HostConnectionError.notConnected
+        }
+        try await link.connection.selectModel(selection, taskID: row.taskID)
+        await refreshCatalog(hostKey: row.hostKey)
     }
 
     public var prompt: String
@@ -192,7 +218,7 @@ public final class TaskListStore {
             return nil
         }
         do {
-            let taskID = try await link.connection.createTask(prompt: text)
+            let taskID = try await link.connection.createTask(prompt: text, selection: composerSelections[link.key])
             let task = taskRecord(hostKey: link.key, taskID: taskID, title: text)
             if task.title.isEmpty { task.title = text }
             prompt = ""
@@ -241,6 +267,10 @@ public final class TaskListStore {
                 host.lastConnectedAt = Date()
                 saveNow()
                 setReachability(.online, link)
+                if await link.connection.capabilities.contains("models.v1") {
+                    modelHosts.insert(link.key)
+                    await refreshCatalog(hostKey: link.key)
+                }
                 delay = backoff.initial
                 await link.connection.waitUntilDisconnected()
             } catch {
@@ -272,6 +302,7 @@ public final class TaskListStore {
     }
 
     private func setReachability(_ r: Reachability, _ link: Link) {
+        if r != .online { modelHosts.remove(link.key) }
         guard link.reachability != r else { return }
         link.reachability = r
         refresh()
@@ -302,6 +333,14 @@ public final class TaskListStore {
             if Int64(seq) > task.lastChunkSeq {
                 task.transcript += text
                 task.lastChunkSeq = Int64(seq)
+            }
+            task.logID = host.logID
+        case .modelSelected(let taskID, let selection):
+            let task = taskRecord(hostKey: link.key, taskID: taskID, title: "")
+            let data = try? selection.serializedData()
+            if task.modelSelectionData != data {
+                task.modelSelectionData = data
+                task.transcript += selection.transcriptLine
             }
             task.logID = host.logID
         case .ended(let taskID, let status, let message):
@@ -416,7 +455,8 @@ public final class TaskListStore {
             TaskRow(
                 key: t.key, hostKey: t.hostKey, hostName: names[t.hostKey] ?? t.hostKey, taskID: t.taskID,
                 title: t.title, state: t.state, message: t.message, transcript: t.transcript,
-                createdAt: t.createdAt, updatedAt: t.updatedAt, milestones: timeline(of: t))
+                createdAt: t.createdAt, updatedAt: t.updatedAt, milestones: timeline(of: t),
+                modelSelection: t.modelSelectionData.flatMap { try? ModelSelection(serializedBytes: $0) })
         }
     }
 
