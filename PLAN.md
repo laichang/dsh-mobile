@@ -46,9 +46,9 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S1 | review | merged `1f35fa2` (batch 1) | 2026-11-05 | User accepts 2 `[human]` items: real iPhone, packet capture (§9) |
 | S2 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D20, D23 in §9) |
 | S3 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D19 in §9) |
-| S4 | todo | — | 2026-11-05 | Ready (T0, X1 merged); batch 2 |
-| S5 | todo | — | 2026-11-05 | Ready (T0 merged); batch 2 |
-| S6 | todo | — | 2026-11-05 | Ready (T0 merged); batch 2 |
+| S4 | doing | `claude/s4-approvals` | 2026-11-05 | Implement and verify in batch 2 |
+| S5 | doing | `claude/s5-interrupt` | 2026-11-05 | Implement and verify in batch 2 |
+| S6 | doing | `claude/s6-models` | 2026-11-05 | Implement and verify in batch 2 |
 | S7 | todo | — | 2026-11-05 | Ready (T0 merged); batch 2 |
 | S8 | todo | — | 2026-11-05 | Wait for X3 (T0 merged) |
 | S9 | todo | — | 2026-11-05 | Ready (S1 merged) |
@@ -771,6 +771,12 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - New in WORKFLOW.md: `scripts/bootstrap` for a new Mac (§2), the long-horizon run (§5: the user starts the coordinator once and does not click session cards; the coordinator falls back to a workflow or `codex exec` when the app refuses a session start), resources for each slice (§6), status titles (§7), and Codex support (§12, §13).
   - Codex guards: `.codex/hooks.json` runs `.codex/hooks/codex-guard` before `Bash` and `apply_patch`. It reuses `git-guard` and `check-plan`, and denies where Claude Code asks (Codex doesn't support `ask` yet). `.codex/hooks.json` and `.codex/hooks/*` joined `PROTECTED` in `scripts/check-plan` and `plan-guard`. Verified: `.codex/hooks/codex-guard-test` (16 cases, 0 failures), and a live `codex exec` run (codex-cli 0.146.0) in a scratch worktree, where the hook blocked a `[human]` tick, a guard-file edit and a `--no-verify` commit. The user commits these guard files by hand.
   - No Done when item changed.
+
+- **2026-11-05 · Coordinator starts batch 2 on this Mac.** At `fb64666`, T0 passed with the real DSH CLI, 41 bridge tests, 46 DSHKit tests and 4 Simulator UI tests. The DSHKit Mac deployment target is 15 for host tests on this Mac (macOS 15.7.7, Xcode 26.0); the iOS target is 26. The pinned DSH packages were installed from the public npm registry.
+  - Codex started three `codex exec` owners. Each worktree is under `~/.codex/worktrees/<branch suffix>/dsh-mobile`. Each owner uses its own Simulator, DSH profile, DerivedData and ports. The shared runtime is read-only to owners.
+  - S4: `claude/s4-approvals`, `dshm-S4`, `~/.dshm/home-s4`, bridge 47810, web 3283.
+  - S5: `claude/s5-interrupt`, `dshm-S5`, `~/.dshm/home-s5`, bridge 47811, web 3284.
+  - S6: `claude/s6-models`, `dshm-S6`, `~/.dshm/home-s6`, bridge 47812, web 3285.
 
 ## 9. Pending user confirmation
 
