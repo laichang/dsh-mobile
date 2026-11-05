@@ -18,6 +18,13 @@ final class S3MilestonesUITests: XCTestCase {
 
 
 
+    private func launch(_ arguments: [String]) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"] + arguments
+        app.launch()
+        return app
+    }
+
     private func send(_ app: XCUIApplication, prompt: String) {
         let field = app.textFields["composer.prompt"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
@@ -102,9 +109,7 @@ final class S3MilestonesUITests: XCTestCase {
                             "todoStarted", "todoDone", "finished"]
 
     func testTodosTickOffOnCardWithFakeBridge() {
-        let app = XCUIApplication()
-        app.launchArguments = ["-DSHMFakeBridge", "YES", "-DSHMFakeMilestones", "YES"]
-        app.launch()
+        let app = launch(["-DSHMFakeBridge", "YES", "-DSHMFakeMilestones", "YES"])
         send(app, prompt: "Summarize this project in three steps.")
         let samples = watchCard(app, timeout: 20, shotAt: "2/3", shotName: "s3-fakebridge-card-ticking")
         assertTicksOff(samples)
@@ -113,9 +118,7 @@ final class S3MilestonesUITests: XCTestCase {
     }
 
     func testTimelineWithFakeBridge() {
-        let app = XCUIApplication()
-        app.launchArguments = ["-DSHMFakeBridge", "YES", "-DSHMFakeMilestones", "YES"]
-        app.launch()
+        let app = launch(["-DSHMFakeBridge", "YES", "-DSHMFakeMilestones", "YES"])
         send(app, prompt: "Summarize this project in three steps.")
         waitForEnd(app, timeout: 30)
         assertTimeline(app, kinds: Self.fakeKinds, shot: "s3-fakebridge-timeline")
@@ -123,9 +126,7 @@ final class S3MilestonesUITests: XCTestCase {
 
     /// A bridge that sends no milestones (T0's FakeBridge script) gets T0's screen, no card.
     func testNoMilestonesNoCard() {
-        let app = XCUIApplication()
-        app.launchArguments = ["-DSHMFakeBridge", "YES"]
-        app.launch()
+        let app = launch(["-DSHMFakeBridge", "YES"])
         send(app, prompt: "Introduce yourself in one sentence.")
         let row = app.buttons.matching(identifier: "tasklist.row")
             .matching(NSPredicate(format: "label CONTAINS %@", "Introduce yourself in one sentence.")).firstMatch
@@ -137,9 +138,7 @@ final class S3MilestonesUITests: XCTestCase {
 
     func testMilestonesAgainstRealDSH() throws {
         try XCTSkipUnless(env["DSHM_REAL_DSH"] == "1", "needs scripts/demo/s3-host.mjs; run scripts/demo/s3.sh")
-        let app = XCUIApplication()
-        app.launchArguments = ["-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47812"]
-        app.launch()
+        let app = launch(["-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47812"])
         send(app, prompt: "分三步总结这个项目。Summarize this project in three steps.")
         let samples = watchCard(app, timeout: 120, shotAt: "2/3", shotName: "s3-real-dsh-card-ticking")
         assertTicksOff(samples)
