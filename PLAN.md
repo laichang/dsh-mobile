@@ -47,7 +47,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S2 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D20, D23 in §9) |
 | S3 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D19 in §9) |
 | S4 | doing | `claude/s4-approvals` | 2026-11-05 | Implement and verify in batch 2 |
-| S5 | done | merged  | 2026-11-05 | — (provisional D28 in §9) |
+| S5 | done | merged `529bb16` | 2026-11-05 | — (provisional D28 in §9) |
 | S6 | doing | `claude/s6-models` | 2026-11-05 | Implement and verify in batch 2 |
 | S7 | todo | — | 2026-11-05 | Ready (T0 merged); batch 2 |
 | S8 | todo | — | 2026-11-05 | Wait for X3 (T0 merged) |
@@ -786,7 +786,7 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-05 · Batch 2 execution fallback.** The three CLI workspaces could not fetch missing dependencies or access CoreSimulator under their child sandbox. The coordinator transferred each slice to a Codex subagent in the same branch and worktree, with the same resources. Each owner reruns T0 before implementing its slice.
 
-- **2026-11-05 · S5.** Merged  after an independent rerun at b3ad3a8. All 42 bridge tests, 46 Swift tests and the real DSH UI test passed with zero skips. The reviewer verified the interrupted stream, list and offline reopened milestone. Evidence: scripts/demo/s5.sh and evidence/S5/s5-interrupted-detail.png. The merge PLAN comparison passed.
+- **2026-11-05 · S5.** Merged `529bb16` after an independent rerun at b3ad3a8. All 42 bridge tests, 46 Swift tests and the real DSH UI test passed with zero skips. The reviewer verified the interrupted stream, list and offline reopened milestone. Evidence: scripts/demo/s5.sh and evidence/S5/s5-interrupted-detail.png. The merge PLAN comparison passed.
 
 ## 9. Pending user confirmation
 
@@ -815,4 +815,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 23 | S1 | dependency | Bridge runtime: `@noble/curves`, `@noble/ciphers`, `@noble/hashes` 2.4.0 (previously spike-only, row 2), `uqr` 0.1.3 (terminal QR) | `main` (merged `1f35fa2`) | `6b1f0bf` |
 | 24 | S1 | `[human]` | "A fresh iPhone scans the QR and runs the T0 demo over Wi-Fi or Tailscale". Needs: a real iPhone, this Mac running `scripts/dsh-up.mjs` with the bridge reachable on the LAN or Tailscale, and the app installed with your free Apple team | `main` | `1f35fa2` |
 | 25 | S1 | `[human]` | "A packet capture of that session shows only ciphertext". Needs: the session from row 24, plus Wireshark or `tcpdump` on this Mac | `main` | `1f35fa2` |
-| 26 | S5 | decision | ARCHITECTURE D28, provisional: acknowledge the interrupt, then derive the terminal state from the durable DSH aborted/user event. | `main` | merged  |
+| 26 | S5 | decision | ARCHITECTURE D28, provisional: acknowledge the interrupt, then derive the terminal state from the durable DSH aborted/user event. | `main` | `529bb16` |
