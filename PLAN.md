@@ -441,6 +441,8 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [ ] [ui] With the app closed, the request waits; reopening the app shows it — Evidence:
 
 - [ ] [auto] A pending approval survives a trimmed resume log and a stale answer cannot release a second request — Evidence:
+- [ ] [auto] An approval from an upstream session can be answered by the phone or the downstream owner, with one resolution — Evidence:
+- [ ] [ui] An approval created outside the phone appears after reconnect, and a web answer removes it from the phone — Evidence:
 
 **Not**: risk tiers, Face ID, push (M2).
 
