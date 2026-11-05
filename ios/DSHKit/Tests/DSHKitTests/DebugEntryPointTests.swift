@@ -19,5 +19,10 @@ import Testing
         #expect(o == .init(useFakeBridge: true, presetPrompt: "hi there", bridgePort: 47811))
         #expect(DebugLaunchOptions.parse(["/app"]) == .init())
     }
+
+    @Test func parsesS2LaunchArguments() {
+        let o = DebugLaunchOptions.parse(["/app", "-DSHMFakeBridge", "offline", "-DSHMResetStore", "YES", "-DSHMConnectDelay", "2.5"])
+        #expect(o == .init(useFakeBridge: true, fakeBridgeOffline: true, resetStore: true, connectDelay: 2.5))
+    }
 }
 #endif

@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct dsh_mobileApp: App {
     @State private var store = AppComposition.makeStore()
+    @Environment(\.scenePhase) private var scenePhase
     #if DEBUG
     @State private var pairingLink: PairingLink?
     #endif
@@ -16,7 +17,7 @@ struct dsh_mobileApp: App {
                 if let link = pairingLink {
                     PairingStubView(link: link) { pairingLink = nil }
                 } else {
-                    ContentView(store: store)
+                    RootView(store: store)
                 }
             }
             .onOpenURL { url in
@@ -25,8 +26,16 @@ struct dsh_mobileApp: App {
                 }
             }
             #else
-            ContentView(store: store)
+            RootView(store: store)
             #endif
+        }
+        // S2: refresh on foreground (resume from the cursor); iOS drops sockets in the background.
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            switch phase {
+            case .active: store.foreground()
+            case .background: store.background()
+            default: break
+            }
         }
     }
 }

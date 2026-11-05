@@ -77,4 +77,13 @@ public enum TaskCache {
         }
         return try ModelContainer(for: schema, configurations: [config])
     }
+
+    /// Deletes every cached host and task (debug `-DSHMResetStore`).
+    @MainActor
+    public static func erase(_ container: ModelContainer) throws {
+        let context = ModelContext(container)
+        try context.delete(model: CachedTask.self)
+        try context.delete(model: CachedHost.self)
+        try context.save()
+    }
 }

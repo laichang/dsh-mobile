@@ -5,21 +5,35 @@ import Foundation
 /// scripts/check-release-clean verifies none of these strings reach a Release binary.
 public enum DebugLaunchOptions {
     /// `-DSHMFakeBridge YES`: use the in-process FakeBridge instead of the loopback bridge.
+    /// `-DSHMFakeBridge offline` (S2): the FakeBridge host is unreachable.
     public static let fakeBridgeKey = "DSHMFakeBridge"
     /// `-DSHMPresetPrompt <text>`: pre-fill the composer.
     public static let presetPromptKey = "DSHMPresetPrompt"
     /// `-DSHMBridgePort <port>`: loopback bridge port (default 47801).
     public static let bridgePortKey = "DSHMBridgePort"
+    /// `-DSHMResetStore YES` (S2): start with an empty task cache.
+    public static let resetStoreKey = "DSHMResetStore"
+    /// `-DSHMConnectDelay <seconds>` (S2): show the cache for a while before the first connection.
+    public static let connectDelayKey = "DSHMConnectDelay"
 
     public struct Options: Equatable, Sendable {
         public var useFakeBridge = false
         public var presetPrompt: String?
         public var bridgePort: Int?
+        public var fakeBridgeOffline = false
+        public var resetStore = false
+        public var connectDelay: Double?
 
-        public init(useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil) {
+        public init(
+            useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil,
+            fakeBridgeOffline: Bool = false, resetStore: Bool = false, connectDelay: Double? = nil
+        ) {
             self.useFakeBridge = useFakeBridge
             self.presetPrompt = presetPrompt
             self.bridgePort = bridgePort
+            self.fakeBridgeOffline = fakeBridgeOffline
+            self.resetStore = resetStore
+            self.connectDelay = connectDelay
         }
     }
 
@@ -37,7 +51,13 @@ public enum DebugLaunchOptions {
             }
         }
         var options = Options()
-        if let v = values[fakeBridgeKey] { options.useFakeBridge = ["YES", "1", "true"].contains(v) }
+        let yes = ["YES", "1", "true"]
+        if let v = values[fakeBridgeKey] {
+            options.useFakeBridge = yes.contains(v) || v == "offline"
+            options.fakeBridgeOffline = v == "offline"
+        }
+        if let v = values[resetStoreKey] { options.resetStore = yes.contains(v) }
+        options.connectDelay = values[connectDelayKey].flatMap(Double.init)
         options.presetPrompt = values[presetPromptKey]
         options.bridgePort = values[bridgePortKey].flatMap(Int.init)
         return options
