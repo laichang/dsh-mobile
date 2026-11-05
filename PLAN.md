@@ -345,7 +345,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S2 · Durable list + resume
 
-**Status** doing · **Needs** T0 · **Branch** `claude/s2-durable-list`
+**Status** review · **Needs** T0 · **Branch** `claude/s2-durable-list`
 
 **Why**: principle 4 (unified list; nothing lost across disconnects), D9.
 
@@ -356,13 +356,29 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 **Done when**
 - [x] [auto] Bridge `Resume { after_seq }` returns exactly the events after `after_seq` — Evidence: test:ResumeAgainstFakeDSH/resumeReturnsExactlyTheEventsAfterSeq · test:HostLog/sinceReturnsExactlyTheEventsAfterSeq · test:ResumeAgainstFakeDSH/taskOutlivesTheConnectionThatCreatedIt · commit:73ca56c
-- [ ] [ui] Start a task, kill the app, wait, reopen: the list and transcript are intact and the gap is filled from the bridge — Evidence:
-- [ ] [ui] With the host unreachable, the list names that host as offline — Evidence:
+- [x] [ui] Start a task, kill the app, wait, reopen: the list and transcript are intact and the gap is filled from the bridge — Evidence: test:S2DurableListUITests/testKillAndReopenAgainstRealDSH · test:TaskListStoreTests/killAndReopenKeepsTheListAndFillsTheGapFromTheBridge · cmd:scripts/demo/s2.sh · shot:evidence/S2/s2-reopened-from-cache.png · shot:evidence/S2/s2-gap-filled.png · shot:evidence/S2/s2-list-after-resume.png
+- [x] [ui] With the host unreachable, the list names that host as offline — Evidence: test:S2DurableListUITests/testOfflineHostIsNamedWithFakeBridge · test:S2DurableListUITests/testOfflineRealHostIsNamed · test:TaskListStoreTests/unreachableHostIsNamedAsOffline · cmd:scripts/demo/s2.sh · shot:evidence/S2/s2-offline-fakebridge.png · shot:evidence/S2/s2-offline-real-host.png
 
 **Not**: background refresh (M1 refreshes on foreground; push is M2).
 
 **Log**
-- —
+- **2026-11-05 · built, to review.**
+  - Done (commits `3ebac5b` protocol, `73ca56c` bridge, `7063405` DSHKit, `babd28c` app, `2b14fd0` UI tests + demo + D17):
+    - **Protocol**: `protocol/s2.proto` (`ListTasks`/`TaskList`, `Resume`/`Resumed`, `TaskUpserted`, `LogReset`, `TaskState`), registered in `frame.proto` at 40–59, plus `Event.host_seq` (40). Capability `resume.v1`. 7 new golden fixtures (`s2_*`).
+    - **Bridge**: `bridge/src/s2/` (`HostLog`, `TaskHub`). Tasks belong to the host, not the connection; closing the socket no longer aborts a task. `Resume` replays exactly the gap and subscribes in one synchronous step. T0-style clients (no `Resume`) still get only their own tasks' events. `TaskUpserted(state)` now comes just before `TaskEnded`, so `TaskEnded` stays last.
+    - **App**: SwiftData cache (`CachedHost` with the cursor, `CachedTask` with transcript + chunk cursor), `TaskListStore` (sync loop per host, Resume, reconnect with backoff 0.5 s → 30 s, foreground refresh, offline host named), unified list (waiting on me / running / done) + task detail + composer in `ios/dsh-mobile/Features/TaskList/`. T0's `ContentView` is gone; its identifiers live on in the new screens, so T0's UI tests pass unchanged. T0's `TaskStore` stays in DSHKit (its tests are T0 evidence) but the app no longer uses it.
+    - **Testability**: `FakeHost` in `DSHTestSupport` (a fake bridge process whose log outlives connections; can go unreachable, drop connections, restart); launch arguments `-DSHMFakeBridge offline`, `-DSHMResetStore YES`, `-DSHMConnectDelay <s>`, added to `scripts/check-release-clean`'s markers.
+    - **Demo**: `scripts/demo/s2.sh` (env `DSHM_BRIDGE_PORT`=47811, `DSHM_WEB_PORT`=3284, `DSHM_HOME`=~/.dshm/home-s2, `DSHM_SIM`=dshm-S2) starts `scripts/demo/s2-host.mjs` (real DSH 0.2.2-rc.1, mock LLM slowed to 250 ms per chunk, so a task streams ~6 s), runs the kill/reopen XCUITest, then stops the host and checks the app names it offline. Full run exit 0 on 2026-11-05.
+  - Decisions: see D17 (*provisional, pending user confirmation*). No new dependencies or downloads; uses the shared `~/.dshm/runtime` read-only. Local setup: `~/.dshm/home-s2` (DSH home with the bridge linked from this worktree, port 47811 via its `cordis.patch.yml`); Simulator `dshm-S2` (already existed).
+  - Not done: no independent `[ui]` rerun yet (the coordinating session's reviewer should run `scripts/demo/s2.sh`). The `[ui]` items were verified by me, in the Simulator, with the commands above.
+  - Seams: S3 (cached milestones) is being built in parallel; **whichever of S2/S3 lands second owns the seam** (cache `MilestoneAdded` in `CachedTask` and replay it through `Resume`). S4 (replay of pending approvals) is the same: S4 lands after S2, so S4 owns it. Expect merge conflicts in `frame.proto` (both add oneof entries, different numbers), `protocol/fixtures/fixtures.json` (end of the array), the generated code (rerun `scripts/codegen`), and the app root / `AppComposition.swift`.
+  - Learned / known gaps:
+    - The bridge log is in memory: restarting DSH starts a new log; the app then marks its still-running cached tasks of the old log as failed ("the bridge restarted"). Persisting the log is an alternative in D17.
+    - `XCUIApplication.terminate()` kills the app without a background phase, so the kill test relies on the ~150 ms coalesced save; the `[ui]` test passes with that.
+    - T0's `TaskStoreTests/streamsTaskToCompletionAgainstFakeBridge` samples the transcript every 10 ms and once missed an intermediate value while the S2 store tests loaded the main actor in parallel. `TaskListStoreTests` is now `.serialized`; 7 runs in a row were green.
+    - The composer lives on the list screen only; the detail screen shows state and transcript.
+    - The D17 number may collide with S1/S3 entries written in parallel; renumber on merge if needed.
+  - Next: independent `[ui]` rerun via `scripts/demo/s2.sh`, then merge. The coordinating session updates §0 (S2 → review) and lists D17 in §9.
 
 ### S3 · Milestones
 
