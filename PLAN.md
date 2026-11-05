@@ -618,7 +618,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S12 · Upstream guard
 
-**Status** todo · **Needs** T0 · **Branch** —
+**Status** doing · **Needs** T0 · **Branch** `claude/s12-upstream-guard`
 
 **Why**: ARCHITECTURE §8.4 (upstream churn).
 
@@ -629,12 +629,13 @@ Each slice needs only T0, unless "Needs" says otherwise.
 **Done when**
 - [ ] [auto] Bridge reports the supported DSH range and an unsupported DSH in `Hello` — Evidence:
 - [ ] [auto] CI runs bridge tests against the pinned DSH, plus a non-blocking job against DSH `main` — Evidence:
+- [ ] [auto] The bridge approval holder runs before the existing web answerer, fans out, and releases once on either answer (D17) — Evidence:
 - [ ] [ui] Against an unsupported DSH, the app shows "host needs bridge update" instead of breaking — Evidence:
 
 **Not**: blocking CI on DSH `main`.
 
 **Log**
-- —
+- **2026-11-05 · Started.** Isolated T0 passed with the installed DSH CLI, 55 bridge tests, 48 Swift tests and 4 Simulator UI tests. Use `dshm-S12`, bridge 47818 and web 3291.
 
 ## 6. M1 exit
 
