@@ -18,7 +18,7 @@ public enum NoiseChannelError: Error, Equatable, CustomStringConvertible {
     }
 }
 
-/// The app's Noise channel to a bridge (ARCHITECTURE D6, D18): the initiator side of
+/// The app's Noise channel to a bridge (ARCHITECTURE D6, D20): the initiator side of
 /// bridge/src/pairing/handshake.ts.
 /// - `.pair`: `Noise_IKpsk1_25519_ChaChaPoly_SHA256`, psk = the QR's one-time secret.
 /// - `.reconnect`: `Noise_IK_25519_ChaChaPoly_SHA256` with the host key saved at pairing.

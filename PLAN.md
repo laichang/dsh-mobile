@@ -323,7 +323,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S1 · Pair + encrypt
 
-**Status** todo · **Needs** T0, X2 · **Branch** —
+**Status** doing · **Needs** T0, X2 · **Branch** `claude/s1-pair-encrypt`
 
 **Why**: principle 6 (anyone can pair) and D6 (every transport is untrusted). This slice unlocks the real device.
 
@@ -337,6 +337,8 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [ ] [ui] Pairing through the `dshm://pair?…` deep link in the Simulator, then the T0 demo over `NoiseChannel` against the local bridge — Evidence:
 - [ ] [human] A fresh iPhone scans the QR and runs the T0 demo over Wi-Fi or Tailscale — Evidence:
 - [ ] [human] A packet capture of that session shows only ciphertext — Evidence:
+- [ ] [auto] The Swift and TS Noise ports pass the official vectors and agree byte for byte on golden pairing and reconnect transcripts and the offer URL — Evidence:
+- [ ] [auto] The bridge registers a device only after a completed pairing handshake, and a key it doesn't know can't reconnect — Evidence:
 
 **Not**: QR inside the DSH UI (terminal first) · device registry UI (S10).
 

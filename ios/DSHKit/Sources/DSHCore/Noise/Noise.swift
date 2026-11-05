@@ -3,7 +3,7 @@
 // `Noise` prefix on every type. Mirrors bridge/src/pairing/noise.ts. Proven by the official
 // vectors (protocol/fixtures/noise/official-vectors.json) and the cross-language golden
 // transcripts (protocol/fixtures/noise/transcripts.json). Hand-rolled and unaudited: see
-// ARCHITECTURE D6 and D18.
+// ARCHITECTURE D6 and D20.
 import CryptoKit
 import Foundation
 

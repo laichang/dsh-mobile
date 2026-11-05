@@ -1,18 +1,25 @@
 import DSHCore
 import SwiftUI
 
-/// T0's one screen: type a sentence, send it, watch the answer stream back.
+/// The one screen: type a sentence, send it, watch the answer stream back. The host row says
+/// which host and channel it goes over (`host.channel`: "noise", or "plaintext" on Debug's
+/// loopback dev path).
 struct ContentView: View {
     @Bindable var store: TaskStore
+    let hostLabel: String
+    let pair: () -> Void
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                hostRow
+                    .padding(.horizontal)
+                    .padding(.top, 4)
                 statusRow
                     .padding(.horizontal)
                     .padding(.vertical, 8)
                 ScrollView {
-                    Text(store.transcript.isEmpty ? "Send a task to the DSH on this Mac." : store.transcript)
+                    Text(store.transcript.isEmpty ? "Send a task to your DSH host." : store.transcript)
                         .foregroundStyle(store.transcript.isEmpty ? .secondary : .primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .textSelection(.enabled)
@@ -26,7 +33,28 @@ struct ContentView: View {
             }
             .navigationTitle("dsh-mobile")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                Button(action: pair) { Image(systemName: "qrcode.viewfinder") }
+                    .accessibilityLabel("Pair a host")
+                    .accessibilityIdentifier("pairing.scan")
+            }
         }
+    }
+
+    private var hostRow: some View {
+        let encrypted = store.channelName == "noise"
+        return HStack(spacing: 6) {
+            Image(systemName: encrypted ? "lock.fill" : "lock.open")
+                .foregroundStyle(encrypted ? .green : .orange)
+            Text(encrypted ? "\(hostLabel) · end-to-end encrypted" : "\(hostLabel) · plaintext")
+            Spacer()
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(encrypted ? "\(hostLabel), encrypted" : "\(hostLabel), plaintext")
+        .accessibilityValue(store.channelName)
+        .accessibilityIdentifier("host.channel")
     }
 
     private var statusRow: some View {
@@ -57,7 +85,7 @@ struct ContentView: View {
         switch store.status {
         case .idle: "Ready"
         case .connecting: "Connecting to the bridge…"
-        case .running: "Running on this Mac"
+        case .running: "Running on \(hostLabel)"
         case .completed: "Done"
         case .failed(let message): "Failed: \(message)"
         }

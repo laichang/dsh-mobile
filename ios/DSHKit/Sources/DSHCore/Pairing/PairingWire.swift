@@ -1,6 +1,6 @@
 import Foundation
 
-/// How a Noise connection starts on the bridge's WebSocket (ARCHITECTURE D6, D18). Mirrors
+/// How a Noise connection starts on the bridge's WebSocket (ARCHITECTURE D6, D20). Mirrors
 /// bridge/src/pairing/wire.ts; protocol/fixtures/noise/transcripts.json keeps the two in step.
 ///
 /// The app's first binary message is a short header followed by Noise message 1:

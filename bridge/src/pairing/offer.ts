@@ -1,5 +1,5 @@
 /**
- * The pairing offer the QR carries (ARCHITECTURE D18), as a `dshm://pair?…` URL. The same URL
+ * The pairing offer the QR carries (ARCHITECTURE D20), as a `dshm://pair?…` URL. The same URL
  * is the Debug-only deep link (D16), so the Simulator can pair without a camera. Parsed by
  * ios/DSHKit/Sources/DSHCore/Pairing/PairingOffer.swift.
  *

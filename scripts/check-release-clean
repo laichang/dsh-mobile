@@ -1,11 +1,12 @@
 #!/bin/bash
 # Proves a Release build carries none of the debug-only testability entry points
-# (ARCHITECTURE D16): FakeBridge, the -DSHM* launch arguments, and the dshm://pair deep link.
+# (ARCHITECTURE D16): FakeBridge, the -DSHM* launch arguments, and the dshm://pair deep link;
+# and, since S1, no PlaintextChannel: Release talks to a bridge only over Noise.
 # Also checks the Debug build *does* carry them, so a passing result means something.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DD=/tmp/dshm-release-check-dd
-MARKERS=(FakeBridge DSHMFakeBridge DSHMPresetPrompt DSHMBridgePort DebugDeepLink DebugLaunchOptions PairingStubView pairing.stub)
+MARKERS=(FakeBridge FakeNoiseHost DSHMFakeBridge DSHMPresetPrompt DSHMBridgePort DSHMResetPairing DebugDeepLink DebugLaunchOptions PlaintextChannel /plaintext)
 
 build() {
   xcodebuild build -project "$ROOT/ios/dsh-mobile.xcodeproj" -scheme dsh-mobile -configuration "$1" \

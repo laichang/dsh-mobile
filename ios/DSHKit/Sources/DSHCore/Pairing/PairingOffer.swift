@@ -1,6 +1,6 @@
 import Foundation
 
-/// The pairing offer a bridge shows as a QR code (ARCHITECTURE D18), parsed from its
+/// The pairing offer a bridge shows as a QR code (ARCHITECTURE D20), parsed from its
 /// `dshm://pair?…` URL. The same URL is the Debug-only deep link (D16), so the Simulator can pair
 /// without a camera. Written by bridge/src/pairing/offer.ts:
 ///

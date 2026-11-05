@@ -1,5 +1,5 @@
 /**
- * How a Noise connection starts on the bridge's WebSocket (ARCHITECTURE D6, D18). Mirrored in
+ * How a Noise connection starts on the bridge's WebSocket (ARCHITECTURE D6, D20). Mirrored in
  * ios/DSHKit/Sources/DSHCore/Pairing/PairingWire.swift; the golden transcripts in
  * protocol/fixtures/noise/ keep the two sides in step.
  *

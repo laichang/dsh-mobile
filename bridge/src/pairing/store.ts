@@ -1,5 +1,5 @@
 /**
- * The bridge's pairing state on disk (ARCHITECTURE D18): the host's Noise static key, open
+ * The bridge's pairing state on disk (ARCHITECTURE D20): the host's Noise static key, open
  * pairing offers, and the device registry. One directory, default `$DSH_HOME/dsh-mobile-bridge`,
  * mode 0700, files 0600. Every call re-reads the files, so `scripts/pair.ts` (a separate
  * process) can add offers while the bridge runs. Writes are atomic (temp file + rename).

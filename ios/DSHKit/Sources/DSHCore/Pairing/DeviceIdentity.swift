@@ -2,7 +2,7 @@ import Foundation
 import Security
 import Synchronization
 
-/// Where the phone's Noise static key (X25519) lives (ARCHITECTURE §4 "Keys", D19). One key per
+/// Where the phone's Noise static key (X25519) lives (ARCHITECTURE §4 "Keys", D21). One key per
 /// device, shared by every paired host; the bridge registers its public half.
 public protocol DeviceKeyStore: Sendable {
     /// The device's static key, created on first use.

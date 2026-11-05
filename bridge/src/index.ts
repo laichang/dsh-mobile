@@ -15,7 +15,7 @@ export const name = 'dsh-mobile-bridge'
 export const inject = ['sessionController', 'workspaceController']
 
 export interface Config {
-  /** Listen address. Default 0.0.0.0: every payload is Noise-encrypted (ARCHITECTURE D18). */
+  /** Listen address. Default 0.0.0.0: every payload is Noise-encrypted (ARCHITECTURE D20). */
   host?: string
   port?: number
   /** Fixed workspace directory for new tasks (S7 adds a picker). */

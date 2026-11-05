@@ -33,7 +33,7 @@ public enum HostConnectionError: Error, Equatable, CustomStringConvertible {
 /// sealed and sent in order from one outbox, so Noise nonces never go out of order.
 /// No reconnect, no resume yet (S2).
 public actor HostConnection {
-    public let endpoint: HostEndpoint
+    public nonisolated let endpoint: HostEndpoint
     public nonisolated let channelName: String
     private let channel: any SecureChannel
     private let makeTransport: BridgeTransportFactory

@@ -2,7 +2,7 @@
  * The bridge's own WebSocket listener (ARCHITECTURE §5.1). One binary WebSocket message carries
  * one `Frame` through the connection's channel. T0 serves Hello and CreateTask.
  *
- * Channels (S1, ARCHITECTURE D6/D18):
+ * Channels (S1, ARCHITECTURE D6/D20):
  * - Noise on every path except `PLAINTEXT_PATH`: the first message is the handshake
  *   (src/pairing/wire.ts), then each message is one Noise transport message.
  * - Plaintext on `PLAINTEXT_PATH`, only when a PlaintextChannel is configured, which in turn

@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// State behind the T0 screen: one composer, one task at a time, in memory only.
+/// State behind the task screen: one composer, one task at a time, in memory only.
 @MainActor
 @Observable
 public final class TaskStore {
@@ -36,6 +36,10 @@ public final class TaskStore {
         self.connection = connection
         self.prompt = prompt
     }
+
+    /// "noise" or (Debug) "plaintext": shown in the status row, checked by UI tests.
+    public var channelName: String { connection.channelName }
+    public var endpoint: HostEndpoint { connection.endpoint }
 
     public var canSend: Bool {
         guard !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
