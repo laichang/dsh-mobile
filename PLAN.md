@@ -56,6 +56,17 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S11 | review | merged `12e1afc` | 2026-11-05 | User checks onboarding on a fresh install (§9) |
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | Hosted compatibility checks deferred; local runner available (§8) |
 | S13 | review | merged `c56d47f` | 2026-11-05 | User verifies the same Web session and latest reply on a paired iPhone (§9) |
+| T1 | todo | — | 2026-11-05 | Start the new UI shell first (§5, "UI to the design board") |
+| S14 | todo | — | 2026-11-05 | Wait for T1 |
+| S15 | todo | — | 2026-11-05 | Wait for T1 |
+| S16 | todo | — | 2026-11-05 | Wait for T1 |
+| S17 | todo | — | 2026-11-05 | Wait for S16 |
+| S18 | todo | — | 2026-11-05 | Wait for T1 |
+| S19 | todo | — | 2026-11-05 | Wait for T1 |
+| S20 | todo | — | 2026-11-05 | Wait for T1 |
+| S21 | todo | — | 2026-11-05 | Wait for T1 |
+| S22 | todo | — | 2026-11-05 | Wait for T1 |
+| S23 | todo | — | 2026-11-05 | Wait for T1. S14 first is better. |
 
 ## 1. Approach
 
@@ -111,11 +122,25 @@ flowchart LR
     S1 --> S10[S10 · Control: devices + audit]
     S1 --> S11[S11 · First run]
 
-    S3 & S4 & S5 & S6 & S7 & S8 & S9 & S10 & S11 & S12 & S13 --> M1([M1 · Real-device acceptance])
+    S3 & S4 & S5 & S6 & S7 & S8 & S9 & S10 & S11 & S12 & S13 --> T1([T1 · Tracer bullet: new UI shell])
+
+    T1 --> S14[S14 · Drawer]
+    T1 --> S15[S15 · All tasks]
+    T1 --> S16[S16 · Session page]
+    T1 --> S18[S18 · Approval sheet]
+    T1 --> S19[S19 · Done and failed]
+    T1 --> S20[S20 · Pickers]
+    T1 --> S21[S21 · Hosts and control]
+    T1 --> S22[S22 · First run]
+    T1 --> S23[S23 · Drawer motion]
+    S16 --> S17[S17 · Structured transcript]
+    S14 -.-> S23
+
+    S14 & S15 & S16 & S18 & S19 & S20 --> M1([M1 · Real-device acceptance])
     M1 --> M2
 ```
 
-Solid = must land first. Dotted = spike result must exist first (a written conclusion, not code). Spikes depend on nothing and can start today, in parallel with T0.
+Solid = must land first. Dotted = spike result must exist first (a written conclusion, not code). Spikes depend on nothing and can start today, in parallel with T0. One exception: `S14 -.-> S23` means "S14 first is better, but not necessary".
 
 ## 3. T0 · Tracer bullet
 
@@ -574,7 +599,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 **Done when**
 - [x] [ui] With two hosts (`FakeBridge` ×2), tasks from both appear in one list; one taken offline is named — Evidence: test:S9MultiHostUITests/testTwoHostsShareTheListAndTheOfflineHostIsNamed · cmd:scripts/demo/s9.sh · shot:evidence/S9/s9-two-hosts.png · shot:evidence/S9/s9-office-offline.png
-- [ ] [human] Two real Macs, tasks from both in one list; take one offline and it's named — Evidence:
+- [ ] [human] Two real Macs, tasks from both in 所有任务; take one offline and the drawer and the hosts sheet name it — Evidence:
 
 - [x] [auto] Pair a second host over Noise, dispatch to either host and retain the first host’s connection and cached task — Evidence: test:pairingASecondHostPreservesTheFirstConnectionAndRoutesEachPrompt
 - [x] [auto] Only configured hosts contribute cached tasks, including a paired host that is offline — Evidence: test:cachedTasksAppearOnlyForConfiguredHostsEvenWhenOffline · test:offlineSelectionNeverSendsToAnotherHost
@@ -690,16 +715,269 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - **2026-11-05 · Planned.** A message sent in the Mac's Web default workspace did not appear on the paired iPhone. The user confirmed cross-client session visibility as an M1 requirement.
 - **2026-11-05 · Implemented.** Real DSH Web created a session in its default workspace before the phone connected. The open phone detail showed both messages for each online turn. The demo cut the bridge socket, submitted two more Web turns and restored the same detail with all eight messages exactly once, in order. The bridge and Swift suites passed. New provisional decision: D50 (durable session listing and journal pages); no new dependency or download. Next: independent Simulator rerun, then coordinator integration; the paired iPhone acceptance remains open.
 
+### UI to the design board (T1, S14–S23)
+
+The M1 UI is a `NavigationStack` with the title "Tasks". The task list is the home screen, and the detail view is a pushed page with a back button. The design board ([DESIGN.md](DESIGN.md), `design/board.html`) is different. The app opens on a blank new session (01). History is in a drawer that pushes the page (02). Details open as bottom sheets. Thus the main change is the navigation shell, not the style of one screen.
+
+T1 is the tracer bullet for the UI. It replaces the shell, with thin versions of 01, 02 and 04. After T1, all M1 capabilities work in the new shell. Each slice S14–S23 makes one or more screens complete. Each slice needs only T1, unless "Needs" says otherwise.
+
+**How the UI slices stay independent.** These rules add to §1.
+
+| Rule | Mechanism |
+|---|---|
+| Own files | Each slice owns `ios/dsh-mobile/Features/<Screen>/`. The shell has registration points: drawer sections, `SheetRoute` cases and page states. A slice adds one line at each point that it uses. |
+| Frozen tokens | T1 puts the DESIGN.md tokens in `DSHTheme`. Slices do not change them. A slice that needs a new token adds it in `Theme+<Slice>.swift`. |
+| Stable identifiers | Accessibility identifiers are the contract between views and tests. Do not rename an identifier. You can add identifiers. |
+| Test alone | Each slice has its own `FakeBridge` scenario and its own `<ID>…UITests.swift`. |
+| Compare to the design | Each `[ui]` item has a `shot:` from the Simulator. The PR shows it next to `design/screens/<label>.png`. |
+| Protocol | Most slices change only the app. S14 and S17 also change the protocol. They follow §1: own `.proto` file, own field numbers (S14: 280–299, S17: 340–359), and a capability string. Without the capability, the app shows the T1 view. |
+| Design board | A slice that changes what a screen does also changes `design/board.html` and STORY.md in the same commit (DESIGN.md). Run `scripts/render-design` after each board edit. |
+
+After T1, these slices touch different files and can run in parallel: S14, S15, S16, S18, S20, S21, S22. S19 shares the session page with S16; start it after S16, or in the same work session. S17 needs S16. S23 is best after S14.
+
+### T1 · Tracer bullet: new UI shell
+
+**Status** todo · **Needs** — (the merged M1 code on `main`) · **Branch** `claude/t1-ui-shell`
+
+**Why**: STORY §3 (one entry; open on a new session), DESIGN.md "Navigation". All other UI slices add to this shell.
+
+**Cuts**
+- `DSHTheme` with the DESIGN.md tokens (canvas, slate, bubble, hairline, three text colors, blue, amber, red, green; SF Mono for commands and paths). The app always uses dark mode.
+- `ShellView` with a push drawer. A drag from the left edge moves the drawer and the page with the finger. Position and velocity decide if the drawer opens or goes back. `NavigationStack` is removed.
+- On launch, the app shows a blank new session with the default host and workspace. One line above the composer shows "host · workspace". The first message creates the session, and the same page becomes the session page.
+- Thin session page: user bubble on the right, the M1 `TranscriptView`, the milestone card, and the send key changes to stop while the task runs. It has no back button.
+- Thin drawer: 新建会话, 所有任务 (the M1 task list), and the sessions in groups by host. A tap on a session shows it, with no animation.
+- One `SheetRoute` enum. The milestone timeline, the workspace and model controls, and devices open as sheets, not pushed pages.
+- D34 no longer applies: the app has no list routing after the first message. Record the new rule as a new `Dxx` in ARCHITECTURE.md, and mark D34 "superseded by Dxx". The 280-character inline rule stays only for rows in 所有任务.
+- `UITestSupport` gets `openDrawer()` and `openSession(_:)`. All M1 UITest files move to the new shell with no identifier renamed.
+
+**Demo**: Open the app. A blank new session shows. Send "Translate: Bonjour." The reply shows on the same page. Swipe from the left edge. The drawer shows the session under its host. Tap 所有任务, then tap a running task.
+
+**Done when**
+- [ ] [ui] On launch, the app shows a blank new session with the default host and workspace, not the task list — Evidence:
+- [ ] [ui] The first message creates the session, and the same page shows the reply — Evidence:
+- [ ] [ui] A drag from the left edge opens the drawer and pushes the page. A release with low velocity closes it again. — Evidence:
+- [ ] [ui] The session page has no back button. The milestone timeline opens as a sheet. — Evidence:
+- [ ] [ui] All M1 UITest files pass on the new shell, with no accessibility identifier renamed — Evidence:
+- [ ] [auto] ARCHITECTURE.md has the new `Dxx` for first-message routing, and D34 says "superseded" — Evidence:
+- [ ] [human] The user accepts that the app always uses dark mode — Evidence:
+
+**Not**: Drawer animation (S23). Unread marks and workspace levels (S14). Restyled cards (S15, S18).
+
+**Log**: —
+
+### S14 · Drawer
+
+**Status** todo · **Needs** T1 · **Branch** `claude/s14-drawer`
+
+**Why**: STORY §4 (sessions from other clients; status at a glance), screen 02.
+
+**Cuts**: Levels: host › workspace › session · status marks: amber dot = waiting on you, spinner = running, blue dot = done and not read · an offline host is grey, and its cached sessions still open · pair and settings at the bottom · "2 / 3" hosts online at the top · the amber badge on the drawer button = the number of items in 等我处理 · **protocol**: `TaskSummary` gets the session workspace (field 280); the bridge reads it from the DSH session; capability `drawer.v1` · local read state for each session, in the cache.
+
+**Demo**: Two hosts, and one is offline. A Web session and a phone session are in the same workspace. The drawer shows both under that workspace. The offline host is grey.
+
+**Done when**
+- [ ] [auto] The bridge sends the workspace of a Web session and of a phone session, and golden fixtures decode the same in Swift and TS — Evidence:
+- [ ] [ui] The drawer groups sessions by host and workspace, and shows the three status marks — Evidence:
+- [ ] [ui] The badge count is the same as the count in 等我处理 — Evidence:
+- [ ] [ui] Sessions of an offline host open from the cache — Evidence:
+- [ ] [ui] Without `drawer.v1`, the drawer shows host › session — Evidence:
+
+**Not**: iPad sidebar. Drawer search.
+
+**Log**: —
+
+### S15 · All tasks
+
+**Status** todo · **Needs** T1 · **Branch** `claude/s15-all-tasks`
+
+**Why**: STORY §4 (one place for all hosts), §5 (approvals show the command), screen 03.
+
+**Cuts**: The M1 task list in the DSH style, as a drawer page · sections 等我处理 / 正在跑 / 已完成, across hosts · approval card: tool, command, reason, tool parameters, 拒绝 / 允许一次 · for an offline host, the buttons are grey and one line tells why · short answers show in the row (the 280-character rule, see T1).
+
+**Demo**: One approval waits on an offline host and one on an online host. Approve the online one from 所有任务.
+
+**Done when**
+- [ ] [ui] 所有任务 opens from the drawer and shows the three sections across hosts — Evidence:
+- [ ] [ui] An approval for an offline host has grey buttons and tells that the host must reconnect first — Evidence:
+
+**Not**: Risk tiers and Face ID (M2, screen P3).
+
+**Log**: —
+
+### S16 · Session page
+
+**Status** todo · **Needs** T1 · **Branch** `claude/s16-session`
+
+**Why**: STORY §4 (milestones by default, details on demand), §8 (the model can change during a task), screen 04.
+
+**Cuts**: User bubble on the right; assistant text has no bubble · the milestone bar stays at the top, and a tap opens all steps in a sheet · the stop key is in the send position · the model pill opens screen M (S20) · Markdown blocks in the DSH style · update D23 (b): the milestone card is a bar at the top of the session page and a part of rows in 所有任务; D23 (a) and (c) do not change.
+
+**Demo**: Start a coding task. The milestone bar shows "3 / 5". Tap stop.
+
+**Done when**
+- [ ] [ui] The milestone bar stays at the top while the transcript scrolls — Evidence:
+- [ ] [ui] Stop interrupts the task from the send position — Evidence:
+- [ ] [auto] ARCHITECTURE D23 (b) tells where the milestone card shows in the new UI — Evidence:
+
+**Not**: The "已思考 N 秒" row and the "verb · target · +/−" tool rows (S17). Follow-up messages (M2).
+
+**Log**: —
+
+### S17 · Structured transcript
+
+**Status** todo · **Needs** S16 · **Branch** `claude/s17-transcript`
+
+**Why**: Screen 04: thinking and tool calls collapse to one line each. DESIGN.md says that the data on screens is real data. The protocol does not have this data now: `SessionMessage` has only `text`.
+
+**Cuts**: **Protocol**: `protocol/transcript.proto` with blocks for thinking (duration) and tool calls (tool, target, lines added and removed); field numbers 340–359; capability `transcript.v1` · the bridge maps typed DSH events into blocks, with no model summary (same rule as D11) · the app shows one collapsed row for each block, and a tap opens a sheet · without the capability, the app shows the S16 view.
+
+**Demo**: A coding task shows "已思考 8 秒 ›", "Read TaskListStore.swift" and "Edit TaskListStore.swift +12 −3".
+
+**Done when**
+- [ ] [auto] Golden fixtures for thinking and tool blocks decode the same in Swift and TS — Evidence:
+- [ ] [auto] The bridge maps DSH thinking and tool events into blocks against `FakeDSH` — Evidence:
+- [ ] [ui] Tool rows show verb, target and +/−, and open a sheet on tap — Evidence:
+- [ ] [ui] Without `transcript.v1`, the session page shows the S16 view — Evidence:
+
+**Not**: A full diff view inside the row.
+
+**Log**: —
+
+### S18 · Approval sheet
+
+**Status** todo · **Needs** T1 · **Branch** `claude/s18-approval-sheet`
+
+**Why**: STORY §5 (approvals show the effect; nothing is allowed by default), screen 05.
+
+**Cuts**: When the open session has a pending approval, a sheet comes up · contents: tool, full command, reason, tool parameters that you can expand · two buttons: 拒绝 / 允许一次; no "always allow" · the footer tells that the task stays paused and that each client can see the approval.
+
+**Demo**: A task asks for `rm -rf ~/Desktop/Q3/tmp`. The sheet comes up in the session. Deny it.
+
+**Done when**
+- [ ] [ui] The sheet comes up when the session opens with a pending approval, and when a new approval arrives — Evidence:
+- [ ] [ui] After an answer from the Web, the sheet closes on the phone — Evidence:
+
+**Not**: The dashed M2 parts of 05: risk tier, effect summary, Face ID, pre-authorization.
+
+**Log**: —
+
+### S19 · Done and failed
+
+**Status** todo · **Needs** T1 · **Branch** `claude/s19-outcomes`
+
+**Why**: STORY §4 (call the user back when a task is done, failed or stuck), screens 06 and X1.
+
+**Cuts**: The process collapses to one row: "已工作 · N 步 · M 次审批 ›" · a done session that is not read opens at the start of the final answer · failure: the top bar is red and shows the step; the raw failure message; "复制错误" and "新会话里再试" (puts the original prompt into 01) · an interrupted task shows the same card · the seam with S16 (session page layout): the slice that lands second owns it.
+
+**Demo**: Start an upload that fails with 403. Open it, copy the error, and try again in a new session.
+
+**Done when**
+- [ ] [ui] A done session that is not read opens at the start of the final answer — Evidence:
+- [ ] [ui] "新会话里再试" opens 01 with the original prompt, which you can edit — Evidence:
+
+**Not**: File cards (M3). Follow-up in the same session (M2). The "stuck" alert (M2 push).
+
+**Log**: —
+
+### S20 · Pickers
+
+**Status** todo · **Needs** T1 · **Branch** `claude/s20-pickers`
+
+**Why**: STORY §3 (defaults that you can change at the composer), §8 (the user picks the model; no silent swap), screens 07, M and X4.
+
+**Cuts**: A tap on the "host · workspace" line opens the workspace sheet: host switch at the top, host default, recent, absolute path · the choice applies only to this new session; the next launch uses the default again · a tap on the model pill opens the model sheet: groups by provider, original names, reasoning effort as its own group · if the model is unavailable, the sheet tells which model on which host, and 应用 stays off until you pick a new one · a provider whose list failed shows one row with 重试.
+
+**Demo**: Pick the `dsh-mobile` workspace and DeepSeek-V41-Pro. Make Pro unavailable on the host. The sheet asks you to pick again.
+
+**Done when**
+- [ ] [ui] The workspace choice does not stay after a relaunch — Evidence:
+- [ ] [ui] With an unavailable model, 应用 is off and no other model is selected — Evidence:
+
+**Not**: A host guessed from the prompt (later).
+
+**Log**: —
+
+### S21 · Hosts and control
+
+**Status** todo · **Needs** T1 · **Branch** `claude/s21-hosts`
+
+**Why**: STORY §2 (all hosts are equal), §3 (say which host is offline), §9 (devices, revocation, audit), screens H, X2 and X3.
+
+**Cuts**: A tap on "2 / 3" in the drawer opens the hosts sheet: online, encrypted, default model; an unsupported DSH version shows the installed and supported versions; an offline host shows its last connection and what waits on it · one host: device list (this device is marked), revoke, audit records, load older · confirm before revoke; a revoke of this device goes back to 08 · all hosts offline: a card on 01 lists each host and its last connection; the send key is off; history still opens.
+
+**Demo**: Stop all hosts. 01 shows the card. Start one host. The card goes away.
+
+**Done when**
+- [ ] [ui] The all-offline card names each host and its last connection — Evidence:
+- [ ] [ui] A revoke of this device asks for confirmation, then opens 08 — Evidence:
+
+**Not**: Device names (needs upstream).
+
+**Log**: —
+
+### S22 · First run
+
+**Status** todo · **Needs** T1 · **Branch** `claude/s22-first-run`
+
+**Why**: STORY §6 (anyone can use it), screen 08.
+
+**Cuts**: Welcome and pairing in the DSH style · the copy follows S11: what the app is and what you need · the network requirement (same Wi-Fi or Tailscale) · scan, or paste a link · after pairing, 01 opens with a first task that you can edit (D49).
+
+**Demo**: Fresh install. Paste a pairing link. 01 opens with the first task.
+
+**Done when**
+- [ ] [ui] After the first pairing, 01 opens with a first task that you can edit — Evidence:
+
+**Not**: Pairing from inside the DSH interface (needs upstream). The S11 `[human]` items stay in S11 (see §6).
+
+**Log**: —
+
+### S23 · Drawer motion
+
+**Status** todo · **Needs** T1 · **Branch** `claude/s23-motion`
+
+**Why**: DESIGN.md "Navigation", screens F1–F4 and S.
+
+**Cuts**: On tap, the row is highlighted, with light haptics · the visible edge of the page cross-fades to the target session from the cache (0–120 ms) · the page slides in with a spring and pushes the drawer away (120–350 ms) · the same animation applies to a tap on 所有任务 or on an approval card; after an approval card, the 05 sheet comes up · landing position: done and not read → start of the final answer; running → follow the bottom; already read → the last position · the seam with S19 (landing position): the slice that lands second owns it.
+
+**Demo**: Open the drawer. Tap "Q3 summary slides". The page lands at the start of the final answer.
+
+**Done when**
+- [ ] [ui] The three landing positions are correct — Evidence:
+- [ ] [human] The drawer motion feels smooth on a real iPhone — Evidence:
+
+**Not**: Settings for haptics.
+
+**Log**: —
+
 ## 6. M1 exit
 
 From a real iPhone over Tailscale, against a home Mac. All items are human-only.
 
 - [ ] [human] Pair by scanning a QR (S1) — Evidence:
 - [ ] [human] "Fix the failing CI test in `<repo>`, open a PR", with workspace and model picked (S6, S7) — Evidence:
-- [ ] [human] Watch milestones tick (S3); open the detail view and read the diff (S8) — Evidence:
+- [ ] [human] Watch milestones tick (S3); open the session and read the diff (S8) — Evidence:
 - [ ] [human] Approve the `git push` from an approval card showing the exact command (S4) — Evidence:
-- [ ] [human] Raise reasoning effort mid-task (S6). Kill the app, reopen, and find nothing lost (S2) — Evidence:
+- [ ] [human] Raise reasoning effort mid-task (S6). Kill the app and reopen it. Open the task from the drawer and find nothing lost (S2) — Evidence:
 - [ ] [human] Get the PR link in the result — Evidence:
+
+Do the exit on the new UI, after T1, S14, S15, S16, S18, S19 and S20 are done. If you do it on the M1 UI, you must check several items again after the UI slices land.
+
+**When each open `[human]` item is ready.** The UI slices change some screens that these items check. The item text stays true; only the place where you check it changes. A UI slice does not tick these items. Only the user ticks them.
+
+| Item | Ready after | Note |
+|---|---|---|
+| S8: diff and test output read well on a phone | S16 (and S17) | Style and tool rows change |
+| S9: two real Macs | S14, S15, S21 | Tasks from both show in 所有任务; the drawer and the hosts sheet name an offline host |
+| S11: explains what it is and what's missing | S22 | The copy changes |
+| S11: first answer without help | T1, S22 | The first-run path changes: 08 → 01 with a first task |
+| S13: same Web session on the phone | Now | Checks data. Find the session in the drawer after T1. |
+| Exit: workspace and model picked | S20 | The pickers become sheets |
+| Exit: open the session and read the diff | S16 | The session page is the detail view |
+| Exit: approve from the approval card | S18 | The card becomes a sheet in the session |
+| Exit: kill, reopen, nothing lost | T1, S14 | Reopen shows a blank new session (STORY §3); find the task in the drawer |
+| T0 (3 items), X3 (2 items), S1 (2 items), Exit: pair by QR, Exit: PR link | Now | The UI change does not affect them |
 
 When all of these are ticked and S13 is done, archive this file and plan M2 the same way.
 
@@ -916,6 +1194,12 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-05 · S13 merged.** An independent reviewer reran `scripts/demo/s13.sh` on `dshm-S13` at `08de88d`. All 57 bridge tests, 58 Swift tests and both UI acceptance scenarios passed. Four Web turns shared a single session. After a socket outage, the open phone detail showed eight messages once each in order. Merged as `c56d47f`. The real-device check and D50 remain open. Screenshots: `evidence/S13/`.
 
 - **2026-11-05 · S12 hosted checks deferred.** The user chose to publish without the GitHub Actions workflow. Pushes, pull requests and the weekly schedule no longer start the S12 compatibility checks. The local runner remains at `scripts/ci/bridge-upstream`.
+
+- **2026-11-05 · UI to the design board planned.** The design board (DESIGN.md, `6be4f38`) changes the navigation shell, so M1 now includes a UI tracer bullet and ten UI slices: T1 and S14–S23 (§5). The IDs use T and S so that `check-plan` and `evidence/<ID>/` work with no change to the guard files.
+  - Decisions in this plan, for the user to accept in review: the app always uses dark mode (T1 `[human]` item); S14 adds the workspace to `TaskSummary` (field 280) for the drawer levels; S17 adds structured thinking and tool blocks (`transcript.proto`), because screen 04 needs data that the protocol does not have.
+  - D34 no longer applies after T1 (no list routing after the first message). D23 (b) changes in S16. §9 rows 33 and 21 stay until the user confirms the new entries.
+  - The M1 exit now happens on the new UI (§2, §6). §6 tells when each open `[human]` item is ready.
+  - The user approved three item rewordings: §6 "open the detail view" → "open the session"; §6 "Kill the app, reopen" → "… Open the task from the drawer …"; S9 "in one list" → "in 所有任务 … the drawer and the hosts sheet name it". The new UI has no single home list and no separate detail view.
 
 ## 9. Pending user confirmation
 
