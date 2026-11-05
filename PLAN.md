@@ -55,7 +55,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
 | S11 | review | merged `12e1afc` | 2026-11-05 | User checks onboarding on a fresh install (§9) |
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | — (hosted CI follows user push/PR; confirmations in §9) |
-| S13 | doing | `codex/s13-visibility` | 2026-11-05 | Build and verify Web-to-phone updates and reconnect |
+| S13 | review | merged `c56d47f` | 2026-11-05 | User verifies the same Web session and latest reply on a paired iPhone (§9) |
 
 ## 1. Approach
 
@@ -670,7 +670,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S13 · Cross-client session visibility
 
-**Status** doing · **Needs** S2 · **Branch** `codex/s13-visibility`
+**Status** review · **Needs** S2 · **Branch** `codex/s13-visibility`
 
 **Why**: STORY principle 4. A user who starts work in DSH Web or on the desktop can pick up the phone and see what happened in the same session.
 
@@ -913,6 +913,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-05 · S13 started.** Slice owner runs in an isolated worktree on `codex/s13-visibility`. Bridge port 47810, Web port 3283, DSH home `~/.dshm/home-s13`, Simulator `dshm-S13`. The coordinator will assign independent UI review before merge.
 
+- **2026-11-05 · S13 merged.** An independent reviewer reran `scripts/demo/s13.sh` on `dshm-S13` at `08de88d`. All 57 bridge tests, 58 Swift tests and both UI acceptance scenarios passed. Four Web turns shared a single session. After a socket outage, the open phone detail showed eight messages once each in order. Merged as `c56d47f`. The real-device check and D50 remain open. Screenshots: `evidence/S13/`.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -958,3 +960,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 41 | S11 | decision | D49, provisional: first-run pairing guide, editable first task suggestion and recovery for unusable saved hosts. | `main` | merged `12e1afc` |
 | 42 | S11 | `[human]` | On a fresh install, check that the app explains its purpose and the need for a reachable DSH host. | `main` | `12e1afc` |
 | 43 | S11 | `[human]` | Have someone unfamiliar with DSH pair with an already-running host and obtain the first answer without help. | `main` | `12e1afc` |
+| 44 | S13 | decision | D50, provisional: use the DSH session directory and durable message journal for cross-client history and recovery. | `codex/s13-visibility` | `08de88d` |
+| 45 | S13 | `[human]` | On a paired iPhone and Mac, send two messages in one Web session and verify the same open phone detail shows the latest reply. Needs the S13 app and bridge. | `main` | `c56d47f` |
