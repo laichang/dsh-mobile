@@ -466,7 +466,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S6 · Models
 
-**Status** todo · **Needs** T0 · **Branch** —
+**Status** blocked · **Needs** T0 · **Branch** claude/s6-models
 
 **Why**: principle 8. The host provides the list, names are shown as given, there's no silent substitution, and you can switch mid-task.
 
@@ -483,6 +483,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 **Log**
 - —
+- **2026-11-05**: Started S6 (`doing`), read the required project documents and git history, and attempted the prerequisite T0 rerun with bridge 47812, web 3285, `DSHM_HOME=/Users/bytedance/.dshm/home-s6`, Simulator `dshm-S6`, and DerivedData `/tmp/dshm-s6-dd`. Used an untracked `/tmp/dshm-s6-t0.sh` copy with only the root and temporary log paths changed (`/tmp/dshm-s6-t0-20261105*`). No tracked T0 script change. T0 stopped before tests: dependency installation stalled; offline installation reported `ERR_PNPM_NO_OFFLINE_TARBALL`, and attempting the existing shared pnpm store with copy imports reported `ERR_SQLITE_ERROR: unable to open database file`. Direct `xcrun simctl list devices available` reported CoreSimulator connection failure and `Operation not permitted` opening its log. The assigned DSH home is absent and outside this session's writable roots. The fixed sandbox cannot request escalation. Status is `blocked`; no implementation or acceptance checkbox changes, no new dependencies or provisional decisions. Next: coordinator supplies a session that can use the assigned Simulator, DSH home, dependency cache, and worktree git metadata; rerun T0 before implementing S6. Independent UI review remains with the coordinator.
 
 ### S7 · Workspaces
 
