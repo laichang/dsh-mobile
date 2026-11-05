@@ -12,10 +12,14 @@ mkdir -p "$LOGS" "$DSHM_HOME"
 PROFILE=$(mktemp -d "$DSHM_HOME/first-run.XXXXXX")
 SHOTS=$(mktemp -d)
 host_pid=""
-registry=""
+registry_path() {
+  local data
+  data=$(xcrun simctl get_app_container "$SIM" chang.dsh-mobile data) || return 1
+  printf '%s/Library/Application Support/paired-hosts.json\n' "$data"
+}
 cleanup() {
   if [ -n "$host_pid" ]; then kill "$host_pid" 2>/dev/null || true; wait "$host_pid" || true; fi
-  if [ -f "$SHOTS/paired-hosts.json" ]; then cp "$SHOTS/paired-hosts.json" "$registry"; fi
+  if [ -f "$SHOTS/paired-hosts.json" ]; then cp "$SHOTS/paired-hosts.json" "$(registry_path)"; fi
   rm -rf "$PROFILE" "$SHOTS"
 }
 trap cleanup EXIT
@@ -62,7 +66,7 @@ run_ui testFirstRunFromWelcomeToReply
 
 # This simulator was freshly installed and paired by the test above. Keep the registered host
 # but remove its address to exercise the Release recovery path; cleanup restores the original.
-registry="$(xcrun simctl get_app_container "$SIM" chang.dsh-mobile data)/Library/Application Support/paired-hosts.json"
+registry=$(registry_path)
 cp "$registry" "$SHOTS/paired-hosts.json"
 node --input-type=module - "$registry" <<'JS'
 import { readFileSync, writeFileSync } from 'node:fs'
