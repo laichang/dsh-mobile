@@ -14,7 +14,8 @@ final class S1PairingUITests: XCTestCase {
     /// Pair through the deep link (IKpsk1), then the T0 demo over Noise (IK reconnect) against
     /// the local bridge; then the same link again is refused because the secret was used.
     func testPairViaDeepLinkThenDemoOverNoise() throws {
-        let link = try XCTUnwrap(env["DSHM_PAIR_URL"].flatMap(URL.init(string:)), "run scripts/demo/s1.sh")
+        try XCTSkipUnless(env["DSHM_PAIR_URL"] != nil, "needs a pairing link; run scripts/demo/s1.sh")
+        let link = try XCTUnwrap(env["DSHM_PAIR_URL"].flatMap(URL.init(string:)))
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMResetPairing", "YES", "-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47801"]
         app.launch()
@@ -71,7 +72,8 @@ final class S1PairingUITests: XCTestCase {
 
     /// An expired code is refused (by the app before connecting; the bridge refuses it too).
     func testExpiredPairingLinkIsRefused() throws {
-        let link = try XCTUnwrap(env["DSHM_EXPIRED_PAIR_URL"].flatMap(URL.init(string:)), "run scripts/demo/s1.sh")
+        try XCTSkipUnless(env["DSHM_EXPIRED_PAIR_URL"] != nil, "needs an expired pairing link; run scripts/demo/s1.sh")
+        let link = try XCTUnwrap(env["DSHM_EXPIRED_PAIR_URL"].flatMap(URL.init(string:)))
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMResetPairing", "YES"]
         app.launch()

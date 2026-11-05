@@ -323,7 +323,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S1 · Pair + encrypt
 
-**Status** doing · **Needs** T0, X2 · **Branch** `claude/s1-pair-encrypt`
+**Status** review · **Needs** T0, X2 · **Branch** `claude/s1-pair-encrypt`
 
 **Why**: principle 6 (anyone can pair) and D6 (every transport is untrusted). This slice unlocks the real device.
 
@@ -332,18 +332,29 @@ Each slice needs only T0, unless "Needs" says otherwise.
 **Demo**: a fresh iPhone scans the QR and runs the T0 demo over Wi-Fi or Tailscale. A packet capture shows only ciphertext.
 
 **Done when**
-- [ ] [auto] `PlaintextChannel` is debug-only and loopback-only — Evidence:
-- [ ] [auto] A reused or expired pairing secret is rejected — Evidence:
-- [ ] [ui] Pairing through the `dshm://pair?…` deep link in the Simulator, then the T0 demo over `NoiseChannel` against the local bridge — Evidence:
+- [x] [auto] `PlaintextChannel` is debug-only and loopback-only — Evidence: test:PlaintextChannelTests/refusesNonLoopbackAddress · test:PlaintextChannelTests/connectionRefusesNonLoopbackBeforeOpeningTransport · test:PlaintextChannelDevOnly/plaintextPathRefusedUnlessConfigured · test:PlaintextChannelDevOnly/devPlaintextRequiresLoopbackListener · cmd:scripts/check-release-clean · cmd:scripts/demo/s1.sh
+- [x] [auto] A reused or expired pairing secret is rejected — Evidence: test:PairingBridge/reusedSecretIsRejected · test:PairingBridge/expiredSecretIsRejected · test:PairingTests/reusedSecretIsRejected · test:PairingTests/expiredSecretIsRejectedByHost · test:PairingTests/expiredOfferIsRefusedBeforeConnecting · cmd:scripts/demo/s1.sh
+- [x] [ui] Pairing through the `dshm://pair?…` deep link in the Simulator, then the T0 demo over `NoiseChannel` against the local bridge — Evidence: test:S1PairingUITests/testPairViaDeepLinkThenDemoOverNoise · test:S1PairingUITests/testRelaunchReconnectsOverNoise · test:S1PairingUITests/testExpiredPairingLinkIsRefused · cmd:scripts/demo/s1.sh · shot:evidence/S1/s1-paired.png · shot:evidence/S1/s1-demo-over-noise.png · shot:evidence/S1/s1-reused-code-refused.png
 - [ ] [human] A fresh iPhone scans the QR and runs the T0 demo over Wi-Fi or Tailscale — Evidence:
 - [ ] [human] A packet capture of that session shows only ciphertext — Evidence:
-- [ ] [auto] The Swift and TS Noise ports pass the official vectors and agree byte for byte on golden pairing and reconnect transcripts and the offer URL — Evidence:
-- [ ] [auto] The bridge registers a device only after a completed pairing handshake, and a key it doesn't know can't reconnect — Evidence:
+- [x] [auto] The Swift and TS Noise ports pass the official vectors and agree byte for byte on golden pairing and reconnect transcripts and the offer URL — Evidence: test:NoiseVectors/officialVector · test:NoiseVectorsBridge/officialVectors · test:NoiseChannelTests/goldenTranscripts · test:NoiseGoldenTranscripts/transcriptsMatchFixture · test:PairingOfferTests/parsesGoldenOfferURL · cmd:scripts/demo/s1.sh
+- [x] [auto] The bridge registers a device only after a completed pairing handshake, and a key it doesn't know can't reconnect — Evidence: test:PairingBridge/deviceRegisteredOnlyAfterFirstTransportMessage · test:PairingBridge/unpairedDeviceCannotReconnect · test:PairingTests/unpairedPhoneCannotReconnect · cmd:scripts/demo/s1.sh
 
 **Not**: QR inside the DSH UI (terminal first) · device registry UI (S10).
 
 **Log**
-- —
+- **2026-11-05 · built, to review.**
+  - Done (commits `6b1f0bf`, `7d74a63`, `4181b8f`, then this one):
+    - **Bridge** (`bridge/src/pairing/`): X2's Noise ported (no dependency on `spikes/`); IKpsk1 pairing with the QR's one-time secret, IK reconnect, mode and offer id bound into the prologue (D6, D20). Offers are single use (burnt at the first valid message 1) and expire after 10 minutes. Terminal QR at startup while no device is paired, more with `node bridge/lib/scripts/pair.js`. State in `$DSH_HOME/dsh-mobile-bridge/` (host key, offers, device registry; store only). The listener is Noise on every path; plaintext only with `devPlaintext`, only on `/plaintext`, only on loopback.
+    - **App** (`ios/DSHKit` + views): `NoiseChannel: SecureChannel`; `SecureChannel` now runs a handshake and returns a `FrameCipher`, and `HostConnection` seals and sends from one ordered outbox (Noise nonces). `PlaintextChannel` and `HostEndpoint.localBridge` are Debug-only. Device Noise key in the Keychain (`ThisDeviceOnly`), paired hosts in Application Support. Pairing screen, VisionKit QR scanner with a paste-the-link fallback, `-DSHMResetPairing` launch argument, `host.channel` / `pairing.*` accessibility identifiers. T0's pairing stub is replaced; its UI test now checks the real screen refuses T0's offer-less link.
+    - **Cross-language truth**: `protocol/fixtures/noise/official-vectors.json` (X2's subset) and `transcripts.json` (fixed-key pair/reconnect transcripts + an offer URL), checked by both sides.
+    - **Verification**: `scripts/demo/s1.sh` (exit 0): bridge and DSHKit tests, `scripts/check-release-clean`, CLI pair → task → IK reconnect → task against real DSH 0.2.2-rc.1 (mock LLM), reused code refused (`closed 4001 pairing secret used`), T0 plaintext path, then XCUITests in `dshm-S1`: S1 (pair via deep link, T0 demo over Noise, reused code refused, relaunch reconnects over Noise, expired code refused) and all T0 UI tests. `scripts/demo/t0.sh --fake-only` also passes.
+  - **Decisions** (provisional, pending user confirmation): **D20** pairing offer, wire header, close codes, bridge state, listener defaults. **D21** the X2 open question: no Secure Enclave P-256 key in M1 (the IK static key already authenticates the device; SE returns with Face ID approvals in M2). D17–D19 were skipped because X1, X4 and S3 already use them on their branches; renumber on merge if needed.
+  - **Provisional dependencies** (bridge runtime, `bridge/pnpm-lock.yaml`, commit `6b1f0bf`): `@noble/curves` 2.4.0, `@noble/ciphers` 2.4.0, `@noble/hashes` 2.4.0 (same versions X2 approved), `uqr` 0.1.3 (terminal QR, no dependencies). No new Swift packages (CryptoKit, VisionKit). No downloads.
+  - **Changed shared behavior**: the bridge's default listen address is now `0.0.0.0` with Noise only; `scripts/dsh-up.mjs` keeps the dev host on `127.0.0.1` with `devPlaintext` on, so T0's demo is unchanged. `scripts/check-release-clean` markers: dropped the stub's, added `PlaintextChannel`, `/plaintext`, `FakeNoiseHost`, `DSHMResetPairing`.
+  - Not done: the two `[human]` items (real iPhone over Wi-Fi/Tailscale: run `DSHM_BRIDGE_HOST=0.0.0.0 DSHM_BRIDGE_DEV_PLAINTEXT=0 node scripts/dsh-up.mjs` or the plugin in a real profile, then `pair.js` and scan; packet capture of that session). Camera scanning is untested (Simulator has no camera). Known limits: one address on reconnect; Noise's 65535-byte message cap (M3 artifacts need chunking); the hand-rolled Noise is unaudited.
+  - For the coordinator: §0 S1 → `review` after an independent rerun of the `[ui]` item (`scripts/demo/s1.sh`); add D20, D21 and the four npm deps to §9; the two `[human]` items go to §9 (real iPhone + Wi-Fi/Tailscale; Wireshark/tcpdump on the Mac).
+  - Next: independent `[ui]` rerun, merge, then the user's `[human]` acceptance on a real iPhone.
 
 ### S2 · Durable list + resume
 
