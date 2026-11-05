@@ -256,7 +256,7 @@ Each spike ends in a short written conclusion (a working note, archived once act
 
 ### X3 · Spike: streaming Markdown
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** `claude/x3-markdown`
 
 **Why**: which Markdown path survives incremental rendering of long streaming transcripts? (ARCHITECTURE §8.5) Unblocks S8.
 
@@ -271,7 +271,8 @@ Each spike ends in a short written conclusion (a working note, archived once act
 **Not**: production code.
 
 **Log**
-- —
+- **2026-11-05 · Started.** The isolated T0 passed: 42 bridge tests, 46 DSHKit tests, four simulator UI tests, and the real DSH CLI round trip. Assigned `dshm-X3`, bridge 47813, web 3286, `~/.dshm/home-x3`.
+- **2026-11-05 · Simulator evidence and handoff.** Release XCTest rendered 61 incremental updates of 5,000 lines on iOS 26.0.1. Three rounds gave p95 12.80–15.06 ms for full-prefix rebuilds and 1.14–2.06 ms for retained blocks; visible rows matched on every update. See `spikes/x3-markdown/README.md` and `spikes/x3-markdown/run`. D10 records the provisional retained-block choice for S8. No new dependencies or downloads. The user still owns both human items: run the same test on a physical iPhone and confirm the D10 choice.
 
 ### X4 · Spike: mid-task context
 
