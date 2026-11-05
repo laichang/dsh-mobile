@@ -23,6 +23,8 @@ import type { MilestoneAdded } from "./milestones_pb.js";
 import { file_milestones } from "./milestones_pb.js";
 import type { ListTasks, LogReset, Resume, Resumed, TaskList, TaskUpserted } from "./s2_pb.js";
 import { file_s2 } from "./s2_pb.js";
+import type { AuditPage, DeviceList, ListAudit, ListDevices, RevokeDevice } from "./devices_pb.js";
+import { file_devices } from "./devices_pb.js";
 import type { Interrupt, InterruptAccepted } from "./interrupt_pb.js";
 import { file_interrupt } from "./interrupt_pb.js";
 import type { GetModelCatalog, ModelCatalog, ModelSelected, ModelSelection, SelectModel } from "./models_pb.js";
@@ -33,7 +35,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file frame.proto.
  */
 export const file_frame: GenFile = /*@__PURE__*/
-  fileDesc("CgtmcmFtZS5wcm90bxIHZHNobS52MSJ8CgVGcmFtZRIjCgdyZXF1ZXN0GAEgASgLMhAuZHNobS52MS5SZXF1ZXN0SAASJQoIcmVzcG9uc2UYAiABKAsyES5kc2htLnYxLlJlc3BvbnNlSAASHwoFZXZlbnQYAyABKAsyDi5kc2htLnYxLkV2ZW50SABCBgoEa2luZCL5AgoHUmVxdWVzdBIKCgJpZBgBIAEoBBIfCgVoZWxsbxgCIAEoCzIOLmRzaG0udjEuSGVsbG9IABIqCgtjcmVhdGVfdGFzaxgDIAEoCzITLmRzaG0udjEuQ3JlYXRlVGFza0gAEigKCmxpc3RfdGFza3MYKCABKAsyEi5kc2htLnYxLkxpc3RUYXNrc0gAEiEKBnJlc3VtZRgpIAEoCzIPLmRzaG0udjEuUmVzdW1lSAASMgoPYW5zd2VyX2FwcHJvdmFsGFAgASgLMhcuZHNobS52MS5BbnN3ZXJBcHByb3ZhbEgAEicKCWludGVycnVwdBhkIAEoCzISLmRzaG0udjEuSW50ZXJydXB0SAASNQoRZ2V0X21vZGVsX2NhdGFsb2cYeCABKAsyGC5kc2htLnYxLkdldE1vZGVsQ2F0YWxvZ0gAEiwKDHNlbGVjdF9tb2RlbBh5IAEoCzIULmRzaG0udjEuU2VsZWN0TW9kZWxIAEIGCgRib2R5IrcDCghSZXNwb25zZRISCgpyZXF1ZXN0X2lkGAEgASgEEh8KBWVycm9yGAIgASgLMg4uZHNobS52MS5FcnJvckgAEh8KBWhlbGxvGAMgASgLMg4uZHNobS52MS5IZWxsb0gAEiwKDHRhc2tfY3JlYXRlZBgEIAEoCzIULmRzaG0udjEuVGFza0NyZWF0ZWRIABImCgl0YXNrX2xpc3QYKCABKAsyES5kc2htLnYxLlRhc2tMaXN0SAASIwoHcmVzdW1lZBgpIAEoCzIQLmRzaG0udjEuUmVzdW1lZEgAEjYKEWFwcHJvdmFsX3Jlc29sdmVkGFAgASgLMhkuZHNobS52MS5BcHByb3ZhbFJlc29sdmVkSAASOAoSaW50ZXJydXB0X2FjY2VwdGVkGGQgASgLMhouZHNobS52MS5JbnRlcnJ1cHRBY2NlcHRlZEgAEi4KDW1vZGVsX2NhdGFsb2cYeCABKAsyFS5kc2htLnYxLk1vZGVsQ2F0YWxvZ0gAEjAKDm1vZGVsX3NlbGVjdGVkGHkgASgLMhYuZHNobS52MS5Nb2RlbFNlbGVjdGVkSABCBgoEYm9keSKrAwoFRXZlbnQSMgoPYXNzaXN0YW50X2NodW5rGAEgASgLMhcuZHNobS52MS5Bc3Npc3RhbnRDaHVua0gAEigKCnRhc2tfZW5kZWQYAiABKAsyEi5kc2htLnYxLlRhc2tFbmRlZEgAEjIKD21pbGVzdG9uZV9hZGRlZBg8IAEoCzIXLmRzaG0udjEuTWlsZXN0b25lQWRkZWRIABIuCg10YXNrX3Vwc2VydGVkGCkgASgLMhUuZHNobS52MS5UYXNrVXBzZXJ0ZWRIABImCglsb2dfcmVzZXQYKiABKAsyES5kc2htLnYxLkxvZ1Jlc2V0SAASNAoQYXBwcm92YWxfcGVuZGluZxhQIAEoCzIYLmRzaG0udjEuQXBwcm92YWxQZW5kaW5nSAASNgoRYXBwcm92YWxfcmVzb2x2ZWQYUSABKAsyGS5kc2htLnYxLkFwcHJvdmFsUmVzb2x2ZWRIABIwCg5tb2RlbF9zZWxlY3RlZBh4IAEoCzIWLmRzaG0udjEuTW9kZWxTZWxlY3RlZEgAEhAKCGhvc3Rfc2VxGCggASgEQgYKBGJvZHkiNwoFSGVsbG8SGAoQcHJvdG9jb2xfdmVyc2lvbhgBIAEoDRIUCgxjYXBhYmlsaXRpZXMYAiADKAkiJgoFRXJyb3ISDAoEY29kZRgBIAEoCRIPCgdtZXNzYWdlGAIgASgJIk4KCkNyZWF0ZVRhc2sSDgoGcHJvbXB0GAEgASgJEjAKD21vZGVsX3NlbGVjdGlvbhh4IAEoCzIXLmRzaG0udjEuTW9kZWxTZWxlY3Rpb24iHgoLVGFza0NyZWF0ZWQSDwoHdGFza19pZBgBIAEoCSI8Cg5Bc3Npc3RhbnRDaHVuaxIPCgd0YXNrX2lkGAEgASgJEgsKA3NlcRgCIAEoBBIMCgR0ZXh0GAMgASgJIlIKCVRhc2tFbmRlZBIPCgd0YXNrX2lkGAEgASgJEiMKBnN0YXR1cxgCIAEoDjITLmRzaG0udjEuVGFza1N0YXR1cxIPCgdtZXNzYWdlGAMgASgJKnkKClRhc2tTdGF0dXMSGwoXVEFTS19TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVUQVNLX1NUQVRVU19DT01QTEVURUQQARIWChJUQVNLX1NUQVRVU19GQUlMRUQQAhIbChdUQVNLX1NUQVRVU19JTlRFUlJVUFRFRBADYgZwcm90bzM", [file_approvals, file_milestones, file_s2, file_interrupt, file_models]);
+  fileDesc("CgtmcmFtZS5wcm90bxIHZHNobS52MSJ8CgVGcmFtZRIjCgdyZXF1ZXN0GAEgASgLMhAuZHNobS52MS5SZXF1ZXN0SAASJQoIcmVzcG9uc2UYAiABKAsyES5kc2htLnYxLlJlc3BvbnNlSAASHwoFZXZlbnQYAyABKAsyDi5kc2htLnYxLkV2ZW50SABCBgoEa2luZCKEBAoHUmVxdWVzdBIKCgJpZBgBIAEoBBIfCgVoZWxsbxgCIAEoCzIOLmRzaG0udjEuSGVsbG9IABIqCgtjcmVhdGVfdGFzaxgDIAEoCzITLmRzaG0udjEuQ3JlYXRlVGFza0gAEigKCmxpc3RfdGFza3MYKCABKAsyEi5kc2htLnYxLkxpc3RUYXNrc0gAEiEKBnJlc3VtZRgpIAEoCzIPLmRzaG0udjEuUmVzdW1lSAASMgoPYW5zd2VyX2FwcHJvdmFsGFAgASgLMhcuZHNobS52MS5BbnN3ZXJBcHByb3ZhbEgAEicKCWludGVycnVwdBhkIAEoCzISLmRzaG0udjEuSW50ZXJydXB0SAASNQoRZ2V0X21vZGVsX2NhdGFsb2cYeCABKAsyGC5kc2htLnYxLkdldE1vZGVsQ2F0YWxvZ0gAEiwKDHNlbGVjdF9tb2RlbBh5IAEoCzIULmRzaG0udjEuU2VsZWN0TW9kZWxIABItCgxsaXN0X2RldmljZXMYyAEgASgLMhQuZHNobS52MS5MaXN0RGV2aWNlc0gAEi8KDXJldm9rZV9kZXZpY2UYyQEgASgLMhUuZHNobS52MS5SZXZva2VEZXZpY2VIABIpCgpsaXN0X2F1ZGl0GMoBIAEoCzISLmRzaG0udjEuTGlzdEF1ZGl0SABCBgoEYm9keSKPBAoIUmVzcG9uc2USEgoKcmVxdWVzdF9pZBgBIAEoBBIfCgVlcnJvchgCIAEoCzIOLmRzaG0udjEuRXJyb3JIABIfCgVoZWxsbxgDIAEoCzIOLmRzaG0udjEuSGVsbG9IABIsCgx0YXNrX2NyZWF0ZWQYBCABKAsyFC5kc2htLnYxLlRhc2tDcmVhdGVkSAASJgoJdGFza19saXN0GCggASgLMhEuZHNobS52MS5UYXNrTGlzdEgAEiMKB3Jlc3VtZWQYKSABKAsyEC5kc2htLnYxLlJlc3VtZWRIABI2ChFhcHByb3ZhbF9yZXNvbHZlZBhQIAEoCzIZLmRzaG0udjEuQXBwcm92YWxSZXNvbHZlZEgAEjgKEmludGVycnVwdF9hY2NlcHRlZBhkIAEoCzIaLmRzaG0udjEuSW50ZXJydXB0QWNjZXB0ZWRIABIuCg1tb2RlbF9jYXRhbG9nGHggASgLMhUuZHNobS52MS5Nb2RlbENhdGFsb2dIABIwCg5tb2RlbF9zZWxlY3RlZBh5IAEoCzIWLmRzaG0udjEuTW9kZWxTZWxlY3RlZEgAEisKC2RldmljZV9saXN0GMgBIAEoCzITLmRzaG0udjEuRGV2aWNlTGlzdEgAEikKCmF1ZGl0X3BhZ2UYygEgASgLMhIuZHNobS52MS5BdWRpdFBhZ2VIAEIGCgRib2R5IqsDCgVFdmVudBIyCg9hc3Npc3RhbnRfY2h1bmsYASABKAsyFy5kc2htLnYxLkFzc2lzdGFudENodW5rSAASKAoKdGFza19lbmRlZBgCIAEoCzISLmRzaG0udjEuVGFza0VuZGVkSAASMgoPbWlsZXN0b25lX2FkZGVkGDwgASgLMhcuZHNobS52MS5NaWxlc3RvbmVBZGRlZEgAEi4KDXRhc2tfdXBzZXJ0ZWQYKSABKAsyFS5kc2htLnYxLlRhc2tVcHNlcnRlZEgAEiYKCWxvZ19yZXNldBgqIAEoCzIRLmRzaG0udjEuTG9nUmVzZXRIABI0ChBhcHByb3ZhbF9wZW5kaW5nGFAgASgLMhguZHNobS52MS5BcHByb3ZhbFBlbmRpbmdIABI2ChFhcHByb3ZhbF9yZXNvbHZlZBhRIAEoCzIZLmRzaG0udjEuQXBwcm92YWxSZXNvbHZlZEgAEjAKDm1vZGVsX3NlbGVjdGVkGHggASgLMhYuZHNobS52MS5Nb2RlbFNlbGVjdGVkSAASEAoIaG9zdF9zZXEYKCABKARCBgoEYm9keSI3CgVIZWxsbxIYChBwcm90b2NvbF92ZXJzaW9uGAEgASgNEhQKDGNhcGFiaWxpdGllcxgCIAMoCSImCgVFcnJvchIMCgRjb2RlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkiTgoKQ3JlYXRlVGFzaxIOCgZwcm9tcHQYASABKAkSMAoPbW9kZWxfc2VsZWN0aW9uGHggASgLMhcuZHNobS52MS5Nb2RlbFNlbGVjdGlvbiIeCgtUYXNrQ3JlYXRlZBIPCgd0YXNrX2lkGAEgASgJIjwKDkFzc2lzdGFudENodW5rEg8KB3Rhc2tfaWQYASABKAkSCwoDc2VxGAIgASgEEgwKBHRleHQYAyABKAkiUgoJVGFza0VuZGVkEg8KB3Rhc2tfaWQYASABKAkSIwoGc3RhdHVzGAIgASgOMhMuZHNobS52MS5UYXNrU3RhdHVzEg8KB21lc3NhZ2UYAyABKAkqeQoKVGFza1N0YXR1cxIbChdUQVNLX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFVRBU0tfU1RBVFVTX0NPTVBMRVRFRBABEhYKElRBU0tfU1RBVFVTX0ZBSUxFRBACEhsKF1RBU0tfU1RBVFVTX0lOVEVSUlVQVEVEEANiBnByb3RvMw", [file_approvals, file_milestones, file_s2, file_devices, file_interrupt, file_models]);
 
 /**
  * One WebSocket binary message carries exactly one Frame (inside the
@@ -141,6 +143,24 @@ export type Request = Message<"dshm.v1.Request"> & {
      */
     value: SelectModel;
     case: "selectModel";
+  } | {
+    /**
+     * @generated from field: dshm.v1.ListDevices list_devices = 200;
+     */
+    value: ListDevices;
+    case: "listDevices";
+  } | {
+    /**
+     * @generated from field: dshm.v1.RevokeDevice revoke_device = 201;
+     */
+    value: RevokeDevice;
+    case: "revokeDevice";
+  } | {
+    /**
+     * @generated from field: dshm.v1.ListAudit list_audit = 202;
+     */
+    value: ListAudit;
+    case: "listAudit";
   } | { case: undefined; value?: undefined };
 };
 
@@ -223,6 +243,18 @@ export type Response = Message<"dshm.v1.Response"> & {
      */
     value: ModelSelected;
     case: "modelSelected";
+  } | {
+    /**
+     * @generated from field: dshm.v1.DeviceList device_list = 200;
+     */
+    value: DeviceList;
+    case: "deviceList";
+  } | {
+    /**
+     * @generated from field: dshm.v1.AuditPage audit_page = 202;
+     */
+    value: AuditPage;
+    case: "auditPage";
   } | { case: undefined; value?: undefined };
 };
 

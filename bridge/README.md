@@ -73,7 +73,9 @@ Defaults: `host: 0.0.0.0`, `port: 47801`, `cwd`: your home directory (the worksp
 
 The environment variables `DSHM_BRIDGE_HOST`, `DSHM_BRIDGE_PORT`, `DSHM_BRIDGE_STATE_DIR` and `DSHM_BRIDGE_DEV_PLAINTEXT=1` fill in whatever `cordis.yml` leaves out (`scripts/dsh-up.mjs` uses them).
 
-**Pairing state** lives in `stateDir` (mode 0700, files 0600): `host-key.json` (the host's Noise private key; keep it private, deleting it unpairs every phone), `offers.json`, `devices.json` (the device registry; listing and revoking in the app is S10), and `listener.json` (the addresses `pair.js` puts in the QR).
+**Pairing state** lives in `stateDir` (mode 0700, files 0600): `host-key.json` (the host's Noise private key; keep it private, deleting it unpairs every phone), `offers.json`, `devices.json` (the paired keys and pairing/revocation history), `approvals.jsonl` (approval decisions), and `listener.json` (the addresses `pair.js` puts in the QR).
+
+On a paired phone, open **Devices and audit** under the host. The list marks the current phone and shows each device’s key fingerprint and connection dates. Revoking access disconnects that device and rejects its reconnect attempts until it pairs again. **Audit history** shows which device paired, revoked access, or answered an approval.
 
 **Plaintext** (`devPlaintext: true`) is for development only: it serves unencrypted frames on the `/plaintext` path, and the bridge refuses to start with it unless `host` is a loopback literal (`127.x.x.x` or `::1`). Only Debug builds of the app have a plaintext channel.
 

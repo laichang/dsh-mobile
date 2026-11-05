@@ -4,9 +4,8 @@
  * mode 0700, files 0600. Every call re-reads the files, so `scripts/pair.ts` (a separate
  * process) can add offers while the bridge runs. Writes are atomic (temp file + rename).
  *
- * Store only, no UI: listing and revoking devices is S10.
  */
-import { createHash, randomBytes } from 'node:crypto'
+import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { generateKeyPair, keyPairFromSecret, type KeyPair } from './noise.ts'
@@ -46,6 +45,19 @@ export class OfferRejected extends Error {
 
 interface OfferJSON { id: string; secret: string; createdAt: number; expiresAt: number; usedAt?: number }
 interface DeviceJSON { id: string; publicKey: string; pairedAt: number; lastSeenAt: number; offerId: string }
+
+interface PairingAudit {
+  id: string
+  atMs: number
+  actor: string
+  device: string
+  action: string
+  detail: string
+}
+interface Registry { devices: DeviceJSON[]; history: PairingAudit[] }
+function paired(d: DeviceJSON): PairingAudit {
+  return { id: 'pair:' + d.offerId, atMs: d.pairedAt, actor: 'owner', device: d.id, action: 'Device paired', detail: d.id }
+}
 
 export const deviceId = (publicKey: Uint8Array): string =>
   createHash('sha256').update(publicKey).digest('hex').slice(0, 16)
@@ -103,11 +115,11 @@ export class PairingStore {
 
   // MARK: devices
 
-  devices(): Device[] { return this.devicesJSON().map(fromDeviceJSON) }
+  devices(): Device[] { return this.registry().devices.map(fromDeviceJSON) }
 
   findDevice(publicKey: Uint8Array): Device | undefined {
     const key = b64url(publicKey)
-    const d = this.devicesJSON().find((x) => x.publicKey === key)
+    const d = this.registry().devices.find((x) => x.publicKey === key)
     return d && fromDeviceJSON(d)
   }
 
@@ -115,18 +127,35 @@ export class PairingStore {
   registerDevice(publicKey: Uint8Array, offerId: Uint8Array): Device {
     const now = this.now()
     const key = b64url(publicKey)
-    const others = this.devicesJSON().filter((d) => d.publicKey !== key)
+    const registry = this.registry()
+    const others = registry.devices.filter((d) => d.publicKey !== key)
     const device: DeviceJSON = {
       id: deviceId(publicKey), publicKey: key, pairedAt: now, lastSeenAt: now, offerId: b64url(offerId),
     }
-    this.write('devices.json', [...others, device])
+    this.write('devices.json', { devices: [...others, device], history: [...registry.history, paired(device)] })
     return fromDeviceJSON(device)
   }
 
   touchDevice(publicKey: Uint8Array): void {
     const key = b64url(publicKey)
     const now = this.now()
-    this.write('devices.json', this.devicesJSON().map((d) => (d.publicKey === key ? { ...d, lastSeenAt: now } : d)))
+    const registry = this.registry()
+    const device = registry.devices.find(d => d.publicKey === key)
+    if (!device) throw new Error('device not paired')
+    device.lastSeenAt = now
+    this.write('devices.json', registry)
+  }
+
+  pairingHistory(): PairingAudit[] { return this.registry().history }
+
+  revoke(id: string, actorDevice: string): void {
+    const registry = this.registry()
+    if (!registry.devices.some(d => d.id === id)) throw new Error('Device is no longer paired.')
+    registry.devices = registry.devices.filter(d => d.id !== id)
+    registry.history.push({ id: 'revoke:' + randomUUID(), atMs: this.now(), actor: 'owner',
+      device: actorDevice, action: 'Device revoked', detail: id })
+    // One atomic rename records both the loss of access and who requested it.
+    this.write('devices.json', registry)
   }
 
   // MARK: listener
@@ -137,7 +166,12 @@ export class PairingStore {
   // MARK: files
 
   private offersJSON(): OfferJSON[] { return this.read<OfferJSON[]>('offers.json') ?? [] }
-  private devicesJSON(): DeviceJSON[] { return this.read<DeviceJSON[]>('devices.json') ?? [] }
+  private registry(): Registry {
+    const value = this.read<DeviceJSON[] | Registry>('devices.json')
+    // S1 stored an array. Its pairedAt and offer ID provide the original pairing event.
+    if (Array.isArray(value)) return { devices: value, history: value.map(paired) }
+    return value ?? { devices: [], history: [] }
+  }
 
   private read<T>(name: string): T | undefined {
     const path = join(this.dir, name)
