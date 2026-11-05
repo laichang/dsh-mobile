@@ -737,7 +737,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### T1 · Tracer bullet: new UI shell
 
-**Status** todo · **Needs** — (the merged M1 code on `main`) · **Branch** `claude/t1-ui-shell`
+**Status** doing · **Needs** — (the merged M1 code on `main`) · **Branch** `claude/t1-ui-shell`
 
 **Why**: STORY §3 (one entry; open on a new session), DESIGN.md "Navigation". All other UI slices add to this shell.
 
@@ -754,12 +754,12 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: Open the app. A blank new session shows. Send "Translate: Bonjour." The reply shows on the same page. Swipe from the left edge. The drawer shows the session under its host. Tap 所有任务, then tap a running task.
 
 **Done when**
-- [ ] [ui] On launch, the app shows a blank new session with the default host and workspace, not the task list — Evidence:
-- [ ] [ui] The first message creates the session, and the same page shows the reply — Evidence:
-- [ ] [ui] A drag from the left edge opens the drawer and pushes the page. A release with low velocity closes it again. — Evidence:
-- [ ] [ui] The session page has no back button. The milestone timeline opens as a sheet. — Evidence:
+- [x] [ui] On launch, the app shows a blank new session with the default host and workspace, not the task list — Evidence: test:T1ShellUITests/testLaunchShowsBlankNewSession · cmd:scripts/demo/t1.sh · shot:evidence/T1/t1-launch-new-session.png
+- [x] [ui] The first message creates the session, and the same page shows the reply — Evidence: test:T1ShellUITests/testFirstMessageCreatesSessionOnSamePage · cmd:scripts/demo/t1.sh · shot:evidence/T1/t1-first-message-reply.png
+- [x] [ui] A drag from the left edge opens the drawer and pushes the page. A release with low velocity closes it again. — Evidence: test:T1ShellUITests/testEdgeDragOpensDrawerAndSlowReleaseCloses · cmd:scripts/demo/t1.sh · shot:evidence/T1/t1-drawer-open.png
+- [x] [ui] The session page has no back button. The milestone timeline opens as a sheet. — Evidence: test:T1ShellUITests/testNoBackButtonAndTimelineSheet · cmd:scripts/demo/t1.sh · shot:evidence/T1/t1-session-page.png · shot:evidence/T1/t1-timeline-sheet.png
 - [ ] [ui] All M1 UITest files pass on the new shell, with no accessibility identifier renamed — Evidence:
-- [ ] [auto] ARCHITECTURE.md has the new `Dxx` for first-message routing, and D34 says "superseded" — Evidence:
+- [x] [auto] ARCHITECTURE.md has the new `Dxx` for first-message routing, and D34 says "superseded" — Evidence: commit:7f4b8cd
 - [ ] [human] The user accepts that the app always uses dark mode — Evidence:
 
 **Not**: Drawer animation (S23). Unread marks and workspace levels (S14). Restyled cards (S15, S18).
