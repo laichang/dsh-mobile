@@ -100,6 +100,9 @@ final class S2DurableListUITests: XCTestCase {
         // First run: a task completes against the in-process FakeBridge host.
         var app = launch(["-DSHMFakeBridge", "YES", "-DSHMResetStore", "YES"])
         send(app, "Offline check")
+        let created = app.buttons.matching(identifier: "tasklist.row").firstMatch
+        XCTAssertTrue(created.waitForExistence(timeout: 5))
+        created.tap()
         let status = app.descendants(matching: .any)["task.status"]
         poll(30, "the task to complete") { value(status) == "completed" }
         app.terminate()

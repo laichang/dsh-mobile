@@ -13,9 +13,21 @@ extension XCTestCase {
         field.typeText(prompt)
         let send = app.buttons["composer.send"]
         XCTAssertTrue(send.isEnabled)
+        let matchingRows = app.buttons.matching(identifier: "tasklist.row")
+            .matching(NSPredicate(format: "label CONTAINS %@", prompt))
+        let priorCount = matchingRows.count
         send.tap()
 
+        // Short answers stay in the list (S8). This demo inspects the full session transcript.
         let status = app.descendants(matching: .any)["task.status"]
+        if !status.waitForExistence(timeout: 3) {
+            // A fast task can cross from Running to Done during the tap. Use its settled row.
+            let ready = expectation(for: NSPredicate { _, _ in
+                status.exists || (matchingRows.count > priorCount && matchingRows.firstMatch.value as? String == "completed")
+            }, evaluatedWith: app)
+            wait(for: [ready], timeout: timeout)
+            if !status.exists { matchingRows.firstMatch.tap() }
+        }
         let transcript = app.descendants(matching: .any)["transcript.text"]
 
         // Streaming: some text shows while the task is still running.

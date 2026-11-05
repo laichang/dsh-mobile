@@ -10,22 +10,39 @@ struct RootView: View {
     @Bindable var store: TaskListStore
     let pair: () -> Void
     @State private var path: [String] = []
+    @State private var submitted: String?
 
     var body: some View {
         NavigationStack(path: $path) {
-            TaskListView(store: store)
-                .navigationTitle("Tasks")
-                .safeAreaInset(edge: .bottom) {
-                    ComposerView(store: store) { key in path = [key] }
-                }
-                .navigationDestination(for: String.self) { key in
-                    TaskDetailView(store: store, taskKey: key)
-                }
-                .toolbar {
-                    Button(action: pair) { Image(systemName: "qrcode.viewfinder") }
-                        .accessibilityLabel("Pair a host")
-                        .accessibilityIdentifier("pairing.scan")
-                }
+            ScrollViewReader { scroll in
+                TaskListView(store: store)
+                    .onChange(of: submitted.flatMap { store.task($0) }?.showsInlineAnswer) { _, visible in
+                        if visible == true, let submitted {
+                            scroll.scrollTo(submitted, anchor: .center)
+                        }
+                    }
+            }
+            .navigationTitle("Tasks")
+            .safeAreaInset(edge: .bottom) {
+                ComposerView(store: store) { key in submitted = key }
+            }
+            .navigationDestination(for: String.self) { key in
+                TaskDetailView(store: store, taskKey: key)
+            }
+            .toolbar {
+                Button(action: pair) { Image(systemName: "qrcode.viewfinder") }
+                    .accessibilityLabel("Pair a host")
+                    .accessibilityIdentifier("pairing.scan")
+            }
+        }
+        .onChange(of: path) { _, _ in submitted = nil }
+        .task(id: submitted) {
+            guard let key = submitted else { return }
+            // Give a simple reply time to finish in place. Longer work opens its live detail.
+            do { try await Task.sleep(for: .seconds(2)) } catch { return }
+            guard path.isEmpty, store.prompt.isEmpty, submitted == key, let row = store.task(key) else { return }
+            if !row.showsInlineAnswer { path = [key] }
+            submitted = nil
         }
     }
 }
@@ -64,6 +81,7 @@ struct TaskListView: View {
                     } else {
                         NavigationLink(value: row.key) { TaskRowView(row: row) }
                             .accessibilityIdentifier("tasklist.row")
+                            .id(row.key)
                     }
                     ForEach(row.approvals) { approval in
                         ApprovalCard(approval: approval, hostKey: row.hostKey, store: store)
@@ -162,12 +180,24 @@ struct TaskRowView: View {
                 }
             }
             // S3's card, from the cache (S2 x S3 seam): progress shows in the list, offline too.
-            if !row.milestones.isEmpty {
+            if row.showsInlineAnswer {
+                Text(TranscriptBlocks.markdown(row.transcript))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else if !row.milestones.isEmpty {
                 MilestoneCard(timeline: row.milestones, maxTodos: 3, showsChevron: false)
             }
         }
         .accessibilityElement(children: .combine)
         .accessibilityValue(row.state.rawValue)
+    }
+}
+
+private extension TaskListStore.TaskRow {
+    var showsInlineAnswer: Bool {
+        state == .completed && !transcript.isEmpty && transcript.prefix(281).count <= 280 &&
+            transcript.split(whereSeparator: \.isNewline).count <= 3 &&
+            !transcript.contains("```") && !transcript.contains("~~~") &&
+            milestones.milestones.allSatisfy { $0.kind == .started || $0.kind == .finished }
     }
 }
 

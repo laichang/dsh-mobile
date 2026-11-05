@@ -127,6 +127,10 @@ final class S3MilestonesUITests: XCTestCase {
         app.launchArguments = ["-DSHMFakeBridge", "YES"]
         app.launch()
         send(app, prompt: "Introduce yourself in one sentence.")
+        let row = app.buttons.matching(identifier: "tasklist.row")
+            .matching(NSPredicate(format: "label CONTAINS %@", "Introduce yourself in one sentence.")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.tap()
         waitForEnd(app, timeout: 15)
         XCTAssertFalse(app.descendants(matching: .any)["milestone.card"].exists)
     }
