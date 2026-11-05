@@ -52,7 +52,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S7 | done | merged `21aabd8` | 2026-11-05 | — (provisional D37 in §9) |
 | S8 | doing | claude/s8-rich-detail | 2026-11-05 | Implement and verify |
 | S9 | doing | claude/s9-multi-host | 2026-11-05 | Implement and verify |
-| S10 | doing | claude/s10-devices-audit | 2026-11-05 | Implement and verify |
+| S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
 | S11 | todo | — | 2026-11-05 | Ready (S1 merged) |
 | S12 | todo | — | 2026-11-05 | Ready (T0 merged); also pins D17's prepend ordering |
 
@@ -834,6 +834,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-05 · S9.** Assigned claude/s9-multi-host, worktree /Users/bytedance/.codex/worktrees/s9-multi-host/dsh-mobile, simulator dshm-S9, DSHM_HOME ~/.dshm/home-s9, bridge 47817, web 3290. The owner uses the shared DSH runtime read-only.
 
+- **2026-11-05 · S10.** Independent integrated review at 1447dee passed 55 bridge and 48 Swift tests plus the real DSH UI. A paired phone saw the approval decision with identity, revoked the second client, and the original key received 4003 on reconnect. Verified S7 and S10 on the same Noise connection. Evidence: scripts/demo/s10.sh and evidence/S10/.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -867,3 +869,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 29 | S6 | decision | ARCHITECTURE D31, provisional: host catalog/default passthrough, pre-prompt selection, and transcript replay of durable model selections. | `main` | merged `d62fd6d` |
 | 30 | S4 | decision | ARCHITECTURE D25, provisional: fail-closed timeout, per-device audit, resume snapshot and temporary pending cards for upstream sessions. | `main` | merged `acbf2c0` |
 | 31 | S7 | decision | D37, provisional: DSH registry supplies canonical host paths and recents; explicit paths are validated by DSH and sent with the model selection. | `main` | merged `21aabd8` |
+| 32 | S10 | decision | D40, provisional: Noise-authenticated device management, registry revocation with active socket closure, and combined pairing/approval audit. | `main` | merged `4a983eb` |
