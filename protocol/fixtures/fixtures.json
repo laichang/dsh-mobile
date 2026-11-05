@@ -18,6 +18,23 @@
     { "name": "t0_error_response",
       "frame": { "response": { "requestId": "3", "error": { "code": "hello/required", "message": "send Hello first" } } } },
     { "name": "t0_large_ids",
-      "frame": { "event": { "assistantChunk": { "taskId": "t", "seq": "18446744073709551615" } } } }
+      "frame": { "event": { "assistantChunk": { "taskId": "t", "seq": "18446744073709551615" } } } },
+    { "name": "s2_resume_request",
+      "frame": { "request": { "id": "4", "resume": { "logId": "0d2f3c1e-6a7b-4c8d-9e0f-112233445566", "afterSeq": "41" } } } },
+    { "name": "s2_resumed_response",
+      "frame": { "response": { "requestId": "4", "resumed": { "logId": "0d2f3c1e-6a7b-4c8d-9e0f-112233445566", "headSeq": "57", "hostName": "Lai's Mac", "replayed": "16" } } } },
+    { "name": "s2_list_tasks_request",
+      "frame": { "request": { "id": "5", "listTasks": {} } } },
+    { "name": "s2_task_list_response",
+      "frame": { "response": { "requestId": "5", "taskList": { "tasks": [
+        { "taskId": "session-2", "title": "整理本周的会议记录", "state": "TASK_STATE_RUNNING", "createdAtMs": "1793000000000", "updatedAtMs": "1793000000000" },
+        { "taskId": "session-1", "title": "Fix the flaky test", "state": "TASK_STATE_FAILED", "createdAtMs": "1792999000000", "updatedAtMs": "1792999100000", "message": "error: rate limited" }
+      ], "logId": "0d2f3c1e-6a7b-4c8d-9e0f-112233445566", "hostName": "Lai's Mac" } } } },
+    { "name": "s2_task_upserted_event",
+      "frame": { "event": { "hostSeq": "42", "taskUpserted": { "task": { "taskId": "session-2", "title": "整理本周的会议记录", "state": "TASK_STATE_COMPLETED", "createdAtMs": "1793000000000", "updatedAtMs": "1793000004000" } } } } },
+    { "name": "s2_chunk_with_host_seq_event",
+      "frame": { "event": { "hostSeq": "43", "assistantChunk": { "taskId": "session-2", "seq": "7", "text": "完成" } } } },
+    { "name": "s2_log_reset_event",
+      "frame": { "event": { "logReset": { "logId": "0d2f3c1e-6a7b-4c8d-9e0f-112233445566" } } } }
   ]
 }

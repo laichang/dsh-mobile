@@ -1,25 +1,23 @@
 /**
  * The bridge's own WebSocket listener (ARCHITECTURE §5.1). One binary WebSocket message carries
- * one `Frame` through the SecureChannel. T0 serves Hello and CreateTask.
+ * one `Frame` through the SecureChannel. T0 serves Hello and CreateTask; S2 adds ListTasks and
+ * Resume, and tasks now belong to the host's `TaskHub`, not to the connection (D17).
  */
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import { WebSocketServer, type WebSocket } from 'ws'
+import { hostname } from 'node:os'
 import type { SecureChannel } from './channel.ts'
-import type { StartedTask } from './dsh.ts'
-import {
-  FrameSchema, TaskStatus,
-  type EventSchema, type Frame, type Request, type ResponseSchema,
-} from './gen/frame_pb.ts'
+import { FrameSchema, type Frame, type Request, type ResponseSchema } from './gen/frame_pb.ts'
+import type { LoggedEvent } from './s2/host-log.ts'
+import { TaskHub, type TaskStarter } from './s2/task-hub.ts'
+
+export type { TaskStarter } from './s2/task-hub.ts'
 
 type ResponseBody = MessageInitShape<typeof ResponseSchema>['body']
-type EventBody = MessageInitShape<typeof EventSchema>['body']
 
 export const PROTOCOL_VERSION = 1
-export const CAPABILITIES = ['tasks.v1'] as const
-
-export interface TaskStarter {
-  start(prompt: string, signal: AbortSignal): Promise<StartedTask>
-}
+/** `resume.v1`: ListTasks, Resume and `Event.host_seq` (S2). */
+export const CAPABILITIES = ['tasks.v1', 'resume.v1'] as const
 
 export interface BridgeServerOptions {
   host: string
@@ -27,11 +25,16 @@ export interface BridgeServerOptions {
   port: number
   channel: SecureChannel
   tasks: TaskStarter
+  /** The host's name in TaskList / Resumed (default: this machine's hostname). */
+  hostName?: string
+  /** Inject a hub (tests); by default the server makes one around `tasks`. */
+  hub?: TaskHub
   log?: (message: string) => void
 }
 
 export interface BridgeServer {
   readonly port: number
+  readonly hub: TaskHub
   close(): Promise<void>
 }
 
@@ -47,31 +50,47 @@ export async function startBridgeServer(options: BridgeServerOptions): Promise<B
   const port = typeof address === 'object' && address ? address.port : options.port
   log(`listening on ${options.host}:${port} (${options.channel.name})`)
 
-  wss.on('connection', (socket) => serveConnection(socket, options, log))
+  const hub = options.hub ?? new TaskHub(options.tasks)
+  const host = { hub, hostName: options.hostName ?? hostname() }
+  wss.on('connection', (socket) => serveConnection(socket, options.channel, host, log))
 
   return {
     port,
-    close: () => new Promise<void>((resolve) => {
-      for (const client of wss.clients) client.terminate()
-      wss.close(() => resolve())
-    }),
+    hub,
+    close: async () => {
+      await new Promise<void>((resolve) => {
+        for (const client of wss.clients) client.terminate()
+        wss.close(() => resolve())
+      })
+      await hub.close()
+    },
   }
 }
 
-function serveConnection(socket: WebSocket, options: BridgeServerOptions, log: (m: string) => void) {
-  const abort = new AbortController()
+function serveConnection(
+  socket: WebSocket, channel: SecureChannel, host: { hub: TaskHub; hostName: string }, log: (m: string) => void,
+) {
+  const { hub, hostName } = host
   let helloDone = false
+  // Which logged events this connection receives. Before Resume (a T0-style client): only the
+  // events of tasks it created here. After Resume: every event, in host_seq order.
+  const ownTasks = new Set<string>()
+  let resumed = false
+  let unsubscribe: (() => void) | undefined
 
   const send = (frame: MessageInitShape<typeof FrameSchema>) => {
     if (socket.readyState !== socket.OPEN) return
-    socket.send(options.channel.seal(toBinary(FrameSchema, create(FrameSchema, frame))))
+    socket.send(channel.seal(toBinary(FrameSchema, create(FrameSchema, frame))))
   }
   const respond = (requestId: bigint, body: ResponseBody) =>
     send({ kind: { case: 'response', value: { requestId, body } } })
   const fail = (requestId: bigint, code: string, message: string) =>
     respond(requestId, { case: 'error', value: { code, message } })
-  const emit = (body: EventBody) =>
-    send({ kind: { case: 'event', value: { body } } })
+  const forward = (event: LoggedEvent) =>
+    send({ kind: { case: 'event', value: { hostSeq: event.seq, body: event.body } } })
+  const subscribeOwnTasks = () => {
+    unsubscribe ??= hub.log.subscribe((event) => { if (ownTasks.has(event.taskId)) forward(event) })
+  }
 
   const handle = async (request: Request) => {
     const id = request.id
@@ -91,29 +110,41 @@ function serveConnection(socket: WebSocket, options: BridgeServerOptions, log: (
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
         const prompt = request.body.value.prompt
         if (!prompt.trim()) return fail(id, 'task/prompt-empty', 'the prompt is empty')
-        let task: StartedTask
+        if (!resumed) subscribeOwnTasks()
         try {
-          task = await options.tasks.start(prompt, abort.signal)
+          // The task id is known before any of its events are logged: answer first, then the
+          // subscription forwards its events (T0 clients rely on TaskCreated preceding them).
+          await hub.create(prompt, (taskId) => {
+            ownTasks.add(taskId)
+            respond(id, { case: 'taskCreated', value: { taskId } })
+          })
         } catch (error) {
           log(`create task failed: ${String(error)}`)
           return fail(id, 'task/create-failed', error instanceof Error ? error.message : String(error))
         }
-        respond(id, { case: 'taskCreated', value: { taskId: task.taskId } })
-        let seq = 0n
-        for await (const out of task.output) {
-          if (out.kind === 'text') {
-            emit({ case: 'assistantChunk', value: { taskId: task.taskId, seq: ++seq, text: out.text } })
-          } else {
-            emit({
-              case: 'taskEnded',
-              value: {
-                taskId: task.taskId,
-                status: out.status === 'completed' ? TaskStatus.COMPLETED : TaskStatus.FAILED,
-                message: out.message ?? '',
-              },
-            })
-          }
-        }
+        return
+      }
+      case 'listTasks': {
+        if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
+        return respond(id, { case: 'taskList', value: { tasks: hub.list(), logId: hub.log.logId, hostName } })
+      }
+      case 'resume': {
+        if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
+        // Replay and subscribe in one synchronous step, so no event falls between them.
+        const { logId, afterSeq } = request.body.value
+        unsubscribe?.()
+        const replay = hub.log.since(logId, afterSeq)
+        if (replay.reset) send({ kind: { case: 'event', value: { body: { case: 'logReset', value: { logId: hub.log.logId } } } } })
+        for (const event of replay.events) forward(event)
+        respond(id, {
+          case: 'resumed',
+          value: {
+            logId: hub.log.logId, headSeq: hub.log.head, hostName,
+            reset: replay.reset, replayed: BigInt(replay.events.length),
+          },
+        })
+        resumed = true
+        unsubscribe = hub.log.subscribe(forward)
         return
       }
       default:
@@ -126,12 +157,13 @@ function serveConnection(socket: WebSocket, options: BridgeServerOptions, log: (
     let frame: Frame
     try {
       const bytes = Array.isArray(data) ? Buffer.concat(data) : Buffer.from(data as ArrayBuffer)
-      frame = fromBinary(FrameSchema, options.channel.open(new Uint8Array(bytes)))
+      frame = fromBinary(FrameSchema, channel.open(new Uint8Array(bytes)))
     } catch {
       return socket.close(1007, 'undecodable frame')
     }
     if (frame.kind.case !== 'request') return
     handle(frame.kind.value).catch((error) => log(`request failed: ${String(error)}`))
   })
-  socket.on('close', () => abort.abort())
+  // The connection goes; the host's tasks keep running (STORY principle 4).
+  socket.on('close', () => unsubscribe?.())
 }
