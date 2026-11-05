@@ -1,0 +1,1941 @@
+{
+  "startedAt": "2026-11-05T02:16:19.967Z",
+  "dsh": "0.2.2-rc.1 (mock LLM)",
+  "scenarios": [
+    {
+      "name": "A-no-plugin-answerer",
+      "mode": "off",
+      "sessionId": "session-8bffc3d8-aaea-474c-8b81-aa7f6ecde321",
+      "listenerOrder": [
+        "other(Include)"
+      ],
+      "whileHeld": {
+        "parkedByPlugin": [],
+        "gatewayPending": [
+          {
+            "event": "approval/request",
+            "agentId": "session-8bffc3d8-aaea-474c-8b81-aa7f6ecde321"
+          }
+        ],
+        "liveWebClient": false,
+        "webSessionState": {
+          "running": true,
+          "pendingInput": [
+            "approval"
+          ]
+        },
+        "decidedSoFar": [],
+        "turnEnded": false,
+        "asked": [
+          {
+            "id": "77e13711-f632-46a4-8b13-bd6e5405e2f7",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE"
+          }
+        ]
+      },
+      "startedAt": 1793844988830,
+      "after": {
+        "released": [],
+        "gatewayPending": [],
+        "decided": [
+          "cancelled"
+        ],
+        "turnEnded": true,
+        "toolResults": [
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: tool call aborted before dispatch\"}],\"isError\":true,\"id\":\"d630cfe4-64ef-42f4-bb9e-e083b1b01bfa\"},\"error\":{\"name\":\"AbortError\",\"code\":\"ABORTED_BEFORE_DISPATCH\"}}"
+        ]
+      }
+    },
+    {
+      "name": "B-append",
+      "mode": "append",
+      "sessionId": "session-8ab6ca62-bd43-45e8-8544-ee12bc71de36",
+      "listenerOrder": [
+        "other(Include)",
+        "x1-spike"
+      ],
+      "whileHeld": {
+        "parkedByPlugin": [],
+        "gatewayPending": [
+          {
+            "event": "approval/request",
+            "agentId": "session-8ab6ca62-bd43-45e8-8544-ee12bc71de36"
+          }
+        ],
+        "liveWebClient": false,
+        "webSessionState": {
+          "running": true,
+          "pendingInput": [
+            "approval"
+          ]
+        },
+        "decidedSoFar": [],
+        "turnEnded": false,
+        "asked": [
+          {
+            "id": "94dd98d5-9c85-437c-9b91-f139e2eecb8d",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE"
+          }
+        ]
+      },
+      "startedAt": 1793844990826,
+      "after": {
+        "released": [],
+        "gatewayPending": [],
+        "decided": [
+          "cancelled"
+        ],
+        "turnEnded": true,
+        "toolResults": [
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: tool call aborted before dispatch\"}],\"isError\":true,\"id\":\"ee16f8c0-3f07-47f3-b003-7be9f89396c1\"},\"error\":{\"name\":\"AbortError\",\"code\":\"ABORTED_BEFORE_DISPATCH\"}}"
+        ]
+      }
+    },
+    {
+      "name": "C-prepend-allow",
+      "mode": "prepend",
+      "sessionId": "session-f16a4108-3528-47d1-84d7-c568d9d8c339",
+      "listenerOrder": [
+        "x1-spike",
+        "other(Include)"
+      ],
+      "whileHeld": {
+        "parkedByPlugin": [
+          {
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE",
+            "sameSession": true,
+            "agentId": "session-f16a4108-3528-47d1-84d7-c568d9d8c339",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            }
+          }
+        ],
+        "gatewayPending": [],
+        "liveWebClient": false,
+        "webSessionState": {
+          "running": true,
+          "pendingInput": []
+        },
+        "decidedSoFar": [],
+        "turnEnded": false,
+        "asked": [
+          {
+            "id": "54b9a306-da8e-4d23-8e06-75c3fa0def5d",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE"
+          }
+        ]
+      },
+      "startedAt": 1793844992731,
+      "releaseOutput": "released 3db9b98d-10f4-4db3-8f09-01a7afdd8a90 → allowed-once",
+      "after": {
+        "released": [
+          {
+            "id": "3db9b98d-10f4-4db3-8f09-01a7afdd8a90",
+            "sessionId": "session-f16a4108-3528-47d1-84d7-c568d9d8c339",
+            "agentId": "session-f16a4108-3528-47d1-84d7-c568d9d8c339",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE",
+            "parkedAt": "2026-11-05T02:16:32.986Z",
+            "mode": "prepend",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            },
+            "outcome": "allowed-once",
+            "answeredBy": "script",
+            "releasedAt": "2026-11-05T02:16:34.742Z"
+          }
+        ],
+        "gatewayPending": [],
+        "decided": [
+          "allowed-once"
+        ],
+        "turnEnded": true,
+        "toolResults": [
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"dee5324a-2e85-40b7-abf7-2c188a739f28\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+        ]
+      }
+    },
+    {
+      "name": "D-prepend-reject",
+      "mode": "prepend",
+      "sessionId": "session-22dccd29-54c0-4724-b655-3e160a5a4b15",
+      "listenerOrder": [
+        "x1-spike",
+        "other(Include)"
+      ],
+      "whileHeld": {
+        "parkedByPlugin": [
+          {
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE",
+            "sameSession": true,
+            "agentId": "session-22dccd29-54c0-4724-b655-3e160a5a4b15",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            }
+          }
+        ],
+        "gatewayPending": [],
+        "liveWebClient": false,
+        "webSessionState": {
+          "running": true,
+          "pendingInput": []
+        },
+        "decidedSoFar": [],
+        "turnEnded": false,
+        "asked": [
+          {
+            "id": "bebd1d92-f198-4666-8e14-4d17194c8076",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE"
+          }
+        ]
+      },
+      "startedAt": 1793844994966,
+      "after": {
+        "released": [
+          {
+            "id": "f2047f16-973e-4b2d-b5a4-a09c3088a30d",
+            "sessionId": "session-22dccd29-54c0-4724-b655-3e160a5a4b15",
+            "agentId": "session-22dccd29-54c0-4724-b655-3e160a5a4b15",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE",
+            "parkedAt": "2026-11-05T02:16:35.224Z",
+            "mode": "prepend",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            },
+            "outcome": "rejected",
+            "answeredBy": "script",
+            "releasedAt": "2026-11-05T02:16:36.955Z"
+          }
+        ],
+        "gatewayPending": [],
+        "decided": [
+          "rejected"
+        ],
+        "turnEnded": true,
+        "toolResults": [
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: the user rejected tool \\\"bash\\\"\"}],\"isError\":true,\"id\":\"580f5600-20db-486f-ba93-a397ae43dc6a\"}}"
+        ]
+      }
+    },
+    {
+      "name": "E-real-sandbox-escalation",
+      "mode": "prepend",
+      "sessionId": "session-cab9757f-5a7d-4037-b093-66e229860fbb",
+      "listenerOrder": [
+        "x1-spike",
+        "other(Include)"
+      ],
+      "whileHeld": {
+        "parkedByPlugin": [
+          {
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "escalate sandbox to danger-full-access: X1 spike: prove a real sandbox escalation reaches the plugin answerer",
+            "sameSession": true,
+            "agentId": "session-cab9757f-5a7d-4037-b093-66e229860fbb",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            }
+          }
+        ],
+        "gatewayPending": [],
+        "liveWebClient": false,
+        "webSessionState": {
+          "running": true,
+          "pendingInput": []
+        },
+        "decidedSoFar": [],
+        "turnEnded": false,
+        "asked": [
+          {
+            "id": "a856b46b-f22a-4873-b5cd-ee7291b0be50",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "escalate sandbox to danger-full-access: X1 spike: prove a real sandbox escalation reaches the plugin answerer"
+          }
+        ]
+      },
+      "startedAt": 1793844997191,
+      "after": {
+        "released": [
+          {
+            "id": "7d904485-db5c-4434-a441-07de2f82455a",
+            "sessionId": "session-cab9757f-5a7d-4037-b093-66e229860fbb",
+            "agentId": "session-cab9757f-5a7d-4037-b093-66e229860fbb",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "escalate sandbox to danger-full-access: X1 spike: prove a real sandbox escalation reaches the plugin answerer",
+            "parkedAt": "2026-11-05T02:16:37.439Z",
+            "mode": "prepend",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            },
+            "outcome": "allowed-once",
+            "answeredBy": "script",
+            "releasedAt": "2026-11-05T02:16:39.222Z"
+          }
+        ],
+        "gatewayPending": [],
+        "decided": [
+          "allowed-once"
+        ],
+        "turnEnded": true,
+        "toolResults": [
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-ESCALATED tool ran\\n\"}],\"isError\":false,\"id\":\"50fc7db5-46f5-48c1-8f84-ff9fad5e59dd\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+        ]
+      }
+    },
+    {
+      "name": "F-fanout-phone-wins",
+      "mode": "fanout",
+      "sessionId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9",
+      "listenerOrder": [
+        "x1-spike",
+        "other(Include)"
+      ],
+      "whileHeld": {
+        "parkedByPlugin": [
+          {
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE",
+            "sameSession": true,
+            "agentId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            }
+          }
+        ],
+        "gatewayPending": [
+          {
+            "event": "approval/request",
+            "agentId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9"
+          }
+        ],
+        "liveWebClient": false,
+        "webSessionState": {
+          "running": true,
+          "pendingInput": [
+            "approval"
+          ]
+        },
+        "decidedSoFar": [],
+        "turnEnded": false,
+        "asked": [
+          {
+            "id": "748bdbfe-d11c-470d-a242-370ad9e0a988",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE"
+          }
+        ]
+      },
+      "startedAt": 1793844999500,
+      "after": {
+        "released": [
+          {
+            "id": "502e1aa5-4ab2-458c-934e-4a325dafd027",
+            "sessionId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9",
+            "agentId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE",
+            "parkedAt": "2026-11-05T02:16:39.754Z",
+            "mode": "fanout",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            },
+            "outcome": "allowed-once",
+            "answeredBy": "script",
+            "releasedAt": "2026-11-05T02:16:41.615Z"
+          }
+        ],
+        "gatewayPending": [],
+        "decided": [
+          "allowed-once"
+        ],
+        "turnEnded": true,
+        "toolResults": [
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"9ce1e1f0-72d0-4bf9-ba98-81de5e60024f\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+        ]
+      }
+    },
+    {
+      "name": "G-cancel-while-parked",
+      "mode": "prepend",
+      "sessionId": "session-f3af7ad0-e78a-413b-bcc9-1e3517f97c4b",
+      "listenerOrder": [
+        "x1-spike",
+        "other(Include)"
+      ],
+      "whileHeld": {
+        "parkedByPlugin": [
+          {
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE",
+            "sameSession": true,
+            "agentId": "session-f3af7ad0-e78a-413b-bcc9-1e3517f97c4b",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            }
+          }
+        ],
+        "gatewayPending": [],
+        "liveWebClient": false,
+        "webSessionState": {
+          "running": true,
+          "pendingInput": []
+        },
+        "decidedSoFar": [],
+        "turnEnded": false,
+        "asked": [
+          {
+            "id": "dec32cfe-9e10-4fc4-b063-355ade11bea3",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE"
+          }
+        ]
+      },
+      "startedAt": 1793845001898,
+      "after": {
+        "released": [
+          {
+            "id": "c29af536-5aa7-4bb1-9161-d4ea91b4107e",
+            "sessionId": "session-f3af7ad0-e78a-413b-bcc9-1e3517f97c4b",
+            "agentId": "session-f3af7ad0-e78a-413b-bcc9-1e3517f97c4b",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE",
+            "parkedAt": "2026-11-05T02:16:42.215Z",
+            "mode": "prepend",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            },
+            "outcome": "cancelled",
+            "answeredBy": "request-signal",
+            "releasedAt": "2026-11-05T02:16:43.803Z"
+          }
+        ],
+        "gatewayPending": [],
+        "decided": [
+          "cancelled"
+        ],
+        "turnEnded": true,
+        "toolResults": [
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: tool call aborted before dispatch\"}],\"isError\":true,\"id\":\"2a51e3e3-5964-46f8-8d0d-77ad1c00a8be\"},\"error\":{\"name\":\"AbortError\",\"code\":\"ABORTED_BEFORE_DISPATCH\"}}"
+        ]
+      }
+    },
+    {
+      "name": "H-subagent",
+      "mode": "prepend",
+      "sessionId": "session-71dd14ce-5ad6-4923-bc06-022b8722f290",
+      "listenerOrder": [
+        "x1-spike",
+        "other(Include)"
+      ],
+      "whileHeld": {
+        "parkedByPlugin": [],
+        "gatewayPending": [],
+        "liveWebClient": false,
+        "webSessionState": {
+          "running": false,
+          "pendingInput": []
+        },
+        "decidedSoFar": [],
+        "turnEnded": true,
+        "asked": []
+      },
+      "startedAt": 1793845003813,
+      "traffic": [
+        {
+          "routed": "parentCall",
+          "firstUser": "X1 scenario H-subagentCurrent runtime context. This snapshot"
+        },
+        {
+          "routed": "done",
+          "firstUser": "X1 scenario H-subagentCurrent runtime context. This snapshot",
+          "lastToolResult": "started subagent 6df1d55d-9617-4921-af9a-322d405bf83a"
+        },
+        {
+          "routed": "childCall",
+          "firstUser": "X1-CHILD: run the gated echo with bashYour parent agent id i"
+        },
+        {
+          "routed": "done",
+          "firstUser": "X1-CHILD: run the gated echo with bashYour parent agent id i",
+          "lastToolResult": "Error: the user rejected tool \"bash\""
+        },
+        {
+          "routed": "done",
+          "firstUser": "X1 scenario H-subagentCurrent runtime context. This snapshot",
+          "lastToolResult": "started subagent 6df1d55d-9617-4921-af9a-322d405bf83a"
+        }
+      ],
+      "rootEvents": [
+        "agent/inbox/spliced {\"target\":\"next-turn\",\"start\":0,\"inserted\":[{\"content\":[{\"type\":\"text\",\"text\":\"X1 scenario H-subagent\"}],\"source\":{\"kind\":\"user\",\"rpcId\":\"25c25409-3eb3-4e85-b6a",
+        "turn/start {\"turn\":1}",
+        "agent/inbox/spliced {\"target\":\"next-turn\",\"start\":0,\"removedCount\":1,\"inserted\":[]}",
+        "step/start {\"turn\":1,\"step\":1}",
+        "system/message {\"turn\":1,\"step\":1,\"message\":{\"role\":\"system\",\"content\":[{\"type\":\"text\",\"text\":\"You are an AI agent powered by DeepSeek Harness.\\n\\nYou are a coding agent power",
+        "user/message {\"content\":[{\"type\":\"text\",\"text\":\"X1 scenario H-subagent\"}],\"source\":{\"kind\":\"user\",\"rpcId\":\"25c25409-3eb3-4e85-b6a8-f2816d629f68\"},\"role\":\"user\",\"id\":\"6330254",
+        "user/message {\"content\":[{\"type\":\"text\",\"text\":\"Current runtime context. This snapshot supersedes earlier runtime-context snapshots.\\n\\nCurrent working directory: \\\"/private",
+        "user/message {\"content\":[{\"type\":\"text\",\"text\":\"<system-reminder>\\nA skill is a reusable set of task-specific instructions. The following skills are available in this sessio",
+        "user/message {\"content\":[{\"type\":\"text\",\"text\":\"Time sampled while preparing turn 1, step 1: 2026-11-05T10:16:44+08:00[Asia/Shanghai]\\nBrowser time zone for this request: un",
+        "request/header {\"header\":{\"config\":{\"provider\":\"deepseek-official\",\"model\":\"deepseek-flash\",\"maxTokens\":256000,\"reasoningEffort\":\"high\"},\"adapterDefaults\":{\"reasoningEffort\":t",
+        "request/context {\"provider\":\"deepseek-official\",\"model\":\"deepseek-flash\",\"contextWindow\":1048576,\"systemPromptUpdate\":\"in-history\"}",
+        "session/title {\"title\":\"X1 scenario H-subagent\",\"messageSeqs\":[8],\"source\":{\"kind\":\"fallback\"}}",
+        "session/title-llm-request {\"titleProvider\":\"session-title-first-prompt-llm\",\"messageSeqs\":[8],\"route\":{\"provider\":\"deepseek-official\",\"model\":\"deepseek-flash\"},\"system\":\"Create a concise",
+        "session-log-deepseek/delivery-accepted {\"sessionId\":\"session-71dd14ce-5ad6-4923-bc06-022b8722f290\",\"sessionFormatVersion\":4,\"throughSeq\":15}",
+        "session/title {\"title\":\"side call\",\"messageSeqs\":[8],\"source\":{\"kind\":\"provider\",\"provider\":\"session-title-first-prompt-llm\",\"model\":{\"provider\":\"deepseek-official\",\"model\":\"",
+        "session-log-deepseek/delivery-accepted {\"sessionId\":\"session-71dd14ce-5ad6-4923-bc06-022b8722f290\",\"sessionFormatVersion\":4,\"throughSeq\":15}",
+        "assistant/message {\"turn\":1,\"step\":1,\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool-call\",\"id\":\"mock-call-1\",\"name\":\"subagent\",\"arguments\":\"{\\\"description\\\":\\\"X1 child ga",
+        "tool/call {\"turn\":1,\"step\":1,\"callId\":\"mock-call-1\",\"name\":\"subagent\",\"arguments\":\"{\\\"description\\\":\\\"X1 child gated echo\\\",\\\"prompt\\\":\\\"X1-CHILD: run the gated echo with",
+        "subagent/catalog {\"version\":0,\"childId\":\"6df1d55d-9617-4921-af9a-322d405bf83a\",\"childCreatedAt\":1793845004113,\"mode\":\"continuable\",\"label\":\"X1 child gated echo\"}",
+        "tool/result {\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"started",
+        "step/end {\"turn\":1,\"step\":1}",
+        "step/start {\"turn\":1,\"step\":2}",
+        "session-log-deepseek/delivery-accepted {\"sessionId\":\"session-71dd14ce-5ad6-4923-bc06-022b8722f290\",\"sessionFormatVersion\":4,\"throughSeq\":24}",
+        "assistant/message {\"turn\":1,\"step\":2,\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"H-subagent done\"}],\"source\":{\"kind\":\"model\",\"provider\":\"deepseek-official\",\"m",
+        "step/end {\"turn\":1,\"step\":2}",
+        "turn/end {\"turn\":1,\"reason\":{\"kind\":\"completed\"}}",
+        "agent/inbox/spliced {\"target\":\"next-turn\",\"start\":0,\"inserted\":[{\"content\":[{\"type\":\"text\",\"text\":\"Background subagent 6df1d55d-9617-4921-af9a-322d405bf83a finished and will do no ",
+        "turn/start {\"turn\":2}",
+        "agent/inbox/spliced {\"target\":\"next-turn\",\"start\":0,\"removedCount\":1,\"inserted\":[]}",
+        "step/start {\"turn\":2,\"step\":1}",
+        "user/message {\"content\":[{\"type\":\"text\",\"text\":\"Background subagent 6df1d55d-9617-4921-af9a-322d405bf83a finished and will do no further work unless you send it more.\"},{\"ty",
+        "session-log-deepseek/delivery-accepted {\"sessionId\":\"session-71dd14ce-5ad6-4923-bc06-022b8722f290\",\"sessionFormatVersion\":4,\"throughSeq\":33}",
+        "assistant/message {\"turn\":2,\"step\":1,\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"H-subagent done\"}],\"source\":{\"kind\":\"model\",\"provider\":\"deepseek-official\",\"m",
+        "step/end {\"turn\":2,\"step\":1}",
+        "turn/end {\"turn\":2,\"reason\":{\"kind\":\"completed\"}}"
+      ],
+      "childToolResult": "Error: the user rejected tool \"bash\"",
+      "hits": [],
+      "after": {
+        "released": [],
+        "gatewayPending": [],
+        "decided": [],
+        "turnEnded": true,
+        "toolResults": [
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"started subagent 6df1d55d-9617-4921-af9a-322d405bf83a\"}],\"isError\":false,\"id\":\"425f03c9-3a9e-45e0-b3d5-06e7082f181c\"}}"
+        ]
+      }
+    },
+    {
+      "name": "J-web-opens-late",
+      "mode": "off",
+      "sessionId": "session-8ccb6b44-b097-440f-ab1f-abfc3ac59d31",
+      "listenerOrder": [
+        "other(Include)"
+      ],
+      "whileHeld": {
+        "parkedByPlugin": [],
+        "gatewayPending": [
+          {
+            "event": "approval/request",
+            "agentId": "session-8ccb6b44-b097-440f-ab1f-abfc3ac59d31"
+          }
+        ],
+        "liveWebClient": false,
+        "webSessionState": {
+          "running": true,
+          "pendingInput": [
+            "approval"
+          ]
+        },
+        "decidedSoFar": [],
+        "turnEnded": false,
+        "asked": [
+          {
+            "id": "1ec32d32-cdba-463c-846d-45a229055ff8",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE"
+          }
+        ]
+      },
+      "startedAt": 1793845006381,
+      "after": {
+        "released": [],
+        "gatewayPending": [],
+        "decided": [
+          "allowed-once"
+        ],
+        "turnEnded": true,
+        "toolResults": [
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"40caf822-825f-4580-9663-bb85bb69079b\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+        ]
+      }
+    },
+    {
+      "name": "K-fanout-web-wins",
+      "mode": "fanout",
+      "sessionId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
+      "listenerOrder": [
+        "x1-spike",
+        "other(Include)"
+      ],
+      "whileHeld": {
+        "parkedByPlugin": [
+          {
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE",
+            "sameSession": true,
+            "agentId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            }
+          }
+        ],
+        "gatewayPending": [
+          {
+            "event": "approval/request",
+            "agentId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9"
+          }
+        ],
+        "liveWebClient": true,
+        "webSessionState": {
+          "running": true,
+          "pendingInput": [
+            "approval"
+          ]
+        },
+        "decidedSoFar": [],
+        "turnEnded": false,
+        "asked": [
+          {
+            "id": "dffbbd2d-6b57-4643-a9af-6e3295e860e6",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE"
+          }
+        ]
+      },
+      "startedAt": 1793845008492,
+      "after": {
+        "released": [
+          {
+            "id": "6d22f32f-992e-4589-9dbf-472b3fcab622",
+            "sessionId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
+            "agentId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE",
+            "parkedAt": "2026-11-05T02:16:48.739Z",
+            "mode": "fanout",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            },
+            "downstream": "rejected",
+            "outcome": "rejected",
+            "answeredBy": "downstream",
+            "releasedAt": "2026-11-05T02:16:50.395Z"
+          }
+        ],
+        "gatewayPending": [],
+        "decided": [
+          "rejected"
+        ],
+        "turnEnded": true,
+        "toolResults": [
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: the user rejected tool \\\"bash\\\"\"}],\"isError\":true,\"id\":\"1562eb9c-58ff-4c48-bf7c-b775f8de350d\"}}"
+        ]
+      }
+    },
+    {
+      "name": "L-fanout-phone-wins-tab-open",
+      "mode": "fanout",
+      "sessionId": "session-48460d79-572f-4fb7-8a16-e85563f80eec",
+      "listenerOrder": [
+        "x1-spike",
+        "other(Include)"
+      ],
+      "whileHeld": {
+        "parkedByPlugin": [
+          {
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE",
+            "sameSession": true,
+            "agentId": "session-48460d79-572f-4fb7-8a16-e85563f80eec",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            }
+          }
+        ],
+        "gatewayPending": [
+          {
+            "event": "approval/request",
+            "agentId": "session-48460d79-572f-4fb7-8a16-e85563f80eec"
+          }
+        ],
+        "liveWebClient": true,
+        "webSessionState": {
+          "running": true,
+          "pendingInput": [
+            "approval"
+          ]
+        },
+        "decidedSoFar": [],
+        "turnEnded": false,
+        "asked": [
+          {
+            "id": "5c29e968-710a-4a4d-8761-4f6ddd8b1222",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE"
+          }
+        ]
+      },
+      "startedAt": 1793845010559,
+      "after": {
+        "released": [
+          {
+            "id": "c3125c79-8bdc-4b81-b0ec-7bf5f052bad6",
+            "sessionId": "session-48460d79-572f-4fb7-8a16-e85563f80eec",
+            "agentId": "session-48460d79-572f-4fb7-8a16-e85563f80eec",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE",
+            "parkedAt": "2026-11-05T02:16:50.784Z",
+            "mode": "fanout",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            },
+            "outcome": "allowed-once",
+            "answeredBy": "script",
+            "releasedAt": "2026-11-05T02:16:52.440Z"
+          }
+        ],
+        "gatewayPending": [],
+        "decided": [
+          "allowed-once"
+        ],
+        "turnEnded": true,
+        "toolResults": [
+          "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"b6cc80ee-3706-4f5d-828b-7cf8fc93dae7\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+        ]
+      }
+    }
+  ],
+  "checks": [
+    {
+      "scenario": "A",
+      "name": "nothing answers it within 1.5 s (no immediate unavailable)",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "scenario": "A",
+      "name": "it is held as a pending web (Remote) event",
+      "pass": true,
+      "detail": [
+        {
+          "event": "approval/request",
+          "agentId": "session-8bffc3d8-aaea-474c-8b81-aa7f6ecde321"
+        }
+      ]
+    },
+    {
+      "scenario": "A",
+      "name": "web state shows input-required (pendingInput approval)",
+      "pass": true,
+      "detail": {
+        "running": true,
+        "pendingInput": [
+          "approval"
+        ]
+      }
+    },
+    {
+      "scenario": "A",
+      "name": "cancelling the turn settles it as cancelled",
+      "pass": true,
+      "detail": [
+        "cancelled"
+      ]
+    },
+    {
+      "scenario": "B",
+      "name": "listener order: web forwarder first, plugin second",
+      "pass": true,
+      "detail": [
+        "other(Include)",
+        "x1-spike"
+      ]
+    },
+    {
+      "scenario": "B",
+      "name": "plugin never sees the request (web forwarder holds it)",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "scenario": "B",
+      "name": "held as pending web event instead",
+      "pass": true,
+      "detail": [
+        {
+          "event": "approval/request",
+          "agentId": "session-8ab6ca62-bd43-45e8-8544-ee12bc71de36"
+        }
+      ]
+    },
+    {
+      "scenario": "C",
+      "name": "listener order: plugin first",
+      "pass": true,
+      "detail": [
+        "x1-spike",
+        "other(Include)"
+      ]
+    },
+    {
+      "scenario": "C",
+      "name": "plugin parks it with toolName + callId + reason",
+      "pass": true,
+      "detail": [
+        {
+          "toolName": "bash",
+          "callId": "mock-call-1",
+          "reason": "X1 spike gate: tool arguments contain X1-GATE",
+          "sameSession": true,
+          "agentId": "session-f16a4108-3528-47d1-84d7-c568d9d8c339",
+          "agentShape": {
+            "keys": [
+              "loopCtx",
+              "id",
+              "options",
+              "session",
+              "model",
+              "inbox",
+              "phase",
+              "activityDone",
+              "scope",
+              "ctx",
+              "dispatch",
+              "requestHeaderLogged",
+              "requestSurfaceGeneration",
+              "runtimeContext",
+              "assistantStreamRevision",
+              "assistantAttemptCounter",
+              "systemPrompt",
+              "frozenMessages"
+            ],
+            "sessionKeys": [
+              "log",
+              "surfaceManager",
+              "header",
+              "inheritedEventCount",
+              "firstLiveSeq",
+              "firstLifecycleSeq",
+              "eventsSnapshot",
+              "headerFold",
+              "headerFoldSeq",
+              "contextFold",
+              "contextFoldSeq",
+              "toolHistoryProjection",
+              "toolHistorySeq",
+              "derived",
+              "derivedNodes",
+              "derivedGeneration"
+            ],
+            "parentId": null,
+            "depth": null
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "C",
+      "name": "web does NOT see it (no pending Remote event)",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "scenario": "C",
+      "name": "web state shows no input-required while plugin holds it",
+      "pass": true,
+      "detail": {
+        "running": true,
+        "pendingInput": []
+      }
+    },
+    {
+      "scenario": "C",
+      "name": "turn stays open while parked",
+      "pass": true
+    },
+    {
+      "scenario": "C",
+      "name": "release script → allowed-once recorded in session audit",
+      "pass": true,
+      "detail": [
+        "allowed-once"
+      ]
+    },
+    {
+      "scenario": "C",
+      "name": "the gated tool actually ran",
+      "pass": true,
+      "detail": [
+        "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-GATE tool ran\\n\"}],\"isError\":false,\"id\":\"dee5324a-2e85-40b7-abf7-2c188a739f28\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+      ]
+    },
+    {
+      "scenario": "D",
+      "name": "release script → rejected recorded",
+      "pass": true,
+      "detail": [
+        "rejected"
+      ]
+    },
+    {
+      "scenario": "D",
+      "name": "model sees a rejection, tool did not run",
+      "pass": true,
+      "detail": [
+        "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"Error: the user rejected tool \\\"bash\\\"\"}],\"isError\":true,\"id\":\"580f5600-20db-486f-ba93-a397ae43dc6a\"}}"
+      ]
+    },
+    {
+      "scenario": "E",
+      "name": "sandbox escalation reaches the plugin answerer",
+      "pass": true,
+      "detail": [
+        {
+          "toolName": "bash",
+          "callId": "mock-call-1",
+          "reason": "escalate sandbox to danger-full-access: X1 spike: prove a real sandbox escalation reaches the plugin answerer",
+          "sameSession": true,
+          "agentId": "session-cab9757f-5a7d-4037-b093-66e229860fbb",
+          "agentShape": {
+            "keys": [
+              "loopCtx",
+              "id",
+              "options",
+              "session",
+              "model",
+              "inbox",
+              "phase",
+              "activityDone",
+              "scope",
+              "ctx",
+              "dispatch",
+              "requestHeaderLogged",
+              "requestSurfaceGeneration",
+              "runtimeContext",
+              "assistantStreamRevision",
+              "assistantAttemptCounter",
+              "systemPrompt",
+              "frozenMessages"
+            ],
+            "sessionKeys": [
+              "log",
+              "surfaceManager",
+              "header",
+              "inheritedEventCount",
+              "firstLiveSeq",
+              "firstLifecycleSeq",
+              "eventsSnapshot",
+              "headerFold",
+              "headerFoldSeq",
+              "contextFold",
+              "contextFoldSeq",
+              "toolHistoryProjection",
+              "toolHistorySeq",
+              "derived",
+              "derivedNodes",
+              "derivedGeneration"
+            ],
+            "parentId": null,
+            "depth": null
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "E",
+      "name": "escalated command ran after release",
+      "pass": true,
+      "detail": [
+        "{\"turn\":1,\"step\":1,\"message\":{\"role\":\"tool\",\"source\":{\"kind\":\"tool\",\"callId\":\"mock-call-1\"},\"toolCallId\":\"mock-call-1\",\"content\":[{\"type\":\"text\",\"text\":\"X1-ESCALATED tool ran\\n\"}],\"isError\":false,\"id\":\"50fc7db5-46f5-48c1-8f84-ff9fad5e59dd\"},\"meta\":{\"cwd\":\"/private/var/folders/l8/2rh4g3wd7kj71x4w5p4_gy5w0000gn/T/dshm-x1-workspace\"}}"
+      ]
+    },
+    {
+      "scenario": "F",
+      "name": "plugin parks it",
+      "pass": true,
+      "detail": [
+        {
+          "toolName": "bash",
+          "callId": "mock-call-1",
+          "reason": "X1 spike gate: tool arguments contain X1-GATE",
+          "sameSession": true,
+          "agentId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9",
+          "agentShape": {
+            "keys": [
+              "loopCtx",
+              "id",
+              "options",
+              "session",
+              "model",
+              "inbox",
+              "phase",
+              "activityDone",
+              "scope",
+              "ctx",
+              "dispatch",
+              "requestHeaderLogged",
+              "requestSurfaceGeneration",
+              "runtimeContext",
+              "assistantStreamRevision",
+              "assistantAttemptCounter",
+              "systemPrompt",
+              "frozenMessages"
+            ],
+            "sessionKeys": [
+              "log",
+              "surfaceManager",
+              "header",
+              "inheritedEventCount",
+              "firstLiveSeq",
+              "firstLifecycleSeq",
+              "eventsSnapshot",
+              "headerFold",
+              "headerFoldSeq",
+              "contextFold",
+              "contextFoldSeq",
+              "toolHistoryProjection",
+              "toolHistorySeq",
+              "derived",
+              "derivedNodes",
+              "derivedGeneration"
+            ],
+            "parentId": null,
+            "depth": null
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "F",
+      "name": "web sees it too (pending Remote event)",
+      "pass": true,
+      "detail": [
+        {
+          "event": "approval/request",
+          "agentId": "session-d3fa7cd0-2f7c-44bd-8b90-04265e0bdef9"
+        }
+      ]
+    },
+    {
+      "scenario": "F",
+      "name": "web state shows input-required",
+      "pass": true,
+      "detail": {
+        "running": true,
+        "pendingInput": [
+          "approval"
+        ]
+      }
+    },
+    {
+      "scenario": "F",
+      "name": "phone answer withdraws the web copy (no pending Remote event left)",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "scenario": "F",
+      "name": "one audit pair, allowed-once",
+      "pass": true,
+      "detail": [
+        "allowed-once"
+      ]
+    },
+    {
+      "scenario": "G",
+      "name": "parked entry is dropped",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "scenario": "G",
+      "name": "outcome cancelled via the request signal",
+      "pass": true,
+      "detail": {
+        "id": "c29af536-5aa7-4bb1-9161-d4ea91b4107e",
+        "sessionId": "session-f3af7ad0-e78a-413b-bcc9-1e3517f97c4b",
+        "agentId": "session-f3af7ad0-e78a-413b-bcc9-1e3517f97c4b",
+        "toolName": "bash",
+        "callId": "mock-call-1",
+        "reason": "X1 spike gate: tool arguments contain X1-GATE",
+        "parkedAt": "2026-11-05T02:16:42.215Z",
+        "mode": "prepend",
+        "agentShape": {
+          "keys": [
+            "loopCtx",
+            "id",
+            "options",
+            "session",
+            "model",
+            "inbox",
+            "phase",
+            "activityDone",
+            "scope",
+            "ctx",
+            "dispatch",
+            "requestHeaderLogged",
+            "requestSurfaceGeneration",
+            "runtimeContext",
+            "assistantStreamRevision",
+            "assistantAttemptCounter",
+            "systemPrompt",
+            "frozenMessages"
+          ],
+          "sessionKeys": [
+            "log",
+            "surfaceManager",
+            "header",
+            "inheritedEventCount",
+            "firstLiveSeq",
+            "firstLifecycleSeq",
+            "eventsSnapshot",
+            "headerFold",
+            "headerFoldSeq",
+            "contextFold",
+            "contextFoldSeq",
+            "toolHistoryProjection",
+            "toolHistorySeq",
+            "derived",
+            "derivedNodes",
+            "derivedGeneration"
+          ],
+          "parentId": null,
+          "depth": null
+        },
+        "outcome": "cancelled",
+        "answeredBy": "request-signal",
+        "releasedAt": "2026-11-05T02:16:43.803Z"
+      }
+    },
+    {
+      "scenario": "H",
+      "name": "plugin answerer is never entered for the subagent request",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "scenario": "H",
+      "name": "web never sees it either (no pending Remote event)",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "scenario": "H",
+      "name": "subagent gets a plain rejection",
+      "pass": true,
+      "detail": "Error: the user rejected tool \"bash\""
+    },
+    {
+      "scenario": "J",
+      "name": "held with no live web client",
+      "pass": true,
+      "detail": {
+        "parkedByPlugin": [],
+        "gatewayPending": [
+          {
+            "event": "approval/request",
+            "agentId": "session-8ccb6b44-b097-440f-ab1f-abfc3ac59d31"
+          }
+        ],
+        "liveWebClient": false,
+        "webSessionState": {
+          "running": true,
+          "pendingInput": [
+            "approval"
+          ]
+        },
+        "decidedSoFar": [],
+        "turnEnded": false,
+        "asked": [
+          {
+            "id": "1ec32d32-cdba-463c-846d-45a229055ff8",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "J",
+      "name": "late browser tab receives the held request on connect",
+      "pass": true,
+      "detail": [
+        {
+          "type": "ready"
+        },
+        {
+          "type": "waterfall",
+          "event": "approval/request",
+          "eventId": "ff1032a2-d714-41a6-9d42-ca66a8d88e7f",
+          "toolName": "bash"
+        }
+      ]
+    },
+    {
+      "scenario": "J",
+      "name": "web answer → allowed-once, tool ran",
+      "pass": true,
+      "detail": [
+        "allowed-once"
+      ]
+    },
+    {
+      "scenario": "K",
+      "name": "plugin parks it and the open tab got it too",
+      "pass": true,
+      "detail": {
+        "parkedByPlugin": [
+          {
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE",
+            "sameSession": true,
+            "agentId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
+            "agentShape": {
+              "keys": [
+                "loopCtx",
+                "id",
+                "options",
+                "session",
+                "model",
+                "inbox",
+                "phase",
+                "activityDone",
+                "scope",
+                "ctx",
+                "dispatch",
+                "requestHeaderLogged",
+                "requestSurfaceGeneration",
+                "runtimeContext",
+                "assistantStreamRevision",
+                "assistantAttemptCounter",
+                "systemPrompt",
+                "frozenMessages"
+              ],
+              "sessionKeys": [
+                "log",
+                "surfaceManager",
+                "header",
+                "inheritedEventCount",
+                "firstLiveSeq",
+                "firstLifecycleSeq",
+                "eventsSnapshot",
+                "headerFold",
+                "headerFoldSeq",
+                "contextFold",
+                "contextFoldSeq",
+                "toolHistoryProjection",
+                "toolHistorySeq",
+                "derived",
+                "derivedNodes",
+                "derivedGeneration"
+              ],
+              "parentId": null,
+              "depth": null
+            }
+          }
+        ],
+        "gatewayPending": [
+          {
+            "event": "approval/request",
+            "agentId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9"
+          }
+        ],
+        "liveWebClient": true,
+        "webSessionState": {
+          "running": true,
+          "pendingInput": [
+            "approval"
+          ]
+        },
+        "decidedSoFar": [],
+        "turnEnded": false,
+        "asked": [
+          {
+            "id": "dffbbd2d-6b57-4643-a9af-6e3295e860e6",
+            "toolName": "bash",
+            "callId": "mock-call-1",
+            "reason": "X1 spike gate: tool arguments contain X1-GATE"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "K",
+      "name": "phone copy is withdrawn (nothing parked), answeredBy downstream",
+      "pass": true,
+      "detail": {
+        "id": "6d22f32f-992e-4589-9dbf-472b3fcab622",
+        "sessionId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
+        "agentId": "session-74bc17d1-1a06-421f-b130-72d0918fecf9",
+        "toolName": "bash",
+        "callId": "mock-call-1",
+        "reason": "X1 spike gate: tool arguments contain X1-GATE",
+        "parkedAt": "2026-11-05T02:16:48.739Z",
+        "mode": "fanout",
+        "agentShape": {
+          "keys": [
+            "loopCtx",
+            "id",
+            "options",
+            "session",
+            "model",
+            "inbox",
+            "phase",
+            "activityDone",
+            "scope",
+            "ctx",
+            "dispatch",
+            "requestHeaderLogged",
+            "requestSurfaceGeneration",
+            "runtimeContext",
+            "assistantStreamRevision",
+            "assistantAttemptCounter",
+            "systemPrompt",
+            "frozenMessages"
+          ],
+          "sessionKeys": [
+            "log",
+            "surfaceManager",
+            "header",
+            "inheritedEventCount",
+            "firstLiveSeq",
+            "firstLifecycleSeq",
+            "eventsSnapshot",
+            "headerFold",
+            "headerFoldSeq",
+            "contextFold",
+            "contextFoldSeq",
+            "toolHistoryProjection",
+            "toolHistorySeq",
+            "derived",
+            "derivedNodes",
+            "derivedGeneration"
+          ],
+          "parentId": null,
+          "depth": null
+        },
+        "downstream": "rejected",
+        "outcome": "rejected",
+        "answeredBy": "downstream",
+        "releasedAt": "2026-11-05T02:16:50.395Z"
+      }
+    },
+    {
+      "scenario": "K",
+      "name": "one audit pair, rejected",
+      "pass": true,
+      "detail": [
+        "rejected"
+      ]
+    },
+    {
+      "scenario": "L",
+      "name": "open tab receives a cancel for its copy",
+      "pass": true,
+      "detail": [
+        {
+          "type": "waterfall",
+          "event": "approval/request",
+          "eventId": "01e6569e-3f30-400b-a4b5-47a34052e42c",
+          "toolName": "bash"
+        },
+        {
+          "type": "cancel",
+          "eventId": "01e6569e-3f30-400b-a4b5-47a34052e42c"
+        },
+        {
+          "type": "emit",
+          "event": "api-session/status"
+        }
+      ]
+    },
+    {
+      "scenario": "L",
+      "name": "one audit pair, allowed-once",
+      "pass": true,
+      "detail": [
+        "allowed-once"
+      ]
+    }
+  ],
+  "passed": true
+}

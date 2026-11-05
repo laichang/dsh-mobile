@@ -1,0 +1,14 @@
+#!/bin/sh
+# X1: start a real DSH 0.2.2-rc.1 (mock LLM) with the throwaway approval-answerer plugin and run
+# every scenario (see ../run.mjs). Writes ../results/latest.json; exits non-zero if a check fails.
+# Needs: ~/.dshm/runtime (DSH + mock server, see PLAN.md T0 Log), Node >= 24.9, a pnpm on PATH.
+# Env: DSHM_WEB_PORT (3282), DSHM_MOCK_PORT (47804), X1_CONTROL_PORT (47803),
+#      DSHM_HOME (~/.dshm/home-x1x4), DSHM_RUNTIME (~/.dshm/runtime).
+set -eu
+here="$(cd "$(dirname "$0")/.." && pwd)"
+if ! node -e 'process.exit(+process.versions.node.split(".")[0] >= 24 ? 0 : 1)' 2>/dev/null; then
+  for d in "$HOME"/.nvm/versions/node/v24*/bin; do PATH="$d:$PATH"; done
+fi
+PATH="$HOME/.dshm/bin:$PATH"
+export PATH
+exec node "$here/run.mjs" "$@"

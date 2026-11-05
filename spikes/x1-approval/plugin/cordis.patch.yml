@@ -1,0 +1,4 @@
+# Bundle layer for the throwaway X1 spike plugin.
+- insert:
+    - id: dshm-spike-x1
+      name: '@dshm-spike/x1-approval'
