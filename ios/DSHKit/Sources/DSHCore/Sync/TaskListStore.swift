@@ -17,9 +17,11 @@ public final class TaskListStore {
     public struct HostConfig: Sendable {
         public var key: String
         public var connection: HostConnection
+        public var name: String?
 
-        public init(key: String, connection: HostConnection) {
+        public init(key: String, connection: HostConnection, name: String? = nil) {
             self.key = key
+            self.name = name
             self.connection = connection
         }
     }
@@ -94,7 +96,14 @@ public final class TaskListStore {
         return try await link.connection.listWorkspaces()
     }
 
-    public var composerHostKey: String? { links.first?.key }
+    public private(set) var composerHostKey: String?
+
+    public func chooseHost(_ key: String) {
+        guard !isSending, links.contains(where: { $0.key == key }) else { return }
+        composerHostKey = key
+        onHostChoice(key)
+        sendError = nil
+    }
 
     public func useHostDefault(hostKey: String) {
         composerSelections.removeValue(forKey: hostKey)
@@ -132,7 +141,8 @@ public final class TaskListStore {
     public var backoff: (initial: Duration, max: Duration) = (.milliseconds(500), .seconds(30))
 
     @ObservationIgnored private let context: ModelContext
-    @ObservationIgnored private let links: [Link]
+    @ObservationIgnored private var links: [Link]
+    @ObservationIgnored private let onHostChoice: (String) -> Void
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     @ObservationIgnored private let firstConnectDelay: Duration
     /// Decoded `CachedTask.milestones`, so `refresh()` doesn't decode every task's JSON each time.
@@ -155,17 +165,43 @@ public final class TaskListStore {
 
     /// - Parameter firstConnectDelay: debug hook (`-DSHMConnectDelay`): show the cache for a
     ///   while before the first connection attempt.
-    public init(container: ModelContainer, hosts: [HostConfig], prompt: String = "", firstConnectDelay: Duration = .zero) {
+    public init(container: ModelContainer, hosts: [HostConfig], prompt: String = "", firstConnectDelay: Duration = .zero,
+                preferredHostKey: String? = nil, onHostChoice: @escaping (String) -> Void = { _ in }) {
         self.context = ModelContext(container)
         self.context.autosaveEnabled = false
         self.links = hosts.map { Link(key: $0.key, connection: $0.connection) }
+        self.onHostChoice = onHostChoice
+        self.composerHostKey = hosts.first(where: { $0.key == preferredHostKey })?.key ?? hosts.last?.key
         self.prompt = prompt
         self.firstConnectDelay = firstConnectDelay
-        for link in links where cachedHost(link.key) == nil {
-            context.insert(CachedHost(key: link.key, name: link.connection.endpoint.description))
+        for host in hosts {
+            if let record = cachedHost(host.key) {
+                if record.lastConnectedAt == nil, let name = host.name { record.name = name }
+            } else {
+                context.insert(CachedHost(key: host.key, name: host.name ?? host.connection.endpoint.description))
+            }
         }
         try? context.save()
         refresh()
+    }
+
+    /// Add a newly paired host or replace its old endpoint without interrupting other hosts.
+    public func connectPairedHost(_ host: HostConfig) {
+        let link = Link(key: host.key, connection: host.connection)
+        if let index = links.firstIndex(where: { $0.key == host.key }) {
+            let old = links[index]
+            old.events?.cancel()
+            stop(old)
+            links[index] = link
+            modelHosts.remove(host.key)
+        } else {
+            links.append(link)
+        }
+        let record = ensureHost(host.key)
+        if let name = host.name { record.name = name }
+        saveNow()
+        refresh()
+        foreground()
     }
 
     // MARK: - Reading
@@ -215,37 +251,43 @@ public final class TaskListStore {
     /// iOS can't keep sockets alive in the background (ARCHITECTURE §4): save, stop the loops,
     /// and close the connections. `foreground()` resumes from the cursor.
     public func background() {
-        for link in links {
-            link.loop?.cancel()
-            link.loop = nil
-            link.wake?.resume()
-            link.wake = nil
-            let connection = link.connection
-            Task { await connection.disconnect() }
-        }
+        for link in links { stop(link) }
         saveNow()
+    }
+
+    private func stop(_ link: Link) {
+        link.loop?.cancel()
+        link.loop = nil
+        link.wake?.resume()
+        link.wake = nil
+        let connection = link.connection
+        Task { await connection.disconnect() }
     }
 
     // MARK: - Sending
 
-    /// Sends the composer's prompt as a new task on the first host. Returns the new task's key,
+    /// Sends the composer's prompt as a new task on the selected host. Returns the new task's key,
     /// or nil with `sendError` set (for example, the host is offline).
     @discardableResult
     public func send() async -> String? {
-        guard canSend, let link = links.first else { return nil }
+        guard canSend, let link = links.first(where: { $0.key == composerHostKey }) else { return nil }
         let text = prompt
+        let selection = composerSelections[link.key]
+        let workspace = composerWorkspaces[link.key]
         isSending = true
         sendError = nil
         defer { isSending = false }
         guard await waitOnline(link) else {
-            sendError = "\(hostName(link.key)) is offline. The task was not sent."
+            let name = hosts.first { $0.key == link.key }?.name ?? link.key
+            sendError = "\(name) is offline. The task was not sent."
             return nil
         }
         do {
-            let taskID = try await link.connection.createTask(prompt: text, selection: composerSelections[link.key], workspace: composerWorkspaces[link.key])
+            let taskID = try await link.connection.createTask(prompt: text, selection: selection, workspace: workspace)
             let task = taskRecord(hostKey: link.key, taskID: taskID, title: text)
             if task.title.isEmpty { task.title = text }
             prompt = ""
+            onHostChoice(link.key)
             saveNow()
             refresh()
             return task.key
@@ -295,12 +337,16 @@ public final class TaskListStore {
             setReachability(.connecting, link)
             do {
                 try await link.connection.connect()
+                try Task.checkCancellation()
                 link.capabilities = await link.connection.capabilities
                 let host = ensureHost(link.key)
                 let resumed = try await link.connection.resume(logID: host.logID, afterSeq: UInt64(host.lastSeq))
+                try Task.checkCancellation()
                 if !resumed.hostName.isEmpty { host.name = resumed.hostName }
                 if resumed.reset {
-                    reconcile(try await link.connection.listTasks(), hostKey: link.key)
+                    let tasks = try await link.connection.listTasks()
+                    try Task.checkCancellation()
+                    reconcile(tasks, hostKey: link.key)
                 }
                 host.lastConnectedAt = Date()
                 saveNow()
@@ -467,8 +513,6 @@ public final class TaskListStore {
         return host
     }
 
-    private func hostName(_ key: String) -> String { cachedHost(key)?.name ?? key }
-
     private func cachedTasks(hostKey: String) -> [CachedTask] {
         (try? context.fetch(FetchDescriptor<CachedTask>(predicate: #Predicate { $0.hostKey == hostKey }))) ?? []
     }
@@ -502,18 +546,27 @@ public final class TaskListStore {
 
     private func refresh() {
         let hostRecords = (try? context.fetch(FetchDescriptor<CachedHost>())) ?? []
-        let names = Dictionary(hostRecords.map { ($0.key, $0.name) }, uniquingKeysWith: { a, _ in a })
+        var names = Dictionary(hostRecords.map { ($0.key, $0.name) }, uniquingKeysWith: { a, _ in a })
+        // Two independently paired machines can advertise the same name.
+        for (name, group) in Dictionary(grouping: links, by: { names[$0.key] ?? $0.key }) where group.count > 1 {
+            for link in group {
+                let address = link.connection.endpoint.description
+                let uniqueAddress = group.filter { $0.connection.endpoint.description == address }.count == 1
+                names[link.key] = "\(name) (\(uniqueAddress ? address : link.key))"
+            }
+        }
         hosts = links.map { link in
             let record = hostRecords.first { $0.key == link.key }
             return HostStatus(
-                key: link.key, name: record?.name ?? link.key,
+                key: link.key, name: names[link.key] ?? link.key,
                 reachability: link.reachability, lastConnectedAt: record?.lastConnectedAt,
                 channelName: link.connection.channelName, capabilities: link.capabilities ?? [])
         }
         let descriptor = FetchDescriptor<CachedTask>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         tasks = ((try? context.fetch(descriptor)) ?? []).compactMap { t in
             // Before Hello, cached requests remain readable offline; a downgrade hides unsupported UI.
-            let supportsApprovals = links.first(where: { $0.key == t.hostKey })?.capabilities?.contains(DSHProtocolInfo.approvalsCapability)
+            guard let link = links.first(where: { $0.key == t.hostKey }) else { return nil }
+            let supportsApprovals = link.capabilities?.contains(DSHProtocolInfo.approvalsCapability)
             if t.approvalOnly && supportsApprovals == false { return nil }
             return TaskRow(
                 key: t.key, hostKey: t.hostKey, hostName: names[t.hostKey] ?? t.hostKey, taskID: t.taskID,

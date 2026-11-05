@@ -21,7 +21,7 @@ public struct PairedHost: Sendable, Equatable, Codable, Identifiable {
     }
 }
 
-/// The paired hosts (M1 uses the most recent one; S9 shows them all).
+/// The paired hosts, in pairing order.
 public protocol PairedHostStore: Sendable {
     func load() -> [PairedHost]
     /// Adds the host, replacing any earlier pairing with the same host key.
