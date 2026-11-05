@@ -1,0 +1,4 @@
+# Bundle layer for the throwaway X4 spike plugin.
+- insert:
+    - id: dshm-spike-x4
+      name: '@dshm-spike/x4-midtask'

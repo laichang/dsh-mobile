@@ -227,7 +227,7 @@ Each spike ends in a short written conclusion (a working note, archived once act
 
 ### X1 · Spike: approval answerer
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** `claude/x1x4-spikes`
 
 **Why**: can a plugin answerer own approvals for **all** agents? How does it order against web/desktop answerers, and does the web UI still see a held request? (ARCHITECTURE §8.1) Unblocks S4.
 
@@ -236,13 +236,23 @@ Each spike ends in a short written conclusion (a working note, archived once act
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A minimal plugin parks one approval and a script releases it — Evidence:
+- [x] [auto] A minimal plugin parks one approval and a script releases it — Evidence: cmd:spikes/x1-approval/scripts/run · commit:ee2c64c
 - [ ] [human] Ordering versus web/desktop answerers, and web UI visibility, written down — Evidence:
 
 **Not**: production code.
 
 **Log**
-- —
+- **2026-11-05 · built, to review.** Conclusion in `spikes/x1-approval/README.md`. Commits `ee2c64c` (plugin, release script, runner), `977805e` (README), `e9d2fa6` (ARCHITECTURE).
+  - Done: a throwaway plugin parks `approval/request` in-process, and `release.mjs` releases it. `spikes/x1-approval/scripts/run` runs 11 scenarios (36 checks, all pass) against real DSH `0.2.2-rc.1` (`dsh web` on 3282, mock LLM, `DSH_HOME=~/.dshm/home-x1x4`, control port 47803, mock proxy 47804).
+  - Learned:
+    - A prepended, unscoped plugin answerer owns every root agent's approvals and can hold them indefinitely (DSH has no timeout). Turn cancel aborts `request.signal`. Real `bash` sandbox escalations reach it too.
+    - Subagents never ask: DSH pins them to policy `never`, so they are rejected before any answerer runs.
+    - Under `dsh web`, the gateway's Remote forwarder is already an answerer. It holds requests **even with no tab open** and delivers them when a tab connects, which corrects ARCHITECTURE §1's "immediately `unavailable`". Append = the plugin never sees requests; prepend = the web sees nothing.
+    - Recommended prepend + fan-out (first answer wins, other copy withdrawn) works both ways, verified with an in-process stand-in for a browser tab on the gateway's event stream.
+  - Provisional, pending user confirmation: **D17** (approval holder ordering: prepend + fan-out), plus the ARCHITECTURE §1 approvals row, §5.4 and §8.1 notes. No dependencies or downloads (uses T0's `~/.dshm/runtime`).
+  - Not done: the `[human]` item is the user's to tick. Not verified: the DSH desktop app, and a real browser tab (J–L use the in-process stand-in).
+  - For the coordinator: §0 X1 → `review`. The D17 number may collide with a parallel slice's Dxx; renumber on merge if so.
+  - Next: the user reads the README and ticks the `[human]` item; S4 builds the holder on D17. S12 should pin the prepend ordering with a test.
 
 ### X2 · Spike: Noise interop
 
@@ -300,7 +310,7 @@ Each spike ends in a short written conclusion (a working note, archived once act
 
 ### X4 · Spike: mid-task context
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** `claude/x1x4-spikes`
 
 **Why**: STORY principles 4 and 7. Can the bridge add a follow-up message or attachment to a DSH session that is still running? Is it queued for the next turn or injected immediately? How does an agent's open question to the user surface, as distinct from an approval request? (ARCHITECTURE §8.6) Unblocks the M2 mid-task context slice; doesn't block M1.
 
@@ -309,13 +319,22 @@ Each spike ends in a short written conclusion (a working note, archived once act
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A script sends a message into a running session of a real DSH and records whether it is queued or injected — Evidence:
+- [x] [auto] A script sends a message into a running session of a real DSH and records whether it is queued or injected — Evidence: cmd:spikes/x4-midtask/scripts/run · commit:7a861fb
 - [ ] [human] Queue-vs-inject behavior, attachment support, and how agent questions surface written down — Evidence:
 
 **Not**: production code · any M1 slice.
 
 **Log**
-- —
+- **2026-11-05 · built, to review.** Conclusion in `spikes/x4-midtask/README.md`. Commits `7a861fb` (plugin, runner), `977805e` (README), `e9d2fa6` (ARCHITECTURE).
+  - Done: `spikes/x4-midtask/scripts/run` runs 6 scenarios (19 checks, all pass) against real DSH `0.2.2-rc.1` (`dsh web` on 3282, mock LLM, `DSH_HOME=~/.dshm/home-x1x4`, control port 47805, mock proxy 47804). It reuses the X1 host lib.
+  - Learned:
+    - `sessionController.prompt` accepts messages into a running session. `mode: steer` is injected at the next step of the current turn: after the running tool returns, or after the current stream ends, without interrupting either; on an idle session it starts a new turn. `mode: queue` runs as the next turn. Both show in `state().queue` as `steering` / `queued`.
+    - Files (staged via `ctx.fileUploads`; the model gets a saved-path note, not the contents) and inline images (the model gets an image block plus a note) work mid-task.
+    - Agent questions use `user-questions/request`, not `approval/request`. The web holds them like approvals (`pendingInput: ['question']`), and a prepended plugin answerer can park them. The request carries no `callId`; the answer is `{answers:[{id, selected, custom?}]}`. A steer doesn't release a waiting question. Subagents can't ask.
+  - Provisional, pending user confirmation: **D18** (`SendMessage` with steer/queue, default steer; questions held like approvals, as their own messages), plus the ARCHITECTURE §1 mid-task row and §8.6 notes. No dependencies or downloads.
+  - Not done: the `[human]` item is the user's to tick. Not verified: real-model reactions, image refusal on a non-vision route, timed questions, queue edits, steering a subagent.
+  - For the coordinator: §0 X4 → `review`. The D18 number may collide with a parallel slice's Dxx; renumber on merge if so.
+  - Next: the user reads the README and ticks the `[human]` item; the M2 mid-task context slice builds on D18.
 
 ## 5. M1 slices
 
