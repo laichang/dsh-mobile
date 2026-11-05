@@ -5,7 +5,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DD=/tmp/dshm-release-check-dd
-MARKERS=(FakeBridge DSHMFakeBridge DSHMPresetPrompt DSHMBridgePort DebugDeepLink DebugLaunchOptions PairingStubView pairing.stub)
+MARKERS=(FakeBridge DSHMFakeBridge DSHMPresetPrompt DSHMBridgePort DSHMFakeMilestones DebugDeepLink DebugLaunchOptions PairingStubView pairing.stub)
 
 build() {
   xcodebuild build -project "$ROOT/ios/dsh-mobile.xcodeproj" -scheme dsh-mobile -configuration "$1" \

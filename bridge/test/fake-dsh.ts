@@ -3,6 +3,8 @@
  * (`workspaceController`, `sessionController`). It replays the frame shapes real DSH emits on
  * `sessionController.follow`: snapshot, `turn/start`, assistant-stream start/chunk(text-delta)/end,
  * `assistant/message`, `turn/end`. No network, no model.
+ * S3: `events` adds durable projection events (`todo/write`, `plan/mode`, `llm/retry`, …) to every
+ * turn, between `turn/start` and the reply, each with its own `seq` and `time`.
  */
 import type { DshServices, FollowFrame } from '../src/dsh.ts'
 
@@ -13,7 +15,12 @@ export interface FakeDSHOptions {
   failWith?: { kind: string; error?: { message: string } }
   /** Make `sessionController.create` reject. */
   createError?: string
+  /** Durable events the agent appends during the turn, in order (S3). `turn` is added to `data`. */
+  events?: { type: string; data: Record<string, unknown> }[]
 }
+
+/** `time` of the first event; each later event is one second on. */
+export const FAKE_DSH_EPOCH_MS = 1_793_000_000_000
 
 class Channel<T> {
   private items: T[] = []
@@ -92,6 +99,10 @@ export class FakeDSH implements DshServices {
     return s
   }
 
+  private emitEvent(sessionId: string, type: string, data: unknown) {
+    this.emit(sessionId, (seq) => ({ type: 'event', event: { type, seq, time: FAKE_DSH_EPOCH_MS + seq * 1000, data } }))
+  }
+
   private emit(sessionId: string, frame: FollowFrame | ((seq: number) => FollowFrame)) {
     const s = this.session(sessionId)
     const f = typeof frame === 'function' ? frame(++s.seq) : frame
@@ -100,7 +111,8 @@ export class FakeDSH implements DshServices {
 
   private runTurn(sessionId: string, turn: number) {
     const reply = this.options.reply ?? ['Hello', ' from', ' FakeDSH.']
-    this.emit(sessionId, (seq) => ({ type: 'event', event: { type: 'turn/start', seq, data: { turn } } }))
+    this.emitEvent(sessionId, 'turn/start', { turn })
+    for (const e of this.options.events ?? []) this.emitEvent(sessionId, e.type, { turn, ...e.data })
     this.emit(sessionId, { type: 'assistant-stream', frame: { type: 'start' } })
     for (const text of reply) {
       this.emit(sessionId, { type: 'assistant-stream', frame: { type: 'chunk', chunk: { type: 'text-delta', index: 0, text } } })
@@ -111,6 +123,6 @@ export class FakeDSH implements DshServices {
       event: { type: 'assistant/message', seq, data: { turn, step: 0, message: { content: [{ type: 'text', text: reply.join('') }] } } },
     }))
     const reason = this.options.failWith ?? { kind: 'completed' }
-    this.emit(sessionId, (seq) => ({ type: 'event', event: { type: 'turn/end', seq, data: { turn, reason } } }))
+    this.emitEvent(sessionId, 'turn/end', { turn, reason })
   }
 }

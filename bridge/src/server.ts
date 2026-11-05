@@ -6,6 +6,7 @@ import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/p
 import { WebSocketServer, type WebSocket } from 'ws'
 import type { SecureChannel } from './channel.ts'
 import type { StartedTask } from './dsh.ts'
+import { MILESTONES_CAPABILITY, milestoneAdded } from './milestones/wire.ts'
 import {
   FrameSchema, TaskStatus,
   type EventSchema, type Frame, type Request, type ResponseSchema,
@@ -15,7 +16,7 @@ type ResponseBody = MessageInitShape<typeof ResponseSchema>['body']
 type EventBody = MessageInitShape<typeof EventSchema>['body']
 
 export const PROTOCOL_VERSION = 1
-export const CAPABILITIES = ['tasks.v1'] as const
+export const CAPABILITIES = ['tasks.v1', MILESTONES_CAPABILITY] as const
 
 export interface TaskStarter {
   start(prompt: string, signal: AbortSignal): Promise<StartedTask>
@@ -100,9 +101,12 @@ function serveConnection(socket: WebSocket, options: BridgeServerOptions, log: (
         }
         respond(id, { case: 'taskCreated', value: { taskId: task.taskId } })
         let seq = 0n
+        let milestoneSeq = 0n
         for await (const out of task.output) {
           if (out.kind === 'text') {
             emit({ case: 'assistantChunk', value: { taskId: task.taskId, seq: ++seq, text: out.text } })
+          } else if (out.kind === 'milestone') {
+            emit({ case: 'milestoneAdded', value: milestoneAdded(task.taskId, ++milestoneSeq, out.milestone) })
           } else {
             emit({
               case: 'taskEnded',

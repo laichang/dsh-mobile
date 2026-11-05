@@ -27,6 +27,8 @@ public final class TaskStore {
     public var prompt: String
     public private(set) var transcript = ""
     public private(set) var status: Status = .idle
+    /// S3: the current task's milestones (card + timeline).
+    public private(set) var milestones = MilestoneTimeline()
 
     private let connection: HostConnection
     private var currentTaskID: String?
@@ -50,6 +52,7 @@ public final class TaskStore {
         guard canSend else { return }
         let text = prompt
         transcript = ""
+        milestones = MilestoneTimeline()
         currentTaskID = nil
         status = .connecting
         startListening()
@@ -87,6 +90,11 @@ public final class TaskStore {
             guard currentTaskID == nil || currentTaskID == taskID else { return }
             currentTaskID = taskID
             status = endStatus == .completed ? .completed : .failed(message.isEmpty ? "the task failed" : message)
+        case .milestone(let milestone):
+            guard currentTaskID == nil || currentTaskID == milestone.taskID else { return }
+            currentTaskID = milestone.taskID
+            if case .connecting = status { status = .running(taskID: milestone.taskID) }
+            milestones.add(milestone)
         }
     }
 }

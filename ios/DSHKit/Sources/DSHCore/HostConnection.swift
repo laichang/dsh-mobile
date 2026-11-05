@@ -6,6 +6,8 @@ import SwiftProtobuf
 public enum TaskEvent: Sendable, Equatable {
     case chunk(taskID: String, seq: UInt64, text: String)
     case ended(taskID: String, status: TaskEndStatus, message: String)
+    /// S3: the next step on the task's milestone timeline. Arrives before `.ended`.
+    case milestone(Milestone)
 }
 
 public enum TaskEndStatus: Sendable, Equatable {
@@ -134,6 +136,8 @@ public actor HostConnection {
                 case .taskEnded(let e)?:
                     let status: TaskEndStatus = e.status == .completed ? .completed : .failed
                     eventContinuation.yield(.ended(taskID: e.taskID, status: status, message: e.message))
+                case .milestoneAdded(let m)?:
+                    if let milestone = Milestone(m) { eventContinuation.yield(.milestone(milestone)) }
                 case nil:
                     break
                 }
