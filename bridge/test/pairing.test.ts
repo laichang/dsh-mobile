@@ -3,7 +3,7 @@
  * Noise listener end to end against FakeDSH (pairing, reconnect, and every refusal).
  */
 import assert from 'node:assert/strict'
-import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { after, describe, test } from 'node:test'
@@ -19,8 +19,9 @@ import {
   DecryptError, HandshakeState, generateKeyPair, hex, keyPairFromSecret, unhex, type KeyPair, type Transport,
 } from '../src/pairing/noise.ts'
 import { offerURL, parseOfferURL } from '../src/pairing/offer.ts'
-import { PairingStore } from '../src/pairing/store.ts'
+import { deviceId, PairingStore } from '../src/pairing/store.ts'
 import { CloseCode } from '../src/pairing/wire.ts'
+import { auditPage } from '../src/devices/manage.ts'
 import { PLAINTEXT_PATH, startBridgeServer, type BridgeServer } from '../src/server.ts'
 import { FakeDSH } from './fake-dsh.ts'
 import { FIXTURES_DIR } from './fixtures.ts'
@@ -258,6 +259,52 @@ function pairWith(store: PairingStore, phone: KeyPair, offer = makeOffer(store))
 }
 
 describe('PairingBridge', () => {
+  test('revokedDeviceLosesOpenSocketsAndCannotReconnect', async () => {
+    const store = tempStore()
+    const server = await noiseBridge(store)
+    const peer = generateKeyPair(), manager = generateKeyPair()
+    const peerId = deviceId(peer.publicKey)
+    const first = await noiseClient(server.port, pairWith(store, peer))
+    first.send(hello)
+    await first.until(fs => fs.length === 1)
+    const reconnect = () => NoiseInitiator.reconnect({ s: peer, hostKey: store.hostKey().publicKey })
+    const pending = await noiseClient(server.port, reconnect()) // accepted IK before its first encrypted frame
+    const owner = await noiseClient(server.port, pairWith(store, manager))
+    owner.send(hello)
+    owner.send({ kind: { case: 'request', value: { id: 2n, body: { case: 'revokeDevice', value: { deviceId: peerId } } } } })
+    await owner.until(fs => fs.length === 2)
+    const reply = owner.frames[1].kind
+    assert.ok(reply.case === 'response' && reply.value.body.case === 'deviceList')
+    assert.deepEqual(reply.value.body.value.devices.map(d => d.id), [deviceId(manager.publicKey)])
+    assert.equal((await first.closed).code, CloseCode.DeviceUnknown)
+    assert.equal((await pending.closed).code, CloseCode.DeviceUnknown)
+    assert.equal((await (await noiseClient(server.port, reconnect())).closed).code, CloseCode.DeviceUnknown)
+    const persisted = new PairingStore(store.dir)
+    assert.equal(persisted.findDevice(peer.publicKey), undefined)
+    assert.deepEqual(persisted.pairingHistory().map(a => a.action), ['Device paired', 'Device paired', 'Device revoked'])
+    const last = persisted.pairingHistory().at(-1)!
+    assert.equal(last.device, deviceId(manager.publicKey))
+    assert.equal(last.detail, peerId)
+    owner.close()
+  })
+
+  test('auditIncludesLegacyPairingsAndPagesPastNewEvents', () => {
+    let time = 100
+    const store = tempStore(() => time++)
+    const device = store.registerDevice(generateKeyPair().publicKey, new Uint8Array([1]))
+    const path = join(store.dir, 'devices.json')
+    writeFileSync(path, JSON.stringify(JSON.parse(readFileSync(path, 'utf8')).devices)) // S1 format
+    assert.equal(store.pairingHistory()[0].atMs, device.pairedAt)
+    for (let i = 2; i <= 52; i++) store.registerDevice(generateKeyPair().publicKey, new Uint8Array([i]))
+    const first = auditPage(store, '')
+    store.revoke(device.id, device.id)
+    const next = auditPage(store, first.nextBeforeId)
+    assert.equal(first.entries.length, 50)
+    assert.deepEqual(next.entries.map(e => e.atMs), [101n, 100n])
+    assert.equal(next.nextBeforeId, '')
+    assert.equal(auditPage(store, '').entries[0].action, 'Device revoked')
+  })
+
   test('pairsThenRunsTaskThenReconnects', async () => {
     const store = tempStore()
     const server = await noiseBridge(store)

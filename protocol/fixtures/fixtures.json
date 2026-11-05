@@ -65,6 +65,9 @@
     { "name": "s7_workspace_list_response",
       "frame": { "response": { "requestId": "7", "workspaceList": { "defaultPath": "/home/user", "recentPaths": ["/work/app"] } } } },
     { "name": "s7_create_in_workspace_request",
-      "frame": { "request": { "id": "8", "createTask": { "prompt": "Show the repo name", "workspace": "/work/app" } } } }
+      "frame": { "request": { "id": "8", "createTask": { "prompt": "Show the repo name", "workspace": "/work/app" } } } },
+    { "name": "s10_revoke_request", "frame": { "request": { "id": "10", "revokeDevice": { "deviceId": "phone-a" } } } },
+    { "name": "s10_device_list", "frame": { "response": { "requestId": "10", "deviceList": { "currentDeviceId": "phone-b", "devices": [{ "id": "phone-b", "pairedAtMs": "100", "lastSeenAtMs": "200" }] } } } },
+    { "name": "s10_audit_page", "frame": { "response": { "requestId": "11", "auditPage": { "entries": [{ "id": "revoke:1", "atMs": "300", "actor": "owner", "device": "phone-b", "action": "Device revoked", "detail": "phone-a" }] } } } }
   ]
 }

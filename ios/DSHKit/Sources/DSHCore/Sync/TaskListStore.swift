@@ -255,6 +255,12 @@ public final class TaskListStore {
         }
     }
 
+    public func deviceManagement(for hostKey: String) -> HostConnection? {
+        guard let link = links.first(where: { $0.key == hostKey }), link.reachability == .online,
+              link.capabilities?.contains("devices.v1") == true else { return nil }
+        return link.connection
+    }
+
     public func interrupt(_ row: TaskRow) async throws {
         guard let link = links.first(where: { $0.key == row.hostKey }), link.reachability == .online else {
             throw HostConnectionError.notConnected

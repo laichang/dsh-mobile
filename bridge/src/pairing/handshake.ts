@@ -49,7 +49,7 @@ export interface Accepted {
 }
 
 export class NoiseResponder {
-  constructor(private readonly store: PairingStore, private readonly log: (m: string) => void = () => {}) {}
+  constructor(readonly store: PairingStore, private readonly log: (m: string) => void = () => {}) {}
 
   /** Handles the app's first message. Throws `HandshakeRejected` to refuse the connection. */
   accept(first: Uint8Array): Accepted {

@@ -584,16 +584,18 @@ Each slice needs only T0, unless "Needs" says otherwise.
 **Demo**: revoke the phone from a second device; its next connection is refused.
 
 **Done when**
-- [ ] [auto] Bridge refuses a connection from a revoked device — Evidence:
-- [ ] [ui] Revoke a device from the management screen; its next connection is refused — Evidence:
-- [ ] [ui] Audit view shows who, when, which device, and what for pairing events — Evidence:
+- [x] [auto] Bridge refuses a connection from a revoked device — Evidence: test:revokedDeviceLosesOpenSocketsAndCannotReconnect
+- [x] [ui] Revoke a device from the management screen; its next connection is refused — Evidence: test:S10DevicesUITests/testAuditAndRevokeAnotherPairedDevice · cmd:scripts/demo/s10.sh · shot:evidence/S10/s10-revoked.png
+- [x] [ui] Audit view shows who, when, which device, and what for pairing events — Evidence: test:S10DevicesUITests/testAuditAndRevokeAnotherPairedDevice · shot:evidence/S10/s10-devices.png · shot:evidence/S10/s10-audit.png
 
-- [ ] [ui] An approval denied on the phone is visible in the audit view with the authenticated device and exact operation (S4 × S10) — Evidence:
+- [x] [ui] An approval denied on the phone is visible in the audit view with the authenticated device and exact operation (S4 × S10) — Evidence: test:S10DevicesUITests/testAuditAndRevokeAnotherPairedDevice · cmd:scripts/demo/s10.sh · shot:evidence/S10/s10-audit.png
 
 **Not**: —
 
 **Log**
 - **2026-11-05 · Started.** Isolated T0 passed on dshm-S10 with the pinned DSH runtime; ports 47816 and 3289, profile ~/.dshm/home-s10. Implementing device management and the approval audit seam.
+- **2026-11-05 · Owner verification.** Implementation `f45e1f7` passed 54 bridge tests, 47 Swift tests and one real DSH UI scenario, with zero skips. Two clients paired over Noise. The phone denied a held command, inspected its timestamp, device and operation, then revoked the CLI. The original CLI key received close 4003 on reconnect. Tests also verified revocation closes existing sockets, a pending IK connection, and persisted access after restart. See provisional D40. No new dependencies or downloads. Next: independent UI rerun and integration.
+- **2026-11-05 · Integrated with S7.** Rebuilt the protocol artifacts with both workspace and device requests. The integrated S10 demo passed 55 bridge tests, 48 Swift tests and one real DSH UI scenario, with zero skips. The approved device viewed the pairing and denial history and revoked the other client. Its next connection was refused with code 4003.
 
 ### S11 · First run
 

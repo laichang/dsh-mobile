@@ -205,6 +205,30 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .listWorkspaces(newValue)}
   }
 
+  public var listDevices: Dshm_V1_ListDevices {
+    get {
+      if case .listDevices(let v)? = body {return v}
+      return Dshm_V1_ListDevices()
+    }
+    set {body = .listDevices(newValue)}
+  }
+
+  public var revokeDevice: Dshm_V1_RevokeDevice {
+    get {
+      if case .revokeDevice(let v)? = body {return v}
+      return Dshm_V1_RevokeDevice()
+    }
+    set {body = .revokeDevice(newValue)}
+  }
+
+  public var listAudit: Dshm_V1_ListAudit {
+    get {
+      if case .listAudit(let v)? = body {return v}
+      return Dshm_V1_ListAudit()
+    }
+    set {body = .listAudit(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -219,6 +243,9 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     case getModelCatalog(Dshm_V1_GetModelCatalog)
     case selectModel(Dshm_V1_SelectModel)
     case listWorkspaces(Dshm_V1_ListWorkspaces)
+    case listDevices(Dshm_V1_ListDevices)
+    case revokeDevice(Dshm_V1_RevokeDevice)
+    case listAudit(Dshm_V1_ListAudit)
 
   }
 
@@ -317,6 +344,22 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .modelSelected(newValue)}
   }
 
+  public var deviceList: Dshm_V1_DeviceList {
+    get {
+      if case .deviceList(let v)? = body {return v}
+      return Dshm_V1_DeviceList()
+    }
+    set {body = .deviceList(newValue)}
+  }
+
+  public var auditPage: Dshm_V1_AuditPage {
+    get {
+      if case .auditPage(let v)? = body {return v}
+      return Dshm_V1_AuditPage()
+    }
+    set {body = .auditPage(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -332,6 +375,8 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     case workspaceList(Dshm_V1_WorkspaceList)
     case modelCatalog(Dshm_V1_ModelCatalog)
     case modelSelected(Dshm_V1_ModelSelected)
+    case deviceList(Dshm_V1_DeviceList)
+    case auditPage(Dshm_V1_AuditPage)
 
   }
 
@@ -645,7 +690,7 @@ nonisolated extension Dshm_V1_Frame: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
 nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Request"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0\u{4}%list_tasks\0\u{1}resume\0\u{4}'answer_approval\0\u{2}\u{14}interrupt\0\u{4}\u{14}get_model_catalog\0\u{3}select_model\0\u{4}\u{13}list_workspaces\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0\u{4}%list_tasks\0\u{1}resume\0\u{4}'answer_approval\0\u{2}\u{14}interrupt\0\u{4}\u{14}get_model_catalog\0\u{3}select_model\0\u{4}\u{13}list_workspaces\0\u{4}<list_devices\0\u{3}revoke_device\0\u{3}list_audit\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -771,6 +816,45 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.body = .listWorkspaces(v)
         }
       }()
+      case 200: try {
+        var v: Dshm_V1_ListDevices?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .listDevices(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .listDevices(v)
+        }
+      }()
+      case 201: try {
+        var v: Dshm_V1_RevokeDevice?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .revokeDevice(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .revokeDevice(v)
+        }
+      }()
+      case 202: try {
+        var v: Dshm_V1_ListAudit?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .listAudit(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .listAudit(v)
+        }
+      }()
       default: break
       }
     }
@@ -821,6 +905,18 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
       guard case .listWorkspaces(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 140)
     }()
+    case .listDevices?: try {
+      guard case .listDevices(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 200)
+    }()
+    case .revokeDevice?: try {
+      guard case .revokeDevice(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 201)
+    }()
+    case .listAudit?: try {
+      guard case .listAudit(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 202)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -836,7 +932,7 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
 
 nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Response"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0\u{4}$task_list\0\u{1}resumed\0\u{4}'approval_resolved\0\u{4}\u{14}interrupt_accepted\0\u{4}\u{14}model_catalog\0\u{3}model_selected\0\u{4}\u{13}workspace_list\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0\u{4}$task_list\0\u{1}resumed\0\u{4}'approval_resolved\0\u{4}\u{14}interrupt_accepted\0\u{4}\u{14}model_catalog\0\u{3}model_selected\0\u{4}\u{13}workspace_list\0\u{4}<device_list\0\u{4}\u{2}audit_page\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -975,6 +1071,32 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
           self.body = .workspaceList(v)
         }
       }()
+      case 200: try {
+        var v: Dshm_V1_DeviceList?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .deviceList(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .deviceList(v)
+        }
+      }()
+      case 202: try {
+        var v: Dshm_V1_AuditPage?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .auditPage(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .auditPage(v)
+        }
+      }()
       default: break
       }
     }
@@ -1028,6 +1150,14 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
     case .workspaceList?: try {
       guard case .workspaceList(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 140)
+    }()
+    case .deviceList?: try {
+      guard case .deviceList(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 200)
+    }()
+    case .auditPage?: try {
+      guard case .auditPage(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 202)
     }()
     case nil: break
     }

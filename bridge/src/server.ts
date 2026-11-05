@@ -14,6 +14,8 @@ import { WebSocketServer, type WebSocket } from 'ws'
 import type { ApprovalHolder } from './approvals/holder.ts'
 import { ApprovalDecision } from './gen/approvals_pb.ts'
 import { deviceId } from './pairing/store.ts'
+import { CloseCode } from './pairing/wire.ts'
+import { auditPage, deviceList } from './devices/manage.ts'
 import { hostname } from 'node:os'
 import type { SecureChannel } from './channel.ts'
 import { FrameSchema, type Frame, type Request, type ResponseSchema } from './gen/frame_pb.ts'
@@ -70,7 +72,7 @@ export async function startBridgeServer(options: BridgeServerOptions): Promise<B
   log(`listening on ${options.host}:${port} (${channels.filter(Boolean).join(', ')})`)
 
   const hub = options.hub ?? new TaskHub(options.tasks)
-  const host = { hub, hostName: options.hostName ?? hostname() }
+  const host = { hub, hostName: options.hostName ?? hostname(), authenticated: new Map<WebSocket, string>() }
   wss.on('connection', (socket, req) => serveConnection(socket, req.url ?? '/', options, host, log))
 
   return {
@@ -93,7 +95,7 @@ interface FrameCodec {
 }
 
 function serveConnection(
-  socket: WebSocket, url: string, options: BridgeServerOptions, host: { hub: TaskHub; hostName: string },
+  socket: WebSocket, url: string, options: BridgeServerOptions, host: { hub: TaskHub; hostName: string; authenticated: Map<WebSocket, string> },
   log: (m: string) => void,
 ) {
   const { hub, hostName } = host
@@ -150,6 +152,7 @@ function serveConnection(
             ...(options.tasks.modelCatalog && options.tasks.selectModel ? ['models.v1'] : []),
             ...(options.approvals ? ['approvals.v1'] : []),
             ...(options.tasks.listWorkspaces ? ['workspaces.v1'] : []),
+            ...(host.authenticated.has(socket) ? ['devices.v1'] : []),
           ] },
         })
       }
@@ -221,6 +224,32 @@ function serveConnection(
           return fail(id, 'model/unavailable', error instanceof Error ? error.message : String(error))
         }
       }
+      case 'listDevices':
+      case 'listAudit':
+      case 'revokeDevice': {
+        if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
+        const actor = host.authenticated.get(socket)
+        const store = options.noise?.store
+        if (!actor || !store) return fail(id, 'devices/forbidden', 'Pair this device to manage the host.')
+        try {
+          if (request.body.case === 'listAudit') {
+            return respond(id, { case: 'auditPage', value: auditPage(store, request.body.value.beforeId) })
+          }
+          if (request.body.case === 'listDevices') return respond(id, { case: 'deviceList', value: deviceList(store, actor) })
+          const target = request.body.value.deviceId
+          store.revoke(target, actor)
+          try {
+            respond(id, { case: 'deviceList', value: deviceList(store, actor) })
+          } finally {
+            for (const [client, fingerprint] of host.authenticated) {
+              if (fingerprint === target) client.close(CloseCode.DeviceUnknown, 'device revoked')
+            }
+          }
+        } catch (error) {
+          return fail(id, 'devices/failed', error instanceof Error ? error.message : String(error))
+        }
+        return
+      }
       case 'answerApproval': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
         if (!options.approvals) return fail(id, 'request/unsupported', 'approvals unavailable')
@@ -264,6 +293,7 @@ function serveConnection(
   }
 
   socket.on('message', (data, isBinary) => {
+    if (socket.readyState !== socket.OPEN) return
     if (!isBinary) return socket.close(1003, 'binary frames only')
     const bytes = new Uint8Array(Array.isArray(data) ? Buffer.concat(data) : Buffer.from(data as ArrayBuffer))
     if (!codec) {
@@ -273,6 +303,7 @@ function serveConnection(
         socket.send(reply)
         codec = session
         device = deviceId(session.remoteStatic)
+        host.authenticated.set(socket, device)
       } catch (error) {
         if (error instanceof HandshakeRejected) {
           log(`refused a connection: ${error.reason}`)
@@ -293,5 +324,5 @@ function serveConnection(
     handle(frame.kind.value).catch((error) => log(`request failed: ${String(error)}`))
   })
   // The connection goes; the host's tasks keep running (STORY principle 4).
-  socket.on('close', () => unsubscribe?.())
+  socket.on('close', () => { host.authenticated.delete(socket); unsubscribe?.() })
 }

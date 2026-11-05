@@ -70,6 +70,18 @@ describe('BridgeAgainstFakeDSH', () => {
     } finally { client.close() }
   })
 
+  test('plaintextCannotReadOrChangeDeviceManagement', async () => {
+    const { client } = await bridgeWith()
+    client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
+    client.send({ kind: { case: 'request', value: { id: 2n, body: { case: 'listDevices', value: {} } } } })
+    client.send({ kind: { case: 'request', value: { id: 3n, body: { case: 'revokeDevice', value: { deviceId: 'victim' } } } } })
+    client.send({ kind: { case: 'request', value: { id: 4n, body: { case: 'listAudit', value: {} } } } })
+    await client.until(fs => fs.length === 4)
+    assert.ok(client.frames.slice(1).every(f => f.kind.case === 'response'
+      && f.kind.value.body.case === 'error' && f.kind.value.body.value.code === 'devices/forbidden'))
+    client.close()
+  })
+
   test('hostCatalogPreservesGroupsNamesEffortsAndDefault', async () => {
     const { dsh, client } = await bridgeWith()
     client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
