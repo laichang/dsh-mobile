@@ -1,0 +1,1169 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>dsh-mobile · DESIGN</title>
+<style>
+:root{
+  /* Tokens lifted from DSH desktop (deepseek.com/harness, computed styles) */
+  --canvas:#151517;      /* main pane */
+  --slate:#343A43;       /* sidebar */
+  --bubble:#2C2C2E;      /* user bubble, composer */
+  --card:#1E1F22;        /* cards on canvas */
+  --card-2:#26272B;
+  --hair:rgba(255,255,255,.08);
+  --hair-2:rgba(255,255,255,.12);
+  --fill:rgba(255,255,255,.08);
+  --t1:#F9FAFB; --t2:#ADB2B8; --t3:#71767E; --t-tool:#C5C7CE;
+  --blue:#4D6BFE;  --blue-soft:rgba(77,107,254,.16);
+  --green:#3FB950; --red:#F85149; --amber:#F5A524; --amber-soft:rgba(245,165,36,.14);
+  --mono:"SF Mono",ui-monospace,Menlo,monospace;
+  --sans:-apple-system,"SF Pro Text","PingFang SC","Hiragino Sans GB",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0B0B0C;color:var(--t1);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.board{padding:72px 80px 80px;width:max-content}
+.board>header{margin-bottom:56px;max-width:1500px}
+.board>header .eyebrow{font:600 13px/1 var(--mono);letter-spacing:.18em;color:var(--t3);text-transform:uppercase}
+.board>header h1{font-size:44px;font-weight:600;letter-spacing:-.01em;margin:16px 0 14px}
+.board>header p{color:var(--t2);font-size:17px;line-height:1.65}
+.principles{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+.principles span{font-size:13.5px;color:var(--t1);background:var(--card);border:1px solid var(--hair);padding:8px 14px;border-radius:999px}
+.principles b{color:var(--t3);font-weight:500;margin-right:6px;font-family:var(--mono)}
+.grid{display:grid;grid-template-columns:repeat(4,393px);gap:72px 64px}
+.cell .cap{margin-top:26px;width:393px}
+.cap h3{font-size:18px;font-weight:600;display:flex;gap:10px;align-items:baseline}
+.cap h3 i{font:600 13px var(--mono);color:var(--blue);font-style:normal}
+.cap ul{margin-top:10px;padding-left:18px;color:var(--t2);font-size:14px;line-height:1.65}
+.cap li::marker{color:var(--t3)}
+.cap code{font-family:var(--mono);font-size:12.5px;color:var(--t1);background:var(--fill);padding:1px 5px;border-radius:5px}
+
+/* ---------- phone ---------- */
+.phone{width:393px;height:852px;border-radius:56px;background:var(--canvas);position:relative;overflow:hidden;
+  box-shadow:0 0 0 11px #1c1c1e,0 0 0 12px #3a3a3c,0 40px 80px rgba(0,0,0,.6)}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:50}
+.status{position:absolute;top:0;left:0;right:0;height:54px;display:flex;justify-content:space-between;align-items:center;padding:4px 34px 0 46px;font-weight:600;font-size:16.5px;z-index:40}
+.status .r{display:flex;gap:7px;align-items:center}
+.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:138px;height:5px;border-radius:3px;background:rgba(255,255,255,.85);z-index:60}
+.screen{position:absolute;inset:0;padding-top:54px;display:flex;flex-direction:column}
+svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;height:24px}
+
+/* nav */
+.nav{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex:none}
+.iconbtn{width:38px;height:38px;border-radius:19px;display:grid;place-items:center;color:var(--t1);background:var(--fill)}
+.iconbtn.ghost{background:none}
+.navtitle{text-align:center;line-height:1.2}
+.navtitle b{font-size:15.5px;font-weight:600;display:block}
+.navtitle small{font-size:12px;color:var(--t2)}
+.hostpill{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--t2);background:var(--fill);padding:7px 12px;border-radius:999px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex:none}
+.dot.off{background:transparent;box-shadow:inset 0 0 0 1.5px var(--t3)}
+.dot.amber{background:var(--amber)} .dot.blue{background:var(--blue)}
+
+.scroll{flex:1;overflow:hidden;padding:0 16px}
+.bigtitle{font-size:30px;font-weight:700;letter-spacing:-.01em;margin:6px 4px 12px}
+.chips{display:flex;gap:8px;margin:0 0 14px;overflow:hidden}
+.chip{font-size:13px;padding:7px 13px;border-radius:999px;background:var(--fill);color:var(--t2);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.chip.on{background:var(--t1);color:#111}
+.sec{display:flex;justify-content:space-between;align-items:baseline;margin:18px 4px 9px;font-size:13px;color:var(--t2);font-weight:500}
+.sec .n{font-family:var(--mono);color:var(--t3)}
+
+.card{background:var(--card);border:1px solid var(--hair);border-radius:18px;padding:14px}
+.card+.card{margin-top:10px}
+.card.needs{border-color:rgba(245,165,36,.35);background:linear-gradient(180deg,rgba(245,165,36,.07),rgba(245,165,36,0) 60%),var(--card)}
+.ctitle{font-size:15.5px;font-weight:600;line-height:1.35}
+.meta{font-size:12.5px;color:var(--t3);margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.meta .sep{opacity:.6}
+.tag{font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:6px;display:inline-flex;gap:5px;align-items:center}
+.tag.amber{background:var(--amber-soft);color:var(--amber)}
+.tag.red{background:rgba(248,81,73,.15);color:#FF7B72}
+.tag.blue{background:var(--blue-soft);color:#8EA2FF}
+.tag.green{background:rgba(63,185,80,.15);color:#56D364}
+.cmd{font:12.5px/1.5 var(--mono);background:#0E0E10;border:1px solid var(--hair);border-radius:10px;padding:9px 11px;margin-top:10px;color:#E6E6E6;white-space:pre-wrap}
+.cmd .p{color:var(--t3)}
+.btnrow{display:flex;gap:8px;margin-top:12px}
+.btn{flex:1;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600;background:var(--fill);color:var(--t1)}
+.btn.primary{background:var(--t1);color:#111}
+.btn.blue{background:var(--blue);color:#fff}
+.btn.tall{height:50px;border-radius:15px;font-size:16px}
+.reply{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap}
+.reply span{font-size:13px;padding:7px 12px;border-radius:999px;border:1px solid var(--hair-2);color:var(--t1)}
+
+.row{display:flex;gap:12px;align-items:flex-start}
+.ring{width:22px;height:22px;flex:none;margin-top:1px}
+.prog{height:3px;border-radius:2px;background:var(--fill);margin-top:9px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--blue);border-radius:2px}
+.step{font-size:13.5px;color:var(--t2);margin-top:4px;display:flex;gap:6px;align-items:center}
+.step .shimmer{background:linear-gradient(90deg,var(--t2),#fff,var(--t2));-webkit-background-clip:text;color:transparent}
+.artifact{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;background:var(--fill);padding:5px 9px 5px 6px;border-radius:8px;margin-top:9px;color:var(--t1)}
+.fi{width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font:700 10px var(--sans);color:#fff;flex:none}
+.fi.ppt{background:#D24726}.fi.xls{background:#1F7244}.fi.doc{background:#2B5797}.fi.pdf{background:#C9302C}.fi.ts{background:#3178C6}.fi.pr{background:#8957E5}
+.list .li{display:flex;gap:12px;padding:13px 2px;border-bottom:1px solid var(--hair);align-items:flex-start}
+.list .li:last-child{border-bottom:0}
+
+/* composer (desktop: #2C2C2E, r=20, pills: + / permission / model / send) */
+.composer{margin:0 10px 30px;background:var(--bubble);border-radius:24px;padding:13px 12px 10px 16px;border:1px solid var(--hair);box-shadow:0 -10px 30px rgba(0,0,0,.35);flex:none;position:relative;z-index:5}
+.composer .ph{font-size:15px;color:var(--t3);margin-bottom:12px}
+.composer .ph.typed{color:var(--t1);line-height:1.45}
+.composer .bar{display:flex;align-items:center;gap:6px}
+.pill{display:flex;align-items:center;gap:5px;font-size:12.5px;color:#CFD3D6;padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.06);white-space:nowrap}
+.pill .w{color:var(--t3)}
+.send{width:34px;height:34px;border-radius:17px;background:var(--blue);display:grid;place-items:center;margin-left:auto;color:#fff;flex:none}
+.send.stop{background:var(--t1);color:#111}
+.send.idle{background:rgba(255,255,255,.14);color:var(--t2)}
+.fade{position:absolute;left:0;right:0;bottom:0;height:200px;background:linear-gradient(180deg,rgba(21,21,23,0),var(--canvas) 55%);pointer-events:none;z-index:4}
+
+/* transcript (desktop style) */
+.ubub{align-self:flex-end;background:var(--bubble);border-radius:20px;padding:10px 14px;font-size:15px;line-height:1.45;max-width:82%;margin:6px 0 14px auto;width:fit-content}
+.thought{font-size:13.5px;color:var(--t2);display:flex;align-items:center;gap:4px;margin:4px 0 10px}
+.para{font-size:15px;line-height:1.62;color:var(--t1);margin-bottom:12px}
+.para code,.ic{font-family:var(--mono);font-size:13px;background:var(--fill);padding:1px 5px;border-radius:5px}
+.tools{border-left:1px solid var(--hair-2);margin:4px 0 14px 6px;padding-left:14px}
+.tool{display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0;color:var(--t-tool);min-width:0}
+.tool .v{color:var(--t2);width:38px;flex:none;font-size:12.5px}
+.tool .tgt{font-family:var(--mono);font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tool .add{color:var(--green);font-family:var(--mono);font-size:12px;margin-left:auto}
+.tool .del{color:var(--red);font-family:var(--mono);font-size:12px}
+.tool .extra{margin-left:auto;color:var(--t3);font-size:12px;white-space:nowrap}
+.term{font:11.5px/1.55 var(--mono);color:#9DA3AA;background:#0E0E10;border:1px solid var(--hair);border-radius:9px;padding:8px 10px;margin:2px 0 6px}
+.term b{color:var(--green);font-weight:500}
+.took{font-size:13px;color:var(--t2);padding:10px 0;border-top:1px solid var(--hair);margin-top:4px;display:flex;align-items:center;gap:5px}
+.spinner{width:13px;height:13px;border-radius:50%;border:1.6px solid rgba(255,255,255,.18);border-top-color:var(--t1);flex:none}
+
+/* pinned progress */
+.pinned{margin:2px 16px 8px;background:var(--card);border:1px solid var(--hair);border-radius:14px;padding:10px 12px;flex:none}
+.pinned .top{display:flex;align-items:center;gap:9px;font-size:13.5px}
+.pinned .top .ct{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--t2)}
+
+/* sheet */
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:20}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#1C1C1F;border-radius:30px 30px 0 0;z-index:30;padding:8px 18px 40px;border-top:1px solid var(--hair-2)}
+.grab{width:38px;height:5px;border-radius:3px;background:rgba(255,255,255,.25);margin:0 auto 14px}
+.kv{display:flex;justify-content:space-between;font-size:13.5px;padding:9px 0;border-bottom:1px solid var(--hair);gap:12px}
+.kv span:first-child{color:var(--t2)}
+.kv span:last-child{text-align:right}
+.opt{display:flex;gap:11px;align-items:flex-start;padding:11px 12px;border-radius:13px;border:1px solid var(--hair);margin-top:8px;font-size:14px;line-height:1.4}
+.opt.on{border-color:var(--blue);background:var(--blue-soft)}
+.radio{width:18px;height:18px;border-radius:50%;border:1.6px solid var(--t3);flex:none;margin-top:1px}
+.opt.on .radio{border:5px solid var(--blue)}
+.opt small{display:block;color:var(--t2);font-size:12.5px;margin-top:2px}
+.fine{font-size:12px;color:var(--t3);text-align:center;margin-top:12px;line-height:1.5}
+
+/* drawer (desktop sidebar) */
+.drawer{position:absolute;top:0;bottom:0;left:0;width:318px;background:var(--slate);z-index:30;padding:58px 12px 34px;display:flex;flex-direction:column}
+.wm{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px;letter-spacing:-.02em;padding:6px 8px 14px}
+.wm em{font:700 9px/1 var(--sans);font-style:normal;letter-spacing:.06em;border:1px solid rgba(255,255,255,.7);border-radius:3px;padding:3px 4px}
+.newbtn{background:rgba(255,255,255,.08);border-radius:11px;height:40px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:14px;font-weight:500}
+.dnav{display:flex;align-items:center;gap:10px;font-size:14px;padding:10px 8px;color:#E7E9EC}
+.dsec{font-size:12px;color:#A3A9B1;padding:16px 8px 6px;display:flex;justify-content:space-between;align-items:center}
+.ditem{display:flex;align-items:center;gap:10px;font-size:14px;padding:8px 8px;border-radius:8px;color:#E7E9EC}
+.ditem.sel{background:rgba(255,255,255,.08)}
+.ditem.sub{padding-left:34px;font-size:13.5px;color:#D3D7DC}
+.ditem .right{margin-left:auto;font-size:11.5px;color:#A3A9B1;display:flex;gap:5px;align-items:center}
+.acct{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 8px;font-size:14px;border-top:1px solid rgba(255,255,255,.08)}
+.avatar{width:28px;height:28px;border-radius:50%;background:#5A626E;display:grid;place-items:center;font-size:12px}
+
+/* lock screen */
+.lock{background:radial-gradient(120% 70% at 20% 0%,#2B3A63 0%,#14182A 45%,#0B0C12 100%)}
+.ltime{text-align:center;margin-top:24px}
+.ltime small{font-size:18px;font-weight:600;color:rgba(255,255,255,.85)}
+.ltime b{display:block;font-size:92px;font-weight:600;letter-spacing:-.02em;line-height:1;margin-top:2px;color:rgba(255,255,255,.92)}
+.glass{background:rgba(40,44,58,.55);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:13px 14px;margin:0 12px 9px}
+.appic{width:36px;height:36px;border-radius:9px;background:#151517;border:1px solid rgba(255,255,255,.12);display:grid;place-items:center;font:800 11px var(--sans);letter-spacing:-.02em;flex:none}
+.notif{display:flex;gap:11px}
+.notif .h{display:flex;justify-content:space-between;font-size:14px;font-weight:600}
+.notif .h small{font-weight:400;color:rgba(255,255,255,.55);font-size:13px}
+.notif p{font-size:14px;line-height:1.38;color:rgba(255,255,255,.88);margin-top:2px}
+.notif .acts{display:flex;gap:7px;margin-top:9px}
+.notif .acts span{font-size:13px;background:rgba(255,255,255,.12);border-radius:9px;padding:6px 11px}
+</style>
+<style>
+/* ---- home v2: the sidebar is the home ---- */
+.hhead{display:flex;align-items:center;justify-content:space-between;padding:6px 18px 8px;flex:none}
+.hhead .wm{padding:0;font-size:19px}
+.hosts{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);background:var(--fill);padding:6px 10px 6px 9px;border-radius:999px}
+.hosts .dots{display:flex;gap:3px}
+.hl{font-size:12.5px;color:var(--t3);font-weight:500;margin:18px 6px 8px;display:flex;justify-content:space-between;align-items:center}
+.hl .n{font-family:var(--mono)}
+.hostgrp{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t3);margin:16px 6px 4px;font-weight:500}
+.hostgrp .line{flex:1;height:1px;background:var(--hair)}
+.ws{display:flex;align-items:center;gap:10px;font-size:15px;padding:9px 6px;color:var(--t1)}
+.ws .cnt{margin-left:auto;font-size:12.5px;color:var(--t3);display:flex;gap:6px;align-items:center}
+.ws .cv{color:var(--t3)}
+.ss{display:flex;align-items:center;gap:10px;font-size:14.5px;padding:8.5px 6px 8.5px 36px;color:#DADDE1;border-radius:10px}
+.ss.sel{background:var(--fill)}
+.ss .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ss .r{margin-left:auto;font-size:12px;color:var(--t3);display:flex;gap:7px;align-items:center;flex:none}
+.ss.unread .t{color:var(--t1);font-weight:600}
+.udot{width:7px;height:7px;border-radius:50%;background:var(--blue)}
+.mini{width:13px;height:13px;flex:none}
+.compact .card{padding:12px 13px}
+.run{display:flex;gap:11px;align-items:center;padding:10px 6px}
+.run+.run{border-top:1px solid var(--hair)}
+.run .tt{font-size:14.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.run .st{font-size:12.5px;color:var(--t2);margin-top:2px}
+.run .pc{margin-left:auto;font:12px var(--mono);color:var(--t3);flex:none}
+.foot{display:flex;flex-direction:column;margin-top:14px;border-top:1px solid var(--hair);padding-top:6px}
+.foot .ws{font-size:14.5px;color:#DADDE1}
+.offline{opacity:.55}
+.mhead{display:flex;align-items:center;justify-content:space-between;height:44px;padding:0 16px;border-bottom:1px solid var(--hair);flex:none;background:rgba(21,21,23,.92)}
+.mhead b{font-size:15.5px}
+/* host sheet */
+.hostcard{display:flex;gap:12px;align-items:flex-start;padding:13px 2px;border-bottom:1px solid var(--hair)}
+.hostcard .ic{width:40px;height:40px;border-radius:11px;background:var(--fill);display:grid;place-items:center;flex:none}
+.hostcard .nm{font-size:15.5px;font-weight:600;display:flex;gap:7px;align-items:center}
+.hostcard .ds{font-size:12.5px;color:var(--t2);margin-top:3px;line-height:1.5}
+/* iPad */
+.ipad{width:1194px;height:834px;border-radius:38px;background:var(--canvas);position:relative;overflow:hidden;display:flex;
+  box-shadow:0 0 0 14px #1c1c1e,0 0 0 15px #3a3a3c,0 40px 80px rgba(0,0,0,.6)}
+.ipad .side{width:340px;background:var(--slate);display:flex;flex-direction:column;padding:34px 12px 18px;flex:none}
+.ipad .main{flex:1;display:flex;flex-direction:column;min-width:0}
+.ipad .status{padding:0 26px;height:30px;font-size:14px}
+.ipad .side .ws,.ipad .side .ss{color:#E7E9EC}
+.ipad .side .ss{color:#D3D7DC}
+.ipad .side .hl,.ipad .side .hostgrp{color:#A3A9B1}
+.ipad .side .hostgrp .line{background:rgba(255,255,255,.1)}
+.ipad .side .card{background:rgba(0,0,0,.18);border-color:rgba(255,255,255,.08)}
+.ipad .side .card.needs{border-color:rgba(245,165,36,.4)}
+.ipad .side .ss.sel{background:rgba(255,255,255,.1)}
+.ipad .side .udot{background:#8EA2FF}
+.colw{max-width:640px;margin:0 auto;width:100%}
+</style>
+<style>
+/* ---- home v3: push drawer. The sidebar is home; the last session peeks behind it ---- */
+.sb{position:absolute;top:0;bottom:0;left:0;width:330px;background:var(--slate);display:flex;flex-direction:column;padding:56px 12px 30px;z-index:10}
+.sb .ws,.sb .ss{color:#E7E9EC}
+.sb .ss{color:#D3D7DC;padding-left:34px}
+.sb .hl,.sb .hostgrp{color:#A3A9B1}
+.sb .hl{margin:14px 6px 7px}
+.sb .hostgrp .line{background:rgba(255,255,255,.1)}
+.sb .card{background:rgba(0,0,0,.2);border-color:rgba(255,255,255,.08);padding:11px 12px}
+.sb .card.needs{border-color:rgba(245,165,36,.42)}
+.sb .card+.card{margin-top:8px}
+.sb .ss.sel{background:rgba(255,255,255,.1)}
+.sb .udot{background:#8EA2FF}
+.sb .run{padding:8px 6px}
+.sb .run+.run{border-top:1px solid rgba(255,255,255,.07)}
+.sb .hosts{background:rgba(255,255,255,.08);color:#C9CDD2}
+.sb .newbtn{height:38px}
+.sb .acct{padding:10px 6px 0}
+.mp{position:absolute;top:0;bottom:0;width:393px;background:var(--canvas);display:flex;flex-direction:column;padding-top:54px;z-index:5;
+  box-shadow:-18px 0 40px rgba(0,0,0,.45);border-radius:0}
+.mp.peek{left:330px}
+.mp.peek::after,.mp.mid::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.28)}
+.mp.mid{left:200px}
+.badge{position:absolute;top:-3px;right:-4px;min-width:17px;height:17px;border-radius:9px;background:var(--amber);color:#111;font:700 11px/17px var(--sans);text-align:center;padding:0 4px}
+.touch{position:absolute;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.28);border:1.5px solid rgba(255,255,255,.7);z-index:70;box-shadow:0 0 0 8px rgba(255,255,255,.08)}
+.trail{position:absolute;height:3px;border-radius:2px;z-index:69}
+.edgeglow{position:absolute;left:0;top:560px;width:4px;height:240px;border-radius:0 3px 3px 0;background:linear-gradient(180deg,transparent,rgba(142,162,255,.85),transparent);z-index:60}
+.edgehint{position:absolute;left:12px;top:665px;z-index:61;font-size:11.5px;color:#C7D0FF;background:rgba(77,107,254,.22);border:1px solid rgba(142,162,255,.35);padding:5px 9px;border-radius:999px;display:flex;gap:4px;align-items:center}
+.sugg{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.sugg div{background:var(--card);border:1px solid var(--hair);border-radius:14px;padding:11px 13px;font-size:14px;color:var(--t1);display:flex;gap:10px;align-items:center}
+.sugg small{color:var(--t3);font-size:12px;display:block;margin-top:2px}
+.flow{display:flex;align-items:center;gap:14px;margin-top:6px;color:var(--t2);font-size:14px}
+</style>
+<style>
+/* ---- tap sequence ---- */
+.sb .run.sel{background:rgba(255,255,255,.1);border-radius:10px}
+.sb .pressed{background:rgba(255,255,255,.2)!important;border-radius:10px}
+.sb[data-q="done"] .q-open{display:none}
+.sb:not([data-q="done"]) .q-done{display:none}
+.sb[data-read="1"] .q3dot{display:none}
+.sb[data-read="1"] .q3row .t{font-weight:400;color:#D3D7DC}
+.mp.fadein>*{opacity:.55}
+.mp.slide{left:150px}
+.mp.slide::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.12)}
+.timeline{position:relative;width:1764px;height:56px;margin:4px 0 30px}
+.timeline .bar{position:absolute;left:0;right:0;top:27px;height:2px;background:var(--hair-2)}
+.timeline .fill{position:absolute;left:196px;top:27px;height:2px;background:var(--blue);width:1371px}
+.timeline .tk{position:absolute;top:0;transform:translateX(-50%);text-align:center;font:600 12.5px var(--mono);color:var(--t2)}
+.timeline .tk i{display:block;width:12px;height:12px;border-radius:50%;background:var(--canvas);border:2px solid var(--blue);margin:8px auto 0}
+.timeline .tk.dim{color:var(--t3)}
+.ms{font:600 12px var(--mono);color:var(--blue);margin-bottom:12px;letter-spacing:.04em}
+.anchor{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#C7D0FF;margin:2px 0 10px}
+.anchor::before,.anchor::after{content:"";flex:1;height:1px;background:rgba(142,162,255,.35)}
+.rowtitle{font-size:22px;font-weight:600;margin:70px 0 26px;display:flex;gap:14px;align-items:baseline}
+.rowtitle small{font-size:15px;color:var(--t2);font-weight:400}
+</style>
+</head>
+<body>
+<!-- Icon sprite (lucide-style strokes) -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></symbol>
+  <symbol id="compose" viewBox="0 0 24 24"><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L12 14.8l-3.8.9.9-3.8z"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="chevd" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="monitor" viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="server" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></symbol>
+  <symbol id="folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="plug" viewBox="0 0 24 24"><path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0zM12 17v5"/></symbol>
+  <symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/></symbol>
+  <symbol id="lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h3M21 17v4h-1"/></symbol>
+  <symbol id="hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-4 0v5M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v8a8 8 0 0 0 16 0v-3a2 2 0 0 0-4 0"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="checkc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.8 2.8L16.2 9.6"/></symbol>
+  <symbol id="alert" viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.01"/></symbol>
+  <symbol id="msg" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="faceid" viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9v1.5M15 9v1.5M12 9v4h-1M9 16c1.8 1.3 4.2 1.3 6 0"/></symbol>
+  <symbol id="share" viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></symbol>
+  <symbol id="eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+  <symbol id="paper" viewBox="0 0 24 24"><path d="M20 11.5l-8.2 8.2a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4L15 7"/></symbol>
+  <symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="term" viewBox="0 0 24 24"><path d="M5 7l5 5-5 5M12 19h7"/></symbol>
+  <symbol id="file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+  <symbol id="pencil" viewBox="0 0 24 24"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+  <symbol id="sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></symbol>
+  <symbol id="audit" viewBox="0 0 24 24"><path d="M9 5h10M9 12h10M9 19h10M4 5h.01M4 12h.01M4 19h.01"/></symbol>
+  <symbol id="square" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="wifi" viewBox="0 0 24 24"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19h.01"/></symbol>
+</svg>
+
+<style>
+/* ---- v3 board: workspace-first ---- */
+.mtag{font:600 11px var(--mono);padding:3px 7px;border-radius:6px;margin-left:auto;letter-spacing:.02em;align-self:center}
+.mtag.m1{background:rgba(63,185,80,.14);color:#56D364}
+.mtag.mx{background:rgba(255,255,255,.07);color:var(--t2)}
+.cap h3{align-items:center}
+.sb .allrow{display:flex;align-items:center;gap:10px;font-size:14.5px;padding:10px 8px;border-radius:10px;color:#E7E9EC;margin-top:6px}
+.sb .allrow .r{margin-left:auto;display:flex;gap:6px;align-items:center;font-size:12px;color:#A3A9B1}
+.cnt-amber{background:var(--amber);color:#111;font:700 11px/18px var(--sans);min-width:18px;height:18px;border-radius:9px;text-align:center;padding:0 5px}
+.wsbtn{display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.wsbtn b{font-size:15.5px;display:flex;gap:4px;align-items:center}
+.wsbtn small{font-size:12px;color:var(--t2)}
+.watermark{position:absolute;left:0;right:0;top:330px;text-align:center;opacity:.07;font-weight:800;font-size:34px;letter-spacing:-.02em}
+.sec2{display:flex;justify-content:space-between;margin:16px 4px 8px;font-size:12.5px;color:var(--t2);font-weight:500}
+.sec2 .n{font-family:var(--mono);color:var(--t3)}
+.inl{font-size:14px;color:var(--t1);margin-top:6px;padding-left:10px;border-left:2px solid var(--hair-2)}
+.listsheet .lhead{display:flex;justify-content:space-between;align-items:center;margin:2px 0 12px}
+.listsheet .lhead span{font-size:15px;color:var(--t2)}
+.listsheet .lhead b{font-size:16px}
+.listsheet .lhead .ok{color:#8EA2FF;font-weight:600}
+.grp{font-size:12px;color:var(--t3);margin:14px 4px 6px}
+.lst{background:var(--card);border:1px solid var(--hair);border-radius:14px;padding:0 14px}
+.lst .it{display:flex;align-items:center;gap:10px;font-size:14.5px;padding:12px 0;border-bottom:1px solid var(--hair)}
+.lst .it:last-child{border-bottom:0}
+.lst .it small{color:var(--t3);font-size:12px;font-family:var(--mono)}
+.lst .it .ck{margin-left:auto;color:#8EA2FF}
+.field{flex:1;font-family:var(--mono);font-size:13px;color:var(--t3);background:#0E0E10;border:1px solid var(--hair);border-radius:9px;padding:9px 10px}
+.trail-l{position:absolute;height:3px;border-radius:2px;z-index:69}
+</style>
+
+<!-- ===== Templates ===== -->
+<template id="sbar"><span>9:41</span><span class="r"><svg class="i s"><use href="#wifi"/></svg><svg width="26" height="13" viewBox="0 0 26 13"><rect x=".5" y=".5" width="22" height="12" rx="3.5" fill="none" stroke="#fff" opacity=".4"/><rect x="2" y="2" width="17" height="9" rx="2" fill="#fff"/></svg></span></template>
+
+<!-- Workspace drawer (STORY §3: left-edge swipe; §4: "所有任务" inside it) -->
+<template id="side">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px">
+    <div class="wm" style="padding:0">deepseek <em>HARNESS</em></div>
+    <div class="hosts"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot off"></span></span>2 / 3<svg class="i xs"><use href="#chevd"/></svg></div>
+  </div>
+  <div class="newbtn" data-k="new"><svg class="i s"><use href="#plus"/></svg>新建会话</div>
+  <div class="allrow" data-k="all"><svg class="i s"><use href="#audit"/></svg>所有任务<span class="r"><span class="cnt-amber">2</span><span class="spinner" style="width:11px;height:11px"></span>2</span></div>
+
+  <div class="hostgrp"><span class="dot"></span>MacBook-Pro<span class="line"></span></div>
+  <div class="ws" style="font-size:14.5px;padding:7px 6px"><svg class="i s"><use href="#folder"/></svg>Q3<span class="cnt" style="font-family:var(--mono);font-size:11px">~/Desktop/Q3</span></div>
+  <div class="ss" data-k="ppt" style="font-size:14px;padding-top:7px;padding-bottom:7px"><span class="t">整理 Q3 报表成 PPT</span><span class="r"><span class="dot amber"></span></span></div>
+  <div class="ss unread q3row" data-k="q3" style="font-size:14px;padding-top:7px;padding-bottom:7px"><span class="t">Q3 summary slides</span><span class="r"><span class="udot q3dot"></span></span></div>
+  <div class="ss" style="font-size:14px;padding-top:7px;padding-bottom:7px"><span class="t">网页第一条</span><span class="r">昨天</span></div>
+  <div class="ws" style="font-size:14.5px;padding:7px 6px"><svg class="i s"><use href="#folder"/></svg>dsh-mobile<span class="cnt" style="font-family:var(--mono);font-size:11px">~/code/dsh-mobile</span></div>
+  <div class="ss" data-k="ci" style="font-size:14px;padding-top:7px;padding-bottom:7px"><span class="t">修复 CI 挂掉的测试并提 PR</span><span class="r"><span class="spinner" style="width:11px;height:11px"></span></span></div>
+  <div class="ws" style="font-size:14.5px;padding:7px 6px"><svg class="i s"><use href="#folder"/></svg>默认工作区<span class="cnt" style="font-family:var(--mono);font-size:11px">~</span></div>
+
+  <div class="hostgrp"><span class="dot"></span>hk-1<span class="line"></span></div>
+  <div class="ws" style="font-size:14.5px;padding:7px 6px"><svg class="i s"><use href="#folder"/></svg>media<span class="cnt"><span class="spinner" style="width:11px;height:11px"></span></span></div>
+  <div class="offline"><div class="hostgrp"><span class="dot off"></span>公司-PC · 离线<span class="line"></span></div></div>
+
+  <div class="acct" style="margin-top:auto"><div class="avatar">L</div>laichang<span style="margin-left:auto;display:flex;gap:14px;color:#C9CDD2"><svg class="i s"><use href="#qr"/></svg><svg class="i s"><use href="#gear"/></svg></span></div>
+</template>
+
+<!-- Launch screen: a blank new session; the first message creates it -->
+<template id="wshome">
+  <div class="nav">
+    <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+    <div class="navtitle"><b>新会话</b></div>
+    <div class="iconbtn ghost"></div>
+  </div>
+  <div class="scroll"></div>
+  <div class="watermark">deepseek</div>
+  <div class="composer">
+    <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);margin-bottom:10px"><span class="dot"></span>MacBook-Pro<span style="opacity:.4">·</span><svg class="i xs"><use href="#folder"/></svg>默认工作区<svg class="i xs"><use href="#chevd"/></svg></div>
+    <div class="ph">描述任务，/ 命令，@ 文件或会话</div>
+    <div class="bar">
+      <span class="pill">DeepSeek-V41-Flash <span class="w">· High</span><svg class="i xs"><use href="#chevd"/></svg></span>
+      <span class="send idle"><svg class="i s"><use href="#up"/></svg></span>
+    </div>
+  </div>
+</template>
+
+<!-- Running CI session -->
+<template id="sess">
+  <div class="nav">
+    <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+    <div class="navtitle"><b>修复 CI 挂掉的测试</b><small>MacBook-Pro · dsh-mobile</small></div>
+    <div class="iconbtn ghost"><svg class="i"><use href="#more"/></svg></div>
+  </div>
+  <div class="pinned">
+    <div class="top"><span class="spinner"></span><span>运行测试</span><span class="ct">3 / 5</span><svg class="i s" style="color:var(--t2)"><use href="#chevd"/></svg></div>
+    <div class="prog" style="margin-top:8px"><i style="width:58%"></i></div>
+  </div>
+  <div class="scroll" style="display:flex;flex-direction:column">
+    <div class="ubub">CI 挂了的那个测试帮我修一下，修好提个 PR</div>
+    <div class="thought">已思考 8 秒<svg class="i xs"><use href="#chev"/></svg></div>
+    <div class="para">失败在 <code>TaskListStoreTests/resume</code>：重连补齐时把旧事件插到了新事件后面。先复现，再改顺序。</div>
+    <div class="thought" style="margin-bottom:4px"><span style="background:linear-gradient(90deg,var(--t2),#fff,var(--t2));-webkit-background-clip:text;color:transparent">深入工作中…</span><span style="color:var(--t3)">· 6 步</span><svg class="i xs"><use href="#chevd"/></svg></div>
+    <div class="tools">
+      <div class="tool"><span class="v">Read</span><span class="tgt">DSHKit/…/TaskListStore.swift</span></div>
+      <div class="tool"><span class="v">Grep</span><span class="tgt">prepend</span><span class="extra">4 处</span></div>
+      <div class="tool"><span class="v">Edit</span><span class="tgt">TaskListStore.swift</span><span class="add">+12</span><span class="del">−3</span></div>
+      <div class="tool"><span class="v">Bash</span><span class="tgt">swift test --filter resume</span><span class="extra"><span class="spinner" style="display:inline-block;vertical-align:-2px"></span></span></div>
+      <div class="term">Test Suite 'TaskListStoreTests' started<br>✔ resumeFillsGapInOrder <b>(0.04s)</b><br>◌ resumeAfterKill …</div>
+    </div>
+  </div>
+  <div class="composer">
+    <div class="ph" style="display:flex;align-items:center"><span style="opacity:.55">补充一句，下一轮送达…</span><span class="mtag mx">M2</span></div>
+    <div class="bar">
+      
+      <span class="pill">V41-Flash <span class="w">· High</span><svg class="i xs"><use href="#chevd"/></svg></span>
+      <span class="send stop"><svg class="i s"><use href="#square"/></svg></span>
+    </div>
+  </div>
+</template>
+
+<!-- Finished, unread "Q3 summary slides", opened at its final answer -->
+<template id="q3">
+  <div class="nav">
+    <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+    <div class="navtitle"><b>Q3 summary slides</b><small>MacBook-Pro · Q3</small></div>
+    <div class="iconbtn ghost"><svg class="i"><use href="#share"/></svg></div>
+  </div>
+  <div class="scroll" style="display:flex;flex-direction:column">
+    <div class="ubub" style="opacity:.5;margin-top:0">把 Q3 的数据做成 12 页汇报</div>
+    <div class="thought" style="margin:0 0 6px"><svg class="i xs" style="color:var(--green)"><use href="#check"/></svg>已工作 · 23 步 · 1 次审批<svg class="i xs"><use href="#chev"/></svg></div>
+    <div class="anchor">停在这里 · 最终回答开头</div>
+    <div class="para">做好了：12 页，存在 <code>~/Desktop/Q3/Q3 summary.pptx</code>。数据来自 <code>Q3.xlsx</code> 的 4 个工作表；第 5 页的华东数据口径和上季度不同，加了脚注。</div>
+    <div style="border:1px dashed var(--hair-2);border-radius:14px;padding:11px 12px;display:flex;align-items:center;gap:10px">
+      <span class="fi ppt">P</span>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600">Q3 summary.pptx</div><div style="font-size:12px;color:var(--t3)">预览 · 分享 · 存到文件</div></div>
+      <span class="mtag mx">M3</span>
+    </div>
+    <div class="took" style="margin-top:12px">用时 5 分 24 秒 · DeepSeek-V41-Flash · High</div>
+  </div>
+  <div class="composer">
+    <div class="ph" style="display:flex;align-items:center"><span style="opacity:.55">继续：“把第 3 页改成柱状图”…</span><span class="mtag mx">M2</span></div>
+    <div class="bar"><span class="pill">V41-Flash <span class="w">· High</span></span><span class="send idle"><svg class="i s"><use href="#up"/></svg></span></div>
+  </div>
+</template>
+
+<!-- PPT task behind the approval sheet -->
+<template id="ppt">
+  <div class="nav">
+    <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+    <div class="navtitle"><b>整理 Q3 报表成 PPT</b><small>MacBook-Pro · Q3</small></div>
+    <div class="iconbtn ghost"><svg class="i"><use href="#square"/></svg></div>
+  </div>
+  <div class="scroll"><div class="ubub">把桌面上的 Q3 报表整理成 PPT</div><div class="para">12 页已生成，正在清理中间文件。</div></div>
+</template>
+
+<!-- ===== Board ===== -->
+<div class="board">
+<header>
+  <div class="eyebrow">dsh-mobile · DESIGN · STORY is DESIGN, DESIGN is STORY · 2026-11-05</div>
+  <h1>打开就是新会话：用户发起，历史在抽屉里</h1>
+  <p>视觉沿用 DSH 桌面/网页：近黑画布 #151517、石板侧栏 #343A43、#2C2C2E 气泡与输入框、细分隔线；思考与工具调用默认折叠成一行。<br>
+  结构按 STORY §3：<b>打开 App 就是空白新会话，用默认执行端和默认工作区，不回到上次去过的地方</b>；发出第一条消息才创建会话；从左缘右滑打开工作区抽屉，选历史会话；抽屉里的<b>「所有任务」</b>跨执行端看正在跑 / 等我处理 / 已完成（§4）。<br>
+  每屏标了里程碑：<span class="mtag m1" style="margin:0">M1 · 已有</span> 表示代码里已有对应能力，只是换样式；<span class="mtag mx" style="margin:0">M2+</span> 是 ARCHITECTURE 里排在后面的能力。</p>
+  <div class="principles">
+    <span><b>§3</b>打开即新会话 · 默认执行端与工作区 · 首条消息建会话</span>
+    <span><b>§4</b>「所有任务」在抽屉里，跨执行端</span>
+    <span><b>§4</b>Web / 桌面发起的会话也在抽屉里（S13）</span>
+    <span><b>§5</b>M1 审批：命令 + 参数 + 理由，拒绝 / 允许一次</span>
+    <span><b>§8</b>模型按提供方分组，原名显示，可中途切换</span>
+    <span><b>§4/§9</b>失败、全部离线、设备与审计都有画面</span>
+    <span><b>M2</b>提问、计划与预授权、风险分级、重新确认先占位</span>
+  </div>
+</header>
+
+<div class="grid">
+
+<!-- 01 workspace home -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" data-t="wshome" style="left:0;box-shadow:none"></div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>01</i>打开 App · 空白新会话<span class="mtag m1">M1 · 改导航</span></h3><ul>
+  <li>打开就是新会话，输入框就绪：产品鼓励用户发起，不先展示“你之前在哪”。</li>
+  <li>执行端和工作区用默认值，写在输入框顶上；点它换（07）。模型胶囊点开是 M。</li>
+  <li>左上角抽屉按钮，琥珀角标 = 「所有任务」里有几件等你处理；历史都在抽屉里。</li>
+  <li>发出第一条消息才创建会话；短问题直接在这里答完（S8 的就地回答）。</li>
+</ul></div>
+</div>
+
+<!-- 02 drawer -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="sb" data-t="side"></div>
+  <div class="mp peek" data-t="wshome"></div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>02</i>工作区抽屉 · 左缘右滑<span class="mtag m1">M1 · 改导航</span></h3><ul>
+  <li>和桌面侧栏同色同结构：新建会话 → 「所有任务」 → 执行端 › 工作区 › 会话。</li>
+  <li>会话包括网页、桌面端发起的（S13）；琥珀点 = 等你，转圈 = 在跑，蓝点 = 完成未读。</li>
+  <li>工作区就是执行端上的文件夹（S7）；离线执行端变灰，缓存的会话照样能看。</li>
+  <li>底部：配对（扫码）和设置；设备与审计在每台执行端里（H）。</li>
+</ul></div>
+</div>
+
+<!-- 03 all tasks -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" style="left:0;box-shadow:none">
+    <div class="nav">
+      <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+      <div class="navtitle"><b>所有任务</b><small>3 台执行端</small></div>
+      <div class="iconbtn ghost"></div>
+    </div>
+    <div class="scroll" style="padding:0 14px">
+      <div style="display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--t2);background:var(--card);border:1px solid var(--hair);border-radius:12px;padding:9px 12px;margin-top:4px"><span class="dot off"></span>公司-PC 离线 · 最后连接 2 小时前</div>
+      <div class="sec2"><span>等我处理</span><span class="n">2</span></div>
+      <div class="card needs" style="padding:12px 13px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag amber"><svg class="i xs"><use href="#hand"/></svg>批准 bash？</span><span style="font-size:12px;color:var(--t3)">MacBook-Pro</span></div>
+        <div style="font-size:14.5px;font-weight:600;margin-top:8px">整理 Q3 报表成 PPT</div>
+        <div class="cmd" style="margin-top:8px">rm -rf ~/Desktop/Q3/tmp</div>
+        <div style="font-size:12.5px;color:var(--t2);margin-top:7px">清理生成 PPT 时的中间图片 · <span style="color:#8EA2FF">工具参数 ›</span></div>
+        <div class="btnrow" style="margin-top:10px"><div class="btn" style="height:34px;color:#FF7B72">拒绝</div><div class="btn primary" style="height:34px">允许一次</div></div>
+      </div>
+      <div class="card needs" style="padding:12px 13px;margin-top:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag amber"><svg class="i xs"><use href="#hand"/></svg>批准 write？</span><span style="font-size:12px;color:var(--t3)">公司-PC · 离线</span></div>
+        <div style="font-size:14px;margin-top:8px">写入 <span class="ic">reports/week45.md</span></div>
+        <div class="btnrow" style="margin-top:10px;opacity:.4"><div class="btn" style="height:32px;font-size:13px">拒绝</div><div class="btn" style="height:32px;font-size:13px">允许一次</div></div>
+        <div style="font-size:11.5px;color:var(--t3);margin-top:6px">公司-PC 重新连上后才能回复；任务一直暂停，不会默认放行</div>
+      </div>
+      <div class="sec2"><span>正在跑</span><span class="n">2</span></div>
+      <div class="run" style="padding:6px 4px"><span class="spinner"></span><div style="min-width:0"><div class="tt" style="font-size:14px">修复 CI 挂掉的测试并提 PR</div><div class="st">运行测试 · dsh-mobile</div></div><span class="pc">3/5</span></div>
+      <div class="run" style="padding:6px 4px"><span class="spinner"></span><div style="min-width:0"><div class="tt" style="font-size:14px">压缩昨天的素材</div><div class="st">压缩文件 · hk-1 · media</div></div><span class="pc">1/4</span></div>
+      <div class="sec2"><span>已完成</span><span class="n">12</span></div>
+      <div style="padding:2px 4px"><div style="display:flex;gap:8px;align-items:center;font-size:14px"><svg class="i s" style="color:var(--green)"><use href="#checkc"/></svg>Translate: Bonjour.<span style="margin-left:auto;font-size:12px;color:var(--t3)">MacBook-Pro</span></div><div class="inl" style="margin-left:24px">Hello.</div></div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>03</i>所有任务 · 从抽屉打开<span class="mtag m1">M1 · 换样式</span></h3><ul>
+  <li>就是现在的 Tasks 列表（等我处理 / 正在跑 / 已完成，跨执行端），挪进抽屉、换成 DSH 风格。</li>
+  <li>审批卡用 M1 已有的字段：工具名、命令、理由、工具参数；<b>拒绝 / 允许一次</b>。</li>
+  <li>执行端离线时按钮置灰并说明原因（和代码一致）；短任务的回答直接显示在行内。</li>
+</ul></div>
+</div>
+
+<!-- 04 running -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" data-t="sess" style="left:0;box-shadow:none"></div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>04</i>会话 · 运行中<span class="mtag m1">M1 · 换样式</span></h3><ul>
+  <li>转录和桌面同构：右侧用户气泡，“已思考 N 秒 ›”折叠，工具调用是 <code>动词 · 目标 · +/−</code> 细行（S8 富文本）。</li>
+  <li>顶部钉住里程碑进度（S3），点开看全部步骤。</li>
+  <li>发送键变<b>停止</b>（S5）；模型胶囊就是“Change model”，任务中可换（S6）。</li>
+  <li>输入框里补充一句、排到下一轮是 M2（追加消息）；M1 的会话页只有停止和换模型。</li>
+</ul></div>
+</div>
+
+<!-- 05 approval -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" data-t="ppt" style="left:0;box-shadow:none"></div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag amber"><svg class="i xs"><use href="#hand"/></svg>Bash</span><span style="font-size:12.5px;color:var(--t3)">任务已暂停，等你决定</span></div>
+    <div style="font-size:21px;font-weight:700;margin-top:10px">批准执行这条命令？</div>
+    <div style="font-size:13.5px;color:var(--t2);margin-top:4px">整理 Q3 报表成 PPT · MacBook-Pro</div>
+    <div class="cmd" style="margin-top:14px">rm -rf ~/Desktop/Q3/tmp</div>
+    <div class="kv" style="margin-top:6px"><span>Agent 的理由</span><span style="max-width:220px">清理生成 PPT 时的中间图片</span></div>
+    <div class="kv" style="border:0"><span>工具参数</span><span style="color:#8EA2FF">展开 ›</span></div>
+    <div class="btnrow" style="margin-top:14px"><div class="btn tall" style="flex:.8;color:#FF7B72">拒绝</div><div class="btn tall primary">允许一次</div></div>
+    <div class="fine">不处理不会默认放行，任务一直暂停<br>手机、网页、桌面任一端都能看到这条审批</div>
+    <div style="margin-top:14px;border:1px dashed var(--hair-2);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--t2);line-height:1.6"><span class="mtag mx" style="margin:0 6px 0 0">M2</span>风险分级 · 影响摘要（多少文件、发给谁）· 最高级要面容 ID · 本任务预授权</div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>05</i>审批 · 在会话里<span class="mtag m1">M1 · 换样式</span></h3><ul>
+  <li>会话里有待批项时直接升起；内容就是 S4 的：工具、完整命令、理由、可展开的工具参数。</li>
+  <li>两个按钮：<b>拒绝 / 允许一次</b>。没有“总是允许”。</li>
+  <li>虚线框是 M2 才有的部分，先在设计里占位，不进 M1。</li>
+</ul></div>
+</div>
+
+<!-- 06 result -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" data-t="q3" style="left:0;box-shadow:none"></div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>06</i>会话 · 完成<span class="mtag m1">M1 · 换样式</span></h3><ul>
+  <li>过程折叠成一行“已工作 · 23 步 · 1 次审批 ›”；未读的会话停在最终回答开头。</li>
+  <li>M1 的结果是文字：写清楚产物在执行端的哪个路径。</li>
+  <li>虚线文件卡是 <b>M3</b>：Quick Look 预览、分享、存到文件。在同一会话里继续追问是 M2。</li>
+</ul></div>
+</div>
+
+<!-- 07 workspace picker -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" data-t="wshome" style="left:0;box-shadow:none;filter:brightness(.4)"></div>
+  <div class="sheet listsheet" style="top:150px;padding-bottom:30px">
+    <div class="grab"></div>
+    <div class="lhead"><span>取消</span><b>工作区</b><span style="width:28px"></span></div>
+    <div style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--t2);margin-bottom:4px"><span class="dot"></span>MacBook-Pro<svg class="i xs"><use href="#chevd"/></svg></div>
+    <div class="grp">执行端默认</div>
+    <div class="lst"><div class="it"><svg class="i s"><use href="#folder"/></svg>默认工作区 <small>~</small></div></div>
+    <div class="grp">最近</div>
+    <div class="lst">
+      <div class="it"><svg class="i s"><use href="#folder"/></svg>Q3 <small>~/Desktop/Q3</small><svg class="i s ck"><use href="#check"/></svg></div>
+      <div class="it"><svg class="i s"><use href="#folder"/></svg>dsh-mobile <small>~/code/dsh-mobile</small></div>
+      <div class="it"><svg class="i s"><use href="#folder"/></svg>analysis <small>~/data/analysis</small></div>
+    </div>
+    <div class="grp">这台电脑上的其他文件夹</div>
+    <div style="display:flex;gap:8px"><div class="field">/Users/laichang/…</div><div class="btn" style="flex:none;width:64px;height:38px">使用</div></div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>07</i>换工作区 · 点输入框顶上那行<span class="mtag m1">M1 · 换样式</span></h3><ul>
+  <li>内容就是 S7 的：执行端默认、最近、手动输入绝对路径。</li>
+  <li>顶部可切换执行端，列表跟着换（工作区属于某台机器）。</li>
+  <li>只对这条新会话生效；下次打开 App 仍是默认工作区，不记住上次的选择。</li>
+</ul></div>
+</div>
+
+<!-- 08 first run -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="screen" style="padding:54px 26px 0">
+    <div style="margin-top:44px" class="wm"><span style="font-size:24px">deepseek</span> <em style="font-size:10px">HARNESS</em></div>
+    <div style="font-size:28px;font-weight:700;line-height:1.3;margin-top:18px">连接你的电脑</div>
+    <div style="font-size:15px;color:var(--t2);line-height:1.6;margin-top:10px">在手机上下任务、看进度、处理审批。任务在你的电脑上由 DeepSeek Harness 执行，手机不调用模型。</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:22px;background:var(--card);border:1px solid var(--hair);border-radius:16px;padding:16px">
+      <div style="text-align:center;font-size:12px;color:var(--t2)"><div class="iconbtn" style="margin:0 auto 6px;width:44px;height:44px;border-radius:12px"><svg class="i" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/></svg></div>手机</div>
+      <div style="flex:1;border-top:1.5px dashed var(--hair-2);position:relative;height:0"><span style="position:absolute;left:50%;top:-11px;transform:translateX(-50%);background:var(--card);padding:0 6px;color:var(--green);display:flex;gap:4px;align-items:center;font-size:11px"><svg class="i xs"><use href="#lock"/></svg>端到端加密</span></div>
+      <div style="text-align:center;font-size:12px;color:var(--t2)"><div class="iconbtn" style="margin:0 auto 6px;width:44px;height:44px;border-radius:12px"><svg class="i"><use href="#monitor"/></svg></div>你的电脑</div>
+    </div>
+    <div style="margin-top:22px;font-size:13px;color:var(--t3);font-weight:500">需要：一台运行 DSH、启用了 dsh-mobile bridge 的电脑</div>
+    <div class="list" style="margin-top:4px">
+      <div class="li"><span style="font:600 13px var(--mono);color:var(--t3);width:16px">1</span><div style="font-size:14.5px;line-height:1.45">DSH 启动时，终端里会打印配对二维码和链接</div></div>
+      <div class="li"><span style="font:600 13px var(--mono);color:var(--t3);width:16px">2</span><div style="font-size:14.5px;line-height:1.45">手机和电脑在同一 Wi-Fi，或用 Tailscale 这类私有网络</div></div>
+    </div>
+    <div style="margin-top:auto;margin-bottom:42px">
+      <div class="btn tall primary"><svg class="i"><use href="#qr"/></svg>扫描配对二维码</div>
+      <div class="btn tall" style="margin-top:10px">粘贴配对链接</div>
+      <div style="text-align:center;font-size:13.5px;color:var(--t2);margin-top:12px">没有配对码？看 bridge 安装说明</div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>08</i>首次启动<span class="mtag m1">M1 · 换样式</span></h3><ul>
+  <li>文案和流程按 S11：讲清是什么、缺什么；扫码，没有相机就粘贴链接。</li>
+  <li>配对码来自电脑终端（不是 DSH 界面里的入口）；说明网络要求。</li>
+  <li>配对成功后进入 01，输入框里预填一条可编辑的第一个任务（S11）。</li>
+</ul></div>
+</div>
+
+</div><!-- grid -->
+
+<div class="rowtitle">抽屉交互 · 点一个会话 <small>约 0.35 秒：先在露出的边上换成目标会话（本地缓存），再滑出铺满</small></div>
+<div class="timeline">
+  <div class="bar"></div><div class="fill"></div>
+  <div class="tk" style="left:196px">0 ms<i></i></div>
+  <div class="tk" style="left:653px">120 ms<i></i></div>
+  <div class="tk" style="left:1110px">230 ms<i></i></div>
+  <div class="tk" style="left:1567px">350 ms<i></i></div>
+</div>
+<div class="grid">
+
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="sb" data-t="side" data-press="q3"></div>
+  <div class="mp peek" data-t="wshome"></div>
+  <div class="touch" data-at="q3"></div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>F1</i>按下 · 0 ms</h3><ul>
+  <li>抽屉开着（02），按下 <b>Q3 summary slides</b>：这一行高亮，轻触感。</li>
+  <li>右边露出的是当前页（这里是新会话）。</li>
+</ul></div>
+</div>
+
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="sb" data-t="side" data-sel="q3"></div>
+  <div class="mp peek fadein" data-t="q3"></div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>F2</i>露出的边换内容 · 0–120 ms</h3><ul>
+  <li>手指抬起，露出的那条交叉淡入成目标会话；抽屉还不动。</li>
+</ul></div>
+</div>
+
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar" style="z-index:40"></div>
+  <div class="sb" data-t="side" data-sel="q3" style="transform:translateX(-180px)"></div>
+  <div class="mp slide" data-t="q3"></div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>F3</i>滑出 · 120–350 ms</h3><ul>
+  <li>会话页带弹性滑出，把抽屉推走；和手动左滑是同一段动画。</li>
+</ul></div>
+</div>
+
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" data-t="q3" style="left:0;box-shadow:none"></div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>F4</i>铺满 · 350 ms</h3><ul>
+  <li>完成未读 → 停在最终回答开头；进行中 → 停在底部跟随；看过的 → 回到上次位置。</li>
+  <li>点「所有任务」或审批卡也是这段动画；点审批卡时，铺满后接着升起 05。</li>
+</ul></div>
+</div>
+
+</div><!-- grid -->
+
+<div class="rowtitle">其他 <small>开抽屉的手势、模型、执行端、以后的锁屏</small></div>
+<div class="grid">
+
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar" style="z-index:40"></div>
+  <div class="sb" data-t="side" style="transform:translateX(-170px)"></div>
+  <div class="mp mid" data-t="wshome" style="left:160px"></div>
+  <div class="trail-l" style="left:80px;top:452px;width:110px;background:linear-gradient(270deg,rgba(255,255,255,.6),rgba(255,255,255,0))"></div>
+  <div class="touch" style="left:180px;top:430px"></div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>S</i>左缘右滑 · 打开抽屉<span class="mtag m1">M1 · 改导航</span></h3><ul>
+  <li>从左边缘向右拖，抽屉和当前页一起跟手移动（推开式）；松手按速度和位置决定开或回弹。</li>
+  <li>会话里的细节都用底部弹出、不推新页，所以左缘手势不会和“返回”冲突。</li>
+</ul></div>
+</div>
+
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" data-t="sess" style="left:0;box-shadow:none;filter:brightness(.4)"></div>
+  <div class="sheet listsheet" style="top:230px;padding-bottom:30px">
+    <div class="grab"></div>
+    <div class="lhead"><span>取消</span><b>模型</b><span class="ok">应用</span></div>
+    <div style="font-size:12.5px;color:var(--t2)">由 MacBook-Pro 提供 · 这个任务正在运行</div>
+    <div class="grp">DeepSeek</div>
+    <div class="lst">
+      <div class="it">DeepSeek-V41-Flash<svg class="i s ck"><use href="#check"/></svg></div>
+      <div class="it">DeepSeek-V41-Pro</div>
+    </div>
+    <div class="grp">推理强度</div>
+    <div class="lst">
+      <div class="it">Low</div>
+      <div class="it">Medium</div>
+      <div class="it">High<svg class="i s ck"><use href="#check"/></svg></div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>M</i>模型 · 点模型胶囊<span class="mtag m1">M1 · 换样式</span></h3><ul>
+  <li>按 S6：列表和默认值来自执行端，按提供方分组，名字原样显示；推理强度单独一组。</li>
+  <li>运行中也能换，下一轮生效；选的模型不可用时明确报错，不偷偷替换。</li>
+</ul></div>
+</div>
+
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="sb" data-t="side" style="filter:brightness(.4)"></div>
+  <div class="mp peek" data-t="wshome" style="filter:brightness(.4)"></div>
+  <div class="sheet" style="top:250px">
+    <div class="grab"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:18px">执行端</b><span style="font-size:13px;color:var(--t2)">2 / 3 在线</span></div>
+    <div class="hostcard"><div class="ic"><svg class="i"><use href="#monitor"/></svg></div><div style="flex:1">
+      <div class="nm">MacBook-Pro<span class="dot"></span></div>
+      <div class="ds"><svg class="i xs" style="vertical-align:-2px;color:var(--green)"><use href="#lock"/></svg> 端到端加密 · 默认 DeepSeek-V41-Flash</div></div>
+      <svg class="i s" style="color:var(--t3);margin-top:12px"><use href="#chev"/></svg></div>
+    <div class="hostcard"><div class="ic"><svg class="i"><use href="#server"/></svg></div><div style="flex:1">
+      <div class="nm">hk-1<span class="dot amber"></span></div>
+      <div class="ds"><span style="color:var(--amber)">需要更新 DSH</span>：已装 0.8.2，支持 0.9.x<br>更新前不能下新任务</div></div>
+      <svg class="i s" style="color:var(--t3);margin-top:12px"><use href="#chev"/></svg></div>
+    <div class="hostcard" style="border:0"><div class="ic" style="opacity:.6"><svg class="i"><use href="#monitor"/></svg></div><div style="flex:1">
+      <div class="nm" style="color:var(--t2)">公司-PC<span class="dot off"></span></div>
+      <div class="ds">离线 · 最后连接 2 小时前<br><span style="color:var(--amber)">1 条审批在等它回来</span></div></div>
+      <svg class="i s" style="color:var(--t3);margin-top:12px"><use href="#chev"/></svg></div>
+    <div class="btn tall" style="margin-top:12px"><svg class="i"><use href="#qr"/></svg>配对新执行端</div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>H</i>执行端 · 点抽屉顶部“2 / 3”<span class="mtag m1">M1 · 换样式</span></h3><ul>
+  <li>在线、加密、默认模型（S1/S6）；DSH 版本不受支持时写明装的和支持的版本（S12）。</li>
+  <li>离线写清最后连接时间和在等它的事（§3）。</li>
+  <li>点进一台：设备列表、吊销、审计记录（S10）。</li>
+</ul></div>
+</div>
+
+<div class="cell">
+<div class="phone lock">
+  <div class="island"></div>
+  <div class="status"><span></span><span class="r"><svg class="i s"><use href="#wifi"/></svg><svg width="26" height="13" viewBox="0 0 26 13"><rect x=".5" y=".5" width="22" height="12" rx="3.5" fill="none" stroke="#fff" opacity=".4"/><rect x="2" y="2" width="17" height="9" rx="2" fill="#fff"/></svg></span></div>
+  <div class="screen">
+    <div class="ltime"><small>11月5日 星期四</small><b>9:41</b></div>
+    <div style="margin-top:auto;margin-bottom:96px">
+      <div class="glass" style="padding:14px 15px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="appic" style="width:30px;height:30px;font-size:9.5px">DSH</div>
+          <div style="flex:1"><div style="font-size:14.5px;font-weight:600">修复 CI 挂掉的测试</div><div style="font-size:12.5px;color:rgba(255,255,255,.6)">MacBook-Pro · 运行测试</div></div>
+          <div style="font:600 15px var(--mono)">3/5</div>
+        </div>
+        <div class="prog" style="height:5px;margin-top:11px;background:rgba(255,255,255,.12)"><i style="width:58%"></i></div>
+      </div>
+      <div class="glass">
+        <div class="notif"><div class="appic">DSH</div><div style="flex:1">
+          <div class="h"><span>需要你批准</span><small>现在</small></div>
+          <p>整理 Q3 报表成 PPT 想执行 rm -rf ~/Desktop/Q3/tmp</p>
+          <div class="acts"><span>打开查看</span><span>拒绝</span></div>
+        </div></div>
+      </div>
+      <div class="glass" style="opacity:.92">
+        <div class="notif"><div class="appic">DSH</div><div style="flex:1">
+          <div class="h"><span>已完成</span><small>8 分钟前</small></div>
+          <p>Q3 summary slides · MacBook-Pro</p>
+        </div></div>
+      </div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>L</i>锁屏<span class="mtag mx">M2 推送 · M4 实时活动</span></h3><ul>
+  <li>M1 只在前台连接，没有推送；这一屏是以后的方向。</li>
+  <li>M2：只在需要决策、失败或卡住、完成时推送；高风险不能在锁屏批准。M4：实时活动显示进度。</li>
+</ul></div>
+</div>
+
+</div><!-- grid -->
+
+<div class="rowtitle">M1 · 还缺的状态 <small>失败、设备与审计、全部离线、模型不可用：代码里已有，设计补上</small></div>
+<div class="grid">
+
+<!-- X1 failed -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" style="left:0;box-shadow:none">
+    <div class="nav">
+      <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+      <div class="navtitle"><b>压缩昨天的素材</b><small>hk-1 · media</small></div>
+      <div class="iconbtn ghost"><svg class="i"><use href="#more"/></svg></div>
+    </div>
+    <div class="pinned" style="border-color:rgba(248,81,73,.35)">
+      <div class="top"><svg class="i s" style="color:#FF7B72"><use href="#alert"/></svg><span>失败 · 第 3 步</span><span class="ct">2 / 4</span></div>
+    </div>
+    <div class="scroll" style="display:flex;flex-direction:column">
+      <div class="ubub">把昨天下载的素材压缩一下传到网盘</div>
+      <div class="thought" style="margin-bottom:8px">已工作 · 9 步<svg class="i xs"><use href="#chev"/></svg></div>
+      <div class="para">214 个文件已压缩成 <code>media-1104.zip</code>（3.1 GB）。上传时出错了。</div>
+      <div class="card" style="border-color:rgba(248,81,73,.4);background:rgba(248,81,73,.06)">
+        <div style="display:flex;gap:8px;align-items:center;font-size:14.5px;font-weight:600;color:#FF7B72"><svg class="i s"><use href="#alert"/></svg>任务失败</div>
+        <div class="cmd" style="margin-top:9px">upload: 403 Forbidden (token expired)</div>
+        <div style="font-size:12.5px;color:var(--t2);margin-top:8px;line-height:1.5">压缩包还在 hk-1 的 <span class="ic">~/media/media-1104.zip</span>，没有被删除。</div>
+        <div class="btnrow"><div class="btn" style="height:36px">复制错误</div><div class="btn primary" style="height:36px">新会话里再试</div></div>
+      </div>
+    </div>
+    <div class="composer">
+      <div class="ph" style="display:flex;align-items:center"><span style="opacity:.55">告诉它怎么处理…</span><span class="mtag mx">M2</span></div>
+      <div class="bar"><span class="pill">V41-Flash <span class="w">· High</span></span><span class="send idle"><svg class="i s"><use href="#up"/></svg></span></div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>X1</i>失败<span class="mtag m1">M1 · 补状态</span></h3><ul>
+  <li>§4 叫回用户的三种时刻之一。顶部进度条变红，写明停在第几步。</li>
+  <li>错误原文照给（任务的 failure message），再用一句话说清已经做了什么、东西在哪。</li>
+  <li>“新会话里再试”把原话预填进 01 的输入框；在原会话里接着说是 M2。</li>
+  <li>“卡住”（很久没有新进展）要靠推送提醒，放 M2。被停止的任务同样标在这里。</li>
+</ul></div>
+</div>
+
+<!-- X2 devices + audit -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" style="left:0;box-shadow:none;filter:brightness(.4)"></div>
+  <div class="sheet listsheet" style="top:62px;padding-bottom:30px">
+    <div class="grab"></div>
+    <div class="lhead"><span style="display:flex;align-items:center"><svg class="i s"><use href="#back"/></svg>执行端</span><b>MacBook-Pro</b><span style="width:52px"></span></div>
+    <div style="display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--t2)"><svg class="i xs" style="color:var(--green)"><use href="#lock"/></svg>端到端加密 · 在线</div>
+    <div class="grp">已配对的设备</div>
+    <div class="lst">
+      <div class="it" style="align-items:flex-start"><svg class="i s" viewBox="0 0 24 24" style="margin-top:2px"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/></svg><div style="flex:1"><div style="font-weight:600;font-size:14px">这台设备</div><div style="font:12px var(--mono);color:var(--t2);margin-top:2px">dshm-a3f9c21e</div><div style="font-size:12px;color:var(--t3);margin-top:2px">配对于 11/3 · 最后连接 刚刚</div></div><span style="font-size:13px;color:#FF7B72;margin-top:2px">吊销</span></div>
+      <div class="it" style="align-items:flex-start"><svg class="i s" viewBox="0 0 24 24" style="margin-top:2px"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/></svg><div style="flex:1"><div style="font:12.5px var(--mono);color:var(--t1)">dshm-77b0e4d2</div><div style="font-size:12px;color:var(--t3);margin-top:2px">配对于 10/21 · 最后连接 2 周前</div></div><span style="font-size:13px;color:#FF7B72;margin-top:2px">吊销</span></div>
+    </div>
+    <div class="grp">审计记录</div>
+    <div class="lst">
+      <div class="it" style="align-items:flex-start;flex-direction:column;gap:2px"><div style="display:flex;width:100%"><b style="font-size:13.5px">允许一次</b><span style="margin-left:auto;font-size:12px;color:var(--t3)">11:02</span></div><div style="font:12px var(--mono);color:var(--t1)">bash rm -rf ~/Desktop/Q3/tmp</div><div style="font-size:12px;color:var(--t3)">laichang · dshm-a3f9c21e</div></div>
+      <div class="it" style="align-items:flex-start;flex-direction:column;gap:2px"><div style="display:flex;width:100%"><b style="font-size:13.5px">拒绝</b><span style="margin-left:auto;font-size:12px;color:var(--t3)">10:40</span></div><div style="font:12px var(--mono);color:var(--t1)">write reports/week45.md</div><div style="font-size:12px;color:var(--t3)">laichang · Web</div></div>
+      <div class="it" style="align-items:flex-start;flex-direction:column;gap:2px"><div style="display:flex;width:100%"><b style="font-size:13.5px">吊销设备</b><span style="margin-left:auto;font-size:12px;color:var(--t3)">昨天</span></div><div style="font:12px var(--mono);color:var(--t1)">dshm-1c0045aa</div><div style="font-size:12px;color:var(--t3)">laichang · dshm-a3f9c21e</div></div>
+    </div>
+    <div style="text-align:center;font-size:13px;color:#8EA2FF;margin-top:12px">加载更早的记录</div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>X2</i>设备与审计 · 从 H 点进一台<span class="mtag m1">M1 · 补画面</span></h3><ul>
+  <li>§9：S10 已有的数据——设备 ID、配对时间、最后连接、吊销；审计的动作、内容、谁、哪台设备、时间。</li>
+  <li>吊销前确认：“这台设备会和 MacBook-Pro 断开，要重新配对才能连上”。吊销自己会退回 08。</li>
+  <li>设备只有 ID 没有名字，所以“这台设备”要标出来；给设备起名需要上游支持。</li>
+</ul></div>
+</div>
+
+<!-- X3 all offline -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" style="left:0;box-shadow:none">
+    <div class="nav">
+      <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+      <div class="navtitle"><b>新会话</b></div>
+      <div class="iconbtn ghost"></div>
+    </div>
+    <div class="scroll" style="padding:0 16px">
+      <div style="margin-top:230px" class="card">
+        <div style="display:flex;gap:8px;align-items:center;font-size:15px;font-weight:600"><svg class="i s" style="color:var(--amber)"><use href="#wifi"/></svg>执行端都离线，暂时不能下任务</div>
+        <div class="list" style="margin-top:6px">
+          <div class="li" style="padding:10px 2px"><span class="dot off" style="margin-top:6px"></span><div style="flex:1;font-size:14px">MacBook-Pro</div><span style="font-size:12.5px;color:var(--t3)">10 分钟前</span></div>
+          <div class="li" style="padding:10px 2px"><span class="dot off" style="margin-top:6px"></span><div style="flex:1;font-size:14px">hk-1</div><span style="font-size:12.5px;color:var(--t3)">1 小时前</span></div>
+          <div class="li" style="padding:10px 2px"><span class="dot off" style="margin-top:6px"></span><div style="flex:1;font-size:14px">公司-PC</div><span style="font-size:12.5px;color:var(--t3)">2 小时前</span></div>
+        </div>
+        <div style="font-size:12.5px;color:var(--t2);line-height:1.55;margin-top:4px">回到和电脑同一个 Wi-Fi，或打开 Tailscale。连上后自动恢复，历史会话离线也能看。</div>
+      </div>
+    </div>
+    <div class="composer">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--amber);margin-bottom:10px"><span class="dot off"></span>没有在线的执行端</div>
+      <div class="ph">描述任务，/ 命令，@ 文件或会话</div>
+      <div class="bar"><span class="pill" style="opacity:.5">DeepSeek-V41-Flash <span class="w">· High</span></span><span class="send idle" style="opacity:.4"><svg class="i s"><use href="#up"/></svg></span></div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>X3</i>所有执行端都离线<span class="mtag m1">M1 · 补状态</span></h3><ul>
+  <li>§3：逐台写出哪台离线、最后连接时间，不只说“连不上”。</li>
+  <li>给出能做的事（同一 Wi-Fi / Tailscale）；发送键置灰，抽屉里的历史照常能看（S2 缓存）。</li>
+  <li>只有部分离线时不出这张卡，只在输入框顶上的执行端那行显示状态。</li>
+</ul></div>
+</div>
+
+<!-- X4 model unavailable -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" data-t="sess" style="left:0;box-shadow:none;filter:brightness(.4)"></div>
+  <div class="sheet listsheet" style="top:200px;padding-bottom:30px">
+    <div class="grab"></div>
+    <div class="lhead"><span>取消</span><b>模型</b><span class="ok" style="opacity:.4">应用</span></div>
+    <div style="background:rgba(245,165,36,.1);border:1px solid rgba(245,165,36,.35);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.5;color:#F6C26B">你选的 <b>DeepSeek-V41-Pro</b> 在 MacBook-Pro 上不可用了。没有替你换成别的模型，请重新选一个。</div>
+    <div class="grp">DeepSeek</div>
+    <div class="lst">
+      <div class="it">DeepSeek-V41-Flash<span style="margin-left:auto;font-size:12px;color:var(--t3)">执行端默认</span></div>
+      <div class="it" style="color:var(--t3)">DeepSeek-V41-Pro<span style="margin-left:auto;font-size:12px;color:var(--amber)">不可用</span></div>
+    </div>
+    <div style="font-size:12.5px;color:var(--t3);margin:10px 4px 0;line-height:1.5">OpenRouter：无法获取模型列表（密钥无效）· <span style="color:#8EA2FF">重试</span></div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>X4</i>模型不可用<span class="mtag m1">M1 · 补状态</span></h3><ul>
+  <li>§8：明确说哪个模型不可用、在哪台执行端；<b>不偷偷替换</b>，必须重选才能“应用”。</li>
+  <li>某个提供方拉列表失败时单独一行说明，可重试（S6 的 catalog 失败项）。</li>
+  <li>运行中的任务遇到这种情况会停下等你选，状态同“等我处理”。</li>
+</ul></div>
+</div>
+
+</div><!-- grid -->
+
+<div class="rowtitle">M2 · 占位 <small>STORY 要求、ARCHITECTURE 排在 M2：先定样子，不进 M1</small></div>
+<div class="grid">
+
+<!-- P1 agent question -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" style="left:0;box-shadow:none">
+    <div class="nav">
+      <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+      <div class="navtitle"><b>写本周周报</b><small>公司-PC · Weekly reports</small></div>
+      <div class="iconbtn ghost"><svg class="i"><use href="#more"/></svg></div>
+    </div>
+    <div class="pinned" style="border-color:rgba(245,165,36,.4)">
+      <div class="top"><svg class="i s" style="color:var(--amber)"><use href="#msg"/></svg><span>等你回答</span><span class="ct">1 / 4</span></div>
+    </div>
+    <div class="scroll" style="display:flex;flex-direction:column">
+      <div class="ubub">用本周的笔记写一份周报</div>
+      <div class="thought" style="margin-bottom:8px">已工作 · 4 步<svg class="i xs"><use href="#chev"/></svg></div>
+      <div class="card needs">
+        <span class="tag amber"><svg class="i xs"><use href="#msg"/></svg>Agent 在问你</span>
+        <div style="font-size:15px;margin-top:9px;line-height:1.5">桌面上有两个周报模板，用哪个？</div>
+        <div class="reply"><span>公司模板.pptx</span><span>简洁版.pptx</span></div>
+        <div style="font-size:12px;color:var(--t3);margin-top:9px">也可以在下面直接回答。任务在等你，不会自己选。</div>
+      </div>
+    </div>
+    <div class="composer">
+      <div class="ph" style="color:var(--t1)">回答 Agent…<span style="display:inline-block;width:2px;height:17px;background:var(--blue);vertical-align:-3px;margin-left:2px"></span></div>
+      <div class="bar"><span class="pill">V41-Flash <span class="w">· High</span></span><span class="send"><svg class="i s"><use href="#up"/></svg></span></div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>P1</i>Agent 提问<span class="mtag mx">M2</span></h3><ul>
+  <li>§4/§5：提问和审批一样是“需要决策”，在「所有任务」的等我处理、角标和推送里都算。</li>
+  <li>有选项就给快捷回复；也能直接在输入框回答。任务暂停等你，不替你选。</li>
+  <li>依赖上游区分“提问”和“审批”（PLAN X4 / ARCHITECTURE §8.6）。</li>
+</ul></div>
+</div>
+
+<!-- P2 plan + pre-authorization -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" style="left:0;box-shadow:none">
+    <div class="nav">
+      <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+      <div class="navtitle"><b>整理 Q3 报表成 PPT</b><small>MacBook-Pro · Q3</small></div>
+      <div class="iconbtn ghost"></div>
+    </div>
+    <div class="scroll" style="display:flex;flex-direction:column">
+      <div class="ubub">把桌面上的 Q3 报表整理成 PPT，做完发我邮箱</div>
+      <div class="card">
+        <div style="font-size:15px;font-weight:600">开始前，先确认计划</div>
+        <div style="font-size:12.5px;color:var(--t2);margin-top:3px">预计 5–10 分钟</div>
+        <div style="margin-top:10px;font-size:14px;line-height:1.5;display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;gap:9px"><span style="font:600 12px var(--mono);color:var(--t3);margin-top:2px">1</span>读 <span class="ic">~/Desktop/Q3/Q3.xlsx</span> 的 4 个工作表</div>
+          <div style="display:flex;gap:9px"><span style="font:600 12px var(--mono);color:var(--t3);margin-top:2px">2</span>生成 12 页 PPT，存到同一目录</div>
+          <div style="display:flex;gap:9px"><span style="font:600 12px var(--mono);color:var(--t3);margin-top:2px">3</span>删除中间文件 <span class="ic">tmp/</span></div>
+          <div style="display:flex;gap:9px"><span style="font:600 12px var(--mono);color:var(--t3);margin-top:2px">4</span>把 PPT 发到 me@example.com</div>
+        </div>
+        <div style="font-size:12.5px;color:var(--t2);margin:14px 0 4px">预先允许（这个任务里不再为此打断你）</div>
+        <div class="opt on" style="margin-top:6px"><span class="radio" style="border-radius:5px;border:0;background:var(--blue);display:grid;place-items:center"><svg class="i xs" style="color:#fff"><use href="#check"/></svg></span><div>发邮件给 me@example.com<small>只限这个收件人</small></div></div>
+        <div class="opt"><span class="radio" style="border-radius:5px"></span><div>删除 <span class="ic">~/Desktop/Q3/tmp</span> 里的文件<small>不勾选的话，到时候再问你</small></div></div>
+        <div class="btnrow" style="margin-top:12px"><div class="btn" style="flex:.7">改一下</div><div class="btn primary">按这个计划开始</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>P2</i>开跑前对齐计划 + 预授权<span class="mtag mx">M2</span></h3><ul>
+  <li>§5：长任务先给计划，再开跑；短任务直接答（§3），不出现这一步。</li>
+  <li>预授权要具体到对象（哪个收件人、哪个目录），只在这个任务里有效。</li>
+  <li>“改一下”就是在输入框里说要改哪里，Agent 重新给计划。</li>
+</ul></div>
+</div>
+
+<!-- P3 high-risk approval -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" data-t="ppt" style="left:0;box-shadow:none"></div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag red"><svg class="i xs"><use href="#shield"/></svg>高风险 · 删除文件</span><span style="font-size:12.5px;color:var(--t3)">任务已暂停</span></div>
+    <div style="font-size:21px;font-weight:700;margin-top:10px">删除 37 个文件</div>
+    <div style="font-size:13.5px;color:var(--t2);margin-top:4px">整理 Q3 报表成 PPT · MacBook-Pro</div>
+    <div class="cmd" style="margin-top:12px">rm -rf ~/Desktop/Q3/tmp</div>
+    <div class="kv" style="margin-top:4px"><span>影响</span><span>1 个文件夹 · 37 个文件 · 212 MB</span></div>
+    <div class="kv"><span>包含</span><span style="font-family:var(--mono);font-size:12px">slide_01.png, chart_q3.svg …</span></div>
+    <div class="kv" style="border:0"><span>Agent 的理由</span><span>清理生成 PPT 时的中间图片</span></div>
+    <div class="opt on" style="margin-top:4px"><span class="radio"></span><div>只批准这一次</div></div>
+    <div class="opt"><span class="radio"></span><div>本任务内都允许删除这个目录</div></div>
+    <div class="btnrow" style="margin-top:14px"><div class="btn tall" style="flex:.8;color:#FF7B72">拒绝</div><div class="btn tall blue"><svg class="i"><use href="#faceid"/></svg>面容 ID 批准</div></div>
+    <div class="fine">高风险不能在锁屏上批准</div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>P3</i>风险分级的审批<span class="mtag mx">M2</span></h3><ul>
+  <li>§5：标题写影响（“删除 37 个文件”），附数量、大小、样例，不只给命令。</li>
+  <li>最高一级要面容 ID（需要 Secure Enclave 签名密钥，D22）；锁屏只能看，不能批。</li>
+  <li>可选“本任务内都允许”，范围限定到具体目录。M1 的 05 是它的简化版。</li>
+</ul></div>
+</div>
+
+<!-- P4 re-confirm after a long pause -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" data-t="ppt" style="left:0;box-shadow:none"></div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag amber"><svg class="i xs"><use href="#clock"/></svg>等了 6 小时</span><span style="font-size:12.5px;color:var(--t3)">18 小时后自动取消</span></div>
+    <div style="font-size:21px;font-weight:700;margin-top:10px">情况变了，再确认一次</div>
+    <div style="font-size:13.5px;color:var(--t2);margin-top:4px;line-height:1.5">你上次看到这条审批是 6 小时前。恢复之前，执行端重新检查了一遍：</div>
+    <div class="cmd" style="margin-top:12px">rm -rf ~/Desktop/Q3/tmp</div>
+    <div style="margin-top:10px;border:1px solid var(--hair);border-radius:12px;overflow:hidden">
+      <div class="kv" style="padding:10px 12px"><span>当时</span><span>37 个文件 · 212 MB</span></div>
+      <div class="kv" style="padding:10px 12px;border:0;background:rgba(245,165,36,.08)"><span>现在</span><span style="color:var(--amber);font-weight:600">41 个文件 · 230 MB</span></div>
+    </div>
+    <div style="font-size:12.5px;color:var(--t2);margin-top:8px">新增 4 个：<span class="ic">notes.md</span> <span class="ic">final_v2.pptx</span> …</div>
+    <div class="btnrow" style="margin-top:14px"><div class="btn tall" style="flex:.8;color:#FF7B72">拒绝</div><div class="btn tall primary">按现在的情况批准</div></div>
+    <div class="fine">超时会取消任务并通知你，不会默认放行</div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>P4</i>暂停太久后重新确认<span class="mtag mx">M2</span></h3><ul>
+  <li>§5：联系不到你就一直暂停；太久自动取消并通知你。</li>
+  <li>恢复时重新确认：把“当时”和“现在”并排给出，变化高亮（这里多了你新放进去的文件）。</li>
+  <li>批准的是“现在”的影响，不是 6 小时前的那份。</li>
+</ul></div>
+</div>
+
+</div><!-- grid -->
+
+</div><!-- board -->
+<script>
+for (const el of document.querySelectorAll('[data-t]')) {
+  el.append(document.getElementById(el.dataset.t).content.cloneNode(true));
+  if (el.dataset.sel) el.querySelector(`[data-k="${el.dataset.sel}"]`)?.classList.add('sel');
+  if (el.dataset.press) el.querySelector(`[data-k="${el.dataset.press}"]`)?.classList.add('pressed');
+}
+// Put each touch marker on the element it presses.
+for (const t of document.querySelectorAll('.touch[data-at]')) {
+  const phone = t.closest('.phone'), target = phone.querySelector(`[data-k="${t.dataset.at}"]`);
+  const p = phone.getBoundingClientRect(), r = target.getBoundingClientRect();
+  t.style.left = (r.left - p.left + 70 - 23) + 'px';
+  t.style.top = (r.top - p.top + r.height / 2 - 23) + 'px';
+}
+// ?s=N renders only phone N (1-based) for per-screen PNGs.
+const s = new URLSearchParams(location.search).get('s');
+if (s) {
+  const sprite = document.querySelector('body > svg');
+  const styles = [...document.querySelectorAll('body > style')];
+  const keep = [...document.querySelectorAll('.cell')][+s - 1];
+  keep.querySelector('.cap').remove();
+  document.body.innerHTML = '';
+  document.body.style.cssText = 'background:#0B0B0C;padding:24px;width:max-content';
+  document.body.append(...styles, sprite, keep);
+}
+</script>
+</body>
+</html>

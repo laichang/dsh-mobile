@@ -1,0 +1,22 @@
+#!/bin/bash
+# Render design/board.html (DESIGN.md) to PNGs with headless Chrome.
+#   scripts/render-design    writes design/board.png and design/screens/<label>.png
+# A screen's file name is its label on the board (01, F1, X2, P3, ...).
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
+[ -x "$CHROME" ] || { echo "render-design: set CHROME to a Chrome or Chromium binary" >&2; exit 1; }
+BOARD="$ROOT/design/board.html"
+OUT="$ROOT/design/screens"
+HEIGHT="${BOARD_HEIGHT:-7500}"
+
+shot() { "$CHROME" --headless=new --disable-gpu --hide-scrollbars "$@" 2>/dev/null; }
+
+shot --force-device-scale-factor=1 --window-size=1924,"$HEIGHT" --screenshot="$ROOT/design/board.png" "file://$BOARD"
+rm -rf "$OUT"; mkdir -p "$OUT"
+i=1
+for label in $(grep -o '<h3><i>[^<]*</i>' "$BOARD" | sed -e 's/<h3><i>//' -e 's/<\/i>//'); do
+  shot --force-device-scale-factor=2 --window-size=441,900 --screenshot="$OUT/$label.png" "file://$BOARD?s=$i"
+  i=$((i + 1))
+done
+echo "render-design: board.png and $((i - 1)) screens in design/"
