@@ -7,7 +7,8 @@
 #
 # Env (defaults are S2's resources, PLAN.md §8 2026-11-05):
 #   DSHM_BRIDGE_PORT (47811)  DSHM_WEB_PORT (3284)  DSHM_HOME (~/.dshm/home-s2)
-#   DSHM_SIM (Simulator name or UDID, default "dshm-S2")
+#   DSHM_SIM (Simulator name or UDID, default "dshm-S2")  DSHM_DD (DerivedData, /tmp/dshm-s2-dd)
+# Fails on any failed or skipped test; with --fake-only the real-DSH tests are left out.
 # Real DSH: starts `node scripts/demo/s2-host.mjs` (DSH 0.2.2-rc.1 + DSH's mock LLM, slowed to
 # 250 ms per chunk, no API key), runs the kill/reopen demo, then stops the host and checks that
 # the app names it as offline. If something already listens on the bridge port, it's used as is
@@ -28,17 +29,17 @@ LOGS=/tmp/dshm-s2-demo; mkdir -p "$LOGS"
 step() { printf '\n== %s\n' "$*"; }
 listening() { lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; }
 
-step "codegen is up to date"
-scripts/codegen --check
+source scripts/demo/lib.sh
+demo_prepare_bridge
 
 step "bridge tests (node:test, FakeDSH, golden fixtures; S2: HostLog, ResumeAgainstFakeDSH)"
-(cd bridge && corepack pnpm install --frozen-lockfile >/dev/null && corepack pnpm test 2>&1 | grep -E "^[▶✔✖]|^  [✔✖]|^ℹ (pass|fail)")
+demo_bridge_tests "$LOGS/bridge-test.log"
 
 step "DSHKit tests (swift test; S2: TaskListStoreTests against FakeHost)"
-swift test --package-path ios/DSHKit 2>&1 | grep -E "✔ Suite|✘|Test run"
+demo_swift_tests "$LOGS/swift-test.log"
 
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
-DD=/tmp/dshm-s2-dd
+DD="${DSHM_DD:-/tmp/dshm-s2-dd}"
 SHOT_DIR="$(mktemp -d)"
 export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR" TEST_RUNNER_DSHM_BRIDGE_PORT="$PORT"
 
@@ -53,6 +54,7 @@ uitest() { # name, then -only-testing targets
     -derivedDataPath "$DD" "$@" > "$LOGS/$name.log" 2>&1 \
     || { grep -E "error:|Test Case.*(passed|failed)" "$LOGS/$name.log"; exit 1; }
   grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/$name.log"
+  demo_no_skipped_ui "$LOGS/$name.log"
 }
 
 step "UI: offline host is named; cached milestones after kill/reopen (S3 seam) (FakeBridge, no DSH); T0's FakeBridge demo still passes"
@@ -89,7 +91,8 @@ if [ $FAKE_ONLY = 0 ]; then
     TEST_RUNNER_DSHM_EXPECT_OFFLINE=1 TEST_RUNNER_DSHM_HOST_NAME="$(node -p 'require("os").hostname()')" uitest offline \
       -only-testing:dsh-mobileUITests/S2DurableListUITests/testOfflineRealHostIsNamed
   else
-    step "skipped the real-offline step: the host on $PORT wasn't started by this script"
+    echo "the host on $PORT wasn't started by this script, so the real-offline step can't run; stop it and rerun" >&2
+    exit 1
   fi
 fi
 

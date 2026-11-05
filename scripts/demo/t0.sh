@@ -7,7 +7,9 @@
 #
 # Real DSH: uses a bridge already listening on 127.0.0.1:${DSHM_BRIDGE_PORT:-47801}, or starts
 # `node scripts/dsh-up.mjs` (DSH 0.2.2-rc.1 + DSH's mock LLM, no API key) and stops it afterwards.
-# Simulator: $DSHM_SIM (name or UDID, default "iPhone 17 Pro"). Node 24 from ~/.nvm if present.
+# Simulator: $DSHM_SIM (name or UDID, default "iPhone 17 Pro"). DerivedData: $DSHM_DD (default
+# /tmp/dshm-t0-dd). Node 24 from ~/.nvm if present. Fails on any failed or skipped test; with
+# --fake-only the real-DSH test is left out rather than skipped.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
@@ -19,15 +21,17 @@ NODE24="$HOME/.nvm/versions/node/v24.14.0/bin"
 [ -d "$NODE24" ] && export PATH="$NODE24:$PATH"
 [ -d "$HOME/.dshm/bin" ] && export PATH="$HOME/.dshm/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
+source scripts/demo/lib.sh
+LOGS=/tmp/dshm-t0; mkdir -p "$LOGS"
+DD="${DSHM_DD:-/tmp/dshm-t0-dd}"
 
-step "codegen is up to date"
-scripts/codegen --check
+demo_prepare_bridge
 
 step "bridge tests (node:test, FakeDSH, golden fixtures)"
-(cd bridge && corepack pnpm install --frozen-lockfile >/dev/null && corepack pnpm test)
+demo_bridge_tests "$LOGS/bridge-test.log"
 
 step "DSHKit tests (swift test, FakeBridge, golden fixtures)"
-swift test --package-path ios/DSHKit 2>&1 | grep -E "✔ Suite|✘|Test run"
+demo_swift_tests "$LOGS/swift-test.log"
 
 DSH_PID=""
 cleanup() { [ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true; }
@@ -49,11 +53,14 @@ step "UI tests in the Simulator ($SIM)"
 SHOT_DIR="$(mktemp -d)"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR" TEST_RUNNER_DSHM_BRIDGE_PORT="$PORT"
-[ $FAKE_ONLY = 0 ] && export TEST_RUNNER_DSHM_REAL_DSH=1
+ONLY=(-only-testing:dsh-mobileUITests/T0DemoUITests)
+if [ $FAKE_ONLY = 0 ]; then export TEST_RUNNER_DSHM_REAL_DSH=1
+else ONLY+=(-skip-testing:dsh-mobileUITests/T0DemoUITests/testDemoAgainstRealDSH); fi
 xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
-  -derivedDataPath /tmp/dshm-t0-dd -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > /tmp/dshm-t0-uitest.log 2>&1 || { grep -E "error:|Test Case" /tmp/dshm-t0-uitest.log; exit 1; }
-grep -E "Test Case.*(passed|failed|skipped)" /tmp/dshm-t0-uitest.log
+  -derivedDataPath "$DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates "${ONLY[@]}" \
+  > "$LOGS/uitest.log" 2>&1 || { grep -E "error:|Test Case" "$LOGS/uitest.log"; exit 1; }
+grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/uitest.log"
+demo_no_skipped_ui "$LOGS/uitest.log"
 
 if [ $SHOTS = 1 ]; then
   step "screenshots → evidence/T0 (1/3 size)"

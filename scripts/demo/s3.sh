@@ -11,7 +11,9 @@
 # no API key) and stops it afterwards. That bridge must be S3's (the scripted three-todo model).
 # Env (defaults are S3's resources, PLAN.md §8):
 #   DSHM_BRIDGE_PORT 47812   DSHM_WEB_PORT 3285   DSHM_HOME ~/.dshm/home-s3   DSHM_SIM dshm-S3
-# Node 24 from ~/.nvm and the pnpm shim from ~/.dshm/bin if present.
+#   DSHM_DD (DerivedData) /tmp/dshm-s3-dd
+# Node 24 from ~/.nvm and the pnpm shim from ~/.dshm/bin if present. Fails on any failed or
+# skipped test; with --fake-only the real-DSH test is left out rather than skipped.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
@@ -26,15 +28,17 @@ NODE24="$HOME/.nvm/versions/node/v24.14.0/bin"
 [ -d "$NODE24" ] && export PATH="$NODE24:$PATH"
 [ -d "$HOME/.dshm/bin" ] && export PATH="$HOME/.dshm/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
+source scripts/demo/lib.sh
+LOGS=/tmp/dshm-s3; mkdir -p "$LOGS"
+DD="${DSHM_DD:-/tmp/dshm-s3-dd}"
 
-step "codegen is up to date"
-scripts/codegen --check
+demo_prepare_bridge
 
 step "bridge tests (node:test: milestone mapper against FakeDSH, golden fixtures)"
-(cd bridge && corepack pnpm install --frozen-lockfile >/dev/null && corepack pnpm test 2>&1 | grep -E "^[▶✔✖]|^  [✔✖]|^ℹ (pass|fail)")
+demo_bridge_tests "$LOGS/bridge-test.log"
 
 step "DSHKit tests (swift test: MilestoneStoreTests against FakeBridge, golden fixtures)"
-swift test --package-path ios/DSHKit 2>&1 | grep -E "✔ Suite|✘|Test run"
+demo_swift_tests "$LOGS/swift-test.log"
 
 DSH_PID=""
 cleanup() { [ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true; }
@@ -60,15 +64,14 @@ step "S3 UI tests in the Simulator ($SIM)"
 SHOT_DIR="$(mktemp -d)"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR" TEST_RUNNER_DSHM_BRIDGE_PORT="$PORT"
-[ $FAKE_ONLY = 0 ] && export TEST_RUNNER_DSHM_REAL_DSH=1
+ONLY=(-only-testing:dsh-mobileUITests/S3MilestonesUITests)
+if [ $FAKE_ONLY = 0 ]; then export TEST_RUNNER_DSHM_REAL_DSH=1
+else ONLY+=(-skip-testing:dsh-mobileUITests/S3MilestonesUITests/testMilestonesAgainstRealDSH); fi
 xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
-  -derivedDataPath /tmp/dshm-s3-dd -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  -only-testing:dsh-mobileUITests/S3MilestonesUITests \
-  > /tmp/dshm-s3-uitest.log 2>&1 || { grep -E "error:|Test Case" /tmp/dshm-s3-uitest.log; exit 1; }
-grep -E "Test Case.*(passed|failed|skipped)" /tmp/dshm-s3-uitest.log
-if [ $FAKE_ONLY = 0 ] && grep -q "testMilestonesAgainstRealDSH.*skipped" /tmp/dshm-s3-uitest.log; then
-  echo "real-DSH UI test was skipped" >&2; exit 1
-fi
+  -derivedDataPath "$DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates "${ONLY[@]}" \
+  > "$LOGS/uitest.log" 2>&1 || { grep -E "error:|Test Case" "$LOGS/uitest.log"; exit 1; }
+grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/uitest.log"
+demo_no_skipped_ui "$LOGS/uitest.log"
 
 if [ $SHOTS = 1 ]; then
   step "screenshots → evidence/S3 (1/3 size)"

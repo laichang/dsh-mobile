@@ -13,6 +13,8 @@
 # Env (defaults are S1's resources in PLAN.md):
 #   DSHM_BRIDGE_PORT  47810              DSHM_WEB_PORT  3283
 #   DSHM_HOME         ~/.dshm/home-s1    DSHM_SIM       dshm-S1 (name or UDID)
+#   DSHM_DD           /tmp/dshm-s1-dd (DerivedData; check-release-clean uses DSHM_RELEASE_DD)
+# Fails on any failed or skipped test.
 # Node 24 from ~/.nvm and the pnpm shim from ~/.dshm/bin are used if present.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -33,14 +35,14 @@ step() { printf '\n== %s\n' "$*"; }
 # pair.js finds the bridge's pairing state through DSH_HOME, like the bridge itself.
 pair_url() { DSH_HOME="$DSHM_HOME" node bridge/lib/scripts/pair.js --url-only "$@"; }
 
-step "codegen is up to date"
-scripts/codegen --check
+source scripts/demo/lib.sh
+demo_prepare_bridge
 
 step "bridge tests (node:test: Noise vectors, golden transcripts, pairing against FakeDSH)"
-(cd bridge && corepack pnpm install --frozen-lockfile >/dev/null && corepack pnpm test 2>&1 | grep -E "^[▶✔✖]|^ℹ (pass|fail)")
+demo_bridge_tests "$LOGS/bridge-test.log"
 
 step "DSHKit tests (swift test: NoiseChannel, pairing against FakeNoiseHost, PlaintextChannel)"
-swift test --package-path ios/DSHKit 2>&1 | grep -E "✔ Suite|✘|Test run"
+demo_swift_tests "$LOGS/swift-test.log"
 
 if [ $RELEASE = 1 ]; then
   step "Release carries no PlaintextChannel or other debug entry points"
@@ -94,9 +96,7 @@ uitest() { # name, then -only-testing targets; fails on any failed or skipped te
     -derivedDataPath "$DD" "$@" > "$LOGS/uitest-$name.log" 2>&1 \
     || { grep -E "error:|Test Case|XCTAssert" "$LOGS/uitest-$name.log"; exit 1; }
   grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/uitest-$name.log"
-  if grep -qE "Test Case.*skipped|Test Suite.*[1-9][0-9]* skipped|with [1-9][0-9]* tests? skipped" "$LOGS/uitest-$name.log"; then
-    echo "UI tests were skipped ($name)" >&2; exit 1
-  fi
+  demo_no_skipped_ui "$LOGS/uitest-$name.log"
 }
 uitest pairing \
   -only-testing:dsh-mobileUITests/S1PairingUITests/testExpiredPairingLinkIsRefused \
