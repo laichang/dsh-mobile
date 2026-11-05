@@ -11,6 +11,20 @@ struct ContentView: View {
                 statusRow
                     .padding(.horizontal)
                     .padding(.vertical, 8)
+                if !store.milestones.isEmpty {
+                    // S3: milestone summary by default; the timeline on demand.
+                    NavigationLink {
+                        MilestoneTimelineView(store: store)
+                    } label: {
+                        MilestoneCard(timeline: store.milestones)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(store.milestones.headline)
+                    .accessibilityValue(store.milestones.progressToken)
+                    .accessibilityIdentifier("milestone.card")
+                    .padding(.horizontal)
+                }
                 ScrollView {
                     Text(store.transcript.isEmpty ? "Send a task to the DSH on this Mac." : store.transcript)
                         .foregroundStyle(store.transcript.isEmpty ? .secondary : .primary)
