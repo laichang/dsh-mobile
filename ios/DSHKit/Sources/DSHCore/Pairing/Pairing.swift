@@ -82,7 +82,7 @@ public final class PairingModel {
         }
     }
 
-    public let offer: PairingOffer
+    public nonisolated let offer: PairingOffer
     public private(set) var state: State = .reviewing
     private let pairing: Pairing
 
