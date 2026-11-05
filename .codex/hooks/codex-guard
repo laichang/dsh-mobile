@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""Codex PreToolUse hook: the repo's guards for Codex (WORKFLOW.md §12).
+
+Codex sends hook input in the Claude Code shape, with two differences that this
+adapter covers:
+  * file edits arrive as `apply_patch`, with the whole patch in tool_input.command
+    (not Edit/Write with file_path);
+  * "ask" is not supported yet: Codex treats it as a failed hook and runs the tool.
+    So everything that is "ask" under Claude Code is "deny" here; the agent asks the
+    user in the chat instead.
+
+Bash   -> .claude/hooks/git-guard, unchanged (same tool_input.command string).
+Patch  -> guard files (PROTECTED in scripts/check-plan) -> deny;
+          PLAN.md -> the file as it would be after the patch, judged by
+          scripts/check-plan --agent against the on-disk version -> deny on any error.
+A patch this adapter cannot apply is let through: apply_patch will fail on it too,
+and the git pre-commit hook still checks every commit.
+"""
+
+import fnmatch
+import importlib.util
+import json
+import subprocess
+import sys
+from importlib.machinery import SourceFileLoader
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+PLAN = ROOT / "PLAN.md"
+
+
+def load_check_plan():
+    loader = SourceFileLoader("check_plan", str(ROOT / "scripts" / "check-plan"))
+    spec = importlib.util.spec_from_loader("check_plan", loader)
+    mod = importlib.util.module_from_spec(spec)
+    loader.exec_module(mod)
+    return mod
+
+
+def deny(reason):
+    print(json.dumps({"hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "deny",
+        "permissionDecisionReason": reason + "\nDon't retry or work around this. Ask the "
+                                    "user in the conversation (WORKFLOW.md §12).",
+    }}))
+    sys.exit(0)
+
+
+def parse_patch(text):
+    """Codex patch -> list of (op, path, move_to, body_lines)."""
+    ops, cur = [], None
+    for line in text.splitlines():
+        if line.startswith("*** Begin Patch") or line.startswith("*** End Patch"):
+            continue
+        for op in ("Add", "Update", "Delete"):
+            tag = f"*** {op} File: "
+            if line.startswith(tag):
+                cur = [op, line[len(tag):].strip(), None, []]
+                ops.append(cur)
+                break
+        else:
+            if cur is None:
+                continue
+            if line.startswith("*** Move to: "):
+                cur[2] = line[len("*** Move to: "):].strip()
+            elif line.startswith("*** End of File"):
+                continue
+            else:
+                cur[3].append(line)
+    return ops
+
+
+def apply_update(current, body):
+    """Apply the @@ chunks of one Update File op; None if a chunk does not match."""
+    lines = current.split("\n")
+    chunks, chunk = [], None
+    for line in body:
+        if line.startswith("@@"):
+            chunk = {"anchor": line[2:].strip(), "old": [], "new": []}
+            chunks.append(chunk)
+            continue
+        if chunk is None:
+            chunk = {"anchor": "", "old": [], "new": []}
+            chunks.append(chunk)
+        tag, rest = (line[:1], line[1:]) if line else (" ", "")
+        if tag in (" ", "-"):
+            chunk["old"].append(rest)
+        if tag in (" ", "+"):
+            chunk["new"].append(rest)
+    pos = 0
+    for c in chunks:
+        if c["anchor"]:
+            try:
+                pos = lines.index(c["anchor"], pos) + 1
+            except ValueError:
+                return None
+        old, new = c["old"], c["new"]
+        if not old:
+            lines[pos:pos] = new
+            pos += len(new)
+            continue
+        for i in range(pos, len(lines) - len(old) + 1):
+            if lines[i:i + len(old)] == old:
+                lines[i:i + len(old)] = new
+                pos = i + len(new)
+                break
+        else:
+            return None
+    return "\n".join(lines)
+
+
+def relpath(path, cwd):
+    p = Path(path)
+    if not p.is_absolute():
+        p = Path(cwd) / p
+    try:
+        return p.resolve().relative_to(ROOT.resolve()).as_posix()
+    except (OSError, ValueError):
+        return None
+
+
+def guard_patch(data):
+    check = load_check_plan()
+    cwd = data.get("cwd") or str(ROOT)
+    for op, path, move_to, body in parse_patch((data.get("tool_input") or {}).get("command", "")):
+        for target in filter(None, (path, move_to)):
+            rel = relpath(target, cwd)
+            if rel and any(fnmatch.fnmatch(rel, pat) for pat in check.PROTECTED):
+                deny(f"{rel} is a guard file: it enforces the PLAN.md and git hook rules. "
+                     "Only the user changes guard files, by hand. An agent blocked by a "
+                     "check must not change the check instead.")
+        if relpath(path, cwd) != "PLAN.md" and relpath(move_to or "", cwd) != "PLAN.md":
+            continue
+        current = PLAN.read_text() if PLAN.exists() else ""
+        if op == "Add":
+            new = "\n".join(l[1:] for l in body if l.startswith("+"))
+        elif op == "Delete" or (move_to and relpath(move_to, cwd) != "PLAN.md"):
+            new = ""
+        else:
+            new = apply_update(current, body)
+            if new is None:
+                return
+        errors = check.check(current, new, agent=True)
+        if not errors:
+            continue
+        body_text = "\n".join(errors)
+        if any(e.startswith("HUMAN ITEM TICKED BY AGENT") for e in errors):
+            deny("PLAN.md: only the user ticks [human] items. Tell the user what you "
+                 "verified and let them tick it themselves.\n\n" + body_text)
+        deny("PLAN.md Done when items may only be ticked (with valid evidence pointers) or "
+             "added unticked. To change an item, show the user the original text, the new "
+             "text and the reason, and let the user make the edit.\n\n" + body_text)
+
+
+def main():
+    data = json.load(sys.stdin)
+    tool = data.get("tool_name")
+    if tool == "Bash":
+        r = subprocess.run([str(ROOT / ".claude" / "hooks" / "git-guard")],
+                           input=json.dumps(data), capture_output=True, text=True)
+        sys.stdout.write(r.stdout)
+        sys.exit(0)
+    if tool == "apply_patch":
+        guard_patch(data)
+
+
+if __name__ == "__main__":
+    main()

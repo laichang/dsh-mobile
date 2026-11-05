@@ -28,7 +28,8 @@ NON_HUMAN_DECISION = "ask"
 ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path(__file__).resolve().parents[2])
 PLAN = ROOT / "PLAN.md"
 # Keep in sync with PROTECTED in scripts/check-plan.
-PROTECTED = ["scripts/check-plan", ".githooks/*", ".claude/hooks/*", ".claude/settings.json"]
+PROTECTED = ["scripts/check-plan", ".githooks/*", ".claude/hooks/*", ".claude/settings.json",
+             ".codex/hooks.json", ".codex/hooks/*"]
 
 
 def decide(decision, reason):

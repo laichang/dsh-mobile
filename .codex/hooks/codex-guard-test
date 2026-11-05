@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+"""Feeds codex-guard synthetic Codex hook inputs and checks each decision. Run: .codex/hooks/codex-guard-test"""
+
+import json, subprocess
+import pathlib
+HERE = pathlib.Path(__file__).resolve()
+R = str(HERE.parents[2])
+G = str(HERE.parent / "codex-guard")
+plan = open(R + "/PLAN.md").read()
+human = [l for l in plan.split("\n") if l.startswith("- [ ] [human]")][0]
+auto_unt = [l for l in plan.split("\n") if l.startswith("- [ ] [auto]")][0]
+ESC = "CHECK_PLAN" + "_ALLOW"
+NOV = "--no-" + "verify"
+HP = "core.hooks" + "Path"
+
+
+def run(tool, cmd, cwd=R):
+    r = subprocess.run([G], input=json.dumps({"tool_name": tool, "tool_input": {"command": cmd}, "cwd": cwd}),
+                       capture_output=True, text=True)
+    if r.returncode:
+        print(r.stderr)
+    out = r.stdout.strip()
+    return json.loads(out)["hookSpecificOutput"]["permissionDecision"] if out else "allow"
+
+
+def patch(path, old, new):
+    return f"*** Begin Patch\n*** Update File: {path}\n@@\n-{old}\n+{new}\n*** End Patch"
+
+
+cases = [
+    ("bash plain", "Bash", "git status", "allow"),
+    ("bash skip-hooks flag", "Bash", f"git commit {NOV} -m x", "deny"),
+    ("bash hooks path", "Bash", f"git config {HP} /tmp", "deny"),
+    ("bash escape var", "Bash", ESC + "=1 git commit -m x", "deny"),
+    ("tick human (rel)", "apply_patch", patch("PLAN.md", human, human.replace("- [ ]", "- [x]") + " human:2026-11-05 x"), "deny"),
+    ("tick human (abs)", "apply_patch", patch(R + "/PLAN.md", human, human.replace("- [ ]", "- [x]") + " human:2026-11-05 x"), "deny"),
+    ("reword item", "apply_patch", patch("PLAN.md", auto_unt, auto_unt.replace("[auto] ", "[auto] Reworded: ", 1)), "deny"),
+    ("tick auto no evidence", "apply_patch", patch("PLAN.md", auto_unt, auto_unt.replace("- [ ]", "- [x]")), "deny"),
+    ("delete PLAN", "apply_patch", "*** Begin Patch\n*** Delete File: PLAN.md\n*** End Patch", "deny"),
+    ("harmless PLAN edit", "apply_patch", patch("PLAN.md", "# PLAN", "# PLAN"), "allow"),
+    ("edit check-plan", "apply_patch", patch("scripts/check-plan", "x", "y"), "deny"),
+    ("edit codex hooks.json", "apply_patch", patch(".codex/hooks.json", "x", "y"), "deny"),
+    ("edit claude hook from subdir", "apply_patch", patch("../.claude/hooks/git-guard", "x", "y"), "deny"),
+    ("add file in .githooks", "apply_patch", "*** Begin Patch\n*** Add File: .githooks/post-commit\n+echo\n*** End Patch", "deny"),
+    ("move onto guard", "apply_patch", "*** Begin Patch\n*** Update File: a.txt\n*** Move to: .githooks/pre-commit\n@@\n-a\n+b\n*** End Patch", "deny"),
+    ("normal code edit", "apply_patch", patch("bridge/src/index.ts", "x", "y"), "allow"),
+]
+fail = 0
+for name, tool, cmd, want in cases:
+    cwd = R + "/bridge" if "subdir" in name else R
+    got = run(tool, cmd, cwd)
+    ok = got == want
+    fail += not ok
+    print("PASS" if ok else "FAIL", name, got)
+print("failures:", fail)
+raise SystemExit(1 if fail else 0)

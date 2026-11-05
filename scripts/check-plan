@@ -46,7 +46,8 @@ from pathlib import Path
 
 PLAN = "PLAN.md"
 ROOT = Path(__file__).resolve().parents[1]
-PROTECTED = ["scripts/check-plan", ".githooks/*", ".claude/hooks/*", ".claude/settings.json"]
+PROTECTED = ["scripts/check-plan", ".githooks/*", ".claude/hooks/*", ".claude/settings.json",
+             ".codex/hooks.json", ".codex/hooks/*"]
 POINTER_SEP = " · "
 SKIP_DIRS = {".git", "node_modules", "DerivedData", "build", ".build", ".archive", "evidence"}
 
