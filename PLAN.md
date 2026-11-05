@@ -377,6 +377,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [x] [auto] Bridge `Resume { after_seq }` returns exactly the events after `after_seq` — Evidence: test:ResumeAgainstFakeDSH/resumeReturnsExactlyTheEventsAfterSeq · test:HostLog/sinceReturnsExactlyTheEventsAfterSeq · test:ResumeAgainstFakeDSH/taskOutlivesTheConnectionThatCreatedIt · commit:73ca56c
 - [x] [ui] Start a task, kill the app, wait, reopen: the list and transcript are intact and the gap is filled from the bridge — Evidence: test:S2DurableListUITests/testKillAndReopenAgainstRealDSH · test:TaskListStoreTests/killAndReopenKeepsTheListAndFillsTheGapFromTheBridge · cmd:scripts/demo/s2.sh · shot:evidence/S2/s2-reopened-from-cache.png · shot:evidence/S2/s2-gap-filled.png · shot:evidence/S2/s2-list-after-resume.png
 - [x] [ui] With the host unreachable, the list names that host as offline — Evidence: test:S2DurableListUITests/testOfflineHostIsNamedWithFakeBridge · test:S2DurableListUITests/testOfflineRealHostIsNamed · test:TaskListStoreTests/unreachableHostIsNamedAsOffline · cmd:scripts/demo/s2.sh · shot:evidence/S2/s2-offline-fakebridge.png · shot:evidence/S2/s2-offline-real-host.png
+- [ ] [ui] Seam with S3 (S2 landed second): list rows show the `MilestoneCard`, and after kill/reopen a task's milestones are still shown from the cache — Evidence:
 
 **Not**: background refresh (M1 refreshes on foreground; push is M2).
 
