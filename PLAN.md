@@ -74,14 +74,14 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
 | T0 | review | merged `84db2e8` | 2026-11-05 | User accepts 3 `[human]` items (§9) |
-| X1 | doing | workflow `wf_219b7aa1-71c` → `claude/x1x4-spikes` | 2026-11-05 | Building with X4 in batch 1 |
+| X1 | review | merged `ccc8ff9` | 2026-11-05 | User accepts 1 `[human]` item (§9) |
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
 | X3 | todo | — | — | Start any time (no deps) |
-| X4 | doing | workflow `wf_219b7aa1-71c` → `claude/x1x4-spikes` | 2026-11-05 | Building with X1 in batch 1 |
+| X4 | review | merged `ccc8ff9` | 2026-11-05 | User accepts 1 `[human]` item (§9) |
 | S1 | doing | workflow `wf_219b7aa1-71c` → `claude/s1-pair-encrypt` | 2026-11-05 | Building in batch 1 |
 | S2 | doing | workflow `wf_219b7aa1-71c` → `claude/s2-durable-list` | 2026-11-05 | Building in batch 1 |
 | S3 | doing | workflow `wf_219b7aa1-71c` → `claude/s3-milestones` | 2026-11-05 | Building in batch 1 |
-| S4 | todo | — | 2026-11-05 | Wait for X1 (T0 merged) |
+| S4 | todo | — | 2026-11-05 | Ready (T0 merged, X1 merged); next batch |
 | S5 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
 | S6 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
 | S7 | todo | — | 2026-11-05 | Ready (T0 merged); after S1–S3 |
@@ -715,6 +715,16 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - Why: the app starts a new session only from the user's own words, so the S1–S3 and X1 + X4 cards sat unstarted while the user was out. A Workflow script started from the main session runs the slices as background agents instead; it doesn't need the user to start each one.
   - Batch 1 is `wf_219b7aa1-71c`: X1 + X4, S1, S2, S3, each in its own worktree and branch, with the ports, `DSH_HOME`s and Simulators from the entry above. Agents run on `claude-opus-5-5` at effort `medium`, the same as "Session settings". A slice with `[ui]` items is then rerun by a separate review agent that didn't build it. Merging, §0 and §9 stay with the coordinating side on `main`, which is now the main session; the rules in "Merging a slice" are unchanged.
   - The X1 + X4, S1, S2 and S3 session cards in the coordinating session are superseded; don't start them.
+- **2026-11-05 · X1 + X4 merged** as `ccc8ff9` from batch 1's workflow (`wf_5740da3d-b68`, which resumed the stopped `wf_219b7aa1-71c` in the same worktrees). Status of both is `review`: one `[human]` item each is open (§9).
+  - Checked before the merge:
+    - both `[auto]` items are ticked, with pointers that resolve;
+    - the main session reran `spikes/x1-approval/scripts/run` (36/36) and `spikes/x4-midtask/scripts/run` (19/19) in the branch worktree;
+    - `scripts/check-plan --base <main PLAN.md> --new <branch PLAN.md>` exited 0;
+    - no build products are in the history.
+  - There are no `[ui]` items and no new dependencies or downloads.
+  - Results: provisional D17 (approval holder goes first in the chain and fans a copy out to the web; first answer wins) and D18 (`SendMessage` steer/queue; agent questions have their own messages). ARCHITECTURE §1, §5.4, §8.1 and §8.6 are updated and marked provisional.
+  - S4's Needs are now met.
+  - S3 and S1 also wrote new `Dxx` entries starting at D17. They are renumbered after D18 when they merge.
 
 ## 9. Pending user confirmation
 
@@ -734,3 +744,7 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 10 | T0 | `[human]` | "Following `bridge/README.md` installs and enables the plugin in a DSH profile". Needs: this Mac with DSH 0.2.2-rc.1 (`~/.dshm`), about 10 minutes | `main` | `84db2e8` |
 | 11 | T0 | `[human]` | "Toolchain choices … recorded in ARCHITECTURE.md". Needs: reading D15 (confirms row 4) | `main` | `84db2e8` |
 | 12 | T0 | `[human]` | "Testability entry points … recorded in ARCHITECTURE.md". Needs: reading D16 (confirms row 4) | `main` | `84db2e8` |
+| 13 | X1 | decision | ARCHITECTURE D17, *provisional*: approval holder registers first in the chain, then fans a copy out to the web/desktop forwarder; first answer wins. Also the corrected §1 approvals row | `main` (merged `ccc8ff9`) | `e9d2fa6` |
+| 14 | X4 | decision | ARCHITECTURE D18, *provisional*: `SendMessage {task_id, mode STEER\|QUEUE, parts}`, default `STEER`; agent questions get their own `QuestionPending` / `AnswerQuestion` messages | `main` (merged `ccc8ff9`) | `e9d2fa6` |
+| 15 | X1 | `[human]` | "Ordering versus web/desktop answerers, and web UI visibility, written down". Needs: reading `spikes/x1-approval/README.md` | `main` | `ccc8ff9` |
+| 16 | X4 | `[human]` | "Queue-vs-inject behavior, attachment support, and how agent questions surface written down". Needs: reading `spikes/x4-midtask/README.md` | `main` | `ccc8ff9` |
