@@ -522,15 +522,16 @@ Each slice needs only T0, unless "Needs" says otherwise.
 **Demo**: run the same prompt in two different repos and get correct, different answers.
 
 **Done when**
-- [ ] [auto] `CreateTask.workspace` becomes the DSH session cwd (`FakeDSH`) — Evidence:
-- [ ] [ui] The same prompt run in two different repos gives correct, different answers — Evidence:
+- [x] [auto] `CreateTask.workspace` becomes the DSH session cwd (`FakeDSH`) — Evidence: test:chosenWorkspaceBecomesSessionCwdWithModelAndRecentPaths
+- [x] [ui] The same prompt run in two different repos gives correct, different answers — Evidence: test:S7WorkspaceUITests/testSamePromptReadsTwoActualRepositories · cmd:scripts/demo/s7.sh · shot:evidence/S7/s7-default.png · shot:evidence/S7/s7-selected.png · shot:evidence/S7/s7-picker.png
 
-- [ ] [auto] Explicit workspace and model selections both reach the same DSH session (S6 × S7) — Evidence:
+- [x] [auto] Explicit workspace and model selections both reach the same DSH session (S6 × S7) — Evidence: test:chosenWorkspaceBecomesSessionCwdWithModelAndRecentPaths
 
 **Not**: inferring the workspace from the prompt.
 
 **Log**
 - **2026-11-05 · Start.** Isolated T0 passed on dshm-S7: 45 bridge tests, 47 Swift tests, 4 UI tests, real DSH round trip. Resources: bridge 47815, web 3288, profile ~/.dshm/home-s7. Implementing the workspace picker and the S6 seam.
+- **2026-11-05 · Implementation and verification.** `e7ddc45` implements the DSH-backed picker and explicit workspace/model dispatch. See provisional D37. No new dependencies or downloads. The owner ran `scripts/demo/s7.sh --shots`: 46 bridge tests, 48 Swift tests, and one real DSH UI test passed without skips. The same prompt read different marker files from two git repositories. Opening the picker again showed the selected repository in the host recent list. The host-downgrade test retained its explicit workspace until the user chose the default. Independent UI rerun and merge belong to the coordinator.
 
 ### S8 · Rich detail
 

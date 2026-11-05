@@ -20,6 +20,7 @@ import "milestones.proto";
 import "s2.proto";
 import "interrupt.proto";
 import "models.proto";
+import "workspaces.proto";
 
 // One WebSocket binary message carries exactly one Frame (inside the
 // SecureChannel; plaintext only on loopback in T0).
@@ -47,6 +48,7 @@ message Request {
     Interrupt interrupt = 100;
     GetModelCatalog get_model_catalog = 120;
     SelectModel select_model = 121;
+    ListWorkspaces list_workspaces = 140;
   }
 }
 
@@ -64,6 +66,7 @@ message Response {
     Resumed resumed = 41;
     ApprovalResolved approval_resolved = 80;
     InterruptAccepted interrupt_accepted = 100;
+    WorkspaceList workspace_list = 140;
     ModelCatalog model_catalog = 120;
     ModelSelected model_selected = 121;
   }
@@ -107,6 +110,7 @@ message Error {
 message CreateTask {
   string prompt = 1;
   ModelSelection model_selection = 120;
+  optional string workspace = 140; // Absolute directory on the host; absent uses its configured default.
 }
 
 message TaskCreated {

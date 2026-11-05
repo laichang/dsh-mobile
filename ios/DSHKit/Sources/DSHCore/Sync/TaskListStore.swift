@@ -80,6 +80,20 @@ public final class TaskListStore {
     public private(set) var catalogs: [String: ModelCatalog] = [:]
     public private(set) var catalogErrors: [String: String] = [:]
     public var composerSelections: [String: ModelSelection] = [:]
+    public private(set) var composerWorkspaces: [String: String] = [:]
+
+    public func chooseWorkspace(_ path: String?, hostKey: String) {
+        composerWorkspaces[hostKey] = path
+        sendError = nil
+    }
+
+    public func listWorkspaces(hostKey: String) async throws -> Dshm_V1_WorkspaceList {
+        guard let link = links.first(where: { $0.key == hostKey }), link.reachability == .online else {
+            throw HostConnectionError.notConnected
+        }
+        return try await link.connection.listWorkspaces()
+    }
+
     public var composerHostKey: String? { links.first?.key }
 
     public func useHostDefault(hostKey: String) {
@@ -228,7 +242,7 @@ public final class TaskListStore {
             return nil
         }
         do {
-            let taskID = try await link.connection.createTask(prompt: text, selection: composerSelections[link.key])
+            let taskID = try await link.connection.createTask(prompt: text, selection: composerSelections[link.key], workspace: composerWorkspaces[link.key])
             let task = taskRecord(hostKey: link.key, taskID: taskID, title: text)
             if task.title.isEmpty { task.title = text }
             prompt = ""

@@ -104,6 +104,21 @@ import Testing
         #expect(await store.send() != nil)
     }
 
+    @Test func explicitWorkspaceCannotFallBackAfterBridgeDowngrade() async throws {
+        let store = try launch(FakeHost())
+        let key = try #require(store.composerHostKey)
+        store.chooseWorkspace("/repo/chosen", hostKey: key)
+        store.foreground()
+        defer { store.background() }
+        try await waitUntil("online") { store.hosts.first?.reachability == .online }
+        #expect(await store.send() == nil)
+        #expect(store.tasks.isEmpty)
+        #expect(store.composerWorkspaces[key] == "/repo/chosen")
+        #expect(store.sendError?.contains("workspace") == true)
+        store.chooseWorkspace(nil, hostKey: key)
+        #expect(await store.send() != nil)
+    }
+
     @Test func unreachableHostIsNamedAsOffline() async throws {
         let host = FakeHost(script: .init(reply: ["ok"], chunkDelay: .milliseconds(5)))
         let store = try launch(host)
