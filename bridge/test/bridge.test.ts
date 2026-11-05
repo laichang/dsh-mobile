@@ -5,6 +5,8 @@ import { WebSocket } from 'ws'
 import { PlaintextChannel, isLoopbackAddress } from '../src/channel.ts'
 import { DshTasks } from '../src/dsh.ts'
 import { FrameSchema, TaskStatus, type Frame } from '../src/gen/frame_pb.ts'
+import { TaskState } from '../src/gen/s2_pb.ts'
+import { MilestoneKind } from '../src/gen/milestones_pb.ts'
 import { PLAINTEXT_PATH, startBridgeServer, type BridgeServer } from '../src/server.ts'
 import { FakeDSH, type FakeDSHOptions } from './fake-dsh.ts'
 
@@ -58,7 +60,7 @@ describe('BridgeAgainstFakeDSH', () => {
     const [hello, created, ...events] = client.frames
     assert.equal(hello.kind.case, 'response')
     assert.equal(hello.kind.value?.body.case, 'hello')
-    assert.deepEqual(hello.kind.case === 'response' && hello.kind.value.body.case === 'hello' && hello.kind.value.body.value.capabilities, ['tasks.v1', 'milestones.v1', 'resume.v1'])
+    assert.deepEqual(hello.kind.case === 'response' && hello.kind.value.body.case === 'hello' && hello.kind.value.body.value.capabilities, ['tasks.v1', 'milestones.v1', 'resume.v1', 'interrupt.v1'])
 
     assert.ok(created.kind.case === 'response' && created.kind.value.body.case === 'taskCreated')
     assert.equal(created.kind.value.requestId, 2n)
@@ -76,6 +78,36 @@ describe('BridgeAgainstFakeDSH', () => {
 
     assert.deepEqual(dsh.workspaces, ['/tmp/dshm-ws'])
     assert.deepEqual(dsh.prompts, [{ sessionId: 'session-1', text: 'hi' }])
+  })
+
+  test('interruptCallsDSHAndReportsInterrupted', async () => {
+    const { dsh, client } = await bridgeWith({ reply: ['first', 'second'], chunkDelayMs: 250 })
+    try {
+      client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
+      client.send({ kind: { case: 'request', value: { id: 2n, body: { case: 'createTask', value: { prompt: 'work' } } } } })
+      await client.until((fs) => fs.some((f) => f.kind.case === 'event' && f.kind.value.body.case === 'assistantChunk'))
+      const interrupt = (id: bigint, taskId: string) => client.send({ kind: { case: 'request', value: {
+        id, body: { case: 'interrupt', value: { taskId } },
+      } } })
+      interrupt(3n, 'session-1')
+      await client.until(ended)
+      const events = client.frames.flatMap(f => f.kind.case === 'event' ? [f.kind.value.body] : [])
+      assert.equal(events.filter(e => e.case === 'assistantChunk').length, 1)
+      assert.ok(events.some(e => e.case === 'milestoneAdded' && e.value.kind === MilestoneKind.INTERRUPTED))
+      assert.ok(events.some(e => e.case === 'taskUpserted' && e.value.task?.state === TaskState.INTERRUPTED))
+      assert.ok(events.some(e => e.case === 'taskEnded' && e.value.status === TaskStatus.INTERRUPTED))
+
+      interrupt(4n, 'session-1')
+      interrupt(5n, 'other')
+      await client.until(fs => fs.some(f => f.kind.case === 'response' && f.kind.value.requestId === 5n))
+      for (const id of [3n, 4n]) assert.ok(client.frames.some(f => f.kind.case === 'response'
+        && f.kind.value.requestId === id && f.kind.value.body.case === 'interruptAccepted'))
+      assert.deepEqual(dsh.interrupts, ['session-1'])
+      assert.ok(client.frames.some(f => f.kind.case === 'response' && f.kind.value.requestId === 5n
+        && f.kind.value.body.case === 'error'))
+    } finally {
+      client.close()
+    }
   })
 
   test('failedTurnEndsWithFailedStatus', async () => {

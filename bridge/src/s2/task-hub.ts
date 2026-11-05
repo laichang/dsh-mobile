@@ -6,11 +6,12 @@
  */
 import { TaskStatus } from '../gen/frame_pb.ts'
 import { TaskState, type TaskSummary } from '../gen/s2_pb.ts'
-import type { StartedTask } from '../dsh.ts'
+import type { StartedTask, TaskOutput } from '../dsh.ts'
 import { HostLog } from './host-log.ts'
 import { milestoneAdded } from '../milestones/wire.ts'
 
 export interface TaskStarter {
+  interrupt(taskId: string): void
   start(prompt: string, signal: AbortSignal): Promise<StartedTask>
 }
 
@@ -46,6 +47,13 @@ export class TaskHub {
     return task.taskId
   }
 
+  interrupt(taskId: string): void {
+    const task = this.summaries.get(taskId)
+    if (!task) throw new Error('Unknown task')
+    // The terminal event can race a tap or a retry. Keep the outcome DSH already reported.
+    if (task.state === TaskState.RUNNING || task.state === TaskState.WAITING_ON_USER) this.starter.interrupt(taskId)
+  }
+
   /** Every known task, newest first. */
   list(): Summary[] {
     return [...this.summaries.values()].map((s) => ({ ...s })).reverse()
@@ -70,26 +78,32 @@ export class TaskHub {
           this.log.append(task.taskId, { case: 'milestoneAdded', value: milestoneAdded(task.taskId, ++milestoneSeq, out.milestone) })
         } else {
           ended = true
-          this.end(summary, out.status === 'completed', out.message ?? '')
+          this.end(summary, out)
         }
       }
     } catch (error) {
       if (!ended && !this.abort.signal.aborted) {
         ended = true
-        this.end(summary, false, error instanceof Error ? error.message : String(error))
+        this.end(summary, { kind: 'end', status: 'failed', message: error instanceof Error ? error.message : String(error) })
       }
     }
   }
 
-  private end(summary: Summary, completed: boolean, message: string) {
-    summary.state = completed ? TaskState.COMPLETED : TaskState.FAILED
-    summary.message = completed ? '' : message
+  private end(summary: Summary, end: Extract<TaskOutput, { kind: 'end' }>) {
+    const states = {
+      completed: [TaskState.COMPLETED, TaskStatus.COMPLETED],
+      failed: [TaskState.FAILED, TaskStatus.FAILED],
+      interrupted: [TaskState.INTERRUPTED, TaskStatus.INTERRUPTED],
+    } as const
+    const [state, status] = states[end.status]
+    summary.state = state
+    summary.message = end.message ?? ''
     summary.updatedAtMs = BigInt(this.now())
     // State first, then TaskEnded: TaskEnded stays the task's last event (T0's contract).
     this.upserted(summary)
     this.log.append(summary.taskId, {
       case: 'taskEnded',
-      value: { taskId: summary.taskId, status: completed ? TaskStatus.COMPLETED : TaskStatus.FAILED, message: summary.message },
+      value: { taskId: summary.taskId, status, message: summary.message },
     })
   }
 

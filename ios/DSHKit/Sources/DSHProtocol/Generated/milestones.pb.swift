@@ -57,6 +57,7 @@ public nonisolated enum Dshm_V1_MilestoneKind: SwiftProtobuf.Enum, Swift.CaseIte
   /// A model request failed and DSH is retrying it (DSH `llm/retry`). `text` is DSH's failure
   /// message. The task is still running; the next milestone says how it went on.
   case retrying // = 9
+  case interrupted // = 10
   case UNRECOGNIZED(Int)
 
   public init() {
@@ -75,6 +76,7 @@ public nonisolated enum Dshm_V1_MilestoneKind: SwiftProtobuf.Enum, Swift.CaseIte
     case 7: self = .failed
     case 8: self = .finished
     case 9: self = .retrying
+    case 10: self = .interrupted
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
@@ -91,6 +93,7 @@ public nonisolated enum Dshm_V1_MilestoneKind: SwiftProtobuf.Enum, Swift.CaseIte
     case .failed: return 7
     case .finished: return 8
     case .retrying: return 9
+    case .interrupted: return 10
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -107,6 +110,7 @@ public nonisolated enum Dshm_V1_MilestoneKind: SwiftProtobuf.Enum, Swift.CaseIte
     .failed,
     .finished,
     .retrying,
+    .interrupted,
   ]
 
 }
@@ -202,7 +206,7 @@ public nonisolated struct Dshm_V1_MilestoneAdded: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_MilestoneKind: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0MILESTONE_KIND_UNSPECIFIED\0\u{1}MILESTONE_KIND_STARTED\0\u{1}MILESTONE_KIND_PLANNED\0\u{1}MILESTONE_KIND_TODO_STARTED\0\u{1}MILESTONE_KIND_TODO_DONE\0\u{1}MILESTONE_KIND_PLAN_MODE_ENTERED\0\u{1}MILESTONE_KIND_PLAN_MODE_LEFT\0\u{1}MILESTONE_KIND_FAILED\0\u{1}MILESTONE_KIND_FINISHED\0\u{1}MILESTONE_KIND_RETRYING\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0MILESTONE_KIND_UNSPECIFIED\0\u{1}MILESTONE_KIND_STARTED\0\u{1}MILESTONE_KIND_PLANNED\0\u{1}MILESTONE_KIND_TODO_STARTED\0\u{1}MILESTONE_KIND_TODO_DONE\0\u{1}MILESTONE_KIND_PLAN_MODE_ENTERED\0\u{1}MILESTONE_KIND_PLAN_MODE_LEFT\0\u{1}MILESTONE_KIND_FAILED\0\u{1}MILESTONE_KIND_FINISHED\0\u{1}MILESTONE_KIND_RETRYING\0\u{1}MILESTONE_KIND_INTERRUPTED\0")
 }
 
 nonisolated extension Dshm_V1_TodoStatus: SwiftProtobuf._ProtoNameProviding {

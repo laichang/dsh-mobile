@@ -38,6 +38,7 @@ public nonisolated enum Dshm_V1_TaskStatus: SwiftProtobuf.Enum, Swift.CaseIterab
   case unspecified // = 0
   case completed // = 1
   case failed // = 2
+  case interrupted // = 3
   case UNRECOGNIZED(Int)
 
   public init() {
@@ -49,6 +50,7 @@ public nonisolated enum Dshm_V1_TaskStatus: SwiftProtobuf.Enum, Swift.CaseIterab
     case 0: self = .unspecified
     case 1: self = .completed
     case 2: self = .failed
+    case 3: self = .interrupted
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
@@ -58,6 +60,7 @@ public nonisolated enum Dshm_V1_TaskStatus: SwiftProtobuf.Enum, Swift.CaseIterab
     case .unspecified: return 0
     case .completed: return 1
     case .failed: return 2
+    case .interrupted: return 3
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -67,6 +70,7 @@ public nonisolated enum Dshm_V1_TaskStatus: SwiftProtobuf.Enum, Swift.CaseIterab
     .unspecified,
     .completed,
     .failed,
+    .interrupted,
   ]
 
 }
@@ -161,6 +165,14 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .resume(newValue)}
   }
 
+  public var interrupt: Dshm_V1_Interrupt {
+    get {
+      if case .interrupt(let v)? = body {return v}
+      return Dshm_V1_Interrupt()
+    }
+    set {body = .interrupt(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -170,6 +182,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     /// S2: 40–59 (s2.proto)
     case listTasks(Dshm_V1_ListTasks)
     case resume(Dshm_V1_Resume)
+    case interrupt(Dshm_V1_Interrupt)
 
   }
 
@@ -228,6 +241,14 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .resumed(newValue)}
   }
 
+  public var interruptAccepted: Dshm_V1_InterruptAccepted {
+    get {
+      if case .interruptAccepted(let v)? = body {return v}
+      return Dshm_V1_InterruptAccepted()
+    }
+    set {body = .interruptAccepted(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -238,6 +259,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     /// S2: 40–59 (s2.proto)
     case taskList(Dshm_V1_TaskList)
     case resumed(Dshm_V1_Resumed)
+    case interruptAccepted(Dshm_V1_InterruptAccepted)
 
   }
 
@@ -413,7 +435,7 @@ public nonisolated struct Dshm_V1_TaskEnded: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_TaskStatus: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TASK_STATUS_UNSPECIFIED\0\u{1}TASK_STATUS_COMPLETED\0\u{1}TASK_STATUS_FAILED\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TASK_STATUS_UNSPECIFIED\0\u{1}TASK_STATUS_COMPLETED\0\u{1}TASK_STATUS_FAILED\0\u{1}TASK_STATUS_INTERRUPTED\0")
 }
 
 nonisolated extension Dshm_V1_Frame: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
@@ -502,7 +524,7 @@ nonisolated extension Dshm_V1_Frame: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
 nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Request"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0\u{4}%list_tasks\0\u{1}resume\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0\u{4}%list_tasks\0\u{1}resume\0\u{2};interrupt\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -563,6 +585,19 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.body = .resume(v)
         }
       }()
+      case 100: try {
+        var v: Dshm_V1_Interrupt?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .interrupt(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .interrupt(v)
+        }
+      }()
       default: break
       }
     }
@@ -593,6 +628,10 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
       guard case .resume(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 41)
     }()
+    case .interrupt?: try {
+      guard case .interrupt(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 100)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -608,7 +647,7 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
 
 nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Response"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0\u{4}$task_list\0\u{1}resumed\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0\u{4}$task_list\0\u{1}resumed\0\u{4};interrupt_accepted\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -682,6 +721,19 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
           self.body = .resumed(v)
         }
       }()
+      case 100: try {
+        var v: Dshm_V1_InterruptAccepted?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .interruptAccepted(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .interruptAccepted(v)
+        }
+      }()
       default: break
       }
     }
@@ -715,6 +767,10 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
     case .resumed?: try {
       guard case .resumed(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 41)
+    }()
+    case .interruptAccepted?: try {
+      guard case .interruptAccepted(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 100)
     }()
     case nil: break
     }

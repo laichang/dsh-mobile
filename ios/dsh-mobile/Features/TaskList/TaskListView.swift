@@ -145,6 +145,9 @@ struct TaskRowView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(row.title.isEmpty ? row.taskID : row.title)
                         .lineLimit(2)
+                    if row.state == .interrupted && row.milestones.current?.kind != .interrupted {
+                        Text("Interrupted").font(.caption)
+                    }
                     Text(row.hostName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -165,6 +168,7 @@ struct TaskStateIcon: View {
 
     var body: some View {
         switch state {
+        case .interrupted: Image(systemName: "stop.circle").foregroundStyle(.secondary)
         case .running: ProgressView().controlSize(.small)
         case .waitingOnUser: Image(systemName: "hand.raised.fill").foregroundStyle(.orange)
         case .completed: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)

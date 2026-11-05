@@ -1,3 +1,4 @@
+import DSHProtocol
 import Foundation
 import Observation
 import SwiftData
@@ -46,6 +47,7 @@ public final class TaskListStore {
         public var lastConnectedAt: Date?
         /// The connection's channel (S1): "noise", or "plaintext" on Debug's loopback dev path.
         public var channelName: String
+        public var capabilities: [String]
     }
 
     /// A task as the views show it (a value copy of `CachedTask`).
@@ -96,6 +98,7 @@ public final class TaskListStore {
         var loop: Task<Void, Never>?
         var events: Task<Void, Never>?
         var wake: CheckedContinuation<Void, Never>?
+        var capabilities: [String] = []
         var reachability: Reachability = .connecting
         init(key: String, connection: HostConnection) {
             self.key = key
@@ -126,7 +129,7 @@ public final class TaskListStore {
             switch task.state {
             case .running: s.running.append(task)
             case .waitingOnUser: s.waitingOnMe.append(task)
-            case .completed, .failed: s.done.append(task)
+            case .completed, .failed, .interrupted: s.done.append(task)
             }
         }
         return s
@@ -205,6 +208,13 @@ public final class TaskListStore {
         }
     }
 
+    public func interrupt(_ row: TaskRow) async throws {
+        guard let link = links.first(where: { $0.key == row.hostKey }), link.reachability == .online else {
+            throw HostConnectionError.notConnected
+        }
+        try await link.connection.interrupt(taskID: row.taskID)
+    }
+
     /// Waits for the host to be online: through a connection attempt in progress, or one
     /// started now if the host was offline. False once that attempt fails, or on timeout.
     private func waitOnline(_ link: Link) async -> Bool {
@@ -232,6 +242,7 @@ public final class TaskListStore {
             setReachability(.connecting, link)
             do {
                 try await link.connection.connect()
+                link.capabilities = await link.connection.capabilities
                 let host = ensureHost(link.key)
                 let resumed = try await link.connection.resume(logID: host.logID, afterSeq: UInt64(host.lastSeq))
                 if !resumed.hostName.isEmpty { host.name = resumed.hostName }
@@ -306,7 +317,7 @@ public final class TaskListStore {
             task.logID = host.logID
         case .ended(let taskID, let status, let message):
             let task = taskRecord(hostKey: link.key, taskID: taskID, title: "")
-            task.state = status == .completed ? .completed : .failed
+            task.state = status.state
             task.message = message
             task.logID = host.logID
         case .milestone(let milestone):
@@ -409,7 +420,7 @@ public final class TaskListStore {
             return HostStatus(
                 key: link.key, name: record?.name ?? link.key,
                 reachability: link.reachability, lastConnectedAt: record?.lastConnectedAt,
-                channelName: link.connection.channelName)
+                channelName: link.connection.channelName, capabilities: link.capabilities)
         }
         let descriptor = FetchDescriptor<CachedTask>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         tasks = ((try? context.fetch(descriptor)) ?? []).map { t in

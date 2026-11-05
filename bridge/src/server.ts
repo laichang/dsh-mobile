@@ -25,7 +25,7 @@ type ResponseBody = MessageInitShape<typeof ResponseSchema>['body']
 
 export const PROTOCOL_VERSION = 1
 /** `resume.v1`: ListTasks, Resume and `Event.host_seq` (S2). `milestones.v1`: MilestoneAdded (S3). */
-export const CAPABILITIES = ['tasks.v1', MILESTONES_CAPABILITY, 'resume.v1'] as const
+export const CAPABILITIES = ['tasks.v1', MILESTONES_CAPABILITY, 'resume.v1', 'interrupt.v1'] as const
 /** Where the dev-only plaintext channel is served. */
 export const PLAINTEXT_PATH = '/plaintext'
 
@@ -154,6 +154,15 @@ function serveConnection(
           return fail(id, 'task/create-failed', error instanceof Error ? error.message : String(error))
         }
         return
+      }
+      case 'interrupt': {
+        if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
+        try {
+          hub.interrupt(request.body.value.taskId)
+          return respond(id, { case: 'interruptAccepted', value: {} })
+        } catch (error) {
+          return fail(id, 'task/interrupt-failed', error instanceof Error ? error.message : String(error))
+        }
       }
       case 'listTasks': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')

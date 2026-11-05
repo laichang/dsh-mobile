@@ -41,6 +41,12 @@
     { "name": "s2_chunk_with_host_seq_event",
       "frame": { "event": { "hostSeq": "43", "assistantChunk": { "taskId": "session-2", "seq": "7", "text": "完成" } } } },
     { "name": "s2_log_reset_event",
-      "frame": { "event": { "logReset": { "logId": "0d2f3c1e-6a7b-4c8d-9e0f-112233445566" } } } }
+      "frame": { "event": { "logReset": { "logId": "0d2f3c1e-6a7b-4c8d-9e0f-112233445566" } } } },
+    { "name": "s5_interrupt_request",
+      "frame": { "request": { "id": "5", "interrupt": { "taskId": "session-1" } } } },
+    { "name": "s5_interrupt_accepted_response",
+      "frame": { "response": { "requestId": "5", "interruptAccepted": {} } } },
+    { "name": "s5_interrupted_end_event",
+      "frame": { "event": { "hostSeq": "12", "taskEnded": { "taskId": "session-1", "status": "TASK_STATUS_INTERRUPTED" } } } }
   ]
 }

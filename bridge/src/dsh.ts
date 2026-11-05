@@ -5,7 +5,7 @@
  * `sessionController` / `workspaceController` services, so `FakeDSH` can implement them in tests.
  */
 import { randomUUID } from 'node:crypto'
-import { MilestoneMapper, describeFailure, type Milestone } from './milestones/mapper.ts'
+import { MilestoneMapper, describeFailure, isUserInterrupt, type Milestone } from './milestones/mapper.ts'
 
 /** Subset of `ctx.workspaceController` (`@deepseek-ai/dsh-api-workspace-controller`). */
 export interface WorkspaceControllerLike {
@@ -21,6 +21,7 @@ export type FollowFrame =
 /** Subset of `ctx.sessionController` (`@deepseek-ai/dsh-api-session-controller`). */
 export interface SessionControllerLike {
   create(request: { workspaceId: string }): Promise<{ sessionId: string }>
+  cancel(request: { sessionId: string }): { accepted: true }
   prompt(
     request: { requestId: string; sessionId: string; mode: 'queue'; content: readonly { type: 'text'; text: string }[] },
     signal: AbortSignal,
@@ -40,7 +41,7 @@ export interface DshServices {
 export type TaskOutput =
   | { kind: 'text'; text: string }
   | { kind: 'milestone'; milestone: Milestone }
-  | { kind: 'end'; status: 'completed' | 'failed'; message?: string }
+  | { kind: 'end'; status: 'completed' | 'interrupted' | 'failed'; message?: string }
 
 export interface StartedTask {
   taskId: string
@@ -50,6 +51,10 @@ export interface StartedTask {
 /** Starts tasks on DSH. `cwd` is the fixed workspace directory for T0 (S7 adds a picker). */
 export class DshTasks {
   constructor(private readonly dsh: DshServices, private readonly cwd: string) {}
+
+  interrupt(taskId: string): void {
+    this.dsh.sessionController.cancel({ sessionId: taskId })
+  }
 
   async start(prompt: string, signal: AbortSignal): Promise<StartedTask> {
     const { workspace } = await this.dsh.workspaceController.create({ path: this.cwd })
@@ -83,11 +88,12 @@ async function* mapFollow(
         }
       } else if (f.type === 'event') {
         for (const milestone of milestones.map(f.event)) yield { kind: 'milestone', milestone }
-        const data = f.event.data as { turn?: number; reason?: { kind?: string; error?: unknown } } | null
+        const data = f.event.data as { turn?: number; reason?: { kind?: string; error?: unknown; reason?: { kind?: string } } } | null
         if (f.event.type === 'turn/start' && turn === undefined) turn = data?.turn
         if (f.event.type === 'turn/end' && (turn === undefined || data?.turn === turn)) {
           const kind = data?.reason?.kind ?? 'unknown'
           if (kind === 'completed') yield { kind: 'end', status: 'completed' }
+          else if (isUserInterrupt(data?.reason)) yield { kind: 'end', status: 'interrupted' }
           else yield { kind: 'end', status: 'failed', message: describeFailure(kind, data?.reason?.error) }
           return
         }

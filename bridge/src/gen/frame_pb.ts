@@ -21,13 +21,15 @@ import type { MilestoneAdded } from "./milestones_pb.js";
 import { file_milestones } from "./milestones_pb.js";
 import type { ListTasks, LogReset, Resume, Resumed, TaskList, TaskUpserted } from "./s2_pb.js";
 import { file_s2 } from "./s2_pb.js";
+import type { Interrupt, InterruptAccepted } from "./interrupt_pb.js";
+import { file_interrupt } from "./interrupt_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file frame.proto.
  */
 export const file_frame: GenFile = /*@__PURE__*/
-  fileDesc("CgtmcmFtZS5wcm90bxIHZHNobS52MSJ8CgVGcmFtZRIjCgdyZXF1ZXN0GAEgASgLMhAuZHNobS52MS5SZXF1ZXN0SAASJQoIcmVzcG9uc2UYAiABKAsyES5kc2htLnYxLlJlc3BvbnNlSAASHwoFZXZlbnQYAyABKAsyDi5kc2htLnYxLkV2ZW50SABCBgoEa2luZCK3AQoHUmVxdWVzdBIKCgJpZBgBIAEoBBIfCgVoZWxsbxgCIAEoCzIOLmRzaG0udjEuSGVsbG9IABIqCgtjcmVhdGVfdGFzaxgDIAEoCzITLmRzaG0udjEuQ3JlYXRlVGFza0gAEigKCmxpc3RfdGFza3MYKCABKAsyEi5kc2htLnYxLkxpc3RUYXNrc0gAEiEKBnJlc3VtZRgpIAEoCzIPLmRzaG0udjEuUmVzdW1lSABCBgoEYm9keSLjAQoIUmVzcG9uc2USEgoKcmVxdWVzdF9pZBgBIAEoBBIfCgVlcnJvchgCIAEoCzIOLmRzaG0udjEuRXJyb3JIABIfCgVoZWxsbxgDIAEoCzIOLmRzaG0udjEuSGVsbG9IABIsCgx0YXNrX2NyZWF0ZWQYBCABKAsyFC5kc2htLnYxLlRhc2tDcmVhdGVkSAASJgoJdGFza19saXN0GCggASgLMhEuZHNobS52MS5UYXNrTGlzdEgAEiMKB3Jlc3VtZWQYKSABKAsyEC5kc2htLnYxLlJlc3VtZWRIAEIGCgRib2R5IosCCgVFdmVudBIyCg9hc3Npc3RhbnRfY2h1bmsYASABKAsyFy5kc2htLnYxLkFzc2lzdGFudENodW5rSAASKAoKdGFza19lbmRlZBgCIAEoCzISLmRzaG0udjEuVGFza0VuZGVkSAASMgoPbWlsZXN0b25lX2FkZGVkGDwgASgLMhcuZHNobS52MS5NaWxlc3RvbmVBZGRlZEgAEi4KDXRhc2tfdXBzZXJ0ZWQYKSABKAsyFS5kc2htLnYxLlRhc2tVcHNlcnRlZEgAEiYKCWxvZ19yZXNldBgqIAEoCzIRLmRzaG0udjEuTG9nUmVzZXRIABIQCghob3N0X3NlcRgoIAEoBEIGCgRib2R5IjcKBUhlbGxvEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFAoMY2FwYWJpbGl0aWVzGAIgAygJIiYKBUVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCSIcCgpDcmVhdGVUYXNrEg4KBnByb21wdBgBIAEoCSIeCgtUYXNrQ3JlYXRlZBIPCgd0YXNrX2lkGAEgASgJIjwKDkFzc2lzdGFudENodW5rEg8KB3Rhc2tfaWQYASABKAkSCwoDc2VxGAIgASgEEgwKBHRleHQYAyABKAkiUgoJVGFza0VuZGVkEg8KB3Rhc2tfaWQYASABKAkSIwoGc3RhdHVzGAIgASgOMhMuZHNobS52MS5UYXNrU3RhdHVzEg8KB21lc3NhZ2UYAyABKAkqXAoKVGFza1N0YXR1cxIbChdUQVNLX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFVRBU0tfU1RBVFVTX0NPTVBMRVRFRBABEhYKElRBU0tfU1RBVFVTX0ZBSUxFRBACYgZwcm90bzM", [file_milestones, file_s2]);
+  fileDesc("CgtmcmFtZS5wcm90bxIHZHNobS52MSJ8CgVGcmFtZRIjCgdyZXF1ZXN0GAEgASgLMhAuZHNobS52MS5SZXF1ZXN0SAASJQoIcmVzcG9uc2UYAiABKAsyES5kc2htLnYxLlJlc3BvbnNlSAASHwoFZXZlbnQYAyABKAsyDi5kc2htLnYxLkV2ZW50SABCBgoEa2luZCLgAQoHUmVxdWVzdBIKCgJpZBgBIAEoBBIfCgVoZWxsbxgCIAEoCzIOLmRzaG0udjEuSGVsbG9IABIqCgtjcmVhdGVfdGFzaxgDIAEoCzITLmRzaG0udjEuQ3JlYXRlVGFza0gAEigKCmxpc3RfdGFza3MYKCABKAsyEi5kc2htLnYxLkxpc3RUYXNrc0gAEiEKBnJlc3VtZRgpIAEoCzIPLmRzaG0udjEuUmVzdW1lSAASJwoJaW50ZXJydXB0GGQgASgLMhIuZHNobS52MS5JbnRlcnJ1cHRIAEIGCgRib2R5Ip0CCghSZXNwb25zZRISCgpyZXF1ZXN0X2lkGAEgASgEEh8KBWVycm9yGAIgASgLMg4uZHNobS52MS5FcnJvckgAEh8KBWhlbGxvGAMgASgLMg4uZHNobS52MS5IZWxsb0gAEiwKDHRhc2tfY3JlYXRlZBgEIAEoCzIULmRzaG0udjEuVGFza0NyZWF0ZWRIABImCgl0YXNrX2xpc3QYKCABKAsyES5kc2htLnYxLlRhc2tMaXN0SAASIwoHcmVzdW1lZBgpIAEoCzIQLmRzaG0udjEuUmVzdW1lZEgAEjgKEmludGVycnVwdF9hY2NlcHRlZBhkIAEoCzIaLmRzaG0udjEuSW50ZXJydXB0QWNjZXB0ZWRIAEIGCgRib2R5IosCCgVFdmVudBIyCg9hc3Npc3RhbnRfY2h1bmsYASABKAsyFy5kc2htLnYxLkFzc2lzdGFudENodW5rSAASKAoKdGFza19lbmRlZBgCIAEoCzISLmRzaG0udjEuVGFza0VuZGVkSAASMgoPbWlsZXN0b25lX2FkZGVkGDwgASgLMhcuZHNobS52MS5NaWxlc3RvbmVBZGRlZEgAEi4KDXRhc2tfdXBzZXJ0ZWQYKSABKAsyFS5kc2htLnYxLlRhc2tVcHNlcnRlZEgAEiYKCWxvZ19yZXNldBgqIAEoCzIRLmRzaG0udjEuTG9nUmVzZXRIABIQCghob3N0X3NlcRgoIAEoBEIGCgRib2R5IjcKBUhlbGxvEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFAoMY2FwYWJpbGl0aWVzGAIgAygJIiYKBUVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCSIcCgpDcmVhdGVUYXNrEg4KBnByb21wdBgBIAEoCSIeCgtUYXNrQ3JlYXRlZBIPCgd0YXNrX2lkGAEgASgJIjwKDkFzc2lzdGFudENodW5rEg8KB3Rhc2tfaWQYASABKAkSCwoDc2VxGAIgASgEEgwKBHRleHQYAyABKAkiUgoJVGFza0VuZGVkEg8KB3Rhc2tfaWQYASABKAkSIwoGc3RhdHVzGAIgASgOMhMuZHNobS52MS5UYXNrU3RhdHVzEg8KB21lc3NhZ2UYAyABKAkqeQoKVGFza1N0YXR1cxIbChdUQVNLX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFVRBU0tfU1RBVFVTX0NPTVBMRVRFRBABEhYKElRBU0tfU1RBVFVTX0ZBSUxFRBACEhsKF1RBU0tfU1RBVFVTX0lOVEVSUlVQVEVEEANiBnByb3RvMw", [file_milestones, file_s2, file_interrupt]);
 
 /**
  * One WebSocket binary message carries exactly one Frame (inside the
@@ -111,6 +113,12 @@ export type Request = Message<"dshm.v1.Request"> & {
      */
     value: Resume;
     case: "resume";
+  } | {
+    /**
+     * @generated from field: dshm.v1.Interrupt interrupt = 100;
+     */
+    value: Interrupt;
+    case: "interrupt";
   } | { case: undefined; value?: undefined };
 };
 
@@ -169,6 +177,12 @@ export type Response = Message<"dshm.v1.Response"> & {
      */
     value: Resumed;
     case: "resumed";
+  } | {
+    /**
+     * @generated from field: dshm.v1.InterruptAccepted interrupt_accepted = 100;
+     */
+    value: InterruptAccepted;
+    case: "interruptAccepted";
   } | { case: undefined; value?: undefined };
 };
 
@@ -407,6 +421,11 @@ export enum TaskStatus {
    * @generated from enum value: TASK_STATUS_FAILED = 2;
    */
   FAILED = 2,
+
+  /**
+   * @generated from enum value: TASK_STATUS_INTERRUPTED = 3;
+   */
+  INTERRUPTED = 3,
 }
 
 /**

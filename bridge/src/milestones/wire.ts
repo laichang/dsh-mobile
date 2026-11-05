@@ -15,6 +15,7 @@ const KINDS: Record<MilestoneKindName, MilestoneKind> = {
   retrying: MilestoneKind.RETRYING,
   failed: MilestoneKind.FAILED,
   finished: MilestoneKind.FINISHED,
+  interrupted: MilestoneKind.INTERRUPTED,
 }
 
 const STATUSES: Record<TodoStatusName, TodoStatus> = {
