@@ -17,6 +17,8 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { AnswerApproval, ApprovalPending, ApprovalResolved } from "./approvals_pb.js";
+import { file_approvals } from "./approvals_pb.js";
 import type { MilestoneAdded } from "./milestones_pb.js";
 import { file_milestones } from "./milestones_pb.js";
 import type { ListTasks, LogReset, Resume, Resumed, TaskList, TaskUpserted } from "./s2_pb.js";
@@ -27,7 +29,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file frame.proto.
  */
 export const file_frame: GenFile = /*@__PURE__*/
-  fileDesc("CgtmcmFtZS5wcm90bxIHZHNobS52MSJ8CgVGcmFtZRIjCgdyZXF1ZXN0GAEgASgLMhAuZHNobS52MS5SZXF1ZXN0SAASJQoIcmVzcG9uc2UYAiABKAsyES5kc2htLnYxLlJlc3BvbnNlSAASHwoFZXZlbnQYAyABKAsyDi5kc2htLnYxLkV2ZW50SABCBgoEa2luZCK3AQoHUmVxdWVzdBIKCgJpZBgBIAEoBBIfCgVoZWxsbxgCIAEoCzIOLmRzaG0udjEuSGVsbG9IABIqCgtjcmVhdGVfdGFzaxgDIAEoCzITLmRzaG0udjEuQ3JlYXRlVGFza0gAEigKCmxpc3RfdGFza3MYKCABKAsyEi5kc2htLnYxLkxpc3RUYXNrc0gAEiEKBnJlc3VtZRgpIAEoCzIPLmRzaG0udjEuUmVzdW1lSABCBgoEYm9keSLjAQoIUmVzcG9uc2USEgoKcmVxdWVzdF9pZBgBIAEoBBIfCgVlcnJvchgCIAEoCzIOLmRzaG0udjEuRXJyb3JIABIfCgVoZWxsbxgDIAEoCzIOLmRzaG0udjEuSGVsbG9IABIsCgx0YXNrX2NyZWF0ZWQYBCABKAsyFC5kc2htLnYxLlRhc2tDcmVhdGVkSAASJgoJdGFza19saXN0GCggASgLMhEuZHNobS52MS5UYXNrTGlzdEgAEiMKB3Jlc3VtZWQYKSABKAsyEC5kc2htLnYxLlJlc3VtZWRIAEIGCgRib2R5IosCCgVFdmVudBIyCg9hc3Npc3RhbnRfY2h1bmsYASABKAsyFy5kc2htLnYxLkFzc2lzdGFudENodW5rSAASKAoKdGFza19lbmRlZBgCIAEoCzISLmRzaG0udjEuVGFza0VuZGVkSAASMgoPbWlsZXN0b25lX2FkZGVkGDwgASgLMhcuZHNobS52MS5NaWxlc3RvbmVBZGRlZEgAEi4KDXRhc2tfdXBzZXJ0ZWQYKSABKAsyFS5kc2htLnYxLlRhc2tVcHNlcnRlZEgAEiYKCWxvZ19yZXNldBgqIAEoCzIRLmRzaG0udjEuTG9nUmVzZXRIABIQCghob3N0X3NlcRgoIAEoBEIGCgRib2R5IjcKBUhlbGxvEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFAoMY2FwYWJpbGl0aWVzGAIgAygJIiYKBUVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCSIcCgpDcmVhdGVUYXNrEg4KBnByb21wdBgBIAEoCSIeCgtUYXNrQ3JlYXRlZBIPCgd0YXNrX2lkGAEgASgJIjwKDkFzc2lzdGFudENodW5rEg8KB3Rhc2tfaWQYASABKAkSCwoDc2VxGAIgASgEEgwKBHRleHQYAyABKAkiUgoJVGFza0VuZGVkEg8KB3Rhc2tfaWQYASABKAkSIwoGc3RhdHVzGAIgASgOMhMuZHNobS52MS5UYXNrU3RhdHVzEg8KB21lc3NhZ2UYAyABKAkqXAoKVGFza1N0YXR1cxIbChdUQVNLX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFVRBU0tfU1RBVFVTX0NPTVBMRVRFRBABEhYKElRBU0tfU1RBVFVTX0ZBSUxFRBACYgZwcm90bzM", [file_milestones, file_s2]);
+  fileDesc("CgtmcmFtZS5wcm90bxIHZHNobS52MSJ8CgVGcmFtZRIjCgdyZXF1ZXN0GAEgASgLMhAuZHNobS52MS5SZXF1ZXN0SAASJQoIcmVzcG9uc2UYAiABKAsyES5kc2htLnYxLlJlc3BvbnNlSAASHwoFZXZlbnQYAyABKAsyDi5kc2htLnYxLkV2ZW50SABCBgoEa2luZCLrAQoHUmVxdWVzdBIKCgJpZBgBIAEoBBIfCgVoZWxsbxgCIAEoCzIOLmRzaG0udjEuSGVsbG9IABIqCgtjcmVhdGVfdGFzaxgDIAEoCzITLmRzaG0udjEuQ3JlYXRlVGFza0gAEigKCmxpc3RfdGFza3MYKCABKAsyEi5kc2htLnYxLkxpc3RUYXNrc0gAEiEKBnJlc3VtZRgpIAEoCzIPLmRzaG0udjEuUmVzdW1lSAASMgoPYW5zd2VyX2FwcHJvdmFsGFAgASgLMhcuZHNobS52MS5BbnN3ZXJBcHByb3ZhbEgAQgYKBGJvZHkimwIKCFJlc3BvbnNlEhIKCnJlcXVlc3RfaWQYASABKAQSHwoFZXJyb3IYAiABKAsyDi5kc2htLnYxLkVycm9ySAASHwoFaGVsbG8YAyABKAsyDi5kc2htLnYxLkhlbGxvSAASLAoMdGFza19jcmVhdGVkGAQgASgLMhQuZHNobS52MS5UYXNrQ3JlYXRlZEgAEiYKCXRhc2tfbGlzdBgoIAEoCzIRLmRzaG0udjEuVGFza0xpc3RIABIjCgdyZXN1bWVkGCkgASgLMhAuZHNobS52MS5SZXN1bWVkSAASNgoRYXBwcm92YWxfcmVzb2x2ZWQYUCABKAsyGS5kc2htLnYxLkFwcHJvdmFsUmVzb2x2ZWRIAEIGCgRib2R5IvkCCgVFdmVudBIyCg9hc3Npc3RhbnRfY2h1bmsYASABKAsyFy5kc2htLnYxLkFzc2lzdGFudENodW5rSAASKAoKdGFza19lbmRlZBgCIAEoCzISLmRzaG0udjEuVGFza0VuZGVkSAASMgoPbWlsZXN0b25lX2FkZGVkGDwgASgLMhcuZHNobS52MS5NaWxlc3RvbmVBZGRlZEgAEi4KDXRhc2tfdXBzZXJ0ZWQYKSABKAsyFS5kc2htLnYxLlRhc2tVcHNlcnRlZEgAEiYKCWxvZ19yZXNldBgqIAEoCzIRLmRzaG0udjEuTG9nUmVzZXRIABI0ChBhcHByb3ZhbF9wZW5kaW5nGFAgASgLMhguZHNobS52MS5BcHByb3ZhbFBlbmRpbmdIABI2ChFhcHByb3ZhbF9yZXNvbHZlZBhRIAEoCzIZLmRzaG0udjEuQXBwcm92YWxSZXNvbHZlZEgAEhAKCGhvc3Rfc2VxGCggASgEQgYKBGJvZHkiNwoFSGVsbG8SGAoQcHJvdG9jb2xfdmVyc2lvbhgBIAEoDRIUCgxjYXBhYmlsaXRpZXMYAiADKAkiJgoFRXJyb3ISDAoEY29kZRgBIAEoCRIPCgdtZXNzYWdlGAIgASgJIhwKCkNyZWF0ZVRhc2sSDgoGcHJvbXB0GAEgASgJIh4KC1Rhc2tDcmVhdGVkEg8KB3Rhc2tfaWQYASABKAkiPAoOQXNzaXN0YW50Q2h1bmsSDwoHdGFza19pZBgBIAEoCRILCgNzZXEYAiABKAQSDAoEdGV4dBgDIAEoCSJSCglUYXNrRW5kZWQSDwoHdGFza19pZBgBIAEoCRIjCgZzdGF0dXMYAiABKA4yEy5kc2htLnYxLlRhc2tTdGF0dXMSDwoHbWVzc2FnZRgDIAEoCSpcCgpUYXNrU3RhdHVzEhsKF1RBU0tfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVVEFTS19TVEFUVVNfQ09NUExFVEVEEAESFgoSVEFTS19TVEFUVVNfRkFJTEVEEAJiBnByb3RvMw", [file_approvals, file_milestones, file_s2]);
 
 /**
  * One WebSocket binary message carries exactly one Frame (inside the
@@ -111,6 +113,12 @@ export type Request = Message<"dshm.v1.Request"> & {
      */
     value: Resume;
     case: "resume";
+  } | {
+    /**
+     * @generated from field: dshm.v1.AnswerApproval answer_approval = 80;
+     */
+    value: AnswerApproval;
+    case: "answerApproval";
   } | { case: undefined; value?: undefined };
 };
 
@@ -169,6 +177,12 @@ export type Response = Message<"dshm.v1.Response"> & {
      */
     value: Resumed;
     case: "resumed";
+  } | {
+    /**
+     * @generated from field: dshm.v1.ApprovalResolved approval_resolved = 80;
+     */
+    value: ApprovalResolved;
+    case: "approvalResolved";
   } | { case: undefined; value?: undefined };
 };
 
@@ -224,6 +238,18 @@ export type Event = Message<"dshm.v1.Event"> & {
      */
     value: LogReset;
     case: "logReset";
+  } | {
+    /**
+     * @generated from field: dshm.v1.ApprovalPending approval_pending = 80;
+     */
+    value: ApprovalPending;
+    case: "approvalPending";
+  } | {
+    /**
+     * @generated from field: dshm.v1.ApprovalResolved approval_resolved = 81;
+     */
+    value: ApprovalResolved;
+    case: "approvalResolved";
   } | { case: undefined; value?: undefined };
 
   /**

@@ -2,6 +2,8 @@
  * dsh-mobile bridge: a Cordis plugin installed into the user's DSH profile (ARCHITECTURE §5).
  * Install and enable: see bridge/README.md.
  */
+import { ApprovalHolder, type ApprovalContext } from './approvals/holder.ts'
+import { TaskHub } from './s2/task-hub.ts'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { PlaintextChannel } from './channel.ts'
@@ -22,6 +24,7 @@ export interface Config {
   cwd?: string
   /** Host key, pairing offers and device registry. Default `$DSH_HOME/dsh-mobile-bridge`. */
   stateDir?: string
+  approvalTimeoutMs?: number
   /**
    * Development only: also serve unencrypted frames on `/plaintext`. Requires a loopback `host`;
    * the bridge refuses to start otherwise. Off by default.
@@ -42,11 +45,12 @@ export function resolveConfig(config: Config = {}, env: NodeJS.ProcessEnv = proc
     port: config.port ?? (env.DSHM_BRIDGE_PORT ? Number(env.DSHM_BRIDGE_PORT) : DEFAULT_PORT),
     cwd: config.cwd ?? homedir(),
     stateDir: config.stateDir ?? env.DSHM_BRIDGE_STATE_DIR ?? join(dshHome, 'dsh-mobile-bridge'),
+    approvalTimeoutMs: config.approvalTimeoutMs,
     devPlaintext: config.devPlaintext ?? env.DSHM_BRIDGE_DEV_PLAINTEXT === '1',
   }
 }
 
-interface PluginContext extends DshServices {
+interface PluginContext extends DshServices, ApprovalContext {
   effect(setup: () => () => void): void
   logger?(name: string): { info(...args: unknown[]): void; warn(...args: unknown[]): void }
 }
@@ -59,12 +63,16 @@ export function apply(ctx: PluginContext, config: Config = {}) {
     let server: BridgeServer | undefined
     let disposed = false
     const store = new PairingStore(c.stateDir)
+    const tasks = new DshTasks(ctx, c.cwd)
+    const hub = new TaskHub(tasks)
+    const approvals = new ApprovalHolder(join(c.stateDir, 'approvals.jsonl'), event => hub.approvalChanged(event, !tasks.sessions.has(event.taskId)), c.approvalTimeoutMs)
+    const unregister = approvals.register(ctx)
     startBridgeServer({
       host: c.host,
       port: c.port,
       noise: new NoiseResponder(store, log),
       channel: c.devPlaintext ? new PlaintextChannel() : undefined,
-      tasks: new DshTasks(ctx, c.cwd),
+      tasks, hub, approvals,
       log,
     }).then(
       (s) => {
@@ -75,8 +83,13 @@ export function apply(ctx: PluginContext, config: Config = {}) {
         // `node bridge/lib/scripts/pair.js` (see bridge/README.md).
         if (store.devices().length === 0) log(`\n${renderOffer(makeOffer(store))}`)
       },
-      (error) => (logger ? logger.warn(`failed to start: ${String(error)}`) : console.error(error)),
+      (error) => {
+        unregister()
+        approvals.close()
+        if (logger) logger.warn(`failed to start: ${String(error)}`)
+        else console.error(error)
+      },
     )
-    return () => { disposed = true; void server?.close() }
+    return () => { disposed = true; unregister(); approvals.close(); void server?.close() }
   })
 }

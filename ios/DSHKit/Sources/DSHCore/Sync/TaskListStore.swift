@@ -1,3 +1,4 @@
+import DSHProtocol
 import Foundation
 import Observation
 import SwiftData
@@ -62,6 +63,8 @@ public final class TaskListStore {
         public var createdAt: Date
         public var updatedAt: Date
         /// S3 milestones, from the cache (S2 x S3 seam): the list row shows the card.
+        public var approvalOnly: Bool
+        public var approvals: [Approval]
         public var milestones: MilestoneTimeline
     }
 
@@ -96,6 +99,7 @@ public final class TaskListStore {
         var loop: Task<Void, Never>?
         var events: Task<Void, Never>?
         var wake: CheckedContinuation<Void, Never>?
+        var supportsApprovals: Bool?
         var reachability: Reachability = .connecting
         init(key: String, connection: HostConnection) {
             self.key = key
@@ -205,6 +209,12 @@ public final class TaskListStore {
         }
     }
 
+    public func answerApproval(_ approval: Approval, hostKey: String, allow: Bool) async throws {
+        guard let link = links.first(where: { $0.key == hostKey }), link.reachability == .online,
+              link.supportsApprovals == true else { throw HostConnectionError.notConnected }
+        try await link.connection.answerApproval(id: approval.id, allow: allow)
+    }
+
     /// Waits for the host to be online: through a connection attempt in progress, or one
     /// started now if the host was offline. False once that attempt fails, or on timeout.
     private func waitOnline(_ link: Link) async -> Bool {
@@ -232,6 +242,7 @@ public final class TaskListStore {
             setReachability(.connecting, link)
             do {
                 try await link.connection.connect()
+                link.supportsApprovals = await link.connection.capabilities.contains(DSHProtocolInfo.approvalsCapability)
                 let host = ensureHost(link.key)
                 let resumed = try await link.connection.resume(logID: host.logID, afterSeq: UInt64(host.lastSeq))
                 if !resumed.hostName.isEmpty { host.name = resumed.hostName }
@@ -318,6 +329,15 @@ public final class TaskListStore {
                 timelines[task.key] = timeline
             }
             task.logID = host.logID
+        case .approvalPending(let approval):
+            let task = taskRecord(hostKey: link.key, taskID: approval.taskID, title: "")
+            if !task.approvals.contains(where: { $0.id == approval.id }) { task.approvals.append(approval) }
+        case .approvalResolved(let taskID, let id):
+            let key = CachedTask.key(hostKey: link.key, taskID: taskID)
+            if let task = try? context.fetch(FetchDescriptor<CachedTask>(predicate: #Predicate { $0.key == key })).first {
+                task.approvals.removeAll { $0.id == id }
+                if task.approvalOnly && task.approvals.isEmpty { context.delete(task) }
+            }
         case .logReset:
             break
         }
@@ -335,8 +355,14 @@ public final class TaskListStore {
             merge(snapshot, into: task)
         }
         for task in cachedTasks(hostKey: hostKey)
-        where !known.contains(task.taskID) && !task.state.isTerminal && task.logID != listing.logID {
+        where !known.contains(task.taskID) {
+            if task.approvalOnly {
+                context.delete(task)
+                continue
+            }
+            guard !task.state.isTerminal, task.logID != listing.logID else { continue }
             task.state = .failed
+            task.approvals = []
             task.message = "The bridge on this host restarted and lost track of this task."
         }
         scheduleSave()
@@ -347,8 +373,10 @@ public final class TaskListStore {
     private func merge(_ snapshot: TaskSnapshot, into task: CachedTask) {
         if !snapshot.title.isEmpty { task.title = snapshot.title }
         task.createdAt = snapshot.createdAt
+        task.approvalOnly = snapshot.approvalOnly
         let regresses = task.state.isTerminal && !snapshot.state.isTerminal
         if snapshot.updatedAt > task.updatedAt || (snapshot.updatedAt == task.updatedAt && !regresses) {
+            task.approvals = snapshot.approvals
             task.state = snapshot.state
             task.message = snapshot.message
             task.updatedAt = snapshot.updatedAt
@@ -412,11 +440,16 @@ public final class TaskListStore {
                 channelName: link.connection.channelName)
         }
         let descriptor = FetchDescriptor<CachedTask>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
-        tasks = ((try? context.fetch(descriptor)) ?? []).map { t in
-            TaskRow(
+        tasks = ((try? context.fetch(descriptor)) ?? []).compactMap { t in
+            // Before Hello, cached requests remain readable offline; a downgrade hides unsupported UI.
+            let supportsApprovals = links.first(where: { $0.key == t.hostKey })?.supportsApprovals
+            if t.approvalOnly && supportsApprovals == false { return nil }
+            return TaskRow(
                 key: t.key, hostKey: t.hostKey, hostName: names[t.hostKey] ?? t.hostKey, taskID: t.taskID,
                 title: t.title, state: t.state, message: t.message, transcript: t.transcript,
-                createdAt: t.createdAt, updatedAt: t.updatedAt, milestones: timeline(of: t))
+                createdAt: t.createdAt, updatedAt: t.updatedAt,
+                approvalOnly: t.approvalOnly, approvals: supportsApprovals == false ? [] : t.approvals,
+                milestones: timeline(of: t))
         }
     }
 

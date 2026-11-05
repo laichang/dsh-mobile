@@ -10,6 +10,8 @@ public enum TaskEvent: Sendable, Equatable {
     case milestone(Milestone)
     /// S2: a task was created or changed state.
     case upserted(TaskSnapshot)
+    case approvalPending(Approval)
+    case approvalResolved(taskID: String, id: String)
     /// S2: the app's resume cursor didn't apply; a replay of log `logID` from its start follows.
     case logReset(logID: String)
 }
@@ -48,6 +50,8 @@ public struct TaskSnapshot: Sendable, Equatable {
     public var createdAt: Date
     public var updatedAt: Date
     public var message: String
+    public var approvals: [Approval] = []
+    public var approvalOnly = false
 
     public init(taskID: String, title: String, state: TaskState, createdAt: Date, updatedAt: Date, message: String = "") {
         self.taskID = taskID
@@ -70,6 +74,8 @@ public struct TaskSnapshot: Sendable, Equatable {
             createdAt: Date(timeIntervalSince1970: Double(s.createdAtMs) / 1000),
             updatedAt: Date(timeIntervalSince1970: Double(s.updatedAtMs) / 1000),
             message: s.message)
+        approvals = s.pendingApprovals.map(Approval.init)
+        approvalOnly = s.approvalOnly
     }
 }
 
@@ -180,6 +186,7 @@ public actor HostConnection {
         do {
             var hello = Dshm_V1_Hello()
             hello.protocolVersion = DSHProtocolInfo.version
+            hello.capabilities = [DSHProtocolInfo.approvalsCapability]
             let response = try await request(.hello(hello))
             guard case .hello(let theirs)? = response.body else { throw HostConnectionError.unexpectedResponse }
             capabilities = theirs.capabilities
@@ -196,6 +203,15 @@ public actor HostConnection {
         let response = try await request(.createTask(create))
         guard case .taskCreated(let created)? = response.body else { throw HostConnectionError.unexpectedResponse }
         return created.taskID
+    }
+
+    public func answerApproval(id: String, allow: Bool) async throws {
+        var answer = Dshm_V1_AnswerApproval()
+        answer.id = id
+        answer.decision = allow ? .allowOnce : .deny
+        let response = try await request(.answerApproval(answer))
+        guard case .approvalResolved(let result)? = response.body, result.id == id,
+              result.outcome == (allow ? .allowed : .denied) else { throw HostConnectionError.unexpectedResponse }
     }
 
     /// S2: every task the host knows, newest first.
@@ -305,6 +321,10 @@ public actor HostConnection {
             return .ended(taskID: e.taskID, status: e.status == .completed ? .completed : .failed, message: e.message)
         case .taskUpserted(let u)?:
             return .upserted(TaskSnapshot(u.task))
+        case .approvalPending(let approval)?:
+            return .approvalPending(Approval(approval))
+        case .approvalResolved(let result)?:
+            return .approvalResolved(taskID: result.taskID, id: result.id)
         case .logReset(let r)?:
             return .logReset(logID: r.logID)
         case .milestoneAdded(let m)?:

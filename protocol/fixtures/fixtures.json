@@ -41,6 +41,14 @@
     { "name": "s2_chunk_with_host_seq_event",
       "frame": { "event": { "hostSeq": "43", "assistantChunk": { "taskId": "session-2", "seq": "7", "text": "完成" } } } },
     { "name": "s2_log_reset_event",
-      "frame": { "event": { "logReset": { "logId": "0d2f3c1e-6a7b-4c8d-9e0f-112233445566" } } } }
+      "frame": { "event": { "logReset": { "logId": "0d2f3c1e-6a7b-4c8d-9e0f-112233445566" } } } },
+    { "name": "s4_answer_approval_request",
+      "frame": { "request": { "id": "7", "answerApproval": { "id": "approval-1", "decision": "APPROVAL_DECISION_DENY" } } } },
+    { "name": "s4_approval_pending_event",
+      "frame": { "event": { "hostSeq": "45", "approvalPending": { "id": "approval-1", "taskId": "session-2", "tool": "bash", "argumentsJson": "{\"command\":\"rm /tmp/x\"}" } } } },
+    { "name": "s4_approval_resolved_event",
+      "frame": { "event": { "hostSeq": "46", "approvalResolved": { "id": "approval-1", "taskId": "session-2", "outcome": "APPROVAL_OUTCOME_TIMEOUT" } } } },
+    { "name": "s4_approval_resolved_response",
+      "frame": { "response": { "requestId": "7", "approvalResolved": { "id": "approval-1", "taskId": "session-2", "outcome": "APPROVAL_OUTCOME_DENIED" } } } }
   ]
 }

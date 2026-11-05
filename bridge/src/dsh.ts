@@ -49,6 +49,8 @@ export interface StartedTask {
 
 /** Starts tasks on DSH. `cwd` is the fixed workspace directory for T0 (S7 adds a picker). */
 export class DshTasks {
+  readonly sessions = new Set<string>()
+
   constructor(private readonly dsh: DshServices, private readonly cwd: string) {}
 
   async start(prompt: string, signal: AbortSignal): Promise<StartedTask> {
@@ -61,8 +63,16 @@ export class DshTasks {
     const iterator = follow[Symbol.asyncIterator]()
     const first = await iterator.next() // the opening snapshot
 
-    await this.dsh.sessionController.prompt(
-      { requestId: randomUUID(), sessionId, mode: 'queue', content: [{ type: 'text', text: prompt }] }, signal)
+    // An approval can arrive before prompt() returns. Distinguish our tasks from requests made by another client.
+    this.sessions.add(sessionId)
+    try {
+      await this.dsh.sessionController.prompt(
+        { requestId: randomUUID(), sessionId, mode: 'queue', content: [{ type: 'text', text: prompt }] }, signal)
+    } catch (error) {
+      this.sessions.delete(sessionId)
+      await iterator.return?.()
+      throw error
+    }
 
     return { taskId: sessionId, output: mapFollow(first, iterator) }
   }

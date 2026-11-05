@@ -58,8 +58,15 @@ struct TaskListView: View {
         if !rows.isEmpty {
             Section {
                 ForEach(rows) { row in
-                    NavigationLink(value: row.key) { TaskRowView(row: row) }
-                        .accessibilityIdentifier("tasklist.row")
+                    if row.approvalOnly {
+                        Text(row.hostName).font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        NavigationLink(value: row.key) { TaskRowView(row: row) }
+                            .accessibilityIdentifier("tasklist.row")
+                    }
+                    ForEach(row.approvals) { approval in
+                        ApprovalCard(approval: approval, hostKey: row.hostKey, store: store)
+                    }
                 }
             } header: {
                 Text(title).accessibilityIdentifier("tasklist.\(id)")

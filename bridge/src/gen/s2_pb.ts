@@ -11,13 +11,15 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ApprovalPending } from "./approvals_pb.js";
+import { file_approvals } from "./approvals_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file s2.proto.
  */
 export const file_s2: GenFile = /*@__PURE__*/
-  fileDesc("CghzMi5wcm90bxIHZHNobS52MSKPAQoLVGFza1N1bW1hcnkSDwoHdGFza19pZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIhCgVzdGF0ZRgDIAEoDjISLmRzaG0udjEuVGFza1N0YXRlEhUKDWNyZWF0ZWRfYXRfbXMYBCABKAMSFQoNdXBkYXRlZF9hdF9tcxgFIAEoAxIPCgdtZXNzYWdlGAYgASgJIgsKCUxpc3RUYXNrcyJSCghUYXNrTGlzdBIjCgV0YXNrcxgBIAMoCzIULmRzaG0udjEuVGFza1N1bW1hcnkSDgoGbG9nX2lkGAIgASgJEhEKCWhvc3RfbmFtZRgDIAEoCSIrCgZSZXN1bWUSDgoGbG9nX2lkGAEgASgJEhEKCWFmdGVyX3NlcRgCIAEoBCJfCgdSZXN1bWVkEg4KBmxvZ19pZBgBIAEoCRIQCghoZWFkX3NlcRgCIAEoBBIRCglob3N0X25hbWUYAyABKAkSDQoFcmVzZXQYBCABKAgSEAoIcmVwbGF5ZWQYBSABKAQiMgoMVGFza1Vwc2VydGVkEiIKBHRhc2sYASABKAsyFC5kc2htLnYxLlRhc2tTdW1tYXJ5IhoKCExvZ1Jlc2V0Eg4KBmxvZ19pZBgBIAEoCSqQAQoJVGFza1N0YXRlEhoKFlRBU0tfU1RBVEVfVU5TUEVDSUZJRUQQABIWChJUQVNLX1NUQVRFX1JVTk5JTkcQARIeChpUQVNLX1NUQVRFX1dBSVRJTkdfT05fVVNFUhACEhgKFFRBU0tfU1RBVEVfQ09NUExFVEVEEAMSFQoRVEFTS19TVEFURV9GQUlMRUQQBGIGcHJvdG8z");
+  fileDesc("CghzMi5wcm90bxIHZHNobS52MSLbAQoLVGFza1N1bW1hcnkSDwoHdGFza19pZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIhCgVzdGF0ZRgDIAEoDjISLmRzaG0udjEuVGFza1N0YXRlEhUKDWNyZWF0ZWRfYXRfbXMYBCABKAMSFQoNdXBkYXRlZF9hdF9tcxgFIAEoAxIPCgdtZXNzYWdlGAYgASgJEjMKEXBlbmRpbmdfYXBwcm92YWxzGFAgAygLMhguZHNobS52MS5BcHByb3ZhbFBlbmRpbmcSFQoNYXBwcm92YWxfb25seRhRIAEoCCILCglMaXN0VGFza3MiUgoIVGFza0xpc3QSIwoFdGFza3MYASADKAsyFC5kc2htLnYxLlRhc2tTdW1tYXJ5Eg4KBmxvZ19pZBgCIAEoCRIRCglob3N0X25hbWUYAyABKAkiKwoGUmVzdW1lEg4KBmxvZ19pZBgBIAEoCRIRCglhZnRlcl9zZXEYAiABKAQiXwoHUmVzdW1lZBIOCgZsb2dfaWQYASABKAkSEAoIaGVhZF9zZXEYAiABKAQSEQoJaG9zdF9uYW1lGAMgASgJEg0KBXJlc2V0GAQgASgIEhAKCHJlcGxheWVkGAUgASgEIjIKDFRhc2tVcHNlcnRlZBIiCgR0YXNrGAEgASgLMhQuZHNobS52MS5UYXNrU3VtbWFyeSIaCghMb2dSZXNldBIOCgZsb2dfaWQYASABKAkqkAEKCVRhc2tTdGF0ZRIaChZUQVNLX1NUQVRFX1VOU1BFQ0lGSUVEEAASFgoSVEFTS19TVEFURV9SVU5OSU5HEAESHgoaVEFTS19TVEFURV9XQUlUSU5HX09OX1VTRVIQAhIYChRUQVNLX1NUQVRFX0NPTVBMRVRFRBADEhUKEVRBU0tfU1RBVEVfRkFJTEVEEARiBnByb3RvMw", [file_approvals]);
 
 /**
  * @generated from message dshm.v1.TaskSummary
@@ -56,6 +58,20 @@ export type TaskSummary = Message<"dshm.v1.TaskSummary"> & {
    * @generated from field: string message = 6;
    */
   message: string;
+
+  /**
+   * S4: current requests, including any older than the retained log.
+   *
+   * @generated from field: repeated dshm.v1.ApprovalPending pending_approvals = 80;
+   */
+  pendingApprovals: ApprovalPending[];
+
+  /**
+   * A session started on another client appears only while it needs a decision.
+   *
+   * @generated from field: bool approval_only = 81;
+   */
+  approvalOnly: boolean;
 };
 
 /**

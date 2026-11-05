@@ -1,0 +1,37 @@
+syntax = "proto3";
+package dshm.v1;
+
+message ApprovalPending {
+  string id = 1;
+  string task_id = 2;
+  string call_id = 3;
+  string tool = 4;
+  // Original JSON from the matching tool call; empty if the host has no matching call.
+  string arguments_json = 5;
+  string reason = 6;
+}
+
+enum ApprovalDecision {
+  APPROVAL_DECISION_UNSPECIFIED = 0;
+  APPROVAL_DECISION_DENY = 1;
+  APPROVAL_DECISION_ALLOW_ONCE = 2;
+}
+
+message AnswerApproval {
+  string id = 1;
+  ApprovalDecision decision = 2;
+}
+
+enum ApprovalOutcome {
+  APPROVAL_OUTCOME_UNSPECIFIED = 0;
+  APPROVAL_OUTCOME_DENIED = 1;
+  APPROVAL_OUTCOME_ALLOWED = 2;
+  APPROVAL_OUTCOME_TIMEOUT = 3;
+  APPROVAL_OUTCOME_CANCELLED = 4;
+}
+
+message ApprovalResolved {
+  string id = 1;
+  string task_id = 2;
+  ApprovalOutcome outcome = 3;
+}

@@ -4,6 +4,7 @@
  * long as the bridge runs, keeps a summary per task for `ListTasks`, and writes every event
  * into the `HostLog` that `Resume` replays from.
  */
+import type { Pending, Resolved } from '../approvals/holder.ts'
 import { TaskStatus } from '../gen/frame_pb.ts'
 import { TaskState, type TaskSummary } from '../gen/s2_pb.ts'
 import type { StartedTask } from '../dsh.ts'
@@ -14,10 +15,11 @@ export interface TaskStarter {
   start(prompt: string, signal: AbortSignal): Promise<StartedTask>
 }
 
-type Summary = Omit<TaskSummary, '$typeName' | '$unknown'>
+type Summary = Omit<TaskSummary, '$typeName' | '$unknown' | 'pendingApprovals'> & { pendingApprovals: Pending[] }
 
 export class TaskHub {
   private readonly summaries = new Map<string, Summary>()
+  private readonly pending = new Map<string, Pending>()
   private readonly abort = new AbortController()
   private readonly running = new Set<Promise<void>>()
 
@@ -36,14 +38,47 @@ export class TaskHub {
     const at = BigInt(this.now())
     const summary: Summary = {
       taskId: task.taskId, title: prompt, state: TaskState.RUNNING,
-      createdAtMs: at, updatedAtMs: at, message: '',
+      createdAtMs: at, updatedAtMs: at, message: '', approvalOnly: false, pendingApprovals: this.approvalsFor(task.taskId),
     }
+    if (summary.pendingApprovals.length) summary.state = TaskState.WAITING_ON_USER
     this.summaries.set(task.taskId, summary)
     onCreated(task.taskId)
     this.upserted(summary)
     const pump = this.pump(task, summary).finally(() => this.running.delete(pump))
     this.running.add(pump)
     return task.taskId
+  }
+
+  approvalChanged(event: Pending | Resolved, external = false) {
+    if ('outcome' in event) {
+      this.pending.delete(event.id)
+      this.log.append(event.taskId, { case: 'approvalResolved', value: event })
+    } else {
+      this.pending.set(event.id, event)
+      this.log.append(event.taskId, { case: 'approvalPending', value: event })
+    }
+    let summary = this.summaries.get(event.taskId)
+    if (!summary && external && !('outcome' in event)) {
+      const at = BigInt(this.now())
+      summary = { taskId: event.taskId, title: '', state: TaskState.WAITING_ON_USER, createdAtMs: at,
+        updatedAtMs: at, message: '', approvalOnly: true, pendingApprovals: [] }
+      this.summaries.set(event.taskId, summary)
+    }
+    if (!summary) return // create() snapshots requests that arrived while DSH accepted our prompt.
+    summary.pendingApprovals = this.approvalsFor(event.taskId)
+    if (summary.approvalOnly && !summary.pendingApprovals.length) {
+      this.summaries.delete(event.taskId)
+      return
+    }
+    if (summary.state === TaskState.RUNNING || summary.state === TaskState.WAITING_ON_USER) {
+      summary.state = summary.pendingApprovals.length ? TaskState.WAITING_ON_USER : TaskState.RUNNING
+    }
+    summary.updatedAtMs = BigInt(this.now())
+    this.upserted(summary)
+  }
+
+  private approvalsFor(taskId: string) {
+    return [...this.pending.values()].filter(request => request.taskId === taskId)
   }
 
   /** Every known task, newest first. */

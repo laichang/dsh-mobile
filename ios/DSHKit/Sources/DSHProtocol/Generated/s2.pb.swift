@@ -95,6 +95,12 @@ public nonisolated struct Dshm_V1_TaskSummary: Sendable {
   /// Why it failed, when state is FAILED.
   public var message: String = String()
 
+  /// S4: current requests, including any older than the retained log.
+  public var pendingApprovals: [Dshm_V1_ApprovalPending] = []
+
+  /// A session started on another client appears only while it needs a decision.
+  public var approvalOnly: Bool = false
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -217,7 +223,7 @@ nonisolated extension Dshm_V1_TaskState: SwiftProtobuf._ProtoNameProviding {
 
 nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TaskSummary"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -231,6 +237,8 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
       case 4: try { try decoder.decodeSingularInt64Field(value: &self.createdAtMs) }()
       case 5: try { try decoder.decodeSingularInt64Field(value: &self.updatedAtMs) }()
       case 6: try { try decoder.decodeSingularStringField(value: &self.message) }()
+      case 80: try { try decoder.decodeRepeatedMessageField(value: &self.pendingApprovals) }()
+      case 81: try { try decoder.decodeSingularBoolField(value: &self.approvalOnly) }()
       default: break
       }
     }
@@ -255,6 +263,12 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     if !self.message.isEmpty {
       try visitor.visitSingularStringField(value: self.message, fieldNumber: 6)
     }
+    if !self.pendingApprovals.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.pendingApprovals, fieldNumber: 80)
+    }
+    if self.approvalOnly != false {
+      try visitor.visitSingularBoolField(value: self.approvalOnly, fieldNumber: 81)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -265,6 +279,8 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     if lhs.createdAtMs != rhs.createdAtMs {return false}
     if lhs.updatedAtMs != rhs.updatedAtMs {return false}
     if lhs.message != rhs.message {return false}
+    if lhs.pendingApprovals != rhs.pendingApprovals {return false}
+    if lhs.approvalOnly != rhs.approvalOnly {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

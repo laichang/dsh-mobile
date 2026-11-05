@@ -30,6 +30,11 @@ struct TaskDetailView: View {
                 .padding(.horizontal)
             }
             ScrollView {
+                if let row {
+                    ForEach(row.approvals) { approval in
+                        ApprovalCard(approval: approval, hostKey: row.hostKey, store: store).padding(.horizontal)
+                    }
+                }
                 let transcript = row?.transcript ?? ""
                 Text(transcript.isEmpty ? "Waiting for the agent…" : transcript)
                     .foregroundStyle(transcript.isEmpty ? .secondary : .primary)
