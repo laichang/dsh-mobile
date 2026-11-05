@@ -255,3 +255,18 @@ describe('ResumeReplaysMilestones', () => {
     assert.equal(replayedMilestones.at(-1)?.todos.length, 2)
   })
 })
+
+test('legacyResumeAndListOmitTemporaryUpstreamApprovalRows', async () => {
+  const { server } = await bridgeWith()
+  server.hub.approvalChanged({ id: 'ask', taskId: 'external', tool: 'bash', argumentsJson: '{}', reason: '', callId: 'call' }, true)
+  const client = await connect(server.port)
+  try {
+    await client.call({ case: 'resume', value: { logId: '', afterSeq: 0n } })
+    assert.deepEqual(client.events().map(event => event.body.case), ['logReset'])
+    const list = await client.call({ case: 'listTasks', value: {} })
+    assert.equal(list.body.case, 'taskList')
+    if (list.body.case === 'taskList') assert.deepEqual(list.body.value.tasks, [])
+  } finally {
+    client.close()
+  }
+})
