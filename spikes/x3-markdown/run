@@ -1,0 +1,16 @@
+#!/bin/bash
+set -euo pipefail
+cd "$(dirname "$0")"
+dest="${1:-platform=iOS Simulator,name=${DSHM_SIM:-dshm-X3}}"
+args=(-parallel-testing-enabled NO -jobs 4)
+if [[ -n "${DEVELOPMENT_TEAM:-}" ]]; then
+  args+=("DEVELOPMENT_TEAM=$DEVELOPMENT_TEAM" CODE_SIGN_STYLE=Automatic -allowProvisioningUpdates)
+fi
+log=$(mktemp)
+trap 'rm -f "$log"' EXIT
+xcodebuild test -scheme StreamingBenchmark-Package -configuration Release \
+  -destination "$dest" -derivedDataPath "${X3_DD:-/tmp/dshm-x3-benchmark-dd}" \
+  "${args[@]}" > "$log" 2>&1 || { tail -65 "$log"; exit 1; }
+grep '^X3 ' "$log"
+[[ "$(grep -c '^X3 round=' "$log")" = 6 ]]
+grep -E "Test Case.*testFiveThousandLines.*passed" "$log"
