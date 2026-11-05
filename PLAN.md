@@ -237,7 +237,7 @@ Each spike ends in a short written conclusion (a working note, archived once act
 
 **Done when**
 - [x] [auto] A minimal plugin parks one approval and a script releases it — Evidence: cmd:spikes/x1-approval/scripts/run · commit:ee2c64c
-- [ ] [human] Ordering versus web/desktop answerers, and web UI visibility, written down — Evidence:
+- [x] [human] Ordering versus web/desktop answerers, and web UI visibility, written down — Evidence: human:2026-11-05 read spikes/x1-approval/README.md
 
 **Not**: production code.
 
@@ -320,7 +320,7 @@ Each spike ends in a short written conclusion (a working note, archived once act
 
 **Done when**
 - [x] [auto] A script sends a message into a running session of a real DSH and records whether it is queued or injected — Evidence: cmd:spikes/x4-midtask/scripts/run · commit:7a861fb
-- [ ] [human] Queue-vs-inject behavior, attachment support, and how agent questions surface written down — Evidence:
+- [x] [human] Queue-vs-inject behavior, attachment support, and how agent questions surface written down — Evidence: human:2026-11-05 read spikes/x4-midtask/README.md
 
 **Not**: production code · any M1 slice.
 
