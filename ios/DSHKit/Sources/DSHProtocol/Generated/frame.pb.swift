@@ -229,12 +229,23 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .taskEnded(newValue)}
   }
 
+  /// S3: 60–79
+  public var milestoneAdded: Dshm_V1_MilestoneAdded {
+    get {
+      if case .milestoneAdded(let v)? = body {return v}
+      return Dshm_V1_MilestoneAdded()
+    }
+    set {body = .milestoneAdded(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
     /// T0: 1–19
     case assistantChunk(Dshm_V1_AssistantChunk)
     case taskEnded(Dshm_V1_TaskEnded)
+    /// S3: 60–79
+    case milestoneAdded(Dshm_V1_MilestoneAdded)
 
   }
 
@@ -588,7 +599,7 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
 
 nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Event"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}:milestone_added\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -622,6 +633,19 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
           self.body = .taskEnded(v)
         }
       }()
+      case 60: try {
+        var v: Dshm_V1_MilestoneAdded?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .milestoneAdded(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .milestoneAdded(v)
+        }
+      }()
       default: break
       }
     }
@@ -640,6 +664,10 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
     case .taskEnded?: try {
       guard case .taskEnded(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    }()
+    case .milestoneAdded?: try {
+      guard case .milestoneAdded(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 60)
     }()
     case nil: break
     }

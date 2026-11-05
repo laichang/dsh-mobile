@@ -12,7 +12,9 @@ enum AppComposition {
         var prompt = ""
         #if DEBUG
         let options = DebugLaunchOptions.parse(ProcessInfo.processInfo.arguments)
-        if options.useFakeBridge { transport = FakeBridge.factory() }
+        if options.useFakeBridge {
+            transport = FakeBridge.factory(script: options.fakeMilestones ? .threeTodos() : .init())
+        }
         if let port = options.bridgePort { endpoint = .localBridge(port: port) }
         prompt = options.presetPrompt ?? ""
         #endif

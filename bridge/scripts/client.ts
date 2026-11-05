@@ -1,11 +1,13 @@
 /**
  * Command-line stand-in for the app: Hello, CreateTask, print the streamed reply.
  *   node lib/scripts/client.js [--port 47801] "prompt"
+ * Milestones (S3) go to stderr as `client: milestone <seq> <KIND> [<todos as P/I/C>] <text>`.
  * Exit 0 when the task ends COMPLETED, 1 otherwise.
  */
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
 import { WebSocket } from 'ws'
 import { FrameSchema, TaskStatus } from '../src/gen/frame_pb.ts'
+import { MilestoneKind, TodoStatus } from '../src/gen/milestones_pb.ts'
 
 const args = process.argv.slice(2)
 const portAt = args.indexOf('--port')
@@ -31,6 +33,11 @@ ws.on('message', (data: Buffer) => {
   } else if (f.kind.case === 'event') {
     const b = f.kind.value.body
     if (b.case === 'assistantChunk') process.stdout.write(b.value.text)
+    if (b.case === 'milestoneAdded') {
+      const m = b.value
+      const todos = m.todos.map((t) => ({ [TodoStatus.PENDING]: 'P', [TodoStatus.IN_PROGRESS]: 'I', [TodoStatus.COMPLETED]: 'C' } as Record<number, string>)[t.status] ?? '?').join('')
+      console.error(`client: milestone ${m.seq} ${MilestoneKind[m.kind]} [${todos}] ${m.text}`)
+    }
     if (b.case === 'taskEnded') {
       clearTimeout(timer)
       const ok = b.value.status === TaskStatus.COMPLETED

@@ -1,0 +1,61 @@
+// S3 · Milestones (PLAN.md §5, ARCHITECTURE D11, D19). Capability "milestones.v1".
+//
+// The bridge maps DSH's typed session events deterministically into milestones; no model ever
+// summarizes (D11). A milestone carries DSH's own words where there are any (a todo's content,
+// an error message) and never invents text; the app labels each kind itself.
+
+syntax = "proto3";
+
+package dshm.v1;
+
+enum MilestoneKind {
+  MILESTONE_KIND_UNSPECIFIED = 0;
+  // The agent started working on the task (DSH `turn/start`).
+  MILESTONE_KIND_STARTED = 1;
+  // The agent wrote a todo list, or added / removed items (DSH `todo/write`).
+  MILESTONE_KIND_PLANNED = 2;
+  // A todo went `in_progress`. `text` is its content.
+  MILESTONE_KIND_TODO_STARTED = 3;
+  // A todo went `completed`. `text` is its content.
+  MILESTONE_KIND_TODO_DONE = 4;
+  // The session entered plan mode (DSH `plan/mode` active).
+  MILESTONE_KIND_PLAN_MODE_ENTERED = 5;
+  // The session left plan mode (DSH `plan/mode` inactive).
+  MILESTONE_KIND_PLAN_MODE_LEFT = 6;
+  // The agent's turn ended without completing. `text` is DSH's reason.
+  MILESTONE_KIND_FAILED = 7;
+  // The agent's turn completed (DSH `turn/end` completed).
+  MILESTONE_KIND_FINISHED = 8;
+  // A model request failed and DSH is retrying it (DSH `llm/retry`). `text` is DSH's failure
+  // message. The task is still running; the next milestone says how it went on.
+  MILESTONE_KIND_RETRYING = 9;
+}
+
+enum TodoStatus {
+  TODO_STATUS_UNSPECIFIED = 0;
+  TODO_STATUS_PENDING = 1;
+  TODO_STATUS_IN_PROGRESS = 2;
+  TODO_STATUS_COMPLETED = 3;
+}
+
+// One item of the agent's todo list, as DSH holds it (no id; the content is the identity).
+message Todo {
+  string content = 1;
+  TodoStatus status = 2;
+}
+
+// One step on a task's milestone timeline, in order.
+message MilestoneAdded {
+  string task_id = 1;
+  // Starts at 1 per task and has no gaps on one connection. Independent of AssistantChunk.seq.
+  uint64 seq = 2;
+  MilestoneKind kind = 3;
+  // DSH's own words for this milestone: the todo's content, or the failure reason (FAILED,
+  // RETRYING). Empty when DSH has none (STARTED, PLANNED, PLAN_MODE_*, FINISHED).
+  string text = 4;
+  // The agent's whole todo list right after this milestone, in DSH's order. Empty while the
+  // agent keeps no list.
+  repeated Todo todos = 5;
+  // When DSH recorded the underlying event, Unix milliseconds.
+  int64 time_ms = 6;
+}

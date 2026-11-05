@@ -17,13 +17,15 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { MilestoneAdded } from "./milestones_pb.js";
+import { file_milestones } from "./milestones_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file frame.proto.
  */
 export const file_frame: GenFile = /*@__PURE__*/
-  fileDesc("CgtmcmFtZS5wcm90bxIHZHNobS52MSJ8CgVGcmFtZRIjCgdyZXF1ZXN0GAEgASgLMhAuZHNobS52MS5SZXF1ZXN0SAASJQoIcmVzcG9uc2UYAiABKAsyES5kc2htLnYxLlJlc3BvbnNlSAASHwoFZXZlbnQYAyABKAsyDi5kc2htLnYxLkV2ZW50SABCBgoEa2luZCJqCgdSZXF1ZXN0EgoKAmlkGAEgASgEEh8KBWhlbGxvGAIgASgLMg4uZHNobS52MS5IZWxsb0gAEioKC2NyZWF0ZV90YXNrGAMgASgLMhMuZHNobS52MS5DcmVhdGVUYXNrSABCBgoEYm9keSKWAQoIUmVzcG9uc2USEgoKcmVxdWVzdF9pZBgBIAEoBBIfCgVlcnJvchgCIAEoCzIOLmRzaG0udjEuRXJyb3JIABIfCgVoZWxsbxgDIAEoCzIOLmRzaG0udjEuSGVsbG9IABIsCgx0YXNrX2NyZWF0ZWQYBCABKAsyFC5kc2htLnYxLlRhc2tDcmVhdGVkSABCBgoEYm9keSJtCgVFdmVudBIyCg9hc3Npc3RhbnRfY2h1bmsYASABKAsyFy5kc2htLnYxLkFzc2lzdGFudENodW5rSAASKAoKdGFza19lbmRlZBgCIAEoCzISLmRzaG0udjEuVGFza0VuZGVkSABCBgoEYm9keSI3CgVIZWxsbxIYChBwcm90b2NvbF92ZXJzaW9uGAEgASgNEhQKDGNhcGFiaWxpdGllcxgCIAMoCSImCgVFcnJvchIMCgRjb2RlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkiHAoKQ3JlYXRlVGFzaxIOCgZwcm9tcHQYASABKAkiHgoLVGFza0NyZWF0ZWQSDwoHdGFza19pZBgBIAEoCSI8Cg5Bc3Npc3RhbnRDaHVuaxIPCgd0YXNrX2lkGAEgASgJEgsKA3NlcRgCIAEoBBIMCgR0ZXh0GAMgASgJIlIKCVRhc2tFbmRlZBIPCgd0YXNrX2lkGAEgASgJEiMKBnN0YXR1cxgCIAEoDjITLmRzaG0udjEuVGFza1N0YXR1cxIPCgdtZXNzYWdlGAMgASgJKlwKClRhc2tTdGF0dXMSGwoXVEFTS19TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVUQVNLX1NUQVRVU19DT01QTEVURUQQARIWChJUQVNLX1NUQVRVU19GQUlMRUQQAmIGcHJvdG8z");
+  fileDesc("CgtmcmFtZS5wcm90bxIHZHNobS52MSJ8CgVGcmFtZRIjCgdyZXF1ZXN0GAEgASgLMhAuZHNobS52MS5SZXF1ZXN0SAASJQoIcmVzcG9uc2UYAiABKAsyES5kc2htLnYxLlJlc3BvbnNlSAASHwoFZXZlbnQYAyABKAsyDi5kc2htLnYxLkV2ZW50SABCBgoEa2luZCJqCgdSZXF1ZXN0EgoKAmlkGAEgASgEEh8KBWhlbGxvGAIgASgLMg4uZHNobS52MS5IZWxsb0gAEioKC2NyZWF0ZV90YXNrGAMgASgLMhMuZHNobS52MS5DcmVhdGVUYXNrSABCBgoEYm9keSKWAQoIUmVzcG9uc2USEgoKcmVxdWVzdF9pZBgBIAEoBBIfCgVlcnJvchgCIAEoCzIOLmRzaG0udjEuRXJyb3JIABIfCgVoZWxsbxgDIAEoCzIOLmRzaG0udjEuSGVsbG9IABIsCgx0YXNrX2NyZWF0ZWQYBCABKAsyFC5kc2htLnYxLlRhc2tDcmVhdGVkSABCBgoEYm9keSKhAQoFRXZlbnQSMgoPYXNzaXN0YW50X2NodW5rGAEgASgLMhcuZHNobS52MS5Bc3Npc3RhbnRDaHVua0gAEigKCnRhc2tfZW5kZWQYAiABKAsyEi5kc2htLnYxLlRhc2tFbmRlZEgAEjIKD21pbGVzdG9uZV9hZGRlZBg8IAEoCzIXLmRzaG0udjEuTWlsZXN0b25lQWRkZWRIAEIGCgRib2R5IjcKBUhlbGxvEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFAoMY2FwYWJpbGl0aWVzGAIgAygJIiYKBUVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCSIcCgpDcmVhdGVUYXNrEg4KBnByb21wdBgBIAEoCSIeCgtUYXNrQ3JlYXRlZBIPCgd0YXNrX2lkGAEgASgJIjwKDkFzc2lzdGFudENodW5rEg8KB3Rhc2tfaWQYASABKAkSCwoDc2VxGAIgASgEEgwKBHRleHQYAyABKAkiUgoJVGFza0VuZGVkEg8KB3Rhc2tfaWQYASABKAkSIwoGc3RhdHVzGAIgASgOMhMuZHNobS52MS5UYXNrU3RhdHVzEg8KB21lc3NhZ2UYAyABKAkqXAoKVGFza1N0YXR1cxIbChdUQVNLX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFVRBU0tfU1RBVFVTX0NPTVBMRVRFRBABEhYKElRBU0tfU1RBVFVTX0ZBSUxFRBACYgZwcm90bzM", [file_milestones]);
 
 /**
  * One WebSocket binary message carries exactly one Frame (inside the
@@ -170,6 +172,14 @@ export type Event = Message<"dshm.v1.Event"> & {
      */
     value: TaskEnded;
     case: "taskEnded";
+  } | {
+    /**
+     * S3: 60–79
+     *
+     * @generated from field: dshm.v1.MilestoneAdded milestone_added = 60;
+     */
+    value: MilestoneAdded;
+    case: "milestoneAdded";
   } | { case: undefined; value?: undefined };
 };
 

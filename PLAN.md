@@ -385,7 +385,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 ### S3 · Milestones
 
-**Status** todo · **Needs** T0 · **Branch** —
+**Status** review · **Needs** T0 · **Branch** `claude/s3-milestones`
 
 **Why**: principle 4 (milestone summary by default, details on demand), D11.
 
@@ -394,14 +394,26 @@ Each slice needs only T0, unless "Needs" says otherwise.
 **Demo**: a multi-step prompt shows its todos ticking off on the card without opening the transcript.
 
 **Done when**
-- [ ] [auto] Mapper turns `FakeDSH` `todos` / `plan` / `state` / error projections into the expected `MilestoneAdded` events — Evidence:
-- [ ] [ui] A multi-step prompt shows its todos ticking off on the card without opening the transcript — Evidence:
-- [ ] [ui] The detail view shows the milestone timeline — Evidence:
+- [x] [auto] Mapper turns `FakeDSH` `todos` / `plan` / `state` / error projections into the expected `MilestoneAdded` events — Evidence: test:MilestoneMapperAgainstFakeDSH/mapsTodosPlanStateAndErrorsIntoMilestoneAdded · test:MilestoneMapperAgainstFakeDSH/failedTurnBecomesFailedMilestone · test:MilestoneMapper/ignoresMalformedPayloadsLaterTurnsAndEventsAfterTheEnd · test:MilestoneStoreTests/todosTickOffOnTheTimelineAgainstFakeBridge · cmd:scripts/demo/s3.sh
+- [x] [ui] A multi-step prompt shows its todos ticking off on the card without opening the transcript — Evidence: test:S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge · test:S3MilestonesUITests/testMilestonesAgainstRealDSH · cmd:scripts/demo/s3.sh · shot:evidence/S3/s3-real-dsh-card-ticking.png · shot:evidence/S3/s3-fakebridge-card-ticking.png
+- [x] [ui] The detail view shows the milestone timeline — Evidence: test:S3MilestonesUITests/testTimelineWithFakeBridge · test:S3MilestonesUITests/testMilestonesAgainstRealDSH · cmd:scripts/demo/s3.sh · shot:evidence/S3/s3-real-dsh-timeline.png · shot:evidence/S3/s3-fakebridge-timeline.png
 
 **Not**: summarizing with a model (never; D11).
 
 **Log**
-- —
+- **2026-11-05 · built, to review** (workflow `wf_219b7aa1-71c`, unattended; commits `8a78489`, `ecf6123`, `debb402` and this one).
+  - Done:
+    - **Protocol**: `protocol/milestones.proto` (`MilestoneAdded { task_id, seq, kind, text, todos[], time_ms }`, Event field 60, capability `milestones.v1`) and two golden fixtures (`s3_milestone_*`).
+    - **Bridge**: `bridge/src/milestones/` maps DSH `turn/start`, `todo/write`, `plan/mode`, `llm/retry` and `turn/end` into milestones; `server.ts` emits them before `TaskEnded`. `FakeDSH` gained scripted session events. The CLI client prints milestones. Choices in **D17**: "state" is read as the turn lifecycle (DSH has no `state` projection; the keys are `todos`, `plan`, `llmRetry`, `goal`, `title`, …), and "errors" as a failed turn plus `llm/retry`.
+    - **App**: `MilestoneTimeline` on `TaskStore` (DSHKit); `Features/Milestones/`: a task card above the transcript (headline = the todo in progress, `n of m`, checklist), tapping it opens the timeline. No card when the bridge sends no milestones, so T0's screen is unchanged for a bridge without `milestones.v1`. `FakeBridge` scripts a three-todo task with `-DSHMFakeMilestones YES` (added to `scripts/check-release-clean`'s markers).
+    - **Real DSH**: `scripts/demo/s3-host.mjs` runs DSH 0.2.2-rc.1 + the bridge (`~/.dshm/home-s3`, web 3285, bridge 47812) with DSH's mock LLM scripted to call `todo_write` four times, then answer. The card ticks 0/3 → 3/3 in the Simulator `dshm-S3` against it; no API key.
+    - **Verification**: `scripts/demo/s3.sh` (exit 0): codegen check, 12 bridge tests, 16 DSHKit tests, the real-DSH CLI milestone sequence, and 4 S3 UI tests on `dshm-S3` (real-DSH one not skipped). T0's UI tests still pass on `dshm-S3` (FakeBridge; the real-DSH one skipped, since T0's host is T0's). `scripts/check-release-clean` passes; it now takes `DSHM_RELEASE_DD`, because the shared default DerivedData collided with a parallel slice's build ("database is locked").
+    - The UI test samples the transcript before the card, so "transcript still empty while the card shows < 3/3" is causal, not timing-dependent (the first version flaked under load).
+  - Not done: the independent review rerun of the two `[ui]` items (the coordinator's review agent). Rerun: `DSHM_SIM=dshm-S3 DSHM_BRIDGE_PORT=47812 DSHM_WEB_PORT=3285 DSHM_HOME=~/.dshm/home-s3 scripts/demo/s3.sh` (starts and stops its own host when 47812 is free).
+  - **Provisional, pending user confirmation**: **D17** (milestone mapping, wire shape, card + timeline UI, `-DSHMFakeMilestones` and identifiers, the mock-LLM proxy in `s3-host.mjs`). No new dependencies or downloads; `s3-host.mjs` uses the already-installed `@deepseek-ai/dsh-llm-mock-server@0.2.2-rc.1` from `~/.dshm/runtime`.
+  - Seams for others: S2 (lands second) owns cached milestones; every `MilestoneAdded` carries the whole todo list, so the latest one is enough to restore a card. S2's list should reuse `MilestoneCard`. `ContentView.swift` gets a ~14-line insert that may conflict with S2's list rewrite.
+  - For §0 (coordinator): S3 → `review`, branch `claude/s3-milestones`.
+  - Next: independent `[ui]` rerun, merge; the user reviews D17.
 
 ### S4 · Approvals (in-app, held)
 

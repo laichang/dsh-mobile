@@ -18,6 +18,12 @@
     { "name": "t0_error_response",
       "frame": { "response": { "requestId": "3", "error": { "code": "hello/required", "message": "send Hello first" } } } },
     { "name": "t0_large_ids",
-      "frame": { "event": { "assistantChunk": { "taskId": "t", "seq": "18446744073709551615" } } } }
+      "frame": { "event": { "assistantChunk": { "taskId": "t", "seq": "18446744073709551615" } } } },
+    { "name": "s3_milestone_todo_done_event",
+      "frame": { "event": { "milestoneAdded": { "taskId": "session-6f1c2a", "seq": "3", "kind": "MILESTONE_KIND_TODO_DONE", "text": "读一遍项目结构 Read the layout",
+        "todos": [ { "content": "读一遍项目结构 Read the layout", "status": "TODO_STATUS_COMPLETED" }, { "content": "Write the summary", "status": "TODO_STATUS_IN_PROGRESS" }, { "content": "Check it", "status": "TODO_STATUS_PENDING" } ],
+        "timeMs": "1793000003000" } } } },
+    { "name": "s3_milestone_failed_event",
+      "frame": { "event": { "milestoneAdded": { "taskId": "session-6f1c2a", "seq": "4", "kind": "MILESTONE_KIND_FAILED", "text": "error: rate limited", "timeMs": "1793000004000" } } } }
   ]
 }

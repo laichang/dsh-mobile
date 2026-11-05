@@ -10,16 +10,20 @@ public enum DebugLaunchOptions {
     public static let presetPromptKey = "DSHMPresetPrompt"
     /// `-DSHMBridgePort <port>`: loopback bridge port (default 47801).
     public static let bridgePortKey = "DSHMBridgePort"
+    /// `-DSHMFakeMilestones YES`: with the FakeBridge, script a three-todo task (S3).
+    public static let fakeMilestonesKey = "DSHMFakeMilestones"
 
     public struct Options: Equatable, Sendable {
         public var useFakeBridge = false
         public var presetPrompt: String?
         public var bridgePort: Int?
+        public var fakeMilestones = false
 
-        public init(useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil) {
+        public init(useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil, fakeMilestones: Bool = false) {
             self.useFakeBridge = useFakeBridge
             self.presetPrompt = presetPrompt
             self.bridgePort = bridgePort
+            self.fakeMilestones = fakeMilestones
         }
     }
 
@@ -40,6 +44,7 @@ public enum DebugLaunchOptions {
         if let v = values[fakeBridgeKey] { options.useFakeBridge = ["YES", "1", "true"].contains(v) }
         options.presetPrompt = values[presetPromptKey]
         options.bridgePort = values[bridgePortKey].flatMap(Int.init)
+        if let v = values[fakeMilestonesKey] { options.fakeMilestones = ["YES", "1", "true"].contains(v) }
         return options
     }
 }

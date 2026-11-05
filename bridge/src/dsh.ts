@@ -5,6 +5,7 @@
  * `sessionController` / `workspaceController` services, so `FakeDSH` can implement them in tests.
  */
 import { randomUUID } from 'node:crypto'
+import { MilestoneMapper, describeFailure, type Milestone } from './milestones/mapper.ts'
 
 /** Subset of `ctx.workspaceController` (`@deepseek-ai/dsh-api-workspace-controller`). */
 export interface WorkspaceControllerLike {
@@ -14,7 +15,7 @@ export interface WorkspaceControllerLike {
 /** One frame of `sessionController.follow` that the bridge reads; everything else is ignored. */
 export type FollowFrame =
   | { type: 'snapshot' }
-  | { type: 'event'; event: { type: string; seq: number; data: unknown } }
+  | { type: 'event'; event: { type: string; seq: number; time?: number; data: unknown } }
   | { type: 'assistant-stream'; frame: { type: 'start' | 'end' } | { type: 'chunk'; chunk: unknown } }
 
 /** Subset of `ctx.sessionController` (`@deepseek-ai/dsh-api-session-controller`). */
@@ -38,6 +39,7 @@ export interface DshServices {
 /** What a running task produces, in order. Exactly one `end`, always last. */
 export type TaskOutput =
   | { kind: 'text'; text: string }
+  | { kind: 'milestone'; milestone: Milestone }
   | { kind: 'end'; status: 'completed' | 'failed'; message?: string }
 
 export interface StartedTask {
@@ -70,6 +72,7 @@ async function* mapFollow(
   first: IteratorResult<FollowFrame>, iterator: AsyncIterator<FollowFrame>,
 ): AsyncGenerator<TaskOutput> {
   let turn: number | undefined
+  const milestones = new MilestoneMapper()
   try {
     for (let next = first; !next.done; next = await iterator.next()) {
       const f = next.value
@@ -79,23 +82,21 @@ async function* mapFollow(
           yield { kind: 'text', text: chunk.text }
         }
       } else if (f.type === 'event') {
+        for (const milestone of milestones.map(f.event)) yield { kind: 'milestone', milestone }
         const data = f.event.data as { turn?: number; reason?: { kind?: string; error?: unknown } } | null
         if (f.event.type === 'turn/start' && turn === undefined) turn = data?.turn
         if (f.event.type === 'turn/end' && (turn === undefined || data?.turn === turn)) {
           const kind = data?.reason?.kind ?? 'unknown'
           if (kind === 'completed') yield { kind: 'end', status: 'completed' }
-          else yield { kind: 'end', status: 'failed', message: describe(kind, data?.reason?.error) }
+          else yield { kind: 'end', status: 'failed', message: describeFailure(kind, data?.reason?.error) }
           return
         }
       }
     }
-    yield { kind: 'end', status: 'failed', message: 'DSH closed the session stream before the turn ended' }
+    const message = 'DSH closed the session stream before the turn ended'
+    for (const milestone of milestones.abandon(message, Date.now())) yield { kind: 'milestone', milestone }
+    yield { kind: 'end', status: 'failed', message }
   } finally {
     await iterator.return?.()
   }
-}
-
-function describe(kind: string, error: unknown): string {
-  if (error && typeof error === 'object' && 'message' in error) return `${kind}: ${String(error.message)}`
-  return error === undefined ? kind : `${kind}: ${String(error)}`
 }
