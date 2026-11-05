@@ -54,7 +54,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S9 | review | merged `575bf62` | 2026-11-05 | User tests two real Macs (§9) |
 | S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
 | S11 | doing | claude/s11-first-run | 2026-11-05 | Implement and verify |
-| S12 | doing | claude/s12-upstream-guard | 2026-11-05 | Implement and verify |
+| S12 | done | merged `ed3f7bf` | 2026-11-05 | — (hosted CI follows user push/PR; confirmations in §9) |
 
 ## 1. Approach
 
@@ -863,6 +863,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-05 · S9.** Independent integrated rerun at 286c6f7 passed 55 bridge, 55 Swift, and both UI tests without skips. Two isolated real Noise profiles had distinct peer lists and correct inline replies. The first-chunk test now uses a release gate. Evidence: scripts/demo/s9.sh and evidence/S9/.
 
+- **2026-11-05 · S12.** Independent review at 557afd1 passed 56 bridge and 56 Swift tests and the real alpha.3 simulator UI. Both local CI jobs ran against the pinned release and upstream fcc0ad46, with a single audit record for phone-first and web-first answers. Hosted execution awaits a user push or pull request. The upstream installer temporarily replaced three global Git hooks; originals were restored from its backups, both affected staged trees rescanned successfully, and an isolated clean build preserved all three hashes.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -901,3 +903,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 34 | S8 | `[human]` | Check a coding task’s diff and terminal output for readability on a real iPhone. | `main` | `8e9fa87` |
 | 35 | S9 | decision | D43, provisional: persistent target key, host-keyed connections and rows only for configured paired hosts. | `main` | merged `575bf62` |
 | 36 | S9 | `[human]` | Use two real Macs, send a task to each, then disconnect one and verify its name and cached task in the unified list. | `main` | `575bf62` |
+| 37 | S12 | decision | D46, provisional: exact supported DSH release, version-only Hello for other hosts, per-host error and retained draft. | `main` | merged `ed3f7bf` |
