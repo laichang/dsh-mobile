@@ -377,7 +377,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [x] [auto] Bridge `Resume { after_seq }` returns exactly the events after `after_seq` — Evidence: test:ResumeAgainstFakeDSH/resumeReturnsExactlyTheEventsAfterSeq · test:HostLog/sinceReturnsExactlyTheEventsAfterSeq · test:ResumeAgainstFakeDSH/taskOutlivesTheConnectionThatCreatedIt · commit:73ca56c
 - [x] [ui] Start a task, kill the app, wait, reopen: the list and transcript are intact and the gap is filled from the bridge — Evidence: test:S2DurableListUITests/testKillAndReopenAgainstRealDSH · test:TaskListStoreTests/killAndReopenKeepsTheListAndFillsTheGapFromTheBridge · cmd:scripts/demo/s2.sh · shot:evidence/S2/s2-reopened-from-cache.png · shot:evidence/S2/s2-gap-filled.png · shot:evidence/S2/s2-list-after-resume.png
 - [x] [ui] With the host unreachable, the list names that host as offline — Evidence: test:S2DurableListUITests/testOfflineHostIsNamedWithFakeBridge · test:S2DurableListUITests/testOfflineRealHostIsNamed · test:TaskListStoreTests/unreachableHostIsNamedAsOffline · cmd:scripts/demo/s2.sh · shot:evidence/S2/s2-offline-fakebridge.png · shot:evidence/S2/s2-offline-real-host.png
-- [ ] [ui] Seam with S3 (S2 landed second): list rows show the `MilestoneCard`, and after kill/reopen a task's milestones are still shown from the cache — Evidence:
+- [x] [ui] Seam with S3 (S2 landed second): list rows show the `MilestoneCard`, and after kill/reopen a task's milestones are still shown from the cache — Evidence: test:S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge · test:CachedMilestoneTests/milestonesSurviveKillAndReopenAndTheGapIsReplayed · test:ResumeReplaysMilestones/resumeAfterSeqReplaysTheMissedMilestonesOnce · cmd:scripts/demo/s2.sh · shot:evidence/S2/s2-cached-milestones-list.png · shot:evidence/S2/s2-cached-milestones-timeline.png
 
 **Not**: background refresh (M1 refreshes on foreground; push is M2).
 
@@ -399,6 +399,11 @@ Each slice needs only T0, unless "Needs" says otherwise.
     - The composer lives on the list screen only; the detail screen shows state and transcript.
     - The D17 number may collide with S1/S3 entries written in parallel; renumber on merge if needed.
   - Next: independent `[ui]` rerun via `scripts/demo/s2.sh`, then merge. The coordinating session updates §0 (S2 → review) and lists D17 in §9.
+- **2026-11-05 · batch 1 integration** (branch `claude/batch1-integration`, merged after S3, before S1).
+  - Renumbering: the entries this Log calls **D17** are now **D20** in ARCHITECTURE.md (main keeps D17/D18 from X1/X4, S3 took D19). Still *provisional, pending user confirmation*.
+  - Seam with S3 (S2 landed second, so S2 owns it): added and ticked the "cached milestones" item. The bridge logs `MilestoneAdded` in the host log, so `Resume` replays it; the app caches each task's whole milestone timeline in `CachedTask.milestonesData`; list rows and the task detail show `MilestoneCard` from the cache. See **D23** (*provisional, pending user confirmation*).
+  - Fixed on the way: `FakeHost` task ids are now unique per instance; before, a task cached by an earlier launch (`fake-task-1`) collided with the next launch's first task, which S3's UI tests (no `-DSHMResetStore`) exposed.
+  - `scripts/demo/s2.sh` also runs the seam UI test.
 
 ### S3 · Milestones
 
@@ -431,6 +436,9 @@ Each slice needs only T0, unless "Needs" says otherwise.
   - Seams for others: S2 (lands second) owns cached milestones; every `MilestoneAdded` carries the whole todo list, so the latest one is enough to restore a card. S2's list should reuse `MilestoneCard`. `ContentView.swift` gets a ~14-line insert that may conflict with S2's list rewrite.
   - For §0 (coordinator): S3 → `review`, branch `claude/s3-milestones`.
   - Next: independent `[ui]` rerun, merge; the user reviews D17.
+- **2026-11-05 · batch 1 integration** (branch `claude/batch1-integration`, merged first).
+  - Renumbering: the entries this Log calls **D17** are now **D19** in ARCHITECTURE.md (main keeps D17/D18 from X1/X4). Still *provisional, pending user confirmation*.
+  - S2 replaced T0's `ContentView`: the milestone card now sits in S2's task detail (above the transcript, same identifiers) and in the list rows; S2 owns that seam (D23). `MilestoneTimelineView` takes a `MilestoneTimeline` instead of the T0 `TaskStore`. `FakeBridge`'s milestone script runs inside S2's `FakeHost`.
 
 ### S4 · Approvals (in-app, held)
 
