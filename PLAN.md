@@ -64,7 +64,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | doing | `claude/s19-outcomes` | 2026-11-07 | Slice owner builds done and failed (§8) |
 | S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
-| S21 | doing | `claude/s21-hosts` | 2026-11-06 | Slice owner builds the hosts sheet and control (§8) |
+| S21 | doing | `claude/s21-hosts` `477f9bd` | 2026-11-07 | Reviewer runs `scripts/review S21` (§8) |
 | S22 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S23 | todo | — | 2026-11-06 | Next batch (S14 is merged) |
 
@@ -1365,6 +1365,10 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-07 · S16 merged.** Background reviewer ran `scripts/review S16 --resume` at `1388a9c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S16-1388a9c.txt`). Merged as `66fd823`; `scripts/check-plan --base` passed. No open `[human]` items, so S16 is `done`. S17 and S19 can start. S20 and S21 must merge `main` before review.
 
 - **2026-11-07 · S19 assigned.** Branch `claude/s19-outcomes`, worktree `.claude/worktrees/s19-outcomes` (from `9962b4e`, with S16 merged; S19 owns the seam with S16), simulator `dshm-S19`, DSHM_HOME `~/.dshm/home-s19`, bridge 47817, web 3290. The owner runs as a background agent (WORKFLOW.md §5.3, step 3). S19 before S17: M1 needs S19.
+
+- **2026-11-07 · S21 built; review started.** S21 at `477f9bd` (D59; `main` with S16 merged): all `[auto]` and `[ui]` items ticked, one `[human]` item open, worktree clean, no guard file changed. Seams owned by S21: the S2 offline test and `TaskListStoreTests/unreachableHostIsNamedAsOffline` now expect the all-offline card and the send key off; S12's update test adjusted the same way. A background reviewer runs `scripts/review S21`.
+  - Flaky, not S21's (reported by S21): `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval` (S15) failed in 3 of 6 `s21.sh` runs and in about 1 of 8 runs alone under load: it answers before the seeded approval is ready. For a later repair in S15's tests.
+  - Not covered by a test (S21): the default model on the hosts sheet shows only when a host sends a model catalog; FakeHost sends none.
 
 ## 9. Pending user confirmation
 
