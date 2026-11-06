@@ -1287,6 +1287,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - Flaky, reported by S18 (not S18 tests): in one `swift test` run inside `t0.sh` at load about 130, 4 earlier tests failed with `store.send()` returning nil; they passed alone. Same family as the `NoiseResumeTests` entries above.
   - Clean-up after S16 merges: `ios/dsh-mobile/Features/Approvals/ApprovalCard.swift` is unused after S18 (left in place to avoid a conflict with S16).
 
+- **2026-11-06 · Run paused by the user (about 19:00).** Heartbeat `0f66e06d` deleted. The S18 and S20 background agents stopped; slice demo jobs stopped; `dshm-*` simulators shut down. State: S16 `8e2a4db` (merge of `main` before S14; must merge `main` again, then review --resume), clean. S18 `ffb61a8` plus an unfinished merge of `main` in its worktree (40 changed paths). S20 at `a9193c7` with 12 uncommitted paths. To resume: create a new heartbeat, then continue each slice in its worktree (WORKFLOW.md §5.4).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
