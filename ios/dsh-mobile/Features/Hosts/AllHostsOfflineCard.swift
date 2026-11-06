@@ -28,6 +28,7 @@ struct AllHostsOfflineCard: View {
                  tableName: "Hosts")
                 .font(.subheadline)
                 .foregroundStyle(DSHTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 10)
         }
         .padding(16)

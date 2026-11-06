@@ -156,7 +156,7 @@ final class S21HostsUITests: XCTestCase {
         app.buttons["device.revoke.\(Self.otherDevice)"].tap()
         let alert = app.alerts.firstMatch
         XCTAssertTrue(alert.waitForExistence(timeout: 5), app.debugDescription)
-        alert.buttons["吊销"].tap()
+        alert.buttons.matching(NSPredicate(format: "label == %@", "吊销")).firstMatch.tap()
         XCTAssertTrue(any(app, "device.id.\(Self.otherDevice)").firstMatch.waitForNonExistence(timeout: 10))
         XCTAssertTrue(element(app, "audit.Device revoked", containing: Self.otherDevice).waitForExistence(timeout: 10))
 
@@ -165,12 +165,12 @@ final class S21HostsUITests: XCTestCase {
         XCTAssertTrue(alert.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(alert.staticTexts["吊销这台设备？"].exists, alert.debugDescription)
         saveShot("s21-revoke-confirm")
-        alert.buttons["取消"].tap()
+        alert.buttons.matching(NSPredicate(format: "label == %@", "取消")).firstMatch.tap()
         XCTAssertTrue(alert.waitForNonExistence(timeout: 5))
         XCTAssertTrue(own.exists)
         app.buttons["device.revoke.\(Self.thisDevice)"].tap()
         XCTAssertTrue(alert.waitForExistence(timeout: 5), app.debugDescription)
-        alert.buttons["吊销"].tap()
+        alert.buttons.matching(NSPredicate(format: "label == %@", "吊销")).firstMatch.tap()
         XCTAssertTrue(app.descendants(matching: .any)["firstRun.purpose"].waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertFalse(app.buttons["drawer.open"].exists)
         saveShot("s21-revoked-08")
