@@ -954,7 +954,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S21 · Hosts and control
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s21-hosts`
+**Status** doing · **Needs** T1 · **Branch** `claude/s21-hosts`
 
 **Why**: STORY §2 (all hosts are equal), §3 (say which host is offline), §9 (devices, revocation, audit), screens H, X2 and X3.
 
@@ -965,6 +965,12 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Done when**
 - [ ] [ui] The all-offline card names each host and its last connection — Evidence:
 - [ ] [ui] A revoke of this device asks for confirmation, then opens 08 — Evidence:
+- [ ] [ui] A tap on the "2 / 3" pill opens the hosts sheet: an online host with its channel, an unsupported DSH with the installed and supported versions, an offline host with its last connection and what waits on it — Evidence:
+- [ ] [ui] One host shows its devices (this device is marked) and its audit records, and "load older" adds the earlier records; a revoke of another device asks first and removes it — Evidence:
+- [ ] [ui] With all hosts offline the send key is off and a cached session still opens; when one host is back, the card goes away and the send key is on — Evidence:
+- [ ] [auto] "All hosts offline" is set only when no host can take a task, stays set while hosts retry, and clears when one is online; the send key follows it — Evidence:
+- [ ] [auto] The fake host's devices, audit pages and revoke match the bridge; a revoke of this device ends its access — Evidence:
+- [ ] [human] On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that — Evidence:
 
 **Not**: Device names (needs upstream).
 

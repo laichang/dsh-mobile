@@ -216,6 +216,9 @@ public final class FakeHost: Sendable {
         var prompts: [String] = []
         var tasksCreated = 0
         var incarnation = 0
+        /// S21: `devices.v1` records; `revoked` once this phone's device lost its access.
+        var devices: FakeDevices?
+        var revoked = false
     }
 
     private let state = Mutex(State())
@@ -224,7 +227,7 @@ public final class FakeHost: Sendable {
     public init(script: FakeBridge.Script = .init(), hostName: String = "FakeBridge Mac", reachable: Bool = true,
                 incompatibleDsh: (installed: String, supported: String)? = nil,
                 seed: [Dshm_V1_TaskSummary] = [], extraCapabilities: [String] = [],
-                approvals: [FakeBridge.PendingApproval] = []) {
+                approvals: [FakeBridge.PendingApproval] = [], devices: FakeDevices? = nil) {
         self.incompatibleDsh = incompatibleDsh
         self.script = script
         self.hostName = hostName
@@ -232,6 +235,7 @@ public final class FakeHost: Sendable {
         self.approvals = approvals
         state.withLock { s in
             s.reachable = reachable
+            s.devices = devices
             for summary in seed {
                 s.tasks.append(summary)
                 Self.upserted(summary, in: &s)
@@ -316,7 +320,7 @@ public final class FakeHost: Sendable {
     func connection() throws -> FakeBridge {
         let bridge = FakeBridge(host: self)
         try state.withLock { s in
-            guard s.reachable else { throw FakeHostError.unreachable }
+            guard s.reachable, !s.revoked else { throw FakeHostError.unreachable }
             s.connections[bridge.id] = Connection(bridge: bridge)
         }
         return bridge
@@ -344,6 +348,7 @@ public final class FakeHost: Sendable {
                     hello.capabilities = [DSHProtocolInfo.tasksCapability, DSHProtocolInfo.milestonesCapability, DSHProtocolInfo.resumeCapability]
                     if answersApprovals { hello.capabilities.append(DSHProtocolInfo.approvalsCapability) }
                     hello.capabilities += extraCapabilities
+                    if s.devices != nil { hello.capabilities.append(FakeDevices.capability) }
                 }
                 bridge.deliver(Self.response(id, .hello(hello)))
             case .createTask(let create)?:
@@ -395,6 +400,14 @@ public final class FakeHost: Sendable {
                 conn.resumed = true
             case .answerApproval(let answer)? where answersApprovals:
                 answerApproval(answer, requestID: id, bridge: bridge, in: &s)
+            case let body? where s.devices != nil && FakeDevices.handles(body):
+                guard let (answer, revokedCurrent) = s.devices?.answer(body) else { break }
+                bridge.deliver(Self.response(id, answer))
+                if revokedCurrent {
+                    s.revoked = true
+                    let dropped = s.connections.values.map(\.bridge)
+                    Task { for bridge in dropped { bridge.drop() } }
+                }
             case .answerApproval?, .interrupt?, .getModelCatalog?, .selectModel?, .listWorkspaces?, .listDevices?, .listAudit?, .revokeDevice?, .readSession?:
                 var error = Dshm_V1_Error()
                 error.code = "request/unsupported"
