@@ -60,12 +60,12 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
 | S16 | done | merged `66fd823` | 2026-11-07 | — (provisional D56 in §9) |
-| S17 | doing | `claude/s17-transcript` | 2026-11-07 | Slice owner builds the structured transcript (§8) |
+| S17 | done | merged `3a9f11e` | 2026-11-07 | — (provisional D61 in §9) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | done | merged `077a9f3` | 2026-11-07 | — (provisional D60 in §9) |
 | S20 | done | merged `e849e8e` | 2026-11-07 | — (provisional D58 in §9) |
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
-| S22 | doing | `claude/s22-first-run` | 2026-11-07 | Slice owner builds (§8) |
+| S22 | doing | `claude/s22-first-run` `2196033` | 2026-11-07 | Reviewer runs `scripts/review S22` (§8) |
 | S23 | doing | `claude/s23-drawer-motion` | 2026-11-07 | Slice owner builds (§8) |
 
 ## 1. Approach
@@ -883,7 +883,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S17 · Structured transcript
 
-**Status** todo · **Needs** S16 · **Branch** `claude/s17-transcript`
+**Status** doing · **Needs** S16 · **Branch** `claude/s17-transcript`
 
 **Why**: Screen 04: thinking and tool calls collapse to one line each. DESIGN.md says that the data on screens is real data. The protocol does not have this data now: `SessionMessage` has only `text`.
 
@@ -892,14 +892,22 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: A coding task shows "已思考 8 秒 ›", "Read TaskListStore.swift" and "Edit TaskListStore.swift +12 −3".
 
 **Done when**
-- [ ] [auto] Golden fixtures for thinking and tool blocks decode the same in Swift and TS — Evidence:
-- [ ] [auto] The bridge maps DSH thinking and tool events into blocks against `FakeDSH` — Evidence:
-- [ ] [ui] Tool rows show verb, target and +/−, and open a sheet on tap — Evidence:
-- [ ] [ui] Without `transcript.v1`, the session page shows the S16 view — Evidence:
+- [x] [auto] Golden fixtures for thinking and tool blocks decode the same in Swift and TS — Evidence: test:S17TranscriptFixtures/thinkingAndToolBlocksDecode · test:GoldenFixtures/fixturesRoundTrip · cmd:scripts/demo/s17.sh
+- [x] [auto] The bridge maps DSH thinking and tool events into blocks against `FakeDSH` — Evidence: test:TranscriptMapperAgainstFakeDSH/mapsThinkingAndToolEventsIntoBlocks · test:TranscriptMapperAgainstFakeDSH/withoutTranscriptCapabilityTheClientGetsNoBlocks · cmd:scripts/demo/s17.sh
+- [x] [ui] Tool rows show verb, target and +/−, and open a sheet on tap — Evidence: test:S17TranscriptUITests/testToolRowsShowVerbTargetAndLinesAndOpenASheet · cmd:scripts/demo/s17.sh · shot:evidence/S17/s17-rows.png · shot:evidence/S17/s17-tool-sheet.png
+- [x] [ui] Without `transcript.v1`, the session page shows the S16 view — Evidence: test:S17TranscriptUITests/testWithoutTranscriptCapabilityShowsTheS16View · test:S17TranscriptStoreTests/withoutTheCapabilityThereAreNoRows · cmd:scripts/demo/s17.sh · shot:evidence/S17/s17-without-capability.png
 
 **Not**: A full diff view inside the row.
 
 **Log**: —
+- **2026-11-07 · built, to review.**
+  - Done: `protocol/transcript.proto` (`TranscriptBlock`: thinking with duration and DSH's reasoning text, tool with tool, target, lines added and removed, raw arguments, error; `Event.transcript_block = 340`; capability `transcript.v1`), one registration line in `frame.proto`, codegen, three golden fixtures (`s17_*`) decoded in Swift (`S17TranscriptFixtures`) and TS (`S17TranscriptFixtures`). Bridge `bridge/src/transcript/`: thinking from the timed `reasoning-delta` chunks of the live stream, tool rows from durable `tool/call` and `tool/result` (`meta.diffs` → +/−), no model summary; blocks are host-log events, sent only to a client with `transcript.v1` in its Hello. FakeDSH streams reasoning and tool calls. App: `TranscriptItem` / `StructuredTranscript` (DSHCore), `CachedTask.transcriptBlocksData`, `TaskRow.blocks` (empty when the host's Hello lacks `transcript.v1`); `Features/Transcript/` (`StructuredTranscriptView`: "Thought for 8 s ›" / "已思考 8 秒 ›" and `verb · target · +/−` rows, tool rows under one hairline; `TranscriptBlockSheet` via `SheetRoute.transcriptBlock`). One line each in `SessionPage.swift`, `ShellModel.swift`, `AppComposition.swift`. Fake: `-DSHMFakeScenario transcript` / `transcript-v0` (`FakeTranscript`, `Script.blocks`). Board 04 caption names S17 and the sheet; `scripts/render-design` run. `scripts/demo/s17.sh` (parts in `demo_part`).
+  - Decision: see **D61** (structured transcript). *Provisional, pending user confirmation.* No new dependencies.
+  - Merged main twice (S20, then S19 with conflicts in shared files; kept both sides, see the merge commit). Verified on the merge with `dshm-S17`: `scripts/demo/s17.sh --shots` (bridge 68/68, `swift test` 80 tests, S17 UI 2/2, S16 UI 2/2), `scripts/demo/s16.sh` (UI 11/11), `scripts/demo/s19.sh` as the seam check (UI 5/5). All exit 0. `scripts/demo/t0.sh` passed at the start (real DSH, UI 4/4).
+  - Flaky, not repaired: one `t0.sh` run had 10 `swift test` failures, all `store.send() → nil` after the 500 ms `sendWaitsFor` (TaskListStoreTests, CachedMilestoneTests, NoiseResumeTests, S16CodingTaskTests, and the new S17 store tests), under load from other slices' simulators; the next run passed. The S17 store tests now wait 5 s; the older tests are not S17's.
+  - Not done: sessions read from the journal (`sessions.v1`, other clients) keep the S16 view (D61, alternative 4); the board's "深入工作中… · N 步" group header over the tool rows is not built.
+  - For the coordinator: add D61 to §9. `scripts/demo/s16.sh` and `s19.sh` write logs to the fixed `/tmp/dshm-s16` and `/tmp/dshm-s19`, which a second slice running them at the same time shares (one `ui-shell.log` was empty after a passing run).
+  - Next: independent `scripts/review S17`, then merge.
 
 ### S18 · Approval sheet
 
@@ -1437,6 +1445,14 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · S23 assigned.** Branch `claude/s23-drawer-motion`, worktree `.claude/worktrees/s23-drawer-motion` (from `7c5ed5b`), simulator `dshm-S23`, DSHM_HOME `~/.dshm/home-s23`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D65–D66. `eval "$(scripts/slice-env S23)"` exports them.
 
+- **2026-11-07 · S17 built; review started.** S17 owner finished at `a151a3e`: four `[auto]`/`[ui]` items ticked, D61 provisional, no new dependencies. It merged `main` (S20, S19); `s17.sh`, `s16.sh`, `s19.sh` and `t0.sh` passed. Flaky: one `t0.sh` run had 10 `swift test` failures (`store.send() → nil` after the 500 ms wait) in the older store tests while other simulators loaded the Mac; the next run passed. Same cause as the S20 repair round 1; the older tests keep their 500 ms wait. Also: `s16.sh` and `s19.sh` log to fixed `/tmp/dshm-s16` and `/tmp/dshm-s19` folders, so two slices that run them at once share them. Open for later: sessions read from another client's history keep the S16 view; the "深入工作中… · N 步" header is not built; D60 "N 步" could count tool calls now. An independent reviewer runs `scripts/review S17` on `a151a3e` (ports 47818/3291).
+
+- **2026-11-07 · S17 review FAIL: tool gap, not code.** `scripts/review S17` at `a151a3e`: `RESULT: FAIL` (`/tmp/dshm-review/S17-a151a3e.txt`). All parts passed (`s17.sh`, both S17 UI tests; `swift test` 80 tests passed). The one FAIL was `test:S17TranscriptStoreTests/withoutTheCapabilityThereAreNoRows`: a Swift Testing `@Test` in DSHKit, which the review could only match in XCTest form. The pointer cannot change (ticked item). Fix in the tool on `main` (`4f91fc1`): such pointers now run `swift test --filter Suite/name` and need the test's own pass line. Not a repair round for S17. The owner merges `main`, then the review runs again with `--resume`. In §9 for the user.
+
+- **2026-11-07 · S22 built; review started.** S22 owner finished at `2196033`: the `[ui]` item ticked, D63 provisional, no new dependencies, no flaky tests in two full demo runs. It merged `main` (S19); `s22.sh` passed with the S11 seam tests (3/3). S22 lands after S11, so it owns the seam: `S11FirstRunUITests/testFirstRunFromWelcomeToReply` now finds the first task already in the composer. It created the simulator `dshm-S22` (iPhone 17 Pro, iOS 26.4). The S11 `[human]` onboarding items can be checked on the new 08 now. An independent reviewer runs `scripts/review S22` on `2196033` (ports 47810/3283).
+
+- **2026-11-07 · S17 merged.** Merged as `3a9f11e`; `scripts/check-plan` on the merge commit passed. `scripts/review S17 --resume` at `dfe79f3`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S17-dfe79f3.txt`); the Swift Testing pointer passed through the new `swift test --filter` check. No open `[human]` items, so S17 is `done`. D61 to §9. Bookkeeping by `row`, `pending` and `log` (`scripts/plan merged` refuses items added on the branch, as for S20).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1495,3 +1511,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 54 | S21 | `[human]` | On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that. Needs a paired iPhone and a running host with the S21 app. | `main` | `13648eb` |
 | 55 | S20 | decision | D58, provisional: picker sheets (07, M, X4): workspace and model pickers as SheetRoute sheets; a task with no selection opens the model sheet at the host default. | ``claude/s20-pickers`` | `merged `e849e8e`` |
 | 56 | S19 | decision | D60, provisional: done and failed on the session page (06, X1): TaskOutcome reads an ended task from the cache only; retry opens 01 in a new session with the original prompt. | ``claude/s19-outcomes`` | `merged `077a9f3`` |
+| 57 | S17 | decision | Coordinator change to scripts/review (4f91fc1): a test: pointer to a DSHKit Swift Testing @Test is checked with `swift test --filter Suite/name` and its own pass line. Before, such pointers could never pass. Please confirm or change. | ``main`` | ``4f91fc1`` |
+| 58 | S17 | decision | D61, provisional: structured transcript (transcript.v1, TranscriptBlock field 340): thinking and tool rows mapped by the bridge from DSH events, with the S16 view as the fallback. | ``claude/s17-transcript`` | `merged `3a9f11e`` |

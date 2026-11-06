@@ -97,6 +97,8 @@ enum SheetRoute: Identifiable, Hashable {
     case settings
     /// The hosts sheet (H), from the "2 / 3" pill in the drawer (S21).
     case hosts
+    /// One thinking or tool-call row of a session (S17).
+    case transcriptBlock(taskKey: String, blockID: String)
 
     var id: Self { self }
 
@@ -117,6 +119,8 @@ enum SheetRoute: Identifiable, Hashable {
             DrawerSettingsSheet(store: store)
         case .hosts:
             HostsSheet(store: store)
+        case .transcriptBlock(let key, let blockID):
+            TranscriptBlockSheet(store: store, taskKey: key, blockID: blockID)
         }
     }
 }

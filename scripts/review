@@ -101,6 +101,17 @@ while IFS= read -r t; do
   suite=${t%%/*}; name=${t#*/}; [ "$name" = "$t" ] && name=""
   pat="Test Case '-\[[A-Za-z_]+\.$suite ${name:-[A-Za-z0-9_]+}\]' passed"
   if grep -qE "$pat" "$LOG"; then LINES+=("PASS  test:$t")
+  # A Swift Testing @Test in DSHKit: the demo log names only suites, so run that one test and
+  # look for its own pass line:  ✔ Test name() passed
+  elif [ -n "$name" ] && grep -rqE "func $name\(" ios/DSHKit/Tests 2>/dev/null; then
+    set +e
+    swift test --package-path ios/DSHKit --filter "$suite/$name" 2>&1 | tee -a "$LOG" > "$LOG.part"
+    set -e
+    if grep -qE "✔ Test \"?$name\(.*passed" "$LOG.part" && ! grep -q "✘" "$LOG.part"; then
+      LINES+=("PASS  test:$t (swift test --filter)")
+    else LINES+=("FAIL  test:$t (swift test --filter: no passed run)"); STATUS=1
+    fi
+    rm -f "$LOG.part"
   else LINES+=("FAIL  test:$t (no passed run in the output)"); STATUS=1
   fi
 done <<< "$TESTS"

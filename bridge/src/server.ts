@@ -23,6 +23,7 @@ import { FrameSchema, type Frame, type Request, type ResponseSchema } from './ge
 import type { SessionDirectory } from './sessions/directory.ts'
 import { MILESTONES_CAPABILITY } from './milestones/wire.ts'
 import { DRAWER_CAPABILITY } from './drawer/workspace.ts'
+import { TRANSCRIPT_CAPABILITY } from './transcript/wire.ts'
 import { HandshakeRejected, type NoiseResponder } from './pairing/handshake.ts'
 import type { LoggedEvent } from './s2/host-log.ts'
 import { TaskHub, type TaskStarter } from './s2/task-hub.ts'
@@ -33,7 +34,7 @@ type ResponseBody = MessageInitShape<typeof ResponseSchema>['body']
 
 export const PROTOCOL_VERSION = 1
 /** `resume.v1`: ListTasks, Resume and `Event.host_seq` (S2). `milestones.v1`: MilestoneAdded (S3). */
-export const CAPABILITIES = ['tasks.v1', MILESTONES_CAPABILITY, 'resume.v1', 'interrupt.v1'] as const
+export const CAPABILITIES = ['tasks.v1', MILESTONES_CAPABILITY, 'resume.v1', 'interrupt.v1', TRANSCRIPT_CAPABILITY] as const
 /** Where the dev-only plaintext channel is served. */
 export const PLAINTEXT_PATH = '/plaintext'
 
@@ -109,6 +110,7 @@ function serveConnection(
   let helloDone = false
   let clientSessions = false
   let clientApprovals = false
+  let clientTranscript = false
   let codec: FrameCodec | undefined
 
   const path = new URL(url, 'ws://bridge').pathname
@@ -141,6 +143,8 @@ function serveConnection(
       } } } } })
       return
     }
+    // S17: only apps that read transcript blocks get them.
+    if (!clientTranscript && event.body?.case === 'transcriptBlock') return
     // Older apps cannot withdraw temporary upstream approval rows.
     if (!clientApprovals && (event.body?.case === 'approvalPending' || event.body?.case === 'approvalResolved'
       || (event.body?.case === 'taskUpserted' && event.body.value.task?.approvalOnly))) return
@@ -164,6 +168,7 @@ function serveConnection(
         helloDone = true
         clientSessions = !!options.sessions && request.body.value.capabilities.includes('sessions.v1')
         clientApprovals = request.body.value.capabilities.includes('approvals.v1')
+        clientTranscript = request.body.value.capabilities.includes(TRANSCRIPT_CAPABILITY)
         return respond(id, {
           case: 'hello',
           value: { protocolVersion: PROTOCOL_VERSION, dshVersion: options.dshVersion,

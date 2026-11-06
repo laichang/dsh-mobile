@@ -33,6 +33,8 @@ public enum DebugLaunchOptions {
     /// `-DSHMFakeScenario outcomes` (S19): a task that asks for one approval and ends done with a
     /// long final answer, one that fails on its third step, and one that runs until it is stopped
     /// (`FakeBridge.Script.outcomes`). The Web's answer is `FakeApprovalSheet`'s notification.
+    /// `-DSHMFakeScenario transcript` (S17): a task with thinking and tool-call blocks
+    /// (`FakeTranscript`); `transcript-v0`: the same blocks from a host without `transcript.v1`.
     public static let fakeScenarioKey = "DSHMFakeScenario"
     /// `-DSHMFakeAsk <text>` (S18): with the FakeBridge approvals scenario, a task whose prompt
     /// contains `<text>` asks for an approval before its reply, so a new approval arrives in an

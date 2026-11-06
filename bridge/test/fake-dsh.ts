@@ -5,6 +5,8 @@
  * `assistant/message`, `turn/end`. No network, no model.
  * S3: `events` adds durable projection events (`todo/write`, `plan/mode`, `llm/retry`, …) to every
  * turn, between `turn/start` and the reply, each with its own `seq` and `time`.
+ * S17: `reasoning` streams timed `reasoning-delta` chunks before the reply, and `tools` adds a
+ * durable `tool/call` and `tool/result` pair for each call after it.
  */
 import type { Selection } from '../src/models/catalog.ts'
 import type { DshServices, FollowFrame } from '../src/dsh.ts'
@@ -20,6 +22,22 @@ export interface FakeDSHOptions {
   events?: { type: string; data: Record<string, unknown> }[]
   /** Wait this long before each text delta (default 0: the whole turn runs at once). */
   chunkDelayMs?: number
+  /** S17: reasoning deltas streamed before the reply; chunk `time`s are `reasoningStepMs` apart (default 1000). */
+  reasoning?: string[]
+  reasoningStepMs?: number
+  /** S17: tool calls after the reply, each a durable `tool/call` then its `tool/result`. */
+  tools?: FakeToolCall[]
+}
+
+/** S17: one tool call and its result, as dsh-tool-fs and dsh-tool-bash record them. */
+export interface FakeToolCall {
+  callId: string
+  name: string
+  arguments: string
+  /** The result's `meta`, e.g. `{ diffs: [{ path, oldText, newText }] }`. */
+  meta?: unknown
+  isError?: boolean
+  reason?: string
 }
 
 /** `time` of the first event; each later event is one second on. */
@@ -151,6 +169,14 @@ export class FakeDSH implements DshServices {
     for (const e of this.options.events ?? []) this.emitEvent(sessionId, e.type, { turn, ...e.data })
     const delay = this.options.chunkDelayMs ?? 0
     this.emit(sessionId, { type: 'assistant-stream', frame: { type: 'start' } })
+    const reasoning = this.options.reasoning ?? []
+    const step = this.options.reasoningStepMs ?? 1000
+    reasoning.forEach((text, i) => this.emit(sessionId, { type: 'assistant-stream',
+      frame: { type: 'chunk', time: FAKE_DSH_EPOCH_MS + i * step, chunk: { type: 'reasoning-delta', index: 0, text } } }))
+    if (reasoning.length) {
+      this.emit(sessionId, { type: 'assistant-stream', frame: { type: 'chunk', time: FAKE_DSH_EPOCH_MS + reasoning.length * step,
+        chunk: { type: 'block-end', index: 0, block: { type: 'reasoning', text: reasoning.join('') } } } })
+    }
     for (const text of reply) {
       if (delay > 0) await new Promise((r) => setTimeout(r, delay))
       if (this.interrupts.includes(sessionId)) return
@@ -161,6 +187,14 @@ export class FakeDSH implements DshServices {
       type: 'event',
       event: { type: 'assistant/message', seq, data: { turn, step: 0, message: { content: [{ type: 'text', text: reply.join('') }] } } },
     }))
+    for (const call of this.options.tools ?? []) {
+      this.emitEvent(sessionId, 'tool/call', { turn, step: 0, callId: call.callId, name: call.name, arguments: call.arguments })
+      this.emitEvent(sessionId, 'tool/result', {
+        turn, step: 0, message: { role: 'tool', toolCallId: call.callId, content: [], ...(call.isError ? { isError: true } : {}) },
+        ...(call.meta === undefined ? {} : { meta: call.meta }),
+        ...(call.isError ? { error: { name: 'ToolError', code: 'failed', reason: call.reason ?? '' } } : {}),
+      })
+    }
     const reason = this.options.failWith ?? { kind: 'completed' }
     this.emitEvent(sessionId, 'turn/end', { turn, reason })
   }

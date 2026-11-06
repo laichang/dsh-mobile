@@ -15,6 +15,8 @@ public enum TaskEvent: Sendable, Equatable {
     case approvalResolved(taskID: String, id: String)
     /// S2: the app's resume cursor didn't apply; a replay of log `logID` from its start follows.
     case logReset(logID: String)
+    /// S17: a thinking or tool-call row was added or changed (`transcript.v1`).
+    case transcriptBlock(TranscriptItem)
 }
 
 public enum TaskEndStatus: Sendable, Equatable {
@@ -218,7 +220,7 @@ public actor HostConnection {
         do {
             var hello = Dshm_V1_Hello()
             hello.protocolVersion = DSHProtocolInfo.version
-            hello.capabilities = [DSHProtocolInfo.approvalsCapability, "sessions.v1"]
+            hello.capabilities = [DSHProtocolInfo.approvalsCapability, "sessions.v1", DSHProtocolInfo.transcriptCapability]
             let response = try await request(.hello(hello))
             guard case .hello(let theirs)? = response.body else { throw HostConnectionError.unexpectedResponse }
             if theirs.requiresBridgeUpdate {
@@ -451,6 +453,8 @@ public actor HostConnection {
             return .modelSelected(taskID: m.taskID, selection: m.selection)
         case .milestoneAdded(let m)?:
             return Milestone(m).map { .milestone($0) }
+        case .transcriptBlock(let b)?:
+            return TranscriptItem(b).map { .transcriptBlock($0) }
         case nil:
             return nil
         }
