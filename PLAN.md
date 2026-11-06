@@ -64,7 +64,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
-| S21 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
+| S21 | doing | `claude/s21-hosts` | 2026-11-06 | Slice owner builds the hosts sheet and control (§8) |
 | S22 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S23 | todo | — | 2026-11-06 | Next batch (S14 is merged) |
 
@@ -1316,6 +1316,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-06 · Guard fixes on `main`; slices merge `main`.** The user committed `2a6a0ed` (the guard waits on CPU idle, not load average; it stops noisy iOS services in `dshm-*` simulators) and `51009d0` (the watcher survives a killed job; simulators with no owner are shut down). At the user's request, each running slice merges `main` before its next demo. S16 (`107ab77`: `main` with S14 and S15 merged; `swift test`, `s16.sh`, `s14.sh --part ui-fake`, `s15.sh` passed) merges `main` again, then its review runs with `--resume`. S20 merges before its next demo. The S18 review on `9315a32` was already running and continues; S18 merges `main` before any repair.
 
 - **2026-11-06 · S18 merged.** Background reviewer ran `scripts/review S18` at `9315a32` (with the real-DSH `s4.sh`): `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S18-9315a32.txt`). Merged as `8d25764`; `scripts/check-plan --base` passed. No open `[human]` items, so S18 is `done`. S16 and S20 must merge `main` again (S18 changed `SessionPage.swift`, `ShellModel.swift`, `FakeBridge.swift`).
+
+- **2026-11-06 · S21 assigned.** Branch `claude/s21-hosts`, worktree `.claude/worktrees/s21-hosts` (from `db51c26`), simulator `dshm-S21`, DSHM_HOME `~/.dshm/home-s21`, bridge 47816, web 3289; second host 47846/3319. The owner runs as a background agent (WORKFLOW.md §5.3, step 3): the app refused the session start from the review-completion turn. S19 waits for S16 (both change the session page).
 
 ## 9. Pending user confirmation
 
