@@ -85,6 +85,22 @@ Rules:
 - A slice owner does not edit §0, §8, or §9. Parallel branches that edit adjacent rows cause merge conflicts.
 - If §0 must change, the slice owner writes this in its Log and its report. The coordinator then changes §0.
 - A subagent gives its results to the slice owner. The slice owner records them in the Log.
+- Change the plan file with `scripts/plan` (§3.1). Do not edit §0, §8, §9, the items, or a Log by hand. The script refuses a command on the wrong branch.
+
+### 3.1 Bookkeeping commands
+
+`scripts/plan` makes each change, checks it with `scripts/check-plan`, and commits it with `--commit`. Use `--dry-run` to see the change first. The file header of `scripts/plan` lists all commands.
+
+| Who | Command | What it does |
+|---|---|---|
+| Coordinator | `scripts/plan assign <ID> --branch <branch> --commit` | Gives the resources (§6), sets §0 to `doing`, and adds the §8 entry |
+| Coordinator | `scripts/plan merged <ID> <merge commit> --commit` | Checks the merge commit (§10, condition 3), sets §0, adds the §9 rows and the §8 entry |
+| Coordinator | `scripts/plan row`, `scripts/plan log`, `scripts/plan pending` | Changes one §0 row, adds one §8 entry, adds one §9 row |
+| Coordinator | `scripts/plan title` | Writes the coordinator status title (§7.1) from §0 |
+| Slice owner | `scripts/plan tick <ID> "<part of the item>" --evidence "<pointers>"` | Ticks one `[auto]` or `[ui]` item |
+| Slice owner | `scripts/plan slice-log <ID> "<title>" --body -` | Adds a dated Log entry. The body comes from stdin |
+| Slice owner | `scripts/plan slice-status <ID> <status>` | Changes the Status field of the slice |
+| All | `scripts/plan show <ID>` | Shows the §0 row and the section of the slice |
 
 ## 4. Start and stop a work session
 
@@ -92,15 +108,15 @@ Rules:
 
 1. Read [AGENTS.md](AGENTS.md).
 2. Read this file.
-3. Read §0 of the plan file.
-4. Read the section of your slice, together with its Log.
-5. Read `git log` from the date of the last Log entry of your slice.
+3. Run `scripts/plan show <ID>`. It shows the §0 row and the section of your slice, together with its Log. Do not read all of the plan file.
+4. Read `git log` from the date of the last Log entry of your slice.
+5. Run `eval "$(scripts/slice-env <ID>)"`. It exports the resources of your slice (§6).
 6. Run `scripts/demo/t0.sh`. If it fails, repair it first.
 7. Set your status title (§7).
 
 ### 4.2 Before you stop
 
-1. Add an entry to the Log of your slice. Write what is done, what is not done, and the next step.
+1. Add an entry to the Log of your slice with `scripts/plan slice-log`. Write what is done, what is not done, and the next step. Tick each item with `scripts/plan tick`.
 2. Commit on the slice branch.
 3. Set your status title (§7).
 4. In your report, list each new provisional item (§9).
@@ -121,11 +137,11 @@ This message gives the coordinator permission for sessions, workflows, backgroun
 
 - Do not propose a session card that waits for a click. The user does not click cards. Start the session, or use the fallback in §5.3.
 - Start slices whose **Needs** are met. Start a maximum of 3 slices in one batch.
-- Give each slice its resources (§6) before you start it.
+- Give each slice its resources (§6) before you start it: `scripts/plan assign <ID> --branch <branch> --commit`.
 - Give each slice owner a brief. The brief contains: the slice ID, the branch, the worktree, the resources, the session settings (§8), the default choices (§9), and the status title rules (§7).
 - When a slice owner stops, examine its result. Do not trust its report alone.
 - Merge each slice that meets the merge conditions (§10). Then start the next slice.
-- Keep §0 and your own status title (§7) up to date after each change.
+- Keep §0 and your own status title (§7) up to date after each change. `scripts/plan title` gives the title.
 - Wait for the completion event of a slice session. Do not poll git for a commit. Do not wait on a background shell for the work of a slice owner.
 - A completion event tells you that a turn of the slice session ended. It does not tell you that the slice is complete. Read the report:
   - If the report says that the work is complete, examine the result (see above).
@@ -156,11 +172,7 @@ A notification that a background job is `stopped` or `killed` is an interruption
 
 Do these steps at the start of each turn that follows an interruption:
 
-1. Do not trust the state that you remember. Examine the real state of each slice that is `doing`:
-   - the head commit of the slice branch,
-   - the uncommitted changes in its worktree,
-   - the test and build processes that run now (`pgrep -fl 'xcodebuild|swift-test'`),
-   - the status of the slice session (`list_sessions`).
+1. Do not trust the state that you remember. Run `scripts/status`. It shows the real state of each slice that is `doing`: the head commit of the slice branch, the uncommitted changes in its worktree, the test and build processes that run for it, and its latest review result. Its "attention" list shows the slices that look stuck. Then examine the status of each slice session (`list_sessions`). A script cannot see the sessions.
 2. If a slice owner is idle and no process runs for its slice, send it a brief to continue. The brief tells it what stopped and what to run again.
 3. Start the slices whose **Needs** are met (§5.2).
 4. Record the interruption and the recovery in §8 of the plan file.
@@ -185,7 +197,7 @@ In the kickoff turn, before the first batch:
 
 In each heartbeat turn:
 
-1. Find the work that runs now: the linked sessions (`list_sessions` with `linked: true`), your workflows, and your background jobs.
+1. Find the work that runs now: run `scripts/status`, and examine the linked sessions (`list_sessions` with `linked: true`), your workflows, and your background jobs.
 2. If work runs, do nothing. End the turn with one line.
 3. If no work runs, do the recovery steps (§5.4).
 4. If the app refuses to start a session in this turn, do not wait for the user. Run the slices as a workflow (§5.3, step 3).
@@ -203,15 +215,20 @@ Slices run tests at the same time. Each slice therefore gets its own resources:
 |---|---|---|
 | Worktree | `.claude/worktrees/<name>` or the worktree that the tool creates | `wf_219b7aa1-71c-2` |
 | Branch | `claude/<id>-<short-name>` | `claude/s1-pair-encrypt` |
-| Bridge port | Next free port from 47810 | 47810 |
-| DSH web port | Next free port from 3283 | 3283 |
+| Slot | The lowest slot that no active slice holds | 0 |
+| Bridge port | 47810 + slot. A second host: 47840 + slot | 47810 |
+| DSH web port | 3283 + slot. A second host: 3313 + slot | 3283 |
 | `DSH_HOME` | `~/.dshm/home-<id>` | `~/.dshm/home-s1` |
 | Simulator | `dshm-<ID>`, an iOS 26 iPhone | `dshm-S1` |
+| Decision numbers | A block of 3 `Dxx` numbers after the highest number in use | `D60-D62` |
 
-- The coordinator gives the resources and records them in §8 of the plan file.
+- The coordinator gives the resources with `scripts/slice-env --assign` (through `scripts/plan assign`). The script writes them to the registry `scripts/resources.tsv`. Do not edit the registry by hand.
+- A slice holds its slot while it is `todo`, `doing`, or `blocked` in §0. After the merge, the next slice can use the slot. The script also skips a slot when a process listens on one of its ports.
+- The slice owner runs `eval "$(scripts/slice-env <ID>)"` in each shell before a demo. This also works in a worktree that was cut before the assignment.
+- Use only the decision numbers of your block (`DSHM_DECISIONS`). Then parallel slices do not use the same number. Do not use the unused numbers of a block for a different slice.
 - A slice uses only its own resources. All slices use the DSH install in `~/.dshm/runtime` read-only.
 - Port 47800 is for demos on `main`. Port 47801 is for `scripts/demo/t0.sh`.
-- The slice demo script reads the resources from `DSHM_BRIDGE_PORT`, `DSHM_WEB_PORT`, `DSHM_HOME`, and `DSHM_SIM`.
+- The slice demo script reads the resources from `DSHM_BRIDGE_PORT`, `DSHM_WEB_PORT`, `DSHM_SECOND_BRIDGE_PORT`, `DSHM_SECOND_WEB_PORT`, `DSHM_HOME`, and `DSHM_SIM`.
 
 ### 6.1 Simulator limit
 
@@ -278,7 +295,7 @@ The coordinator uses these settings for each slice session, workflow agent, and 
 
 The user is not always available. Agents therefore do not wait for the user at a choice.
 
-- **Decisions.** At a toolchain or design choice, continue with your recommendation. Record it in [ARCHITECTURE.md](ARCHITECTURE.md) as a `Dxx` entry. Mark the entry **provisional, pending user confirmation**. List the alternatives that you considered.
+- **Decisions.** At a toolchain or design choice, continue with your recommendation. Record it in [ARCHITECTURE.md](ARCHITECTURE.md) as a `Dxx` entry, with a number from your block (§6). Mark the entry **provisional, pending user confirmation**. List the alternatives that you considered.
 - **Dependencies and downloads.** You can add them without permission. Pin each one: an exact version, or a commit and a checksum. Record each one as provisional, and name it in the Log of the slice.
 - **Reports.** List each new provisional item in your report to the coordinator. The coordinator adds it to §9 of the plan file with the slice, the branch, and the commit.
 - **Confirmation.** A provisional item stays provisional until the user confirms it. When the user confirms or changes it, the owner removes the marker or applies the change.
@@ -292,7 +309,7 @@ The coordinator merges a slice branch into `main` without permission when all th
 2. A reviewer ran `scripts/review <ID>` on the head commit of the slice branch, and the result is `RESULT: PASS`.
 3. `scripts/check-plan` passes. For a merge commit, run `scripts/check-plan --base <PLAN.md before the merge> --new PLAN.md` by hand, because the pre-commit hook does not run on a merge commit.
 
-The merge does not wait for `[human]` items. After the merge:
+The merge does not wait for `[human]` items. After the merge, run `scripts/plan merged <ID> <merge commit> --commit`. It does condition 3 for the merge commit and the bookkeeping below:
 
 - If the slice has open `[human]` items, set §0 to `review`. Add each open `[human]` item to §9 with the device or setup that it needs.
 - If the slice has no open `[human]` items, set §0 to `done`.
@@ -312,7 +329,7 @@ A test is flaky when it fails and then passes with no change to the code.
 
 - It runs only the `[ui]` items of the slice, from the plan file: each `cmd:` pointer one time, and the slice demo for items with only `test:` pointers. Then each `test:` pointer must show as passed.
 - It runs a failed part again, a maximum of 2 times. A part that passes on a run again is flaky. The review still passes, and the result lists the flaky part.
-- It does not run again the parts that passed for the same code. This applies to a run again and to `--resume`.
+- It does not run again the parts that passed for the same code. This applies to a run again and to `--resume`. "The same code" is the same content of the worktree, not the same commit. Changes to `evidence/` and to `*.md` files do not change the code. Thus a commit that only ticks items or adds a Log entry keeps the passed parts.
 - It refuses a worktree with uncommitted changes. It writes the result to `/tmp/dshm-review/<ID>-<commit>.txt`.
 
 Rules for all agents:
@@ -385,3 +402,4 @@ If a tool has no function for a capability, use the fallback in this table. Then
 - **2026-11-06**: Added the recovery after an interruption (§5.4), the simulator limit (§6.1, enforced by the guard in `scripts/demo/lib.sh`), and the review run with the rules for flaky tests (§10.1, enforced by `scripts/review`). Added coordinator rules to §5.2: wait for completion events, read each event as the end of a turn and not of the slice, and do not add merge conditions. A `stopped` or `killed` job notification starts the recovery (§5.4). Reason: T1 stopped for many hours. An app restart stopped the background jobs. Six booted simulators made the UI tests flaky. A merge condition of "5 runs in a row" did not converge. Each failure in `t1.sh --all` started the full regression again. Added the heartbeat and keep-awake (§5.5): after an interruption, no event woke the coordinator.
 - **2026-11-06**: The guard (§6.1) now checks the CPU idle time, not the load average. It also stops the iOS background services in each `dshm-*` simulator.
 - **2026-11-06**: The shutdown by the guard (§6.1) now also occurs after a tool kills the script. The guard shuts down a `dshm-*` simulator whose owner is not running.
+- **2026-11-07**: Added the bookkeeping commands (§3.1, `scripts/plan`), the run status (`scripts/status`, in §5.4 and §5.5), and the resource registry with blocks of decision numbers (§6, `scripts/slice-env`, `scripts/resources.tsv`). The code key of the parts (§10.1) is now the content of the worktree, not the commit. Reason: a review of all sessions to 2026-11-07. About one quarter of all commits were hand edits of §0, §8, and §9. The user asked for the progress more than 15 times, and each answer was a set of hand-made commands. Parallel slices took the same `Dxx` number, and agents renumbered decisions 10 times. A commit with no code change made the review run the passed parts again.
