@@ -66,7 +66,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S20 | done | merged `e849e8e` | 2026-11-07 | — (provisional D58 in §9) |
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
 | S22 | done | merged `4deb8d0` | 2026-11-07 | — (provisional D63 in §9) |
-| S23 | doing | `claude/s23-drawer-motion` `7d086d9` | 2026-11-07 | Reviewer runs `scripts/review S23` (§8) |
+| S23 | review | merged `47acc0d` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
 
 ## 1. Approach
 
@@ -1477,6 +1477,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · S23 built; review started.** S23 owner finished at `7d086d9`: the `[ui]` item ticked, the `[human]` item (motion feels smooth on a real iPhone) open, D65 provisional (D66 not used), no new dependencies, no flaky tests. It merged `main` twice (S17, S22); `s23.sh --shots` passed with the seam tests of S19, S16, S14, T1, S18 and S15 (20/20). S23 owns the S19 landing-position seam and reuses its code. Its own reading, in D65: on 03 (drawer closed) an approval card only cross-fades, then 05 comes up; saved scroll positions live in memory only. It created the simulator `dshm-S23` (iPhone 17 Pro, iOS 26.4). An independent reviewer runs `scripts/review S23` on `7d086d9` (ports 47811/3284).
 
+- **2026-11-07 · S23 merged.** Merged as `47acc0d`; `scripts/check-plan` on the merge commit passed. `scripts/review S23` at `7d086d9`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S23-7d086d9.txt`); the S15 seam UI step was slow (about 19 min) on an idle machine but passed. 1 open `[human]` item, so S23 is `review`. D65 to §9.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1538,3 +1540,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 57 | S17 | decision | Coordinator change to scripts/review (4f91fc1): a test: pointer to a DSHKit Swift Testing @Test is checked with `swift test --filter Suite/name` and its own pass line. Before, such pointers could never pass. Please confirm or change. | ``main`` | ``4f91fc1`` |
 | 58 | S17 | decision | D61, provisional: structured transcript (transcript.v1, TranscriptBlock field 340): thinking and tool rows mapped by the bridge from DSH events, with the S16 view as the fallback. | ``claude/s17-transcript`` | `merged `3a9f11e`` |
 | 59 | S22 | decision | D63, provisional: after the first pairing, 01 opens with the first task filled in (no tap); paste mode on 08; restyled pairing review. | ``claude/s22-first-run`` | `merged `4deb8d0`` |
+| 60 | S23 | decision | D65, provisional: drawer motion timings and landing positions; on 03 an approval card only cross-fades, then 05; saved scroll positions in memory only. | ``claude/s23-drawer-motion`` | `merged `47acc0d`` |
+| 61 | S23 | `[human]` | The drawer motion feels smooth on a real iPhone. | ``main`` | ``47acc0d`` |
