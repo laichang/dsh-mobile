@@ -12,9 +12,9 @@ struct dsh_mobileApp: App {
             root
                 // DESIGN.md "Visual language": the app always uses dark mode (T1).
                 .preferredColorScheme(.dark)
-                .environment(\.hostActions, HostActions(pair: { app.showingScanner = true }, forget: { app.forgetHost($0) }))
+                .environment(\.hostActions, HostActions(pair: { app.startPairing() }, forget: { app.forgetHost($0) }))
                 .sheet(isPresented: $app.showingScanner) {
-                    ScannerView(found: { app.openPairingCode($0) }, cancel: { app.showingScanner = false })
+                    ScannerView(mode: app.scannerMode, found: { app.openPairingCode($0) }, cancel: { app.showingScanner = false })
                 }
                 #if DEBUG
                 // dshm:// is registered only in the Debug Info.plist (ARCHITECTURE D16).
@@ -41,52 +41,21 @@ struct dsh_mobileApp: App {
                 let wasUnpaired = !app.hasSavedHosts
                 app.closePairing()
                 showFirstTask = wasUnpaired && app.hasSavedHosts
+                // S22 (D63): after the first pairing, 01 opens with the first task in the composer.
+                if showFirstTask, let store = app.store, store.prompt.isEmpty { store.prompt = FirstRun.suggestion }
             }
         } else if let store = app.store {
-            ShellView(store: store, showFirstTask: $showFirstTask) { app.showingScanner = true }
+            ShellView(store: store, showFirstTask: $showFirstTask) { app.startPairing() }
                 .id(ObjectIdentifier(store))
         } else if app.hasSavedHosts {
             ContentUnavailableView {
                 Label("Couldn't open your paired computers", systemImage: "lock.trianglebadge.exclamationmark")
             } actions: {
                 Button("Try again") { app.retrySavedHosts() }
-                Button("Pair a computer") { app.showingScanner = true }
+                Button("Pair a computer") { app.startPairing() }
             }
         } else {
-            WelcomeView { app.showingScanner = true }
+            WelcomeView(scan: { app.startPairing() }, paste: { app.startPairing(.paste) })
         }
-    }
-}
-
-/// With no paired computer, explain what the phone can do and how to connect it.
-struct WelcomeView: View {
-    let pair: () -> Void
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Image(systemName: "desktopcomputer")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.tint)
-                    .accessibilityHidden(true)
-                Text("Connect your computer")
-                    .font(.largeTitle.bold())
-                    .accessibilityAddTraits(.isHeader)
-                Text("Send tasks from your phone, follow their progress, and answer approval requests. DeepSeek Harness runs the tasks on your computer.")
-                    .font(.body)
-                    .accessibilityIdentifier("firstRun.purpose")
-                Text("To get started, you need a computer running DeepSeek Harness (DSH) with the dsh-mobile bridge enabled.")
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("firstRun.requiresHost")
-                Button("Pair a computer", action: pair)
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .accessibilityIdentifier("pairing.scan")
-            }
-            .frame(maxWidth: 480, alignment: .leading)
-            .padding(28)
-            .frame(maxWidth: .infinity, alignment: .center)
-        }
-        .defaultScrollAnchor(.center, for: .alignment)
     }
 }

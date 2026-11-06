@@ -27,6 +27,8 @@ final class AppModel {
     private static let preferredHostKey = "dshm.composerHostKey"
     var pairingRoute: PairingRoute?
     var showingScanner = false
+    /// S22: 08 opens the scanner to scan, or to paste a link.
+    private(set) var scannerMode: ScannerView.Mode = .scan
 
     let pairing: Pairing
     @ObservationIgnored private let container: ModelContainer
@@ -144,6 +146,11 @@ final class AppModel {
         return configs
     }
     #endif
+
+    func startPairing(_ mode: ScannerView.Mode = .scan) {
+        scannerMode = mode
+        showingScanner = true
+    }
 
     /// A scanned QR payload, a pasted link, or (Debug) a `dshm://pair?…` deep link.
     func openPairingCode(_ text: String) {
