@@ -66,7 +66,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S20 | done | merged `e849e8e` | 2026-11-07 | — (provisional D58 in §9) |
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
 | S22 | doing | `claude/s22-first-run` | 2026-11-07 | Slice owner builds (§8) |
-| S23 | todo | — | 2026-11-06 | Next batch (S14 is merged) |
+| S23 | doing | `claude/s23-drawer-motion` | 2026-11-07 | Slice owner builds (§8) |
 
 ## 1. Approach
 
@@ -1434,6 +1434,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-07 · S22 assigned.** Branch `claude/s22-first-run`, worktree `.claude/worktrees/s22-first-run` (from `c2bdee1`), simulator `dshm-S22`, DSHM_HOME `~/.dshm/home-s22`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D63–D64. `eval "$(scripts/slice-env S22)"` exports them.
 
 - **2026-11-07 · S19 merged.** Merged as `077a9f3`; `scripts/check-plan` on the merge commit passed. `scripts/review S19` at `595b24b`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S19-595b24b.txt`), with `s19.sh`, `s16.sh` and the S16 seam tests. No open `[human]` items, so S19 is `done`. D60 to §9. `scripts/plan merged` refused again for the items added on the branch (same cause as S20); bookkeeping done with `row`, `pending` and `log`.
+
+- **2026-11-07 · S23 assigned.** Branch `claude/s23-drawer-motion`, worktree `.claude/worktrees/s23-drawer-motion` (from `7c5ed5b`), simulator `dshm-S23`, DSHM_HOME `~/.dshm/home-s23`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D65–D66. `eval "$(scripts/slice-env S23)"` exports them.
 
 ## 9. Pending user confirmation
 
