@@ -85,7 +85,9 @@ while IFS= read -r cmd; do
   n=$((n + 1))
   set +e
   # shellcheck disable=SC2086 # a cmd: pointer is a path plus words
-  demo_part "cmd$n" $cmd 2>&1 | tee -a "$LOG"
+  # The part name holds a hash of the command: the code key ignores PLAN.md, so a changed list of
+  # cmd: pointers must not reuse a pass that belongs to another command.
+  demo_part "cmd$n-$(printf '%s' "$cmd" | shasum | cut -c1-8)" $cmd 2>&1 | tee -a "$LOG"
   rc=${PIPESTATUS[0]}
   set -e
   if [ "$rc" = 0 ]; then LINES+=("PASS  $cmd"); else LINES+=("FAIL  $cmd"); STATUS=1; fi

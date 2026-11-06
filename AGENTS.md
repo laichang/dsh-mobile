@@ -24,6 +24,7 @@ Read on demand, not all at once:
 - `evidence/<slice>/`: screenshots cited by PLAN.md `shot:` pointers
 - `scripts/check-plan`: guards PLAN.md's Done when items (see PLAN.md "How to use this file")
 - `scripts/review <ID>`: the review run of one slice; `scripts/demo/lib.sh` also holds the machine guard (WORKFLOW.md §6.1, §10.1)
+- `scripts/plan`: PLAN.md bookkeeping (§0, §8, §9, ticks, Logs) without hand edits; `scripts/status`: the run in one screen; `scripts/slice-env <ID>`: the resources of a slice, from `scripts/resources.tsv` (WORKFLOW.md §5, §6). Tests: `scripts/plan-test`
 - `.githooks/`: git hooks; `.claude/`: Claude Code hooks; `.codex/`: Codex hooks (WORKFLOW.md §12)
 
 ## Code is truth

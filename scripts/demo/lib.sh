@@ -163,16 +163,24 @@ fi
 # ---------------------------------------------------------------------------------------------
 # Parts that resume (WORKFLOW.md §10.1). A script that runs many parts wraps each one:
 #   demo_part <name> <command…>
-# A part that passed is recorded for the current code (HEAD + uncommitted diff). With
+# A part that passed is recorded for the current code (the content of the worktree). With
 # DSHM_RESUME=1, a part that passed for the same code is skipped, so a failure in part 9 of 14
 # does not run parts 1–8 again. DSHM_PART_RETRIES (0) runs a failed part again that many times;
 # a part that passes on a retry is written to the flaky list (<state>/<code>/flaky.txt).
 # <command> must be a script or program, not a shell function: `set -e` does not apply inside an
 # `if`, so a function would not stop at its first error.
 
-# evidence/ is not code: slice demos rewrite their shots while a run goes on.
+# The key is the git tree of the worktree content (tracked and untracked, not ignored), so a
+# commit of the same content keeps the key. evidence/ and *.md are not code: slice demos rewrite
+# their shots while a run goes on, and PLAN.md and the docs change after a run (ticks, Log).
 dshm_code_key() {
-  { git rev-parse HEAD; git diff HEAD -- . ':!evidence'; } | shasum -a 256 | cut -c1-16
+  local idx
+  idx=$(mktemp "${TMPDIR:-/tmp}/dshm-key.XXXXXX")
+  cp "$(git rev-parse --path-format=absolute --git-path index)" "$idx"
+  GIT_INDEX_FILE=$idx git add -A -- . >/dev/null 2>&1
+  GIT_INDEX_FILE=$idx git rm -r -q --cached --ignore-unmatch -- evidence ':(glob)**/*.md' >/dev/null 2>&1
+  GIT_INDEX_FILE=$idx git write-tree | cut -c1-16
+  rm -f "$idx"
 }
 
 demo_part() {
