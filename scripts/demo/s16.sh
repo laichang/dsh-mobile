@@ -51,14 +51,9 @@ ui_part() { # name, then -only-testing selectors
   demo_no_skipped_ui "$LOGS/ui-$name.log"
 }
 
-ui_part s16 S16SessionPageUITests
-ui_part shell T1ShellUITests \
-  S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge \
-  S3MilestonesUITests/testTimelineWithFakeBridge \
-  S3MilestonesUITests/testNoMilestonesNoCard \
-  S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge
-
-if [ $SHOTS = 1 ]; then
+# Copy the screenshots right after the S16 part, so a failure in a later part does not lose them.
+copy_shots() {
+  [ $SHOTS = 1 ] || return 0
   step "screenshots → evidence/S16 (1/3 size)"
   mkdir -p evidence/S16
   for f in "$SHOT_DIR"/s16-*.png; do
@@ -67,5 +62,14 @@ if [ $SHOTS = 1 ]; then
     sips --resampleWidth 402 "$f" --out "$out" >/dev/null
     echo "$out $(du -h "$out" | cut -f1)"
   done
-fi
+}
+
+ui_part s16 S16SessionPageUITests
+copy_shots
+ui_part shell T1ShellUITests \
+  S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge \
+  S3MilestonesUITests/testTimelineWithFakeBridge \
+  S3MilestonesUITests/testNoMilestonesNoCard \
+  S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge
+
 step "S16 demo passed"
