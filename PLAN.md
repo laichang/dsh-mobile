@@ -63,7 +63,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S17 | doing | `claude/s17-transcript` | 2026-11-07 | Slice owner builds the structured transcript (§8) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | doing | `claude/s19-outcomes` `595b24b` | 2026-11-07 | Reviewer runs `scripts/review S19` (§8) |
-| S20 | doing | `claude/s20-pickers` `0575fe2` | 2026-11-07 | Reviewer runs `scripts/review S20 --resume` (§8) |
+| S20 | done | merged `e849e8e` | 2026-11-07 | — (provisional D58 in §9) |
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
 | S22 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S23 | todo | — | 2026-11-06 | Next batch (S14 is merged) |
@@ -1413,6 +1413,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · S19 built; review started.** S19 owner finished at `595b24b`: all six Done when items ticked, D60 provisional, no flaky tests. It merged `main` (S21) and `s19.sh` and `s16.sh` passed. It used a new iPhone 17 Pro simulator with iOS 26.4 as `dshm-S19`. An independent reviewer now runs `scripts/review S19` on `595b24b` (ports 47817/3290).
 
+- **2026-11-07 · S20 merged.** Merged as `e849e8e`; `scripts/check-plan` on the merge commit passed. `scripts/review S20 --resume` at `0575fe2`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S20-0575fe2.txt`), after repair round 1 (test-only connect waits). No open `[human]` items, so S20 is `done`. D58 to §9. `scripts/plan merged S20` refused the merge: its `--agent` check of parent 1 against the merge flags the S20 `[auto]` item as added already ticked, although the branch added it unticked (`6b19ba2`) and ticked it later. Bookkeeping done with `row`, `pending` and `log` instead; reported to the user.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1469,3 +1471,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 52 | S16 | decision | D56, provisional: session page layout (milestone bar at the top, "done / total" counts finished todos; stop key in the send position); D23 (b) updated. | `claude/s16-session` | `1388a9c` |
 | 53 | S21 | decision | D59, provisional: hosts sheet (H) from the drawer pill, host devices and audit (X2), all-offline card on 01 (X3). | `claude/s21-hosts` | `477f9bd` |
 | 54 | S21 | `[human]` | On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that. Needs a paired iPhone and a running host with the S21 app. | `main` | `13648eb` |
+| 55 | S20 | decision | D58, provisional: picker sheets (07, M, X4): workspace and model pickers as SheetRoute sheets; a task with no selection opens the model sheet at the host default. | ``claude/s20-pickers`` | `merged `e849e8e`` |
