@@ -115,7 +115,7 @@ The user sends this message (or a message with the same meaning) to the coordina
 
 > You are the coordinator. Follow WORKFLOW.md. Run the plan to the end without my help. Start each slice in its own session. If you cannot start a session, run the slices as a workflow or as background agents.
 
-This message gives the coordinator permission for sessions, workflows, and background agents.
+This message gives the coordinator permission for sessions, workflows, background agents, keep-awake, and the heartbeat (§5.5).
 
 ### 5.2 Rules for the coordinator
 
@@ -168,6 +168,32 @@ Do these steps at the start of each turn that follows an interruption:
 If the app refuses to start a session or to send a message, tell the user in one line. Ask the user to send one message to the coordinator, for example: "Continue. Recover after the interruption (WORKFLOW.md §5.4)." That user turn starts a new chain.
 
 A slice owner does the same steps 1 and 2 for its own slice when it receives a message after an interruption.
+
+### 5.5 Heartbeat and keep-awake
+
+After an interruption, no event wakes the coordinator. The heartbeat wakes it. Thus the run continues without the user.
+
+In the kickoff turn, before the first batch:
+
+1. Request keep-awake for the Mac (`request_keep_awake`). A sleeping Mac stops all work.
+2. Create the heartbeat with `CronCreate`:
+   - `cron`: `7,27,47 * * * *` (about every 20 minutes),
+   - `recurring`: `true`,
+   - `durable`: `true` (it continues after an app restart),
+   - `prompt`: `Heartbeat (WORKFLOW.md §5.5).`
+3. Record the heartbeat job ID in §8 of the plan file.
+
+In each heartbeat turn:
+
+1. Find the work that runs now: the linked sessions (`list_sessions` with `linked: true`), your workflows, and your background jobs.
+2. If work runs, do nothing. End the turn with one line.
+3. If no work runs, do the recovery steps (§5.4).
+4. If the app refuses to start a session in this turn, do not wait for the user. Run the slices as a workflow (§5.3, step 3).
+5. A recurring job ends after 7 days. If its age is more than 6 days (`CronList`), create a new heartbeat, delete the old one (`CronDelete`), and record the new job ID in §8.
+
+When the plan is complete, or when all remaining slices wait for the user, delete the heartbeat. Then tell the user what waits for them.
+
+Do not use a `/goal` stop hook for the run. It stops the turn from ending, and then the coordinator cannot wait for completion events.
 
 ## 6. Resources for each slice
 
@@ -354,4 +380,4 @@ If a tool has no function for a capability, use the fallback in this table. Then
 ### Change log
 
 - **2026-11-05**: First version. Moved the process rules from "How to use this file" in the plan file. Added the setup procedure, the long-horizon run, the resources, the status titles, and the tool support for Codex. Added the Codex hooks (`.codex/hooks.json`, `codex-guard`) and the Codex setup (§2.1).
-- **2026-11-06**: Added the recovery after an interruption (§5.4), the simulator limit (§6.1, enforced by the guard in `scripts/demo/lib.sh`), and the review run with the rules for flaky tests (§10.1, enforced by `scripts/review`). Added coordinator rules to §5.2: wait for completion events, read each event as the end of a turn and not of the slice, and do not add merge conditions. A `stopped` or `killed` job notification starts the recovery (§5.4). Reason: T1 stopped for many hours. An app restart stopped the background jobs. Six booted simulators made the UI tests flaky. A merge condition of "5 runs in a row" did not converge. Each failure in `t1.sh --all` started the full regression again.
+- **2026-11-06**: Added the recovery after an interruption (§5.4), the simulator limit (§6.1, enforced by the guard in `scripts/demo/lib.sh`), and the review run with the rules for flaky tests (§10.1, enforced by `scripts/review`). Added coordinator rules to §5.2: wait for completion events, read each event as the end of a turn and not of the slice, and do not add merge conditions. A `stopped` or `killed` job notification starts the recovery (§5.4). Reason: T1 stopped for many hours. An app restart stopped the background jobs. Six booted simulators made the UI tests flaky. A merge condition of "5 runs in a row" did not converge. Each failure in `t1.sh --all` started the full regression again. Added the heartbeat and keep-awake (§5.5): after an interruption, no event woke the coordinator.
