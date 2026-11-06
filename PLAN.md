@@ -1252,6 +1252,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-06 · S18 assigned.** Branch `claude/s18-approval-sheet`, worktree `.claude/worktrees/s18-approval-sheet` (from `29f90a1`), simulator `dshm-S18`, DSHM_HOME `~/.dshm/home-s18`, bridge 47814, web 3287. The owner runs as a background agent (WORKFLOW.md §5.3, step 3): the app refuses session starts from event turns.
 
+- **2026-11-06 · Interruption: app restart (about 17:40).** Recovery (WORKFLOW.md §5.4): S14's session survived and runs its repair demo (`s14.sh --shots`, uncommitted test change). S16's session was idle with its `s16.sh --shots` run stopped and uncommitted PLAN.md, `s16.sh` and `evidence/S16/`; the coordinator sent it a brief to continue. The S18 background agent stopped with uncommitted changes; the coordinator resumed it with a message. Heartbeat `0f66e06d` survived; keep-awake requested again.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
