@@ -56,17 +56,17 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S11 | review | merged `12e1afc` | 2026-11-05 | User checks onboarding on a fresh install (§9) |
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | Hosted compatibility checks deferred; local runner available (§8) |
 | S13 | review | merged `c56d47f` | 2026-11-05 | User verifies the same Web session and latest reply on a paired iPhone (§9) |
-| T1 | doing | `claude/t1-ui-shell` | 2026-11-05 | Slice owner builds the shell (§8) |
-| S14 | todo | — | 2026-11-05 | Wait for T1 |
-| S15 | todo | — | 2026-11-05 | Wait for T1 |
-| S16 | todo | — | 2026-11-05 | Wait for T1 |
+| T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
+| S14 | doing | `claude/s14-drawer` | 2026-11-06 | Slice owner builds the drawer (§8) |
+| S15 | doing | `claude/s15-all-tasks` | 2026-11-06 | Slice owner builds 所有任务 (§8) |
+| S16 | doing | `claude/s16-session` | 2026-11-06 | Slice owner builds the session page (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
-| S18 | todo | — | 2026-11-05 | Wait for T1 |
-| S19 | todo | — | 2026-11-05 | Wait for T1 |
-| S20 | todo | — | 2026-11-05 | Wait for T1 |
-| S21 | todo | — | 2026-11-05 | Wait for T1 |
-| S22 | todo | — | 2026-11-05 | Wait for T1 |
-| S23 | todo | — | 2026-11-05 | Wait for T1. S14 first is better. |
+| S18 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
+| S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
+| S20 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
+| S21 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
+| S22 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
+| S23 | todo | — | 2026-11-06 | Next batch, after S14 |
 
 ## 1. Approach
 
@@ -1219,6 +1219,14 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-06 · Run resumed; heartbeat.** The user restarted the coordinator. Keep-awake is on (`session_idle`). Heartbeat cron job `d4a0e2c2` (`7,27,47 * * * *`, recurring, durable), created 2026-11-06. T1 is already built at `7b4a0c0` on `claude/t1-ui-shell`; it is not built again. An independent reviewer runs `scripts/review T1` on that commit with the T1 resources (`dshm-T1`, `~/.dshm/home-t1`, bridge 47810, web 3283).
 
+- **2026-11-06 · T1 merged.** Reviewer session ran `scripts/review T1` at `7b4a0c0`: `RESULT: PASS`, all 7 parts passed on the first run, no flaky part. Merged as `4f289bc`. `scripts/check-plan --base` passed on the merge. T1 is in `review`: the dark-mode `[human]` item waits for the user (§9). The S7 demo part ran slowly (about 27 minutes) under a load average of about 65 on 12 CPUs; it passed.
+
+- **2026-11-06 · Batch UI-1 assigned: S14, S15, S16.** Each slice owner runs in its own session and worktree from `main` at the T1 merge. The owner uses the shared DSH runtime read-only.
+  - S14: branch `claude/s14-drawer`, simulator `dshm-S14`, DSHM_HOME `~/.dshm/home-s14`, bridge 47811, web 3284.
+  - S15: branch `claude/s15-all-tasks`, simulator `dshm-S15`, DSHM_HOME `~/.dshm/home-s15`, bridge 47812, web 3285.
+  - S16: branch `claude/s16-session`, simulator `dshm-S16`, DSHM_HOME `~/.dshm/home-s16`, bridge 47813, web 3286.
+  - Ports 47830 and 3303 stay reserved for the S9 second host in `scripts/demo/t1.sh --all` (§9 row 48).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1266,3 +1274,6 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 43 | S11 | `[human]` | Have someone unfamiliar with DSH pair with an already-running host and obtain the first answer without help. | `main` | `12e1afc` |
 | 44 | S13 | decision | D50, provisional: use the DSH session directory and durable message journal for cross-client history and recovery. | `codex/s13-visibility` | `08de88d` |
 | 45 | S13 | `[human]` | On a paired iPhone and Mac, send two messages in one Web session and verify the same open phone detail shows the latest reply. Needs the S13 app and bridge. | `main` | `c56d47f` |
+| 46 | T1 | `[human]` | Accept that the app always uses dark mode. Needs the T1 app on the Simulator or an iPhone. | `main` | `4f289bc` |
+| 47 | T1 | decision | D51, provisional: first-message routing in the shell; supersedes D34 (row 33 stays until the user confirms D51). | `claude/t1-ui-shell` | `7b4a0c0` |
+| 48 | T1 | resource | Provisional: the S9 second host in `scripts/demo/t1.sh --all` uses bridge 47830 and web 3303 (`DSHM_SECOND_BRIDGE_PORT`, `DSHM_SECOND_WEB_PORT`). | `claude/t1-ui-shell` | `7b4a0c0` |
