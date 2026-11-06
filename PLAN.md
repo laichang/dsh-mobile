@@ -59,7 +59,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
 | S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
-| S16 | doing | `claude/s16-session` `107ab77` | 2026-11-06 | Owner merges main (guard fixes), then review --resume (§8) |
+| S16 | doing | `claude/s16-session` `ca76dd9` | 2026-11-06 | Owner runs demos on the merge with S18, then review --resume (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -1320,6 +1320,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-06 · S21 assigned.** Branch `claude/s21-hosts`, worktree `.claude/worktrees/s21-hosts` (from `db51c26`), simulator `dshm-S21`, DSHM_HOME `~/.dshm/home-s21`, bridge 47816, web 3289; second host 47846/3319. The owner runs as a background agent (WORKFLOW.md §5.3, step 3): the app refused the session start from the review-completion turn. S19 waits for S16 (both change the session page).
 
 - **2026-11-06 · Run paused by the user (about 23:00).** Heartbeat `c6c0c493` deleted. The S21 background agent stopped before its first commit (branch `claude/s21-hosts` at `db51c26`, worktree clean). The S16 and S20 sessions were stopped and told to do nothing until a new brief. Slice demo jobs stopped; `dshm-*` simulators shut down. State: S16 at `ca76dd9` (merged `main` with the guard fixes; check whether it includes S18 `8d25764`, then demos and `scripts/review S16 --resume`). S20 at `f319b99` (merged `main` with the guard fixes; it still needs S18 and its own demos). To resume: create a new heartbeat, then brief each slice (WORKFLOW.md §5.4).
+
+- **2026-11-06 · Run resumed by the user (about 23:20).** Keep-awake on. New heartbeat cron job `5dd6aa73` (`7,27,47 * * * *`, recurring, durable), created 2026-11-06; `c6c0c493` is deleted. `main` had no new code. S16 (`ca76dd9`, includes S18) runs `swift test`, `s16.sh`, `s18.sh`, then review. S20 merges `main` (S18) and continues. S21 had no commit, so its branch and worktree were removed and S21 starts again as a slice session (`s21-hosts`) from `main`, with the same resources.
 
 ## 9. Pending user confirmation
 
