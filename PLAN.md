@@ -57,7 +57,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | Hosted compatibility checks deferred; local runner available (§8) |
 | S13 | review | merged `c56d47f` | 2026-11-05 | User verifies the same Web session and latest reply on a paired iPhone (§9) |
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
-| S14 | doing | `claude/s14-drawer` `c270ce1` | 2026-11-06 | Reviewer runs `scripts/review S14` (§8) |
+| S14 | doing | `claude/s14-drawer` `c270ce1` | 2026-11-06 | Owner repairs the review FAIL, round 1 (§8) |
 | S15 | doing | `claude/s15-all-tasks` `bfd3d67` | 2026-11-06 | Reviewer runs `scripts/review S15` (§8) |
 | S16 | doing | `claude/s16-session` | 2026-11-06 | Slice owner builds the session page (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
@@ -1237,6 +1237,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - Reported by S15: under the same load, a first `s15.sh` run failed all earlier-slice UI tests (`kAXErrorServerNotFound`); the next run passed. In `t0.sh`, xcodebuild retried `testPairDeepLinkOpensPairingStub` once.
   - Reported by S14: parallel slices share `/tmp/dshm-t0` logs when they run `scripts/demo/t0.sh` at the same time. A later change can give each simulator its own log directory.
   - Load: the Mac ran at load averages of 150–400 on 12 CPUs for hours (simulators, TencentMeeting, `mediaanalysisd`).
+
+- **2026-11-06 · S14 review FAIL.** `scripts/review S14` at `c270ce1`: `RESULT: FAIL` (`/tmp/dshm-review/S14-c270ce1.txt`). Part `s14-ui-fake` failed on all 3 runs: `testOfflineHostSessionsOpenFromTheCache` read the host label once, while the label (`Office-PC is offline, 上次连接 …`) was still being updated. The real-DSH part did not run. Sent to the S14 owner as repair round 1 (WORKFLOW.md §10.1). Load average 120–500 during the run.
 
 ## 9. Pending user confirmation
 
