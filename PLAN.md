@@ -1479,6 +1479,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · S23 merged.** Merged as `47acc0d`; `scripts/check-plan` on the merge commit passed. `scripts/review S23` at `7d086d9`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S23-7d086d9.txt`); the S15 seam UI step was slow (about 19 min) on an idle machine but passed. 1 open `[human]` item, so S23 is `review`. D65 to §9.
 
+- **2026-11-07 · Run ended: all slices merged.** All M1 slices are merged into `main`. No slice is `todo`, `doing` or `blocked`. What is left is for the user: the `[human]` items and the provisional decisions in §9, then the M1 exit (§6). The coordinator stopped the heartbeat (`5dd6aa73`). Tool note for the user: `scripts/plan merged` refuses every merge of a slice that added an item on its branch (the `--agent` check of parent 1 sees it as added already ticked), so S20, S19, S17, S22 and S23 were recorded with `row`, `pending` and `log`.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
