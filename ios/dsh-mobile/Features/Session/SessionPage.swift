@@ -103,6 +103,9 @@ private struct SessionTranscript: View {
     @State private var followsLanding = true
     /// S23: scrolls a read session back to its last position.
     @State private var position = ScrollPosition()
+    /// S23: the height of S19's rows before the final answer. Only an unread visit has the marker,
+    /// so a saved position counts from below them: the same text comes back to the same place.
+    @State private var leadHeight: CGFloat = 0
 
     init(store: TaskListStore, taskKey: String, lastPosition: CGFloat? = nil) {
         self.store = store
@@ -162,7 +165,7 @@ private struct SessionTranscript: View {
                                 UserBubble(text: message.text)
                             } else {
                                 if message.seq == finalSeq {
-                                    OutcomeLead(row: row, outcome: outcome, marksAnswer: opensAtAnswer)
+                                    lead(row, outcome)
                                 }
                                 TranscriptView(source: message.text)
                                     .accessibilityElement(children: .ignore)
@@ -171,7 +174,7 @@ private struct SessionTranscript: View {
                             }
                         }
                         if !showJournal {
-                            OutcomeLead(row: row, outcome: outcome, marksAnswer: opensAtAnswer)
+                            lead(row, outcome)
                             TranscriptView(source: row.singleTurnTranscript(messages))
                         } else if history == nil && historyError == nil {
                             if host?.reachability == .online { ProgressView() }
@@ -203,9 +206,10 @@ private struct SessionTranscript: View {
             .onScrollPhaseChange { _, phase in
                 if phase == .interacting { followsLanding = false }
             }
-            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, y in
                 // S23: remember where the user scrolled to, for the next time this page opens.
-                if !followsLanding { shell.lastPositions[taskKey] = max(y, 0) }
+                // `ScrollPosition.scrollTo(y:)` takes the same content offset back.
+                if !followsLanding { shell.lastPositions[taskKey] = y - leadHeight }
             }
             .task(id: "\(history?.throughSeq ?? 0)/\(row?.transcript.utf8.count ?? 0)") {
                 // Again when the history or the text comes in, until the user scrolls.
@@ -213,10 +217,14 @@ private struct SessionTranscript: View {
                 case .answerStart, .lastPosition: break
                 case .followBottom, .end: return
                 }
-                try? await Task.sleep(for: .milliseconds(80))
-                guard followsLanding, !Task.isCancelled else { return }
-                if case .lastPosition(let y) = landing { position.scrollTo(y: y) }
-                else { proxy.scrollTo(OutcomeAnchor.id, anchor: .top) }
+                // A few times: the page can still be in its motion (S23 F2–F3), and a lazy
+                // transcript lays out more text after the first scroll.
+                for delay in [80, 250, 500] {
+                    try? await Task.sleep(for: .milliseconds(delay))
+                    guard followsLanding, !Task.isCancelled else { return }
+                    if case .lastPosition(let y) = landing { position.scrollTo(y: y + leadHeight) }
+                    else { proxy.scrollTo(OutcomeAnchor.id, anchor: .top) }
+                }
             }
             }
         }
@@ -232,6 +240,17 @@ private struct SessionTranscript: View {
             } catch {
                 if !Task.isCancelled { historyError = String(describing: error) }
             }
+        }
+    }
+
+    /// S19's rows before the final answer, in one stack so that S23 can measure them.
+    @ViewBuilder
+    private func lead(_ row: TaskListStore.TaskRow, _ outcome: TaskOutcome?) -> some View {
+        if outcome != nil || opensAtAnswer {
+            VStack(alignment: .leading, spacing: 12) {
+                OutcomeLead(row: row, outcome: outcome, marksAnswer: opensAtAnswer)
+            }
+            .onGeometryChange(for: CGFloat.self, of: \.size.height) { leadHeight = $0 }
         }
     }
 

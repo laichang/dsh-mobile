@@ -50,6 +50,15 @@ final class S23DrawerMotionUITests: XCTestCase {
         }
     }
 
+    /// Polls `condition` until it holds or time runs out, with no failure: an assertion after it
+    /// then reports the numbers.
+    private func settles(timeout: TimeInterval, _ condition: () -> Bool) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() && Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        }
+    }
+
     /// The element's top edge once it stops moving (the scroll has come to rest).
     private func restingMinY(_ element: XCUIElement) -> CGFloat {
         var last = element.frame.minY
@@ -156,9 +165,10 @@ final class S23DrawerMotionUITests: XCTestCase {
         tapInDrawer(app, Self.donePrompt)
         waitFor("value == 'lastPosition'", on: scroll)
         XCTAssertTrue(transcript.waitForExistence(timeout: 15), app.debugDescription)
-        eventually("the read session lands at the last position (\(readTop))") {
+        settles(timeout: 20) {
             abs(transcript.frame.minY - readTop) < 24
         }
+        XCTAssertEqual(transcript.frame.minY, readTop, accuracy: 24, "the answer's top, back from \(answerTop)")
         XCTAssertFalse(marker.exists, "no marker once read")
         XCTAssertFalse(footer.isHittable, "not at the end: at the last position")
         saveShot("s23-read-last-position")
@@ -182,10 +192,14 @@ final class S23DrawerMotionUITests: XCTestCase {
         tapInDrawer(app, Self.codingPrompt)
         waitFor("value == 'followBottom'", on: scroll)
         waitFor("value == 'running'", on: any(app, "task.status"))
-        eventually("the end of the reply is at the bottom of the transcript") {
+        // The transcript scrolls under the composer (a safe-area inset): its bottom is the
+        // composer's top.
+        let composer = any(app, "session.followUp")
+        settles(timeout: 20) {
             let bottom = transcript.frame.maxY
-            return bottom <= scroll.frame.maxY + 1 && bottom > scroll.frame.maxY - 120
+            return bottom <= composer.frame.minY && bottom > composer.frame.minY - 120
         }
+        XCTAssertEqual(transcript.frame.maxY, composer.frame.minY - 60, accuracy: 60, "the end of the reply")
         XCTAssertLessThan(transcript.frame.minY, scroll.frame.minY, "the start of the reply is above the screen")
         saveShot("s23-running-bottom")
     }

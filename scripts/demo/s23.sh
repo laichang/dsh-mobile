@@ -5,7 +5,8 @@
 #
 #   scripts/demo/s23.sh          swift test, S23DrawerMotionUITests, then the seams: S19OutcomesUITests
 #                                (landing position), S16SessionPageUITests (session page),
-#                                S14DrawerUITests (FakeBridge part) and T1ShellUITests (drawer)
+#                                S14DrawerUITests (FakeBridge part) and T1ShellUITests (drawer),
+#                                S18ApprovalSheetUITests and S15AllTasksUITests (05 after the motion)
 #   scripts/demo/s23.sh --shots  also refresh the screenshots in evidence/S23/ (1/3 size)
 #   DSHM_RESUME=1               skip the parts that passed for the same code (lib.sh demo_part)
 #
@@ -75,5 +76,8 @@ ui_part s14-seam S14DrawerUITests/testDrawerGroupsByHostAndWorkspaceWithStatusMa
   S14DrawerUITests/testBadgeCountMatchesWaitingOnMe S14DrawerUITests/testOfflineHostSessionsOpenFromTheCache \
   S14DrawerUITests/testWithoutDrawerCapabilityShowsHostAndSession
 ui_part t1-seam T1ShellUITests
+# 05 waits for the motion (S18's PendingApprovalBar); the 03 approval card opens its session (S15).
+ui_part s18-seam S18ApprovalSheetUITests
+ui_part s15-seam S15AllTasksUITests
 
 step "S23 demo passed"
