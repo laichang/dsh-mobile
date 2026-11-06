@@ -1,0 +1,272 @@
+#!/usr/bin/env python3
+"""Where the run is now, in one screen (WORKFLOW.md §5.4 step 1, §5.5). Read-only.
+
+  scripts/status          from any checkout or worktree
+  scripts/status --fast   no 2-second CPU sample
+
+It shows: §0 counts (the coordinator title), the heartbeat, the machine (CPU idle, load, booted
+dshm-* simulators), and for each slice that is todo/doing/blocked in §0 on main: its branch head
+and age, its distance from main, uncommitted files in its worktree, the processes that run for it
+(demo, review, xcodebuild, swift test), and its latest review result. "attention" lists what
+looks stuck. It cannot see the app's sessions: use list_sessions (linked: true) for those.
+"""
+
+import argparse
+import json
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+import dshm  # noqa: E402
+
+IDLE_AFTER_MIN = 45        # a doing slice with no process and no commit for this long needs a look
+HEARTBEAT_STALE_MIN = 30   # the heartbeat fires about every 20 minutes
+SIM_LIMIT, MIN_IDLE = 3, 15
+REVIEW_DIR = Path("/tmp/dshm-review")
+PROC_RE = re.compile(r"xcodebuild|swift-test|swiftpm-testing|scripts/review|scripts/demo/|xctest|swift test|swift-build")
+
+
+def sh(*cmd):
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    return r.stdout
+
+
+def ago(seconds):
+    seconds = int(max(0, seconds))
+    if seconds < 3600:
+        return f"{seconds // 60}m"
+    if seconds < 86400:
+        return f"{seconds // 3600}h{seconds % 3600 // 60:02d}m"
+    return f"{seconds // 86400}d{seconds % 86400 // 3600}h"
+
+
+def etime_seconds(etime):
+    d, _, rest = etime.rpartition("-")
+    parts = [int(x) for x in rest.split(":")]
+    while len(parts) < 3:
+        parts.insert(0, 0)
+    return (int(d) if d else 0) * 86400 + parts[0] * 3600 + parts[1] * 60 + parts[2]
+
+
+def worktrees():
+    """branch -> path, from git worktree list."""
+    out, cur = {}, None
+    for line in dshm.git("worktree", "list", "--porcelain").split("\n"):
+        if line.startswith("worktree "):
+            cur = line[9:]
+        elif line.startswith("branch refs/heads/"):
+            out[line[18:]] = cur
+    return out
+
+
+def processes():
+    """[(pid, seconds, command, cwd)] for test and demo processes."""
+    rows = []
+    for line in sh("ps", "-axo", "pid=,etime=,command=").split("\n"):
+        m = re.match(r"\s*(\d+)\s+(\S+)\s+(.*)", line)
+        cmd = m.group(3) if m else ""
+        # skip agent shell wrappers and subshells of the demo library; keep the scripts and tools
+        if (m and PROC_RE.search(cmd) and "scripts/status" not in cmd
+                and not re.match(r"(/bin/)?(zsh|sh|bash) -c ", cmd) and "demo/lib.sh;" not in cmd
+                and cmd.split()[0].rsplit("/", 1)[-1] not in ("grep", "ugrep", "rg", "tail", "tee", "sed", "awk", "cat", "less")):
+            rows.append([m.group(1), etime_seconds(m.group(2)), m.group(3), ""])
+    if rows:
+        out = sh("lsof", "-a", "-d", "cwd", "-Fpn", "-p", ",".join(r[0] for r in rows))
+        cwd, pid = {}, None
+        for line in out.split("\n"):
+            if line.startswith("p"):
+                pid = line[1:]
+            elif line.startswith("n") and pid:
+                cwd[pid] = line[1:]
+        for r in rows:
+            r[3] = cwd.get(r[0], "")
+    return rows
+
+
+def short_cmd(cmd):
+    m = re.search(r"(scripts/(?:review \S+|demo/\S+)(?: --?[\w-]+)*)", cmd)
+    if m:
+        return m.group(1)[:70]
+    m = re.search(r"(xcodebuild \S+)", cmd)
+    if m:
+        dest = re.search(r"name=(\S+)", cmd)
+        return m.group(1) + (f" on {dest.group(1)}" if dest else "")
+    return cmd.split()[0].rsplit("/", 1)[-1][:40]
+
+
+def booted_sims():
+    names = []
+    for line in sh("xcrun", "simctl", "list", "devices", "booted").split("\n"):
+        m = re.match(r"\s+(.+?) \([0-9A-F-]{36}\) \(Booted\)", line)
+        if m:
+            names.append(m.group(1))
+    return names
+
+
+def cpu_idle():
+    """CPU idle percent over 1 second (iostat; top takes 5 s on a loaded Mac)."""
+    lines = [l for l in sh("iostat", "-c", "2", "-w", "1").split("\n") if l.strip()]
+    try:
+        return float(lines[-1].split()[-4])
+    except (IndexError, ValueError):
+        return None
+
+
+def heartbeat(main_root):
+    f = main_root / ".claude/scheduled_tasks.json"
+    if not f.exists():
+        return None
+    try:
+        tasks = json.loads(f.read_text()).get("tasks", [])
+    except ValueError:
+        return None
+    beats = [t for t in tasks if "Heartbeat" in t.get("prompt", "")]
+    return beats[-1] if beats else None
+
+
+def latest_review(sid):
+    files = sorted(REVIEW_DIR.glob(f"{sid}-*.txt"), key=lambda p: p.stat().st_mtime)
+    if not files:
+        return None
+    f = files[-1]
+    text = f.read_text()
+    result = "PASS" if "RESULT: PASS" in text else "FAIL" if "RESULT: FAIL" in text else "?"
+    return f.stem.split("-", 1)[1], result, f.stat().st_mtime, "flaky" in text
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--fast", action="store_true")
+    a = ap.parse_args()
+    now = time.time()
+    main_root = dshm.main_checkout()
+    plan = dshm.split_lines(dshm.read_main_file("PLAN.md"))
+    rows = [r for _, r in dshm.status_table(plan)]
+    registry = {r["id"]: r for r in dshm.parse_registry(
+        (main_root / dshm.REGISTRY).read_text() if (main_root / dshm.REGISTRY).exists() else "")}
+    wts = worktrees()
+    procs = processes()
+    sims = booted_sims()
+    attention = []
+
+    head, head_t = dshm.git("log", "-1", "--format=%h %ct", "main").split()
+    print(f"dsh-mobile · {time.strftime('%Y-%m-%d %H:%M')} · main {head} ({ago(now - int(head_t))} ago)")
+    marks = {"done": "✅", "review": "👀", "doing": "🔨", "blocked": "⏸"}
+    print("🎛 Coordinator · M1 · " + " ".join(
+        f"{marks[k]}{sum(r['status'] == k for r in rows)}" for k in marks))
+
+    hb = heartbeat(main_root)
+    if hb:
+        last = hb.get("lastFiredAt") or hb.get("createdAt")
+        age = now - last / 1000
+        created = ago(now - hb.get("createdAt", 0) / 1000)
+        print(f"heartbeat {hb['id']} ({hb.get('cron')}): last fired {ago(age)} ago, created {created} ago")
+        if age > HEARTBEAT_STALE_MIN * 60:
+            attention.append(f"heartbeat {hb['id']} has not fired for {ago(age)}: the app or the Mac may be asleep")
+        if now - hb.get("createdAt", now * 1000) / 1000 > 6 * 86400:
+            attention.append("heartbeat is older than 6 days: renew it (WORKFLOW.md §5.5, step 5)")
+    else:
+        print("heartbeat: none")
+        if any(r["status"] == "doing" for r in rows):
+            attention.append("slices are doing, but there is no heartbeat (WORKFLOW.md §5.5)")
+
+    load = sh("sysctl", "-n", "vm.loadavg").strip("{} \n").split()
+    idle = None if a.fast else cpu_idle()
+    dshm_sims = [s for s in sims if s.startswith("dshm-")]
+    other = [s for s in sims if not s.startswith("dshm-")]
+    machine = f"machine: load {load[0] if load else '?'}"
+    if idle is not None:
+        machine += f" · CPU {idle:.0f}% idle"
+    machine += f" · dshm simulators {len(dshm_sims)}/{SIM_LIMIT}"
+    if dshm_sims:
+        machine += f" ({', '.join(dshm_sims)})"
+    if other:
+        machine += f" · other booted: {', '.join(other)}"
+    print(machine)
+    if idle is not None and idle < MIN_IDLE:
+        attention.append(f"CPU is {idle:.0f}% idle: demos wait in the guard (WORKFLOW.md §6.1)")
+
+    active = [r for r in rows if r["status"] in dshm.ACTIVE
+              and not (r["status"] == "todo" and not re.search(r"`[^`]+`", r["branch"]))]
+    waiting = [r["id"] for r in rows if r["status"] == "todo" and r not in active]
+    owned_sims = set()
+    print()
+    for r in active:
+        sid = r["id"]
+        reg = registry.get(sid)
+        m = re.search(r"`([^`]+)`", r["branch"])
+        br = m.group(1) if m else (reg["branch"] if reg else None)
+        line = f"{sid:<4} {r['status']:<7}"
+        wt = wts.get(br) if br else None
+        commit_age = None
+        head_short = None
+        if br and dshm.git("rev-parse", "--verify", "-q", br, check=False):
+            head_short, ct = dshm.git("log", "-1", "--format=%h %ct", br).split()
+            commit_age = now - int(ct)
+            behind, ahead = dshm.git("rev-list", "--left-right", "--count", f"main...{br}").split()
+            line += f" {br}  {head_short} {ago(commit_age)} ago  +{ahead}/-{behind} vs main"
+            if wt:
+                dirty = len([l for l in dshm.git("-C", wt, "status", "--porcelain").split("\n") if l.strip()])
+                line += f"  {dirty} uncommitted" if dirty else "  clean"
+            else:
+                line += "  (no worktree)"
+        else:
+            line += f" {r['branch']}  (no branch yet)"
+        print(line)
+        print(f"     next: {r['next']}")
+        key = sid.lower()
+        mine = [p for p in procs
+                if (wt and p[3].startswith(wt))
+                or re.search(rf"(dshm-{sid}\b|/tmp/dshm-{key}\b|scripts/demo/{key}\.sh|scripts/review {sid}\b)", p[2])]
+        if reg:
+            owned_sims.add(reg["sim"])
+        owned_sims.add(f"dshm-{sid}")
+        if mine:
+            seen = set()
+            for p in sorted(mine, key=lambda p: -p[1]):
+                c = short_cmd(p[2])
+                if c not in seen:
+                    seen.add(c)
+                    print(f"     running: {c} ({ago(p[1])})")
+        else:
+            print("     running: —")
+        rv = latest_review(sid)
+        if rv:
+            commit, result, mtime, flaky = rv
+            stale = "" if head_short and head_short.startswith(commit[:7]) else " (not the branch head)"
+            print(f"     review: {commit} {result}{' with flaky parts' if flaky else ''}, {ago(now - mtime)} ago{stale}")
+        if r["status"] == "doing" and not mine and commit_age is not None and commit_age > IDLE_AFTER_MIN * 60:
+            newer_review = rv and rv[2] > now - IDLE_AFTER_MIN * 60
+            if not newer_review:
+                attention.append(f"{sid}: nothing runs and the last commit is {ago(commit_age)} old. "
+                                 f"Check its session (WORKFLOW.md §5.4)")
+    if waiting:
+        print(f"todo, not started: {', '.join(waiting)}")
+    if not active and not waiting:
+        print("no slice is todo, doing or blocked")
+    for s in dshm_sims:
+        if s not in owned_sims:
+            attention.append(f"{s} is booted, but its slice is not active: shut it down (WORKFLOW.md §6.1)")
+    if len(dshm_sims) >= SIM_LIMIT:
+        attention.append(f"{len(dshm_sims)} dshm simulators are booted: do not start another slice (WORKFLOW.md §6.1)")
+
+    print()
+    if attention:
+        print("attention:")
+        for x in attention:
+            print(f"  ! {x}")
+    else:
+        print("attention: none")
+    print("sessions: not visible to scripts; in the app use list_sessions (linked: true)")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except dshm.PlanError as e:
+        print(f"status: {e}", file=sys.stderr)
+        sys.exit(1)
