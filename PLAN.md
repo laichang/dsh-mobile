@@ -1230,6 +1230,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-06 · Run paused by the user.** Workflow `wf_20f9600c-fdc` stopped. Heartbeat `d4a0e2c2` deleted. Slice demo jobs stopped and `dshm-S14`–`dshm-S16` shut down. No slice commit yet: the work is uncommitted in `.claude/worktrees/s14-drawer` (32 changed paths), `s15-all-tasks` (11) and `s16-session` (12), all on base `426049b`. To resume: create a new heartbeat, then continue each slice in its worktree (WORKFLOW.md §5.4) or resume the workflow with `resumeFromRunId`.
 
+- **2026-11-06 · Run resumed by the user.** Keep-awake on. New heartbeat cron job `0f66e06d` (`7,27,47 * * * *`, recurring, durable), created 2026-11-06; `d4a0e2c2` is deleted. The uncommitted work of the stopped workflow agents is saved as unreviewed WIP commits: S14 `a4fb1ad`, S15 `f63c6c7`, S16 `cb38321`. The coordinator worktrees under `.claude/worktrees/s1x-*` are removed. S14, S15 and S16 now continue as slice sessions (`s14-drawer`, `s15-all-tasks`, `s16-session`), each in its own app worktree cut from its WIP commit; each owner takes back the canonical branch name `claude/<id>-<name>`. Resources do not change.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
