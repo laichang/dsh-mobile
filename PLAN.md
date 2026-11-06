@@ -987,6 +987,9 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Verification on the merged code, with `eval "$(scripts/slice-env S20)"`: `scripts/demo/s20.sh --shots --regress` exit 0: `swift test` 69 tests in 19 suites, UI 4/4 (S20 ×2, T1, S9), `s6.sh` and `s7.sh` with real DSH. The first run failed in `S16CodingTaskTests/codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt` (`send()` → nil at load average 200, not S20); it passed on the next run.
   - Earlier Log entries of this slice were edited by hand, before `scripts/plan` was on `main`.
   - Next: independent `scripts/review S20`, then merge.
+- **2026-11-07 · merged main (PLAN only); s16.sh green.**
+  - Done: merged `main` at `e275b16`; it added only PLAN.md bookkeeping (S16 `66fd823` was already in this branch). S20 restyles the model pill that sits on S16's session page, so I ran `scripts/demo/s16.sh` on `dshm-S20` (no `--shots`): exit 0, `swift test`, S16 UI 2/2, T1 and S3 shell UI tests all passed. The S20 code did not change since the green `s20.sh --shots --regress` run at `f75fff3`.
+  - Next: independent `scripts/review S20`, then merge.
 
 ### S21 · Hosts and control
 
