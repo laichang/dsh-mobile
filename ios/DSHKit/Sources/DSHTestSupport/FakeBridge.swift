@@ -314,6 +314,9 @@ public final class FakeHost: Sendable {
         var incarnation = 0
         /// S20: models that left the catalog (`Pickers.goneAfterUse`).
         var goneModels: Set<String> = []
+        /// S21: `devices.v1` records; `revoked` once this phone's device lost its access.
+        var devices: FakeDevices?
+        var revoked = false
         /// S16: interrupted tasks; their stream stops.
         var stopped: Set<String> = []
         /// S16: each task's latest milestone seq and todos, for the INTERRUPTED milestone.
@@ -326,7 +329,8 @@ public final class FakeHost: Sendable {
     public init(script: FakeBridge.Script = .init(), hostName: String = "FakeBridge Mac", reachable: Bool = true,
                 incompatibleDsh: (installed: String, supported: String)? = nil,
                 seed: [Dshm_V1_TaskSummary] = [], extraCapabilities: [String] = [],
-                approvals: [FakeBridge.PendingApproval] = [], pickers: FakeBridge.Pickers? = nil) {
+                approvals: [FakeBridge.PendingApproval] = [], pickers: FakeBridge.Pickers? = nil,
+                devices: FakeDevices? = nil) {
         self.pickers = pickers
         self.incompatibleDsh = incompatibleDsh
         self.script = script
@@ -335,6 +339,7 @@ public final class FakeHost: Sendable {
         self.approvals = approvals
         state.withLock { s in
             s.reachable = reachable
+            s.devices = devices
             for summary in seed {
                 s.tasks.append(summary)
                 Self.upserted(summary, in: &s)
@@ -419,7 +424,7 @@ public final class FakeHost: Sendable {
     func connection() throws -> FakeBridge {
         let bridge = FakeBridge(host: self)
         try state.withLock { s in
-            guard s.reachable else { throw FakeHostError.unreachable }
+            guard s.reachable, !s.revoked else { throw FakeHostError.unreachable }
             s.connections[bridge.id] = Connection(bridge: bridge)
         }
         return bridge
@@ -449,6 +454,7 @@ public final class FakeHost: Sendable {
                     if answersApprovals { hello.capabilities.append(DSHProtocolInfo.approvalsCapability) }
                     hello.capabilities += extraCapabilities
                     if pickers != nil { hello.capabilities += ["models.v1", "workspaces.v1"] }
+                    if s.devices != nil { hello.capabilities.append(FakeDevices.capability) }
                 }
                 bridge.deliver(Self.response(id, .hello(hello)))
             case .createTask(let create)?:
@@ -538,6 +544,14 @@ public final class FakeHost: Sendable {
                 selectModel(select, requestID: id, bridge: bridge, in: &s)
             case .listWorkspaces? where pickers != nil:
                 bridge.deliver(Self.response(id, .workspaceList(pickers!.workspaces)))
+            case let body? where s.devices != nil && FakeDevices.handles(body):
+                guard let (answer, revokedCurrent) = s.devices?.answer(body) else { break }
+                bridge.deliver(Self.response(id, answer))
+                if revokedCurrent {
+                    s.revoked = true
+                    let dropped = s.connections.values.map(\.bridge)
+                    Task { for bridge in dropped { bridge.drop() } }
+                }
             case .answerApproval?, .interrupt?, .getModelCatalog?, .selectModel?, .listWorkspaces?, .listDevices?, .listAudit?, .revokeDevice?, .readSession?:
                 var error = Dshm_V1_Error()
                 error.code = "request/unsupported"

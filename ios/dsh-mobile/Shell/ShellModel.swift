@@ -49,6 +49,8 @@ enum SheetRoute: Identifiable, Hashable {
     case approval(taskKey: String)
     /// Settings, from the bottom of the drawer (S14).
     case settings
+    /// The hosts sheet (H), from the "2 / 3" pill in the drawer (S21).
+    case hosts
 
     var id: Self { self }
 
@@ -67,6 +69,8 @@ enum SheetRoute: Identifiable, Hashable {
             ApprovalSheet(store: store, taskKey: key)
         case .settings:
             DrawerSettingsSheet(store: store)
+        case .hosts:
+            HostsSheet(store: store)
         }
     }
 }

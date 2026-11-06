@@ -32,6 +32,10 @@ public final class TaskListStore {
         case offline
         case needsBridgeUpdate(version: String, supported: String)
 
+        var isUpdateRequired: Bool {
+            if case .needsBridgeUpdate = self { true } else { false }
+        }
+
         /// Stable token for UI tests (`host.status` accessibility value).
         public var token: String {
             switch self {
@@ -241,7 +245,8 @@ public final class TaskListStore {
     public var offlineHosts: [HostStatus] { hosts.filter { $0.reachability == .offline } }
 
     public var canSend: Bool {
-        !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSending
+        // S21: with every host offline, the send key is off (X3).
+        !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSending && !allHostsOffline
     }
 
     // MARK: - Lifecycle
@@ -426,7 +431,21 @@ public final class TaskListStore {
         if r != .online { modelHosts.remove(link.key) }
         guard link.reachability != r else { return }
         link.reachability = r
+        updateAllHostsOffline()
         refresh()
+    }
+
+    /// S21: no host can take a task (screen X3). True once every host has failed to connect
+    /// (offline, or its DSH needs an update); it stays true while hosts retry, and goes false
+    /// when one is online. So the card on 01 does not flash on each reconnect attempt.
+    public private(set) var allHostsOffline = false
+
+    private func updateAllHostsOffline() {
+        if links.contains(where: { $0.reachability == .online }) {
+            allHostsOffline = false
+        } else if !links.isEmpty, links.allSatisfy({ $0.reachability == .offline || $0.reachability.isUpdateRequired }) {
+            allHostsOffline = true
+        }
     }
 
     // MARK: - Applying host events

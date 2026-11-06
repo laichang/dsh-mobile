@@ -60,11 +60,11 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
 | S16 | done | merged `66fd823` | 2026-11-07 | — (provisional D56 in §9) |
-| S17 | todo | — | 2026-11-07 | Next batch (S16 is merged) |
+| S17 | doing | `claude/s17-transcript` | 2026-11-07 | Slice owner builds the structured transcript (§8) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | doing | `claude/s19-outcomes` | 2026-11-07 | Slice owner builds done and failed (§8) |
 | S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
-| S21 | doing | `claude/s21-hosts` `477f9bd` | 2026-11-07 | Reviewer runs `scripts/review S21` (§8) |
+| S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
 | S22 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S23 | todo | — | 2026-11-06 | Next batch (S14 is merged) |
 
@@ -993,7 +993,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S21 · Hosts and control
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s21-hosts`
+**Status** doing · **Needs** T1 · **Branch** `claude/s21-hosts`
 
 **Why**: STORY §2 (all hosts are equal), §3 (say which host is offline), §9 (devices, revocation, audit), screens H, X2 and X3.
 
@@ -1002,12 +1002,28 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: Stop all hosts. 01 shows the card. Start one host. The card goes away.
 
 **Done when**
-- [ ] [ui] The all-offline card names each host and its last connection — Evidence:
-- [ ] [ui] A revoke of this device asks for confirmation, then opens 08 — Evidence:
+- [x] [ui] The all-offline card names each host and its last connection — Evidence: test:S21HostsUITests/testAllOfflineCardNamesEachHostAndGoesWhenOneIsBack · cmd:scripts/demo/s21.sh · shot:evidence/S21/s21-all-offline.png
+- [x] [ui] A revoke of this device asks for confirmation, then opens 08 — Evidence: test:S21HostsUITests/testRevokeThisDeviceAsksThenOpens08 · cmd:scripts/demo/s21.sh · shot:evidence/S21/s21-revoke-confirm.png · shot:evidence/S21/s21-revoked-08.png
+- [x] [ui] A tap on the "2 / 3" pill opens the hosts sheet: an online host with its channel, an unsupported DSH with the installed and supported versions, an offline host with its last connection and what waits on it — Evidence: test:S21HostsUITests/testHostsSheetShowsEachHostsState · cmd:scripts/demo/s21.sh · shot:evidence/S21/s21-hosts-sheet.png
+- [x] [ui] One host shows its devices (this device is marked) and its audit records, and "load older" adds the earlier records; a revoke of another device asks first and removes it — Evidence: test:S21HostsUITests/testRevokeThisDeviceAsksThenOpens08 · cmd:scripts/demo/s21.sh · shot:evidence/S21/s21-host-detail.png
+- [x] [ui] With all hosts offline the send key is off and a cached session still opens; when one host is back, the card goes away and the send key is on — Evidence: test:S21HostsUITests/testAllOfflineCardNamesEachHostAndGoesWhenOneIsBack · test:S2DurableListUITests/testOfflineHostIsNamedWithFakeBridge · cmd:scripts/demo/s21.sh · shot:evidence/S21/s21-host-back.png
+- [x] [auto] "All hosts offline" is set only when no host can take a task, stays set while hosts retry, and clears when one is online; the send key follows it — Evidence: test:HostsControlTests/allHostsOfflineOnlyWhenNoHostCanTakeATaskAndNotWhileOneComesBack · test:unreachableHostIsNamedAsOffline
+- [x] [auto] The fake host's devices, audit pages and revoke match the bridge; a revoke of this device ends its access — Evidence: test:HostsControlTests/devicesAuditPagesAndARevokeOfThisDeviceEndsItsAccess
+- [ ] [human] On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that — Evidence:
 
 **Not**: Device names (needs upstream).
 
-**Log**: —
+**Log**
+- **2026-11-07 · built, to review.** Branch `claude/s21-hosts`; simulator `dshm-S21`; `DSHM_HOME=~/.dshm/home-s21`. Ports 47816/3289 are only for `t0.sh`; the S21 demo uses in-process fakes. T0 demo passed on `dshm-S21` at the start.
+  - Done: `Features/Hosts/`: `HostsSheet` (H) from the "2 / 3" pill (`SheetRoute.hosts`, `.opensHostsSheet()`; the pill keeps `drawer.hosts`); `HostDetailView` (X2): devices with this device marked, revoke behind an alert, audit pages with "load older"; `AllHostsOfflineCard` (X3) on 01. `TaskListStore.allHostsOffline` stays set while hosts retry, and `canSend` is false while it is set. A revoke of this device forgets the host; with no host left, the app shows 08. See **D59** (*provisional, pending user confirmation*). The X2 caption on the board now says what happens when other hosts are left (`scripts/render-design`; only `board.png` changed). STORY.md needs no change.
+  - FakeBridge: `FakeHost(devices:)` (`FakeDevices`: `ListDevices`, paged `ListAudit`, `RevokeDevice`, like bridge/src/server.ts) and `FakeHosts` (`-DSHMFakeBridge hosts`, `hosts-one`); `FakeHostsSwitch` stops and starts the hosts on Darwin notifications.
+  - Seams (S21 lands second): S2's `testOfflineHostIsNamedWithFakeBridge` and `TaskListStoreTests/unreachableHostIsNamedAsOffline` now expect the card and the send key off, not an error after the tap. S12's test taps send on a host that needs an update; the key is now off, so the tap does nothing, and its checks (prompt kept, no task) still hold. I did not rerun it here (it needs the old DSH; `scripts/demo/s12.sh`). `s21.sh` also runs two S14 drawer tests (the pill).
+  - Verification: after `git merge main` (S16), `scripts/demo/s21.sh --shots` passed: `swift test` 69 tests, S21HostsUITests 3/3, seams 3/3.
+  - Flaky, not S21's (for §8): `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval` failed in 3 of 6 `s21.sh` runs (passed in the other 3), and in about 1 of 8 runs alone, under high load (load average about 190). It answers as soon as the seeded approval shows, which can be before the host is `.online` ("not connected to the bridge"). Not repaired (WORKFLOW §10.1). In S21's own tests, the alert-button query matched two buttons once; fixed with `firstMatch` (repair round 1 of 3).
+  - Not done: the default model on the hosts sheet shows only when the host sends a model catalog. FakeHost has none, so no test covers it. Encryption shows "not encrypted (debug)" on the fakes; a Noise host shows "end-to-end encrypted". The `[human]` item is for the user.
+  - No new dependencies. Board change: the X2 caption only.
+  - For the coordinator: §0 S21 → `review` after `scripts/review S21`; add D59 and the `[human]` item to §9; add the S15 flaky test to §8.
+  - Next: independent review run (`scripts/review S21`), then merge.
 
 ### S22 · First run
 
@@ -1373,6 +1389,10 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - Flaky, not S21's (reported by S21): `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval` (S15) failed in 3 of 6 `s21.sh` runs and in about 1 of 8 runs alone under load: it answers before the seeded approval is ready. For a later repair in S15's tests.
   - Not covered by a test (S21): the default model on the hosts sheet shows only when a host sends a model catalog; FakeHost sends none.
 
+- **2026-11-07 · S21 merged.** Background reviewer ran `scripts/review S21` at `477f9bd`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S21-477f9bd.txt`). Merged as `13648eb`; `scripts/check-plan --base` passed. One `[human]` item is open, so S21 is in `review` (§9). S19 and S20 must merge `main` before review.
+
+- **2026-11-07 · S17 assigned.** Branch `claude/s17-transcript`, worktree `.claude/worktrees/s17-transcript` (from `96abed2`), simulator `dshm-S17`, DSHM_HOME `~/.dshm/home-s17`, bridge 47818, web 3291 (S12's old ports; S12 is done). Protocol: `transcript.proto`, fields 340–359, `transcript.v1`. The owner runs as a background agent (WORKFLOW.md §5.3, step 3).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1427,3 +1447,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 50 | S14 | decision | D54, provisional: drawer levels host › workspace › session, status marks, local read state; `TaskSummary.workspace` (field 280), capability `drawer.v1`. | `claude/s14-drawer` | `d2cd506` |
 | 51 | S18 | decision | D57, provisional: the approval sheet comes up on session open and on a new approval, closes when the approval is gone, and comes back from a one-line bar after a swipe down. | `claude/s18-approval-sheet` | `9599cc6` |
 | 52 | S16 | decision | D56, provisional: session page layout (milestone bar at the top, "done / total" counts finished todos; stop key in the send position); D23 (b) updated. | `claude/s16-session` | `1388a9c` |
+| 53 | S21 | decision | D59, provisional: hosts sheet (H) from the drawer pill, host devices and audit (X2), all-offline card on 01 (X3). | `claude/s21-hosts` | `477f9bd` |
+| 54 | S21 | `[human]` | On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that. Needs a paired iPhone and a running host with the S21 app. | `main` | `13648eb` |
