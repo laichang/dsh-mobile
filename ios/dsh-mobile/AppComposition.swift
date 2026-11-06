@@ -82,8 +82,11 @@ final class AppModel {
         if options.multipleFakeHosts {
             return ["Office Mac", "Home Mac"].enumerated().map { index, name in
                 let endpoint = HostEndpoint.localBridge(port: 47801 + index)
-                let fake = FakeHost(script: .init(reply: ["Reply ", "from ", name], chunkDelay: .seconds(1)),
-                                    hostName: name, reachable: index != 0 || !options.fakeBridgeOffline)
+                var script = FakeBridge.Script(reply: ["Reply ", "from ", name], chunkDelay: .seconds(1))
+                script.holdPrompt = options.fakeHold
+                let fake = FakeHost(script: script,
+                                    hostName: name, reachable: index != 0 || !options.fakeBridgeOffline,
+                                    approvals: options.fakeApprovals ? FakeApprovals.seed(for: name) : [])
                 return .init(key: "fake:\(name)", connection: HostConnection(endpoint: endpoint,
                              channel: PlaintextChannel(), transport: fake.factory), name: name)
             }
