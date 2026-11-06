@@ -59,7 +59,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
 | S14 | doing | `claude/s14-drawer` `2d14273` | 2026-11-06 | Reviewer runs `scripts/review S14 --resume` (§8) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
-| S16 | doing | `claude/s16-session` | 2026-11-06 | Slice owner builds the session page (§8) |
+| S16 | doing | `claude/s16-session` `8c1bdb8` | 2026-11-06 | Reviewer runs `scripts/review S16` (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
 | S18 | doing | `claude/s18-approval-sheet` | 2026-11-06 | Slice owner builds the approval sheet (§8) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -1255,6 +1255,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-06 · Interruption: app restart (about 17:40).** Recovery (WORKFLOW.md §5.4): S14's session survived and runs its repair demo (`s14.sh --shots`, uncommitted test change). S16's session was idle with its `s16.sh --shots` run stopped and uncommitted PLAN.md, `s16.sh` and `evidence/S16/`; the coordinator sent it a brief to continue. The S18 background agent stopped with uncommitted changes; the coordinator resumed it with a message. Heartbeat `0f66e06d` survived; keep-awake requested again.
 
 - **2026-11-06 · S14 repair round 1 done.** The owner made the UI tests wait for labels and values with predicates (`2d14273`); `s14.sh --shots` passed (UI 5/5). A background reviewer runs `scripts/review S14 --resume` on `2d14273`.
+
+- **2026-11-06 · S16 built; review started.** S16 at `8c1bdb8` (D56; D23 (b) updated): all `[auto]` and `[ui]` items ticked, worktree clean, no guard file changed. A background reviewer runs `scripts/review S16`. Flaky under load (reported by S16, not repaired): `S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge` once lost the last typed key. Load averages of 300–770 were seen.
 
 ## 9. Pending user confirmation
 
