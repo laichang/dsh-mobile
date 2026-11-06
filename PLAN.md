@@ -61,7 +61,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
 | S16 | doing | `claude/s16-session` | 2026-11-06 | Slice owner builds the session page (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
-| S18 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
+| S18 | doing | `claude/s18-approval-sheet` | 2026-11-06 | Slice owner builds the approval sheet (§8) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S20 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S21 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -1249,6 +1249,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-06 · S15 merged.** Background reviewer ran `scripts/review S15` at `bfd3d67`: `RESULT: PASS` (`/tmp/dshm-review/S15-bfd3d67.txt`). Merged as `a298f38`; `scripts/check-plan --base` passed. No open `[human]` items, so S15 is `done`.
   - Flaky: part `s15-ui` passed on run 2 of 3. Run 1 failed only in `S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge` ("Neither element nor any descendant has keyboard focus" when it typed into `composer.prompt`). S15 did not change that test. For a later slice: wait for keyboard focus before typing.
+
+- **2026-11-06 · S18 assigned.** Branch `claude/s18-approval-sheet`, worktree `.claude/worktrees/s18-approval-sheet` (from `29f90a1`), simulator `dshm-S18`, DSHM_HOME `~/.dshm/home-s18`, bridge 47814, web 3287. The owner runs as a background agent (WORKFLOW.md §5.3, step 3): the app refuses session starts from event turns.
 
 ## 9. Pending user confirmation
 
