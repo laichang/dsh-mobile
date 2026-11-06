@@ -878,8 +878,8 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Done when**
 - [x] [ui] The sheet comes up when the session opens with a pending approval, and when a new approval arrives — Evidence: test:S18ApprovalSheetUITests/testSheetComesUpWhenTheSessionOpensAndWhenANewApprovalArrives · cmd:scripts/demo/s18.sh · shot:evidence/S18/s18-sheet-on-open.png · shot:evidence/S18/s18-tool-arguments.png · shot:evidence/S18/s18-sheet-new-approval.png
 - [x] [ui] After an answer from the Web, the sheet closes on the phone — Evidence: test:S18ApprovalSheetUITests/testWebAnswerClosesTheSheet · cmd:scripts/demo/s18.sh · shot:evidence/S18/s18-before-web-answer.png · shot:evidence/S18/s18-web-answered.png
-- [ ] [auto] With FakeHost, a running task asks for an approval, and an answer from another client resolves it and the task runs on — Evidence:
-- [ ] [ui] Seam: the S4 (real DSH) and S15 UI tests pass with the sheet over the session page — Evidence:
+- [x] [auto] With FakeHost, a running task asks for an approval, and an answer from another client resolves it and the task runs on — Evidence: test:ApprovalSheetFakeTests/aRunningTaskAsksAndAWebAnswerResolvesIt · cmd:scripts/demo/s18.sh
+- [x] [ui] Seam: the S4 (real DSH) and S15 UI tests pass with the sheet over the session page — Evidence: test:S4ApprovalUITests/testSwitchWhileHeldResumeThenInterrupt · cmd:scripts/demo/s4.sh · test:S15AllTasksUITests/testAllTasksShowsThreeSectionsAcrossHosts · cmd:scripts/demo/s18.sh
 
 **Not**: The dashed M2 parts of 05: risk tier, effect summary, Face ID, pre-authorization.
 
@@ -892,6 +892,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Flaky: none in S18 tests. One `swift test` run inside `t0.sh` at load ~130 failed 4 earlier-slice tests (`store.send()` → nil) and passed alone with no change. First S18 UI run failed: `swipeDown` on the sheet content did not close it; the tests now drag the grabber (repair round 1, not a flake).
   - Not done: —. The M1 `ApprovalCard` (`Features/Approvals/`) has no user now; left in place so that S16 (same page, in parallel) does not conflict; remove it after S16 merges.
   - Next: independent `scripts/review S18`, then merge. For the coordinator: §0 S18 → review/done after the merge; add D57 to §9.
+- 2026-11-06: ticked the two items added in `9599cc6` (FakeHost ask and web answer; S4 and S15 seam), with the runs above as evidence. Not done: —. Next: `scripts/review S18` (it runs `scripts/demo/s18.sh` and `scripts/demo/s4.sh`).
 
 ### S19 · Done and failed
 
