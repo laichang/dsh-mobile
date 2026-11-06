@@ -63,7 +63,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S17 | doing | `claude/s17-transcript` | 2026-11-07 | Slice owner builds the structured transcript (§8) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | doing | `claude/s19-outcomes` | 2026-11-07 | Slice owner builds done and failed (§8) |
-| S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
+| S20 | doing | `claude/s20-pickers` `0575fe2` | 2026-11-07 | Reviewer runs `scripts/review S20 --resume` (§8) |
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
 | S22 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S23 | todo | — | 2026-11-06 | Next batch (S14 is merged) |
@@ -1388,6 +1388,13 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-07 · S21 merged.** Background reviewer ran `scripts/review S21` at `477f9bd`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S21-477f9bd.txt`). Merged as `13648eb`; `scripts/check-plan --base` passed. One `[human]` item is open, so S21 is in `review` (§9). S19 and S20 must merge `main` before review.
 
 - **2026-11-07 · S17 assigned.** Branch `claude/s17-transcript`, worktree `.claude/worktrees/s17-transcript` (from `96abed2`), simulator `dshm-S17`, DSHM_HOME `~/.dshm/home-s17`, bridge 47818, web 3291 (S12's old ports; S12 is done). Protocol: `transcript.proto`, fields 340–359, `transcript.v1`. The owner runs as a background agent (WORKFLOW.md §5.3, step 3).
+
+- **2026-11-07 · S20 built; review started.** S20 at `2108a3e` (D58; `main` with S16 and S21 merged, seams owned by S20): all `[auto]` and `[ui]` items ticked, worktree clean, no guard file changed. `s20.sh --shots --regress` (with real-DSH `s6.sh` and `s7.sh`) and `s16.sh` passed on the merged code. A background reviewer runs `scripts/review S20`. The S20 Log says that earlier S20 Log entries were edited by hand; the Log is append-only (PLAN "How to use this file"), so the user may want to look at it.
+  - S21's owner checked the flaky S15 test `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval`: 12 of 12 passes on `main` and on S21 under load. The entry above stays as S15's.
+
+- **2026-11-07 · S20 review FAIL.** `scripts/review S20` at `2108a3e`: `RESULT: FAIL` (`/tmp/dshm-review/S20-2108a3e.txt`). Part `s20-swift-test` failed on all 3 runs, each time in a different earlier test with `store.send() → nil` or "not connected to the bridge" (S15, S16, S2 tests); the S20 UI tests did not run. S20 changes `TaskListStore.swift` and `FakeBridge.swift`, and the S15 test passed 12/12 on `main`, so the owner first compares the failure rate on the branch and on `main`. Repair round 1 (WORKFLOW.md §10.1).
+
+- **2026-11-07 · S20 repair round 1 done.** The owner found that the `send() → nil` failures also occur on `main`: the tests sent before the first connect. With the coordinator's approval it made a small test-only seam fix (`0575fe2`): five DSHKit test files (`AllTasksApprovalTests`, `CachedMilestoneTests`, `NoiseResumeTests`, `S16CodingTaskTests`, `TaskListStoreTests`) wait up to 5 s for the first connect before `send()`. No app code changed. This addresses the `NoiseResumeTests`, `MilestoneStoreTests`-family and S15 flaky entries above once S20 is merged. A background reviewer runs `scripts/review S20 --resume` on `0575fe2`.
 
 ## 9. Pending user confirmation
 
