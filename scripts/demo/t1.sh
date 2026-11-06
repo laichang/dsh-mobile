@@ -4,6 +4,7 @@
 #   scripts/demo/t1.sh          T1ShellUITests + every FakeBridge UI test of the M1 slices, on the new shell
 #   scripts/demo/t1.sh --all    also bridge tests, swift test, and every slice demo (t0.sh, s1.sh … s13.sh),
 #                               each with real DSH, one after the other, on T1's resources
+#   DSHM_RESUME=1 with --all   skip the slice demos that passed for the same code (lib.sh demo_part)
 #   scripts/demo/t1.sh --shots  also refresh the screenshots in evidence/T1/ (1/3 size)
 #
 # Resources (WORKFLOW.md §6), read from the environment:
@@ -78,7 +79,10 @@ if [ $ALL = 1 ]; then
   for demo in t0 s1 s2 s3 s4 s5 s6 s7 s8 s9 s10 s11 s12 s13; do
     step "slice demo: scripts/demo/$demo.sh (log: $LOGS/demo-$demo.log)"
     mkdir -p "$DSHM_HOME/$demo"
-    if DSHM_HOME="$DSHM_HOME/$demo" "scripts/demo/$demo.sh" > "$LOGS/demo-$demo.log" 2>&1; then
+    # demo_part (lib.sh): with DSHM_RESUME=1 or on a retry in scripts/review, a demo that passed
+    # for the same code is skipped, and its log from that run stays.
+    if demo_part "demo-$demo" bash -c 'DSHM_HOME="$1" "scripts/demo/$2.sh" > "$3" 2>&1' _ \
+        "$DSHM_HOME/$demo" "$demo" "$LOGS/demo-$demo.log"; then
       grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/demo-$demo.log" || true
     else
       tail -30 "$LOGS/demo-$demo.log"
