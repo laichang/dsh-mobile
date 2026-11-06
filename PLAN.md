@@ -994,6 +994,13 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Done: merged `main` at `f6e9afc` (S21 hosts and control). Conflicts in `ARCHITECTURE.md` (D58 and D59), `DebugEntryPoints.swift` (`pickers` and `hosts…`), `FakeBridge.swift` (`FakeHost(… pickers:, devices:)`, both capabilities, both request handlers) and `AppComposition.swift` (both scenarios); kept both sides.
   - Verification on the merged code (`eval "$(scripts/slice-env S20)"`): `scripts/demo/s20.sh --shots --regress`, then `DSHM_RESUME=1` for the failed part: `swift test` 71 tests in 20 suites, UI 4/4 (S20 ×2, T1, S9), `s6.sh` and `s7.sh` with real DSH all passed. The `swift test` inside `s7.sh` failed once in `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval` ("not connected to the bridge", S15's flaky test, already in §8); it passed on the rerun. The screenshots in `evidence/S20/` are from `f75fff3`; the S20 views did not change since then.
   - Next: independent `scripts/review S20`, then merge.
+- **2026-11-07 · review repair round 1 of 3.**
+  - Done: `scripts/review S20` at `2108a3e` failed in `s20-swift-test` on all 3 runs, each time in a test of another slice: `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval` ("not connected to the bridge"), `S16CodingTaskTests`, `CachedMilestoneTests`, `TaskListStoreTests` (`send()` → nil).
+  - Cause, not S20: I ran `swift test` on this branch and on `main` side by side under the same load. `main` failed 3 of 3 runs (`send()` → nil in `NoiseResumeTests` ×3, `S16CodingTaskTests`, and the `AllTasksApprovalTests` race). The tests gave `send()` only 500 ms (`sendWaitsFor`) for the first connect, and under load the connect takes longer. In `AllTasksApprovalTests` the seeded task can arrive before the host is marked online, and `answerApproval` needs it online. S20's `FakeHost(pickers:)` adds nothing to a host without pickers, and its `TaskListStore` change runs only after `createTask` succeeds.
+  - Repair (seam, test code only): `CachedMilestoneTests`, `S16CodingTaskTests`, `TaskListStoreTests` and `NoiseResumeTests` set `sendWaitsFor` to 5 s; `send()` still returns as soon as the host is online, and the tests that expect nil fail fast (no host online, bridge update). `AllTasksApprovalTests` also waits until the host is online before it answers. With the repair, the branch passed 3 of 3 of the same side-by-side runs where `main` failed 3 of 3.
+  - Verification: `scripts/demo/s20.sh` exit 0 on `dshm-S20`: `swift test` 71 tests in 20 suites, UI 4/4 (S20 ×2, T1, S9).
+  - For the coordinator: this repairs the `send()` → nil family in §8 for all slices once it is on `main`.
+  - Next: `scripts/review S20 --resume` on this commit.
 
 ### S21 · Hosts and control
 
