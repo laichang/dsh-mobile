@@ -803,7 +803,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S15 · All tasks
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s15-all-tasks`
+**Status** doing · **Needs** T1 · **Branch** `claude/s15-all-tasks`
 
 **Why**: STORY §4 (one place for all hosts), §5 (approvals show the command), screen 03.
 
@@ -814,6 +814,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Done when**
 - [ ] [ui] 所有任务 opens from the drawer and shows the three sections across hosts — Evidence:
 - [ ] [ui] An approval for an offline host has grey buttons and tells that the host must reconnect first — Evidence:
+- [ ] [auto] An answer from 所有任务 (allow or deny) resolves a seeded FakeHost approval, and the task runs on to its reply — Evidence:
 
 **Not**: Risk tiers and Face ID (M2, screen P3).
 

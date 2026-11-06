@@ -28,7 +28,9 @@ struct TaskListView: View {
     var body: some View {
         let sections = store.sections
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
+            // Not lazy: a row moves between sections with the same id, and a LazyVStack kept the
+            // old view of a row that moved from 等我处理 to 已完成. The list is short.
+            VStack(alignment: .leading, spacing: 0) {
                 ForEach(store.offlineHosts) { host in
                     OfflineHostBanner(host: host).padding(.top, 4)
                 }
@@ -81,7 +83,6 @@ struct TaskListView: View {
                     Button { shell.open(.session(row.key)) } label: { TaskRowView(row: row) }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("tasklist.row")
-                        .id(row.key)
                         .overlay(alignment: .top) {
                             if index > 0 && rows[index - 1].approvals.isEmpty {
                                 Rectangle().fill(DSHTheme.hairline).frame(height: 1)

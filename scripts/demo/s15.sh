@@ -24,9 +24,12 @@ SIM="$DSHM_SIM"
 source scripts/demo/lib.sh
 LOGS=/tmp/dshm-s15; mkdir -p "$LOGS"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
+export DEST
 
 step "DSHKit tests (swift test, FakeBridge)"
-demo_swift_tests "$LOGS/swift-test.log"
+# demo_part (lib.sh): with DSHM_RESUME=1 or on a retry in scripts/review, a part that passed for
+# the same code does not run again.
+demo_part s15-swift-test bash -c 'source scripts/demo/lib.sh; demo_swift_tests "$1"' _ "$LOGS/swift-test.log"
 
 SHOT_DIR="$(mktemp -d)"
 export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR"
@@ -37,22 +40,27 @@ xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobil
   > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 step "UI: 所有任务 (S15), and the FakeBridge UI tests of T1, S2, S3, S9 that use it"
-xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
-  -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO \
-  -only-testing:dsh-mobileUITests/S15AllTasksUITests \
-  -only-testing:dsh-mobileUITests/T1ShellUITests/testAllTasksAndDrawerOpenSessions \
-  -only-testing:dsh-mobileUITests/S2DurableListUITests/testOfflineHostIsNamedWithFakeBridge \
-  -only-testing:dsh-mobileUITests/S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge \
-  -only-testing:dsh-mobileUITests/S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge \
-  -only-testing:dsh-mobileUITests/S9MultiHostUITests \
-  > "$LOGS/ui.log" 2>&1 || { grep -E "error:|Test Case.*(passed|failed)" "$LOGS/ui.log"; exit 1; }
-grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui.log"
-demo_no_skipped_ui "$LOGS/ui.log"
+UI_TESTS=(
+  -only-testing:dsh-mobileUITests/S15AllTasksUITests
+  -only-testing:dsh-mobileUITests/T1ShellUITests/testAllTasksAndDrawerOpenSessions
+  -only-testing:dsh-mobileUITests/S2DurableListUITests/testOfflineHostIsNamedWithFakeBridge
+  -only-testing:dsh-mobileUITests/S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge
+  -only-testing:dsh-mobileUITests/S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge
+  -only-testing:dsh-mobileUITests/S9MultiHostUITests
+)
+demo_part s15-ui bash -c '
+  log=$1; shift
+  xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+    -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "$@" > "$log" 2>&1 \
+    || { grep -E "error:|Test Case.*(passed|failed)" "$log"; exit 1; }
+  grep -E "Test Case.*(passed|failed|skipped)" "$log"
+  source scripts/demo/lib.sh; demo_no_skipped_ui "$log"' _ "$LOGS/ui.log" "${UI_TESTS[@]}"
 
 if [ $SHOTS = 1 ]; then
   step "screenshots → evidence/S15 (1/3 size)"
   mkdir -p evidence/S15
   for f in "$SHOT_DIR"/s15-*.png; do
+    [ -e "$f" ] || { echo "no new shots (the UI part was skipped)"; break; }
     out="evidence/S15/$(basename "$f")"
     sips --resampleWidth 402 "$f" --out "$out" >/dev/null
     echo "$out $(du -h "$out" | cut -f1)"
