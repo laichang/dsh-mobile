@@ -24,5 +24,10 @@ import Testing
         let o = DebugLaunchOptions.parse(["/app", "-DSHMFakeBridge", "offline", "-DSHMResetStore", "YES", "-DSHMConnectDelay", "2.5"])
         #expect(o == .init(useFakeBridge: true, fakeBridgeOffline: true, resetStore: true, connectDelay: 2.5))
     }
+
+    @Test func parsesT1FakeHold() {
+        let o = DebugLaunchOptions.parse(["/app", "-DSHMFakeBridge", "YES", "-DSHMFakeHold", "Second task"])
+        #expect(o == .init(useFakeBridge: true, fakeHold: "Second task"))
+    }
 }
 #endif

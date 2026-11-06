@@ -19,7 +19,8 @@ final class S1PairingUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMResetPairing", "YES", "-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47801"]
         app.launch()
-        // Unpaired Debug build: T0's plaintext dev path.
+        // Unpaired Debug build: T0's plaintext dev path. Host rows are in the drawer (T1).
+        openDrawer(app)
         let channel = app.descendants(matching: .any)["host.channel"]
         XCTAssertTrue(channel.waitForExistence(timeout: 10))
         XCTAssertEqual(channel.value as? String, "plaintext")
@@ -36,6 +37,7 @@ final class S1PairingUITests: XCTestCase {
         reopened.buttons["pairing.done"].tap()
 
         // The T0 demo, now over Noise to the paired host.
+        openDrawer(reopened)
         let noise = reopened.descendants(matching: .any)["host.channel"]
         XCTAssertTrue(noise.waitForExistence(timeout: 10))
         XCTAssertEqual(noise.value as? String, "noise")
@@ -56,6 +58,7 @@ final class S1PairingUITests: XCTestCase {
         saveShot("s1-reused-code-refused")
         reopened.buttons["pairing.close"].tap()
         // Still paired: the refusal didn't touch the existing pairing.
+        openDrawer(reopened)
         XCTAssertEqual(reopened.descendants(matching: .any)["host.channel"].value as? String, "noise")
     }
 
@@ -65,6 +68,7 @@ final class S1PairingUITests: XCTestCase {
         try XCTSkipUnless(env["DSHM_PAIR_URL"] != nil, "run scripts/demo/s1.sh")
         let app = XCUIApplication()
         app.launch()
+        openDrawer(app)
         let channel = app.descendants(matching: .any)["host.channel"]
         XCTAssertTrue(channel.waitForExistence(timeout: 10))
         XCTAssertEqual(channel.value as? String, "noise")
@@ -79,6 +83,7 @@ final class S1PairingUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMResetPairing", "YES"]
         app.launch()
+        openDrawer(app)
         XCTAssertTrue(app.descendants(matching: .any)["host.channel"].waitForExistence(timeout: 10))
         let reopened = openDeepLink(link)
         let confirm = reopened.buttons["pairing.confirm"]
@@ -99,6 +104,7 @@ final class S1PairingUITests: XCTestCase {
         try XCTSkipUnless(env["DSHM_RESUME_PHASE"] == "1", "run scripts/demo/s1.sh")
         let app = XCUIApplication()
         app.launch()
+        openDrawer(app)
         let channel = app.descendants(matching: .any)["host.channel"]
         XCTAssertTrue(channel.waitForExistence(timeout: 10))
         XCTAssertEqual(channel.value as? String, "noise")
@@ -118,9 +124,11 @@ final class S1PairingUITests: XCTestCase {
         let prompt = try XCTUnwrap(env["DSHM_GAP_PROMPT"])
         let app = XCUIApplication()
         app.launch()
+        openDrawer(app)
         let channel = app.descendants(matching: .any)["host.channel"]
         XCTAssertTrue(channel.waitForExistence(timeout: 10))
         XCTAssertEqual(channel.value as? String, "noise")
+        app.buttons["drawer.allTasks"].tap()
         let row = app.buttons.matching(NSPredicate(format: "identifier == 'tasklist.row' AND label CONTAINS %@", prompt)).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 30), app.debugDescription)
         saveShot("s1-resumed-over-noise-list")

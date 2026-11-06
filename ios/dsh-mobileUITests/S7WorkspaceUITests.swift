@@ -20,7 +20,7 @@ final class S7WorkspaceUITests: XCTestCase {
         let first = runDemo(app, prompt: prompt, timeout: 20)
         XCTAssertTrue(first.contains("Amber repository"), first)
         saveShot("s7-default")
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        newSession(app)
         open.tap()
         let path = app.textFields["workspace.path"]
         XCTAssertTrue(path.waitForExistence(timeout: 10))
@@ -30,7 +30,7 @@ final class S7WorkspaceUITests: XCTestCase {
         let second = runDemo(app, prompt: prompt, timeout: 20)
         XCTAssertTrue(second.contains("Violet repository"), second)
         saveShot("s7-selected")
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        newSession(app)
         open.tap()
         let recent = app.buttons["workspace.option." + repos + "/violet"]
         XCTAssertTrue(recent.waitForExistence(timeout: 10))

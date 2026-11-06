@@ -1,33 +1,26 @@
 import XCTest
 
-/// Shared by the slice UI tests (T0, S1, …): drive the composer, open deep links, save shots.
+/// Shared by the slice UI tests (T0, S1, …): drive the composer and the T1 shell, open deep links, save shots.
 @MainActor
 extension XCTestCase {
     var env: [String: String] { ProcessInfo.processInfo.environment }
 
-    /// Types the prompt, taps send, waits for the task to finish; returns the transcript.
+    /// Types the prompt in a new session, taps send, waits for the task to finish; returns the
+    /// transcript. The first message turns the new session into the session page (T1, D51).
     func runDemo(_ app: XCUIApplication, prompt: String, timeout: TimeInterval) -> String {
         let field = app.textFields["composer.prompt"]
+        let elsewhere = app.otherElements["drawer"].exists || app.descendants(matching: .any)["task.status"].exists ||
+            app.descendants(matching: .any)["tasklist"].exists
+        if elsewhere { newSession(app) }
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.tap()
         field.typeText(prompt)
         let send = app.buttons["composer.send"]
         XCTAssertTrue(send.isEnabled)
-        let matchingRows = app.buttons.matching(identifier: "tasklist.row")
-            .matching(NSPredicate(format: "label CONTAINS %@", prompt))
-        let priorCount = matchingRows.count
         send.tap()
 
-        // Short answers stay in the list (S8). This demo inspects the full session transcript.
         let status = app.descendants(matching: .any)["task.status"]
-        if !status.waitForExistence(timeout: 3) {
-            // A fast task can cross from Running to Done during the tap. Use its settled row.
-            let ready = expectation(for: NSPredicate { _, _ in
-                status.exists || (matchingRows.count > priorCount && matchingRows.firstMatch.value as? String == "completed")
-            }, evaluatedWith: app)
-            wait(for: [ready], timeout: timeout)
-            if !status.exists { matchingRows.firstMatch.tap() }
-        }
+        XCTAssertTrue(status.waitForExistence(timeout: timeout), app.debugDescription)
         let transcript = app.descendants(matching: .any)["transcript.text"]
 
         // Streaming: some text shows while the task is still running.
@@ -38,6 +31,50 @@ extension XCTestCase {
         wait(for: [done], timeout: timeout)
         XCTAssertEqual(status.value as? String, "completed", "status label: \(status.label)")
         return transcript.value as? String ?? ""
+    }
+
+    // MARK: - T1 shell: the drawer replaces the navigation stack
+
+    /// Opens the workspace drawer with its button (no-op if it is open).
+    func openDrawer(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let drawer = app.otherElements["drawer"]
+        if drawer.exists { return }
+        let button = app.buttons["drawer.open"]
+        XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription, file: file, line: line)
+        button.tap()
+        XCTAssertTrue(drawer.waitForExistence(timeout: 5), app.debugDescription, file: file, line: line)
+    }
+
+    /// Closes the drawer with a tap on the peeking page (no-op if it is closed).
+    func closeDrawer(_ app: XCUIApplication) {
+        let drawer = app.otherElements["drawer"]
+        guard drawer.exists else { return }
+        app.buttons["drawer.dismiss"].tap()
+        XCTAssertTrue(drawer.waitForNonExistence(timeout: 5))
+    }
+
+    /// Opens the session whose drawer row contains `text`.
+    func openSession(_ app: XCUIApplication, _ text: String, timeout: TimeInterval = 10,
+                     file: StaticString = #filePath, line: UInt = #line) {
+        openDrawer(app, file: file, line: line)
+        let row = app.buttons.matching(identifier: "drawer.session").matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: timeout), app.debugDescription, file: file, line: line)
+        row.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["task.status"].waitForExistence(timeout: 5), file: file, line: line)
+    }
+
+    /// Opens 所有任务 (the M1 task list) from the drawer.
+    func openAllTasks(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        openDrawer(app, file: file, line: line)
+        app.buttons["drawer.allTasks"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["tasklist"].waitForExistence(timeout: 5), app.debugDescription, file: file, line: line)
+    }
+
+    /// Opens a blank new session from the drawer.
+    func newSession(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        openDrawer(app, file: file, line: line)
+        app.buttons["drawer.new"].tap()
+        XCTAssertTrue(app.textFields["composer.prompt"].waitForExistence(timeout: 5), app.debugDescription, file: file, line: line)
     }
 
     /// Opens a `dshm://` link the way the system does, confirms iOS's "Open in dsh-mobile?"

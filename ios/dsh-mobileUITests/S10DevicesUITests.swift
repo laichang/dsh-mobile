@@ -15,6 +15,7 @@ final class S10DevicesUITests: XCTestCase {
         original.launchArguments = ["-DSHMResetPairing", "YES", "-DSHMResetStore", "YES",
                                     "-DSHMBridgePort", "1"]
         original.launch()
+        openDrawer(original)
         XCTAssertTrue(original.descendants(matching: .any)["host.channel"].waitForExistence(timeout: 15))
         XCTAssertFalse(original.buttons["host.manage"].exists)
         let app = openDeepLink(link)
@@ -22,10 +23,12 @@ final class S10DevicesUITests: XCTestCase {
         let paired = app.descendants(matching: .any)["pairing.status"]
         XCTAssertEqual(waitForValue(paired, in: ["paired", "failed"], timeout: 20), "paired")
         app.buttons["pairing.done"].tap()
+        openAllTasks(app)
         let deny = app.buttons["approval.deny"].firstMatch
         XCTAssertTrue(deny.waitForExistence(timeout: 30), app.debugDescription)
         deny.tap()
         XCTAssertTrue(deny.waitForNonExistence(timeout: 15))
+        openDrawer(app)
         let manage = app.buttons["host.manage"]
         XCTAssertTrue(manage.waitForExistence(timeout: 10))
         manage.tap()

@@ -19,6 +19,9 @@ public enum DebugLaunchOptions {
     public static let connectDelayKey = "DSHMConnectDelay"
     /// `-DSHMResetPairing YES`: forget paired hosts and the device key at launch (S1 UI tests).
     public static let resetPairingKey = "DSHMResetPairing"
+    /// `-DSHMFakeHold <text>` (T1): with the FakeBridge, a task whose prompt contains `<text>`
+    /// stays running until the app quits, so a UI test can act on a running task.
+    public static let fakeHoldKey = "DSHMFakeHold"
 
     public struct Options: Equatable, Sendable {
         public var useFakeBridge = false
@@ -30,12 +33,13 @@ public enum DebugLaunchOptions {
         public var resetStore = false
         public var connectDelay: Double?
         public var resetPairing = false
+        public var fakeHold: String?
 
         public init(
             useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil,
             fakeMilestones: Bool = false,
             fakeBridgeOffline: Bool = false, resetStore: Bool = false, connectDelay: Double? = nil,
-            resetPairing: Bool = false
+            resetPairing: Bool = false, fakeHold: String? = nil
         ) {
             self.useFakeBridge = useFakeBridge
             self.presetPrompt = presetPrompt
@@ -45,6 +49,7 @@ public enum DebugLaunchOptions {
             self.resetStore = resetStore
             self.connectDelay = connectDelay
             self.resetPairing = resetPairing
+            self.fakeHold = fakeHold
         }
     }
 
@@ -74,6 +79,7 @@ public enum DebugLaunchOptions {
         options.bridgePort = values[bridgePortKey].flatMap(Int.init)
         if let v = values[fakeMilestonesKey] { options.fakeMilestones = yes.contains(v) }
         if let v = values[resetPairingKey] { options.resetPairing = yes.contains(v) }
+        options.fakeHold = values[fakeHoldKey]
         return options
     }
 }

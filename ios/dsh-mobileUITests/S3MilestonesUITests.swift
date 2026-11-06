@@ -88,6 +88,14 @@ final class S3MilestonesUITests: XCTestCase {
         card.tap()
         let timeline = app.descendants(matching: .any)["milestone.timeline"]
         XCTAssertTrue(timeline.waitForExistence(timeout: 5), app.debugDescription)
+        // The todos are on top. Check them first: the timeline is a sheet (T1), and a swipe
+        // down at the top of it would close it.
+        for i in Self.todos.indices {
+            let todo = app.descendants(matching: .any)["milestone.todo.\(i)"]
+            XCTAssertTrue(todo.waitForExistence(timeout: 3))
+            XCTAssertEqual(todo.value as? String, "completed")
+            XCTAssertTrue(todo.label.contains(Self.todos[i]), todo.label)
+        }
         for (i, kind) in kinds.enumerated() {
             let row = app.descendants(matching: .any)["milestone.row.\(i + 1)"]
             if !row.exists { timeline.swipeUp() }
@@ -95,13 +103,6 @@ final class S3MilestonesUITests: XCTestCase {
             XCTAssertEqual(row.value as? String, kind, "row \(i + 1): \(row.label)")
         }
         XCTAssertFalse(app.descendants(matching: .any)["milestone.row.\(kinds.count + 1)"].exists)
-        timeline.swipeDown()
-        for i in Self.todos.indices {
-            let todo = app.descendants(matching: .any)["milestone.todo.\(i)"]
-            XCTAssertTrue(todo.waitForExistence(timeout: 3))
-            XCTAssertEqual(todo.value as? String, "completed")
-            XCTAssertTrue(todo.label.contains(Self.todos[i]), todo.label)
-        }
         saveShot(shot)
     }
 
@@ -128,10 +129,6 @@ final class S3MilestonesUITests: XCTestCase {
     func testNoMilestonesNoCard() {
         let app = launch(["-DSHMFakeBridge", "YES"])
         send(app, prompt: "Introduce yourself in one sentence.")
-        let row = app.buttons.matching(identifier: "tasklist.row")
-            .matching(NSPredicate(format: "label CONTAINS %@", "Introduce yourself in one sentence.")).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
-        row.tap()
         waitForEnd(app, timeout: 15)
         XCTAssertFalse(app.descendants(matching: .any)["milestone.card"].exists)
     }

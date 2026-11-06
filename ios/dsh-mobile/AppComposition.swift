@@ -90,7 +90,9 @@ final class AppModel {
         }
         if options.useFakeBridge {
             let endpoint = HostEndpoint.localBridge()
-            let fake = FakeHost(script: options.fakeMilestones ? .threeTodos() : .init(), reachable: !options.fakeBridgeOffline)
+            var script: FakeBridge.Script = options.fakeMilestones ? .threeTodos() : .init()
+            script.holdPrompt = options.fakeHold
+            let fake = FakeHost(script: script, reachable: !options.fakeBridgeOffline)
             return [.init(key: "fake:\(endpoint)",
                           connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: fake.factory))]
         }
