@@ -1226,6 +1226,7 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - S15: branch `claude/s15-all-tasks`, simulator `dshm-S15`, DSHM_HOME `~/.dshm/home-s15`, bridge 47812, web 3285.
   - S16: branch `claude/s16-session`, simulator `dshm-S16`, DSHM_HOME `~/.dshm/home-s16`, bridge 47813, web 3286.
   - Ports 47830 and 3303 stay reserved for the S9 second host in `scripts/demo/t1.sh --all` (§9 row 48).
+  - Fallback (WORKFLOW.md §5.3, step 3): the app refused to start sessions from the review-completion turn (the chain had ended across heartbeat turns). Batch UI-1 runs as workflow `wf_20f9600c-fdc` (task `wc826829r`): one slice-owner agent per slice in worktrees `.claude/worktrees/s14-drawer`, `s15-all-tasks`, `s16-session` (created from `426049b`), then an independent reviewer agent runs `scripts/review <ID>`, with up to 3 repair rounds on FAIL. The coordinator merges. Second-host ports, if a demo needs one: S14 47841/3314, S15 47842/3315.
 
 ## 9. Pending user confirmation
 
