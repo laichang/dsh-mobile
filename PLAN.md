@@ -812,13 +812,19 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: One approval waits on an offline host and one on an online host. Approve the online one from 所有任务.
 
 **Done when**
-- [ ] [ui] 所有任务 opens from the drawer and shows the three sections across hosts — Evidence:
-- [ ] [ui] An approval for an offline host has grey buttons and tells that the host must reconnect first — Evidence:
-- [ ] [auto] An answer from 所有任务 (allow or deny) resolves a seeded FakeHost approval, and the task runs on to its reply — Evidence:
+- [x] [ui] 所有任务 opens from the drawer and shows the three sections across hosts — Evidence: test:S15AllTasksUITests/testAllTasksShowsThreeSectionsAcrossHosts · cmd:scripts/demo/s15.sh · shot:evidence/S15/s15-all-tasks.png · shot:evidence/S15/s15-tool-arguments.png
+- [x] [ui] An approval for an offline host has grey buttons and tells that the host must reconnect first — Evidence: test:S15AllTasksUITests/testOfflineHostApprovalIsGreyAndTheOnlineOneIsApproved · cmd:scripts/demo/s15.sh · shot:evidence/S15/s15-offline-approval.png · shot:evidence/S15/s15-approved-online.png
+- [x] [auto] An answer from 所有任务 (allow or deny) resolves a seeded FakeHost approval, and the task runs on to its reply — Evidence: test:AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval · cmd:scripts/demo/s15.sh
 
 **Not**: Risk tiers and Face ID (M2, screen P3).
 
-**Log**: —
+**Log**
+- **2026-11-06 · built, to review.**
+  - Done: 所有任务 (screen 03) as a drawer page in the DSH style: sections 等我处理 / 正在跑 / 已完成 with counts, across hosts, from the cache; one line for each offline host; approval cards (`AllTasksApprovalCard`) with tool, host, task title (opens the session), command or path in SF Mono, reason, 工具参数 › (full arguments), 拒绝 / 允许一次; grey buttons and one line of reason when the host is not online; short answers inline in rows (D51 rule). Own string catalog `Features/TaskList/AllTasks.xcstrings`, tokens in `Theme+S15.swift`. FakeBridge scenario `-DSHMFakeBridge approvals` / `approvals-office-offline` (`FakeHost(approvals:)`, seeded task ids stable across launches). Decision: see **D55**. *Provisional, pending user confirmation.* No new dependencies. No board or STORY change: the code follows screen 03 as drawn.
+  - Resume (WORKFLOW.md §5.4): the stopped workflow owner left WIP `f63c6c7`. Kept it. Repaired: a row that moved from 等我处理 to 已完成 after 允许一次 kept its old view in the `LazyVStack` (same id in another section); 所有任务 now uses a `VStack`. Added `AllTasksApprovalTests` (store level) and wrapped `s15.sh` parts in `demo_part`.
+  - Verification: `scripts/demo/s15.sh --shots` exit 0 on `dshm-S15`: `swift test` 60 tests in 15 suites; UI 7/7 (S15 ×2, T1 `testAllTasksAndDrawerOpenSessions`, S2 ×2, S3 ×1, S9 ×1), 0 skipped. `scripts/demo/t0.sh` passed at the start.
+  - Flaky: none in S15 tests. The first `s15.sh` run failed in all earlier-slice tests (main thread busy, `kAXErrorServerNotFound`, terminate failed) while the Mac load average was 87–316 on 12 CPUs (TencentMeeting and simulator daemons); all passed on the next run. In `t0.sh`, `testPairDeepLinkOpensPairingStub` showed twice as passed (a retry by xcodebuild); not this slice's test.
+  - Not done: —. Next: independent `scripts/review S15`, then merge. For the coordinator: §0 S15 → review after the merge; add D55 to §9.
 
 ### S16 · Session page
 
