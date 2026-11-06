@@ -870,6 +870,11 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Not done: lists and tables still show as plain text (D56 alternatives; S17 changes the transcript next).
   - For the coordinator: add D56 to §9.
   - Next: independent `scripts/review S16`, then merge.
+- **2026-11-06 · merged main (S15, then S14) for the seam.** `scripts/review S16` passed on `8c1bdb8`; the coordinator's merge then conflicted, so S16 took the seam.
+  - Done: merge commits `8e2a4db` (S15) and `030b891` (S14). Kept both sides. In `FakeBridge.swift`, S15's `approvals:` and `answerApproval` sit next to S16's `interruptible` and interrupt handling. In `DebugEntryPoints.swift`, `fakeScenario` (S16), `fakeApprovals` (S15) and `fakeDrawer` (S14) all stay. ARCHITECTURE.md has D54, D55 and D56, in that order. `DSHMFakeScenario` stays a Release marker.
+  - Verified on `030b891` with S16's resources (`dshm-S16`): `swift test` 66 tests in 17 suites; `scripts/demo/s16.sh` (UI 11/11), `scripts/demo/s14.sh --part ui-fake` (4/4), `scripts/demo/s15.sh` (7/7), all exit 0. One run on `8e2a4db` was killed (exit 144) and two runs were stopped by app restarts and the pause; they were run again, not repaired.
+  - Under load, `testMilestoneBarStaysAtTopWhileTranscriptScrolls` (1242 s) and `S15AllTasksUITests/testAllTasksShowsThreeSectionsAcrossHosts` (1398 s) passed but were slow: each step waited 60 s for "animations complete".
+  - Next: `scripts/review S16 --resume` on this commit, then merge.
 
 ### S17 · Structured transcript
 
