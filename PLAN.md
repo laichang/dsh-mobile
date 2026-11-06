@@ -60,7 +60,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
 | S16 | done | merged `66fd823` | 2026-11-07 | — (provisional D56 in §9) |
-| S17 | doing | `claude/s17-transcript` | 2026-11-07 | Slice owner builds the structured transcript (§8) |
+| S17 | doing | `claude/s17-transcript` `a151a3e` | 2026-11-07 | Reviewer runs `scripts/review S17` (§8) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | done | merged `077a9f3` | 2026-11-07 | — (provisional D60 in §9) |
 | S20 | done | merged `e849e8e` | 2026-11-07 | — (provisional D58 in §9) |
@@ -1436,6 +1436,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-07 · S19 merged.** Merged as `077a9f3`; `scripts/check-plan` on the merge commit passed. `scripts/review S19` at `595b24b`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S19-595b24b.txt`), with `s19.sh`, `s16.sh` and the S16 seam tests. No open `[human]` items, so S19 is `done`. D60 to §9. `scripts/plan merged` refused again for the items added on the branch (same cause as S20); bookkeeping done with `row`, `pending` and `log`.
 
 - **2026-11-07 · S23 assigned.** Branch `claude/s23-drawer-motion`, worktree `.claude/worktrees/s23-drawer-motion` (from `7c5ed5b`), simulator `dshm-S23`, DSHM_HOME `~/.dshm/home-s23`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D65–D66. `eval "$(scripts/slice-env S23)"` exports them.
+
+- **2026-11-07 · S17 built; review started.** S17 owner finished at `a151a3e`: four `[auto]`/`[ui]` items ticked, D61 provisional, no new dependencies. It merged `main` (S20, S19); `s17.sh`, `s16.sh`, `s19.sh` and `t0.sh` passed. Flaky: one `t0.sh` run had 10 `swift test` failures (`store.send() → nil` after the 500 ms wait) in the older store tests while other simulators loaded the Mac; the next run passed. Same cause as the S20 repair round 1; the older tests keep their 500 ms wait. Also: `s16.sh` and `s19.sh` log to fixed `/tmp/dshm-s16` and `/tmp/dshm-s19` folders, so two slices that run them at once share them. Open for later: sessions read from another client's history keep the S16 view; the "深入工作中… · N 步" header is not built; D60 "N 步" could count tool calls now. An independent reviewer runs `scripts/review S17` on `a151a3e` (ports 47818/3291).
 
 ## 9. Pending user confirmation
 
