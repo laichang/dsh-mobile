@@ -59,7 +59,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
 | S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
-| S16 | doing | `claude/s16-session` `030b891` | 2026-11-06 | Owner reruns demos on the merge with main, then review --resume (§8) |
+| S16 | doing | `claude/s16-session` `107ab77` | 2026-11-06 | Owner merges main (guard fixes), then review --resume (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
 | S18 | doing | `claude/s18-approval-sheet` `9315a32` | 2026-11-06 | Reviewer runs `scripts/review S18` (§8) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -1296,6 +1296,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - The coordinator worktrees `.claude/worktrees/s18-approval-sheet` and `s20-pickers` are removed; each session takes back the canonical branch name. Resources do not change.
 
 - **2026-11-06 · S18 merged `main`; review started.** The owner merged `main` (S14 seam) as `a4d79ca` and logged it at `9315a32`: `swift test` 66/66, `s18.sh` (S18 ×2, S15 ×2) and `s14.sh --part ui-fake` (S14 ×4) passed; no flaky test. A background reviewer runs `scripts/review S18` (with the real-DSH `s4.sh`) on `9315a32`. Its ready report reached the coordinator only through the heartbeat.
+
+- **2026-11-06 · Guard fixes on `main`; slices merge `main`.** The user committed `2a6a0ed` (the guard waits on CPU idle, not load average; it stops noisy iOS services in `dshm-*` simulators) and `51009d0` (the watcher survives a killed job; simulators with no owner are shut down). At the user's request, each running slice merges `main` before its next demo. S16 (`107ab77`: `main` with S14 and S15 merged; `swift test`, `s16.sh`, `s14.sh --part ui-fake`, `s15.sh` passed) merges `main` again, then its review runs with `--resume`. S20 merges before its next demo. The S18 review on `9315a32` was already running and continues; S18 merges `main` before any repair.
 
 ## 9. Pending user confirmation
 
