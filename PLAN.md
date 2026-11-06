@@ -66,7 +66,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S20 | done | merged `e849e8e` | 2026-11-07 | — (provisional D58 in §9) |
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
 | S22 | done | merged `4deb8d0` | 2026-11-07 | — (provisional D63 in §9) |
-| S23 | doing | `claude/s23-drawer-motion` | 2026-11-07 | Slice owner builds (§8) |
+| S23 | doing | `claude/s23-drawer-motion` `7d086d9` | 2026-11-07 | Reviewer runs `scripts/review S23` (§8) |
 
 ## 1. Approach
 
@@ -1464,6 +1464,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-07 · S22 review PASS; merge conflicts with S17.** `scripts/review S22` at `2196033`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S22-2196033.txt`). The merge into `main` conflicted with S17 in `ARCHITECTURE.md` and `design/board.png` (merge aborted). The owner merges `main`, runs `s22.sh` and `s17.sh`, then the review runs again on the new head.
 
 - **2026-11-07 · S22 merged.** Merged as `4deb8d0`; `scripts/check-plan` on the merge commit passed. `scripts/review S22 --resume` at `32cc7b1`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S22-32cc7b1.txt`), after the owner merged `main` (S17) and `s17.sh` passed as the seam check. No open `[human]` items, so S22 is `done`. D63 to §9. The S11 `[human]` onboarding items can be checked on the new 08.
+
+- **2026-11-07 · S23 built; review started.** S23 owner finished at `7d086d9`: the `[ui]` item ticked, the `[human]` item (motion feels smooth on a real iPhone) open, D65 provisional (D66 not used), no new dependencies, no flaky tests. It merged `main` twice (S17, S22); `s23.sh --shots` passed with the seam tests of S19, S16, S14, T1, S18 and S15 (20/20). S23 owns the S19 landing-position seam and reuses its code. Its own reading, in D65: on 03 (drawer closed) an approval card only cross-fades, then 05 comes up; saved scroll positions live in memory only. It created the simulator `dshm-S23` (iPhone 17 Pro, iOS 26.4). An independent reviewer runs `scripts/review S23` on `7d086d9` (ports 47811/3284).
 
 ## 9. Pending user confirmation
 
