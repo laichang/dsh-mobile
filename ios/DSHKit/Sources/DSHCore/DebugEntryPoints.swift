@@ -26,6 +26,10 @@ public enum DebugLaunchOptions {
     /// `-DSHMFakeHold <text>` (T1): with the FakeBridge, a task whose prompt contains `<text>`
     /// stays running until the app quits, so a UI test can act on a running task.
     public static let fakeHoldKey = "DSHMFakeHold"
+    /// `-DSHMFakeAsk <text>` (S18): with the FakeBridge approvals scenario, a task whose prompt
+    /// contains `<text>` asks for an approval before its reply, so a new approval arrives in an
+    /// open session.
+    public static let fakeAskKey = "DSHMFakeAsk"
 
     public struct Options: Equatable, Sendable {
         public var useFakeBridge = false
@@ -41,6 +45,7 @@ public enum DebugLaunchOptions {
         /// S14: the `FakeDrawer` variant (`drawer`, `drawer-office-offline`, `drawer-v0`).
         public var fakeDrawer: String?
         public var fakeApprovals = false
+        public var fakeAsk: String?
 
         public init(
             useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil,
@@ -89,6 +94,7 @@ public enum DebugLaunchOptions {
         if let v = values[fakeMilestonesKey] { options.fakeMilestones = yes.contains(v) }
         if let v = values[resetPairingKey] { options.resetPairing = yes.contains(v) }
         options.fakeHold = values[fakeHoldKey]
+        options.fakeAsk = values[fakeAskKey]
         return options
     }
 }

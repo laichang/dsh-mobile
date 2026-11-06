@@ -37,6 +37,9 @@ public final class FakeBridge: BridgeTransport {
         /// T1: a task whose prompt contains this text stops after its first milestone (or before
         /// its reply, with no milestones) and stays running for the rest of the run.
         public var holdPrompt: String?
+        /// S18: a task whose prompt contains `ask.prompt` asks for `ask.approval` before its reply
+        /// and waits until it is answered (here, or from elsewhere with `answerFromElsewhere`).
+        public var ask: (prompt: String, approval: PendingApproval)?
 
         public init(
             reply: [String] = ["Hello", " from", " FakeBridge", ". ", "No DSH", " was", " involved."],
@@ -55,6 +58,11 @@ public final class FakeBridge: BridgeTransport {
         func holds(_ prompt: String) -> Bool {
             guard let holdPrompt, !holdPrompt.isEmpty else { return false }
             return prompt.contains(holdPrompt)
+        }
+
+        func asks(_ prompt: String) -> PendingApproval? {
+            guard let ask, !ask.prompt.isEmpty, prompt.contains(ask.prompt) else { return nil }
+            return ask.approval
         }
 
         /// A three-todo task that ticks its todos off one by one (S3 demo, `-DSHMFakeMilestones YES`).
@@ -189,6 +197,8 @@ public final class FakeHost: Sendable {
     private let extraCapabilities: [String]
     /// S15: with any, the host advertises `approvals.v1` and answers `AnswerApproval`.
     private let approvals: [FakeBridge.PendingApproval]
+    /// S15, S18: seeded approvals or a script that asks for one.
+    private var answersApprovals: Bool { !approvals.isEmpty || script.ask != nil }
 
     private struct Connection {
         let bridge: FakeBridge
@@ -332,7 +342,7 @@ public final class FakeHost: Sendable {
                     hello.requiresBridgeUpdate = true
                 } else {
                     hello.capabilities = [DSHProtocolInfo.tasksCapability, DSHProtocolInfo.milestonesCapability, DSHProtocolInfo.resumeCapability]
-                    if !approvals.isEmpty { hello.capabilities.append(DSHProtocolInfo.approvalsCapability) }
+                    if answersApprovals { hello.capabilities.append(DSHProtocolInfo.approvalsCapability) }
                     hello.capabilities += extraCapabilities
                 }
                 bridge.deliver(Self.response(id, .hello(hello)))
@@ -355,7 +365,8 @@ public final class FakeHost: Sendable {
                 Self.upserted(summary, in: &s)
                 let incarnation = s.incarnation
                 let hold = script.holds(create.prompt)
-                Task { await self.stream(taskID: taskID, incarnation: incarnation, hold: hold) }
+                let ask = script.asks(create.prompt)
+                Task { await self.stream(taskID: taskID, incarnation: incarnation, hold: hold, ask: ask) }
             case .listTasks?:
                 var list = Dshm_V1_TaskList()
                 list.tasks = s.tasks.reversed()
@@ -382,7 +393,7 @@ public final class FakeHost: Sendable {
                 resumed.replayed = UInt64(replay.count)
                 bridge.deliver(Self.response(id, .resumed(resumed)))
                 conn.resumed = true
-            case .answerApproval(let answer)? where !approvals.isEmpty:
+            case .answerApproval(let answer)? where answersApprovals:
                 answerApproval(answer, requestID: id, bridge: bridge, in: &s)
             case .answerApproval?, .interrupt?, .getModelCatalog?, .selectModel?, .listWorkspaces?, .listDevices?, .listAudit?, .revokeDevice?, .readSession?:
                 var error = Dshm_V1_Error()
@@ -404,24 +415,43 @@ public final class FakeHost: Sendable {
             bridge.deliver(Self.response(requestID, .error(error)))
             return
         }
+        let resolved = resolve(answer.id, at: at, allow: answer.decision == .allowOnce, in: &s)
+        bridge.deliver(Self.response(requestID, .approvalResolved(resolved)))
+    }
+
+    /// S18: another client (the Web) answers every pending approval of this host. The phone
+    /// gets only the `ApprovalResolved` event, as from the real bridge.
+    public func answerFromElsewhere(allow: Bool) {
+        state.withLock { s in
+            for at in s.tasks.indices {
+                for pending in s.tasks[at].pendingApprovals {
+                    _ = resolve(pending.id, at: at, allow: allow, in: &s)
+                }
+            }
+        }
+    }
+
+    /// Logs the resolution, and the task goes on to its reply.
+    private func resolve(_ id: String, at: Int, allow: Bool, in s: inout State) -> Dshm_V1_ApprovalResolved {
         let taskID = s.tasks[at].taskID
         var resolved = Dshm_V1_ApprovalResolved()
-        resolved.id = answer.id
+        resolved.id = id
         resolved.taskID = taskID
-        resolved.outcome = answer.decision == .allowOnce ? .allowed : .denied
-        bridge.deliver(Self.response(requestID, .approvalResolved(resolved)))
+        resolved.outcome = allow ? .allowed : .denied
         var event = Dshm_V1_Event()
         event.approvalResolved = resolved
         Self.append(event, taskID: taskID, in: &s)
-        s.tasks[at].pendingApprovals.removeAll { $0.id == answer.id }
+        s.tasks[at].pendingApprovals.removeAll { $0.id == id }
         s.tasks[at].state = .running
         s.tasks[at].updatedAtMs = Self.nowMs()
         Self.upserted(s.tasks[at], in: &s)
         let incarnation = s.incarnation
         Task { await self.stream(taskID: taskID, incarnation: incarnation) }
+        return resolved
     }
 
-    private func stream(taskID: String, incarnation: Int, hold: Bool = false) async {
+    private func stream(taskID: String, incarnation: Int, hold: Bool = false,
+                        ask: FakeBridge.PendingApproval? = nil) async {
         // S3: milestones are logged like any other event, so Resume replays them.
         var milestoneSeq: UInt64 = 0
         var lastTodos: [Todo] = []
@@ -443,6 +473,28 @@ public final class FakeHost: Sendable {
             if hold { return }
         }
         if hold { return }
+        if let ask {
+            // S18: the task pauses on an approval; `resolve` streams the reply after the answer.
+            try? await Task.sleep(for: script.chunkDelay)
+            state.withLock { s in
+                guard s.incarnation == incarnation, let at = s.tasks.firstIndex(where: { $0.taskID == taskID }) else { return }
+                var pending = Dshm_V1_ApprovalPending()
+                pending.taskID = taskID
+                pending.id = "\(taskID)-approval"
+                pending.callID = "\(taskID)-call"
+                pending.tool = ask.tool
+                pending.argumentsJson = ask.arguments
+                pending.reason = ask.reason
+                var event = Dshm_V1_Event()
+                event.approvalPending = pending
+                Self.append(event, taskID: taskID, in: &s)
+                s.tasks[at].pendingApprovals = [pending]
+                s.tasks[at].state = .waitingOnUser
+                s.tasks[at].updatedAtMs = Self.nowMs()
+                Self.upserted(s.tasks[at], in: &s)
+            }
+            return
+        }
         for (i, text) in script.reply.enumerated() {
             try? await Task.sleep(for: script.chunkDelay)
             var chunk = Dshm_V1_AssistantChunk()
