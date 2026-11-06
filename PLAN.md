@@ -1319,6 +1319,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-06 · S21 assigned.** Branch `claude/s21-hosts`, worktree `.claude/worktrees/s21-hosts` (from `db51c26`), simulator `dshm-S21`, DSHM_HOME `~/.dshm/home-s21`, bridge 47816, web 3289; second host 47846/3319. The owner runs as a background agent (WORKFLOW.md §5.3, step 3): the app refused the session start from the review-completion turn. S19 waits for S16 (both change the session page).
 
+- **2026-11-06 · Run paused by the user (about 23:00).** Heartbeat `c6c0c493` deleted. The S21 background agent stopped before its first commit (branch `claude/s21-hosts` at `db51c26`, worktree clean). The S16 and S20 sessions were stopped and told to do nothing until a new brief. Slice demo jobs stopped; `dshm-*` simulators shut down. State: S16 at `ca76dd9` (merged `main` with the guard fixes; check whether it includes S18 `8d25764`, then demos and `scripts/review S16 --resume`). S20 at `f319b99` (merged `main` with the guard fixes; it still needs S18 and its own demos). To resume: create a new heartbeat, then brief each slice (WORKFLOW.md §5.4).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
