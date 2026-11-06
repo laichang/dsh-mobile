@@ -81,7 +81,7 @@ try {
     return records.some(r => r.event.type === 'turn/end')
   }, 'Web turn', 40_000)
   // Diagnostics only: what DSH lists as each session's directory (the bridge reads the same list).
-  const listed = () => rpc('session/list', { request: {} })
+  const listed = () => rpc('session/list', { _request: {} })
     .then(({ items }) => JSON.stringify(items.map(item => ({ id: item.sessionId, cwd: item.cwd }))), String)
   console.log('Web session ' + sessionId + ' in ' + workspace.path + '; DSH sessions: ' + await listed())
   writeFileSync(join(signals, 'bridge-port'), String(process.env.DSHM_BRIDGE_PORT))

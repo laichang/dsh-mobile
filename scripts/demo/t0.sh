@@ -22,8 +22,7 @@ NODE24="$HOME/.nvm/versions/node/v24.14.0/bin"
 [ -d "$HOME/.dshm/bin" ] && export PATH="$HOME/.dshm/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
 source scripts/demo/lib.sh
-# One log directory per simulator: slices run t0.sh at the same time (WORKFLOW.md §6).
-LOGS="/tmp/dshm-t0${DSHM_SIM:+-$DSHM_SIM}"; mkdir -p "$LOGS"
+LOGS=/tmp/dshm-t0; mkdir -p "$LOGS"
 DD="${DSHM_DD:-/tmp/dshm-t0-dd}"
 
 demo_prepare_bridge
@@ -41,10 +40,10 @@ if [ $FAKE_ONLY = 0 ]; then
   if ! lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
     step "starting real DSH + bridge (scripts/dsh-up.mjs)"
     (cd bridge && corepack pnpm build >/dev/null)
-    node scripts/dsh-up.mjs > "$LOGS/dsh-up.log" 2>&1 &
+    node scripts/dsh-up.mjs > /tmp/dshm-t0-dsh-up.log 2>&1 &
     DSH_PID=$!
     for _ in $(seq 1 240); do lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1 && break; sleep 0.5; done
-    lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null || { cat "$LOGS/dsh-up.log"; echo "bridge did not come up" >&2; exit 1; }
+    lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null || { cat /tmp/dshm-t0-dsh-up.log; echo "bridge did not come up" >&2; exit 1; }
   fi
   step "bridge inside real DSH answers a CLI client"
   node bridge/lib/scripts/client.js --port "$PORT" "用一句话介绍你自己。"
