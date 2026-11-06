@@ -60,7 +60,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
 | S16 | done | merged `66fd823` | 2026-11-07 | — (provisional D56 in §9) |
-| S17 | doing | `claude/s17-transcript` `a151a3e` | 2026-11-07 | Slice owner merges `main` (`4f91fc1`); reviewer runs `scripts/review S17 --resume` (§8) |
+| S17 | done | merged `3a9f11e` | 2026-11-07 | — (provisional D61 in §9) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | done | merged `077a9f3` | 2026-11-07 | — (provisional D60 in §9) |
 | S20 | done | merged `e849e8e` | 2026-11-07 | — (provisional D58 in §9) |
@@ -1451,6 +1451,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · S22 built; review started.** S22 owner finished at `2196033`: the `[ui]` item ticked, D63 provisional, no new dependencies, no flaky tests in two full demo runs. It merged `main` (S19); `s22.sh` passed with the S11 seam tests (3/3). S22 lands after S11, so it owns the seam: `S11FirstRunUITests/testFirstRunFromWelcomeToReply` now finds the first task already in the composer. It created the simulator `dshm-S22` (iPhone 17 Pro, iOS 26.4). The S11 `[human]` onboarding items can be checked on the new 08 now. An independent reviewer runs `scripts/review S22` on `2196033` (ports 47810/3283).
 
+- **2026-11-07 · S17 merged.** Merged as `3a9f11e`; `scripts/check-plan` on the merge commit passed. `scripts/review S17 --resume` at `dfe79f3`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S17-dfe79f3.txt`); the Swift Testing pointer passed through the new `swift test --filter` check. No open `[human]` items, so S17 is `done`. D61 to §9. Bookkeeping by `row`, `pending` and `log` (`scripts/plan merged` refuses items added on the branch, as for S20).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1510,3 +1512,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 55 | S20 | decision | D58, provisional: picker sheets (07, M, X4): workspace and model pickers as SheetRoute sheets; a task with no selection opens the model sheet at the host default. | ``claude/s20-pickers`` | `merged `e849e8e`` |
 | 56 | S19 | decision | D60, provisional: done and failed on the session page (06, X1): TaskOutcome reads an ended task from the cache only; retry opens 01 in a new session with the original prompt. | ``claude/s19-outcomes`` | `merged `077a9f3`` |
 | 57 | S17 | decision | Coordinator change to scripts/review (4f91fc1): a test: pointer to a DSHKit Swift Testing @Test is checked with `swift test --filter Suite/name` and its own pass line. Before, such pointers could never pass. Please confirm or change. | ``main`` | ``4f91fc1`` |
+| 58 | S17 | decision | D61, provisional: structured transcript (transcript.v1, TranscriptBlock field 340): thinking and tool rows mapped by the bridge from DSH events, with the S16 view as the fallback. | ``claude/s17-transcript`` | `merged `3a9f11e`` |
