@@ -82,6 +82,21 @@ public final class FakeBridge: BridgeTransport {
         }
     }
 
+    /// S15: a task that waits on an approval when the host starts, as if DSH had paused it there.
+    public struct PendingApproval: Sendable {
+        public var title: String
+        public var tool: String
+        public var arguments: String
+        public var reason: String
+
+        public init(title: String, tool: String, arguments: String, reason: String) {
+            self.title = title
+            self.tool = tool
+            self.arguments = arguments
+            self.reason = reason
+        }
+    }
+
     public static let defaultReply = Script().reply.joined()
     public static let threeTodoItems = ["Read the project layout", "Write the summary", "Check the summary against the code"]
 
@@ -170,6 +185,8 @@ public final class FakeHost: Sendable {
     /// an earlier app launch never collides with a new one that happens to be numbered the same.
     private let taskIDPrefix = "fake-\(UUID().uuidString.prefix(8).lowercased())-task"
     private let script: FakeBridge.Script
+    /// S15: with any, the host advertises `approvals.v1` and answers `AnswerApproval`.
+    private let approvals: [FakeBridge.PendingApproval]
 
     private struct Connection {
         let bridge: FakeBridge
@@ -192,11 +209,43 @@ public final class FakeHost: Sendable {
     private let state = Mutex(State())
 
     public init(script: FakeBridge.Script = .init(), hostName: String = "FakeBridge Mac", reachable: Bool = true,
-                incompatibleDsh: (installed: String, supported: String)? = nil) {
+                incompatibleDsh: (installed: String, supported: String)? = nil,
+                approvals: [FakeBridge.PendingApproval] = []) {
         self.incompatibleDsh = incompatibleDsh
         self.script = script
         self.hostName = hostName
+        self.approvals = approvals
         state.withLock { $0.reachable = reachable }
+        seed(approvals)
+    }
+
+    /// S15: each approval is a waiting task. Its ids depend only on the host name and the
+    /// position, like a DSH session that outlives the app: a later launch finds the same task.
+    private func seed(_ approvals: [FakeBridge.PendingApproval]) {
+        let slug = hostName.lowercased().filter { $0.isLetter || $0.isNumber }
+        state.withLock { s in
+            for (i, approval) in approvals.enumerated() {
+                var pending = Dshm_V1_ApprovalPending()
+                pending.taskID = "fake-seed-\(slug)-\(i + 1)"
+                pending.id = "\(pending.taskID)-approval"
+                pending.callID = "\(pending.taskID)-call"
+                pending.tool = approval.tool
+                pending.argumentsJson = approval.arguments
+                pending.reason = approval.reason
+                var summary = Dshm_V1_TaskSummary()
+                summary.taskID = pending.taskID
+                summary.title = approval.title
+                summary.state = .waitingOnUser
+                summary.createdAtMs = Self.nowMs() - Int64(60_000 * (approvals.count - i))
+                summary.updatedAtMs = summary.createdAtMs
+                summary.pendingApprovals = [pending]
+                s.tasks.append(summary)
+                Self.upserted(summary, in: &s)
+                var event = Dshm_V1_Event()
+                event.approvalPending = pending
+                Self.append(event, taskID: pending.taskID, in: &s)
+            }
+        }
     }
 
     /// Opens a connection to this host; throws while it's unreachable.
@@ -272,6 +321,7 @@ public final class FakeHost: Sendable {
                     hello.requiresBridgeUpdate = true
                 } else {
                     hello.capabilities = [DSHProtocolInfo.tasksCapability, DSHProtocolInfo.milestonesCapability, DSHProtocolInfo.resumeCapability]
+                    if !approvals.isEmpty { hello.capabilities.append(DSHProtocolInfo.approvalsCapability) }
                 }
                 bridge.deliver(Self.response(id, .hello(hello)))
             case .createTask(let create)?:
@@ -320,6 +370,8 @@ public final class FakeHost: Sendable {
                 resumed.replayed = UInt64(replay.count)
                 bridge.deliver(Self.response(id, .resumed(resumed)))
                 conn.resumed = true
+            case .answerApproval(let answer)? where !approvals.isEmpty:
+                answerApproval(answer, requestID: id, bridge: bridge, in: &s)
             case .answerApproval?, .interrupt?, .getModelCatalog?, .selectModel?, .listWorkspaces?, .listDevices?, .listAudit?, .revokeDevice?, .readSession?:
                 var error = Dshm_V1_Error()
                 error.code = "request/unsupported"
@@ -329,6 +381,32 @@ public final class FakeHost: Sendable {
                 break
             }
         }
+    }
+
+    /// S15: the answer resolves the approval, and the task goes on to its reply.
+    private func answerApproval(_ answer: Dshm_V1_AnswerApproval, requestID: UInt64, bridge: FakeBridge, in s: inout State) {
+        guard let at = s.tasks.firstIndex(where: { $0.pendingApprovals.contains { $0.id == answer.id } }) else {
+            var error = Dshm_V1_Error()
+            error.code = "approval/unknown"
+            error.message = "No pending approval has this id."
+            bridge.deliver(Self.response(requestID, .error(error)))
+            return
+        }
+        let taskID = s.tasks[at].taskID
+        var resolved = Dshm_V1_ApprovalResolved()
+        resolved.id = answer.id
+        resolved.taskID = taskID
+        resolved.outcome = answer.decision == .allowOnce ? .allowed : .denied
+        bridge.deliver(Self.response(requestID, .approvalResolved(resolved)))
+        var event = Dshm_V1_Event()
+        event.approvalResolved = resolved
+        Self.append(event, taskID: taskID, in: &s)
+        s.tasks[at].pendingApprovals.removeAll { $0.id == answer.id }
+        s.tasks[at].state = .running
+        s.tasks[at].updatedAtMs = Self.nowMs()
+        Self.upserted(s.tasks[at], in: &s)
+        let incarnation = s.incarnation
+        Task { await self.stream(taskID: taskID, incarnation: incarnation) }
     }
 
     private func stream(taskID: String, incarnation: Int, hold: Bool = false) async {
