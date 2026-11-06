@@ -104,8 +104,10 @@ final class AppModel {
             let endpoint = HostEndpoint.localBridge()
             var script: FakeBridge.Script = options.fakeMilestones ? .threeTodos() : .init()
             if options.fakeScenario == "coding" { script = .codingTask() } // S16
-            script.holdPrompt = options.fakeHold
+            if options.fakeScenario == "outcomes" { script = .outcomes() } // S19
+            script.holdPrompt = options.fakeHold ?? script.holdPrompt
             let fake = FakeHost(script: script, reachable: !options.fakeBridgeOffline)
+            if options.fakeScenario == "outcomes" { FakeApprovalSheet.watchWebAnswers(fake) } // S19
             return [.init(key: "fake:\(endpoint)",
                           connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: fake.factory))]
         }

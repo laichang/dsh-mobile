@@ -62,11 +62,11 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S16 | done | merged `66fd823` | 2026-11-07 | — (provisional D56 in §9) |
 | S17 | doing | `claude/s17-transcript` | 2026-11-07 | Slice owner builds the structured transcript (§8) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
-| S19 | doing | `claude/s19-outcomes` `595b24b` | 2026-11-07 | Reviewer runs `scripts/review S19` (§8) |
+| S19 | done | merged `077a9f3` | 2026-11-07 | — (provisional D60 in §9) |
 | S20 | done | merged `e849e8e` | 2026-11-07 | — (provisional D58 in §9) |
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
 | S22 | doing | `claude/s22-first-run` | 2026-11-07 | Slice owner builds (§8) |
-| S23 | todo | — | 2026-11-06 | Next batch (S14 is merged) |
+| S23 | doing | `claude/s23-drawer-motion` | 2026-11-07 | Slice owner builds (§8) |
 
 ## 1. Approach
 
@@ -937,7 +937,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S19 · Done and failed
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s19-outcomes`
+**Status** doing · **Needs** T1 · **Branch** `claude/s19-outcomes`
 
 **Why**: STORY §4 (call the user back when a task is done, failed or stuck), screens 06 and X1.
 
@@ -946,12 +946,28 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: Start an upload that fails with 403. Open it, copy the error, and try again in a new session.
 
 **Done when**
-- [ ] [ui] A done session that is not read opens at the start of the final answer — Evidence:
-- [ ] [ui] "新会话里再试" opens 01 with the original prompt, which you can edit — Evidence:
+- [x] [ui] A done session that is not read opens at the start of the final answer — Evidence: test:S19OutcomesUITests/testDoneSessionNotReadOpensAtTheStartOfTheFinalAnswer · cmd:scripts/demo/s19.sh · shot:evidence/S19/s19-done-unread.png · shot:evidence/S19/s19-done-read.png
+- [x] [ui] "新会话里再试" opens 01 with the original prompt, which you can edit — Evidence: test:S19OutcomesUITests/testFailedTaskRetriesInANewSessionWithTheOriginalPrompt · cmd:scripts/demo/s19.sh · shot:evidence/S19/s19-retry-prefilled.png
+- [x] [ui] A failed task shows a red bar with the step, the raw failure message and "复制错误" — Evidence: test:S19OutcomesUITests/testFailedTaskRetriesInANewSessionWithTheOriginalPrompt · cmd:scripts/demo/s19.sh · shot:evidence/S19/s19-failed.png
+- [x] [ui] A stopped task shows the same card, with "新会话里再试" — Evidence: test:S19OutcomesUITests/testStoppedTaskShowsTheSameCard · cmd:scripts/demo/s19.sh · shot:evidence/S19/s19-stopped.png
+- [x] [auto] With FakeHost, an ended task gives its outcome: the steps, the answered approvals, the step where it stopped and the raw failure message — Evidence: test:OutcomeFakeTests/aDoneTaskCountsItsStepsAndTheApprovalAnsweredOnTheWeb · test:OutcomeFakeTests/aFailedTaskGivesTheStepAndTheRawError · test:OutcomeFakeTests/aStoppedTaskHasAnInterruptedOutcome · cmd:scripts/demo/s19.sh
+- [x] [ui] Seam: the S16 session page tests pass with the S19 rows on the page — Evidence: test:S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls · test:S16SessionPageUITests/testStopInterruptsFromTheSendPosition · cmd:scripts/demo/s19.sh · cmd:scripts/demo/s16.sh
 
 **Not**: File cards (M3). Follow-up in the same session (M2). The "stuck" alert (M2 push).
 
-**Log**: —
+**Log**
+- **2026-11-07 · started.** `scripts/demo/t0.sh` passed on `dshm-S19` (ports 47817/3290). The first two runs stopped in `swift package resolve`: GitHub reset the connection; the next run passed with no change. Added four Done when items for the failed bar, the stopped card, the FakeHost outcome and the S16 seam.
+- **2026-11-07 · built, to review.**
+  - Done: screens 06 and X1 on the session page (`Features/Outcomes/`, `DSHCore/Outcome.swift`). `TaskOutcome` reads an ended task from the cache: done, failed or stopped; N 步 (the milestones on the timeline); M 次审批 (answered approvals, new cached field `CachedTask.approvalsAnswered`); the todo where it stopped; the raw failure message. Before the final answer, one row 已工作 · N 步 · M 次审批 › that opens all steps. A finished session that was not read when it opened shows 停在这里 · 最终回答开头 and opens there (the process row at the top, then the marker, then the answer); a read one opens at the end, as before. Done: a footer 用时 · model. Failed: the `MilestoneBar` gets a red border and 失败 · 第 N 步 (one optional `alert` parameter; S16's layout is unchanged), and a red card 任务失败 with the raw message, 复制错误 (已复制) and 新会话里再试 (01 with the first user message, on the task's host and workspace, editable). Stopped: the same card, neutral, 任务已停止, with 新会话里再试 only; the bar keeps S16's Interrupted. Own string catalog `Outcomes.xcstrings`, tokens in `Theme+S19.swift`. Board: X1's card no longer has the app-written "what was done and where" sentence (the agent's reply above says it, D11); captions of 06 and X1 say how N, M, the read state and the stopped card work; `scripts/render-design` run. STORY §4: one bullet for what the user sees when called back.
+  - Decision: see **D60**. *Provisional, pending user confirmation.* No new dependencies.
+  - Test support: `FakeBridge.Script.variants` (a prompt picks its own script; `FakeHost.stream(using:)`) and `Script.outcomes()` (`-DSHMFakeScenario outcomes`: a task that asks for `git push` and ends done with a long answer, one that fails on step 3 with `upload: 403 Forbidden (token expired)`, one that runs until stopped). The Web's answer reuses S18's `FakeApprovalSheet` notification. `DSHMFakeScenario` is already a Release marker.
+  - Seam with S16 (this slice lands second): `SessionPage` gets the outcome rows, the scroll anchor for unread sessions and the `alert` on the bar; S16's tests pass unchanged.
+  - Merged `main` (S21, `076ea07`): kept both sides; D59 then D60; `design/board.png` rendered again.
+  - Verified on the merge with S19's resources (`dshm-S19`): `scripts/demo/s19.sh --shots` exit 0 (`swift test` 72 tests in 20 suites; UI S19 ×3, S16 ×2); `scripts/demo/s16.sh` exit 0 (UI 11/11).
+  - Slow, not failing: on the first full run (load average ~240) `testDoneSessionNotReadOpensAtTheStartOfTheFinalAnswer` took 1410 s with each step waiting for "animations complete"; on the merge it took 78 s. No flaky test, no repair round used.
+  - Not done: —. The X1 sentence about where the files are stays with the agent's reply; N 步 can switch to tool calls when S17's `transcript.v1` lands (D60).
+  - For the coordinator: §0 S19 → review run; add D60 to §9.
+  - Next: independent `scripts/review S19`, then merge.
 
 ### S20 · Pickers
 
@@ -1417,6 +1433,10 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · S22 assigned.** Branch `claude/s22-first-run`, worktree `.claude/worktrees/s22-first-run` (from `c2bdee1`), simulator `dshm-S22`, DSHM_HOME `~/.dshm/home-s22`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D63–D64. `eval "$(scripts/slice-env S22)"` exports them.
 
+- **2026-11-07 · S19 merged.** Merged as `077a9f3`; `scripts/check-plan` on the merge commit passed. `scripts/review S19` at `595b24b`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S19-595b24b.txt`), with `s19.sh`, `s16.sh` and the S16 seam tests. No open `[human]` items, so S19 is `done`. D60 to §9. `scripts/plan merged` refused again for the items added on the branch (same cause as S20); bookkeeping done with `row`, `pending` and `log`.
+
+- **2026-11-07 · S23 assigned.** Branch `claude/s23-drawer-motion`, worktree `.claude/worktrees/s23-drawer-motion` (from `7c5ed5b`), simulator `dshm-S23`, DSHM_HOME `~/.dshm/home-s23`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D65–D66. `eval "$(scripts/slice-env S23)"` exports them.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1474,3 +1494,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 53 | S21 | decision | D59, provisional: hosts sheet (H) from the drawer pill, host devices and audit (X2), all-offline card on 01 (X3). | `claude/s21-hosts` | `477f9bd` |
 | 54 | S21 | `[human]` | On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that. Needs a paired iPhone and a running host with the S21 app. | `main` | `13648eb` |
 | 55 | S20 | decision | D58, provisional: picker sheets (07, M, X4): workspace and model pickers as SheetRoute sheets; a task with no selection opens the model sheet at the host default. | ``claude/s20-pickers`` | `merged `e849e8e`` |
+| 56 | S19 | decision | D60, provisional: done and failed on the session page (06, X1): TaskOutcome reads an ended task from the cache only; retry opens 01 in a new session with the original prompt. | ``claude/s19-outcomes`` | `merged `077a9f3`` |
