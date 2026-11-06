@@ -1,0 +1,14 @@
+// Signing for builds to a real iPhone. Simulator builds and the demos need nothing here.
+//
+// To run the app on your own iPhone, create ios/Config/Signing.local.xcconfig (git ignores it):
+//
+//   DEVELOPMENT_TEAM = <your Apple team ID>
+//   DSHM_BUNDLE_ID_PREFIX = <a reverse-DNS prefix of your own, e.g. com.example>
+//
+// A free Apple developer account works. Bundle IDs are unique per Apple team, so pick your own
+// prefix. The default below is the maintainer's; tests and demo scripts expect it in the Simulator.
+
+DEVELOPMENT_TEAM =
+DSHM_BUNDLE_ID_PREFIX = chang
+
+#include? "Signing.local.xcconfig"
