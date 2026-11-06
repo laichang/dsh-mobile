@@ -22,6 +22,9 @@ public enum DebugLaunchOptions {
     /// `-DSHMFakeHold <text>` (T1): with the FakeBridge, a task whose prompt contains `<text>`
     /// stays running until the app quits, so a UI test can act on a running task.
     public static let fakeHoldKey = "DSHMFakeHold"
+    /// `-DSHMFakeScenario coding` (S16): with the FakeBridge, a five-step coding task with a long
+    /// Markdown reply that keeps running until the user stops it (`FakeBridge.Script.codingTask`).
+    public static let fakeScenarioKey = "DSHMFakeScenario"
 
     public struct Options: Equatable, Sendable {
         public var useFakeBridge = false
@@ -34,6 +37,7 @@ public enum DebugLaunchOptions {
         public var connectDelay: Double?
         public var resetPairing = false
         public var fakeHold: String?
+        public var fakeScenario: String?
 
         public init(
             useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil,
@@ -80,6 +84,7 @@ public enum DebugLaunchOptions {
         if let v = values[fakeMilestonesKey] { options.fakeMilestones = yes.contains(v) }
         if let v = values[resetPairingKey] { options.resetPairing = yes.contains(v) }
         options.fakeHold = values[fakeHoldKey]
+        options.fakeScenario = values[fakeScenarioKey]
         return options
     }
 }

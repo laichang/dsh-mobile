@@ -102,21 +102,25 @@ private struct SessionTranscript: View {
         let row = store.task(taskKey)
         let host = store.hosts.first { $0.key == row?.hostKey }
         VStack(spacing: 0) {
-            statusRow(row, host: host)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 6)
+            // S16: the milestone bar and the status line sit above the scroll view, so they stay
+            // at the top while the transcript scrolls (ARCHITECTURE D23 (b)).
             if let timeline = row?.milestones, !timeline.isEmpty {
                 // S3: milestone summary by default; the timeline on demand, in a sheet.
                 Button { shell.present(.milestones(taskKey: taskKey)) } label: {
-                    MilestoneCard(timeline: timeline)
+                    MilestoneBar(timeline: timeline, state: row?.state)
                 }
                 .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(timeline.headline)
                 .accessibilityValue(timeline.progressToken)
+                .accessibilityHint("Shows all steps")
                 .accessibilityIdentifier("milestone.card")
                 .padding(.horizontal, 16)
+                .padding(.top, 4)
             }
+            statusRow(row, host: host)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 6)
             ScrollView {
                 if let row {
                     VStack(alignment: .leading, spacing: 12) {
@@ -157,6 +161,8 @@ private struct SessionTranscript: View {
             // Follow the stream at the bottom, but start a short transcript at the top.
             .defaultScrollAnchor(.bottom)
             .defaultScrollAnchor(.top, for: .alignment)
+            .scrollDismissesKeyboard(.interactively)
+            .accessibilityIdentifier("session.transcript")
         }
         .task(id: HistoryRequest(key: taskKey, revision: row?.sessionRevision,
                                  online: host?.reachability == .online, retry: retry)) {
@@ -235,9 +241,20 @@ private struct SessionComposer: View {
         let row = store.task(taskKey)
         let host = store.hosts.first { $0.key == row?.hostKey }
         VStack(alignment: .leading, spacing: 10) {
-            Text("Follow-ups come in a later version")
-                .foregroundStyle(DSHTheme.textTertiary)
-                .accessibilityIdentifier("session.followUp")
+            HStack(spacing: 8) {
+                Text("Follow-ups come in a later version")
+                    .foregroundStyle(DSHTheme.textTertiary)
+                    .accessibilityIdentifier("session.followUp")
+                Spacer(minLength: 0)
+                // Screen 04 tags the follow-up field with its milestone.
+                Text(verbatim: "M2")
+                    .font(DSHTheme.mono(.caption2).weight(.semibold))
+                    .foregroundStyle(DSHTheme.textSecondary)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(Color.white.opacity(0.08), in: .rect(cornerRadius: 6))
+                    .accessibilityHidden(true)
+            }
             HStack(spacing: 8) {
                 if let row, !row.state.isTerminal, store.modelHosts.contains(row.hostKey) {
                     ModelControl(store: store, hostKey: row.hostKey, task: row)
