@@ -1228,6 +1228,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - Ports 47830 and 3303 stay reserved for the S9 second host in `scripts/demo/t1.sh --all` (§9 row 48).
   - Fallback (WORKFLOW.md §5.3, step 3): the app refused to start sessions from the review-completion turn (the chain had ended across heartbeat turns). Batch UI-1 runs as workflow `wf_20f9600c-fdc` (task `wc826829r`): one slice-owner agent per slice in worktrees `.claude/worktrees/s14-drawer`, `s15-all-tasks`, `s16-session` (created from `426049b`), then an independent reviewer agent runs `scripts/review <ID>`, with up to 3 repair rounds on FAIL. The coordinator merges. Second-host ports, if a demo needs one: S14 47841/3314, S15 47842/3315.
 
+- **2026-11-06 · Run paused by the user.** Workflow `wf_20f9600c-fdc` stopped. Heartbeat `d4a0e2c2` deleted. Slice demo jobs stopped and `dshm-S14`–`dshm-S16` shut down. No slice commit yet: the work is uncommitted in `.claude/worktrees/s14-drawer` (32 changed paths), `s15-all-tasks` (11) and `s16-session` (12), all on base `426049b`. To resume: create a new heartbeat, then continue each slice in its worktree (WORKFLOW.md §5.4) or resume the workflow with `resumeFromRunId`.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
