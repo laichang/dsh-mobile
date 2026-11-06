@@ -94,7 +94,7 @@ private struct DrawerAllTasksRow: View {
             .padding(.vertical, 12)
             .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.drawerPress) // S23 F1
         .foregroundStyle(DSHTheme.textPrimary)
         .accessibilityIdentifier("drawer.allTasks")
     }

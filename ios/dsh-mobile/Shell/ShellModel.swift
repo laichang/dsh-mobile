@@ -15,11 +15,57 @@ final class ShellModel {
     var page: ShellPage = .newSession
     var sheet: SheetRoute?
     var drawerOpen = false
+    /// S23: true from a tap in the drawer until the page fills the screen (F1–F4). A pending
+    /// approval's sheet waits for it.
+    private(set) var moving = false
+    /// S23: one more for each tap that opens a page from the drawer; the light haptic follows it.
+    private(set) var taps = 0
+    /// S23: true while the page cross-fades (F2); `ShellView` animates the page change then.
+    private(set) var fading = false
+    /// S23: the last scroll position, per session, that the user scrolled to (D65). Not observed:
+    /// it changes on each scroll frame, and only a new page reads it.
+    @ObservationIgnored var lastPositions: [String: CGFloat] = [:]
+    @ObservationIgnored private var motion: Task<Void, Never>?
 
-    /// Shows a page. From the drawer this closes the drawer with no animation (T1; S23 adds motion).
+    /// Shows a page. With the drawer open, it moves like DESIGN.md F1–F4 (S23, `DrawerMotion`):
+    /// the peeking edge cross-fades to the page (0–120 ms), then the page slides in with a spring
+    /// and pushes the drawer away (120–350 ms). Without the drawer (the composer's first message,
+    /// a card in 03), the page cross-fades in place.
     func open(_ page: ShellPage) {
+        motion?.cancel()
+        taps += 1
+        let fromDrawer = drawerOpen
+        moving = true
+        fading = true
+        // Assign the page directly (T1: a page set inside `withTransaction` could get lost);
+        // `ShellView` animates it while `fading` is true.
+        self.page = page
+        motion = Task { [weak self] in
+            try? await Task.sleep(for: DrawerMotion.fade)
+            guard let self, !Task.isCancelled else { return }
+            self.fading = false
+            if fromDrawer {
+                withAnimation(DrawerMotion.slide) { self.drawerOpen = false }
+                try? await Task.sleep(for: DrawerMotion.slideTime)
+                guard !Task.isCancelled else { return }
+            }
+            self.moving = false
+        }
+    }
+
+    /// Shows a page at once, with no motion: the first message turns the new session into the
+    /// session page on the same page (ARCHITECTURE D51).
+    func show(_ page: ShellPage) {
+        motion?.cancel()
+        moving = false
+        fading = false
         self.page = page
         drawerOpen = false
+    }
+
+    /// Opens or closes the drawer with the same spring as the slide (S23).
+    func setDrawer(open: Bool) {
+        withAnimation(DrawerMotion.slide) { drawerOpen = open }
     }
 
     func present(_ route: SheetRoute) { sheet = route }

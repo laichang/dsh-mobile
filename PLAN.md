@@ -1087,7 +1087,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S23 · Drawer motion
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s23-motion`
+**Status** doing · **Needs** T1 · **Branch** `claude/s23-motion`
 
 **Why**: DESIGN.md "Navigation", screens F1–F4 and S.
 
@@ -1096,12 +1096,22 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: Open the drawer. Tap "Q3 summary slides". The page lands at the start of the final answer.
 
 **Done when**
-- [ ] [ui] The three landing positions are correct — Evidence:
+- [x] [ui] The three landing positions are correct — Evidence: test:S23DrawerMotionUITests/testDoneUnreadLandsAtTheAnswerAndReadReturnsToTheLastPosition · test:S23DrawerMotionUITests/testRunningSessionLandsAtTheBottom · cmd:scripts/demo/s23.sh · shot:evidence/S23/s23-done-unread.png · shot:evidence/S23/s23-read-last-position.png · shot:evidence/S23/s23-running-bottom.png
 - [ ] [human] The drawer motion feels smooth on a real iPhone — Evidence:
 
 **Not**: Settings for haptics.
 
 **Log**: —
+- **2026-11-07 · built, to review.**
+  - Done: DESIGN.md F1–F4 in `ShellModel.open(_:)` and `Features/Motion/DrawerMotion.swift`. F1: drawer rows (sessions, 所有任务) are highlighted while pressed (`DrawerPressStyle`) and a tap gives a light impact haptic. F2 (0–120 ms): the peeking edge cross-fades to the target page from the cache; the drawer does not move. F3 (120–350 ms): one spring closes the drawer, so the page slides in and pushes it away; a released drag, the peeking-page tap and the drawer button use the same spring. F4: `ShellModel.moving` ends at 350 ms and S18's `PendingApprovalBar` waits for it, so 05 comes up after the page fills the screen (a waiting session from the drawer, or an approval card in 03; from 03 there is no drawer to push, so the page only cross-fades). The first message keeps D51 (`ShellModel.show`, no motion).
+  - Landing (`SessionLanding`, on top of S19's D60, whose code it reuses): done and not read → the start of the final answer (S19's marker); running → the bottom, following the stream; read → the last position the user scrolled to (in memory, counted from below S19's rows because the marker shows only on the unread visit); a read session never scrolled opens at the end, as in D60, so S19's test is unchanged. `session.transcript` has the landing as its accessibility value.
+  - Decision: see **D65**. *Provisional, pending user confirmation.* No new dependencies. D66 not used.
+  - Seams (S14, S16, S19 landed first; this slice owns them): `scripts/demo/s23.sh` also runs S19OutcomesUITests, S16SessionPageUITests, the S14 FakeBridge tests, T1ShellUITests, S18ApprovalSheetUITests and S15AllTasksUITests. Merged `main` twice (S17 `3a9f11e`, S22 `4b0b4dd`): kept both sides (S17's `StructuredTranscriptView`; D61, D63, D65 in order).
+  - Verified on `dshm-S23` after the last merge: `scripts/demo/s23.sh --shots` exit 0 (`swift test`; UI 20/20, 0 skipped). Before the S22 merge: `scripts/demo/s17.sh` exit 0 and `scripts/demo/s14.sh` exit 0 (with the real DSH part).
+  - Learned: `ScrollPosition.scrollTo(y:)` takes back the raw `contentOffset.y` from `onScrollGeometryChange` (adding `contentInsets.top` was wrong). The simulator `dshm-S23` did not exist; created it as an iPhone 17 Pro on iOS 26.4, like the other slices.
+  - Flaky: none seen. The two first-run failures of the S23 tests were real (wrong offset; the bottom check measured under the composer), fixed in code and test.
+  - Not done: the `[human]` item (smooth on a real iPhone).
+  - For the coordinator: §0 S23 → review run (`scripts/review S23`); add D65 to §9.
 
 ## 6. M1 exit
 

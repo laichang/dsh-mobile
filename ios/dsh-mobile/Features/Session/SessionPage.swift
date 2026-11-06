@@ -9,6 +9,8 @@ struct SessionPage: View {
     let store: TaskListStore
     let taskKey: String?
     @Binding var showFirstTask: Bool
+    /// S23: where the user last scrolled this session to, on this phone (`SessionLanding`).
+    var lastPosition: CGFloat? = nil
     @Environment(ShellModel.self) private var shell
 
     var body: some View {
@@ -17,7 +19,7 @@ struct SessionPage: View {
             if let taskKey {
                 PageBar(title: row.map { $0.title.isEmpty ? $0.taskID : $0.title } ?? String(localized: "Session"),
                         subtitle: row?.hostName)
-                SessionTranscript(store: store, taskKey: taskKey)
+                SessionTranscript(store: store, taskKey: taskKey, lastPosition: lastPosition)
             } else {
                 PageBar(title: String(localized: "New session"))
                 NewSessionBody(store: store, showFirstTask: showFirstTask)
@@ -28,7 +30,7 @@ struct SessionPage: View {
                 SessionComposer(store: store, taskKey: taskKey)
             } else {
                 ComposerView(store: store) { key in
-                    shell.open(.session(key))
+                    shell.show(.session(key))
                     showFirstTask = false
                 }
             }
@@ -100,13 +102,23 @@ private struct SessionTranscript: View {
     @State private var retry = 0
     /// S19: finished and not read when the page opened: it opens at the start of the final answer.
     @State private var opensAtAnswer: Bool
-    /// S19: false once the user scrolls; then the page stops going back to the answer's start.
-    @State private var followsAnswer = true
+    /// S23: where the page lands when it opens (D65): the answer's start, the bottom, or the last
+    /// position. Decided once, when the page is made.
+    @State private var landing: SessionLanding
+    /// S19, S23: false once the user scrolls; then the page stops going back to where it landed.
+    @State private var followsLanding = true
+    /// S23: scrolls a read session back to its last position.
+    @State private var position = ScrollPosition()
+    /// S23: the height of S19's rows before the final answer. Only an unread visit has the marker,
+    /// so a saved position counts from below them: the same text comes back to the same place.
+    @State private var leadHeight: CGFloat = 0
 
-    init(store: TaskListStore, taskKey: String) {
+    init(store: TaskListStore, taskKey: String, lastPosition: CGFloat? = nil) {
         self.store = store
         self.taskKey = taskKey
-        _opensAtAnswer = State(initialValue: OutcomeAnchor.opensAtAnswer(store.task(taskKey)))
+        let landing = SessionLanding.landing(store.task(taskKey), lastPosition: lastPosition)
+        _landing = State(initialValue: landing)
+        _opensAtAnswer = State(initialValue: landing == .answerStart)
     }
 
     private struct HistoryRequest: Equatable {
@@ -159,7 +171,7 @@ private struct SessionTranscript: View {
                                 UserBubble(text: message.text)
                             } else {
                                 if message.seq == finalSeq {
-                                    OutcomeLead(row: row, outcome: outcome, marksAnswer: opensAtAnswer)
+                                    lead(row, outcome)
                                 }
                                 TranscriptView(source: message.text)
                                     .accessibilityElement(children: .ignore)
@@ -168,7 +180,7 @@ private struct SessionTranscript: View {
                             }
                         }
                         if !showJournal {
-                            OutcomeLead(row: row, outcome: outcome, marksAnswer: opensAtAnswer)
+                            lead(row, outcome)
                             StructuredTranscriptView(row: row, text: row.singleTurnTranscript(messages)) // S17
                         } else if history == nil && historyError == nil {
                             if host?.reachability == .online { ProgressView() }
@@ -190,18 +202,35 @@ private struct SessionTranscript: View {
             }
             // Follow the stream at the bottom, but start a short transcript at the top.
             // S19: a finished session that is not read opens at the start of its final answer.
-            .defaultScrollAnchor(opensAtAnswer ? .top : .bottom)
+            // S23: a read one opens at its last position (D65).
+            .defaultScrollAnchor(landing.anchor)
             .defaultScrollAnchor(.top, for: .alignment)
+            .scrollPosition($position)
             .scrollDismissesKeyboard(.interactively)
             .accessibilityIdentifier("session.transcript")
+            .accessibilityValue(landing.token)
             .onScrollPhaseChange { _, phase in
-                if phase == .interacting { followsAnswer = false }
+                if phase == .interacting { followsLanding = false }
+            }
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, y in
+                // S23: remember where the user scrolled to, for the next time this page opens.
+                // `ScrollPosition.scrollTo(y:)` takes the same content offset back.
+                if !followsLanding { shell.lastPositions[taskKey] = y - leadHeight }
             }
             .task(id: "\(history?.throughSeq ?? 0)/\(row?.transcript.utf8.count ?? 0)") {
                 // Again when the history or the text comes in, until the user scrolls.
-                guard opensAtAnswer else { return }
-                try? await Task.sleep(for: .milliseconds(80))
-                if followsAnswer && !Task.isCancelled { proxy.scrollTo(OutcomeAnchor.id, anchor: .top) }
+                switch landing {
+                case .answerStart, .lastPosition: break
+                case .followBottom, .end: return
+                }
+                // A few times: the page can still be in its motion (S23 F2–F3), and a lazy
+                // transcript lays out more text after the first scroll.
+                for delay in [80, 250, 500] {
+                    try? await Task.sleep(for: .milliseconds(delay))
+                    guard followsLanding, !Task.isCancelled else { return }
+                    if case .lastPosition(let y) = landing { position.scrollTo(y: y + leadHeight) }
+                    else { proxy.scrollTo(OutcomeAnchor.id, anchor: .top) }
+                }
             }
             }
         }
@@ -217,6 +246,17 @@ private struct SessionTranscript: View {
             } catch {
                 if !Task.isCancelled { historyError = String(describing: error) }
             }
+        }
+    }
+
+    /// S19's rows before the final answer, in one stack so that S23 can measure them.
+    @ViewBuilder
+    private func lead(_ row: TaskListStore.TaskRow, _ outcome: TaskOutcome?) -> some View {
+        if outcome != nil || opensAtAnswer {
+            VStack(alignment: .leading, spacing: 12) {
+                OutcomeLead(row: row, outcome: outcome, marksAnswer: opensAtAnswer)
+            }
+            .onGeometryChange(for: CGFloat.self, of: \.size.height) { leadHeight = $0 }
         }
     }
 

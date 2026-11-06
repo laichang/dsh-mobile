@@ -27,24 +27,31 @@ struct ShellView: View {
                         .frame(width: width)
                         .offset(x: offset - width)
                 }
-                page(shell.page)
-                    .frame(width: geometry.size.width)
-                    .accessibilityHidden(shell.drawerOpen)
-                    .overlay {
-                        if offset > 0 {
-                            // The peeking page closes the drawer on a tap.
-                            Button { close() } label: { Color.black.opacity(0.001) }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel("Close the drawer")
-                                .accessibilityIdentifier("drawer.dismiss")
-                        }
+                // S23 F2: the peeking edge cross-fades to the new page (`ShellModel.fading`).
+                ZStack {
+                    page(shell.page)
+                        .id(shell.page)
+                        .transition(.opacity)
+                }
+                .animation(shell.fading ? DrawerMotion.fadeAnimation : nil, value: shell.page)
+                .frame(width: geometry.size.width)
+                .accessibilityHidden(shell.drawerOpen)
+                .overlay {
+                    if offset > 0 {
+                        // The peeking page closes the drawer on a tap.
+                        Button { close() } label: { Color.black.opacity(0.001) }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Close the drawer")
+                            .accessibilityIdentifier("drawer.dismiss")
                     }
-                    .offset(x: offset)
+                }
+                .offset(x: offset)
             }
             .simultaneousGesture(drag(width: width))
         }
         .background(DSHTheme.canvas.ignoresSafeArea())
         .modifier(DrawerReadTracker(store: store, shell: shell))
+        .sensoryFeedback(.impact(weight: .light), trigger: shell.taps) // S23 F1
         .environment(shell)
         .environment(store)
         .sheet(item: $shell.sheet) { route in
@@ -61,7 +68,8 @@ struct ShellView: View {
         case .newSession:
             SessionPage(store: store, taskKey: nil, showFirstTask: $showFirstTask)
         case .session(let key):
-            SessionPage(store: store, taskKey: key, showFirstTask: $showFirstTask)
+            SessionPage(store: store, taskKey: key, showFirstTask: $showFirstTask,
+                        lastPosition: shell.lastPositions[key]) // S23: read once, when the page is made
                 .id(key)
         case .allTasks:
             AllTasksPage(store: store)
@@ -69,7 +77,7 @@ struct ShellView: View {
     }
 
     private func close() {
-        withAnimation(.easeOut(duration: 0.2)) { shell.drawerOpen = false }
+        shell.setDrawer(open: false)
     }
 
     /// Opens from the left edge when closed; anywhere when open (a drag to the left closes it).
@@ -86,7 +94,8 @@ struct ShellView: View {
             .onEnded { value in
                 guard let current = dragOffset else { return }
                 let open = Self.settlesOpen(offset: current, velocity: value.velocity.width, width: width)
-                withAnimation(.easeOut(duration: 0.2)) {
+                // S23 F3: the same spring as the slide after a tap in the drawer.
+                withAnimation(DrawerMotion.slide) {
                     shell.drawerOpen = open
                     dragOffset = nil
                 }
@@ -112,7 +121,7 @@ struct PageBar<Trailing: View>: View {
     var body: some View {
         HStack(spacing: 12) {
             Button {
-                withAnimation(.easeOut(duration: 0.2)) { shell.drawerOpen = true }
+                shell.setDrawer(open: true)
             } label: {
                 Image(systemName: "sidebar.left")
                     .font(.system(size: 17, weight: .medium))

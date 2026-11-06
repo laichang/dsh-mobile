@@ -185,7 +185,7 @@ private struct DrawerSessionRow: View {
                 .background(current ? DSHTheme.drawerCurrentRow : .clear, in: .rect(cornerRadius: 10))
                 .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.drawerPress) // S23 F1: highlighted under the finger
         .accessibilityElement(children: .combine)
         .accessibilityValue(row.state.token)
         .accessibilityIdentifier("drawer.session")

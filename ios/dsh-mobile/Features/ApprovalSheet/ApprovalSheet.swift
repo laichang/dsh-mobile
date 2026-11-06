@@ -283,6 +283,7 @@ struct PendingApprovalBar: View {
         .onAppear(perform: sync)
         .onChange(of: row.approvals.map(\.id)) { sync() }
         .onChange(of: shell.drawerOpen) { sync() }
+        .onChange(of: shell.moving) { sync() } // S23: after the page fills the screen (F4)
         .onChange(of: shell.sheet) { old, new in
             if old == route, new == nil, let id = row.approvals.first?.id { dismissed.insert(id) }
             if new == nil { sync() }
@@ -317,7 +318,7 @@ struct PendingApprovalBar: View {
             if shell.sheet == route { shell.sheet = nil }
             return
         }
-        guard shell.sheet == nil, !shell.drawerOpen, !dismissed.contains(approval.id) else { return }
+        guard shell.sheet == nil, !shell.drawerOpen, !shell.moving, !dismissed.contains(approval.id) else { return }
         shell.present(route)
     }
 }
