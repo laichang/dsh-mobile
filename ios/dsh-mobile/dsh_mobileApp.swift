@@ -12,6 +12,7 @@ struct dsh_mobileApp: App {
             root
                 // DESIGN.md "Visual language": the app always uses dark mode (T1).
                 .preferredColorScheme(.dark)
+                .environment(\.hostActions, HostActions(pair: { app.showingScanner = true }, forget: { app.forgetHost($0) }))
                 .sheet(isPresented: $app.showingScanner) {
                     ScannerView(found: { app.openPairingCode($0) }, cancel: { app.showingScanner = false })
                 }

@@ -45,7 +45,9 @@ private struct NewSessionBody: View {
     var body: some View {
         VStack(spacing: 16) {
             Spacer()
-            if store.tasks.isEmpty || showFirstTask {
+            if store.allHostsOffline {
+                AllHostsOfflineCard(store: store)
+            } else if store.tasks.isEmpty || showFirstTask {
                 VStack(spacing: 10) {
                     if store.tasks.isEmpty {
                         Text("No tasks yet")

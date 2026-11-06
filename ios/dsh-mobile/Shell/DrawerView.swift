@@ -16,7 +16,7 @@ struct DrawerView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack { brand; Spacer(minLength: 8); DrawerHostsOnline(hosts: store.hosts) }
+                    HStack { brand; Spacer(minLength: 8); DrawerHostsOnline(hosts: store.hosts).opensHostsSheet() }
                     DrawerNewSessionButton()
                     DrawerAllTasksRow(store: store)
                     ForEach(store.hosts) { host in
