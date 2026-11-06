@@ -109,8 +109,9 @@ fi
 # <command> must be a script or program, not a shell function: `set -e` does not apply inside an
 # `if`, so a function would not stop at its first error.
 
+# evidence/ is not code: slice demos rewrite their shots while a run goes on.
 dshm_code_key() {
-  { git rev-parse HEAD; git diff HEAD; } | shasum -a 256 | cut -c1-16
+  { git rev-parse HEAD; git diff HEAD -- . ':!evidence'; } | shasum -a 256 | cut -c1-16
 }
 
 demo_part() {
