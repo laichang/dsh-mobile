@@ -59,10 +59,10 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
 | S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
-| S16 | doing | `claude/s16-session` `107ab77` | 2026-11-06 | Owner merges main (guard fixes), then review --resume (§8) |
-| S17 | todo | — | 2026-11-05 | Wait for S16 |
+| S16 | done | merged `66fd823` | 2026-11-07 | — (provisional D56 in §9) |
+| S17 | todo | — | 2026-11-07 | Next batch (S16 is merged) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
-| S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
+| S19 | doing | `claude/s19-outcomes` | 2026-11-07 | Slice owner builds done and failed (§8) |
 | S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
 | S21 | doing | `claude/s21-hosts` | 2026-11-06 | Slice owner builds the hosts sheet and control (§8) |
 | S22 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -845,7 +845,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S16 · Session page
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s16-session`
+**Status** doing · **Needs** T1 · **Branch** `claude/s16-session`
 
 **Why**: STORY §4 (milestones by default, details on demand), §8 (the model can change during a task), screen 04.
 
@@ -854,13 +854,32 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: Start a coding task. The milestone bar shows "3 / 5". Tap stop.
 
 **Done when**
-- [ ] [ui] The milestone bar stays at the top while the transcript scrolls — Evidence:
-- [ ] [ui] Stop interrupts the task from the send position — Evidence:
-- [ ] [auto] ARCHITECTURE D23 (b) tells where the milestone card shows in the new UI — Evidence:
+- [x] [ui] The milestone bar stays at the top while the transcript scrolls — Evidence: test:S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls · cmd:scripts/demo/s16.sh · shot:evidence/S16/s16-session-top.png · shot:evidence/S16/s16-session-scrolled.png
+- [x] [ui] Stop interrupts the task from the send position — Evidence: test:S16SessionPageUITests/testStopInterruptsFromTheSendPosition · cmd:scripts/demo/s16.sh · shot:evidence/S16/s16-stop-running.png · shot:evidence/S16/s16-stopped.png
+- [x] [auto] ARCHITECTURE D23 (b) tells where the milestone card shows in the new UI — Evidence: commit:cb38321
 
 **Not**: The "已思考 N 秒" row and the "verb · target · +/−" tool rows (S17). Follow-up messages (M2).
 
-**Log**: —
+**Log**
+- **2026-11-06 · built, to review.**
+  - Done (WIP commit `cb38321` from the stopped workflow owner, examined and kept; then this commit): `Features/Session/MilestoneBar.swift`, the milestone bar at the top of the session page (headline = the step in progress, "done / total", a progress line; a tap opens `SheetRoute.milestones`). The bar and the status line sit outside the `ScrollView`, so they never scroll. The stop key takes the send key's frame while the task runs; the disabled send key comes back to the same frame. Assistant text has no bubble; the user's message is a bubble on the right. Markdown keeps `TranscriptBlocks` (D10) with the DSH style (inline code in SF Mono on the bubble color, links in blue, code blocks under a hairline, diff lines in green and red), tokens in `Theme+S16.swift`. The model pill opens `SheetRoute.model` (T1). ARCHITECTURE D23 (b) updated for the new UI.
+  - Decision: see **D56** (session page layout; "3 / 5" counts finished todos). *Provisional, pending user confirmation.* No new dependencies.
+  - Test support: Debug-only `-DSHMFakeScenario coding` (FakeBridge five-step coding task that holds at "3 / 5" after a long Markdown reply and answers `interrupt.v1` like the bridge). `DSHMFakeScenario` is a marker in `scripts/check-release-clean`; the check passes (Release carries none). `S16CodingTaskTests` in `swift test`.
+  - This session: `scripts/demo/s16.sh` now copies the screenshots right after the S16 part, so a failure in a later part does not lose them. Final run of `scripts/demo/s16.sh --shots` on `dshm-S16`: exit 0. `swift test` 60/60; S16 UI 2/2; T1, S3 and S2 milestone UI 9/9. `scripts/demo/t0.sh` passed at the start.
+  - Flaky under machine load (load average 300–770, not code): (1) `S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge` once lost the last typed key ("Milestone cache chec"); S16 did not change it, not repaired. (2) `S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls` failed once after 1255 s: each step waited 60 s for "animations complete", and the recording shows the page went to a new session with the drawer open, with no test step that does that (stale touch events). It passed in 4 other runs. No repair round used.
+  - Not done: lists and tables still show as plain text (D56 alternatives; S17 changes the transcript next).
+  - For the coordinator: add D56 to §9.
+  - Next: independent `scripts/review S16`, then merge.
+- **2026-11-06 · merged main (S15, then S14) for the seam.** `scripts/review S16` passed on `8c1bdb8`; the coordinator's merge then conflicted, so S16 took the seam.
+  - Done: merge commits `8e2a4db` (S15) and `030b891` (S14). Kept both sides. In `FakeBridge.swift`, S15's `approvals:` and `answerApproval` sit next to S16's `interruptible` and interrupt handling. In `DebugEntryPoints.swift`, `fakeScenario` (S16), `fakeApprovals` (S15) and `fakeDrawer` (S14) all stay. ARCHITECTURE.md has D54, D55 and D56, in that order. `DSHMFakeScenario` stays a Release marker.
+  - Verified on `030b891` with S16's resources (`dshm-S16`): `swift test` 66 tests in 17 suites; `scripts/demo/s16.sh` (UI 11/11), `scripts/demo/s14.sh --part ui-fake` (4/4), `scripts/demo/s15.sh` (7/7), all exit 0. One run on `8e2a4db` was killed (exit 144) and two runs were stopped by app restarts and the pause; they were run again, not repaired.
+  - Under load, `testMilestoneBarStaysAtTopWhileTranscriptScrolls` (1242 s) and `S15AllTasksUITests/testAllTasksShowsThreeSectionsAcrossHosts` (1398 s) passed but were slow: each step waited 60 s for "animations complete".
+  - Next: `scripts/review S16 --resume` on this commit, then merge.
+- **2026-11-07 · merged main again (guard fixes, then S18) for the seam.**
+  - Done: merge commits `bee3c86` (guard fixes, README, license, `Signing.xcconfig`) and `ca76dd9` (S18). Kept both sides. In `FakeBridge.swift`, S18's `Script.ask`/`asks(_:)` and `answersApprovals` sit next to S16's `codingTask`, `interruptible` and interrupt handling. `DebugEntryPoints.swift` keeps `fakeScenario` and `fakeAsk`. `scripts/check-release-clean` keeps both `DSHMFakeScenario` and `DSHMFakeAsk`. ARCHITECTURE.md has D54–D57. Deleted `Features/Approvals/ApprovalCard.swift`: nothing uses it since S18's `PendingApprovalBar` (S18 Log, §8).
+  - Verified on `ca76dd9` with S16's resources (`dshm-S16`): `swift test` (67 tests in 18 suites), `scripts/demo/s16.sh` (UI 11/11), `scripts/demo/s18.sh` (UI 4/4), `scripts/check-release-clean` (Release carries none). All exit 0.
+  - Slow, not failing: `testMilestoneBarStaysAtTopWhileTranscriptScrolls` took 1290 s, with each step waiting 60 s for "animations complete", also under the new CPU-idle guard. Three of the last seven runs took ~1250 s; the others took 40–70 s. The stop test on the same running task stays fast, so the cause is probably in the scroll steps, not the spinner. Not repaired yet; a candidate for a later look.
+  - Next: `scripts/review S16 --resume` on this commit, then merge.
 
 ### S17 · Structured transcript
 
@@ -1333,6 +1352,15 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-06 · Run paused by the user (about 23:00).** Heartbeat `c6c0c493` deleted. The S21 background agent stopped before its first commit (branch `claude/s21-hosts` at `db51c26`, worktree clean). The S16 and S20 sessions were stopped and told to do nothing until a new brief. Slice demo jobs stopped; `dshm-*` simulators shut down. State: S16 at `ca76dd9` (merged `main` with the guard fixes; check whether it includes S18 `8d25764`, then demos and `scripts/review S16 --resume`). S20 at `f319b99` (merged `main` with the guard fixes; it still needs S18 and its own demos). To resume: create a new heartbeat, then brief each slice (WORKFLOW.md §5.4).
 
+- **2026-11-06 · Run resumed by the user (about 23:20).** Keep-awake on. New heartbeat cron job `5dd6aa73` (`7,27,47 * * * *`, recurring, durable), created 2026-11-06; `c6c0c493` is deleted. `main` had no new code. S16 (`ca76dd9`, includes S18) runs `swift test`, `s16.sh`, `s18.sh`, then review. S20 merges `main` (S18) and continues. S21 had no commit, so its branch and worktree were removed and S21 starts again as a slice session (`s21-hosts`) from `main`, with the same resources.
+
+- **2026-11-07 · S16 merged `main`; review started.** S16 merged the guard fixes (`bee3c86`) and S18 (`ca76dd9`, seam owned by S16; `ApprovalCard.swift` removed) and logged it at `1388a9c`: `swift test` 67/67, `s16.sh` (UI 11/11), `s18.sh` (UI 4/4), `check-release-clean` passed. A background reviewer runs `scripts/review S16 --resume` on `1388a9c`.
+  - Slow, not failing (reported by S16): `S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls` took about 1250–1290 s in 3 of 7 runs (each step waited 60 s for "animations complete"); other runs took 40–70 s. Probably the scroll steps. For a later repair.
+
+- **2026-11-07 · S16 merged.** Background reviewer ran `scripts/review S16 --resume` at `1388a9c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S16-1388a9c.txt`). Merged as `66fd823`; `scripts/check-plan --base` passed. No open `[human]` items, so S16 is `done`. S17 and S19 can start. S20 and S21 must merge `main` before review.
+
+- **2026-11-07 · S19 assigned.** Branch `claude/s19-outcomes`, worktree `.claude/worktrees/s19-outcomes` (from `9962b4e`, with S16 merged; S19 owns the seam with S16), simulator `dshm-S19`, DSHM_HOME `~/.dshm/home-s19`, bridge 47817, web 3290. The owner runs as a background agent (WORKFLOW.md §5.3, step 3). S19 before S17: M1 needs S19.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1386,3 +1414,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 49 | S15 | decision | D55, provisional: 所有任务 (screen 03) as a drawer page; sections, approval cards, offline hosts. | `claude/s15-all-tasks` | `bfd3d67` |
 | 50 | S14 | decision | D54, provisional: drawer levels host › workspace › session, status marks, local read state; `TaskSummary.workspace` (field 280), capability `drawer.v1`. | `claude/s14-drawer` | `d2cd506` |
 | 51 | S18 | decision | D57, provisional: the approval sheet comes up on session open and on a new approval, closes when the approval is gone, and comes back from a one-line bar after a swipe down. | `claude/s18-approval-sheet` | `9599cc6` |
+| 52 | S16 | decision | D56, provisional: session page layout (milestone bar at the top, "done / total" counts finished todos; stop key in the send position); D23 (b) updated. | `claude/s16-session` | `1388a9c` |

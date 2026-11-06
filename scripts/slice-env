@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+"""Resources of one slice (WORKFLOW.md §6), from the registry scripts/resources.tsv.
+
+  eval "$(scripts/slice-env S22)"       export the resources of S22 (any worktree)
+  scripts/slice-env --assign S22 --branch claude/s22-name [--decisions N]
+                                        coordinator, on main: give S22 a slot and a block of
+                                        decision numbers, and append the row (no commit)
+  scripts/slice-env --list              all rows, with the §0 status of each slice
+
+A slot k gives bridge 47810+k, web 3283+k, and a second host at +30 (bridge 47840+k, web 3313+k).
+A slot is free when no row with that slot belongs to a slice that is todo, doing or blocked in §0,
+and no process listens on its ports. The decision block (default 3 numbers) starts after the
+highest D number in ARCHITECTURE.md on main, on each slice branch, and in the registry. Unused
+numbers in a block stay unused. Assigning a slice that already has a row prints that row again.
+
+Exports: DSHM_BRIDGE_PORT DSHM_WEB_PORT DSHM_SECOND_BRIDGE_PORT DSHM_SECOND_WEB_PORT DSHM_HOME
+DSHM_SIM DSHM_DECISIONS. Exit 0 = OK, 1 = error, 2 = usage.
+"""
+
+import argparse
+import shlex
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+import dshm  # noqa: E402
+
+
+def registry_text(root, prefer_main=False):
+    path = root / dshm.REGISTRY
+    if not prefer_main and path.exists():
+        return path.read_text()
+    try:
+        return dshm.read_main_file(dshm.REGISTRY)
+    except dshm.PlanError:
+        return path.read_text() if path.exists() else ""
+
+
+def find_row(sid, root):
+    rows = dshm.parse_registry(registry_text(root))
+    hit = [r for r in rows if r["id"] == sid]
+    if not hit:  # a slice branch cut before its assignment: ask main
+        hit = [r for r in dshm.parse_registry(registry_text(root, prefer_main=True)) if r["id"] == sid]
+    return hit[-1] if hit else None
+
+
+def exports(row):
+    env = {
+        "DSHM_BRIDGE_PORT": row["bridge"], "DSHM_WEB_PORT": row["web"],
+        "DSHM_SECOND_BRIDGE_PORT": row["bridge2"], "DSHM_SECOND_WEB_PORT": row["web2"],
+        "DSHM_HOME": dshm.expand_home(row["home"]), "DSHM_SIM": row["sim"],
+        "DSHM_DECISIONS": row["decisions"],
+    }
+    return "\n".join(f"export {k}={shlex.quote(v)}" for k, v in env.items())
+
+
+def listening(port):
+    r = subprocess.run(["lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-t"],
+                       capture_output=True, text=True)
+    return bool(r.stdout.strip())
+
+
+def highest_decision(root, rows):
+    nums = set(dshm.decision_numbers((root / "ARCHITECTURE.md").read_text()))
+    branches = dshm.git("for-each-ref", "--format=%(refname:short)", "refs/heads/").split("\n")
+    for b in branches:
+        if b:
+            r = subprocess.run(["git", "show", f"{b}:ARCHITECTURE.md"], cwd=root,
+                               capture_output=True, text=True)
+            if r.returncode == 0:
+                nums |= dshm.decision_numbers(r.stdout)
+    for row in rows:
+        rng = dshm.decision_range(row["decisions"])
+        if rng:
+            nums.add(rng[1])
+    return max(nums) if nums else 0
+
+
+def assign(sid, branch_name, block, root):
+    if dshm.branch() != "main":
+        raise dshm.PlanError("--assign runs on main (the coordinator owns the registry, WORKFLOW.md §3)")
+    path = root / dshm.REGISTRY
+    rows = dshm.parse_registry(path.read_text())
+    old = [r for r in rows if r["id"] == sid]
+    if old:
+        return old[-1], False
+    status = dshm.statuses(dshm.split_lines((root / "PLAN.md").read_text()))
+    if sid not in status:
+        raise dshm.PlanError(f"{sid} has no row in PLAN.md §0")
+    held = {int(r["slot"]) for r in rows if status.get(r["id"]) in dshm.ACTIVE}
+    for slot in range(0, dshm.MAX_SLOT + 1):
+        ports = (dshm.BRIDGE_BASE + slot, dshm.WEB_BASE + slot,
+                 dshm.BRIDGE_BASE + slot + dshm.SECOND_OFFSET, dshm.WEB_BASE + slot + dshm.SECOND_OFFSET)
+        if slot not in held and not any(listening(p) for p in ports):
+            break
+    else:
+        raise dshm.PlanError("no free slot (all held by active slices or listening)")
+    first = highest_decision(root, rows) + 1
+    decisions = f"D{first}" if block == 1 else f"D{first}-D{first + block - 1}"
+    row = dict(id=sid, branch=branch_name, slot=str(slot), bridge=str(ports[0]), web=str(ports[1]),
+               bridge2=str(ports[2]), web2=str(ports[3]), sim=f"dshm-{sid}",
+               home=f"~/.dshm/home-{sid.lower()}", decisions=decisions, assigned=dshm.today())
+    text = path.read_text()
+    if not text.endswith("\n"):
+        text += "\n"
+    path.write_text(text + "\t".join(row[c] for c in dshm.REGISTRY_COLUMNS) + "\n")
+    return row, True
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("id", nargs="?")
+    ap.add_argument("--assign", action="store_true")
+    ap.add_argument("--branch")
+    ap.add_argument("--decisions", type=int, default=dshm.DECISION_BLOCK)
+    ap.add_argument("--list", action="store_true")
+    a = ap.parse_args()
+    root = dshm.toplevel()
+    try:
+        if a.list:
+            plan = (root / "PLAN.md").read_text()
+            status = dshm.statuses(dshm.split_lines(plan))
+            print("\t".join(dshm.REGISTRY_COLUMNS + ("status",)))
+            for r in dshm.parse_registry(registry_text(root)):
+                print("\t".join([r[c] for c in dshm.REGISTRY_COLUMNS] + [status.get(r["id"], "?")]))
+            return 0
+        if not a.id:
+            ap.error("give a slice ID")
+        sid = dshm.check_id(a.id)
+        if a.assign:
+            if not a.branch:
+                ap.error("--assign needs --branch")
+            if a.decisions < 1:
+                ap.error("--decisions is at least 1")
+            row, new = assign(sid, a.branch, a.decisions, root)
+            if not new:
+                print(f"slice-env: {sid} already has a row; its resources do not change", file=sys.stderr)
+        else:
+            row = find_row(sid, root)
+            if row is None:
+                raise dshm.PlanError(f"{sid} has no row in {dshm.REGISTRY}; the coordinator assigns it "
+                                     f"(scripts/plan assign {sid} --branch …)")
+        print(exports(row))
+        return 0
+    except dshm.PlanError as e:
+        print(f"slice-env: {e}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
