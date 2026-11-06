@@ -79,6 +79,8 @@ public final class TaskListStore {
         public var workspace: String? = nil
         /// S14: finished, and changed since the user last saw it on this phone.
         public var unread = false
+        /// S19: how many approvals of this task were answered, on any client.
+        public var approvalsAnswered = 0
 
         /// Chunks stream the first phone turn. Its committed journal restores text after a truncated replay.
         public func singleTurnTranscript(_ messages: [Dshm_V1_SessionMessage]) -> String {
@@ -479,6 +481,8 @@ public final class TaskListStore {
         case .approvalResolved(let taskID, let id):
             let key = CachedTask.key(hostKey: link.key, taskID: taskID)
             if let task = try? context.fetch(FetchDescriptor<CachedTask>(predicate: #Predicate { $0.key == key })).first {
+                // S19: count each pending approval once, when it is resolved.
+                if task.approvals.contains(where: { $0.id == id }) { task.approvalsAnswered += 1 }
                 task.approvals.removeAll { $0.id == id }
                 if task.approvalOnly && task.approvals.isEmpty { context.delete(task) }
             }
@@ -648,7 +652,8 @@ public final class TaskListStore {
                 approvalOnly: t.approvalOnly, approvals: supportsApprovals == false ? [] : t.approvals,
                 milestones: timeline(of: t),
                 modelSelection: t.modelSelectionData.flatMap { try? ModelSelection(serializedBytes: $0) },
-                workspace: t.workspace, unread: t.state.isTerminal && (t.readThrough.map { $0 < t.updatedAt } ?? true))
+                workspace: t.workspace, unread: t.state.isTerminal && (t.readThrough.map { $0 < t.updatedAt } ?? true),
+                approvalsAnswered: t.approvalsAnswered)
         }
     }
 

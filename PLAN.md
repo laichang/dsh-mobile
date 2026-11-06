@@ -937,7 +937,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S19 · Done and failed
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s19-outcomes`
+**Status** doing · **Needs** T1 · **Branch** `claude/s19-outcomes`
 
 **Why**: STORY §4 (call the user back when a task is done, failed or stuck), screens 06 and X1.
 
@@ -948,10 +948,15 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Done when**
 - [ ] [ui] A done session that is not read opens at the start of the final answer — Evidence:
 - [ ] [ui] "新会话里再试" opens 01 with the original prompt, which you can edit — Evidence:
+- [ ] [ui] A failed task shows a red bar with the step, the raw failure message and "复制错误" — Evidence:
+- [ ] [ui] A stopped task shows the same card, with "新会话里再试" — Evidence:
+- [ ] [auto] With FakeHost, an ended task gives its outcome: the steps, the answered approvals, the step where it stopped and the raw failure message — Evidence:
+- [ ] [ui] Seam: the S16 session page tests pass with the S19 rows on the page — Evidence:
 
 **Not**: File cards (M3). Follow-up in the same session (M2). The "stuck" alert (M2 push).
 
-**Log**: —
+**Log**
+- **2026-11-07 · started.** `scripts/demo/t0.sh` passed on `dshm-S19` (ports 47817/3290). The first two runs stopped in `swift package resolve`: GitHub reset the connection; the next run passed with no change. Added four Done when items for the failed bar, the stopped card, the FakeHost outcome and the S16 seam.
 
 ### S20 · Pickers
 

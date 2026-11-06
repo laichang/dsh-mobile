@@ -90,6 +90,16 @@ private struct SessionTranscript: View {
     @State private var history: Dshm_V1_SessionPage?
     @State private var historyError: String?
     @State private var retry = 0
+    /// S19: finished and not read when the page opened: it opens at the start of the final answer.
+    @State private var opensAtAnswer: Bool
+    /// S19: false once the user scrolls; then the page stops going back to the answer's start.
+    @State private var followsAnswer = true
+
+    init(store: TaskListStore, taskKey: String) {
+        self.store = store
+        self.taskKey = taskKey
+        _opensAtAnswer = State(initialValue: OutcomeAnchor.opensAtAnswer(store.task(taskKey)))
+    }
 
     private struct HistoryRequest: Equatable {
         var key: String
@@ -105,13 +115,15 @@ private struct SessionTranscript: View {
             // S16: the milestone bar and the status line sit above the scroll view, so they stay
             // at the top while the transcript scrolls (ARCHITECTURE D23 (b)).
             if let timeline = row?.milestones, !timeline.isEmpty {
+                // S19: red, with the step, when the task failed (screen X1).
+                let alert = row.flatMap(TaskOutcome.init)?.barAlert
                 // S3: milestone summary by default; the timeline on demand, in a sheet.
                 Button { shell.present(.milestones(taskKey: taskKey)) } label: {
-                    MilestoneBar(timeline: timeline, state: row?.state)
+                    MilestoneBar(timeline: timeline, state: row?.state, alert: alert)
                 }
                 .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel(timeline.headline)
+                .accessibilityLabel(alert ?? timeline.headline)
                 .accessibilityValue(timeline.progressToken)
                 .accessibilityHint("Shows all steps")
                 .accessibilityIdentifier("milestone.card")
@@ -121,12 +133,16 @@ private struct SessionTranscript: View {
             statusRow(row, host: host)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 6)
+            ScrollViewReader { proxy in
             ScrollView {
                 if let row {
+                    let outcome = TaskOutcome(row) // S19: nil while the task runs or waits
                     VStack(alignment: .leading, spacing: 12) {
                         PendingApprovalBar(store: store, row: row)
                         let messages = history?.messages ?? []
                         let showJournal = row.externalSession || messages.filter(\.fromUser).count > 1
+                        // S19: the final answer of a finished session with a journal.
+                        let finalSeq = showJournal && outcome != nil ? messages.last(where: { !$0.fromUser })?.seq : nil
                         if !messages.contains(where: \.fromUser) && !row.title.isEmpty {
                             UserBubble(text: row.title)
                         }
@@ -134,6 +150,9 @@ private struct SessionTranscript: View {
                             if message.fromUser {
                                 UserBubble(text: message.text)
                             } else {
+                                if message.seq == finalSeq {
+                                    OutcomeLead(row: row, outcome: outcome, marksAnswer: opensAtAnswer)
+                                }
                                 TranscriptView(source: message.text)
                                     .accessibilityElement(children: .ignore)
                                     .accessibilityLabel(message.text)
@@ -141,6 +160,7 @@ private struct SessionTranscript: View {
                             }
                         }
                         if !showJournal {
+                            OutcomeLead(row: row, outcome: outcome, marksAnswer: opensAtAnswer)
                             TranscriptView(source: row.singleTurnTranscript(messages))
                         } else if history == nil && historyError == nil {
                             if host?.reachability == .online { ProgressView() }
@@ -150,6 +170,10 @@ private struct SessionTranscript: View {
                             Text(historyError).font(.footnote)
                             Button("Retry") { retry += 1 }
                         }
+                        if let outcome {
+                            OutcomeEnd(store: store, row: row, outcome: outcome,
+                                       prompt: OutcomeAnchor.retryPrompt(row, messages: messages))
+                        }
                     }
                     .foregroundStyle(DSHTheme.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -157,10 +181,21 @@ private struct SessionTranscript: View {
                 }
             }
             // Follow the stream at the bottom, but start a short transcript at the top.
-            .defaultScrollAnchor(.bottom)
+            // S19: a finished session that is not read opens at the start of its final answer.
+            .defaultScrollAnchor(opensAtAnswer ? .top : .bottom)
             .defaultScrollAnchor(.top, for: .alignment)
             .scrollDismissesKeyboard(.interactively)
             .accessibilityIdentifier("session.transcript")
+            .onScrollPhaseChange { _, phase in
+                if phase == .interacting { followsAnswer = false }
+            }
+            .task(id: "\(history?.throughSeq ?? 0)/\(row?.transcript.utf8.count ?? 0)") {
+                // Again when the history or the text comes in, until the user scrolls.
+                guard opensAtAnswer else { return }
+                try? await Task.sleep(for: .milliseconds(80))
+                if followsAnswer && !Task.isCancelled { proxy.scrollTo(OutcomeAnchor.id, anchor: .top) }
+            }
+            }
         }
         .task(id: HistoryRequest(key: taskKey, revision: row?.sessionRevision,
                                  online: host?.reachability == .online, retry: retry)) {
