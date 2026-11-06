@@ -1,0 +1,8 @@
+# Slice resources (WORKFLOW.md §6). The coordinator appends a row on main with
+# `scripts/slice-env --assign` (or `scripts/plan assign`). Do not edit rows. A slot is held while
+# the slice is todo, doing or blocked in PLAN.md §0. Rows before 2026-11-07 are copied from §8.
+id	branch	slot	bridge	web	bridge2	web2	sim	home	decisions	assigned
+S16	claude/s16-session	3	47813	3286	47843	3316	dshm-S16	~/.dshm/home-s16	D56	2026-11-06
+S20	claude/s20-pickers	5	47815	3288	47845	3318	dshm-S20	~/.dshm/home-s20	D58	2026-11-06
+S21	claude/s21-hosts	6	47816	3289	47846	3319	dshm-S21	~/.dshm/home-s21	D59	2026-11-06
+S19	claude/s19-outcomes	7	47817	3290	47847	3320	dshm-S19	~/.dshm/home-s19	D60-D62	2026-11-07
