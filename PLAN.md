@@ -845,7 +845,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S16 · Session page
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s16-session`
+**Status** doing · **Needs** T1 · **Branch** `claude/s16-session`
 
 **Why**: STORY §4 (milestones by default, details on demand), §8 (the model can change during a task), screen 04.
 
@@ -854,13 +854,32 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: Start a coding task. The milestone bar shows "3 / 5". Tap stop.
 
 **Done when**
-- [ ] [ui] The milestone bar stays at the top while the transcript scrolls — Evidence:
-- [ ] [ui] Stop interrupts the task from the send position — Evidence:
-- [ ] [auto] ARCHITECTURE D23 (b) tells where the milestone card shows in the new UI — Evidence:
+- [x] [ui] The milestone bar stays at the top while the transcript scrolls — Evidence: test:S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls · cmd:scripts/demo/s16.sh · shot:evidence/S16/s16-session-top.png · shot:evidence/S16/s16-session-scrolled.png
+- [x] [ui] Stop interrupts the task from the send position — Evidence: test:S16SessionPageUITests/testStopInterruptsFromTheSendPosition · cmd:scripts/demo/s16.sh · shot:evidence/S16/s16-stop-running.png · shot:evidence/S16/s16-stopped.png
+- [x] [auto] ARCHITECTURE D23 (b) tells where the milestone card shows in the new UI — Evidence: commit:cb38321
 
 **Not**: The "已思考 N 秒" row and the "verb · target · +/−" tool rows (S17). Follow-up messages (M2).
 
-**Log**: —
+**Log**
+- **2026-11-06 · built, to review.**
+  - Done (WIP commit `cb38321` from the stopped workflow owner, examined and kept; then this commit): `Features/Session/MilestoneBar.swift`, the milestone bar at the top of the session page (headline = the step in progress, "done / total", a progress line; a tap opens `SheetRoute.milestones`). The bar and the status line sit outside the `ScrollView`, so they never scroll. The stop key takes the send key's frame while the task runs; the disabled send key comes back to the same frame. Assistant text has no bubble; the user's message is a bubble on the right. Markdown keeps `TranscriptBlocks` (D10) with the DSH style (inline code in SF Mono on the bubble color, links in blue, code blocks under a hairline, diff lines in green and red), tokens in `Theme+S16.swift`. The model pill opens `SheetRoute.model` (T1). ARCHITECTURE D23 (b) updated for the new UI.
+  - Decision: see **D56** (session page layout; "3 / 5" counts finished todos). *Provisional, pending user confirmation.* No new dependencies.
+  - Test support: Debug-only `-DSHMFakeScenario coding` (FakeBridge five-step coding task that holds at "3 / 5" after a long Markdown reply and answers `interrupt.v1` like the bridge). `DSHMFakeScenario` is a marker in `scripts/check-release-clean`; the check passes (Release carries none). `S16CodingTaskTests` in `swift test`.
+  - This session: `scripts/demo/s16.sh` now copies the screenshots right after the S16 part, so a failure in a later part does not lose them. Final run of `scripts/demo/s16.sh --shots` on `dshm-S16`: exit 0. `swift test` 60/60; S16 UI 2/2; T1, S3 and S2 milestone UI 9/9. `scripts/demo/t0.sh` passed at the start.
+  - Flaky under machine load (load average 300–770, not code): (1) `S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge` once lost the last typed key ("Milestone cache chec"); S16 did not change it, not repaired. (2) `S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls` failed once after 1255 s: each step waited 60 s for "animations complete", and the recording shows the page went to a new session with the drawer open, with no test step that does that (stale touch events). It passed in 4 other runs. No repair round used.
+  - Not done: lists and tables still show as plain text (D56 alternatives; S17 changes the transcript next).
+  - For the coordinator: add D56 to §9.
+  - Next: independent `scripts/review S16`, then merge.
+- **2026-11-06 · merged main (S15, then S14) for the seam.** `scripts/review S16` passed on `8c1bdb8`; the coordinator's merge then conflicted, so S16 took the seam.
+  - Done: merge commits `8e2a4db` (S15) and `030b891` (S14). Kept both sides. In `FakeBridge.swift`, S15's `approvals:` and `answerApproval` sit next to S16's `interruptible` and interrupt handling. In `DebugEntryPoints.swift`, `fakeScenario` (S16), `fakeApprovals` (S15) and `fakeDrawer` (S14) all stay. ARCHITECTURE.md has D54, D55 and D56, in that order. `DSHMFakeScenario` stays a Release marker.
+  - Verified on `030b891` with S16's resources (`dshm-S16`): `swift test` 66 tests in 17 suites; `scripts/demo/s16.sh` (UI 11/11), `scripts/demo/s14.sh --part ui-fake` (4/4), `scripts/demo/s15.sh` (7/7), all exit 0. One run on `8e2a4db` was killed (exit 144) and two runs were stopped by app restarts and the pause; they were run again, not repaired.
+  - Under load, `testMilestoneBarStaysAtTopWhileTranscriptScrolls` (1242 s) and `S15AllTasksUITests/testAllTasksShowsThreeSectionsAcrossHosts` (1398 s) passed but were slow: each step waited 60 s for "animations complete".
+  - Next: `scripts/review S16 --resume` on this commit, then merge.
+- **2026-11-07 · merged main again (guard fixes, then S18) for the seam.**
+  - Done: merge commits `bee3c86` (guard fixes, README, license, `Signing.xcconfig`) and `ca76dd9` (S18). Kept both sides. In `FakeBridge.swift`, S18's `Script.ask`/`asks(_:)` and `answersApprovals` sit next to S16's `codingTask`, `interruptible` and interrupt handling. `DebugEntryPoints.swift` keeps `fakeScenario` and `fakeAsk`. `scripts/check-release-clean` keeps both `DSHMFakeScenario` and `DSHMFakeAsk`. ARCHITECTURE.md has D54–D57. Deleted `Features/Approvals/ApprovalCard.swift`: nothing uses it since S18's `PendingApprovalBar` (S18 Log, §8).
+  - Verified on `ca76dd9` with S16's resources (`dshm-S16`): `swift test` (67 tests in 18 suites), `scripts/demo/s16.sh` (UI 11/11), `scripts/demo/s18.sh` (UI 4/4), `scripts/check-release-clean` (Release carries none). All exit 0.
+  - Slow, not failing: `testMilestoneBarStaysAtTopWhileTranscriptScrolls` took 1290 s, with each step waiting 60 s for "animations complete", also under the new CPU-idle guard. Three of the last seven runs took ~1250 s; the others took 40–70 s. The stop test on the same running task stays fast, so the cause is probably in the scroll steps, not the spinner. Not repaired yet; a candidate for a later look.
+  - Next: `scripts/review S16 --resume` on this commit, then merge.
 
 ### S17 · Structured transcript
 

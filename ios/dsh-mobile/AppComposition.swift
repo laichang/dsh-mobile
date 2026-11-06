@@ -97,6 +97,7 @@ final class AppModel {
         if options.useFakeBridge {
             let endpoint = HostEndpoint.localBridge()
             var script: FakeBridge.Script = options.fakeMilestones ? .threeTodos() : .init()
+            if options.fakeScenario == "coding" { script = .codingTask() } // S16
             script.holdPrompt = options.fakeHold
             let fake = FakeHost(script: script, reachable: !options.fakeBridgeOffline)
             return [.init(key: "fake:\(endpoint)",

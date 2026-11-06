@@ -9,7 +9,7 @@ struct TranscriptView: View {
     var body: some View {
         LazyVStack(alignment: .leading, spacing: 12) {
             if source.isEmpty {
-                Text("Waiting for the agent…").foregroundStyle(.secondary)
+                Text("Waiting for the agent…").foregroundStyle(DSHTheme.textSecondary)
             }
             ForEach(blocks.completed.indices, id: \.self) { index in
                 blockView(blocks.completed[index])
@@ -40,14 +40,16 @@ struct TranscriptView: View {
     private func blockView(_ block: TranscriptBlocks.Block) -> some View {
         switch block {
         case .prose(let text):
-            Text(text)
+            Text(Self.dshStyled(text))
+                .lineSpacing(4)
         case .heading(let level, let text):
-            Text(text).font(level <= 2 ? .title3.bold() : .headline)
+            Text(Self.dshStyled(text)).font(level <= 2 ? .title3.weight(.semibold) : .headline)
+                .padding(.top, 4)
                 .accessibilityAddTraits(.isHeader)
         case .fence(let language, let text):
             VStack(alignment: .leading, spacing: 6) {
                 if !language.isEmpty {
-                    Text(language).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                    Text(language).font(DSHTheme.mono(.caption)).foregroundStyle(DSHTheme.textTertiary)
                 }
                 ScrollView(.horizontal) {
                     if language == "diff" || language == "patch" {
@@ -64,19 +66,37 @@ struct TranscriptView: View {
                         Text(verbatim: text)
                     }
                 }
-                .font(.system(.callout, design: .monospaced))
+                .font(DSHTheme.mono(.footnote))
+                .foregroundStyle(DSHTheme.textPrimary.opacity(0.9))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(10)
-            .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+            .padding(12)
+            // S16 · DSH style (screen 04): a block a shade below the canvas, under a hairline.
+            .background(DSHTheme.s16CodeFill, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(DSHTheme.hairline))
             .accessibilityIdentifier("transcript.fence." + language)
         }
     }
 
     private func diffTint(_ line: String) -> Color {
         if line.hasPrefix("+++") || line.hasPrefix("---") || line.hasPrefix("@@") { return .clear }
-        if line.hasPrefix("+") { return .green.opacity(0.18) }
-        if line.hasPrefix("-") { return .red.opacity(0.16) }
+        if line.hasPrefix("+") { return DSHTheme.s16DiffAdded }
+        if line.hasPrefix("-") { return DSHTheme.s16DiffRemoved }
         return .clear
+    }
+
+    /// S16 · inline Markdown in the DSH style: `code` in SF Mono on the bubble color, links in blue.
+    static func dshStyled(_ text: AttributedString) -> AttributedString {
+        var styled = text
+        for run in text.runs {
+            if run.inlinePresentationIntent?.contains(.code) == true {
+                styled[run.range].font = DSHTheme.mono(.callout)
+                styled[run.range].backgroundColor = DSHTheme.s16InlineCodeFill
+            }
+            if run.link != nil {
+                styled[run.range].foregroundColor = DSHTheme.blue
+            }
+        }
+        return styled
     }
 }
