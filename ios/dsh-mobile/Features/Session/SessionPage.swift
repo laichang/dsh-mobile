@@ -120,9 +120,7 @@ private struct SessionTranscript: View {
             ScrollView {
                 if let row {
                     VStack(alignment: .leading, spacing: 12) {
-                        ForEach(row.approvals) { approval in
-                            ApprovalCard(approval: approval, hostKey: row.hostKey, store: store)
-                        }
+                        PendingApprovalBar(store: store, row: row)
                         let messages = history?.messages ?? []
                         let showJournal = row.externalSession || messages.filter(\.fromUser).count > 1
                         if !messages.contains(where: \.fromUser) && !row.title.isEmpty {
