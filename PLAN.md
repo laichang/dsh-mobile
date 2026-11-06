@@ -57,7 +57,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | Hosted compatibility checks deferred; local runner available (§8) |
 | S13 | review | merged `c56d47f` | 2026-11-05 | User verifies the same Web session and latest reply on a paired iPhone (§9) |
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
-| S14 | doing | `claude/s14-drawer` `c270ce1` | 2026-11-06 | Owner repairs the review FAIL, round 1 (§8) |
+| S14 | doing | `claude/s14-drawer` `2d14273` | 2026-11-06 | Reviewer runs `scripts/review S14 --resume` (§8) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
 | S16 | doing | `claude/s16-session` | 2026-11-06 | Slice owner builds the session page (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
@@ -1253,6 +1253,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-06 · S18 assigned.** Branch `claude/s18-approval-sheet`, worktree `.claude/worktrees/s18-approval-sheet` (from `29f90a1`), simulator `dshm-S18`, DSHM_HOME `~/.dshm/home-s18`, bridge 47814, web 3287. The owner runs as a background agent (WORKFLOW.md §5.3, step 3): the app refuses session starts from event turns.
 
 - **2026-11-06 · Interruption: app restart (about 17:40).** Recovery (WORKFLOW.md §5.4): S14's session survived and runs its repair demo (`s14.sh --shots`, uncommitted test change). S16's session was idle with its `s16.sh --shots` run stopped and uncommitted PLAN.md, `s16.sh` and `evidence/S16/`; the coordinator sent it a brief to continue. The S18 background agent stopped with uncommitted changes; the coordinator resumed it with a message. Heartbeat `0f66e06d` survived; keep-awake requested again.
+
+- **2026-11-06 · S14 repair round 1 done.** The owner made the UI tests wait for labels and values with predicates (`2d14273`); `s14.sh --shots` passed (UI 5/5). A background reviewer runs `scripts/review S14 --resume` on `2d14273`.
 
 ## 9. Pending user confirmation
 
