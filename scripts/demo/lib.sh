@@ -92,9 +92,33 @@ dshm_quiet_sim() {
   done
 }
 
+# Owner records: $DSHM_OWNERS/<sim> holds "<pid> <process start time>" of the script that owns
+# the simulator. The watcher removes it after the shutdown.
+DSHM_OWNERS="${DSHM_OWNERS:-/tmp/dshm-guard}"
+
+dshm_pid_start() { ps -o lstart= -p "$1" 2>/dev/null | tr -s ' ' | sed 's/^ //; s/ /_/g'; }
+
+# Shut down each booted dshm-* simulator whose owner is gone (killed with its watcher, or the
+# watcher is gone). A simulator with no owner record stays as it is.
+dshm_reap_orphans() {
+  local f sim pid start
+  [ -d "$DSHM_OWNERS" ] || return 0
+  for f in "$DSHM_OWNERS"/*; do
+    [ -f "$f" ] || continue
+    sim=$(basename "$f"); read -r pid start < "$f" || continue
+    [ -n "$pid" ] && [ "$(dshm_pid_start "$pid")" = "$start" ] && continue
+    if dshm_sim_booted "$sim"; then
+      echo "guard: $sim has no owner now (pid $pid ended); shutting it down" >&2
+      xcrun simctl shutdown "$sim" >/dev/null 2>&1 || true
+    fi
+    rm -f "$f"
+  done
+}
+
 dshm_guard() {
   local sim=$1 limit=${DSHM_SIM_LIMIT:-3} wait=${DSHM_GUARD_WAIT:-1800} waited=0 others n
   while :; do
+    dshm_reap_orphans
     others=$(dshm_other_sims "$sim")
     n=$(printf '%s' "$others" | grep -c . || true)
     if dshm_load_ok && [ "$n" -lt "$limit" ]; then break; fi
@@ -110,14 +134,22 @@ dshm_guard() {
     sleep 30; waited=$((waited + 30))
   done
   # Shut the simulator down when the owner exits. A watcher process, so a script's own
-  # `trap … EXIT` does not replace it, and a killed script still gets it.
+  # `trap … EXIT` does not replace it, and a killed script still gets it. The watcher runs in its
+  # own session, outside the process tree of the owner: a tool that stops a background job kills
+  # its whole process group or tree, and a plain `nohup … &` died with it (2026-11-06).
   local shut=0
   case "$sim" in dshm-*) shut=1 ;; esac
   dshm_sim_booted "$sim" || shut=1
   if [ $shut = 1 ]; then
-    nohup bash -c 'while kill -0 "$1" 2>/dev/null; do sleep 3; done; xcrun simctl shutdown "$2" >/dev/null 2>&1' \
-      dshm-guard "$$" "$sim" >/dev/null 2>&1 &
-    disown 2>/dev/null || true
+    mkdir -p "$DSHM_OWNERS"
+    printf '%s %s\n' "$$" "$(dshm_pid_start $$)" > "$DSHM_OWNERS/$sim"
+    perl -MPOSIX -e 'exit 0 if fork; POSIX::setsid(); exit 0 if fork; open STDIN, "</dev/null";
+      open STDOUT, ">/dev/null"; open STDERR, ">&STDOUT"; exec @ARGV' \
+      bash -c 'while kill -0 "$1" 2>/dev/null; do sleep 3; done
+        # A new owner of the same simulator took over: leave it to that owner.
+        [ "$(cut -d" " -f1 "$3" 2>/dev/null)" = "$1" ] || exit 0
+        xcrun simctl shutdown "$2" >/dev/null 2>&1; rm -f "$3"' \
+      dshm-guard "$$" "$sim" "$DSHM_OWNERS/$sim"
   fi
   dshm_quiet_sim "$sim"
 }

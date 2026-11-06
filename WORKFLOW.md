@@ -221,7 +221,8 @@ The guard in `scripts/demo/lib.sh` applies these rules. Each demo script and `sc
 
 - The guard waits while the CPU is less than 15% idle. It waits while 3 other `dshm-*` simulators are booted. After 30 minutes, it stops the script with an error. The guard does not use the load average. On macOS, the load average also counts threads that only wait.
 - The guard boots a `dshm-*` simulator and stops the iOS background services that no test needs (`DSHM_SIM_NOISE`). These services can use 5 CPUs or more.
-- When the script ends, the guard shuts down the simulator of the script. It does not shut down a simulator of the user.
+- When the script ends, the guard shuts down the simulator of the script. This also occurs when a tool kills the script. It does not shut down a simulator of the user.
+- The guard records the owner of each simulator in `/tmp/dshm-guard/`. Before a run, it shuts down each `dshm-*` simulator whose owner is not running.
 
 Rules for all agents:
 
@@ -383,3 +384,4 @@ If a tool has no function for a capability, use the fallback in this table. Then
 - **2026-11-05**: First version. Moved the process rules from "How to use this file" in the plan file. Added the setup procedure, the long-horizon run, the resources, the status titles, and the tool support for Codex. Added the Codex hooks (`.codex/hooks.json`, `codex-guard`) and the Codex setup (§2.1).
 - **2026-11-06**: Added the recovery after an interruption (§5.4), the simulator limit (§6.1, enforced by the guard in `scripts/demo/lib.sh`), and the review run with the rules for flaky tests (§10.1, enforced by `scripts/review`). Added coordinator rules to §5.2: wait for completion events, read each event as the end of a turn and not of the slice, and do not add merge conditions. A `stopped` or `killed` job notification starts the recovery (§5.4). Reason: T1 stopped for many hours. An app restart stopped the background jobs. Six booted simulators made the UI tests flaky. A merge condition of "5 runs in a row" did not converge. Each failure in `t1.sh --all` started the full regression again. Added the heartbeat and keep-awake (§5.5): after an interruption, no event woke the coordinator.
 - **2026-11-06**: The guard (§6.1) now checks the CPU idle time, not the load average. It also stops the iOS background services in each `dshm-*` simulator.
+- **2026-11-06**: The shutdown by the guard (§6.1) now also occurs after a tool kills the script. The guard shuts down a `dshm-*` simulator whose owner is not running.
