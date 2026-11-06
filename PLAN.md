@@ -62,7 +62,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S16 | done | merged `66fd823` | 2026-11-07 | — (provisional D56 in §9) |
 | S17 | todo | — | 2026-11-07 | Next batch (S16 is merged) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
-| S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
+| S19 | doing | `claude/s19-outcomes` | 2026-11-07 | Slice owner builds done and failed (§8) |
 | S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
 | S21 | doing | `claude/s21-hosts` | 2026-11-06 | Slice owner builds the hosts sheet and control (§8) |
 | S22 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -1346,6 +1346,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - Slow, not failing (reported by S16): `S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls` took about 1250–1290 s in 3 of 7 runs (each step waited 60 s for "animations complete"); other runs took 40–70 s. Probably the scroll steps. For a later repair.
 
 - **2026-11-07 · S16 merged.** Background reviewer ran `scripts/review S16 --resume` at `1388a9c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S16-1388a9c.txt`). Merged as `66fd823`; `scripts/check-plan --base` passed. No open `[human]` items, so S16 is `done`. S17 and S19 can start. S20 and S21 must merge `main` before review.
+
+- **2026-11-07 · S19 assigned.** Branch `claude/s19-outcomes`, worktree `.claude/worktrees/s19-outcomes` (from `9962b4e`, with S16 merged; S19 owns the seam with S16), simulator `dshm-S19`, DSHM_HOME `~/.dshm/home-s19`, bridge 47817, web 3290. The owner runs as a background agent (WORKFLOW.md §5.3, step 3). S19 before S17: M1 needs S19.
 
 ## 9. Pending user confirmation
 
