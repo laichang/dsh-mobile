@@ -39,18 +39,22 @@ demo_no_skipped_ui() {
 # ---------------------------------------------------------------------------------------------
 # Machine guard (WORKFLOW.md §6.1). Runs when this file is sourced. Rules that live in code, not
 # in a prompt:
-#   - Waits while the 1-minute load average is above 2 × the CPU count, then fails.
+#   - Waits while the CPU is less than DSHM_MIN_IDLE (15) percent idle, then fails.
 #   - Waits while DSHM_SIM_LIMIT (3) other dshm-* simulators are booted, then fails.
 #   - When the top-level script exits (also on error or kill), shuts down its simulator if it is
 #     a dshm-* simulator or was not booted before. A simulator of the user stays as it was.
+#   - Boots a dshm-* simulator and stops the iOS services in DSHM_SIM_NOISE (dshm_quiet_sim).
 # A nested demo (t1.sh --all runs s1.sh … s13.sh) sees DSHM_GUARD_OWNER and skips the guard; the
 # top-level script owns the simulator. Env: DSHM_SIM_LIMIT (3), DSHM_GUARD_WAIT (seconds, 1800).
 
+# CPU idle percent, from a 2-second sample. Not the load average: on macOS it also counts
+# threads that only wait, and it showed 139 on 12 CPUs while the CPU was 75% idle (2026-11-06).
+dshm_cpu_idle() {
+  top -l 2 -s 2 -n 0 2>/dev/null | awk '/CPU usage/ { v = $7 } END { sub(/%/, "", v); print v + 0 }'
+}
+
 dshm_load_ok() {
-  local ncpu load
-  ncpu=$(sysctl -n hw.ncpu)
-  load=$(sysctl -n vm.loadavg | awk '{print $2}')
-  awk -v l="$load" -v n="$ncpu" 'BEGIN { exit !(l <= 2 * n) }'
+  awk -v i="$(dshm_cpu_idle)" -v m="${DSHM_MIN_IDLE:-15}" 'BEGIN { exit !(i >= m) }'
 }
 
 # Booted dshm-* simulators other than $1 (name or UDID), one "name (udid)" per line.
@@ -64,6 +68,30 @@ dshm_sim_booted() {
   xcrun simctl list devices booted 2>/dev/null | grep -qE "^ +$1 \(|\($1\) \(Booted\)"
 }
 
+# iOS background services that use most of the CPU in a test simulator and that no test needs.
+# Measured 2026-11-06: mediaanalysisd alone used 5+ CPUs of a fresh dshm-* simulator, and the
+# 1-minute load went to 290 on 12 CPUs. With these stopped, the load went down to 13.
+DSHM_SIM_NOISE="com.apple.mediaanalysisd com.apple.photoanalysisd com.apple.mlhostd
+  com.apple.managedappdistributiond com.apple.knowledgeconstructiond com.apple.intelligenceplatformd
+  com.apple.spotlightknowledged com.apple.siriactionsd com.apple.siriknowledged com.apple.siriinferenced"
+
+# Boot $1 and stop the services in DSHM_SIM_NOISE in it. The simulator does not keep a disabled
+# service after a reboot, so this runs on each boot. xcodebuild uses a booted simulator as it is.
+dshm_quiet_sim() {
+  local sim=$1 l
+  # Only a dshm-* simulator (by name or UDID). A simulator of the user stays as it was.
+  case "$sim" in
+    dshm-*) ;;
+    *) xcrun simctl list devices 2>/dev/null | grep -qE "^ +dshm-[^ ]+ \\($sim\\)" || return 0 ;;
+  esac
+  xcrun simctl boot "$sim" >/dev/null 2>&1 || true
+  xcrun simctl bootstatus "$sim" -b >/dev/null 2>&1 || { echo "guard: $sim did not boot" >&2; return 1; }
+  for l in $DSHM_SIM_NOISE; do
+    xcrun simctl spawn "$sim" launchctl disable "system/$l" >/dev/null 2>&1 || true
+    xcrun simctl spawn "$sim" launchctl bootout "system/$l" >/dev/null 2>&1 || true
+  done
+}
+
 dshm_guard() {
   local sim=$1 limit=${DSHM_SIM_LIMIT:-3} wait=${DSHM_GUARD_WAIT:-1800} waited=0 others n
   while :; do
@@ -72,13 +100,13 @@ dshm_guard() {
     if dshm_load_ok && [ "$n" -lt "$limit" ]; then break; fi
     if [ "$waited" -ge "$wait" ]; then
       echo "guard: the Mac is not ready after ${wait}s (WORKFLOW.md §6.1)." >&2
-      echo "guard: load $(sysctl -n vm.loadavg), limit 2 × $(sysctl -n hw.ncpu) CPUs" >&2
+      echo "guard: CPU $(dshm_cpu_idle)% idle, minimum ${DSHM_MIN_IDLE:-15}%" >&2
       echo "guard: other booted dshm-* simulators ($n, limit $limit):" >&2
       printf '%s\n' "$others" | sed 's/^/  /' >&2
       echo "guard: shut down the simulators that no running slice uses. Do not raise the limit." >&2
       return 1
     fi
-    [ "$waited" = 0 ] && echo "guard: waiting (load $(sysctl -n vm.loadavg | awk '{print $2}'), $n other dshm-* simulators booted)" >&2
+    [ "$waited" = 0 ] && echo "guard: waiting (CPU $(dshm_cpu_idle)% idle, $n other dshm-* simulators booted)" >&2
     sleep 30; waited=$((waited + 30))
   done
   # Shut the simulator down when the owner exits. A watcher process, so a script's own
@@ -91,6 +119,7 @@ dshm_guard() {
       dshm-guard "$$" "$sim" >/dev/null 2>&1 &
     disown 2>/dev/null || true
   fi
+  dshm_quiet_sim "$sim"
 }
 
 # No simulator (bridge-only scripts such as scripts/ci/bridge-upstream) or no Xcode: no guard.
