@@ -80,6 +80,7 @@ final class AppModel {
         #if DEBUG
         let options = DebugLaunchOptions.parse(ProcessInfo.processInfo.arguments)
         if let drawer = options.fakeDrawer.flatMap(FakeDrawer.Variant.init(rawValue:)) { return FakeDrawer.hosts(drawer) }
+        if options.fakePickers { return FakePickers.hosts(hold: options.fakeHold) }
         if options.multipleFakeHosts {
             return ["Office Mac", "Home Mac"].enumerated().map { index, name in
                 let endpoint = HostEndpoint.localBridge(port: 47801 + index)

@@ -10,6 +10,7 @@ public enum DebugLaunchOptions {
     /// sessions in workspaces (`FakeDrawer`).
     /// `-DSHMFakeBridge approvals` (S15): two hosts, each with a task that waits on an approval;
     /// `approvals-office-offline`: the same, with Office Mac unreachable.
+    /// `-DSHMFakeBridge pickers` (S20): two hosts with models and workspaces (`FakePickers`).
     public static let fakeBridgeKey = "DSHMFakeBridge"
     /// `-DSHMPresetPrompt <text>`: pre-fill the composer.
     public static let presetPromptKey = "DSHMPresetPrompt"
@@ -41,6 +42,8 @@ public enum DebugLaunchOptions {
         /// S14: the `FakeDrawer` variant (`drawer`, `drawer-office-offline`, `drawer-v0`).
         public var fakeDrawer: String?
         public var fakeApprovals = false
+        /// S20: the `FakePickers` hosts.
+        public var fakePickers = false
 
         public init(
             useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil,
@@ -81,6 +84,7 @@ public enum DebugLaunchOptions {
             options.multipleFakeHosts = v == "multi" || v == "multi-office-offline" || options.fakeApprovals
             options.fakeBridgeOffline = v == "offline" || v == "multi-office-offline" || v == "approvals-office-offline"
             if v.hasPrefix("drawer") { options.fakeDrawer = v }
+            options.fakePickers = v == "pickers"
         }
         if let v = values[resetStoreKey] { options.resetStore = yes.contains(v) }
         options.connectDelay = values[connectDelayKey].flatMap(Double.init)

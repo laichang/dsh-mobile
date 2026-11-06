@@ -308,6 +308,7 @@ public final class TaskListStore {
             let task = taskRecord(hostKey: link.key, taskID: taskID, title: text)
             if task.title.isEmpty { task.title = text }
             prompt = ""
+            composerWorkspaces[link.key] = nil // S20: a workspace choice is for this one new session.
             onHostChoice(link.key)
             saveNow()
             refresh()
