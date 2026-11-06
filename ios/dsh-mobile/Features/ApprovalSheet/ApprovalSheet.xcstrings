@@ -1,0 +1,156 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Agent's reason": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent 的理由"
+          }
+        }
+      }
+    },
+    "Allow once": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允许一次"
+          }
+        }
+      }
+    },
+    "Approve this command?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批准执行这条命令？"
+          }
+        }
+      }
+    },
+    "Approve this file change?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批准修改这个文件？"
+          }
+        }
+      }
+    },
+    "Approve this tool call?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批准这次工具调用？"
+          }
+        }
+      }
+    },
+    "Deny": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拒绝"
+          }
+        }
+      }
+    },
+    "Hide": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收起"
+          }
+        }
+      }
+    },
+    "Nothing is allowed if you do not answer; the task stays paused.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不处理不会默认放行，任务一直暂停"
+          }
+        }
+      }
+    },
+    "Operation details unavailable": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法取得操作详情"
+          }
+        }
+      }
+    },
+    "Review ›": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看 ›"
+          }
+        }
+      }
+    },
+    "Show ›": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "展开 ›"
+          }
+        }
+      }
+    },
+    "The phone, the Web and the desktop can all see this approval.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "手机、网页、桌面任一端都能看到这条审批"
+          }
+        }
+      }
+    },
+    "The task is paused until you decide": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "任务已暂停，等你决定"
+          }
+        }
+      }
+    },
+    "Tool arguments": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具参数"
+          }
+        }
+      }
+    },
+    "Waiting on you": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等你决定"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

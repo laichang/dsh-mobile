@@ -867,7 +867,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S18 · Approval sheet
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s18-approval-sheet`
+**Status** doing · **Needs** T1 · **Branch** `claude/s18-approval-sheet`
 
 **Why**: STORY §5 (approvals show the effect; nothing is allowed by default), screen 05.
 
@@ -876,12 +876,22 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: A task asks for `rm -rf ~/Desktop/Q3/tmp`. The sheet comes up in the session. Deny it.
 
 **Done when**
-- [ ] [ui] The sheet comes up when the session opens with a pending approval, and when a new approval arrives — Evidence:
-- [ ] [ui] After an answer from the Web, the sheet closes on the phone — Evidence:
+- [x] [ui] The sheet comes up when the session opens with a pending approval, and when a new approval arrives — Evidence: test:S18ApprovalSheetUITests/testSheetComesUpWhenTheSessionOpensAndWhenANewApprovalArrives · cmd:scripts/demo/s18.sh · shot:evidence/S18/s18-sheet-on-open.png · shot:evidence/S18/s18-tool-arguments.png · shot:evidence/S18/s18-sheet-new-approval.png
+- [x] [ui] After an answer from the Web, the sheet closes on the phone — Evidence: test:S18ApprovalSheetUITests/testWebAnswerClosesTheSheet · cmd:scripts/demo/s18.sh · shot:evidence/S18/s18-before-web-answer.png · shot:evidence/S18/s18-web-answered.png
+- [ ] [auto] With FakeHost, a running task asks for an approval, and an answer from another client resolves it and the task runs on — Evidence:
+- [ ] [ui] Seam: the S4 (real DSH) and S15 UI tests pass with the sheet over the session page — Evidence:
 
 **Not**: The dashed M2 parts of 05: risk tier, effect summary, Face ID, pre-authorization.
 
-**Log**: —
+**Log**
+- **2026-11-06 · built, to review.**
+  - Done: screen 05 as a `SheetRoute.approval(taskKey:)` sheet (`Features/ApprovalSheet/`). `PendingApprovalBar` on the session page brings the sheet up when the session opens with a pending approval and when a new one arrives, and takes it down when no approval is left (an answer here, or `ApprovalResolved` from the Web or the desktop). Sheet: tool tag, 任务已暂停，等你决定, title by kind, task · host, full command in SF Mono, reason, 工具参数 展开 ›, 拒绝 / 允许一次 (no "always allow"), footer (not allowed by default; every client sees it); grey buttons with S15's reason when the host is not online. A swipe down hides it for that approval; the page keeps one line 等你决定 · command · 查看 › (`approval.pending`) that opens it again. The inline `ApprovalCard` no longer shows on the session page; no identifier renamed. Own string catalog `ApprovalSheet.xcstrings`, tokens in `Theme+S18.swift`. Board caption of 05 has the new behavior (STORY §5 unchanged: it already says any client can answer); `scripts/render-design` run. Decision: see **D57**. *Provisional, pending user confirmation.* No new dependencies.
+  - FakeBridge: `Script.ask` (`-DSHMFakeAsk <text>`, also a release marker in `scripts/check-release-clean`) and `FakeHost.answerFromElsewhere(allow:)`. The UI test sends the Web's answer as a Darwin notification (`FakeApprovalSheet`, Debug only).
+  - Seams (this slice lands second): `S4ApprovalUITests/testSwitchWhileHeldResumeThenInterrupt` and `S15AllTasksUITests/testAllTasksShowsThreeSectionsAcrossHosts` close the sheet before they use the page (`closeApprovalSheet`, `reopenApprovalSheet` in `UITestSupport`).
+  - Verification: `scripts/demo/t0.sh` passed at the start (the first run, before the app restart, failed `testDemoAgainstRealDSH` on keyboard focus at load ~100; the next run passed). `scripts/demo/s18.sh --shots` exit 0 on `dshm-S18`: `swift test` 61 tests in 16 suites; UI S18 ×2, S15 ×2, 0 skipped. `scripts/demo/s4.sh` (real DSH, ports 47814/3287, `dshm-S18`) exit 0: S4 ×4. S4's evidence shots were not refreshed.
+  - Flaky: none in S18 tests. One `swift test` run inside `t0.sh` at load ~130 failed 4 earlier-slice tests (`store.send()` → nil) and passed alone with no change. First S18 UI run failed: `swipeDown` on the sheet content did not close it; the tests now drag the grabber (repair round 1, not a flake).
+  - Not done: —. The M1 `ApprovalCard` (`Features/Approvals/`) has no user now; left in place so that S16 (same page, in parallel) does not conflict; remove it after S16 merges.
+  - Next: independent `scripts/review S18`, then merge. For the coordinator: §0 S18 → review/done after the merge; add D57 to §9.
 
 ### S19 · Done and failed
 

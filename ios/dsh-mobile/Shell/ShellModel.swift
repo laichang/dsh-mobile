@@ -45,6 +45,8 @@ enum SheetRoute: Identifiable, Hashable {
     case model(hostKey: String, taskKey: String?)
     /// Paired devices and the audit history of one host (S10).
     case devices(hostKey: String)
+    /// The pending approval of a session (S18, screen 05).
+    case approval(taskKey: String)
 
     var id: Self { self }
 
@@ -59,6 +61,8 @@ enum SheetRoute: Identifiable, Hashable {
             ModelPicker(store: store, hostKey: hostKey, task: taskKey.flatMap { store.task($0) })
         case .devices(let hostKey):
             DevicesSheet(store: store, hostKey: hostKey)
+        case .approval(let key):
+            ApprovalSheet(store: store, taskKey: key)
         }
     }
 }

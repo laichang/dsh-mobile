@@ -103,6 +103,8 @@ final class S4ApprovalUITests: XCTestCase {
         app.buttons["model.apply"].tap()
         send(app)
         checkCommand(app, expected: command)
+        // S18: the approval is a sheet over the session; the model pill is under it.
+        closeApprovalSheet(app)
 
         picker.tap()
         let high = app.buttons["model.effort.high"]
@@ -111,6 +113,7 @@ final class S4ApprovalUITests: XCTestCase {
         app.buttons["model.apply"].tap()
         var transcript = app.descendants(matching: .any)["transcript.text"]
         wait(for: [expectation(for: NSPredicate(format: "value CONTAINS %@", " · high]"), evaluatedWith: transcript)], timeout: 15)
+        reopenApprovalSheet(app)
         checkCommand(app, expected: command)
         app.terminate()
 
@@ -120,6 +123,7 @@ final class S4ApprovalUITests: XCTestCase {
         let row = app.buttons.matching(identifier: "tasklist.row").matching(NSPredicate(format: "value == 'waitingOnUser'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 15), app.debugDescription)
         row.tap()
+        closeApprovalSheet(app)
         transcript = app.descendants(matching: .any)["transcript.text"]
         XCTAssertTrue((transcript.value as? String)?.contains(" · high]") == true)
         let stop = app.buttons["task.interrupt"]
