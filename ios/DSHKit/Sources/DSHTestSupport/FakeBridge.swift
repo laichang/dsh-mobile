@@ -47,6 +47,23 @@ public final class FakeBridge: BridgeTransport {
         /// S18: a task whose prompt contains `ask.prompt` asks for `ask.approval` before its reply
         /// and waits until it is answered (here, or from elsewhere with `answerFromElsewhere`).
         public var ask: (prompt: String, approval: PendingApproval)?
+        /// S19: a task whose prompt contains `prompt` runs `script` instead (its milestones, reply
+        /// and end). Hold, ask and the host's capabilities still come from this script.
+        public var variants: [Variant] = []
+
+        public struct Variant: Sendable {
+            public var prompt: String
+            public var script: Script
+
+            public init(prompt: String, script: Script) {
+                self.prompt = prompt
+                self.script = script
+            }
+        }
+
+        func variant(for prompt: String) -> Script {
+            variants.first { !$0.prompt.isEmpty && prompt.contains($0.prompt) }?.script ?? self
+        }
         /// S17: transcript blocks, each sent just before reply chunk `beforeChunk` (0-based;
         /// `reply.count` or more: after the reply). The host sends them whatever its capabilities.
         public var blocks: [(beforeChunk: Int, block: Dshm_V1_TranscriptBlock)] = []
@@ -486,7 +503,8 @@ public final class FakeHost: Sendable {
                 let incarnation = s.incarnation
                 let hold = script.holds(create.prompt)
                 let ask = script.asks(create.prompt)
-                Task { await self.stream(taskID: taskID, incarnation: incarnation, hold: hold, ask: ask) }
+                let variant = script.variant(for: create.prompt) // S19
+                Task { await self.stream(taskID: taskID, incarnation: incarnation, hold: hold, ask: ask, using: variant) }
             case .listTasks?:
                 var list = Dshm_V1_TaskList()
                 list.tasks = s.tasks.reversed()
@@ -632,12 +650,14 @@ public final class FakeHost: Sendable {
         s.tasks[at].updatedAtMs = Self.nowMs()
         Self.upserted(s.tasks[at], in: &s)
         let incarnation = s.incarnation
-        Task { await self.stream(taskID: taskID, incarnation: incarnation) }
+        let variant = script.variant(for: s.tasks[at].title) // S19
+        Task { await self.stream(taskID: taskID, incarnation: incarnation, using: variant) }
         return resolved
     }
 
     private func stream(taskID: String, incarnation: Int, hold: Bool = false,
-                        ask: FakeBridge.PendingApproval? = nil) async {
+                        ask: FakeBridge.PendingApproval? = nil, using variant: FakeBridge.Script? = nil) async {
+        let script = variant ?? self.script // S19: the task's own script, if its prompt picks one
         // S3: milestones are logged like any other event, so Resume replays them.
         var milestoneSeq: UInt64 = 0
         var lastTodos: [Todo] = []

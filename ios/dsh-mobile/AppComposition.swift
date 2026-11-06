@@ -102,10 +102,12 @@ final class AppModel {
             let endpoint = HostEndpoint.localBridge()
             var script: FakeBridge.Script = options.fakeMilestones ? .threeTodos() : .init()
             if options.fakeScenario == "coding" { script = .codingTask() } // S16
+            if options.fakeScenario == "outcomes" { script = .outcomes() } // S19
             if options.fakeScenario?.hasPrefix("transcript") == true { script = FakeTranscript.script() } // S17
-            script.holdPrompt = options.fakeHold
+            script.holdPrompt = options.fakeHold ?? script.holdPrompt
             let fake = FakeHost(script: script, reachable: !options.fakeBridgeOffline,
                                 extraCapabilities: options.fakeScenario == "transcript" ? [FakeTranscript.capability] : [])
+            if options.fakeScenario == "outcomes" { FakeApprovalSheet.watchWebAnswers(fake) } // S19
             return [.init(key: "fake:\(endpoint)",
                           connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: fake.factory))]
         }

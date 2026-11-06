@@ -8,12 +8,15 @@ import SwiftUI
 struct MilestoneBar: View {
     let timeline: MilestoneTimeline
     let state: TaskState?
+    /// S19: when the task failed, the line that replaces the headline ("失败 · 第 3 步"); the
+    /// bar then has a red border (screen X1).
+    var alert: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 icon.frame(width: 20, height: 20)
-                Text(timeline.headline)
+                Text(alert ?? timeline.headline)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(DSHTheme.textPrimary)
                     .lineLimit(1)
@@ -35,7 +38,7 @@ struct MilestoneBar: View {
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(DSHTheme.s16BarFill, in: .rect(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(DSHTheme.hairline))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(alert == nil ? DSHTheme.hairline : DSHTheme.s19FailBarBorder))
         .contentShape(.rect)
     }
 
@@ -43,6 +46,15 @@ struct MilestoneBar: View {
 
     @ViewBuilder
     private var icon: some View {
+        if alert != nil {
+            Image(systemName: "exclamationmark.triangle").foregroundStyle(DSHTheme.s19FailText)
+        } else {
+            stateIcon
+        }
+    }
+
+    @ViewBuilder
+    private var stateIcon: some View {
         switch kind {
         case .finished?: Image(systemName: "checkmark.circle.fill").foregroundStyle(DSHTheme.green)
         case .failed?: Image(systemName: "exclamationmark.circle.fill").foregroundStyle(DSHTheme.red)
