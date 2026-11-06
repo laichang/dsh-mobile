@@ -910,6 +910,11 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Not done: —. The M1 `ApprovalCard` (`Features/Approvals/`) has no user now; left in place so that S16 (same page, in parallel) does not conflict; remove it after S16 merges.
   - Next: independent `scripts/review S18`, then merge. For the coordinator: §0 S18 → review/done after the merge; add D57 to §9.
 - 2026-11-06: ticked the two items added in `9599cc6` (FakeHost ask and web answer; S4 and S15 seam), with the runs above as evidence. Not done: —. Next: `scripts/review S18` (it runs `scripts/demo/s18.sh` and `scripts/demo/s4.sh`).
+- **2026-11-06 · merged `main` (S14 drawer), to review.**
+  - Done: branch renamed to `claude/s18-approval-sheet`. `git merge main` (`a4d79ca`). Two conflicts; S18 owns the seam (lands after S14). `ShellModel.swift`: both `SheetRoute` cases kept (`.approval(taskKey:)`, `.settings`). `FakeBridge.swift`: hello advertises `approvals.v1` when `answersApprovals` (S15 seeded approvals or S18 `Script.ask`), then S14 `extraCapabilities`; init keeps `seed:`, `extraCapabilities:`, `approvals:`. D54, D55, D57 unchanged. No new decision, no new dependency.
+  - Verification (`dshm-S18`): `swift test` 66 tests in 17 suites, pass. `scripts/demo/s18.sh` exit 0: S18 ×2, S15 ×2, 0 skipped. `scripts/demo/s14.sh --part ui-fake` exit 0: S14 ×4. `scripts/demo/s4.sh` not run: the merge changes no approval code on the real path (the bridge diff from S14 is the session `workspace` field and the `drawer.v1` capability only).
+  - Flaky: none.
+  - Not done: —. Next: independent `scripts/review S18`, then merge.
 
 ### S19 · Done and failed
 
