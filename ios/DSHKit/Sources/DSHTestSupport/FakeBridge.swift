@@ -37,6 +37,13 @@ public final class FakeBridge: BridgeTransport {
         /// T1: a task whose prompt contains this text stops after its first milestone (or before
         /// its reply, with no milestones) and stays running for the rest of the run.
         public var holdPrompt: String?
+        /// S16: the reply streams after this many milestones (nil: after all of them).
+        public var replyAfterMilestones: Int?
+        /// S16: every task stays running after its reply and its milestones, until it is interrupted.
+        public var holdAfterReply = false
+        /// S16: the host advertises `interrupt.v1` and stops a task like the real bridge: an
+        /// `InterruptAccepted`, then an INTERRUPTED milestone and `TaskEnded(INTERRUPTED)`.
+        public var interruptible = false
         /// S18: a task whose prompt contains `ask.prompt` asks for `ask.approval` before its reply
         /// and waits until it is answered (here, or from elsewhere with `answerFromElsewhere`).
         public var ask: (prompt: String, approval: PendingApproval)?
@@ -58,6 +65,32 @@ public final class FakeBridge: BridgeTransport {
         func holds(_ prompt: String) -> Bool {
             guard let holdPrompt, !holdPrompt.isEmpty else { return false }
             return prompt.contains(holdPrompt)
+        }
+
+        /// S16 · a coding task (`-DSHMFakeScenario coding`): five todos, three done and the fourth
+        /// running ("3 / 5"); a long Markdown reply, so the transcript scrolls; then it keeps running
+        /// until the user taps stop.
+        public static func codingTask(delay: Duration = .milliseconds(300)) -> Script {
+            let items = FakeBridge.codingTodoItems
+            func list(done: Int) -> [Todo] {
+                items.enumerated().map { i, content in
+                    Todo(content: content, status: i < done ? .completed : i == done ? .inProgress : .pending)
+                }
+            }
+            var script = Script(
+                reply: FakeBridge.codingReply.split(separator: "\n", omittingEmptySubsequences: false).map { $0 + "\n" },
+                chunkDelay: .milliseconds(40),
+                milestones: [
+                    Step(.started),
+                    Step(.planned, todos: list(done: 0)),
+                    Step(.todoDone, items[0], todos: list(done: 1)),
+                    Step(.todoDone, items[1], todos: list(done: 2)),
+                    Step(.todoDone, items[2], todos: list(done: 3)),
+                ],
+                milestoneDelay: delay)
+            script.holdAfterReply = true
+            script.interruptible = true
+            return script
         }
 
         func asks(_ prompt: String) -> PendingApproval? {
@@ -106,6 +139,52 @@ public final class FakeBridge: BridgeTransport {
     }
 
     public static let defaultReply = Script().reply.joined()
+    public static let codingTodoItems = ["Find the failing test", "Reproduce it", "Fix the order of replayed events",
+                                         "Run the tests", "Open a pull request"]
+    /// S16: long enough to scroll on any iPhone; ends with a line a UI test can look for.
+    public static let codingReply = """
+        The failing test is `TaskListStoreTests/resume`: after a reconnect, replayed events were put **after** the new ones.
+
+        ## What I changed
+
+        - `TaskListStore.apply` now sorts a replay by `host_seq` before it merges.
+        - Live events wait until the replay is in.
+        - The cache keeps the highest `host_seq` it has seen.
+
+        ```swift
+        let ordered = replay.sorted { $0.hostSeq < $1.hostSeq }
+        for event in ordered where event.hostSeq > lastSeq {
+            apply(event)
+        }
+        ```
+
+        ## Why it failed
+
+        The bridge sends the replay first, but the app read the live socket in parallel. A fast live event could land first, and the replay then wrote an older state over it.
+
+        ```diff
+        - for event in replay { apply(event) }
+        + for event in replay.sorted(by: \\.hostSeq) where event.hostSeq > lastSeq { apply(event) }
+        ```
+
+        ## How I checked it
+
+        I added `resumeFillsGapInOrder`. It drops the connection after two events, sends three live events, and then lets the replay in. Before the fix the cache ended on the second event; now it ends on the fifth.
+
+        | Case | Before | After |
+        | --- | --- | --- |
+        | replay, then live | ok | ok |
+        | live, then replay | wrong order | ok |
+
+        The other tests in the suite still pass. The change touches only the merge, so the list and the transcript code stay the same.
+
+        ## Next
+
+        1. Run the whole suite on the simulator.
+        2. Open a pull request with the fix and the new test.
+
+        Running the tests now.
+        """
     public static let threeTodoItems = ["Read the project layout", "Write the summary", "Check the summary against the code"]
 
     /// A fresh host behind every connection this factory opens (T0 behaviour, plus S2's log).
@@ -219,6 +298,10 @@ public final class FakeHost: Sendable {
         /// S21: `devices.v1` records; `revoked` once this phone's device lost its access.
         var devices: FakeDevices?
         var revoked = false
+        /// S16: interrupted tasks; their stream stops.
+        var stopped: Set<String> = []
+        /// S16: each task's latest milestone seq and todos, for the INTERRUPTED milestone.
+        var lastMilestones: [String: (seq: UInt64, todos: [Todo])] = [:]
     }
 
     private let state = Mutex(State())
@@ -346,6 +429,7 @@ public final class FakeHost: Sendable {
                     hello.requiresBridgeUpdate = true
                 } else {
                     hello.capabilities = [DSHProtocolInfo.tasksCapability, DSHProtocolInfo.milestonesCapability, DSHProtocolInfo.resumeCapability]
+                    if script.interruptible { hello.capabilities.append(DSHProtocolInfo.interruptCapability) }
                     if answersApprovals { hello.capabilities.append(DSHProtocolInfo.approvalsCapability) }
                     hello.capabilities += extraCapabilities
                     if s.devices != nil { hello.capabilities.append(FakeDevices.capability) }
@@ -398,6 +482,32 @@ public final class FakeHost: Sendable {
                 resumed.replayed = UInt64(replay.count)
                 bridge.deliver(Self.response(id, .resumed(resumed)))
                 conn.resumed = true
+            case .interrupt(let interrupt)? where script.interruptible:
+                guard let at = s.tasks.firstIndex(where: { $0.taskID == interrupt.taskID }), s.tasks[at].state == .running else {
+                    var error = Dshm_V1_Error()
+                    error.code = "task/not-running"
+                    error.message = "The task is not running."
+                    bridge.deliver(Self.response(id, .error(error)))
+                    return
+                }
+                bridge.deliver(Self.response(id, .interruptAccepted(Dshm_V1_InterruptAccepted())))
+                s.stopped.insert(interrupt.taskID)
+                let last = s.lastMilestones[interrupt.taskID] ?? (0, [])
+                if !script.milestones.isEmpty {
+                    var event = Dshm_V1_Event()
+                    event.milestoneAdded = Self.wire(taskID: interrupt.taskID, seq: last.seq + 1,
+                                                     FakeBridge.Step(.interrupted, todos: last.todos))
+                    Self.append(event, taskID: interrupt.taskID, in: &s)
+                }
+                s.tasks[at].state = .interrupted
+                s.tasks[at].updatedAtMs = Self.nowMs()
+                Self.upserted(s.tasks[at], in: &s)
+                var ended = Dshm_V1_TaskEnded()
+                ended.taskID = interrupt.taskID
+                ended.status = .interrupted
+                var event = Dshm_V1_Event()
+                event.taskEnded = ended
+                Self.append(event, taskID: interrupt.taskID, in: &s)
             case .answerApproval(let answer)? where answersApprovals:
                 answerApproval(answer, requestID: id, bridge: bridge, in: &s)
             case let body? where s.devices != nil && FakeDevices.handles(body):
@@ -473,14 +583,16 @@ public final class FakeHost: Sendable {
             lastTodos = step.todos
             let wire = Self.wire(taskID: taskID, seq: milestoneSeq, step)
             return state.withLock { s -> Bool in
-                guard s.incarnation == incarnation else { return false }
+                guard s.incarnation == incarnation, !s.stopped.contains(taskID) else { return false }
+                s.lastMilestones[taskID] = (milestoneSeq, step.todos)
                 var event = Dshm_V1_Event()
                 event.milestoneAdded = wire
                 Self.append(event, taskID: taskID, in: &s)
                 return true
             }
         }
-        for step in script.milestones {
+        let split = min(script.replyAfterMilestones ?? script.milestones.count, script.milestones.count)
+        for step in script.milestones.prefix(split) {
             try? await Task.sleep(for: script.milestoneDelay)
             if !milestone(step) { return }
             if hold { return }
@@ -515,7 +627,7 @@ public final class FakeHost: Sendable {
             chunk.seq = UInt64(i + 1)
             chunk.text = text
             let alive = state.withLock { s -> Bool in
-                guard s.incarnation == incarnation else { return false }
+                guard s.incarnation == incarnation, !s.stopped.contains(taskID) else { return false }
                 var event = Dshm_V1_Event()
                 event.assistantChunk = chunk
                 Self.append(event, taskID: taskID, in: &s)
@@ -524,13 +636,19 @@ public final class FakeHost: Sendable {
             if !alive { return }
             if i == 0 { await script.afterFirstChunk?() }
         }
+        for step in script.milestones.dropFirst(split) {
+            try? await Task.sleep(for: script.milestoneDelay)
+            if !milestone(step) { return }
+        }
+        if script.holdAfterReply { return }
         if !script.milestones.isEmpty {
             let closing = script.failWith.map { FakeBridge.Step(.failed, $0, todos: lastTodos) }
                 ?? FakeBridge.Step(.finished, todos: lastTodos)
             if !milestone(closing) { return }
         }
         state.withLock { s in
-            guard s.incarnation == incarnation, let at = s.tasks.firstIndex(where: { $0.taskID == taskID }) else { return }
+            guard s.incarnation == incarnation, !s.stopped.contains(taskID),
+                  let at = s.tasks.firstIndex(where: { $0.taskID == taskID }) else { return }
             s.tasks[at].state = script.failWith == nil ? .completed : .failed
             s.tasks[at].message = script.failWith ?? ""
             s.tasks[at].updatedAtMs = Self.nowMs()
