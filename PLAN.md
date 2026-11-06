@@ -60,7 +60,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
 | S16 | done | merged `66fd823` | 2026-11-07 | — (provisional D56 in §9) |
-| S17 | doing | `claude/s17-transcript` `a151a3e` | 2026-11-07 | Reviewer runs `scripts/review S17` (§8) |
+| S17 | doing | `claude/s17-transcript` `a151a3e` | 2026-11-07 | Slice owner merges `main` (`4f91fc1`); reviewer runs `scripts/review S17 --resume` (§8) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | done | merged `077a9f3` | 2026-11-07 | — (provisional D60 in §9) |
 | S20 | done | merged `e849e8e` | 2026-11-07 | — (provisional D58 in §9) |
@@ -1439,6 +1439,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · S17 built; review started.** S17 owner finished at `a151a3e`: four `[auto]`/`[ui]` items ticked, D61 provisional, no new dependencies. It merged `main` (S20, S19); `s17.sh`, `s16.sh`, `s19.sh` and `t0.sh` passed. Flaky: one `t0.sh` run had 10 `swift test` failures (`store.send() → nil` after the 500 ms wait) in the older store tests while other simulators loaded the Mac; the next run passed. Same cause as the S20 repair round 1; the older tests keep their 500 ms wait. Also: `s16.sh` and `s19.sh` log to fixed `/tmp/dshm-s16` and `/tmp/dshm-s19` folders, so two slices that run them at once share them. Open for later: sessions read from another client's history keep the S16 view; the "深入工作中… · N 步" header is not built; D60 "N 步" could count tool calls now. An independent reviewer runs `scripts/review S17` on `a151a3e` (ports 47818/3291).
 
+- **2026-11-07 · S17 review FAIL: tool gap, not code.** `scripts/review S17` at `a151a3e`: `RESULT: FAIL` (`/tmp/dshm-review/S17-a151a3e.txt`). All parts passed (`s17.sh`, both S17 UI tests; `swift test` 80 tests passed). The one FAIL was `test:S17TranscriptStoreTests/withoutTheCapabilityThereAreNoRows`: a Swift Testing `@Test` in DSHKit, which the review could only match in XCTest form. The pointer cannot change (ticked item). Fix in the tool on `main` (`4f91fc1`): such pointers now run `swift test --filter Suite/name` and need the test's own pass line. Not a repair round for S17. The owner merges `main`, then the review runs again with `--resume`. In §9 for the user.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1497,3 +1499,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 54 | S21 | `[human]` | On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that. Needs a paired iPhone and a running host with the S21 app. | `main` | `13648eb` |
 | 55 | S20 | decision | D58, provisional: picker sheets (07, M, X4): workspace and model pickers as SheetRoute sheets; a task with no selection opens the model sheet at the host default. | ``claude/s20-pickers`` | `merged `e849e8e`` |
 | 56 | S19 | decision | D60, provisional: done and failed on the session page (06, X1): TaskOutcome reads an ended task from the cache only; retry opens 01 in a new session with the original prompt. | ``claude/s19-outcomes`` | `merged `077a9f3`` |
+| 57 | S17 | decision | Coordinator change to scripts/review (4f91fc1): a test: pointer to a DSHKit Swift Testing @Test is checked with `swift test --filter Suite/name` and its own pass line. Before, such pointers could never pass. Please confirm or change. | ``main`` | ``4f91fc1`` |
