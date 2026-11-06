@@ -29,6 +29,8 @@ public enum DebugLaunchOptions {
     public static let fakeHoldKey = "DSHMFakeHold"
     /// `-DSHMFakeScenario coding` (S16): with the FakeBridge, a five-step coding task with a long
     /// Markdown reply that keeps running until the user stops it (`FakeBridge.Script.codingTask`).
+    /// `-DSHMFakeScenario transcript` (S17): a task with thinking and tool-call blocks
+    /// (`FakeTranscript`); `transcript-v0`: the same blocks from a host without `transcript.v1`.
     public static let fakeScenarioKey = "DSHMFakeScenario"
     /// `-DSHMFakeAsk <text>` (S18): with the FakeBridge approvals scenario, a task whose prompt
     /// contains `<text>` asks for an approval before its reply, so a new approval arrives in an

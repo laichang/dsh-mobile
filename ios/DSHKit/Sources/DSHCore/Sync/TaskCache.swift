@@ -57,6 +57,9 @@ public final class CachedTask {
     /// S14: the `updatedAt` the user last saw on the session page. A finished session with a
     /// newer `updatedAt` is "done and not read" (the drawer's blue dot). Local to this phone.
     public var readThrough: Date?
+    /// S17: the task's thinking and tool-call rows, a JSON-encoded `StructuredTranscript`; empty
+    /// when it has none. Each row keeps its place in `transcript` (`TranscriptItem.offset`).
+    public var transcriptBlocksData: Data = Data()
 
     public init(hostKey: String, taskID: String, title: String, createdAt: Date) {
         self.key = Self.key(hostKey: hostKey, taskID: taskID)
@@ -91,6 +94,14 @@ public final class CachedTask {
             return (try? JSONDecoder().decode(MilestoneTimeline.self, from: milestonesData)) ?? MilestoneTimeline()
         }
         set { milestonesData = newValue.isEmpty ? Data() : (try? JSONEncoder().encode(newValue)) ?? Data() }
+    }
+
+    public var structuredTranscript: StructuredTranscript {
+        get {
+            guard !transcriptBlocksData.isEmpty else { return StructuredTranscript() }
+            return (try? JSONDecoder().decode(StructuredTranscript.self, from: transcriptBlocksData)) ?? StructuredTranscript()
+        }
+        set { transcriptBlocksData = newValue.isEmpty ? Data() : (try? JSONEncoder().encode(newValue)) ?? Data() }
     }
 }
 

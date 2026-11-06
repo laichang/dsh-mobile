@@ -83,6 +83,8 @@ public final class TaskListStore {
         public var workspace: String? = nil
         /// S14: finished, and changed since the user last saw it on this phone.
         public var unread = false
+        /// S17: thinking and tool-call rows (`transcript.v1`), in transcript order.
+        public var blocks = StructuredTranscript()
 
         /// Chunks stream the first phone turn. Its committed journal restores text after a truncated replay.
         public func singleTurnTranscript(_ messages: [Dshm_V1_SessionMessage]) -> String {
@@ -168,6 +170,8 @@ public final class TaskListStore {
     @ObservationIgnored private let firstConnectDelay: Duration
     /// Decoded `CachedTask.milestones`, so `refresh()` doesn't decode every task's JSON each time.
     @ObservationIgnored private var timelines: [String: MilestoneTimeline] = [:]
+    /// S17: decoded `CachedTask.transcriptBlocksData`, for the same reason.
+    @ObservationIgnored private var structuredTranscripts: [String: StructuredTranscript] = [:]
 
     @MainActor
     private final class Link {
@@ -492,6 +496,15 @@ public final class TaskListStore {
                 timelines[task.key] = timeline
             }
             task.logID = host.logID
+        case .transcriptBlock(let item):
+            // S17: a new row sits after the text streamed so far; an update keeps its place.
+            let task = taskRecord(hostKey: link.key, taskID: item.taskID, title: "")
+            var blocks = structuredTranscript(of: task)
+            if blocks.upsert(item, offset: task.transcript.utf8.count) {
+                task.structuredTranscript = blocks
+                structuredTranscripts[task.key] = blocks
+            }
+            task.logID = host.logID
         case .approvalPending(let approval):
             let task = taskRecord(hostKey: link.key, taskID: approval.taskID, title: "")
             if !task.approvals.contains(where: { $0.id == approval.id }) { task.approvals.append(approval) }
@@ -667,8 +680,17 @@ public final class TaskListStore {
                 approvalOnly: t.approvalOnly, approvals: supportsApprovals == false ? [] : t.approvals,
                 milestones: timeline(of: t),
                 modelSelection: t.modelSelectionData.flatMap { try? ModelSelection(serializedBytes: $0) },
-                workspace: t.workspace, unread: t.state.isTerminal && (t.readThrough.map { $0 < t.updatedAt } ?? true))
+                workspace: t.workspace, unread: t.state.isTerminal && (t.readThrough.map { $0 < t.updatedAt } ?? true),
+                blocks: link.capabilities?.contains(DSHProtocolInfo.transcriptCapability) == false
+                    ? StructuredTranscript() : structuredTranscript(of: t))
         }
+    }
+
+    private func structuredTranscript(of task: CachedTask) -> StructuredTranscript {
+        if let cached = structuredTranscripts[task.key] { return cached }
+        let decoded = task.structuredTranscript
+        structuredTranscripts[task.key] = decoded
+        return decoded
     }
 
     private func timeline(of task: CachedTask) -> MilestoneTimeline {

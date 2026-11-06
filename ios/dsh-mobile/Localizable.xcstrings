@@ -51,6 +51,16 @@
         }
       }
     },
+    "Arguments": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "参数"
+          }
+        }
+      }
+    },
     "Bridge setup instructions": {
       "localizations": {
         "zh-Hans": {
@@ -161,6 +171,26 @@
         }
       }
     },
+    "Error": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误"
+          }
+        }
+      }
+    },
+    "Failed": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失败"
+          }
+        }
+      }
+    },
     "Follow-ups come in a later version": {
       "localizations": {
         "zh-Hans": {
@@ -217,6 +247,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "上次连接 %@"
+          }
+        }
+      }
+    },
+    "Lines": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "行数"
           }
         }
       }
@@ -381,6 +421,26 @@
         }
       }
     },
+    "Reasoning": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "推理内容"
+          }
+        }
+      }
+    },
+    "Running": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "运行中"
+          }
+        }
+      }
+    },
     "Say hello and describe one way you can help me on this computer.": {
       "localizations": {
         "zh-Hans": {
@@ -451,6 +511,36 @@
         }
       }
     },
+    "Shortened by the host": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "执行端已截断"
+          }
+        }
+      }
+    },
+    "Started": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始于"
+          }
+        }
+      }
+    },
+    "State": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "状态"
+          }
+        }
+      }
+    },
     "Stop": {
       "localizations": {
         "zh-Hans": {
@@ -471,6 +561,26 @@
         }
       }
     },
+    "Thinking": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "思考"
+          }
+        }
+      }
+    },
+    "Thinking…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "思考中…"
+          }
+        }
+      }
+    },
     "This host has no device management.": {
       "localizations": {
         "zh-Hans": {
@@ -481,12 +591,52 @@
         }
       }
     },
+    "This step is no longer in the session.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这一步已不在会话中。"
+          }
+        }
+      }
+    },
+    "Thought for %lld s": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已思考 %lld 秒"
+          }
+        }
+      }
+    },
     "To get started, you need a computer running DeepSeek Harness (DSH) with the dsh-mobile bridge enabled.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "请准备一台已运行 DeepSeek Harness（DSH）的电脑，并启用 dsh-mobile 桥接插件。"
+          }
+        }
+      }
+    },
+    "Tool": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具"
+          }
+        }
+      }
+    },
+    "Tool call": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具调用"
           }
         }
       }

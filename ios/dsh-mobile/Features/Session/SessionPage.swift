@@ -143,7 +143,7 @@ private struct SessionTranscript: View {
                             }
                         }
                         if !showJournal {
-                            TranscriptView(source: row.singleTurnTranscript(messages))
+                            StructuredTranscriptView(row: row, text: row.singleTurnTranscript(messages)) // S17
                         } else if history == nil && historyError == nil {
                             if host?.reachability == .online { ProgressView() }
                             else { Text("Connect to this host to load the conversation.").foregroundStyle(DSHTheme.textSecondary) }

@@ -47,6 +47,9 @@ public final class FakeBridge: BridgeTransport {
         /// S18: a task whose prompt contains `ask.prompt` asks for `ask.approval` before its reply
         /// and waits until it is answered (here, or from elsewhere with `answerFromElsewhere`).
         public var ask: (prompt: String, approval: PendingApproval)?
+        /// S17: transcript blocks, each sent just before reply chunk `beforeChunk` (0-based;
+        /// `reply.count` or more: after the reply). The host sends them whatever its capabilities.
+        public var blocks: [(beforeChunk: Int, block: Dshm_V1_TranscriptBlock)] = []
 
         public init(
             reply: [String] = ["Hello", " from", " FakeBridge", ". ", "No DSH", " was", " involved."],
@@ -620,8 +623,25 @@ public final class FakeHost: Sendable {
             }
             return
         }
+        // S17: blocks are logged like chunks, in their place among them.
+        func blocks(before chunk: Int) -> Bool {
+            for entry in script.blocks where entry.beforeChunk == chunk || (chunk == script.reply.count && entry.beforeChunk > chunk) {
+                var block = entry.block
+                block.taskID = taskID
+                let alive = state.withLock { s -> Bool in
+                    guard s.incarnation == incarnation, !s.stopped.contains(taskID) else { return false }
+                    var event = Dshm_V1_Event()
+                    event.transcriptBlock = block
+                    Self.append(event, taskID: taskID, in: &s)
+                    return true
+                }
+                if !alive { return false }
+            }
+            return true
+        }
         for (i, text) in script.reply.enumerated() {
             try? await Task.sleep(for: script.chunkDelay)
+            if !blocks(before: i) { return }
             var chunk = Dshm_V1_AssistantChunk()
             chunk.taskID = taskID
             chunk.seq = UInt64(i + 1)
@@ -635,6 +655,10 @@ public final class FakeHost: Sendable {
             }
             if !alive { return }
             if i == 0 { await script.afterFirstChunk?() }
+        }
+        if !script.blocks.isEmpty {
+            try? await Task.sleep(for: script.chunkDelay)
+            if !blocks(before: script.reply.count) { return }
         }
         for step in script.milestones.dropFirst(split) {
             try? await Task.sleep(for: script.milestoneDelay)
