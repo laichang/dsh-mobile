@@ -34,6 +34,9 @@ public final class FakeBridge: BridgeTransport {
         /// closing FINISHED (or FAILED, with `failWith`) follows the reply, as the real bridge does.
         public var milestones: [Step]
         public var milestoneDelay: Duration
+        /// T1: a task whose prompt contains this text stops after its first milestone (or before
+        /// its reply, with no milestones) and stays running for the rest of the run.
+        public var holdPrompt: String?
 
         public init(
             reply: [String] = ["Hello", " from", " FakeBridge", ". ", "No DSH", " was", " involved."],
@@ -47,6 +50,11 @@ public final class FakeBridge: BridgeTransport {
             self.failWith = failWith
             self.milestones = milestones
             self.milestoneDelay = milestoneDelay
+        }
+
+        func holds(_ prompt: String) -> Bool {
+            guard let holdPrompt, !holdPrompt.isEmpty else { return false }
+            return prompt.contains(holdPrompt)
         }
 
         /// A three-todo task that ticks its todos off one by one (S3 demo, `-DSHMFakeMilestones YES`).
@@ -284,7 +292,8 @@ public final class FakeHost: Sendable {
                 s.connections[bridge.id] = conn
                 Self.upserted(summary, in: &s)
                 let incarnation = s.incarnation
-                Task { await self.stream(taskID: taskID, incarnation: incarnation) }
+                let hold = script.holds(create.prompt)
+                Task { await self.stream(taskID: taskID, incarnation: incarnation, hold: hold) }
             case .listTasks?:
                 var list = Dshm_V1_TaskList()
                 list.tasks = s.tasks.reversed()
@@ -322,7 +331,7 @@ public final class FakeHost: Sendable {
         }
     }
 
-    private func stream(taskID: String, incarnation: Int) async {
+    private func stream(taskID: String, incarnation: Int, hold: Bool = false) async {
         // S3: milestones are logged like any other event, so Resume replays them.
         var milestoneSeq: UInt64 = 0
         var lastTodos: [Todo] = []
@@ -341,7 +350,9 @@ public final class FakeHost: Sendable {
         for step in script.milestones {
             try? await Task.sleep(for: script.milestoneDelay)
             if !milestone(step) { return }
+            if hold { return }
         }
+        if hold { return }
         for (i, text) in script.reply.enumerated() {
             try? await Task.sleep(for: script.chunkDelay)
             var chunk = Dshm_V1_AssistantChunk()

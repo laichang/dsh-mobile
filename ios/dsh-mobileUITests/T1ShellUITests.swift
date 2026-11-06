@@ -133,8 +133,9 @@ final class T1ShellUITests: XCTestCase {
         XCTAssertFalse(drawer.exists, "a slow release before the middle closes the drawer")
         XCTAssertTrue(status(app).isHittable)
 
-        // A short drag released at speed: open (the velocity carries it past the middle).
-        edgeDrag(app, to: drawerWidth * 0.3, velocity: 2500, hold: 0)
+        // A drag that stops just before the middle, released at speed: open. Without the velocity
+        // it would close (as above); even a slow measured release (~100 pt/s) carries it past.
+        edgeDrag(app, to: drawerWidth * 0.45, velocity: 2500, hold: 0)
         XCTAssertTrue(drawer.waitForExistence(timeout: 3), "a flick opens the drawer")
         RunLoop.current.run(until: Date().addingTimeInterval(0.5))
         XCTAssertEqual(app.buttons["drawer.dismiss"].frame.minX, drawerWidth, accuracy: 2)
@@ -168,7 +169,9 @@ final class T1ShellUITests: XCTestCase {
     /// The demo's tail: 所有任务 from the drawer, then a tap on a running task opens its session.
     /// A tap on a session in the drawer shows it.
     func testAllTasksAndDrawerOpenSessions() {
-        let app = launch(["-DSHMFakeBridge", "YES", "-DSHMFakeMilestones", "YES"])
+        // The FakeBridge holds the second task after its first milestone, so it is still running
+        // when the test taps it.
+        let app = launch(["-DSHMFakeBridge", "YES", "-DSHMFakeMilestones", "YES", "-DSHMFakeHold", "Second task"])
         send(app, "First task, finished")
         waitForValue(status(app), in: ["completed"], timeout: 30)
         newSession(app)
@@ -177,14 +180,17 @@ final class T1ShellUITests: XCTestCase {
         XCTAssertEqual(status(app).value as? String, "running")
 
         openAllTasks(app)
-        let running = app.buttons.matching(identifier: "tasklist.row").matching(NSPredicate(format: "value == 'running'")).firstMatch
+        let running = app.buttons.matching(identifier: "tasklist.row")
+            .matching(NSPredicate(format: "label CONTAINS 'Second task, running'")).firstMatch
         XCTAssertTrue(running.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertEqual(running.value as? String, "running")
         XCTAssertTrue(app.descendants(matching: .any)["tasklist.running"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["tasklist.done"].exists)
         saveShot("t1-all-tasks")
         running.tap()
         XCTAssertTrue(status(app).waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["page.title"].label, "Second task, running")
+        XCTAssertEqual(status(app).value as? String, "running")
 
         openSession(app, "First task, finished")
         XCTAssertEqual(app.staticTexts["page.title"].label, "First task, finished")

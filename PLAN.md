@@ -775,6 +775,10 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Not done: the `[human]` dark-mode item (the user decides).
   - For the coordinator: §0 T1 → `review` after an independent rerun of the `[ui]` items (`scripts/demo/t1.sh`, `scripts/demo/t1.sh --all`); add D51 and the 47830/3303 ports to §9.
   - Next: independent `[ui]` rerun, merge, then S14–S22 can start.
+- 2026-11-06: Flaky-test fixes for the review, committed from the worktree after an app restart stopped the 5-run job.
+  - Done: Debug-only `-DSHMFakeHold 'text'` keeps the FakeBridge task running until the test ends (`testAllTasksAndDrawerOpenSessions`), and is a release marker in `scripts/check-release-clean`. `testEdgeDragOpensDrawerAndSlowReleaseCloses` uses an explicit flick velocity. `swift test`: 59 tests passed.
+  - Not done: the five back-to-back `T1ShellUITests` runs did not finish (the job was killed). Under WORKFLOW.md §10.1 they are not needed.
+  - Next: `scripts/review T1` on this commit, then merge.
 
 ### S14 · Drawer
 
