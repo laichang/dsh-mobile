@@ -945,13 +945,24 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: Pick the `dsh-mobile` workspace and DeepSeek-V41-Pro. Make Pro unavailable on the host. The sheet asks you to pick again.
 
 **Done when**
-- [ ] [ui] The workspace choice does not stay after a relaunch — Evidence:
-- [ ] [ui] With an unavailable model, 应用 is off and no other model is selected — Evidence:
-- [ ] [auto] Against the FakePickers hosts, a model that leaves the catalog is named, nothing is selected in its place, 应用 accepts only an available model, and a sent task clears the workspace choice — Evidence:
+- [x] [ui] The workspace choice does not stay after a relaunch — Evidence: test:S20PickersUITests/testWorkspaceChoiceDoesNotStayAfterRelaunch · cmd:scripts/demo/s20.sh · shot:evidence/S20/s20-workspace-sheet.png · shot:evidence/S20/s20-workspace-picked.png · shot:evidence/S20/s20-relaunch-default.png
+- [x] [ui] With an unavailable model, 应用 is off and no other model is selected — Evidence: test:S20PickersUITests/testUnavailableModelKeepsApplyOffAndSelectsNothing · cmd:scripts/demo/s20.sh · shot:evidence/S20/s20-model-sheet.png · shot:evidence/S20/s20-model-unavailable.png
+- [x] [auto] Against the FakePickers hosts, a model that leaves the catalog is named, nothing is selected in its place, 应用 accepts only an available model, and a sent task clears the workspace choice — Evidence: test:PickerTests/unavailableModelIsNamedAndNothingIsSelectedInItsPlace · cmd:scripts/demo/s20.sh
 
 **Not**: A host guessed from the prompt (later).
 
-**Log**: —
+**Log**
+- **2026-11-07 · built, to review.**
+  - Resume (WORKFLOW.md §5.4): the stopped background owner left WIP `3763c00`. I examined it and kept it: `ModelAvailability.swift` (`ModelSheetState`: the unavailable selection, the first draft, when 应用 is on), `FakePickers` (`-DSHMFakeBridge pickers`: MacBook-Pro and Office-PC with models and workspaces; DeepSeek-V41-Pro leaves the catalog once a task uses it; the OpenRouter list fails), `FakeHost(pickers:)` (`models.v1`, `workspaces.v1`, catalog, `SelectModel`, workspace list), `Features/Pickers/` (shared sheet parts, `Pickers.xcstrings`, `Theme+S20.swift`), the restyled `WorkspacePicker` (07: host switch, host default, recent, absolute path) and `ModelPicker` (M, X4), `TaskListStore` clears the workspace choice when the first message creates the session, `PickerTests`, `S20PickersUITests`, `scripts/demo/s20.sh`. No accessibility identifier renamed; new ones: `model.unavailable`, `model.provider`, `model.retry.<id>`, `model.failure.<id>`, `model.cancel`, `model.error`, `workspace.host`, `workspace.cancel`, `workspace.retry`.
+  - Repaired: a running task with no recorded model selection opens the model sheet at the host default (the WIP showed no row and no effort group there). After the merge of S18, `Theme+S18.swift` also declares `DSHTheme.sheet` (same value), so `Theme+S20.swift` no longer declares it.
+  - Decision: see **D58** (picker sheets). *Provisional, pending user confirmation.* No new dependencies. No board or STORY change: the code follows 07, M and X4 as drawn.
+  - Merged `main` twice (guard fixes `2a6a0ed`, `51009d0`, README and signing config; then S18 `8d25764`). Conflicts in `ARCHITECTURE.md` (D57 and D58), `DebugEntryPoints.swift` (`fakePickers` and `fakeAsk`) and `FakeBridge.swift` (`pickers` and `answersApprovals`); kept both sides.
+  - Verification on the merged code, with the S20 resources (`dshm-S20`, 47815, 3288, `~/.dshm/home-s20`): `scripts/demo/t0.sh` exit 0 at the start; `scripts/demo/s20.sh --shots --regress` exit 0: `swift test` 68 tests in 18 suites, UI 4/4 (S20 ×2, T1 `testLaunchShowsBlankNewSession`, S9), then `s6.sh` and `s7.sh` with real DSH (the model and workspace sheets against the real bridge).
+  - Flaky, not S20 (not repaired): under high load (load average 100–290), `swift test` failed one run each in `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval` ("not connected to the bridge"), `CachedMilestoneTests` and `TaskListStoreTests/streamsATaskIntoTheUnifiedList` (`send()` → nil); each passed on the next run. `S6ModelsUITests` failed twice because a DSH from a run killed by the pause still listened on 47815 with a dead mock LLM ("DeepSeek Messages transport failed"); after I stopped that process it passed. Suggestion for the coordinator: the demo scripts reuse any bridge that listens on their port, so a killed run can leave an orphan that breaks the next run on that port.
+  - Slow, not failed: in one run `testWorkspaceChoiceDoesNotStayAfterRelaunch` took 559 s because the app did not go idle after the send (XCUITest waited 60 s for animations before each of 8 taps); other runs took 63–76 s.
+  - Not done: the third line of the X4 caption on the board (a running task stops and waits in 等我处理 when its model goes away) is host behavior and not in this slice's Cuts; the FakeBridge task keeps running. For a later slice or upstream DSH.
+  - For the coordinator: §0 S20 → review after `scripts/review S20`; add D58 to §9.
+  - Next: independent `scripts/review S20`, then merge.
 
 ### S21 · Hosts and control
 
