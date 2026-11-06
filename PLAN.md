@@ -920,7 +920,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S20 · Pickers
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s20-pickers`
+**Status** doing · **Needs** T1 · **Branch** `claude/s20-pickers`
 
 **Why**: STORY §3 (defaults that you can change at the composer), §8 (the user picks the model; no silent swap), screens 07, M and X4.
 
@@ -931,6 +931,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Done when**
 - [ ] [ui] The workspace choice does not stay after a relaunch — Evidence:
 - [ ] [ui] With an unavailable model, 应用 is off and no other model is selected — Evidence:
+- [ ] [auto] Against the FakePickers hosts, a model that leaves the catalog is named, nothing is selected in its place, 应用 accepts only an available model, and a sent task clears the workspace choice — Evidence:
 
 **Not**: A host guessed from the prompt (later).
 

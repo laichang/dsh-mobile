@@ -68,8 +68,9 @@ struct ModelPicker: View {
 
     private var catalog: ModelCatalog? { store.catalogs[hostKey] }
     private var hostName: String { store.hosts.first { $0.key == hostKey }?.name ?? hostKey }
+    /// A task with no recorded selection runs on the host default, so the sheet starts there.
     private var selection: ModelSelection? {
-        if let task { return task.modelSelection }
+        if let task { return task.modelSelection ?? catalog?.defaultSelection }
         return store.composerSelections[hostKey] ?? catalog?.defaultSelection
     }
     private var sheet: ModelSheetState { ModelSheetState(catalog: catalog, current: selection) }
