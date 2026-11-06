@@ -990,6 +990,10 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 - **2026-11-07 · merged main (PLAN only); s16.sh green.**
   - Done: merged `main` at `e275b16`; it added only PLAN.md bookkeeping (S16 `66fd823` was already in this branch). S20 restyles the model pill that sits on S16's session page, so I ran `scripts/demo/s16.sh` on `dshm-S20` (no `--shots`): exit 0, `swift test`, S16 UI 2/2, T1 and S3 shell UI tests all passed. The S20 code did not change since the green `s20.sh --shots --regress` run at `f75fff3`.
   - Next: independent `scripts/review S20`, then merge.
+- **2026-11-07 · merged main (S21), rerun.**
+  - Done: merged `main` at `f6e9afc` (S21 hosts and control). Conflicts in `ARCHITECTURE.md` (D58 and D59), `DebugEntryPoints.swift` (`pickers` and `hosts…`), `FakeBridge.swift` (`FakeHost(… pickers:, devices:)`, both capabilities, both request handlers) and `AppComposition.swift` (both scenarios); kept both sides.
+  - Verification on the merged code (`eval "$(scripts/slice-env S20)"`): `scripts/demo/s20.sh --shots --regress`, then `DSHM_RESUME=1` for the failed part: `swift test` 71 tests in 20 suites, UI 4/4 (S20 ×2, T1, S9), `s6.sh` and `s7.sh` with real DSH all passed. The `swift test` inside `s7.sh` failed once in `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval` ("not connected to the bridge", S15's flaky test, already in §8); it passed on the rerun. The screenshots in `evidence/S20/` are from `f75fff3`; the S20 views did not change since then.
+  - Next: independent `scripts/review S20`, then merge.
 
 ### S21 · Hosts and control
 
