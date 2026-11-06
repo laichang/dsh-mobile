@@ -63,7 +63,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S17 | doing | `claude/s17-transcript` | 2026-11-07 | Slice owner builds the structured transcript (§8) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | doing | `claude/s19-outcomes` | 2026-11-07 | Slice owner builds done and failed (§8) |
-| S20 | doing | `claude/s20-pickers` `2108a3e` | 2026-11-07 | Owner repairs the review FAIL, round 1 (§8) |
+| S20 | doing | `claude/s20-pickers` `0575fe2` | 2026-11-07 | Reviewer runs `scripts/review S20 --resume` (§8) |
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
 | S22 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S23 | todo | — | 2026-11-06 | Next batch (S14 is merged) |
@@ -1377,6 +1377,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - S21's owner checked the flaky S15 test `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval`: 12 of 12 passes on `main` and on S21 under load. The entry above stays as S15's.
 
 - **2026-11-07 · S20 review FAIL.** `scripts/review S20` at `2108a3e`: `RESULT: FAIL` (`/tmp/dshm-review/S20-2108a3e.txt`). Part `s20-swift-test` failed on all 3 runs, each time in a different earlier test with `store.send() → nil` or "not connected to the bridge" (S15, S16, S2 tests); the S20 UI tests did not run. S20 changes `TaskListStore.swift` and `FakeBridge.swift`, and the S15 test passed 12/12 on `main`, so the owner first compares the failure rate on the branch and on `main`. Repair round 1 (WORKFLOW.md §10.1).
+
+- **2026-11-07 · S20 repair round 1 done.** The owner found that the `send() → nil` failures also occur on `main`: the tests sent before the first connect. With the coordinator's approval it made a small test-only seam fix (`0575fe2`): five DSHKit test files (`AllTasksApprovalTests`, `CachedMilestoneTests`, `NoiseResumeTests`, `S16CodingTaskTests`, `TaskListStoreTests`) wait up to 5 s for the first connect before `send()`. No app code changed. This addresses the `NoiseResumeTests`, `MilestoneStoreTests`-family and S15 flaky entries above once S20 is merged. A background reviewer runs `scripts/review S20 --resume` on `0575fe2`.
 
 ## 9. Pending user confirmation
 
