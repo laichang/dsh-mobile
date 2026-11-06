@@ -65,7 +65,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S19 | done | merged `077a9f3` | 2026-11-07 | — (provisional D60 in §9) |
 | S20 | done | merged `e849e8e` | 2026-11-07 | — (provisional D58 in §9) |
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
-| S22 | doing | `claude/s22-first-run` `2196033` | 2026-11-07 | Slice owner merges `main` (S17); then `scripts/review S22 --resume` (§8) |
+| S22 | done | merged `4deb8d0` | 2026-11-07 | — (provisional D63 in §9) |
 | S23 | doing | `claude/s23-drawer-motion` | 2026-11-07 | Slice owner builds (§8) |
 
 ## 1. Approach
@@ -1463,6 +1463,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · S22 review PASS; merge conflicts with S17.** `scripts/review S22` at `2196033`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S22-2196033.txt`). The merge into `main` conflicted with S17 in `ARCHITECTURE.md` and `design/board.png` (merge aborted). The owner merges `main`, runs `s22.sh` and `s17.sh`, then the review runs again on the new head.
 
+- **2026-11-07 · S22 merged.** Merged as `4deb8d0`; `scripts/check-plan` on the merge commit passed. `scripts/review S22 --resume` at `32cc7b1`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S22-32cc7b1.txt`), after the owner merged `main` (S17) and `s17.sh` passed as the seam check. No open `[human]` items, so S22 is `done`. D63 to §9. The S11 `[human]` onboarding items can be checked on the new 08.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1523,3 +1525,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 56 | S19 | decision | D60, provisional: done and failed on the session page (06, X1): TaskOutcome reads an ended task from the cache only; retry opens 01 in a new session with the original prompt. | ``claude/s19-outcomes`` | `merged `077a9f3`` |
 | 57 | S17 | decision | Coordinator change to scripts/review (4f91fc1): a test: pointer to a DSHKit Swift Testing @Test is checked with `swift test --filter Suite/name` and its own pass line. Before, such pointers could never pass. Please confirm or change. | ``main`` | ``4f91fc1`` |
 | 58 | S17 | decision | D61, provisional: structured transcript (transcript.v1, TranscriptBlock field 340): thinking and tool rows mapped by the bridge from DSH events, with the S16 view as the fallback. | ``claude/s17-transcript`` | `merged `3a9f11e`` |
+| 59 | S22 | decision | D63, provisional: after the first pairing, 01 opens with the first task filled in (no tap); paste mode on 08; restyled pairing review. | ``claude/s22-first-run`` | `merged `4deb8d0`` |
