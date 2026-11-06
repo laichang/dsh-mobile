@@ -74,6 +74,8 @@ public struct TaskSnapshot: Sendable, Equatable {
     public var sessionRevision: UInt64?
     public var externalSession = false
     public var latestReply: String?
+    /// S14 (`drawer.v1`): the session's workspace directory on the host.
+    public var workspace: String?
 
     public init(taskID: String, title: String, state: TaskState, createdAt: Date, updatedAt: Date, message: String = "") {
         self.taskID = taskID
@@ -100,6 +102,7 @@ public struct TaskSnapshot: Sendable, Equatable {
         sessionRevision = s.hasSessionRevision ? s.sessionRevision : nil
         externalSession = s.externalSession
         latestReply = s.hasLatestReply ? s.latestReply : nil
+        workspace = s.hasWorkspace && !s.workspace.isEmpty ? s.workspace : nil
         approvals = s.pendingApprovals.map(Approval.init)
         approvalOnly = s.approvalOnly
         modelSelection = s.hasModelSelection ? s.modelSelection : nil

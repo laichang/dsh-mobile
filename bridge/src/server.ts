@@ -22,6 +22,7 @@ import type { SecureChannel } from './channel.ts'
 import { FrameSchema, type Frame, type Request, type ResponseSchema } from './gen/frame_pb.ts'
 import type { SessionDirectory } from './sessions/directory.ts'
 import { MILESTONES_CAPABILITY } from './milestones/wire.ts'
+import { DRAWER_CAPABILITY } from './drawer/workspace.ts'
 import { HandshakeRejected, type NoiseResponder } from './pairing/handshake.ts'
 import type { LoggedEvent } from './s2/host-log.ts'
 import { TaskHub, type TaskStarter } from './s2/task-hub.ts'
@@ -171,7 +172,7 @@ function serveConnection(
             ...(options.sessions ? ['sessions.v1'] : []),
             ...(options.tasks.modelCatalog && options.tasks.selectModel ? ['models.v1'] : []),
             ...(options.approvals ? ['approvals.v1'] : []),
-            ...(options.tasks.listWorkspaces ? ['workspaces.v1'] : []),
+            ...(options.tasks.listWorkspaces ? ['workspaces.v1', DRAWER_CAPABILITY] : []),
             ...(host.authenticated.has(socket) ? ['devices.v1'] : []),
           ] : [] },
         })

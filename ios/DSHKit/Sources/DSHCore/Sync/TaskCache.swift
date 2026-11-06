@@ -52,6 +52,11 @@ public final class CachedTask {
     /// none. Each `MilestoneAdded` carries the whole todo list, so the card needs only the latest;
     /// the whole timeline is kept for the detail view (S2 x S3 seam, D23).
     public var milestonesData: Data = Data()
+    /// S14: the session's workspace directory on the host, when the bridge has `drawer.v1`.
+    public var workspace: String?
+    /// S14: the `updatedAt` the user last saw on the session page. A finished session with a
+    /// newer `updatedAt` is "done and not read" (the drawer's blue dot). Local to this phone.
+    public var readThrough: Date?
 
     public init(hostKey: String, taskID: String, title: String, createdAt: Date) {
         self.key = Self.key(hostKey: hostKey, taskID: taskID)

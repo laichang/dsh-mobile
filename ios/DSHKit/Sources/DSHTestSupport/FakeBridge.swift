@@ -264,6 +264,8 @@ public final class FakeHost: Sendable {
     /// an earlier app launch never collides with a new one that happens to be numbered the same.
     private let taskIDPrefix = "fake-\(UUID().uuidString.prefix(8).lowercased())-task"
     private let script: FakeBridge.Script
+    /// Capabilities this host adds to T0–S3's (for example S14's `drawer.v1`).
+    private let extraCapabilities: [String]
     /// S15: with any, the host advertises `approvals.v1` and answers `AnswerApproval`.
     private let approvals: [FakeBridge.PendingApproval]
 
@@ -291,15 +293,24 @@ public final class FakeHost: Sendable {
 
     private let state = Mutex(State())
 
+    /// - Parameter seed: sessions the host already has, as if other clients made them (S14).
     public init(script: FakeBridge.Script = .init(), hostName: String = "FakeBridge Mac", reachable: Bool = true,
                 incompatibleDsh: (installed: String, supported: String)? = nil,
+                seed: [Dshm_V1_TaskSummary] = [], extraCapabilities: [String] = [],
                 approvals: [FakeBridge.PendingApproval] = []) {
         self.incompatibleDsh = incompatibleDsh
         self.script = script
         self.hostName = hostName
+        self.extraCapabilities = extraCapabilities
         self.approvals = approvals
-        state.withLock { $0.reachable = reachable }
-        seed(approvals)
+        state.withLock { s in
+            s.reachable = reachable
+            for summary in seed {
+                s.tasks.append(summary)
+                Self.upserted(summary, in: &s)
+            }
+        }
+        self.seed(approvals)
     }
 
     /// S15: each approval is a waiting task. Its ids depend only on the host name and the
@@ -406,6 +417,7 @@ public final class FakeHost: Sendable {
                     hello.capabilities = [DSHProtocolInfo.tasksCapability, DSHProtocolInfo.milestonesCapability, DSHProtocolInfo.resumeCapability]
                     if script.interruptible { hello.capabilities.append(DSHProtocolInfo.interruptCapability) }
                     if !approvals.isEmpty { hello.capabilities.append(DSHProtocolInfo.approvalsCapability) }
+                    hello.capabilities += extraCapabilities
                 }
                 bridge.deliver(Self.response(id, .hello(hello)))
             case .createTask(let create)?:
