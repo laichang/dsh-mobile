@@ -65,7 +65,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S19 | done | merged `077a9f3` | 2026-11-07 | — (provisional D60 in §9) |
 | S20 | done | merged `e849e8e` | 2026-11-07 | — (provisional D58 in §9) |
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
-| S22 | doing | `claude/s22-first-run` | 2026-11-07 | Slice owner builds (§8) |
+| S22 | doing | `claude/s22-first-run` `2196033` | 2026-11-07 | Reviewer runs `scripts/review S22` (§8) |
 | S23 | doing | `claude/s23-drawer-motion` | 2026-11-07 | Slice owner builds (§8) |
 
 ## 1. Approach
@@ -1440,6 +1440,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-07 · S17 built; review started.** S17 owner finished at `a151a3e`: four `[auto]`/`[ui]` items ticked, D61 provisional, no new dependencies. It merged `main` (S20, S19); `s17.sh`, `s16.sh`, `s19.sh` and `t0.sh` passed. Flaky: one `t0.sh` run had 10 `swift test` failures (`store.send() → nil` after the 500 ms wait) in the older store tests while other simulators loaded the Mac; the next run passed. Same cause as the S20 repair round 1; the older tests keep their 500 ms wait. Also: `s16.sh` and `s19.sh` log to fixed `/tmp/dshm-s16` and `/tmp/dshm-s19` folders, so two slices that run them at once share them. Open for later: sessions read from another client's history keep the S16 view; the "深入工作中… · N 步" header is not built; D60 "N 步" could count tool calls now. An independent reviewer runs `scripts/review S17` on `a151a3e` (ports 47818/3291).
 
 - **2026-11-07 · S17 review FAIL: tool gap, not code.** `scripts/review S17` at `a151a3e`: `RESULT: FAIL` (`/tmp/dshm-review/S17-a151a3e.txt`). All parts passed (`s17.sh`, both S17 UI tests; `swift test` 80 tests passed). The one FAIL was `test:S17TranscriptStoreTests/withoutTheCapabilityThereAreNoRows`: a Swift Testing `@Test` in DSHKit, which the review could only match in XCTest form. The pointer cannot change (ticked item). Fix in the tool on `main` (`4f91fc1`): such pointers now run `swift test --filter Suite/name` and need the test's own pass line. Not a repair round for S17. The owner merges `main`, then the review runs again with `--resume`. In §9 for the user.
+
+- **2026-11-07 · S22 built; review started.** S22 owner finished at `2196033`: the `[ui]` item ticked, D63 provisional, no new dependencies, no flaky tests in two full demo runs. It merged `main` (S19); `s22.sh` passed with the S11 seam tests (3/3). S22 lands after S11, so it owns the seam: `S11FirstRunUITests/testFirstRunFromWelcomeToReply` now finds the first task already in the composer. It created the simulator `dshm-S22` (iPhone 17 Pro, iOS 26.4). The S11 `[human]` onboarding items can be checked on the new 08 now. An independent reviewer runs `scripts/review S22` on `2196033` (ports 47810/3283).
 
 ## 9. Pending user confirmation
 
