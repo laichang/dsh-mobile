@@ -59,7 +59,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
 | S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
-| S16 | doing | `claude/s16-session` `8c1bdb8` | 2026-11-06 | Owner merges main (seam with S15), then review --resume (§8) |
+| S16 | doing | `claude/s16-session` `030b891` | 2026-11-06 | Owner reruns demos on the merge with main, then review --resume (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
 | S18 | doing | `claude/s18-approval-sheet` `ffb61a8` | 2026-11-06 | Owner merges main (seam with S14), then review (§8) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -1288,6 +1288,12 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - Clean-up after S16 merges: `ios/dsh-mobile/Features/Approvals/ApprovalCard.swift` is unused after S18 (left in place to avoid a conflict with S16).
 
 - **2026-11-06 · Run paused by the user (about 19:00).** Heartbeat `0f66e06d` deleted. The S18 and S20 background agents stopped; slice demo jobs stopped; `dshm-*` simulators shut down. State: S16 `8e2a4db` (merge of `main` before S14; must merge `main` again, then review --resume), clean. S18 `ffb61a8` plus an unfinished merge of `main` in its worktree (40 changed paths). S20 at `a9193c7` with 12 uncommitted paths. To resume: create a new heartbeat, then continue each slice in its worktree (WORKFLOW.md §5.4).
+
+- **2026-11-06 · Run resumed by the user (about 21:20).** Keep-awake on. New heartbeat cron job `c6c0c493` (`7,27,47 * * * *`, recurring, durable), created 2026-11-06; `0f66e06d` is deleted. Before the pause the user's iPhone 17 Pro Simulator got a Debug build of `main` (T1, S14, S15).
+  - S16: the session merged `main` with S14 (`030b891`); it reruns `s16.sh`, `s14.sh --part ui-fake` and `s15.sh`, then reports.
+  - S18: the unfinished merge of `main` in the old worktree was aborted (only the two conflicted files had changes); the branch is back at `ffb61a8`. S18 continues as a slice session (`s18-approval-sheet`) that merges `main` and reruns its demos.
+  - S20: the background agent's uncommitted work is saved as unreviewed WIP `3763c00`. S20 continues as a slice session (`s20-pickers`).
+  - The coordinator worktrees `.claude/worktrees/s18-approval-sheet` and `s20-pickers` are removed; each session takes back the canonical branch name. Resources do not change.
 
 ## 9. Pending user confirmation
 
