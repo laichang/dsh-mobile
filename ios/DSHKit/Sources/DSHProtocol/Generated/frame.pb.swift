@@ -476,6 +476,15 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .modelSelected(newValue)}
   }
 
+  /// S17 (transcript.proto)
+  public var transcriptBlock: Dshm_V1_TranscriptBlock {
+    get {
+      if case .transcriptBlock(let v)? = body {return v}
+      return Dshm_V1_TranscriptBlock()
+    }
+    set {body = .transcriptBlock(newValue)}
+  }
+
   /// S2: per-host monotonic sequence number in the bridge's event log (s2.proto), from 1.
   /// 0 when the event isn't logged (LogReset).
   public var hostSeq: UInt64 = 0
@@ -494,6 +503,8 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     case approvalPending(Dshm_V1_ApprovalPending)
     case approvalResolved(Dshm_V1_ApprovalResolved)
     case modelSelected(Dshm_V1_ModelSelected)
+    /// S17 (transcript.proto)
+    case transcriptBlock(Dshm_V1_TranscriptBlock)
 
   }
 
@@ -1233,7 +1244,7 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
 
 nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Event"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}&host_seq\0\u{3}task_upserted\0\u{3}log_reset\0\u{4}\u{12}milestone_added\0\u{4}\u{14}approval_pending\0\u{3}approval_resolved\0\u{4}'model_selected\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}&host_seq\0\u{3}task_upserted\0\u{3}log_reset\0\u{4}\u{12}milestone_added\0\u{4}\u{14}approval_pending\0\u{3}approval_resolved\0\u{4}'model_selected\0\u{4}\\\u{3}transcript_block\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1346,6 +1357,19 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
           self.body = .modelSelected(v)
         }
       }()
+      case 340: try {
+        var v: Dshm_V1_TranscriptBlock?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .transcriptBlock(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .transcriptBlock(v)
+        }
+      }()
       default: break
       }
     }
@@ -1394,6 +1418,10 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
     case .modelSelected?: try {
       guard case .modelSelected(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 120)
+    }()
+    case .transcriptBlock?: try {
+      guard case .transcriptBlock(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 340)
     }()
     default: break
     }

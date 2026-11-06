@@ -12,6 +12,7 @@ import type { DshTasks, StartedTask, TaskOutput } from '../dsh.ts'
 import { HostLog } from './host-log.ts'
 import { milestoneAdded } from '../milestones/wire.ts'
 import { sessionWorkspace } from '../drawer/workspace.ts'
+import { transcriptBlock } from '../transcript/wire.ts'
 
 export interface TaskStarter {
   interrupt(taskId: string): void
@@ -156,6 +157,9 @@ export class TaskHub {
         } else if (out.kind === 'milestone') {
           // S3: milestones are logged like any other event, so Resume replays them (S2 × S3 seam).
           this.log.append(task.taskId, { case: 'milestoneAdded', value: milestoneAdded(task.taskId, ++milestoneSeq, out.milestone) })
+        } else if (out.kind === 'block') {
+          // S17: blocks are logged too, so Resume replays them in their place among the chunks.
+          this.log.append(task.taskId, { case: 'transcriptBlock', value: transcriptBlock(task.taskId, out.block) })
         } else {
           ended = true
           this.end(summary, out)

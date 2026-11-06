@@ -883,7 +883,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S17 · Structured transcript
 
-**Status** todo · **Needs** S16 · **Branch** `claude/s17-transcript`
+**Status** doing · **Needs** S16 · **Branch** `claude/s17-transcript`
 
 **Why**: Screen 04: thinking and tool calls collapse to one line each. DESIGN.md says that the data on screens is real data. The protocol does not have this data now: `SessionMessage` has only `text`.
 
@@ -892,14 +892,22 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: A coding task shows "已思考 8 秒 ›", "Read TaskListStore.swift" and "Edit TaskListStore.swift +12 −3".
 
 **Done when**
-- [ ] [auto] Golden fixtures for thinking and tool blocks decode the same in Swift and TS — Evidence:
-- [ ] [auto] The bridge maps DSH thinking and tool events into blocks against `FakeDSH` — Evidence:
-- [ ] [ui] Tool rows show verb, target and +/−, and open a sheet on tap — Evidence:
-- [ ] [ui] Without `transcript.v1`, the session page shows the S16 view — Evidence:
+- [x] [auto] Golden fixtures for thinking and tool blocks decode the same in Swift and TS — Evidence: test:S17TranscriptFixtures/thinkingAndToolBlocksDecode · test:GoldenFixtures/fixturesRoundTrip · cmd:scripts/demo/s17.sh
+- [x] [auto] The bridge maps DSH thinking and tool events into blocks against `FakeDSH` — Evidence: test:TranscriptMapperAgainstFakeDSH/mapsThinkingAndToolEventsIntoBlocks · test:TranscriptMapperAgainstFakeDSH/withoutTranscriptCapabilityTheClientGetsNoBlocks · cmd:scripts/demo/s17.sh
+- [x] [ui] Tool rows show verb, target and +/−, and open a sheet on tap — Evidence: test:S17TranscriptUITests/testToolRowsShowVerbTargetAndLinesAndOpenASheet · cmd:scripts/demo/s17.sh · shot:evidence/S17/s17-rows.png · shot:evidence/S17/s17-tool-sheet.png
+- [x] [ui] Without `transcript.v1`, the session page shows the S16 view — Evidence: test:S17TranscriptUITests/testWithoutTranscriptCapabilityShowsTheS16View · test:S17TranscriptStoreTests/withoutTheCapabilityThereAreNoRows · cmd:scripts/demo/s17.sh · shot:evidence/S17/s17-without-capability.png
 
 **Not**: A full diff view inside the row.
 
 **Log**: —
+- **2026-11-07 · built, to review.**
+  - Done: `protocol/transcript.proto` (`TranscriptBlock`: thinking with duration and DSH's reasoning text, tool with tool, target, lines added and removed, raw arguments, error; `Event.transcript_block = 340`; capability `transcript.v1`), one registration line in `frame.proto`, codegen, three golden fixtures (`s17_*`) decoded in Swift (`S17TranscriptFixtures`) and TS (`S17TranscriptFixtures`). Bridge `bridge/src/transcript/`: thinking from the timed `reasoning-delta` chunks of the live stream, tool rows from durable `tool/call` and `tool/result` (`meta.diffs` → +/−), no model summary; blocks are host-log events, sent only to a client with `transcript.v1` in its Hello. FakeDSH streams reasoning and tool calls. App: `TranscriptItem` / `StructuredTranscript` (DSHCore), `CachedTask.transcriptBlocksData`, `TaskRow.blocks` (empty when the host's Hello lacks `transcript.v1`); `Features/Transcript/` (`StructuredTranscriptView`: "Thought for 8 s ›" / "已思考 8 秒 ›" and `verb · target · +/−` rows, tool rows under one hairline; `TranscriptBlockSheet` via `SheetRoute.transcriptBlock`). One line each in `SessionPage.swift`, `ShellModel.swift`, `AppComposition.swift`. Fake: `-DSHMFakeScenario transcript` / `transcript-v0` (`FakeTranscript`, `Script.blocks`). Board 04 caption names S17 and the sheet; `scripts/render-design` run. `scripts/demo/s17.sh` (parts in `demo_part`).
+  - Decision: see **D61** (structured transcript). *Provisional, pending user confirmation.* No new dependencies.
+  - Merged main twice (S20, then S19 with conflicts in shared files; kept both sides, see the merge commit). Verified on the merge with `dshm-S17`: `scripts/demo/s17.sh --shots` (bridge 68/68, `swift test` 80 tests, S17 UI 2/2, S16 UI 2/2), `scripts/demo/s16.sh` (UI 11/11), `scripts/demo/s19.sh` as the seam check (UI 5/5). All exit 0. `scripts/demo/t0.sh` passed at the start (real DSH, UI 4/4).
+  - Flaky, not repaired: one `t0.sh` run had 10 `swift test` failures, all `store.send() → nil` after the 500 ms `sendWaitsFor` (TaskListStoreTests, CachedMilestoneTests, NoiseResumeTests, S16CodingTaskTests, and the new S17 store tests), under load from other slices' simulators; the next run passed. The S17 store tests now wait 5 s; the older tests are not S17's.
+  - Not done: sessions read from the journal (`sessions.v1`, other clients) keep the S16 view (D61, alternative 4); the board's "深入工作中… · N 步" group header over the tool rows is not built.
+  - For the coordinator: add D61 to §9. `scripts/demo/s16.sh` and `s19.sh` write logs to the fixed `/tmp/dshm-s16` and `/tmp/dshm-s19`, which a second slice running them at the same time shares (one `ui-shell.log` was empty after a passing run).
+  - Next: independent `scripts/review S17`, then merge.
 
 ### S18 · Approval sheet
 

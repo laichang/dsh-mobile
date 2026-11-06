@@ -1,0 +1,67 @@
+// S17 · Structured transcript (PLAN.md §5, screen 04, ARCHITECTURE D61). Capability "transcript.v1".
+// Field numbers in frame.proto: 340–359.
+//
+// The bridge maps DSH's typed session data into blocks, deterministically: thinking from the
+// timed `reasoning-delta` chunks of the assistant stream, tool calls from the durable `tool/call`
+// and `tool/result` events. No model summarizes anything (the same rule as D11): a block carries
+// DSH's own data (the tool's name, its target from the arguments, the lines in its diff, DSH's
+// timestamps), and the app words each row itself ("已思考 8 秒", "Edit TaskListStore.swift +12 −3").
+//
+// Blocks are logged host events (S2), so Resume replays them. They take their place in the
+// transcript by order: a block sits after the AssistantChunks that came before it.
+
+syntax = "proto3";
+
+package dshm.v1;
+
+enum TranscriptBlockState {
+  TRANSCRIPT_BLOCK_STATE_UNSPECIFIED = 0;
+  // Thinking still streams, or the tool call has no result yet.
+  TRANSCRIPT_BLOCK_STATE_RUNNING = 1;
+  // Thinking ended, or the tool returned a result.
+  TRANSCRIPT_BLOCK_STATE_DONE = 2;
+  // The tool returned an error result (DSH `isError`).
+  TRANSCRIPT_BLOCK_STATE_FAILED = 3;
+}
+
+// The model's reasoning in one step.
+message ThinkingBlock {
+  // From the first reasoning chunk to the end of the reasoning, by DSH's chunk timestamps.
+  // 0 while RUNNING.
+  uint64 duration_ms = 1;
+  // The reasoning text itself, cut to the first 8,000 characters. The app shows it only in the sheet.
+  string text = 2;
+  bool truncated = 3;
+}
+
+// One tool call.
+message ToolBlock {
+  // DSH's tool name, as the model called it (`read`, `edit`, `write`, `bash`, `grep`, …).
+  string tool = 1;
+  // What the call acts on, from its arguments: `file_path` / `path` for file tools, `command`
+  // for shells, `pattern` for searches. Empty when the arguments name none.
+  string target = 2;
+  // From the result's diff (DSH `tool/result` meta `diffs`). 0 for tools that change no file.
+  uint32 lines_added = 3;
+  uint32 lines_removed = 4;
+  // The raw arguments JSON as the model produced it, cut to the first 4,000 characters (sheet only).
+  string arguments = 5;
+  bool arguments_truncated = 6;
+  // DSH's user-facing reason when the result is an error (FAILED).
+  string error = 7;
+}
+
+// One block was added or changed. A later event with the same `block_id` replaces the block;
+// it keeps the block's place in the transcript.
+message TranscriptBlock {
+  string task_id = 1;
+  // Unique within the task: the DSH tool call id, or the assistant attempt and block index.
+  string block_id = 2;
+  TranscriptBlockState state = 3;
+  oneof kind {
+    ThinkingBlock thinking = 4;
+    ToolBlock tool = 5;
+  }
+  // When DSH recorded the start of the block, Unix milliseconds.
+  int64 time_ms = 6;
+}
