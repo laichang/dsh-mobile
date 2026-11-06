@@ -59,11 +59,11 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
 | S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
-| S16 | doing | `claude/s16-session` `8c1bdb8` | 2026-11-06 | Owner merges main (seam with S15), then review --resume (§8) |
+| S16 | doing | `claude/s16-session` `030b891` | 2026-11-06 | Owner reruns demos on the merge with main, then review --resume (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
-| S18 | doing | `claude/s18-approval-sheet` | 2026-11-06 | Slice owner builds the approval sheet (§8) |
+| S18 | doing | `claude/s18-approval-sheet` `9315a32` | 2026-11-06 | Reviewer runs `scripts/review S18` (§8) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
-| S20 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
+| S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
 | S21 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S22 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S23 | todo | — | 2026-11-06 | Next batch (S14 is merged) |
@@ -1281,6 +1281,22 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-06 · S16 review PASS; merge conflict.** `scripts/review S16` at `8c1bdb8`: `RESULT: PASS` (`/tmp/dshm-review/S16-8c1bdb8.txt`), no flaky part. The merge into `main` conflicted with S15 in the same three files as S14; the coordinator aborted it. The S16 owner merges `main` and reruns `s16.sh` and `s15.sh`. S14 and S16 merge `main` at the same time; the one that lands second merges `main` again.
 
 - **2026-11-06 · S14 merged.** The owner merged `main` (S15 seam) as `d2cd506`; `scripts/review S14 --resume` there: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S14-d2cd506.txt`). Merged as `6a120f7`; `scripts/check-plan --base` passed. No open `[human]` items, so S14 is `done`. S16 now needs one more merge of `main`.
+
+- **2026-11-06 · S20 assigned.** Branch `claude/s20-pickers`, worktree `.claude/worktrees/s20-pickers` (from `a9193c7`), simulator `dshm-S20`, DSHM_HOME `~/.dshm/home-s20`, bridge 47815, web 3288. The owner runs as a background agent (WORKFLOW.md §5.3, step 3). S16 merges `main` again for the S14 seam.
+
+- **2026-11-06 · S18 built.** S18 at `ffb61a8` (work in `9599cc6`; D57): all `[auto]` and `[ui]` items ticked, including a new seam item with S4 and S15; worktree clean; no guard file changed. Its branch conflicts with `main` (S14) in `FakeBridge.swift` and `ShellModel.swift`, so the owner merges `main` first and the review runs on the merged commit. The reviewer runs `scripts/review S18`, which runs `scripts/demo/s18.sh` and the real-DSH `scripts/demo/s4.sh` with the S18 ports.
+  - Flaky, reported by S18 (not S18 tests): in one `swift test` run inside `t0.sh` at load about 130, 4 earlier tests failed with `store.send()` returning nil; they passed alone. Same family as the `NoiseResumeTests` entries above.
+  - Clean-up after S16 merges: `ios/dsh-mobile/Features/Approvals/ApprovalCard.swift` is unused after S18 (left in place to avoid a conflict with S16).
+
+- **2026-11-06 · Run paused by the user (about 19:00).** Heartbeat `0f66e06d` deleted. The S18 and S20 background agents stopped; slice demo jobs stopped; `dshm-*` simulators shut down. State: S16 `8e2a4db` (merge of `main` before S14; must merge `main` again, then review --resume), clean. S18 `ffb61a8` plus an unfinished merge of `main` in its worktree (40 changed paths). S20 at `a9193c7` with 12 uncommitted paths. To resume: create a new heartbeat, then continue each slice in its worktree (WORKFLOW.md §5.4).
+
+- **2026-11-06 · Run resumed by the user (about 21:20).** Keep-awake on. New heartbeat cron job `c6c0c493` (`7,27,47 * * * *`, recurring, durable), created 2026-11-06; `0f66e06d` is deleted. Before the pause the user's iPhone 17 Pro Simulator got a Debug build of `main` (T1, S14, S15).
+  - S16: the session merged `main` with S14 (`030b891`); it reruns `s16.sh`, `s14.sh --part ui-fake` and `s15.sh`, then reports.
+  - S18: the unfinished merge of `main` in the old worktree was aborted (only the two conflicted files had changes); the branch is back at `ffb61a8`. S18 continues as a slice session (`s18-approval-sheet`) that merges `main` and reruns its demos.
+  - S20: the background agent's uncommitted work is saved as unreviewed WIP `3763c00`. S20 continues as a slice session (`s20-pickers`).
+  - The coordinator worktrees `.claude/worktrees/s18-approval-sheet` and `s20-pickers` are removed; each session takes back the canonical branch name. Resources do not change.
+
+- **2026-11-06 · S18 merged `main`; review started.** The owner merged `main` (S14 seam) as `a4d79ca` and logged it at `9315a32`: `swift test` 66/66, `s18.sh` (S18 ×2, S15 ×2) and `s14.sh --part ui-fake` (S14 ×4) passed; no flaky test. A background reviewer runs `scripts/review S18` (with the real-DSH `s4.sh`) on `9315a32`. Its ready report reached the coordinator only through the heartbeat.
 
 ## 9. Pending user confirmation
 
