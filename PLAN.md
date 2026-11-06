@@ -1203,6 +1203,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-05 · T1 assigned.** New long-horizon run (coordinator on `main`). Branch `claude/t1-ui-shell`, own worktree from the session, simulator `dshm-T1`, DSHM_HOME `~/.dshm/home-t1`, bridge 47810, web 3283. The owner uses the shared DSH runtime read-only. S14–S23 wait for T1.
 
+- **2026-11-06 · Run resumed; heartbeat.** The user restarted the coordinator. Keep-awake is on (`session_idle`). Heartbeat cron job `d4a0e2c2` (`7,27,47 * * * *`, recurring, durable), created 2026-11-06. T1 is already built at `7b4a0c0` on `claude/t1-ui-shell`; it is not built again. An independent reviewer runs `scripts/review T1` on that commit with the T1 resources (`dshm-T1`, `~/.dshm/home-t1`, bridge 47810, web 3283).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
