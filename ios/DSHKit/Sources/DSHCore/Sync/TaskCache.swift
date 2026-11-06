@@ -57,6 +57,9 @@ public final class CachedTask {
     /// S14: the `updatedAt` the user last saw on the session page. A finished session with a
     /// newer `updatedAt` is "done and not read" (the drawer's blue dot). Local to this phone.
     public var readThrough: Date?
+    /// S19: approvals of this task that were answered (here or on another client), from the
+    /// host's `ApprovalResolved` events. The done page says "M 次审批".
+    public var approvalsAnswered: Int = 0
 
     public init(hostKey: String, taskID: String, title: String, createdAt: Date) {
         self.key = Self.key(hostKey: hostKey, taskID: taskID)

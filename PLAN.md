@@ -937,7 +937,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S19 · Done and failed
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s19-outcomes`
+**Status** doing · **Needs** T1 · **Branch** `claude/s19-outcomes`
 
 **Why**: STORY §4 (call the user back when a task is done, failed or stuck), screens 06 and X1.
 
@@ -946,12 +946,28 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: Start an upload that fails with 403. Open it, copy the error, and try again in a new session.
 
 **Done when**
-- [ ] [ui] A done session that is not read opens at the start of the final answer — Evidence:
-- [ ] [ui] "新会话里再试" opens 01 with the original prompt, which you can edit — Evidence:
+- [x] [ui] A done session that is not read opens at the start of the final answer — Evidence: test:S19OutcomesUITests/testDoneSessionNotReadOpensAtTheStartOfTheFinalAnswer · cmd:scripts/demo/s19.sh · shot:evidence/S19/s19-done-unread.png · shot:evidence/S19/s19-done-read.png
+- [x] [ui] "新会话里再试" opens 01 with the original prompt, which you can edit — Evidence: test:S19OutcomesUITests/testFailedTaskRetriesInANewSessionWithTheOriginalPrompt · cmd:scripts/demo/s19.sh · shot:evidence/S19/s19-retry-prefilled.png
+- [x] [ui] A failed task shows a red bar with the step, the raw failure message and "复制错误" — Evidence: test:S19OutcomesUITests/testFailedTaskRetriesInANewSessionWithTheOriginalPrompt · cmd:scripts/demo/s19.sh · shot:evidence/S19/s19-failed.png
+- [x] [ui] A stopped task shows the same card, with "新会话里再试" — Evidence: test:S19OutcomesUITests/testStoppedTaskShowsTheSameCard · cmd:scripts/demo/s19.sh · shot:evidence/S19/s19-stopped.png
+- [x] [auto] With FakeHost, an ended task gives its outcome: the steps, the answered approvals, the step where it stopped and the raw failure message — Evidence: test:OutcomeFakeTests/aDoneTaskCountsItsStepsAndTheApprovalAnsweredOnTheWeb · test:OutcomeFakeTests/aFailedTaskGivesTheStepAndTheRawError · test:OutcomeFakeTests/aStoppedTaskHasAnInterruptedOutcome · cmd:scripts/demo/s19.sh
+- [x] [ui] Seam: the S16 session page tests pass with the S19 rows on the page — Evidence: test:S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls · test:S16SessionPageUITests/testStopInterruptsFromTheSendPosition · cmd:scripts/demo/s19.sh · cmd:scripts/demo/s16.sh
 
 **Not**: File cards (M3). Follow-up in the same session (M2). The "stuck" alert (M2 push).
 
-**Log**: —
+**Log**
+- **2026-11-07 · started.** `scripts/demo/t0.sh` passed on `dshm-S19` (ports 47817/3290). The first two runs stopped in `swift package resolve`: GitHub reset the connection; the next run passed with no change. Added four Done when items for the failed bar, the stopped card, the FakeHost outcome and the S16 seam.
+- **2026-11-07 · built, to review.**
+  - Done: screens 06 and X1 on the session page (`Features/Outcomes/`, `DSHCore/Outcome.swift`). `TaskOutcome` reads an ended task from the cache: done, failed or stopped; N 步 (the milestones on the timeline); M 次审批 (answered approvals, new cached field `CachedTask.approvalsAnswered`); the todo where it stopped; the raw failure message. Before the final answer, one row 已工作 · N 步 · M 次审批 › that opens all steps. A finished session that was not read when it opened shows 停在这里 · 最终回答开头 and opens there (the process row at the top, then the marker, then the answer); a read one opens at the end, as before. Done: a footer 用时 · model. Failed: the `MilestoneBar` gets a red border and 失败 · 第 N 步 (one optional `alert` parameter; S16's layout is unchanged), and a red card 任务失败 with the raw message, 复制错误 (已复制) and 新会话里再试 (01 with the first user message, on the task's host and workspace, editable). Stopped: the same card, neutral, 任务已停止, with 新会话里再试 only; the bar keeps S16's Interrupted. Own string catalog `Outcomes.xcstrings`, tokens in `Theme+S19.swift`. Board: X1's card no longer has the app-written "what was done and where" sentence (the agent's reply above says it, D11); captions of 06 and X1 say how N, M, the read state and the stopped card work; `scripts/render-design` run. STORY §4: one bullet for what the user sees when called back.
+  - Decision: see **D60**. *Provisional, pending user confirmation.* No new dependencies.
+  - Test support: `FakeBridge.Script.variants` (a prompt picks its own script; `FakeHost.stream(using:)`) and `Script.outcomes()` (`-DSHMFakeScenario outcomes`: a task that asks for `git push` and ends done with a long answer, one that fails on step 3 with `upload: 403 Forbidden (token expired)`, one that runs until stopped). The Web's answer reuses S18's `FakeApprovalSheet` notification. `DSHMFakeScenario` is already a Release marker.
+  - Seam with S16 (this slice lands second): `SessionPage` gets the outcome rows, the scroll anchor for unread sessions and the `alert` on the bar; S16's tests pass unchanged.
+  - Merged `main` (S21, `076ea07`): kept both sides; D59 then D60; `design/board.png` rendered again.
+  - Verified on the merge with S19's resources (`dshm-S19`): `scripts/demo/s19.sh --shots` exit 0 (`swift test` 72 tests in 20 suites; UI S19 ×3, S16 ×2); `scripts/demo/s16.sh` exit 0 (UI 11/11).
+  - Slow, not failing: on the first full run (load average ~240) `testDoneSessionNotReadOpensAtTheStartOfTheFinalAnswer` took 1410 s with each step waiting for "animations complete"; on the merge it took 78 s. No flaky test, no repair round used.
+  - Not done: —. The X1 sentence about where the files are stays with the agent's reply; N 步 can switch to tool calls when S17's `transcript.v1` lands (D60).
+  - For the coordinator: §0 S19 → review run; add D60 to §9.
+  - Next: independent `scripts/review S19`, then merge.
 
 ### S20 · Pickers
 
