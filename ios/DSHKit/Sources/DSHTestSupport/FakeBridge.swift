@@ -170,6 +170,8 @@ public final class FakeHost: Sendable {
     /// an earlier app launch never collides with a new one that happens to be numbered the same.
     private let taskIDPrefix = "fake-\(UUID().uuidString.prefix(8).lowercased())-task"
     private let script: FakeBridge.Script
+    /// Capabilities this host adds to T0–S3's (for example S14's `drawer.v1`).
+    private let extraCapabilities: [String]
 
     private struct Connection {
         let bridge: FakeBridge
@@ -191,12 +193,21 @@ public final class FakeHost: Sendable {
 
     private let state = Mutex(State())
 
+    /// - Parameter seed: sessions the host already has, as if other clients made them (S14).
     public init(script: FakeBridge.Script = .init(), hostName: String = "FakeBridge Mac", reachable: Bool = true,
-                incompatibleDsh: (installed: String, supported: String)? = nil) {
+                incompatibleDsh: (installed: String, supported: String)? = nil,
+                seed: [Dshm_V1_TaskSummary] = [], extraCapabilities: [String] = []) {
         self.incompatibleDsh = incompatibleDsh
         self.script = script
         self.hostName = hostName
-        state.withLock { $0.reachable = reachable }
+        self.extraCapabilities = extraCapabilities
+        state.withLock { s in
+            s.reachable = reachable
+            for summary in seed {
+                s.tasks.append(summary)
+                Self.upserted(summary, in: &s)
+            }
+        }
     }
 
     /// Opens a connection to this host; throws while it's unreachable.
@@ -272,6 +283,7 @@ public final class FakeHost: Sendable {
                     hello.requiresBridgeUpdate = true
                 } else {
                     hello.capabilities = [DSHProtocolInfo.tasksCapability, DSHProtocolInfo.milestonesCapability, DSHProtocolInfo.resumeCapability]
+                        + extraCapabilities
                 }
                 bridge.deliver(Self.response(id, .hello(hello)))
             case .createTask(let create)?:

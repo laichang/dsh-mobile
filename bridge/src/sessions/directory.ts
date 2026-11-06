@@ -7,6 +7,8 @@ interface Row {
   blank: boolean
   running: boolean
   updatedAt: number
+  /** S14: the session's directory on the host. */
+  cwd?: string
   projections?: { kind?: 'sequenced' | 'cached'; asOfSeq?: number; values: { title?: string | null } }
 }
 interface Event { seq: number; type: string; time: number; data: unknown; surfaceOp?: unknown }
@@ -89,7 +91,7 @@ export class SessionDirectory {
           const at = page.records.at(-1)?.event.time ?? row.updatedAt
           this.hub.observeSession(row.sessionId, BigInt(page.cursor), title ?? row.sessionId,
             state, state === TaskState.FAILED ? describeFailure(reason?.kind ?? 'unknown', reason?.error) : '',
-            BigInt(at), BigInt(page.records[0]?.event.time ?? row.updatedAt), reply, rename?.source?.kind === 'user' ? rename.title : undefined)
+            BigInt(at), BigInt(page.records[0]?.event.time ?? row.updatedAt), reply, rename?.source?.kind === 'user' ? rename.title : undefined, row.cwd)
         } catch (error) {
           this.abort.signal.throwIfAborted()
           this.log('cannot read session ' + row.sessionId + ': ' + error)

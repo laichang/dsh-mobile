@@ -69,6 +69,10 @@
     { "name": "s10_revoke_request", "frame": { "request": { "id": "10", "revokeDevice": { "deviceId": "phone-a" } } } },
     { "name": "s10_device_list", "frame": { "response": { "requestId": "10", "deviceList": { "currentDeviceId": "phone-b", "devices": [{ "id": "phone-b", "pairedAtMs": "100", "lastSeenAtMs": "200" }] } } } },
     { "name": "s10_audit_page", "frame": { "response": { "requestId": "11", "auditPage": { "entries": [{ "id": "revoke:1", "atMs": "300", "actor": "owner", "device": "phone-b", "action": "Device revoked", "detail": "phone-a" }] } } } },
-    { "name": "s12_unsupported_hello", "frame": { "response": { "requestId": "1", "hello": { "protocolVersion": 1, "dshVersion": "0.2.2-alpha.3", "supportedDshRange": "0.2.2-rc.1", "requiresBridgeUpdate": true } } } }
+    { "name": "s12_unsupported_hello", "frame": { "response": { "requestId": "1", "hello": { "protocolVersion": 1, "dshVersion": "0.2.2-alpha.3", "supportedDshRange": "0.2.2-rc.1", "requiresBridgeUpdate": true } } } },
+    { "name": "s14_phone_session_upserted_event",
+      "frame": { "event": { "hostSeq": "1", "taskUpserted": { "task": { "taskId": "session-1", "title": "修复 CI 挂掉的测试", "state": "TASK_STATE_RUNNING", "createdAtMs": "1793000000000", "updatedAtMs": "1793000000000", "workspace": "/work/app" } } } } },
+    { "name": "s14_web_session_upserted_event",
+      "frame": { "event": { "hostSeq": "1", "taskUpserted": { "task": { "taskId": "web-1", "title": "网页第一条", "state": "TASK_STATE_COMPLETED", "createdAtMs": "1793000000000", "updatedAtMs": "1793000003000", "sessionRevision": "3", "externalSession": true, "latestReply": "已收到。", "workspace": "/work/app" } } } } }
   ]
 }

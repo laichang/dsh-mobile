@@ -5,8 +5,8 @@ import SwiftUI
 /// Each host group starts with the host's status, its channel and its device management (S1, S2,
 /// S10), so a host's state shows where its sessions are.
 ///
-/// Registration point: each section is one line in `body`. S14 adds workspace levels and status
-/// marks inside `DrawerHostSection`; S21 adds pair and settings at the bottom.
+/// Registration point: each section is one line in `body`. S14's `DrawerHostTree` shows each host
+/// as host › workspace › session with status marks, the "2 / 3" hosts online, and settings.
 struct DrawerView: View {
     let store: TaskListStore
     let pair: () -> Void
@@ -16,11 +16,11 @@ struct DrawerView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 4) {
-                    brand
+                    HStack { brand; Spacer(minLength: 8); DrawerHostsOnline(hosts: store.hosts) }
                     DrawerNewSessionButton()
                     DrawerAllTasksRow(store: store)
                     ForEach(store.hosts) { host in
-                        DrawerHostSection(store: store, host: host)
+                        DrawerHostTree(store: store, host: host)
                     }
                 }
                 .padding(.horizontal, 12)
@@ -100,59 +100,6 @@ private struct DrawerAllTasksRow: View {
     }
 }
 
-/// One host: its status, then its sessions, newest first.
-private struct DrawerHostSection: View {
-    let store: TaskListStore
-    let host: TaskListStore.HostStatus
-    @Environment(ShellModel.self) private var shell
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HostStatusRow(host: host)
-                .padding(.top, 14)
-            HostChannelRow(host: host)
-            if store.deviceManagement(for: host.key) != nil {
-                Button { shell.present(.devices(hostKey: host.key)) } label: {
-                    Label("Devices and audit", systemImage: "person.badge.key")
-                        .font(.footnote)
-                        .foregroundStyle(DSHTheme.textSecondary)
-                        .padding(.vertical, 4)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Devices and audit on \(host.name)")
-                .accessibilityIdentifier("host.manage")
-            }
-            ForEach(sessions) { row in
-                Button { shell.open(.session(row.key)) } label: {
-                    HStack(spacing: 8) {
-                        Text(row.title.isEmpty ? row.taskID : row.title)
-                            .lineLimit(1)
-                            .foregroundStyle(current(row) ? DSHTheme.textPrimary : DSHTheme.textSecondary)
-                            .fontWeight(current(row) ? .semibold : .regular)
-                        Spacer(minLength: 4)
-                        TaskStateIcon(state: row.state).font(.caption)
-                    }
-                    .padding(.leading, 28)
-                    .padding(.trailing, 8)
-                    .padding(.vertical, 10)
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityElement(children: .combine)
-                .accessibilityValue(row.state.token)
-                .accessibilityIdentifier("drawer.session")
-            }
-        }
-        .padding(.horizontal, 8)
-    }
-
-    private var sessions: [TaskListStore.TaskRow] {
-        store.tasks.filter { $0.hostKey == host.key && !$0.approvalOnly }.sorted { $0.updatedAt > $1.updatedAt }
-    }
-
-    private func current(_ row: TaskListStore.TaskRow) -> Bool { shell.page == .session(row.key) }
-}
-
 private struct DrawerFooter: View {
     let pair: () -> Void
 
@@ -164,6 +111,7 @@ private struct DrawerFooter: View {
             }
             .accessibilityLabel("Pair a host")
             .accessibilityIdentifier("pairing.scan")
+            DrawerSettingsButton().padding(.leading, 16)
         }
         .foregroundStyle(DSHTheme.textSecondary)
         .padding(.horizontal, 20)

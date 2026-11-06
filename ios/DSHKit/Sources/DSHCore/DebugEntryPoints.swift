@@ -6,6 +6,8 @@ import Foundation
 public enum DebugLaunchOptions {
     /// `-DSHMFakeBridge YES`: use the in-process FakeBridge instead of the loopback bridge.
     /// `-DSHMFakeBridge offline` (S2): the FakeBridge host is unreachable.
+    /// `-DSHMFakeBridge drawer`, `drawer-office-offline`, `drawer-v0` (S14): two hosts with
+    /// sessions in workspaces (`FakeDrawer`).
     public static let fakeBridgeKey = "DSHMFakeBridge"
     /// `-DSHMPresetPrompt <text>`: pre-fill the composer.
     public static let presetPromptKey = "DSHMPresetPrompt"
@@ -34,6 +36,8 @@ public enum DebugLaunchOptions {
         public var connectDelay: Double?
         public var resetPairing = false
         public var fakeHold: String?
+        /// S14: the `FakeDrawer` variant (`drawer`, `drawer-office-offline`, `drawer-v0`).
+        public var fakeDrawer: String?
 
         public init(
             useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil,
@@ -72,6 +76,7 @@ public enum DebugLaunchOptions {
             options.useFakeBridge = yes.contains(v) || v == "offline"
             options.multipleFakeHosts = v == "multi" || v == "multi-office-offline"
             options.fakeBridgeOffline = v == "offline" || v == "multi-office-offline"
+            if v.hasPrefix("drawer") { options.fakeDrawer = v }
         }
         if let v = values[resetStoreKey] { options.resetStore = yes.contains(v) }
         options.connectDelay = values[connectDelayKey].flatMap(Double.init)
