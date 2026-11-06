@@ -1062,7 +1062,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S22 · First run
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s22-first-run`
+**Status** doing · **Needs** T1 · **Branch** `claude/s22-first-run`
 
 **Why**: STORY §6 (anyone can use it), screen 08.
 
@@ -1071,11 +1071,19 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: Fresh install. Paste a pairing link. 01 opens with the first task.
 
 **Done when**
-- [ ] [ui] After the first pairing, 01 opens with a first task that you can edit — Evidence:
+- [x] [ui] After the first pairing, 01 opens with a first task that you can edit — Evidence: test:S22FirstRunUITests/testPastedLinkPairsAndOpensTheFirstTask · cmd:scripts/demo/s22.sh · shot:evidence/S22/s22-welcome.png · shot:evidence/S22/s22-first-task.png · shot:evidence/S22/s22-first-task-edited.png
 
 **Not**: Pairing from inside the DSH interface (needs upstream). The S11 `[human]` items stay in S11 (see §6).
 
 **Log**: —
+- **2026-11-07 · First run built; demo green after merging main.**
+  - Built: 08 in the DSH style (`Features/FirstRun/WelcomeView.swift`): wordmark, purpose (copy per S11: the phone never calls a model), the end-to-end card, what you need, the network requirement as step 2 (same Wi-Fi or Tailscale), "扫描配对二维码" and "粘贴配对链接", and a link to the bridge setup. The paste button opens the scanner sheet without the camera, with the link field focused. The pairing review uses the same canvas, card, and white primary button. After the first pairing, 01 opens with the first task already in the composer and a hint; the user edits it and sends it (see D63, provisional; D49).
+  - Tests: `S22FirstRunUITests/testPastedLinkPairsAndOpensTheFirstTask` (fresh Release install in Chinese, real DSH + bridge over Noise, paste, pair, first task in the composer, edit, send, reply; next launch is a blank 01). `scripts/demo/s22.sh` runs it and `scripts/demo/s11.sh` as the seam. Strings in `Features/FirstRun/FirstRun.xcstrings`.
+  - Seam (S22 lands after S11): `S11FirstRunUITests/testFirstRunFromWelcomeToReply` now finds the first task in the composer (no `firstRun.suggestion` tap). The tap-to-fill suggestion stays for a later empty task list.
+  - Verification: after `git merge main` (S19), `scripts/demo/s22.sh` passed: S22 1/1, S11 3/3 (with swift test 71, bridge tests). No flaky tests seen (2 full runs).
+  - Board: the 08 caption cites D63; board.png rendered again. No new dependencies. Created the simulator `dshm-S22` (iPhone 17 Pro, iOS 26.4).
+  - Not done: pairing from inside the DSH interface (needs upstream). The S11 `[human]` items stay with the user.
+  - For the coordinator: add D63 to §9; §0 S22 → reviewer runs `scripts/review S22`.
 
 ### S23 · Drawer motion
 
