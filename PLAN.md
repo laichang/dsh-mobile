@@ -63,7 +63,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S17 | doing | `claude/s17-transcript` | 2026-11-07 | Slice owner builds the structured transcript (§8) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | doing | `claude/s19-outcomes` | 2026-11-07 | Slice owner builds done and failed (§8) |
-| S20 | doing | `claude/s20-pickers` `2108a3e` | 2026-11-07 | Reviewer runs `scripts/review S20` (§8) |
+| S20 | doing | `claude/s20-pickers` `2108a3e` | 2026-11-07 | Owner repairs the review FAIL, round 1 (§8) |
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
 | S22 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S23 | todo | — | 2026-11-06 | Next batch (S14 is merged) |
@@ -1375,6 +1375,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · S20 built; review started.** S20 at `2108a3e` (D58; `main` with S16 and S21 merged, seams owned by S20): all `[auto]` and `[ui]` items ticked, worktree clean, no guard file changed. `s20.sh --shots --regress` (with real-DSH `s6.sh` and `s7.sh`) and `s16.sh` passed on the merged code. A background reviewer runs `scripts/review S20`. The S20 Log says that earlier S20 Log entries were edited by hand; the Log is append-only (PLAN "How to use this file"), so the user may want to look at it.
   - S21's owner checked the flaky S15 test `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval`: 12 of 12 passes on `main` and on S21 under load. The entry above stays as S15's.
+
+- **2026-11-07 · S20 review FAIL.** `scripts/review S20` at `2108a3e`: `RESULT: FAIL` (`/tmp/dshm-review/S20-2108a3e.txt`). Part `s20-swift-test` failed on all 3 runs, each time in a different earlier test with `store.send() → nil` or "not connected to the bridge" (S15, S16, S2 tests); the S20 UI tests did not run. S20 changes `TaskListStore.swift` and `FakeBridge.swift`, and the S15 test passed 12/12 on `main`, so the owner first compares the failure rate on the branch and on `main`. Repair round 1 (WORKFLOW.md §10.1).
 
 ## 9. Pending user confirmation
 
