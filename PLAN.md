@@ -59,7 +59,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
 | S14 | doing | `claude/s14-drawer` `2d14273` | 2026-11-06 | Owner merges main (seam with S15), then review --resume (§8) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
-| S16 | doing | `claude/s16-session` `8c1bdb8` | 2026-11-06 | Reviewer runs `scripts/review S16` (§8) |
+| S16 | doing | `claude/s16-session` `8c1bdb8` | 2026-11-06 | Owner merges main (seam with S15), then review --resume (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
 | S18 | doing | `claude/s18-approval-sheet` | 2026-11-06 | Slice owner builds the approval sheet (§8) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -1259,6 +1259,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-06 · S16 built; review started.** S16 at `8c1bdb8` (D56; D23 (b) updated): all `[auto]` and `[ui]` items ticked, worktree clean, no guard file changed. A background reviewer runs `scripts/review S16`. Flaky under load (reported by S16, not repaired): `S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge` once lost the last typed key. Load averages of 300–770 were seen.
 
 - **2026-11-06 · S14 review PASS; merge conflict.** `scripts/review S14 --resume` at `2d14273`: `RESULT: PASS` (`/tmp/dshm-review/S14-2d14273.txt`); `cmd1` flaky (`swift test` passed on run 3; `NoiseResumeTests` ×3 on run 1, `MilestoneStoreTests/todosTickOffOnTheTimelineAgainstFakeBridge` on run 2; already listed above). The merge into `main` conflicted with S15 in `FakeBridge.swift`, `DebugEntryPoints.swift` and `ARCHITECTURE.md`; the coordinator aborted it. S14 lands second and owns the seam (§1): the owner merges `main`, reruns `s14.sh` and `s15.sh`, then the reviewer runs `--resume` on the new commit.
+
+- **2026-11-06 · S16 review PASS; merge conflict.** `scripts/review S16` at `8c1bdb8`: `RESULT: PASS` (`/tmp/dshm-review/S16-8c1bdb8.txt`), no flaky part. The merge into `main` conflicted with S15 in the same three files as S14; the coordinator aborted it. The S16 owner merges `main` and reruns `s16.sh` and `s15.sh`. S14 and S16 merge `main` at the same time; the one that lands second merges `main` again.
 
 ## 9. Pending user confirmation
 
