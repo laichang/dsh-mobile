@@ -808,6 +808,11 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Flaky tests, not added or changed by S14 (not repaired, for §8): under high load (load average 150–400, from `mediaanalysisd` in another simulator), `swift test` failed in two of six runs: `MilestoneStoreTests/todosTickOffOnTheTimelineAgainstFakeBridge`, `NoiseResumeTests/pairingASecondHostPreservesTheFirstConnectionAndRoutesEachPrompt`, `NoiseResumeTests/droppedNoiseConnectionReconnectsAndReplaysOnlyTheGap`, `TaskListStoreTests/reconnectsAfterTheConnectionDropsAndReplaysOnlyTheGap`. They pass at normal load (`send()` waits 500 ms).
   - For the coordinator: §0 S14 → review after `scripts/review S14`; add D54 to §9. D54 skips D52/D53; check that S15 and S16 do not also use D54.
   - Not done: —. Next: independent review run, then merge.
+- **2026-11-06 · review repair round 1 of 3.**
+  - Done: `scripts/review S14` at `c270ce1` failed in `s14-ui-fake`, on all 3 runs: `testOfflineHostSessionsOpenFromTheCache` read `office.label` one time, and the read returned a stale snapshot under load (the failure message, read a moment later, was correct). The app sets the label and the value in the same render of `DrawerHostHeader`, so the UI did not change. The test now waits for the label with a predicate (`label BEGINSWITH "Office-PC is offline"`). Each single read of a mark, workspace or page title in `S14DrawerUITests` now waits too (`expectValue`, label predicates).
+  - Verification: `scripts/demo/s14.sh --shots` exit 0 on `dshm-S14`, after an app restart stopped one run: bridge 59/59, `swift test` 64/64, S14 UI tests 5/5. The `session/list` diagnostic now shows the same DSH `cwd` for the Web session and the phone session.
+  - Flaky, not S14 (not repaired): `NoiseResumeTests` failed again at a high load (2 tests, 1 run). Five runs in a row at a load of about 100 passed.
+  - Next: `scripts/review S14 --resume` on this commit.
 
 ### S15 · All tasks
 

@@ -42,6 +42,12 @@ final class S14DrawerUITests: XCTestCase {
         any(app, "host.status").matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
     }
 
+    /// Waits for the accessibility value: under load, one read can return a stale snapshot.
+    private func expectValue(_ element: XCUIElement, _ value: String, _ message: String = "",
+                             file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertEqual(waitForValue(element, in: [value], timeout: 10), value, message, file: file, line: line)
+    }
+
     /// Asserts that the elements are in this order from top to bottom.
     private func assertOrder(_ elements: [XCUIElement], file: StaticString = #filePath, line: UInt = #line) {
         for (upper, lower) in zip(elements, elements.dropFirst()) {
@@ -56,7 +62,7 @@ final class S14DrawerUITests: XCTestCase {
         openDrawer(app)
         XCTAssertTrue(workspace(app, "Q3").waitForExistence(timeout: 10), app.debugDescription)
         waitForValue(any(app, "drawer.hosts").firstMatch, in: ["2/2"], timeout: 10)
-        XCTAssertEqual(workspace(app, "Q3").value as? String, "/Users/laichang/Desktop/Q3")
+        expectValue(workspace(app, "Q3"), "/Users/laichang/Desktop/Q3")
         assertOrder([
             host(app, Self.mac), workspace(app, "Q3"),
             row(app, "整理 Q3 报表成 PPT"), row(app, "Q3 summary slides"), row(app, "网页第一条"),
@@ -65,10 +71,10 @@ final class S14DrawerUITests: XCTestCase {
             row(app, "Install the printer driver"), row(app, "Weekly report"),
         ])
         XCTAssertEqual(any(app, "drawer.workspace").count, 3)
-        XCTAssertEqual(mark(app, "整理 Q3 报表成 PPT").value as? String, "waiting")
-        XCTAssertEqual(mark(app, "修复 CI 挂掉的测试并提 PR").value as? String, "running")
-        XCTAssertEqual(mark(app, "Q3 summary slides").value as? String, "unread")
-        XCTAssertEqual(mark(app, "网页第一条").value as? String, "unread")
+        expectValue(mark(app, "整理 Q3 报表成 PPT"), "waiting")
+        expectValue(mark(app, "修复 CI 挂掉的测试并提 PR"), "running")
+        expectValue(mark(app, "Q3 summary slides"), "unread")
+        expectValue(mark(app, "网页第一条"), "unread")
         // A mark sits at the end of its own row.
         let slides = row(app, "Q3 summary slides")
         XCTAssertEqual(mark(app, "Q3 summary slides").frame.midY, slides.frame.midY, accuracy: 2)
@@ -79,8 +85,8 @@ final class S14DrawerUITests: XCTestCase {
         XCTAssertTrue(any(app, "task.status").firstMatch.waitForExistence(timeout: 5))
         openDrawer(app)
         waitForValue(mark(app, "Q3 summary slides"), in: ["read"], timeout: 5)
-        XCTAssertEqual(mark(app, "网页第一条").value as? String, "unread")
-        XCTAssertEqual(mark(app, "整理 Q3 报表成 PPT").value as? String, "waiting")
+        expectValue(mark(app, "网页第一条"), "unread")
+        expectValue(mark(app, "整理 Q3 报表成 PPT"), "waiting")
         saveShot("s14-drawer-read")
     }
 
@@ -110,7 +116,9 @@ final class S14DrawerUITests: XCTestCase {
         let office = host(app, Self.office)
         XCTAssertTrue(office.waitForExistence(timeout: 10), app.debugDescription)
         waitForValue(office, in: ["offline"], timeout: 15)
-        XCTAssertTrue(office.label.contains("\(Self.office) is offline"), office.label)
+        // Wait for the label with a predicate: under load, one read of `label` can return a stale snapshot.
+        let named = any(app, "host.status").matching(NSPredicate(format: "label BEGINSWITH %@", "\(Self.office) is offline")).firstMatch
+        XCTAssertTrue(named.waitForExistence(timeout: 15), office.debugDescription)
         waitForValue(any(app, "drawer.hosts").firstMatch, in: ["1/2"], timeout: 10)
         XCTAssertTrue(workspace(app, "office").exists)
         assertOrder([office, workspace(app, "office"), row(app, "Install the printer driver"), row(app, "Weekly report")])
@@ -120,7 +128,7 @@ final class S14DrawerUITests: XCTestCase {
         XCTAssertTrue(any(app, "task.status").firstMatch.waitForExistence(timeout: 5), app.debugDescription)
         let title = app.staticTexts["page.title"]
         XCTAssertTrue(title.waitForExistence(timeout: 5))
-        XCTAssertEqual(title.label, "Weekly report")
+        XCTAssertTrue(app.staticTexts.matching(identifier: "page.title").matching(NSPredicate(format: "label == %@", "Weekly report")).firstMatch.waitForExistence(timeout: 10), title.label)
         XCTAssertFalse(app.otherElements["drawer"].exists)
     }
 
@@ -133,7 +141,7 @@ final class S14DrawerUITests: XCTestCase {
         XCTAssertEqual(any(app, "drawer.workspace").count, 0)
         assertOrder([host(app, Self.mac), row(app, "整理 Q3 报表成 PPT"), row(app, "修复 CI 挂掉的测试并提 PR"),
                      host(app, Self.office), row(app, "Install the printer driver")])
-        XCTAssertEqual(mark(app, "修复 CI 挂掉的测试并提 PR").value as? String, "running")
+        expectValue(mark(app, "修复 CI 挂掉的测试并提 PR"), "running")
         saveShot("s14-no-capability")
     }
 
@@ -163,8 +171,8 @@ final class S14DrawerUITests: XCTestCase {
         XCTAssertTrue(folder.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertEqual(any(app, "drawer.workspace").count, 1, app.debugDescription)
         assertOrder([any(app, "host.status").firstMatch, folder, row(app, "手机会话"), web])
-        XCTAssertEqual(mark(app, "网页会话").value as? String, "unread")
-        XCTAssertEqual(mark(app, "手机会话").value as? String, "read", "the phone showed its own reply")
+        expectValue(mark(app, "网页会话"), "unread")
+        expectValue(mark(app, "手机会话"), "read", "the phone showed its own reply")
         saveShot("s14-web-and-phone")
         try Data().write(to: signals.appendingPathComponent("verified"))
     }
