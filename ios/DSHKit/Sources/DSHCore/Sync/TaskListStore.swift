@@ -75,6 +75,10 @@ public final class TaskListStore {
         /// S3 milestones, from the cache (S2 x S3 seam): the list row shows the card.
         public var milestones: MilestoneTimeline
         public var modelSelection: ModelSelection?
+        /// S14: the session's workspace directory on the host (`drawer.v1`), from the cache.
+        public var workspace: String? = nil
+        /// S14: finished, and changed since the user last saw it on this phone.
+        public var unread = false
 
         /// Chunks stream the first phone turn. Its committed journal restores text after a truncated replay.
         public func singleTurnTranscript(_ messages: [Dshm_V1_SessionMessage]) -> String {
@@ -522,6 +526,7 @@ public final class TaskListStore {
         }
         task.createdAt = snapshot.createdAt
         task.approvalOnly = snapshot.approvalOnly
+        if let workspace = snapshot.workspace { task.workspace = workspace }
         let regresses = task.state.isTerminal && !snapshot.state.isTerminal
         if newerTurn || snapshot.updatedAt > task.updatedAt || (snapshot.updatedAt == task.updatedAt && !regresses) {
             task.approvals = snapshot.approvals
@@ -538,6 +543,16 @@ public final class TaskListStore {
             task.modelSelectionData = data
             task.transcript += selection.transcriptLine
         }
+    }
+
+    /// S14: the user saw this session as it is now. A finished session loses its unread mark
+    /// until the host reports a newer change. Stored in the cache, on this phone only.
+    public func markRead(_ key: String) {
+        guard let task = try? context.fetch(FetchDescriptor<CachedTask>(predicate: #Predicate { $0.key == key })).first,
+              task.state.isTerminal, task.readThrough.map({ $0 < task.updatedAt }) ?? true else { return }
+        task.readThrough = task.updatedAt
+        scheduleSave()
+        refresh()
     }
 
     public func cachedHistory(for row: TaskRow) -> Dshm_V1_SessionPage? {
@@ -632,7 +647,8 @@ public final class TaskListStore {
                 latestReply: t.latestReply, sessionRevision: t.sessionRevision.map(UInt64.init), externalSession: t.externalSession,
                 approvalOnly: t.approvalOnly, approvals: supportsApprovals == false ? [] : t.approvals,
                 milestones: timeline(of: t),
-                modelSelection: t.modelSelectionData.flatMap { try? ModelSelection(serializedBytes: $0) })
+                modelSelection: t.modelSelectionData.flatMap { try? ModelSelection(serializedBytes: $0) },
+                workspace: t.workspace, unread: t.state.isTerminal && (t.readThrough.map { $0 < t.updatedAt } ?? true))
         }
     }
 

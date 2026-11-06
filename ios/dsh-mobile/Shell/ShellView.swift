@@ -44,7 +44,9 @@ struct ShellView: View {
             .simultaneousGesture(drag(width: width))
         }
         .background(DSHTheme.canvas.ignoresSafeArea())
+        .modifier(DrawerReadTracker(store: store, shell: shell))
         .environment(shell)
+        .environment(store)
         .sheet(item: $shell.sheet) { route in
             route.content(store: store)
                 .environment(shell)
@@ -120,6 +122,7 @@ struct PageBar<Trailing: View>: View {
             }
             .accessibilityLabel("Open the drawer")
             .accessibilityIdentifier("drawer.open")
+            .overlay(alignment: .topTrailing) { DrawerButtonBadge() }
             VStack(spacing: 2) {
                 Text(title)
                     .font(.headline)

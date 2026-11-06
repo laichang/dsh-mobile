@@ -47,6 +47,8 @@ enum SheetRoute: Identifiable, Hashable {
     case devices(hostKey: String)
     /// The pending approval of a session (S18, screen 05).
     case approval(taskKey: String)
+    /// Settings, from the bottom of the drawer (S14).
+    case settings
 
     var id: Self { self }
 
@@ -63,6 +65,8 @@ enum SheetRoute: Identifiable, Hashable {
             DevicesSheet(store: store, hostKey: hostKey)
         case .approval(let key):
             ApprovalSheet(store: store, taskKey: key)
+        case .settings:
+            DrawerSettingsSheet(store: store)
         }
     }
 }

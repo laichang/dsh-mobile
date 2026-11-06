@@ -11,6 +11,7 @@ import { TaskState, type TaskSummary } from '../gen/s2_pb.ts'
 import type { DshTasks, StartedTask, TaskOutput } from '../dsh.ts'
 import { HostLog } from './host-log.ts'
 import { milestoneAdded } from '../milestones/wire.ts'
+import { sessionWorkspace } from '../drawer/workspace.ts'
 
 export interface TaskStarter {
   interrupt(taskId: string): void
@@ -46,6 +47,7 @@ export class TaskHub {
       taskId: task.taskId, title: prompt, state: TaskState.RUNNING,
       createdAtMs: at, updatedAtMs: at, message: '', approvalOnly: false, externalSession: false,
       sessionRevision: this.summaries.get(task.taskId)?.sessionRevision, pendingApprovals: this.approvalsFor(task.taskId),
+      workspace: sessionWorkspace(this.summaries.get(task.taskId)?.workspace, task.workspace ?? workspace),
     }
     if (summary.pendingApprovals.length) summary.state = TaskState.WAITING_ON_USER
     this.summaries.set(task.taskId, summary)
@@ -108,7 +110,7 @@ export class TaskHub {
 
   /** The DSH session ID is also CreateTask's ID, even if the journal arrives before its response. */
   observeSession(taskId: string, revision: bigint, title: string, state: TaskState, message: string,
-    updatedAt: bigint, createdAt: bigint, latestReply?: string, renamedTitle?: string) {
+    updatedAt: bigint, createdAt: bigint, latestReply?: string, renamedTitle?: string, workspace?: string) {
     const old = this.summaries.get(taskId)
     if (old?.sessionRevision !== undefined && old.sessionRevision >= revision) return
     const pending = this.approvalsFor(taskId)
@@ -119,6 +121,7 @@ export class TaskHub {
     if (renamedTitle) summary.title = renamedTitle
     else if (!summary.title || summary.title === taskId) summary.title = title
     summary.latestReply = latestReply
+    summary.workspace = sessionWorkspace(workspace, summary.workspace)
     summary.sessionRevision = revision
     summary.updatedAtMs = summary.updatedAtMs > updatedAt ? summary.updatedAtMs : updatedAt
     summary.state = pending.length ? TaskState.WAITING_ON_USER : state

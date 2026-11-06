@@ -6,6 +6,8 @@ import Foundation
 public enum DebugLaunchOptions {
     /// `-DSHMFakeBridge YES`: use the in-process FakeBridge instead of the loopback bridge.
     /// `-DSHMFakeBridge offline` (S2): the FakeBridge host is unreachable.
+    /// `-DSHMFakeBridge drawer`, `drawer-office-offline`, `drawer-v0` (S14): two hosts with
+    /// sessions in workspaces (`FakeDrawer`).
     /// `-DSHMFakeBridge approvals` (S15): two hosts, each with a task that waits on an approval;
     /// `approvals-office-offline`: the same, with Office Mac unreachable.
     public static let fakeBridgeKey = "DSHMFakeBridge"
@@ -40,6 +42,8 @@ public enum DebugLaunchOptions {
         public var connectDelay: Double?
         public var resetPairing = false
         public var fakeHold: String?
+        /// S14: the `FakeDrawer` variant (`drawer`, `drawer-office-offline`, `drawer-v0`).
+        public var fakeDrawer: String?
         public var fakeApprovals = false
         public var fakeAsk: String?
 
@@ -81,6 +85,7 @@ public enum DebugLaunchOptions {
             options.fakeApprovals = v == "approvals" || v == "approvals-office-offline"
             options.multipleFakeHosts = v == "multi" || v == "multi-office-offline" || options.fakeApprovals
             options.fakeBridgeOffline = v == "offline" || v == "multi-office-offline" || v == "approvals-office-offline"
+            if v.hasPrefix("drawer") { options.fakeDrawer = v }
         }
         if let v = values[resetStoreKey] { options.resetStore = yes.contains(v) }
         options.connectDelay = values[connectDelayKey].flatMap(Double.init)

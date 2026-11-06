@@ -52,6 +52,8 @@ export type TaskOutput =
 export interface StartedTask {
   taskId: string
   output: AsyncIterable<TaskOutput>
+  /** S14: the directory the session was created in. */
+  workspace?: string
 }
 
 /** Starts tasks on DSH. `cwd` is the default when the phone sends no workspace. */
@@ -107,7 +109,7 @@ export class DshTasks {
       throw error
     }
 
-    return { taskId: sessionId, output: mapFollow(first, iterator) }
+    return { taskId: sessionId, output: mapFollow(first, iterator), workspace: path }
   }
 }
 
