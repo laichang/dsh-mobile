@@ -61,7 +61,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
 | S16 | doing | `claude/s16-session` `107ab77` | 2026-11-06 | Owner merges main (guard fixes), then review --resume (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
-| S18 | doing | `claude/s18-approval-sheet` `9315a32` | 2026-11-06 | Reviewer runs `scripts/review S18` (§8) |
+| S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
 | S21 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -1315,6 +1315,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-06 · Guard fixes on `main`; slices merge `main`.** The user committed `2a6a0ed` (the guard waits on CPU idle, not load average; it stops noisy iOS services in `dshm-*` simulators) and `51009d0` (the watcher survives a killed job; simulators with no owner are shut down). At the user's request, each running slice merges `main` before its next demo. S16 (`107ab77`: `main` with S14 and S15 merged; `swift test`, `s16.sh`, `s14.sh --part ui-fake`, `s15.sh` passed) merges `main` again, then its review runs with `--resume`. S20 merges before its next demo. The S18 review on `9315a32` was already running and continues; S18 merges `main` before any repair.
 
+- **2026-11-06 · S18 merged.** Background reviewer ran `scripts/review S18` at `9315a32` (with the real-DSH `s4.sh`): `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S18-9315a32.txt`). Merged as `8d25764`; `scripts/check-plan --base` passed. No open `[human]` items, so S18 is `done`. S16 and S20 must merge `main` again (S18 changed `SessionPage.swift`, `ShellModel.swift`, `FakeBridge.swift`).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1367,3 +1369,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 48 | T1 | resource | Provisional: the S9 second host in `scripts/demo/t1.sh --all` uses bridge 47830 and web 3303 (`DSHM_SECOND_BRIDGE_PORT`, `DSHM_SECOND_WEB_PORT`). | `claude/t1-ui-shell` | `7b4a0c0` |
 | 49 | S15 | decision | D55, provisional: 所有任务 (screen 03) as a drawer page; sections, approval cards, offline hosts. | `claude/s15-all-tasks` | `bfd3d67` |
 | 50 | S14 | decision | D54, provisional: drawer levels host › workspace › session, status marks, local read state; `TaskSummary.workspace` (field 280), capability `drawer.v1`. | `claude/s14-drawer` | `d2cd506` |
+| 51 | S18 | decision | D57, provisional: the approval sheet comes up on session open and on a new approval, closes when the approval is gone, and comes back from a one-line bar after a swipe down. | `claude/s18-approval-sheet` | `9599cc6` |
