@@ -59,9 +59,9 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
 | S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
-| S16 | doing | `claude/s16-session` `030b891` | 2026-11-06 | Owner reruns demos on the merge with main, then review --resume (§8) |
+| S16 | doing | `claude/s16-session` `107ab77` | 2026-11-06 | Owner merges main (guard fixes), then review --resume (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
-| S18 | doing | `claude/s18-approval-sheet` `9315a32` | 2026-11-06 | Reviewer runs `scripts/review S18` (§8) |
+| S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
 | S21 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -898,7 +898,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S18 · Approval sheet
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s18-approval-sheet`
+**Status** doing · **Needs** T1 · **Branch** `claude/s18-approval-sheet`
 
 **Why**: STORY §5 (approvals show the effect; nothing is allowed by default), screen 05.
 
@@ -907,12 +907,28 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: A task asks for `rm -rf ~/Desktop/Q3/tmp`. The sheet comes up in the session. Deny it.
 
 **Done when**
-- [ ] [ui] The sheet comes up when the session opens with a pending approval, and when a new approval arrives — Evidence:
-- [ ] [ui] After an answer from the Web, the sheet closes on the phone — Evidence:
+- [x] [ui] The sheet comes up when the session opens with a pending approval, and when a new approval arrives — Evidence: test:S18ApprovalSheetUITests/testSheetComesUpWhenTheSessionOpensAndWhenANewApprovalArrives · cmd:scripts/demo/s18.sh · shot:evidence/S18/s18-sheet-on-open.png · shot:evidence/S18/s18-tool-arguments.png · shot:evidence/S18/s18-sheet-new-approval.png
+- [x] [ui] After an answer from the Web, the sheet closes on the phone — Evidence: test:S18ApprovalSheetUITests/testWebAnswerClosesTheSheet · cmd:scripts/demo/s18.sh · shot:evidence/S18/s18-before-web-answer.png · shot:evidence/S18/s18-web-answered.png
+- [x] [auto] With FakeHost, a running task asks for an approval, and an answer from another client resolves it and the task runs on — Evidence: test:ApprovalSheetFakeTests/aRunningTaskAsksAndAWebAnswerResolvesIt · cmd:scripts/demo/s18.sh
+- [x] [ui] Seam: the S4 (real DSH) and S15 UI tests pass with the sheet over the session page — Evidence: test:S4ApprovalUITests/testSwitchWhileHeldResumeThenInterrupt · cmd:scripts/demo/s4.sh · test:S15AllTasksUITests/testAllTasksShowsThreeSectionsAcrossHosts · cmd:scripts/demo/s18.sh
 
 **Not**: The dashed M2 parts of 05: risk tier, effect summary, Face ID, pre-authorization.
 
-**Log**: —
+**Log**
+- **2026-11-06 · built, to review.**
+  - Done: screen 05 as a `SheetRoute.approval(taskKey:)` sheet (`Features/ApprovalSheet/`). `PendingApprovalBar` on the session page brings the sheet up when the session opens with a pending approval and when a new one arrives, and takes it down when no approval is left (an answer here, or `ApprovalResolved` from the Web or the desktop). Sheet: tool tag, 任务已暂停，等你决定, title by kind, task · host, full command in SF Mono, reason, 工具参数 展开 ›, 拒绝 / 允许一次 (no "always allow"), footer (not allowed by default; every client sees it); grey buttons with S15's reason when the host is not online. A swipe down hides it for that approval; the page keeps one line 等你决定 · command · 查看 › (`approval.pending`) that opens it again. The inline `ApprovalCard` no longer shows on the session page; no identifier renamed. Own string catalog `ApprovalSheet.xcstrings`, tokens in `Theme+S18.swift`. Board caption of 05 has the new behavior (STORY §5 unchanged: it already says any client can answer); `scripts/render-design` run. Decision: see **D57**. *Provisional, pending user confirmation.* No new dependencies.
+  - FakeBridge: `Script.ask` (`-DSHMFakeAsk <text>`, also a release marker in `scripts/check-release-clean`) and `FakeHost.answerFromElsewhere(allow:)`. The UI test sends the Web's answer as a Darwin notification (`FakeApprovalSheet`, Debug only).
+  - Seams (this slice lands second): `S4ApprovalUITests/testSwitchWhileHeldResumeThenInterrupt` and `S15AllTasksUITests/testAllTasksShowsThreeSectionsAcrossHosts` close the sheet before they use the page (`closeApprovalSheet`, `reopenApprovalSheet` in `UITestSupport`).
+  - Verification: `scripts/demo/t0.sh` passed at the start (the first run, before the app restart, failed `testDemoAgainstRealDSH` on keyboard focus at load ~100; the next run passed). `scripts/demo/s18.sh --shots` exit 0 on `dshm-S18`: `swift test` 61 tests in 16 suites; UI S18 ×2, S15 ×2, 0 skipped. `scripts/demo/s4.sh` (real DSH, ports 47814/3287, `dshm-S18`) exit 0: S4 ×4. S4's evidence shots were not refreshed.
+  - Flaky: none in S18 tests. One `swift test` run inside `t0.sh` at load ~130 failed 4 earlier-slice tests (`store.send()` → nil) and passed alone with no change. First S18 UI run failed: `swipeDown` on the sheet content did not close it; the tests now drag the grabber (repair round 1, not a flake).
+  - Not done: —. The M1 `ApprovalCard` (`Features/Approvals/`) has no user now; left in place so that S16 (same page, in parallel) does not conflict; remove it after S16 merges.
+  - Next: independent `scripts/review S18`, then merge. For the coordinator: §0 S18 → review/done after the merge; add D57 to §9.
+- 2026-11-06: ticked the two items added in `9599cc6` (FakeHost ask and web answer; S4 and S15 seam), with the runs above as evidence. Not done: —. Next: `scripts/review S18` (it runs `scripts/demo/s18.sh` and `scripts/demo/s4.sh`).
+- **2026-11-06 · merged `main` (S14 drawer), to review.**
+  - Done: branch renamed to `claude/s18-approval-sheet`. `git merge main` (`a4d79ca`). Two conflicts; S18 owns the seam (lands after S14). `ShellModel.swift`: both `SheetRoute` cases kept (`.approval(taskKey:)`, `.settings`). `FakeBridge.swift`: hello advertises `approvals.v1` when `answersApprovals` (S15 seeded approvals or S18 `Script.ask`), then S14 `extraCapabilities`; init keeps `seed:`, `extraCapabilities:`, `approvals:`. D54, D55, D57 unchanged. No new decision, no new dependency.
+  - Verification (`dshm-S18`): `swift test` 66 tests in 17 suites, pass. `scripts/demo/s18.sh` exit 0: S18 ×2, S15 ×2, 0 skipped. `scripts/demo/s14.sh --part ui-fake` exit 0: S14 ×4. `scripts/demo/s4.sh` not run: the merge changes no approval code on the real path (the bridge diff from S14 is the session `workspace` field and the `drawer.v1` capability only).
+  - Flaky: none.
+  - Not done: —. Next: independent `scripts/review S18`, then merge.
 
 ### S19 · Done and failed
 
@@ -1311,6 +1327,10 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-06 · S18 merged `main`; review started.** The owner merged `main` (S14 seam) as `a4d79ca` and logged it at `9315a32`: `swift test` 66/66, `s18.sh` (S18 ×2, S15 ×2) and `s14.sh --part ui-fake` (S14 ×4) passed; no flaky test. A background reviewer runs `scripts/review S18` (with the real-DSH `s4.sh`) on `9315a32`. Its ready report reached the coordinator only through the heartbeat.
 
+- **2026-11-06 · Guard fixes on `main`; slices merge `main`.** The user committed `2a6a0ed` (the guard waits on CPU idle, not load average; it stops noisy iOS services in `dshm-*` simulators) and `51009d0` (the watcher survives a killed job; simulators with no owner are shut down). At the user's request, each running slice merges `main` before its next demo. S16 (`107ab77`: `main` with S14 and S15 merged; `swift test`, `s16.sh`, `s14.sh --part ui-fake`, `s15.sh` passed) merges `main` again, then its review runs with `--resume`. S20 merges before its next demo. The S18 review on `9315a32` was already running and continues; S18 merges `main` before any repair.
+
+- **2026-11-06 · S18 merged.** Background reviewer ran `scripts/review S18` at `9315a32` (with the real-DSH `s4.sh`): `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S18-9315a32.txt`). Merged as `8d25764`; `scripts/check-plan --base` passed. No open `[human]` items, so S18 is `done`. S16 and S20 must merge `main` again (S18 changed `SessionPage.swift`, `ShellModel.swift`, `FakeBridge.swift`).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1363,3 +1383,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 48 | T1 | resource | Provisional: the S9 second host in `scripts/demo/t1.sh --all` uses bridge 47830 and web 3303 (`DSHM_SECOND_BRIDGE_PORT`, `DSHM_SECOND_WEB_PORT`). | `claude/t1-ui-shell` | `7b4a0c0` |
 | 49 | S15 | decision | D55, provisional: 所有任务 (screen 03) as a drawer page; sections, approval cards, offline hosts. | `claude/s15-all-tasks` | `bfd3d67` |
 | 50 | S14 | decision | D54, provisional: drawer levels host › workspace › session, status marks, local read state; `TaskSummary.workspace` (field 280), capability `drawer.v1`. | `claude/s14-drawer` | `d2cd506` |
+| 51 | S18 | decision | D57, provisional: the approval sheet comes up on session open and on a new approval, closes when the approval is gone, and comes back from a one-line bar after a swipe down. | `claude/s18-approval-sheet` | `9599cc6` |

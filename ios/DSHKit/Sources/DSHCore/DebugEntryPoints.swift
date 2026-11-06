@@ -29,6 +29,10 @@ public enum DebugLaunchOptions {
     /// `-DSHMFakeScenario coding` (S16): with the FakeBridge, a five-step coding task with a long
     /// Markdown reply that keeps running until the user stops it (`FakeBridge.Script.codingTask`).
     public static let fakeScenarioKey = "DSHMFakeScenario"
+    /// `-DSHMFakeAsk <text>` (S18): with the FakeBridge approvals scenario, a task whose prompt
+    /// contains `<text>` asks for an approval before its reply, so a new approval arrives in an
+    /// open session.
+    public static let fakeAskKey = "DSHMFakeAsk"
 
     public struct Options: Equatable, Sendable {
         public var useFakeBridge = false
@@ -45,6 +49,7 @@ public enum DebugLaunchOptions {
         /// S14: the `FakeDrawer` variant (`drawer`, `drawer-office-offline`, `drawer-v0`).
         public var fakeDrawer: String?
         public var fakeApprovals = false
+        public var fakeAsk: String?
 
         public init(
             useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil,
@@ -94,6 +99,7 @@ public enum DebugLaunchOptions {
         if let v = values[resetPairingKey] { options.resetPairing = yes.contains(v) }
         options.fakeHold = values[fakeHoldKey]
         options.fakeScenario = values[fakeScenarioKey]
+        options.fakeAsk = values[fakeAskKey]
         return options
     }
 }

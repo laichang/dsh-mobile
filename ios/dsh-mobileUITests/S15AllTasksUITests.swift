@@ -101,6 +101,8 @@ final class S15AllTasksUITests: XCTestCase {
         XCTAssertTrue(arguments.label.contains("\"timeout\""), arguments.label)
         saveShot("s15-tool-arguments")
         home.buttons["tasklist.row"].tap()
+        // S18: the session opens with its approval sheet up (05).
+        closeApprovalSheet(app)
         XCTAssertTrue(status.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertEqual(app.staticTexts["page.title"].label, Self.homeTask)
         XCTAssertEqual(status.value as? String, "waiting")

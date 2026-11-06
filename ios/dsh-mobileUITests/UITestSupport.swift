@@ -77,6 +77,27 @@ extension XCTestCase {
         XCTAssertTrue(app.textFields["composer.prompt"].waitForExistence(timeout: 5), app.debugDescription, file: file, line: line)
     }
 
+    /// S18: swipes the approval sheet (05) of the open session down, if it is up. The page then
+    /// shows `approval.pending`, which opens it again.
+    func closeApprovalSheet(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let sheet = app.descendants(matching: .any).matching(identifier: "approval.sheet").firstMatch
+        guard sheet.waitForExistence(timeout: 10) else { return }
+        // Drag the grabber, above the content, down to the bottom of the screen.
+        let grabber = sheet.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0)).withOffset(CGVector(dx: 0, dy: -14))
+        let bottom = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98))
+        grabber.press(forDuration: 0.05, thenDragTo: bottom, withVelocity: .fast, thenHoldForDuration: 0)
+        XCTAssertTrue(sheet.waitForNonExistence(timeout: 15), app.debugDescription, file: file, line: line)
+    }
+
+    /// S18: opens the approval sheet again from the session page's `approval.pending` bar.
+    func reopenApprovalSheet(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let bar = app.buttons["approval.pending"]
+        XCTAssertTrue(bar.waitForExistence(timeout: 15), app.debugDescription, file: file, line: line)
+        bar.tap()
+        let sheet = app.descendants(matching: .any).matching(identifier: "approval.sheet").firstMatch
+        XCTAssertTrue(sheet.waitForExistence(timeout: 15), app.debugDescription, file: file, line: line)
+    }
+
     /// Opens a `dshm://` link the way the system does, confirms iOS's "Open in dsh-mobile?"
     /// prompt, and returns a fresh handle on the app (the old one can keep a stale tree).
     func openDeepLink(_ url: URL) -> XCUIApplication {
