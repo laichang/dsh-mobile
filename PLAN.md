@@ -58,7 +58,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S13 | review | merged `c56d47f` | 2026-11-05 | User verifies the same Web session and latest reply on a paired iPhone (§9) |
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
 | S14 | doing | `claude/s14-drawer` `c270ce1` | 2026-11-06 | Owner repairs the review FAIL, round 1 (§8) |
-| S15 | doing | `claude/s15-all-tasks` `bfd3d67` | 2026-11-06 | Reviewer runs `scripts/review S15` (§8) |
+| S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
 | S16 | doing | `claude/s16-session` | 2026-11-06 | Slice owner builds the session page (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
 | S18 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -1247,6 +1247,9 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-06 · S14 review FAIL.** `scripts/review S14` at `c270ce1`: `RESULT: FAIL` (`/tmp/dshm-review/S14-c270ce1.txt`). Part `s14-ui-fake` failed on all 3 runs: `testOfflineHostSessionsOpenFromTheCache` read the host label once, while the label (`Office-PC is offline, 上次连接 …`) was still being updated. The real-DSH part did not run. Sent to the S14 owner as repair round 1 (WORKFLOW.md §10.1). Load average 120–500 during the run.
 
+- **2026-11-06 · S15 merged.** Background reviewer ran `scripts/review S15` at `bfd3d67`: `RESULT: PASS` (`/tmp/dshm-review/S15-bfd3d67.txt`). Merged as `a298f38`; `scripts/check-plan --base` passed. No open `[human]` items, so S15 is `done`.
+  - Flaky: part `s15-ui` passed on run 2 of 3. Run 1 failed only in `S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge` ("Neither element nor any descendant has keyboard focus" when it typed into `composer.prompt`). S15 did not change that test. For a later slice: wait for keyboard focus before typing.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1297,3 +1300,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 46 | T1 | `[human]` | Accept that the app always uses dark mode. Needs the T1 app on the Simulator or an iPhone. | `main` | `4f289bc` |
 | 47 | T1 | decision | D51, provisional: first-message routing in the shell; supersedes D34 (row 33 stays until the user confirms D51). | `claude/t1-ui-shell` | `7b4a0c0` |
 | 48 | T1 | resource | Provisional: the S9 second host in `scripts/demo/t1.sh --all` uses bridge 47830 and web 3303 (`DSHM_SECOND_BRIDGE_PORT`, `DSHM_SECOND_WEB_PORT`). | `claude/t1-ui-shell` | `7b4a0c0` |
+| 49 | S15 | decision | D55, provisional: 所有任务 (screen 03) as a drawer page; sections, approval cards, offline hosts. | `claude/s15-all-tasks` | `bfd3d67` |
