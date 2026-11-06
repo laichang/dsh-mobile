@@ -36,7 +36,10 @@ import Testing
                             hostName: "Home Mac", approvals: [Self.approval])
         let store = try launch(host)
         store.foreground()
-        try await waitUntil("seeded approval") { store.sections.waitingOnMe.first?.approvals.count == 1 }
+        // The seeded task can arrive before the host is marked online; an answer needs it online.
+        try await waitUntil("seeded approval") {
+            store.sections.waitingOnMe.first?.approvals.count == 1 && store.hosts.first?.reachability == .online
+        }
         let row = try #require(store.sections.waitingOnMe.first)
         #expect(row.title == Self.approval.title)
         let pending = try #require(row.approvals.first)
