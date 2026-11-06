@@ -65,7 +65,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S19 | done | merged `077a9f3` | 2026-11-07 | — (provisional D60 in §9) |
 | S20 | done | merged `e849e8e` | 2026-11-07 | — (provisional D58 in §9) |
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
-| S22 | doing | `claude/s22-first-run` `2196033` | 2026-11-07 | Reviewer runs `scripts/review S22` (§8) |
+| S22 | doing | `claude/s22-first-run` `2196033` | 2026-11-07 | Slice owner merges `main` (S17); then `scripts/review S22 --resume` (§8) |
 | S23 | doing | `claude/s23-drawer-motion` | 2026-11-07 | Slice owner builds (§8) |
 
 ## 1. Approach
@@ -1452,6 +1452,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-07 · S22 built; review started.** S22 owner finished at `2196033`: the `[ui]` item ticked, D63 provisional, no new dependencies, no flaky tests in two full demo runs. It merged `main` (S19); `s22.sh` passed with the S11 seam tests (3/3). S22 lands after S11, so it owns the seam: `S11FirstRunUITests/testFirstRunFromWelcomeToReply` now finds the first task already in the composer. It created the simulator `dshm-S22` (iPhone 17 Pro, iOS 26.4). The S11 `[human]` onboarding items can be checked on the new 08 now. An independent reviewer runs `scripts/review S22` on `2196033` (ports 47810/3283).
 
 - **2026-11-07 · S17 merged.** Merged as `3a9f11e`; `scripts/check-plan` on the merge commit passed. `scripts/review S17 --resume` at `dfe79f3`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S17-dfe79f3.txt`); the Swift Testing pointer passed through the new `swift test --filter` check. No open `[human]` items, so S17 is `done`. D61 to §9. Bookkeeping by `row`, `pending` and `log` (`scripts/plan merged` refuses items added on the branch, as for S20).
+
+- **2026-11-07 · S22 review PASS; merge conflicts with S17.** `scripts/review S22` at `2196033`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S22-2196033.txt`). The merge into `main` conflicted with S17 in `ARCHITECTURE.md` and `design/board.png` (merge aborted). The owner merges `main`, runs `s22.sh` and `s17.sh`, then the review runs again on the new head.
 
 ## 9. Pending user confirmation
 
