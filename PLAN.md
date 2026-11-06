@@ -57,8 +57,8 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | Hosted compatibility checks deferred; local runner available (§8) |
 | S13 | review | merged `c56d47f` | 2026-11-05 | User verifies the same Web session and latest reply on a paired iPhone (§9) |
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
-| S14 | doing | `claude/s14-drawer` | 2026-11-06 | Slice owner builds the drawer (§8) |
-| S15 | doing | `claude/s15-all-tasks` | 2026-11-06 | Slice owner builds 所有任务 (§8) |
+| S14 | doing | `claude/s14-drawer` `c270ce1` | 2026-11-06 | Reviewer runs `scripts/review S14` (§8) |
+| S15 | doing | `claude/s15-all-tasks` `bfd3d67` | 2026-11-06 | Reviewer runs `scripts/review S15` (§8) |
 | S16 | doing | `claude/s16-session` | 2026-11-06 | Slice owner builds the session page (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
 | S18 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -1231,6 +1231,12 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-06 · Run paused by the user.** Workflow `wf_20f9600c-fdc` stopped. Heartbeat `d4a0e2c2` deleted. Slice demo jobs stopped and `dshm-S14`–`dshm-S16` shut down. No slice commit yet: the work is uncommitted in `.claude/worktrees/s14-drawer` (32 changed paths), `s15-all-tasks` (11) and `s16-session` (12), all on base `426049b`. To resume: create a new heartbeat, then continue each slice in its worktree (WORKFLOW.md §5.4) or resume the workflow with `resumeFromRunId`.
 
 - **2026-11-06 · Run resumed by the user.** Keep-awake on. New heartbeat cron job `0f66e06d` (`7,27,47 * * * *`, recurring, durable), created 2026-11-06; `d4a0e2c2` is deleted. The uncommitted work of the stopped workflow agents is saved as unreviewed WIP commits: S14 `a4fb1ad`, S15 `f63c6c7`, S16 `cb38321`. The coordinator worktrees under `.claude/worktrees/s1x-*` are removed. S14, S15 and S16 now continue as slice sessions (`s14-drawer`, `s15-all-tasks`, `s16-session`), each in its own app worktree cut from its WIP commit; each owner takes back the canonical branch name `claude/<id>-<name>`. Resources do not change.
+
+- **2026-11-06 · S14 and S15 built; reviews started.** S14 at `c270ce1` (D54) and S15 at `bfd3d67` (D55): all `[auto]` and `[ui]` items ticked, worktrees clean, no guard file changed. The app refused to start reviewer sessions from the completion-event turn, so the reviewers run as background agents (WORKFLOW.md §5.3, step 3) in the slice worktrees (`.claude/worktrees/x2-noise-b1b3cc` for S14, a folder name the app reused; `.claude/worktrees/s15-all-tasks-3cf42f`) with the slice resources.
+  - Flaky, not repaired (reported by S14; M1 tests that S14 did not change): under load averages of 150–400, `swift test` failed in two of six runs in `MilestoneStoreTests/todosTickOffOnTheTimelineAgainstFakeBridge`, `NoiseResumeTests/pairingASecondHostPreservesTheFirstConnectionAndRoutesEachPrompt`, `NoiseResumeTests/droppedNoiseConnectionReconnectsAndReplaysOnlyTheGap`, `TaskListStoreTests/reconnectsAfterTheConnectionDropsAndReplaysOnlyTheGap`. For a later slice.
+  - Reported by S15: under the same load, a first `s15.sh` run failed all earlier-slice UI tests (`kAXErrorServerNotFound`); the next run passed. In `t0.sh`, xcodebuild retried `testPairDeepLinkOpensPairingStub` once.
+  - Reported by S14: parallel slices share `/tmp/dshm-t0` logs when they run `scripts/demo/t0.sh` at the same time. A later change can give each simulator its own log directory.
+  - Load: the Mac ran at load averages of 150–400 on 12 CPUs for hours (simulators, TencentMeeting, `mediaanalysisd`).
 
 ## 9. Pending user confirmation
 
