@@ -982,6 +982,11 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Not done: the third line of the X4 caption on the board (a running task stops and waits in 等我处理 when its model goes away) is host behavior and not in this slice's Cuts; the FakeBridge task keeps running. For a later slice or upstream DSH.
   - For the coordinator: §0 S20 → review after `scripts/review S20`; add D58 to §9.
   - Next: independent `scripts/review S20`, then merge.
+- **2026-11-07 · merged main (S16), rerun.**
+  - Done: merged `main` at `9385fd2` (S16 session page, P0 process tooling). Conflict in `FakeBridge.swift` (`goneModels` and S16's `stopped`, `lastMilestones`); kept both sides.
+  - Verification on the merged code, with `eval "$(scripts/slice-env S20)"`: `scripts/demo/s20.sh --shots --regress` exit 0: `swift test` 69 tests in 19 suites, UI 4/4 (S20 ×2, T1, S9), `s6.sh` and `s7.sh` with real DSH. The first run failed in `S16CodingTaskTests/codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt` (`send()` → nil at load average 200, not S20); it passed on the next run.
+  - Earlier Log entries of this slice were edited by hand, before `scripts/plan` was on `main`.
+  - Next: independent `scripts/review S20`, then merge.
 
 ### S21 · Hosts and control
 
