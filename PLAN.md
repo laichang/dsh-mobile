@@ -61,7 +61,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
 | S16 | doing | `claude/s16-session` `030b891` | 2026-11-06 | Owner reruns demos on the merge with main, then review --resume (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
-| S18 | doing | `claude/s18-approval-sheet` `ffb61a8` | 2026-11-06 | Owner merges main (seam with S14), then review (§8) |
+| S18 | doing | `claude/s18-approval-sheet` `9315a32` | 2026-11-06 | Reviewer runs `scripts/review S18` (§8) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
 | S21 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -1294,6 +1294,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - S18: the unfinished merge of `main` in the old worktree was aborted (only the two conflicted files had changes); the branch is back at `ffb61a8`. S18 continues as a slice session (`s18-approval-sheet`) that merges `main` and reruns its demos.
   - S20: the background agent's uncommitted work is saved as unreviewed WIP `3763c00`. S20 continues as a slice session (`s20-pickers`).
   - The coordinator worktrees `.claude/worktrees/s18-approval-sheet` and `s20-pickers` are removed; each session takes back the canonical branch name. Resources do not change.
+
+- **2026-11-06 · S18 merged `main`; review started.** The owner merged `main` (S14 seam) as `a4d79ca` and logged it at `9315a32`: `swift test` 66/66, `s18.sh` (S18 ×2, S15 ×2) and `s14.sh --part ui-fake` (S14 ×4) passed; no flaky test. A background reviewer runs `scripts/review S18` (with the real-DSH `s4.sh`) on `9315a32`. Its ready report reached the coordinator only through the heartbeat.
 
 ## 9. Pending user confirmation
 
