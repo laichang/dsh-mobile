@@ -61,7 +61,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
 | S16 | doing | `claude/s16-session` `8c1bdb8` | 2026-11-06 | Owner merges main (seam with S15), then review --resume (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
-| S18 | doing | `claude/s18-approval-sheet` | 2026-11-06 | Slice owner builds the approval sheet (§8) |
+| S18 | doing | `claude/s18-approval-sheet` `ffb61a8` | 2026-11-06 | Owner merges main (seam with S14), then review (§8) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
 | S21 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -1282,6 +1282,10 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-06 · S14 merged.** The owner merged `main` (S15 seam) as `d2cd506`; `scripts/review S14 --resume` there: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S14-d2cd506.txt`). Merged as `6a120f7`; `scripts/check-plan --base` passed. No open `[human]` items, so S14 is `done`. S16 now needs one more merge of `main`.
 
 - **2026-11-06 · S20 assigned.** Branch `claude/s20-pickers`, worktree `.claude/worktrees/s20-pickers` (from `a9193c7`), simulator `dshm-S20`, DSHM_HOME `~/.dshm/home-s20`, bridge 47815, web 3288. The owner runs as a background agent (WORKFLOW.md §5.3, step 3). S16 merges `main` again for the S14 seam.
+
+- **2026-11-06 · S18 built.** S18 at `ffb61a8` (work in `9599cc6`; D57): all `[auto]` and `[ui]` items ticked, including a new seam item with S4 and S15; worktree clean; no guard file changed. Its branch conflicts with `main` (S14) in `FakeBridge.swift` and `ShellModel.swift`, so the owner merges `main` first and the review runs on the merged commit. The reviewer runs `scripts/review S18`, which runs `scripts/demo/s18.sh` and the real-DSH `scripts/demo/s4.sh` with the S18 ports.
+  - Flaky, reported by S18 (not S18 tests): in one `swift test` run inside `t0.sh` at load about 130, 4 earlier tests failed with `store.send()` returning nil; they passed alone. Same family as the `NoiseResumeTests` entries above.
+  - Clean-up after S16 merges: `ios/dsh-mobile/Features/Approvals/ApprovalCard.swift` is unused after S18 (left in place to avoid a conflict with S16).
 
 ## 9. Pending user confirmation
 
