@@ -782,7 +782,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S14 · Drawer
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s14-drawer`
+**Status** doing · **Needs** T1 · **Branch** `claude/s14-drawer`
 
 **Why**: STORY §4 (sessions from other clients; status at a glance), screen 02.
 
@@ -791,15 +791,32 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: Two hosts, and one is offline. A Web session and a phone session are in the same workspace. The drawer shows both under that workspace. The offline host is grey.
 
 **Done when**
-- [ ] [auto] The bridge sends the workspace of a Web session and of a phone session, and golden fixtures decode the same in Swift and TS — Evidence:
-- [ ] [ui] The drawer groups sessions by host and workspace, and shows the three status marks — Evidence:
-- [ ] [ui] The badge count is the same as the count in 等我处理 — Evidence:
-- [ ] [ui] Sessions of an offline host open from the cache — Evidence:
-- [ ] [ui] Without `drawer.v1`, the drawer shows host › session — Evidence:
+- [x] [auto] The bridge sends the workspace of a Web session and of a phone session, and golden fixtures decode the same in Swift and TS — Evidence: test:DrawerWorkspaces/phoneAndWebSessionsCarryTheirWorkspaceAsTheGoldenFixtures · test:goldenWebAndPhoneSessionsDecodeTheirWorkspace · cmd:scripts/demo/s14.sh
+- [x] [ui] The drawer groups sessions by host and workspace, and shows the three status marks — Evidence: test:S14DrawerUITests/testDrawerGroupsByHostAndWorkspaceWithStatusMarks · test:S14DrawerUITests/testWebAndPhoneSessionsShareAWorkspaceWithRealDSH · cmd:scripts/demo/s14.sh · shot:evidence/S14/s14-drawer.png · shot:evidence/S14/s14-drawer-read.png · shot:evidence/S14/s14-web-and-phone.png
+- [x] [ui] The badge count is the same as the count in 等我处理 — Evidence: test:S14DrawerUITests/testBadgeCountMatchesWaitingOnMe · cmd:scripts/demo/s14.sh · shot:evidence/S14/s14-badge.png
+- [x] [ui] Sessions of an offline host open from the cache — Evidence: test:S14DrawerUITests/testOfflineHostSessionsOpenFromTheCache · cmd:scripts/demo/s14.sh · shot:evidence/S14/s14-offline-host.png
+- [x] [ui] Without `drawer.v1`, the drawer shows host › session — Evidence: test:S14DrawerUITests/testWithoutDrawerCapabilityShowsHostAndSession · cmd:scripts/demo/s14.sh · shot:evidence/S14/s14-no-capability.png
 
 **Not**: iPad sidebar. Drawer search.
 
-**Log**: —
+**Log**
+- **2026-11-06 · built, to review.**
+  - Resume (WORKFLOW.md §5.4): the stopped workflow owner left WIP `a4fb1ad`. I examined it and kept it: protocol field `TaskSummary.workspace = 280` and fixtures `s14_phone_session_upserted_event`, `s14_web_session_upserted_event`; bridge `drawer.v1` (DSH `cwd` from the session list wins, else the phone's CreateTask directory); `DrawerTree` (host › workspace › session), `DrawerMark`, `CachedTask.workspace` and `readThrough`; `Features/Drawer/` (`DrawerHostTree`, hosts pill "2 / 3", badge, read tracker, settings button and `SheetRoute.settings`), `Theme+S14.swift`; `FakeDrawer` scenarios; `S14DrawerUITests`; `scripts/demo/s14.sh` and `s14-web.mjs`. Repaired: the diagnostic `session/list` call in `s14-web.mjs` used `request`; DSH wants `_request` (log only; the test does not depend on it).
+  - Reverted the WIP change to `scripts/demo/t0.sh` (a log directory per simulator). S14 does not need it: `s14.sh` has its own log directory. Suggestion for a later change: parallel slices share `/tmp/dshm-t0` logs when they run t0.sh at the same time.
+  - Decision: see **D54** (drawer levels, marks, local read state). *Provisional, pending user confirmation.* No new dependencies. The design board already shows screen 02 as built, so `design/board.html` and STORY.md do not change.
+  - Verification: `scripts/demo/t0.sh` exit 0 on `dshm-S14` at the start. `scripts/demo/s14.sh --shots` exit 0 on `dshm-S14`: bridge tests 59/59, `swift test` 64/64, S14 UI tests 5/5 (4 FakeBridge, 1 with real DSH Web + bridge, ports 47811/3284).
+  - Flaky tests, not added or changed by S14 (not repaired, for §8): under high load (load average 150–400, from `mediaanalysisd` in another simulator), `swift test` failed in two of six runs: `MilestoneStoreTests/todosTickOffOnTheTimelineAgainstFakeBridge`, `NoiseResumeTests/pairingASecondHostPreservesTheFirstConnectionAndRoutesEachPrompt`, `NoiseResumeTests/droppedNoiseConnectionReconnectsAndReplaysOnlyTheGap`, `TaskListStoreTests/reconnectsAfterTheConnectionDropsAndReplaysOnlyTheGap`. They pass at normal load (`send()` waits 500 ms).
+  - For the coordinator: §0 S14 → review after `scripts/review S14`; add D54 to §9. D54 skips D52/D53; check that S15 and S16 do not also use D54.
+  - Not done: —. Next: independent review run, then merge.
+- **2026-11-06 · review repair round 1 of 3.**
+  - Done: `scripts/review S14` at `c270ce1` failed in `s14-ui-fake`, on all 3 runs: `testOfflineHostSessionsOpenFromTheCache` read `office.label` one time, and the read returned a stale snapshot under load (the failure message, read a moment later, was correct). The app sets the label and the value in the same render of `DrawerHostHeader`, so the UI did not change. The test now waits for the label with a predicate (`label BEGINSWITH "Office-PC is offline"`). Each single read of a mark, workspace or page title in `S14DrawerUITests` now waits too (`expectValue`, label predicates).
+  - Verification: `scripts/demo/s14.sh --shots` exit 0 on `dshm-S14`, after an app restart stopped one run: bridge 59/59, `swift test` 64/64, S14 UI tests 5/5. The `session/list` diagnostic now shows the same DSH `cwd` for the Web session and the phone session.
+  - Flaky, not S14 (not repaired): `NoiseResumeTests` failed again at a high load (2 tests, 1 run). Five runs in a row at a load of about 100 passed.
+  - Next: `scripts/review S14 --resume` on this commit.
+- **2026-11-06 · merged `main` (S15) into the slice branch.** The review at `2d14273` passed, but the merge into `main` conflicted with S15 (`a298f38`). S14 lands second, so it owns the seam.
+  - Done: kept both sides. `FakeHost` takes `seed`, `extraCapabilities` and S15's `approvals`; its Hello capabilities are the T0–S3 ones, then `approvals.v1` when it has approvals, then the extra ones. `DebugLaunchOptions` parses both `approvals…` and `drawer…`. ARCHITECTURE.md keeps D54 (S14) and D55 (S15).
+  - Verification on the merged code, with the S14 resources (`dshm-S14`, 47811, 3284): `swift test` 65/65; `scripts/demo/s14.sh` exit 0 (bridge, swift, S14 UI 5/5); `scripts/demo/s15.sh` exit 0 (S15 UI 2/2, and the T1, S2, S3, S9 FakeBridge UI tests that use 所有任务, 5/5).
+  - Next: `scripts/review S14 --resume` on this commit, then merge.
 
 ### S15 · All tasks
 

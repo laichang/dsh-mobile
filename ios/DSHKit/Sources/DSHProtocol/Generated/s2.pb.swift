@@ -137,6 +137,17 @@ public nonisolated struct Dshm_V1_TaskSummary: Sendable {
   /// Clears the value of `latestReply`. Subsequent reads from it will return its default value.
   public mutating func clearLatestReply() {self._latestReply = nil}
 
+  /// S14 (drawer.v1, fields 280–299): the absolute directory of the session's workspace on the
+  /// host, from the DSH session (`cwd`) or the phone's CreateTask. Absent when the host does not know it.
+  public var workspace: String {
+    get {_workspace ?? String()}
+    set {_workspace = newValue}
+  }
+  /// Returns true if `workspace` has been explicitly set.
+  public var hasWorkspace: Bool {self._workspace != nil}
+  /// Clears the value of `workspace`. Subsequent reads from it will return its default value.
+  public mutating func clearWorkspace() {self._workspace = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -144,6 +155,7 @@ public nonisolated struct Dshm_V1_TaskSummary: Sendable {
   fileprivate var _modelSelection: Dshm_V1_ModelSelection? = nil
   fileprivate var _sessionRevision: UInt64? = nil
   fileprivate var _latestReply: String? = nil
+  fileprivate var _workspace: String? = nil
 }
 
 /// Request: every task this bridge knows, newest first.
@@ -263,7 +275,7 @@ nonisolated extension Dshm_V1_TaskState: SwiftProtobuf._ProtoNameProviding {
 
 nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TaskSummary"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0\u{4}L\u{2}session_revision\0\u{3}external_session\0\u{3}latest_reply\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0\u{4}L\u{2}session_revision\0\u{3}external_session\0\u{3}latest_reply\0\u{2}\u{12}workspace\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -283,6 +295,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
       case 260: try { try decoder.decodeSingularUInt64Field(value: &self._sessionRevision) }()
       case 261: try { try decoder.decodeSingularBoolField(value: &self.externalSession) }()
       case 262: try { try decoder.decodeSingularStringField(value: &self._latestReply) }()
+      case 280: try { try decoder.decodeSingularStringField(value: &self._workspace) }()
       default: break
       }
     }
@@ -329,6 +342,9 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     try { if let v = self._latestReply {
       try visitor.visitSingularStringField(value: v, fieldNumber: 262)
     } }()
+    try { if let v = self._workspace {
+      try visitor.visitSingularStringField(value: v, fieldNumber: 280)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -345,6 +361,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     if lhs._sessionRevision != rhs._sessionRevision {return false}
     if lhs.externalSession != rhs.externalSession {return false}
     if lhs._latestReply != rhs._latestReply {return false}
+    if lhs._workspace != rhs._workspace {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
