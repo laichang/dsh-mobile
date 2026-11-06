@@ -1,0 +1,114 @@
+#!/bin/bash
+# Review run for one slice (WORKFLOW.md §10, §10.1). The reviewer runs this script and nothing else.
+#
+#   scripts/review <ID>              run the [ui] items of slice <ID> from PLAN.md
+#   scripts/review <ID> --resume     skip the parts that passed for the same code
+#   scripts/review <ID> --dry-run    show what it would run, run nothing
+#
+# What it runs, from the slice section in PLAN.md (this worktree):
+#   - each distinct cmd: pointer of a [ui] item, one time;
+#   - if a [ui] item has only test: pointers, the slice demo scripts/demo/<id>.sh, one time.
+# Then each test: pointer of a [ui] item must show as passed in that output.
+# Retries: a failed part runs again a maximum of 2 times (DSHM_PART_RETRIES). A part that passes
+# on a retry is FLAKY, and the review still passes. The machine guard in scripts/demo/lib.sh
+# applies (load, simulator limit, shutdown at exit).
+# It refuses a worktree with uncommitted changes (evidence/ excepted).
+# Result: $DSHM_REVIEW_DIR (/tmp/dshm-review)/<ID>-<commit>.txt, and the exit code (0 = pass).
+# Resources (WORKFLOW.md §6) come from DSHM_BRIDGE_PORT, DSHM_WEB_PORT, DSHM_HOME, DSHM_SIM.
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || { cd "$(dirname "$0")/.." && pwd; })"
+cd "$ROOT"
+ID=""; RESUME=0; DRY=0
+for a in "$@"; do
+  case "$a" in
+    --resume) RESUME=1 ;;
+    --dry-run) DRY=1 ;;
+    -*) echo "unknown arg $a" >&2; exit 2 ;;
+    *) ID="$a" ;;
+  esac
+done
+[ -n "$ID" ] || { echo "usage: scripts/review <ID> [--resume] [--dry-run]" >&2; exit 2; }
+
+# The slice section: from "### <ID> ·" to the next "### ".
+SECTION=$(awk -v id="$ID" '
+  /^### / { f = (index($0, "### " id " ") == 1) ; next }
+  f' PLAN.md)
+[ -n "$SECTION" ] || { echo "review: no section '### $ID ·' in PLAN.md" >&2; exit 2; }
+UI=$(printf '%s\n' "$SECTION" | grep -E '^- \[[x ]\] \[ui\]' || true)
+[ -n "$UI" ] || { echo "review: $ID has no [ui] items" >&2; exit 2; }
+
+# Merge condition 1: each [ui] item is ticked.
+OPEN=$(printf '%s\n' "$UI" | grep -E '^- \[ \]' || true)
+if [ -n "$OPEN" ]; then
+  echo "review: $ID has [ui] items that are not ticked (WORKFLOW.md §10, condition 1):" >&2
+  printf '%s\n' "$OPEN" | cut -c1-120 | sed 's/^/  /' >&2
+  exit 1
+fi
+
+pointers() { # $1 = type; prints the pointers of that type in stdin, one per line
+  sed -n 's/.*Evidence: //p' | tr '·' '\n' | sed -E 's/^ +//; s/ +$//' | sed -n "s/^$1://p"
+}
+# A path with --all runs the path without it as well: keep only the --all run.
+CMDS=$(printf '%s\n' "$UI" | pointers cmd | awk '!seen[$0]++' \
+  | awk '{ c[NR] = $0 } END { for (i = 1; i <= NR; i++) { a = 0; for (j = 1; j <= NR; j++) if (c[j] == c[i] " --all") a = 1; if (!a) print c[i] } }')
+TESTS=$(printf '%s\n' "$UI" | pointers test | awk '!seen[$0]++')
+ONLY_TEST=$(printf '%s\n' "$UI" | grep -v 'cmd:' || true)
+DEMO="scripts/demo/$(printf '%s' "$ID" | tr '[:upper:]' '[:lower:]').sh"
+if [ -n "$ONLY_TEST" ] && ! printf '%s\n' "$CMDS" | grep -qE "^$DEMO( |$)"; then
+  [ -x "$DEMO" ] || { echo "review: [ui] items with only test: pointers need $DEMO" >&2; exit 1; }
+  CMDS=$(printf '%s\n%s\n' "$CMDS" "$DEMO" | grep . )
+fi
+
+HEAD=$(git rev-parse --short HEAD)
+echo "review: $ID at $HEAD"
+echo "review: parts to run:"; printf '%s\n' "$CMDS" | sed 's/^/  /'
+echo "review: tests that must pass:"; printf '%s\n' "${TESTS:-(none)}" | sed 's/^/  /'
+[ $DRY = 1 ] && exit 0
+if [ -n "$(git status --porcelain -- . ':!evidence')" ]; then
+  echo "review: commit the changes first. A review runs on a commit, so the merge can name it." >&2
+  git status --short -- . ':!evidence' | head -10 | sed 's/^/  /' >&2
+  exit 1
+fi
+
+export SIM="${DSHM_SIM:-}"
+source scripts/demo/lib.sh   # the guard: this script owns the simulator for the whole review
+export DSHM_PART_RETRIES="${DSHM_PART_RETRIES:-2}" DSHM_RESUME=$RESUME
+export DSHM_STATE="/tmp/dshm-state/review-$ID"
+OUT_DIR="${DSHM_REVIEW_DIR:-/tmp/dshm-review}"; mkdir -p "$OUT_DIR"
+LOG="$OUT_DIR/$ID-$HEAD.log"; RESULT="$OUT_DIR/$ID-$HEAD.txt"
+: > "$LOG"
+
+STATUS=0; LINES=()
+n=0
+while IFS= read -r cmd; do
+  [ -n "$cmd" ] || continue
+  n=$((n + 1))
+  set +e
+  # shellcheck disable=SC2086 # a cmd: pointer is a path plus words
+  demo_part "cmd$n" $cmd 2>&1 | tee -a "$LOG"
+  rc=${PIPESTATUS[0]}
+  set -e
+  if [ "$rc" = 0 ]; then LINES+=("PASS  $cmd"); else LINES+=("FAIL  $cmd"); STATUS=1; fi
+done <<< "$CMDS"
+
+# Each test: pointer must show as passed. XCTest prints
+#   Test Case '-[dsh_mobileUITests.Suite testName]' passed
+# A pointer "Suite" needs at least one passed case of Suite; "Suite/name" needs that case.
+while IFS= read -r t; do
+  [ -n "$t" ] || continue
+  suite=${t%%/*}; name=${t#*/}; [ "$name" = "$t" ] && name=""
+  pat="Test Case '-\[[A-Za-z_]+\.$suite ${name:-[A-Za-z0-9_]+}\]' passed"
+  if grep -qE "$pat" "$LOG"; then LINES+=("PASS  test:$t")
+  else LINES+=("FAIL  test:$t (no passed run in the output)"); STATUS=1
+  fi
+done <<< "$TESTS"
+
+FLAKY="$DSHM_STATE/$(dshm_code_key)/flaky.txt"
+{
+  echo "review $ID at $HEAD  $(date '+%Y-%m-%d %H:%M')"
+  printf '%s\n' "${LINES[@]}"
+  if [ -s "$FLAKY" ]; then echo "flaky (record in the slice Log and in PLAN.md §8):"; sed 's/^/  /' "$FLAKY"; fi
+  if [ $STATUS = 0 ]; then echo "RESULT: PASS"; else echo "RESULT: FAIL"; fi
+  echo "log: $LOG"
+} | tee "$RESULT"
+exit $STATUS

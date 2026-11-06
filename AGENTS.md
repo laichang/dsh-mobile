@@ -23,6 +23,7 @@ Read on demand, not all at once:
 - `design/`: the design board (`board.html` is the source; `board.png` and `screens/` are renders from `scripts/render-design`). See DESIGN.md
 - `evidence/<slice>/`: screenshots cited by PLAN.md `shot:` pointers
 - `scripts/check-plan`: guards PLAN.md's Done when items (see PLAN.md "How to use this file")
+- `scripts/review <ID>`: the review run of one slice; `scripts/demo/lib.sh` also holds the machine guard (WORKFLOW.md §6.1, §10.1)
 - `.githooks/`: git hooks; `.claude/`: Claude Code hooks; `.codex/`: Codex hooks (WORKFLOW.md §12)
 
 ## Code is truth

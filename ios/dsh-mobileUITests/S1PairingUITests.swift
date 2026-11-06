@@ -39,7 +39,9 @@ final class S1PairingUITests: XCTestCase {
         let noise = reopened.descendants(matching: .any)["host.channel"]
         XCTAssertTrue(noise.waitForExistence(timeout: 10))
         XCTAssertEqual(noise.value as? String, "noise")
-        let text = runDemo(reopened, prompt: "用一句话介绍你自己。", timeout: 120)
+        // A unique prompt per run: real DSH keeps every earlier run, and the list shows only the rows
+        // on screen, so a repeated prompt never adds a row that the wait can see.
+        let text = runDemo(reopened, prompt: "用一句话介绍你自己。#\(UUID().uuidString.prefix(6))", timeout: 120)
         XCTAssertTrue(text.contains("streamed through the dsh-mobile bridge"), text)
         saveShot("s1-demo-over-noise")
 

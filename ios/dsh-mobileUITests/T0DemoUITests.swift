@@ -54,7 +54,9 @@ final class T0DemoUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47801", "-DSHMResetPairing", "YES"]
         app.launch()
-        let text = runDemo(app, prompt: "用一句话介绍你自己。", timeout: 120)
+        // A unique prompt per run: real DSH keeps every earlier run, and the list shows only the rows
+        // on screen, so a repeated prompt never adds a row that the wait can see.
+        let text = runDemo(app, prompt: "用一句话介绍你自己。#\(UUID().uuidString.prefix(6))", timeout: 120)
         // The local acceptance host uses DSH's mock LLM (scripts/dsh-up.mjs MOCK_TEXT).
         XCTAssertTrue(text.contains("streamed through the dsh-mobile bridge"), text)
         saveShot("t0-real-dsh-done")

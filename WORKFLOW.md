@@ -126,6 +126,13 @@ This message gives the coordinator permission for sessions, workflows, and backg
 - When a slice owner stops, examine its result. Do not trust its report alone.
 - Merge each slice that meets the merge conditions (§10). Then start the next slice.
 - Keep §0 and your own status title (§7) up to date after each change.
+- Wait for the completion event of a slice session. Do not poll git for a commit. Do not wait on a background shell for the work of a slice owner.
+- A completion event tells you that a turn of the slice session ended. It does not tell you that the slice is complete. Read the report:
+  - If the report says that the work is complete, examine the result (see above).
+  - If the report says that a job continues in the background, wait for the next completion event of that slice session.
+  - If no next event arrives and the slice session is idle, do the recovery steps (§5.4) for that slice.
+- Each brief tells the slice owner: "When a background job ends, examine its result and end a turn with a report. Do not end the slice work while a job runs."
+- Do not add merge conditions to §10. If a condition in §10 is not sufficient, propose a change to this file (§14).
 - Stop only when no slice can move without the user. Then tell the user what waits for them.
 
 ### 5.3 Session start limit and fallback
@@ -140,6 +147,27 @@ Do these steps to keep the run moving:
 4. Record the change in §8 of the plan file.
 
 CAUTION: Never send a message to the coordinator for the user. A relayed message breaks the chain in step 2.
+
+### 5.4 Recovery after an interruption
+
+An API error, an app restart, or a stopped turn ends the chain (§5.3). An app restart also stops all background shells and all running tests.
+
+A notification that a background job is `stopped` or `killed` is an interruption. The jobs of other sessions can also be stopped, and those sessions possibly get no notification. Do not end that turn with no action.
+
+Do these steps at the start of each turn that follows an interruption:
+
+1. Do not trust the state that you remember. Examine the real state of each slice that is `doing`:
+   - the head commit of the slice branch,
+   - the uncommitted changes in its worktree,
+   - the test and build processes that run now (`pgrep -fl 'xcodebuild|swift-test'`),
+   - the status of the slice session (`list_sessions`).
+2. If a slice owner is idle and no process runs for its slice, send it a brief to continue. The brief tells it what stopped and what to run again.
+3. Start the slices whose **Needs** are met (§5.2).
+4. Record the interruption and the recovery in §8 of the plan file.
+
+If the app refuses to start a session or to send a message, tell the user in one line. Ask the user to send one message to the coordinator, for example: "Continue. Recover after the interruption (WORKFLOW.md §5.4)." That user turn starts a new chain.
+
+A slice owner does the same steps 1 and 2 for its own slice when it receives a message after an interruption.
 
 ## 6. Resources for each slice
 
@@ -158,6 +186,22 @@ Slices run tests at the same time. Each slice therefore gets its own resources:
 - A slice uses only its own resources. All slices use the DSH install in `~/.dshm/runtime` read-only.
 - Port 47800 is for demos on `main`. Port 47801 is for `scripts/demo/t0.sh`.
 - The slice demo script reads the resources from `DSHM_BRIDGE_PORT`, `DSHM_WEB_PORT`, `DSHM_HOME`, and `DSHM_SIM`.
+
+### 6.1 Simulator limit
+
+Many booted simulators make the Mac slow. A slow Mac makes UI tests fail at random.
+
+The guard in `scripts/demo/lib.sh` applies these rules. Each demo script and `scripts/review` loads it.
+
+- The guard waits while the 1-minute load average is more than 2 × the CPU count. It waits while 3 other `dshm-*` simulators are booted. After 30 minutes, it stops the script with an error.
+- When the script ends, the guard shuts down the simulator of the script. It does not shut down a simulator of the user.
+
+Rules for all agents:
+
+- Run UI tests only through a demo script or `scripts/review`. Do not run `xcodebuild test` directly.
+- Do not change `DSHM_SIM_LIMIT` or `DSHM_GUARD_WAIT`.
+- If the guard stops you, shut down the `dshm-*` simulators that no running slice uses. Then run the script again.
+- The coordinator does not start a new slice or reviewer while 3 `dshm-*` simulators are booted.
 
 ## 7. Status titles
 
@@ -217,7 +261,7 @@ The user is not always available. Agents therefore do not wait for the user at a
 The coordinator merges a slice branch into `main` without permission when all these conditions are true:
 
 1. Each `[auto]` and `[ui]` item of the slice is ticked, and each evidence pointer resolves.
-2. A reviewer ran each `[ui]` item again, and each item passed.
+2. A reviewer ran `scripts/review <ID>` on the head commit of the slice branch, and the result is `RESULT: PASS`.
 3. `scripts/check-plan` passes. For a merge commit, run `scripts/check-plan --base <PLAN.md before the merge> --new PLAN.md` by hand, because the pre-commit hook does not run on a merge commit.
 
 The merge does not wait for `[human]` items. After the merge:
@@ -231,6 +275,27 @@ The merge does not wait for `[human]` items. After the merge:
 - Bookkeeping commits on `main` (§0, §8, §9) do not need permission.
 
 If a condition is false, do not merge. Tell the user what is missing.
+
+### 10.1 Review run and flaky tests
+
+A test is flaky when it fails and then passes with no change to the code.
+
+`scripts/review <ID>` applies these rules:
+
+- It runs only the `[ui]` items of the slice, from the plan file: each `cmd:` pointer one time, and the slice demo for items with only `test:` pointers. Then each `test:` pointer must show as passed.
+- It runs a failed part again, a maximum of 2 times. A part that passes on a run again is flaky. The review still passes, and the result lists the flaky part.
+- It does not run again the parts that passed for the same code. This applies to a run again and to `--resume`.
+- It refuses a worktree with uncommitted changes. It writes the result to `/tmp/dshm-review/<ID>-<commit>.txt`.
+
+Rules for all agents:
+
+- The reviewer runs `scripts/review <ID>` and nothing else. The reviewer reports the result file.
+- Do not run the review again because of a flaky part. Write each flaky part in the Log of the slice. The coordinator adds it to §8.
+- If the result is `RESULT: FAIL`, the slice owner repairs the failure. Then run `scripts/review <ID> --resume` on the new commit.
+- A slice owner uses a maximum of 3 repair rounds for flaky tests of one slice. After that, do not repair more. Record each remaining flaky test in the Log and in §8.
+- Do not repair a flaky test that the slice did not add or change. Record it in §8 for a later slice.
+- A script that runs many parts (for example `scripts/demo/t1.sh --all`) wraps each part in `demo_part` from `scripts/demo/lib.sh`. Then a failure in one part does not run the other parts again.
+- At the start of a work session, run only the T0 demo (§4.1). Do not run the demos of other slices to prepare the Mac.
 
 ## 11. Decisions that stay with the user
 
@@ -289,3 +354,4 @@ If a tool has no function for a capability, use the fallback in this table. Then
 ### Change log
 
 - **2026-11-05**: First version. Moved the process rules from "How to use this file" in the plan file. Added the setup procedure, the long-horizon run, the resources, the status titles, and the tool support for Codex. Added the Codex hooks (`.codex/hooks.json`, `codex-guard`) and the Codex setup (§2.1).
+- **2026-11-06**: Added the recovery after an interruption (§5.4), the simulator limit (§6.1, enforced by the guard in `scripts/demo/lib.sh`), and the review run with the rules for flaky tests (§10.1, enforced by `scripts/review`). Added coordinator rules to §5.2: wait for completion events, read each event as the end of a turn and not of the slice, and do not add merge conditions. A `stopped` or `killed` job notification starts the recovery (§5.4). Reason: T1 stopped for many hours. An app restart stopped the background jobs. Six booted simulators made the UI tests flaky. A merge condition of "5 runs in a row" did not converge. Each failure in `t1.sh --all` started the full regression again.
