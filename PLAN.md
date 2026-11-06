@@ -64,7 +64,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | doing | `claude/s19-outcomes` | 2026-11-07 | Slice owner builds done and failed (§8) |
 | S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
-| S21 | doing | `claude/s21-hosts` `477f9bd` | 2026-11-07 | Reviewer runs `scripts/review S21` (§8) |
+| S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
 | S22 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S23 | todo | — | 2026-11-06 | Next batch (S14 is merged) |
 
@@ -1369,6 +1369,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - Flaky, not S21's (reported by S21): `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval` (S15) failed in 3 of 6 `s21.sh` runs and in about 1 of 8 runs alone under load: it answers before the seeded approval is ready. For a later repair in S15's tests.
   - Not covered by a test (S21): the default model on the hosts sheet shows only when a host sends a model catalog; FakeHost sends none.
 
+- **2026-11-07 · S21 merged.** Background reviewer ran `scripts/review S21` at `477f9bd`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S21-477f9bd.txt`). Merged as `13648eb`; `scripts/check-plan --base` passed. One `[human]` item is open, so S21 is in `review` (§9). S19 and S20 must merge `main` before review.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1423,3 +1425,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 50 | S14 | decision | D54, provisional: drawer levels host › workspace › session, status marks, local read state; `TaskSummary.workspace` (field 280), capability `drawer.v1`. | `claude/s14-drawer` | `d2cd506` |
 | 51 | S18 | decision | D57, provisional: the approval sheet comes up on session open and on a new approval, closes when the approval is gone, and comes back from a one-line bar after a swipe down. | `claude/s18-approval-sheet` | `9599cc6` |
 | 52 | S16 | decision | D56, provisional: session page layout (milestone bar at the top, "done / total" counts finished todos; stop key in the send position); D23 (b) updated. | `claude/s16-session` | `1388a9c` |
+| 53 | S21 | decision | D59, provisional: hosts sheet (H) from the drawer pill, host devices and audit (X2), all-offline card on 01 (X3). | `claude/s21-hosts` | `477f9bd` |
+| 54 | S21 | `[human]` | On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that. Needs a paired iPhone and a running host with the S21 app. | `main` | `13648eb` |
