@@ -875,6 +875,11 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Verified on `030b891` with S16's resources (`dshm-S16`): `swift test` 66 tests in 17 suites; `scripts/demo/s16.sh` (UI 11/11), `scripts/demo/s14.sh --part ui-fake` (4/4), `scripts/demo/s15.sh` (7/7), all exit 0. One run on `8e2a4db` was killed (exit 144) and two runs were stopped by app restarts and the pause; they were run again, not repaired.
   - Under load, `testMilestoneBarStaysAtTopWhileTranscriptScrolls` (1242 s) and `S15AllTasksUITests/testAllTasksShowsThreeSectionsAcrossHosts` (1398 s) passed but were slow: each step waited 60 s for "animations complete".
   - Next: `scripts/review S16 --resume` on this commit, then merge.
+- **2026-11-07 · merged main again (guard fixes, then S18) for the seam.**
+  - Done: merge commits `bee3c86` (guard fixes, README, license, `Signing.xcconfig`) and `ca76dd9` (S18). Kept both sides. In `FakeBridge.swift`, S18's `Script.ask`/`asks(_:)` and `answersApprovals` sit next to S16's `codingTask`, `interruptible` and interrupt handling. `DebugEntryPoints.swift` keeps `fakeScenario` and `fakeAsk`. `scripts/check-release-clean` keeps both `DSHMFakeScenario` and `DSHMFakeAsk`. ARCHITECTURE.md has D54–D57. Deleted `Features/Approvals/ApprovalCard.swift`: nothing uses it since S18's `PendingApprovalBar` (S18 Log, §8).
+  - Verified on `ca76dd9` with S16's resources (`dshm-S16`): `swift test` (67 tests in 18 suites), `scripts/demo/s16.sh` (UI 11/11), `scripts/demo/s18.sh` (UI 4/4), `scripts/check-release-clean` (Release carries none). All exit 0.
+  - Slow, not failing: `testMilestoneBarStaysAtTopWhileTranscriptScrolls` took 1290 s, with each step waiting 60 s for "animations complete", also under the new CPU-idle guard. Three of the last seven runs took ~1250 s; the others took 40–70 s. The stop test on the same running task stays fast, so the cause is probably in the scroll steps, not the spinner. Not repaired yet; a candidate for a later look.
+  - Next: `scripts/review S16 --resume` on this commit, then merge.
 
 ### S17 · Structured transcript
 
