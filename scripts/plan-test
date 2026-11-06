@@ -1,0 +1,138 @@
+#!/bin/bash
+# Tests for scripts/plan, scripts/slice-env and dshm_code_key (scripts/demo/lib.sh), in a temporary
+# clone (the repo is not touched).
+#   scripts/plan-test        ends with "failures: 0"
+set -uo pipefail
+SRC="$(git rev-parse --show-toplevel)"
+T=$(mktemp -d "${TMPDIR:-/tmp}/dshm-plan-test.XXXXXX")
+trap 'rm -rf "$T"' EXIT
+FAIL=0
+ok()   { printf '  ok    %s\n' "$1"; }
+bad()  { printf '  FAIL  %s\n' "$1"; FAIL=$((FAIL + 1)); }
+expect() { # expect <name> <0|1> <command…>: exit code 0 = success, 1 = refused
+  local name=$1 want=$2; shift 2
+  local out; out=$("$@" 2>&1); local rc=$?
+  if { [ "$want" = 0 ] && [ $rc = 0 ]; } || { [ "$want" = 1 ] && [ $rc != 0 ]; }; then ok "$name"
+  else bad "$name (exit $rc)"; printf '%s\n' "$out" | head -8 | sed 's/^/        /'; fi
+}
+has() { # has <name> <file> <fixed string>
+  if grep -qF -- "$3" "$2"; then ok "$1"; else bad "$1: no '$3' in $2"; fi
+}
+
+git clone -q "$SRC" "$T/repo"
+cd "$T/repo"
+git checkout -q -B main HEAD
+# The working copy of the tools under test (they may be uncommitted in $SRC).
+cp "$SRC"/scripts/plan "$SRC"/scripts/slice-env "$SRC"/scripts/check-plan scripts/
+mkdir -p scripts/lib && cp "$SRC"/scripts/lib/dshm.py scripts/lib/
+cp "$SRC"/scripts/resources.tsv scripts/
+git add -A scripts && git commit -q -m "tools under test" --allow-empty
+git config user.name test; git config user.email test@example.com
+
+echo "read-only"
+expect "title" 0 scripts/plan title
+expect "show S22" 0 scripts/plan show S22
+expect "slice-env of an unassigned slice is refused" 1 scripts/slice-env S22
+expect "bad ID is refused" 1 scripts/plan show Q9
+
+echo "coordinator on main"
+prev=$(cat scripts/resources.tsv | awk -F'\t' 'NR>1 && $1!="id" && $1!~/^#/ {sub(/.*D/, "", $10); if ($10+0 > m) m = $10+0} END {print m}')
+expect "assign S22" 0 scripts/plan assign S22 --branch claude/s22-test --worktree .claude/worktrees/s22 --from abc1234 --commit
+has "registry row for S22" scripts/resources.tsv "S22	claude/s22-test	"
+s22d=$(awk -F'\t' '$1=="S22"{print $10}' scripts/resources.tsv)
+[ "$s22d" = "D$((prev + 1))-D$((prev + 3))" ] && ok "S22 got the next decision block ($s22d)" || bad "S22 decisions $s22d, highest before $prev"
+has "§0 row of S22 is doing" PLAN.md '| S22 | doing | `claude/s22-test` |'
+has "§8 entry for the assignment" PLAN.md "· S22 assigned.** Branch \`claude/s22-test\`, worktree"
+eval "$(scripts/slice-env S22)"
+[ "$DSHM_SIM" = dshm-S22 ] && ok "slice-env exports the simulator" || bad "slice-env DSHM_SIM=$DSHM_SIM"
+slot=$(awk -F'\t' '$1=="S22"{print $3}' scripts/resources.tsv)
+case "$slot" in 3|5|6) bad "S22 took a slot held by an active slice ($slot)";; *) ok "S22 slot $slot is not held";; esac
+expect "assign S22 again keeps its row" 0 scripts/plan assign S22 --branch claude/s22-test
+[ "$(grep -c '^S22	' scripts/resources.tsv)" = 1 ] && ok "still one S22 row" || bad "two S22 rows"
+expect "assign S23 (next block)" 0 scripts/plan assign S23 --branch claude/s23-test
+s23d=$(awk -F'\t' '$1=="S23"{print $10}' scripts/resources.tsv)
+[ "$s23d" = "D$((prev + 4))-D$((prev + 6))" ] && ok "S23 block follows S22 ($s23d)" || bad "S23 decisions $s23d"
+git checkout -q -- PLAN.md scripts/resources.tsv
+expect "row S22 blocked" 0 scripts/plan row S22 blocked --next "Waits for the user"
+has "§0 row changed" PLAN.md '| S22 | blocked | `claude/s22-test` |'
+expect "row with a bad status is refused" 1 scripts/plan row S22 finished
+expect "row of a slice not in §0 is refused" 1 scripts/plan row S99 doing
+expect "log entry" 0 scripts/plan log "Test entry" --body $'First line.\n- a sub-item'
+has "§8 entry title" PLAN.md "· Test entry.** First line."
+has "§8 sub-item indented" PLAN.md "  - a sub-item"
+expect "pending row" 0 scripts/plan pending "S22 × S16" decision "A test | item" --commit-ref abc1234
+has "§9 row with escaped pipe" PLAN.md '| S22 × S16 | decision | A test \| item | `main` | `abc1234` |'
+expect "dry run changes nothing" 0 scripts/plan row S22 doing --dry-run
+has "dry run left blocked" PLAN.md '| S22 | blocked |'
+git checkout -q -- PLAN.md
+expect "owner command on main is refused" 1 scripts/plan tick S22 "anything" --evidence "cmd:scripts/plan"
+
+echo "slice owner on its branch"
+git checkout -q -b claude/s22-test
+expect "coordinator command on a slice branch is refused" 1 scripts/plan row S22 doing
+expect "owner of another slice is refused" 1 scripts/plan slice-status S21 doing
+expect "slice-status S22 doing" 0 scripts/plan slice-status S22 doing
+item=$(awk '/^### S22 /{f=1;next} /^### /{f=0} f && /^- \[ \] \[(auto|ui)\]/{print; exit}' PLAN.md \
+  | sed -E 's/^- \[ \] \[[a-z]+\] //; s/ — Evidence:.*//' | cut -c1-30)
+human=$(awk '/^### S22 /{f=1;next} /^### /{f=0} f && /^- \[ \] \[human\]/{print; exit}' PLAN.md \
+  | sed -E 's/^- \[ \] \[human\] //; s/ — Evidence:.*//' | cut -c1-30)
+expect "tick with evidence that does not resolve is refused" 1 scripts/plan tick S22 "$item" --evidence "test:NoSuchTestAnywhere"
+expect "tick with no match is refused" 1 scripts/plan tick S22 "zzz no such item" --evidence "cmd:scripts/plan"
+expect "tick one item" 0 scripts/plan tick S22 "$item" --evidence "cmd:scripts/plan"
+has "item ticked with evidence" PLAN.md "$item"
+if [ -n "$human" ]; then expect "tick a [human] item is refused" 1 scripts/plan tick S22 "$human" --evidence "cmd:scripts/plan"; fi
+expect "slice log" 0 scripts/plan slice-log S22 "built, to review" --body $'- Done: a test.\n- Next: review.'
+s22=$(awk '/^### S22 /{f=1} /^### S23 /{f=0} f' PLAN.md)
+printf '%s\n' "$s22" | tail -4 | grep -qF "· built, to review.**" && ok "Log entry at the end of S22" || bad "Log entry not at the end of S22"
+# A provisional decision and a commit, then the merge.
+first=$(awk -F'\t' '$1=="S22"{print $10}' scripts/resources.tsv | sed -E 's/^D([0-9]+).*/\1/')
+awk -v n="$first" '{print} /^\| D57 \|/{print "| D" n " | *Provisional, pending user confirmation (S22, test).* **A test decision.** Text. | Why. |"}' \
+  ARCHITECTURE.md > ARCHITECTURE.md.new && mv ARCHITECTURE.md.new ARCHITECTURE.md
+# An open [human] item, so the merge leaves S22 in review.
+python3 - <<'PY'
+import re
+s = open("PLAN.md").read()
+i = s.index("### S22 ·"); j = s.index("**Done when**", i)
+k = s.index("\n", j) + 1
+s = s[:k] + "- [ ] [human] A test check on a real iPhone — Evidence:\n" + s[k:]
+open("PLAN.md", "w").write(s)
+PY
+human="A test check on a real iPhone"
+expect "tick a [human] item is refused" 1 scripts/plan tick S22 "$human" --evidence "cmd:scripts/plan"
+git commit -qam "S22 work"
+git checkout -q main
+git merge -q --no-ff --no-edit claude/s22-test
+M=$(git rev-parse --short HEAD)
+
+echo "merge bookkeeping on main"
+mkdir -p "$T/review"; printf 'review S22 at x\nRESULT: PASS\n' > "$T/review/S22-1234567.txt"
+expect "merged S22" 0 env DSHM_REVIEW_DIR="$T/review" scripts/plan merged S22 "$M" --commit
+if [ -n "$human" ]; then
+  has "S22 is review (open [human] items)" PLAN.md "| S22 | review | merged \`$M\` |"
+  has "§9 row for the open [human] item" PLAN.md "| S22 | \`[human]\` | $human"
+else
+  has "S22 is done" PLAN.md "| S22 | done | merged \`$M\` |"
+fi
+has "§9 row for the provisional decision" PLAN.md "ARCHITECTURE D$first, *provisional*: A test decision"
+has "§8 merge entry with the review result" PLAN.md "· S22 merged.** Merged as \`$M\`; \`scripts/check-plan\` on the merge commit passed. \`scripts/review S22\` at \`1234567\`: \`RESULT: PASS\`"
+[ -z "$(git status --porcelain -- PLAN.md)" ] && ok "merge bookkeeping is committed" || bad "PLAN.md not committed"
+expect "merged on a commit that is not a merge is refused" 1 scripts/plan merged S22 HEAD
+expect "slot of a merged slice is free again" 0 scripts/plan assign S23 --branch claude/s23-test
+s23=$(awk -F'\t' '$1=="S23"{print $3}' scripts/resources.tsv)
+[ "$s23" = "$slot" ] && ok "S23 reuses slot $slot" || bad "S23 got slot $s23, expected $slot"
+
+echo "code key (scripts/demo/lib.sh)"
+cp "$SRC"/scripts/demo/lib.sh scripts/demo/lib.sh
+key() { bash -c 'eval "$(sed -n "/^dshm_code_key()/,/^}/p" scripts/demo/lib.sh)"; dshm_code_key'; }
+k0=$(key); echo "// test" >> ios/DSHKit/Package.swift; k1=$(key)
+git commit -qam "code"; k2=$(key)
+echo "note" >> PLAN.md; mkdir -p evidence/S22; echo x > evidence/S22/t.png; k3=$(key)
+echo "x" > untracked-test.swift; k4=$(key); rm -f untracked-test.swift
+[ "$k0" != "$k1" ] && ok "a code change makes a new key" || bad "code change kept the key"
+[ "$k1" = "$k2" ] && ok "a commit of the same content keeps the key" || bad "commit changed the key"
+[ "$k2" = "$k3" ] && ok "PLAN.md and evidence/ do not change the key" || bad "PLAN.md or evidence changed the key"
+[ "$k3" != "$k4" ] && ok "an untracked source file changes the key" || bad "untracked file ignored"
+git diff --cached --quiet && ok "the real index is not touched" || bad "index changed"
+
+echo "failures: $FAIL"
+[ $FAIL = 0 ]

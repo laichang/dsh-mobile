@@ -119,12 +119,17 @@ final class S2DurableListUITests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 5))
         XCTAssertTrue(row.label.contains("Offline check"), row.label)
 
-        // Sending names the offline host instead of failing silently.
+        // S21 seam: with no host online, the new session names the host on the all-offline card
+        // (X3), and the send key is off instead of failing after the tap.
         newSession(app)
-        send(app, "Will not go out")
-        let error = app.descendants(matching: .any)["composer.error"]
-        XCTAssertTrue(error.waitForExistence(timeout: 15))
-        XCTAssertTrue(error.label.contains("FakeBridge Mac is offline"), error.label)
+        let line = app.descendants(matching: .any).matching(identifier: "hosts.offlineCard.host").firstMatch
+        XCTAssertTrue(line.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(line.label.contains("FakeBridge Mac"), line.label)
+        let field = app.textFields["composer.prompt"]
+        field.tap()
+        field.typeText("Will not go out")
+        let off = expectation(for: NSPredicate(format: "isEnabled == false"), evaluatedWith: app.buttons["composer.send"])
+        wait(for: [off], timeout: 10)
         saveShot("s2-offline-fakebridge")
     }
 

@@ -1,0 +1,386 @@
+#!/usr/bin/env python3
+"""Bookkeeping in PLAN.md, without hand edits (WORKFLOW.md §3, §5.2, §10).
+
+Each command changes PLAN.md in one place, checks the result with scripts/check-plan, and writes
+it. Add --commit to commit it (one commit, a standard message). Add --dry-run to print the diff
+and change nothing. The ownership rules of WORKFLOW.md §3 apply: coordinator commands run only
+on main, slice owner commands only on the branch of that slice.
+
+Read-only (anywhere):
+  plan show <ID>                       the §0 row and the slice section
+  plan title [--milestone M1]          the coordinator status title, counted from §0
+
+Coordinator (on main):
+  plan row <ID> <status> [--branch T] [--next T]       change the §0 row (Updated = today)
+  plan log "<title>" [--body T|-]                       add a §8 entry (- = body from stdin)
+  plan pending <slice> <kind> "<item>" [--branch B] [--commit-ref C]   add a §9 row
+  plan assign <ID> --branch B [--worktree P] [--from C] [--decisions N] [--note T]
+        give the slice its resources (scripts/slice-env), set §0 to doing, add the §8 entry
+  plan merged <ID> <merge-commit> [--note T]
+        after a merge: check PLAN.md of the merge commit against its first parent (§10, condition
+        3); set §0 to review (open [human] items) or done; add §9 rows for the open [human]
+        items and for the provisional D entries that the merge added; add the §8 entry with the
+        review result from /tmp/dshm-review
+
+Slice owner (on the slice branch):
+  plan tick <ID> "<part of the item>" --evidence "test:… · cmd:…"   tick one [auto]/[ui] item
+  plan slice-log <ID> "<title>" [--body T|-]                         add a dated Log entry
+  plan slice-status <ID> <status>                                    the Status field
+
+Exit 0 = OK, 1 = refused or check failed, 2 = usage.
+"""
+
+import argparse
+import difflib
+import glob
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+import dshm  # noqa: E402
+
+PlanError = dshm.PlanError
+TRAILER = "\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+
+
+class Plan:
+    def __init__(self, root):
+        self.root = root
+        self.path = root / "PLAN.md"
+        self.before = self.path.read_text()
+        self.lines = dshm.split_lines(self.before)
+        self.extra_files = []      # other files to commit with PLAN.md
+
+    # -- write ------------------------------------------------------------------------------
+    def text(self):
+        return "\n".join(self.lines)
+
+    def save(self, args, message):
+        after = self.text()
+        if after == self.before:
+            print("plan: no change")
+            return 0
+        if args.dry_run:
+            sys.stdout.writelines(difflib.unified_diff(
+                self.before.splitlines(True), after.splitlines(True), "PLAN.md", "PLAN.md (new)"))
+            return 0
+        check(self.root, self.before, after)
+        self.path.write_text(after)
+        print(f"plan: PLAN.md changed ({message})")
+        if args.commit:
+            files = ["PLAN.md", *self.extra_files]
+            dshm.git("add", "--", *files, cwd=self.root)
+            r = subprocess.run(["git", "commit", "-q", "-m", message + TRAILER, "--", *files],
+                               cwd=self.root, capture_output=True, text=True)
+            if r.returncode != 0:
+                raise PlanError(f"git commit failed:\n{r.stdout}{r.stderr}")
+            print(f"plan: committed {dshm.git('rev-parse', '--short', 'HEAD', cwd=self.root)} {message}")
+        return 0
+
+    # -- §0 --------------------------------------------------------------------------------
+    def row(self, sid):
+        for i, r in dshm.status_table(self.lines):
+            if r["id"] == sid:
+                return i, r
+        raise PlanError(f"{sid} has no row in §0 (adding a row is a plan change for the user)")
+
+    def set_row(self, sid, status=None, branch=None, nxt=None):
+        i, r = self.row(sid)
+        if status:
+            if status not in dshm.STATUSES:
+                raise PlanError(f"status must be one of {', '.join(dshm.STATUSES)}")
+            r["status"] = status
+        if branch is not None:
+            r["branch"] = branch
+        if nxt is not None:
+            r["next"] = nxt
+        r["updated"] = dshm.today()
+        self.lines[i] = dshm.format_row([r["id"], r["status"], r["branch"], r["updated"], r["next"]])
+
+    # -- §8 --------------------------------------------------------------------------------
+    def add_log(self, title, body=""):
+        entry = format_entry(title, body)
+        _, e = dshm.section_bounds(self.lines, "## 8. Plan log")
+        while e > 0 and self.lines[e - 1].strip() == "":
+            e -= 1
+        self.lines[e:e] = ["", *entry]
+        # one blank line before the next heading
+        _, e2 = dshm.section_bounds(self.lines, "## 8. Plan log")
+        if self.lines[e2 - 1].strip() != "":
+            self.lines.insert(e2, "")
+
+    # -- §9 --------------------------------------------------------------------------------
+    def add_pending(self, sid, kind, item, branch="`main`", ref="—"):
+        s, e = dshm.section_bounds(self.lines, "## 9. Pending user confirmation")
+        last, numbers = None, []
+        for i in range(s, e):
+            cells = dshm.table_cells(self.lines[i])
+            if cells and cells[0].isdigit():
+                last = i
+                numbers.append(int(cells[0]))
+        if last is None:
+            raise PlanError("§9 has no table rows to add to")
+        n = max(numbers) + 1
+        self.lines.insert(last + 1, dshm.format_row([str(n), sid, kind, item.replace("|", "\\|"), branch, ref]))
+        return n
+
+
+def format_entry(title, body):
+    title = title.strip().rstrip(".")
+    body_lines = [l.rstrip() for l in (body or "").strip("\n").split("\n")] if body and body.strip() else []
+    head = f"- **{dshm.today()} · {title}.**"
+    if body_lines and not body_lines[0].lstrip().startswith("- "):
+        head += " " + body_lines.pop(0).strip()
+    rest = [("  " + l if l and not l.startswith("  ") else l) for l in body_lines]
+    return [head, *rest]
+
+
+def check(root, before, after):
+    """scripts/check-plan on this one edit (--agent: no [human] tick, no pre-ticked new item)."""
+    with tempfile.TemporaryDirectory() as d:
+        b, a = Path(d, "base.md"), Path(d, "new.md")
+        b.write_text(before)
+        a.write_text(after)
+        r = subprocess.run([str(root / "scripts/check-plan"), "--base", str(b), "--new", str(a), "--agent"],
+                           cwd=root, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise PlanError("scripts/check-plan refused the change:\n" + r.stdout + r.stderr)
+
+
+def read_body(value):
+    if value == "-":
+        return sys.stdin.read()
+    return value or ""
+
+
+def need_main():
+    b = dshm.branch()
+    if b != "main":
+        raise PlanError(f"this command is for the coordinator, on main (now on {b}); WORKFLOW.md §3")
+
+
+def need_slice_branch(sid):
+    b = dshm.branch()
+    key = sid.lower()
+    if b == "main" or not re.search(rf"(^|/){re.escape(key)}(-|$)", b):
+        raise PlanError(f"this command is for the owner of {sid}, on its branch (now on {b}); WORKFLOW.md §3")
+
+
+# ------------------------------------------------------------------------------- commands
+
+def cmd_show(p, a):
+    _, r = p.row(a.id)
+    print(dshm.format_row([r["id"], r["status"], r["branch"], r["updated"], r["next"]]))
+    print()
+    s, e = dshm.slice_bounds(p.lines, a.id)
+    print("\n".join(p.lines[s:e]).rstrip())
+    return 0
+
+
+def title_from(lines, milestone):
+    marks = {"done": "✅", "review": "👀", "doing": "🔨", "blocked": "⏸"}
+    count = {k: 0 for k in marks}
+    for _, r in dshm.status_table(lines):
+        if r["status"] in count:
+            count[r["status"]] += 1
+    return f"🎛 Coordinator · {milestone} · " + " ".join(f"{marks[k]}{count[k]}" for k in marks)
+
+
+def cmd_title(p, a):
+    print(title_from(p.lines, a.milestone))
+    return 0
+
+
+def cmd_row(p, a):
+    need_main()
+    p.set_row(a.id, a.status, a.branch, a.next)
+    return p.save(a, f"PLAN: {a.id} {a.status}")
+
+
+def cmd_log(p, a):
+    need_main()
+    p.add_log(a.title, read_body(a.body))
+    return p.save(a, f"PLAN §8: {a.title.strip().rstrip('.')}")
+
+
+def cmd_pending(p, a):
+    need_main()
+    n = p.add_pending(a.slice, a.kind, a.item, f"`{a.branch}`", f"`{a.commit_ref}`" if a.commit_ref else "—")
+    return p.save(a, f"PLAN §9: row {n} ({a.slice} {a.kind})")
+
+
+def cmd_assign(p, a):
+    need_main()
+    sys.path.insert(0, str(p.root / "scripts"))
+    import importlib.machinery
+    import importlib.util
+    loader = importlib.machinery.SourceFileLoader("slice_env", str(p.root / "scripts/slice-env"))
+    spec = importlib.util.spec_from_loader("slice_env", loader)
+    se = importlib.util.module_from_spec(spec)
+    loader.exec_module(se)
+    if a.dry_run:
+        raise PlanError("assign has no --dry-run (it writes the registry); use scripts/slice-env --list")
+    row, new = se.assign(a.id, a.branch, a.decisions, p.root)
+    p.extra_files.append(dshm.REGISTRY)
+    p.set_row(a.id, "doing", f"`{a.branch}`", "Slice owner builds (§8)")
+    where = f", worktree `{a.worktree}`" if a.worktree else ""
+    base = f" (from `{a.from_commit}`)" if a.from_commit else ""
+    body = (f"Branch `{a.branch}`{where}{base}, simulator `{row['sim']}`, DSHM_HOME `{row['home']}`, "
+            f"bridge {row['bridge']}, web {row['web']}; second host {row['bridge2']}/{row['web2']}. "
+            f"Decision numbers {row['decisions'].replace('-', '–')}. "
+            f"`eval \"$(scripts/slice-env {a.id})\"` exports them.")
+    if not new:
+        body += " Same resources as before."
+    if a.note:
+        body += " " + a.note.strip()
+    p.add_log(f"{a.id} assigned", body)
+    return p.save(a, f"PLAN: assign {a.id}")
+
+
+def review_line(sid, short):
+    files = sorted(glob.glob(f"{os.environ.get('DSHM_REVIEW_DIR', '/tmp/dshm-review')}/{sid}-*.txt"),
+                   key=os.path.getmtime)
+    if not files:
+        return None
+    f = files[-1]
+    text = Path(f).read_text()
+    result = "PASS" if "RESULT: PASS" in text else "FAIL" if "RESULT: FAIL" in text else "?"
+    flaky = " (flaky parts listed there)" if "flaky" in text else ", no flaky part"
+    commit = Path(f).stem.split("-", 1)[1]
+    return f"`scripts/review {sid}` at `{commit}`: `RESULT: {result}`{flaky} (`{f}`)."
+
+
+def cmd_merged(p, a):
+    need_main()
+    root = p.root
+    full = dshm.git("rev-parse", "--verify", f"{a.merge_commit}^{{commit}}", cwd=root)
+    short = full[:7]
+    parents = dshm.git("rev-list", "--parents", "-n", "1", full, cwd=root).split()[1:]
+    if len(parents) < 2:
+        raise PlanError(f"{short} is not a merge commit")
+    # §10, condition 3: the merge commit skipped pre-commit; check its PLAN.md against parent 1.
+    check(root, dshm.git("show", f"{parents[0]}:PLAN.md", cwd=root), dshm.git("show", f"{full}:PLAN.md", cwd=root))
+
+    open_human = [m.group("desc").strip() for _, m in dshm.items(p.lines, a.id)
+                  if m.group("tier") == "human" and m.group("box") == " "]
+    old = dshm.decision_rows(dshm.git("show", f"{parents[0]}:ARCHITECTURE.md", cwd=root))
+    new = dshm.decision_rows(dshm.git("show", f"{full}:ARCHITECTURE.md", cwd=root))
+    added = [(n, new[n]) for n in sorted(new) if n not in old and "provisional" in new[n].lower()]
+    _, r = p.row(a.id)
+    branch = r["branch"] if r["branch"].startswith("`claude/") or r["branch"].startswith("`codex/") else "—"
+
+    rows = []
+    for n, line in added:
+        m = re.search(r"\*\*(.+?)\*\*", line)
+        summary = m.group(1).rstrip(".") if m else "see ARCHITECTURE.md"
+        rows.append(p.add_pending(a.id, "decision", f"ARCHITECTURE D{n}, *provisional*: {summary}",
+                                  branch, f"merged `{short}`"))
+    for desc in open_human:
+        rows.append(p.add_pending(a.id, "`[human]`", desc, "`main`", f"`{short}`"))
+
+    ds = ", ".join(f"D{n}" for n, _ in added)
+    if open_human:
+        status = "review"
+        nxt = f"User accepts {len(open_human)} `[human]` item{'s' if len(open_human) > 1 else ''} (§9)"
+    else:
+        status = "done"
+        nxt = f"— (provisional {ds} in §9)" if ds else "—"
+    p.set_row(a.id, status, f"merged `{short}`", nxt)
+
+    parts = [f"Merged as `{short}`; `scripts/check-plan` on the merge commit passed."]
+    rl = review_line(a.id, short)
+    if rl:
+        parts.append(rl)
+    if open_human:
+        parts.append(f"{len(open_human)} open `[human]` item{'s' if len(open_human) > 1 else ''}, so {a.id} is `review`.")
+    else:
+        parts.append(f"No open `[human]` items, so {a.id} is `done`.")
+    if rows:
+        parts.append(f"§9 rows {', '.join(map(str, rows))}" + (f" ({ds})." if ds else "."))
+    if a.note:
+        parts.append(a.note.strip())
+    p.add_log(f"{a.id} merged", " ".join(parts))
+    return p.save(a, f"PLAN: {a.id} {status}" + (f"; {ds} to §9" if ds else ""))
+
+
+def cmd_tick(p, a):
+    need_slice_branch(a.id)
+    hits = [(i, m) for i, m in dshm.items(p.lines, a.id) if m.group("box") == " " and a.match in m.group("desc")]
+    if not hits:
+        raise PlanError(f"no open item of {a.id} contains {a.match!r}")
+    if len(hits) > 1:
+        raise PlanError(f"{len(hits)} open items of {a.id} contain {a.match!r}; give more of the text:\n" +
+                        "\n".join("  " + p.lines[i][:120] for i, _ in hits))
+    i, m = hits[0]
+    if m.group("tier") == "human":
+        raise PlanError("only the user ticks [human] items (WORKFLOW.md §12)")
+    p.lines[i] = f"- [x] [{m.group('tier')}] {m.group('desc').strip()} — Evidence: {a.evidence.strip()}"
+    return p.save(a, f"PLAN {a.id}: tick \"{m.group('desc').strip()[:50]}\"")
+
+
+def cmd_slice_log(p, a):
+    need_slice_branch(a.id)
+    s, e = dshm.slice_bounds(p.lines, a.id)
+    while e > s and p.lines[e - 1].strip() == "":
+        e -= 1
+    p.lines[e:e] = format_entry(a.title, read_body(a.body))
+    return p.save(a, f"PLAN {a.id}: Log, {a.title.strip().rstrip('.')}")
+
+
+def cmd_slice_status(p, a):
+    need_slice_branch(a.id)
+    if a.status not in dshm.STATUSES:
+        raise PlanError(f"status must be one of {', '.join(dshm.STATUSES)}")
+    s, e = dshm.slice_bounds(p.lines, a.id)
+    for i in range(s, e):
+        if p.lines[i].startswith("**Status** "):
+            p.lines[i] = re.sub(r"^\*\*Status\*\* \S+", f"**Status** {a.status}", p.lines[i])
+            return p.save(a, f"PLAN {a.id}: status {a.status}")
+    raise PlanError(f"{a.id} has no **Status** line")
+
+
+def main():
+    ap = argparse.ArgumentParser(prog="scripts/plan", description="Bookkeeping in PLAN.md (see the file header).")
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--commit", action="store_true", help="commit the change")
+    common.add_argument("--dry-run", action="store_true", help="print the diff, change nothing")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    def add(name, fn, *args):
+        sp = sub.add_parser(name, parents=[common])
+        sp.set_defaults(fn=fn)
+        return sp
+
+    sp = add("show", cmd_show); sp.add_argument("id")
+    sp = add("title", cmd_title); sp.add_argument("--milestone", default="M1")
+    sp = add("row", cmd_row); sp.add_argument("id"); sp.add_argument("status")
+    sp.add_argument("--branch"); sp.add_argument("--next")
+    sp = add("log", cmd_log); sp.add_argument("title"); sp.add_argument("--body")
+    sp = add("pending", cmd_pending); sp.add_argument("slice"); sp.add_argument("kind"); sp.add_argument("item")
+    sp.add_argument("--branch", default="main"); sp.add_argument("--commit-ref")
+    sp = add("assign", cmd_assign); sp.add_argument("id"); sp.add_argument("--branch", required=True)
+    sp.add_argument("--worktree"); sp.add_argument("--from", dest="from_commit")
+    sp.add_argument("--decisions", type=int, default=dshm.DECISION_BLOCK); sp.add_argument("--note")
+    sp = add("merged", cmd_merged); sp.add_argument("id"); sp.add_argument("merge_commit", metavar="merge-commit"); sp.add_argument("--note")
+    sp = add("tick", cmd_tick); sp.add_argument("id"); sp.add_argument("match")
+    sp.add_argument("--evidence", required=True)
+    sp = add("slice-log", cmd_slice_log); sp.add_argument("id"); sp.add_argument("title"); sp.add_argument("--body")
+    sp = add("slice-status", cmd_slice_status); sp.add_argument("id"); sp.add_argument("status")
+
+    a = ap.parse_args()
+    try:
+        for attr in ("id",):
+            if getattr(a, attr, None):
+                dshm.check_id(getattr(a, attr))
+        return a.fn(Plan(dshm.toplevel()), a)
+    except PlanError as e:
+        print(f"plan: {e}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

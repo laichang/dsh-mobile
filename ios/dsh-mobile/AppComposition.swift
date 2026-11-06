@@ -32,6 +32,8 @@ final class AppModel {
     @ObservationIgnored private let container: ModelContainer
     @ObservationIgnored private var presetPrompt = ""
     @ObservationIgnored private var connectDelay: Duration = .zero
+    /// S21: hosts this device lost its access to (a revoke of this device, D59).
+    @ObservationIgnored private var forgottenHostKeys: Set<String> = []
 
     init() {
         let keys = KeychainDeviceKeyStore()
@@ -57,7 +59,7 @@ final class AppModel {
     }
 
     private func makeStore() -> TaskListStore? {
-        let hosts = hostConfigs()
+        let hosts = hostConfigs().filter { !forgottenHostKeys.contains($0.key) }
         guard !hosts.isEmpty else { return nil }
         return TaskListStore(container: container, hosts: hosts, prompt: presetPrompt, firstConnectDelay: connectDelay,
                              preferredHostKey: UserDefaults.standard.string(forKey: Self.preferredHostKey)) { key in
@@ -80,6 +82,7 @@ final class AppModel {
         #if DEBUG
         let options = DebugLaunchOptions.parse(ProcessInfo.processInfo.arguments)
         if let drawer = options.fakeDrawer.flatMap(FakeDrawer.Variant.init(rawValue:)) { return FakeDrawer.hosts(drawer) }
+        if let variant = options.fakeHosts.flatMap(FakeHosts.Variant.init(rawValue:)) { return fakeHosts(variant) }
         if options.multipleFakeHosts {
             return ["Office Mac", "Home Mac"].enumerated().map { index, name in
                 let endpoint = HostEndpoint.localBridge(port: 47801 + index)
@@ -110,6 +113,8 @@ final class AppModel {
         hasSavedHosts = !paired.isEmpty
         if !paired.isEmpty { return paired.compactMap(pairedConfig) }
         #if DEBUG
+        // After this device lost its last paired host, show 08, not the loopback dev path.
+        if !forgottenHostKeys.isEmpty { return [] }
         let endpoint = HostEndpoint.localBridge(port: options.bridgePort ?? 47801)
         return [.init(key: "bridge:\(endpoint)",
                       connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: pairing.transport))]
@@ -117,6 +122,29 @@ final class AppModel {
         return []
         #endif
     }
+
+    /// S21 · this device lost its access to the host (it revoked itself, D59): forget the pairing
+    /// and rebuild the store without it. With no host left, the root shows 08 (`WelcomeView`).
+    func forgetHost(_ key: String) {
+        forgottenHostKeys.insert(key)
+        if key.hasPrefix("noise:") {
+            let id = String(key.dropFirst("noise:".count))
+            let kept = pairing.hosts.load().filter { $0.id != id }
+            try? pairing.hosts.removeAll()
+            for host in kept { try? pairing.hosts.save(host) }
+        }
+        store?.background()
+        store = makeStore()
+        store?.foreground()
+    }
+
+    #if DEBUG
+    private func fakeHosts(_ variant: FakeHosts.Variant) -> [TaskListStore.HostConfig] {
+        let (configs, switchable) = FakeHosts.hosts(variant)
+        FakeHostsSwitch.watch(switchable) { Task { @MainActor [weak self] in self?.store?.foreground() } }
+        return configs
+    }
+    #endif
 
     /// A scanned QR payload, a pasted link, or (Debug) a `dshm://pair?…` deep link.
     func openPairingCode(_ text: String) {
