@@ -60,6 +60,9 @@ public final class CachedTask {
     /// S19: approvals of this task that were answered (here or on another client), from the
     /// host's `ApprovalResolved` events. The done page says "M 次审批".
     public var approvalsAnswered: Int = 0
+    /// S17: the task's thinking and tool-call rows, a JSON-encoded `StructuredTranscript`; empty
+    /// when it has none. Each row keeps its place in `transcript` (`TranscriptItem.offset`).
+    public var transcriptBlocksData: Data = Data()
 
     public init(hostKey: String, taskID: String, title: String, createdAt: Date) {
         self.key = Self.key(hostKey: hostKey, taskID: taskID)
@@ -94,6 +97,14 @@ public final class CachedTask {
             return (try? JSONDecoder().decode(MilestoneTimeline.self, from: milestonesData)) ?? MilestoneTimeline()
         }
         set { milestonesData = newValue.isEmpty ? Data() : (try? JSONEncoder().encode(newValue)) ?? Data() }
+    }
+
+    public var structuredTranscript: StructuredTranscript {
+        get {
+            guard !transcriptBlocksData.isEmpty else { return StructuredTranscript() }
+            return (try? JSONDecoder().decode(StructuredTranscript.self, from: transcriptBlocksData)) ?? StructuredTranscript()
+        }
+        set { transcriptBlocksData = newValue.isEmpty ? Data() : (try? JSONEncoder().encode(newValue)) ?? Data() }
     }
 }
 

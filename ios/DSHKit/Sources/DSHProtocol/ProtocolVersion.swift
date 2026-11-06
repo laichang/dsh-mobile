@@ -10,4 +10,6 @@ public enum DSHProtocolInfo {
     public static let interruptCapability = "interrupt.v1"
     /// S2: ListTasks, Resume and `Event.host_seq` (protocol/s2.proto).
     public static let resumeCapability = "resume.v1"
+    /// S17: the bridge sends `TranscriptBlock` events (protocol/transcript.proto).
+    public static let transcriptCapability = "transcript.v1"
 }

@@ -8,6 +8,7 @@ import { catalogFrame, type HostCatalog, type Selection } from './models/catalog
 import { randomUUID } from 'node:crypto'
 import { isAbsolute } from 'node:path'
 import { MilestoneMapper, describeFailure, isUserInterrupt, type Milestone } from './milestones/mapper.ts'
+import { TranscriptMapper, type BlockOut } from './transcript/mapper.ts'
 
 /** Subset of `ctx.workspaceController` (`@deepseek-ai/dsh-api-workspace-controller`). */
 export interface WorkspaceControllerLike {
@@ -18,7 +19,7 @@ export interface WorkspaceControllerLike {
 export type FollowFrame =
   | { type: 'snapshot' }
   | { type: 'event'; event: { type: string; seq: number; time?: number; data: unknown } }
-  | { type: 'assistant-stream'; frame: { type: 'start' | 'end' } | { type: 'chunk'; chunk: unknown } }
+  | { type: 'assistant-stream'; frame: { type: 'start' | 'end' } | { type: 'chunk'; chunk: unknown; time?: number } }
 
 /** Subset of `ctx.sessionController` (`@deepseek-ai/dsh-api-session-controller`). */
 export interface SessionControllerLike {
@@ -47,6 +48,7 @@ export type TaskOutput =
   | { kind: 'text'; text: string }
   | { kind: 'model'; selection: Selection }
   | { kind: 'milestone'; milestone: Milestone }
+  | { kind: 'block'; block: BlockOut } // S17
   | { kind: 'end'; status: 'completed' | 'interrupted' | 'failed'; message?: string }
 
 export interface StartedTask {
@@ -118,9 +120,12 @@ async function* mapFollow(
 ): AsyncGenerator<TaskOutput> {
   let turn: number | undefined
   const milestones = new MilestoneMapper()
+  const blocks = new TranscriptMapper() // S17
   try {
     for (let next = first; !next.done; next = await iterator.next()) {
       const f = next.value
+      if (f.type === 'assistant-stream') for (const block of blocks.stream(f.frame)) yield { kind: 'block', block }
+      if (f.type === 'event') for (const block of blocks.event(f.event)) yield { kind: 'block', block }
       if (f.type === 'assistant-stream' && f.frame.type === 'chunk') {
         const chunk = f.frame.chunk as { type?: string; text?: unknown } | null
         if (chunk?.type === 'text-delta' && typeof chunk.text === 'string' && chunk.text) {
@@ -135,6 +140,7 @@ async function* mapFollow(
         const data = f.event.data as { turn?: number; reason?: { kind?: string; error?: unknown; reason?: { kind?: string } } } | null
         if (f.event.type === 'turn/start' && turn === undefined) turn = data?.turn
         if (f.event.type === 'turn/end' && (turn === undefined || data?.turn === turn)) {
+          for (const block of blocks.finish(f.event.time)) yield { kind: 'block', block }
           const kind = data?.reason?.kind ?? 'unknown'
           if (kind === 'completed') yield { kind: 'end', status: 'completed' }
           else if (isUserInterrupt(data?.reason)) yield { kind: 'end', status: 'interrupted' }
