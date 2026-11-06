@@ -60,7 +60,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
 | S16 | done | merged `66fd823` | 2026-11-07 | — (provisional D56 in §9) |
-| S17 | todo | — | 2026-11-07 | Next batch (S16 is merged) |
+| S17 | doing | `claude/s17-transcript` | 2026-11-07 | Slice owner builds the structured transcript (§8) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | doing | `claude/s19-outcomes` | 2026-11-07 | Slice owner builds done and failed (§8) |
 | S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
@@ -1370,6 +1370,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - Not covered by a test (S21): the default model on the hosts sheet shows only when a host sends a model catalog; FakeHost sends none.
 
 - **2026-11-07 · S21 merged.** Background reviewer ran `scripts/review S21` at `477f9bd`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S21-477f9bd.txt`). Merged as `13648eb`; `scripts/check-plan --base` passed. One `[human]` item is open, so S21 is in `review` (§9). S19 and S20 must merge `main` before review.
+
+- **2026-11-07 · S17 assigned.** Branch `claude/s17-transcript`, worktree `.claude/worktrees/s17-transcript` (from `96abed2`), simulator `dshm-S17`, DSHM_HOME `~/.dshm/home-s17`, bridge 47818, web 3291 (S12's old ports; S12 is done). Protocol: `transcript.proto`, fields 340–359, `transcript.v1`. The owner runs as a background agent (WORKFLOW.md §5.3, step 3).
 
 ## 9. Pending user confirmation
 
