@@ -59,8 +59,8 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
 | S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
-| S16 | doing | `claude/s16-session` `1388a9c` | 2026-11-07 | Reviewer runs `scripts/review S16 --resume` (§8) |
-| S17 | todo | — | 2026-11-05 | Wait for S16 |
+| S16 | done | merged `66fd823` | 2026-11-07 | — (provisional D56 in §9) |
+| S17 | todo | — | 2026-11-07 | Next batch (S16 is merged) |
 | S18 | done | merged `8d25764` | 2026-11-06 | — (provisional D57 in §9) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S20 | doing | `claude/s20-pickers` | 2026-11-06 | Slice owner builds the pickers (§8) |
@@ -1345,6 +1345,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-07 · S16 merged `main`; review started.** S16 merged the guard fixes (`bee3c86`) and S18 (`ca76dd9`, seam owned by S16; `ApprovalCard.swift` removed) and logged it at `1388a9c`: `swift test` 67/67, `s16.sh` (UI 11/11), `s18.sh` (UI 4/4), `check-release-clean` passed. A background reviewer runs `scripts/review S16 --resume` on `1388a9c`.
   - Slow, not failing (reported by S16): `S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls` took about 1250–1290 s in 3 of 7 runs (each step waited 60 s for "animations complete"); other runs took 40–70 s. Probably the scroll steps. For a later repair.
 
+- **2026-11-07 · S16 merged.** Background reviewer ran `scripts/review S16 --resume` at `1388a9c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S16-1388a9c.txt`). Merged as `66fd823`; `scripts/check-plan --base` passed. No open `[human]` items, so S16 is `done`. S17 and S19 can start. S20 and S21 must merge `main` before review.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1398,3 +1400,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 49 | S15 | decision | D55, provisional: 所有任务 (screen 03) as a drawer page; sections, approval cards, offline hosts. | `claude/s15-all-tasks` | `bfd3d67` |
 | 50 | S14 | decision | D54, provisional: drawer levels host › workspace › session, status marks, local read state; `TaskSummary.workspace` (field 280), capability `drawer.v1`. | `claude/s14-drawer` | `d2cd506` |
 | 51 | S18 | decision | D57, provisional: the approval sheet comes up on session open and on a new approval, closes when the approval is gone, and comes back from a one-line bar after a swipe down. | `claude/s18-approval-sheet` | `9599cc6` |
+| 52 | S16 | decision | D56, provisional: session page layout (milestone bar at the top, "done / total" counts finished todos; stop key in the send position); D23 (b) updated. | `claude/s16-session` | `1388a9c` |
