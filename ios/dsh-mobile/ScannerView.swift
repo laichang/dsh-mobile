@@ -5,10 +5,15 @@ import VisionKit
 /// Scans the host's pairing QR with the camera (VisionKit's DataScanner). Where the camera
 /// isn't available (Simulator, no permission) it falls back to pasting the `dshm://pair?…`
 /// link the host's terminal prints next to the QR.
+/// S22: 08 opens it for scanning or for pasting (`Mode.paste`: no camera, the link field has focus).
 struct ScannerView: View {
+    enum Mode { case scan, paste }
+
+    var mode: Mode = .scan
     let found: (String) -> Void
     let cancel: () -> Void
     @State private var pasted = ""
+    @FocusState private var linkFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -16,7 +21,9 @@ struct ScannerView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("On your computer, find the pairing code in the terminal where DSH started. Keep your phone on the same Wi-Fi or connect through a private network such as Tailscale.")
                         .accessibilityIdentifier("pairing.guide")
-                    if DataScannerViewController.isSupported, DataScannerViewController.isAvailable {
+                    if mode == .paste {
+                        EmptyView()
+                    } else if DataScannerViewController.isSupported, DataScannerViewController.isAvailable {
                         QRScanner(found: found)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .frame(height: 240)
@@ -31,6 +38,7 @@ struct ScannerView: View {
                             .textFieldStyle(.roundedBorder)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+                            .focused($linkFocused)
                             .accessibilityIdentifier("pairing.paste")
                         Button("Use") { found(pasted) }
                             .disabled(pasted.isEmpty)
@@ -50,7 +58,10 @@ struct ScannerView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Pair a computer")
+            .scrollContentBackground(.hidden)
+            .background(DSHTheme.canvas.ignoresSafeArea())
+            .onAppear { if mode == .paste { linkFocused = true } }
+            .navigationTitle(mode == .paste ? String(localized: "Paste a pairing link", table: "FirstRun") : String(localized: "Pair a computer"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

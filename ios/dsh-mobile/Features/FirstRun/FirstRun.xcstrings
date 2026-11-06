@@ -1,0 +1,116 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "End-to-end encrypted": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端到端加密"
+          }
+        }
+      }
+    },
+    "Keep the phone and the computer on the same Wi-Fi, or connect them through a private network such as Tailscale.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "手机和电脑在同一 Wi-Fi，或用 Tailscale 这类私有网络"
+          }
+        }
+      }
+    },
+    "No pairing code? Read the bridge setup": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有配对码？看 bridge 安装说明"
+          }
+        }
+      }
+    },
+    "Paste a pairing link": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘贴配对链接"
+          }
+        }
+      }
+    },
+    "Phone": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "手机"
+          }
+        }
+      }
+    },
+    "Scan the pairing QR code": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扫描配对二维码"
+          }
+        }
+      }
+    },
+    "Send tasks from your phone, follow their progress, and answer approval requests. DeepSeek Harness runs the tasks on your computer; the phone never calls a model.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在手机上下任务、看进度、处理审批。任务在你的电脑上由 DeepSeek Harness 执行，手机不调用模型。"
+          }
+        }
+      }
+    },
+    "When DSH starts, its terminal prints a pairing QR code and a link.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DSH 启动时，终端里会打印配对二维码和链接"
+          }
+        }
+      }
+    },
+    "You need a computer that runs DSH with the dsh-mobile bridge enabled.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要：一台运行 DSH、启用了 dsh-mobile bridge 的电脑"
+          }
+        }
+      }
+    },
+    "Your computer": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的电脑"
+          }
+        }
+      }
+    },
+    "Your first task is ready below. Edit it if you like, then send it.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第一个任务已经填好。可以先改一改，再发送。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

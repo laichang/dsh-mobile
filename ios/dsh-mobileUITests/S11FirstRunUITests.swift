@@ -58,10 +58,11 @@ final class S11FirstRunUITests: XCTestCase {
         XCTAssertTrue(existing.firstMatch.waitForExistence(timeout: 8))
         XCTAssertEqual(app.buttons.matching(identifier: "drawer.session").count, 1)
         closeDrawer(app)
+        // S22 seam (D63): after the first pairing the first task is already in the composer.
         let suggestion = app.buttons["firstRun.suggestion"]
-        XCTAssertTrue(suggestion.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["firstRun.hint"].waitForExistence(timeout: 10))
+        XCTAssertFalse(suggestion.exists)
         saveShot("s11-first-task")
-        suggestion.tap()
         let composer = app.textFields["composer.prompt"]
         let draft = try XCTUnwrap(composer.value as? String)
         XCTAssertTrue(draft.contains("Say hello"))

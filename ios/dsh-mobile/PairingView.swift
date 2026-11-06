@@ -38,6 +38,8 @@ struct PairingView: View {
         }
         .multilineTextAlignment(.center)
         .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(DSHTheme.canvas.ignoresSafeArea())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("pairing.view")
     }
@@ -47,23 +49,47 @@ private struct OfferPairingView: View {
     let model: PairingModel
     let close: () -> Void
 
+    // S22: in the DSH style of 08 (canvas, one card, a white primary button), not a grouped List.
     var body: some View {
-        List {
-            Section {
-                LabeledContent("Host", value: model.offer.hostName.isEmpty ? "Unnamed host" : model.offer.hostName)
-                LabeledContent("Addresses", value: model.offer.addresses.map(\.description).joined(separator: "\n"))
-                LabeledContent("Host key", value: fingerprint)
-                LabeledContent("Code expires", value: model.offer.expiresAt.formatted(date: .omitted, time: .shortened))
-            } footer: {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                DSHWordmark().padding(.top, 12)
+                VStack(alignment: .leading, spacing: 0) {
+                    row("Host", model.offer.hostName.isEmpty ? String(localized: "Unnamed host") : model.offer.hostName)
+                    row("Addresses", model.offer.addresses.map(\.description).joined(separator: "\n"))
+                    row("Host key", fingerprint, mono: true)
+                    row("Code expires", model.offer.expiresAt.formatted(date: .omitted, time: .shortened), last: true)
+                }
+                .padding(.horizontal, 16)
+                .background(Color(hex: 0x1F2023), in: .rect(cornerRadius: 18))
+                .overlay(RoundedRectangle(cornerRadius: 18).stroke(DSHTheme.hairline))
                 Text("Pairing lets this phone send tasks to that host. Everything between them is end-to-end encrypted; the code works once.")
-            }
-            Section {
+                    .font(.footnote)
+                    .foregroundStyle(DSHTheme.textTertiary)
                 status
                 actions
             }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
         }
+        .background(DSHTheme.canvas.ignoresSafeArea())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("pairing.view")
+    }
+
+    private func row(_ title: LocalizedStringKey, _ value: String, mono: Bool = false, last: Bool = false) -> some View {
+        VStack(spacing: 0) {
+            LabeledContent {
+                Text(value)
+                    .font(mono ? DSHTheme.mono(.footnote) : .body)
+                    .foregroundStyle(DSHTheme.textPrimary)
+                    .multilineTextAlignment(.trailing)
+            } label: {
+                Text(title).foregroundStyle(DSHTheme.textSecondary)
+            }
+            .padding(.vertical, 12)
+            if !last { Divider().overlay(DSHTheme.hairline) }
+        }
     }
 
     /// First 8 bytes of the host key, so the user can compare with the host's terminal if they like.
@@ -79,7 +105,7 @@ private struct OfferPairingView: View {
             case .paired: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
             case .failed: Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
             }
-            Text(statusText).font(.footnote).foregroundStyle(.secondary)
+            Text(statusText).font(.footnote).foregroundStyle(DSHTheme.textSecondary)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(statusText)
@@ -97,20 +123,39 @@ private struct OfferPairingView: View {
     }
 
     @ViewBuilder private var actions: some View {
-        switch model.state {
-        case .reviewing, .pairing:
-            Button("Pair") { Task { await model.pair() } }
-                .disabled(model.state == .pairing)
-                .accessibilityIdentifier("pairing.confirm")
-            Button("Cancel", role: .cancel, action: close)
-                .accessibilityIdentifier("pairing.close")
-        case .paired:
-            Button("Done", action: close)
-                .bold()
-                .accessibilityIdentifier("pairing.done")
-        case .failed:
-            Button("Close", action: close)
-                .accessibilityIdentifier("pairing.close")
+        VStack(spacing: 10) {
+            switch model.state {
+            case .reviewing, .pairing:
+                Button { Task { await model.pair() } } label: { primary(Text("Pair")) }
+                    .buttonStyle(.plain)
+                    .disabled(model.state == .pairing)
+                    .accessibilityIdentifier("pairing.confirm")
+                Button(action: close) { secondary(Text("Cancel")) }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("pairing.close")
+            case .paired:
+                Button(action: close) { primary(Text("Done")) }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("pairing.done")
+            case .failed:
+                Button(action: close) { secondary(Text("Close")) }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("pairing.close")
+            }
         }
+    }
+
+    private func primary(_ label: Text) -> some View {
+        label.font(.body.weight(.semibold))
+            .foregroundStyle(DSHTheme.canvas)
+            .frame(maxWidth: .infinity, minHeight: 52)
+            .background(DSHTheme.textPrimary, in: .rect(cornerRadius: 18))
+    }
+
+    private func secondary(_ label: Text) -> some View {
+        label.font(.body.weight(.semibold))
+            .foregroundStyle(DSHTheme.textPrimary)
+            .frame(maxWidth: .infinity, minHeight: 52)
+            .background(DSHTheme.bubble, in: .rect(cornerRadius: 18))
     }
 }

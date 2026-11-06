@@ -39,7 +39,7 @@ struct SessionPage: View {
     }
 }
 
-/// The empty middle of a new session; on the first run, a suggested first task (S11).
+/// The empty middle of a new session; on the first run, a suggested first task (S11, S22).
 private struct NewSessionBody: View {
     let store: TaskListStore
     let showFirstTask: Bool
@@ -58,7 +58,7 @@ private struct NewSessionBody: View {
                     }
                     if store.prompt.isEmpty {
                         Button {
-                            store.prompt = String(localized: "Say hello and describe one way you can help me on this computer.")
+                            store.prompt = FirstRun.suggestion
                         } label: {
                             Label("Try a first task", systemImage: "text.bubble")
                         }
@@ -66,6 +66,12 @@ private struct NewSessionBody: View {
                         .accessibilityIdentifier("firstRun.suggestion")
                         Text("You can edit the suggestion before sending it.")
                             .font(.footnote).foregroundStyle(DSHTheme.textTertiary)
+                    } else if showFirstTask {
+                        // S22 (D63): after the first pairing the first task is already in the composer.
+                        Text("Your first task is ready below. Edit it if you like, then send it.", tableName: "FirstRun")
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(DSHTheme.textSecondary)
+                            .accessibilityIdentifier("firstRun.hint")
                     } else {
                         Text("Send your first task when you're ready.")
                             .foregroundStyle(DSHTheme.textSecondary)
