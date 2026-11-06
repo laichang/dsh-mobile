@@ -9,6 +9,8 @@ struct SessionPage: View {
     let store: TaskListStore
     let taskKey: String?
     @Binding var showFirstTask: Bool
+    /// S23: where the user last scrolled this session to, on this phone (`SessionLanding`).
+    var lastPosition: CGFloat? = nil
     @Environment(ShellModel.self) private var shell
 
     var body: some View {
@@ -17,7 +19,7 @@ struct SessionPage: View {
             if let taskKey {
                 PageBar(title: row.map { $0.title.isEmpty ? $0.taskID : $0.title } ?? String(localized: "Session"),
                         subtitle: row?.hostName)
-                SessionTranscript(store: store, taskKey: taskKey)
+                SessionTranscript(store: store, taskKey: taskKey, lastPosition: lastPosition)
             } else {
                 PageBar(title: String(localized: "New session"))
                 NewSessionBody(store: store, showFirstTask: showFirstTask)
@@ -28,7 +30,7 @@ struct SessionPage: View {
                 SessionComposer(store: store, taskKey: taskKey)
             } else {
                 ComposerView(store: store) { key in
-                    shell.open(.session(key))
+                    shell.show(.session(key))
                     showFirstTask = false
                 }
             }
@@ -94,13 +96,20 @@ private struct SessionTranscript: View {
     @State private var retry = 0
     /// S19: finished and not read when the page opened: it opens at the start of the final answer.
     @State private var opensAtAnswer: Bool
-    /// S19: false once the user scrolls; then the page stops going back to the answer's start.
-    @State private var followsAnswer = true
+    /// S23: where the page lands when it opens (D65): the answer's start, the bottom, or the last
+    /// position. Decided once, when the page is made.
+    @State private var landing: SessionLanding
+    /// S19, S23: false once the user scrolls; then the page stops going back to where it landed.
+    @State private var followsLanding = true
+    /// S23: scrolls a read session back to its last position.
+    @State private var position = ScrollPosition()
 
-    init(store: TaskListStore, taskKey: String) {
+    init(store: TaskListStore, taskKey: String, lastPosition: CGFloat? = nil) {
         self.store = store
         self.taskKey = taskKey
-        _opensAtAnswer = State(initialValue: OutcomeAnchor.opensAtAnswer(store.task(taskKey)))
+        let landing = SessionLanding.landing(store.task(taskKey), lastPosition: lastPosition)
+        _landing = State(initialValue: landing)
+        _opensAtAnswer = State(initialValue: landing == .answerStart)
     }
 
     private struct HistoryRequest: Equatable {
@@ -184,18 +193,30 @@ private struct SessionTranscript: View {
             }
             // Follow the stream at the bottom, but start a short transcript at the top.
             // S19: a finished session that is not read opens at the start of its final answer.
-            .defaultScrollAnchor(opensAtAnswer ? .top : .bottom)
+            // S23: a read one opens at its last position (D65).
+            .defaultScrollAnchor(landing.anchor)
             .defaultScrollAnchor(.top, for: .alignment)
+            .scrollPosition($position)
             .scrollDismissesKeyboard(.interactively)
             .accessibilityIdentifier("session.transcript")
+            .accessibilityValue(landing.token)
             .onScrollPhaseChange { _, phase in
-                if phase == .interacting { followsAnswer = false }
+                if phase == .interacting { followsLanding = false }
+            }
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
+                // S23: remember where the user scrolled to, for the next time this page opens.
+                if !followsLanding { shell.lastPositions[taskKey] = max(y, 0) }
             }
             .task(id: "\(history?.throughSeq ?? 0)/\(row?.transcript.utf8.count ?? 0)") {
                 // Again when the history or the text comes in, until the user scrolls.
-                guard opensAtAnswer else { return }
+                switch landing {
+                case .answerStart, .lastPosition: break
+                case .followBottom, .end: return
+                }
                 try? await Task.sleep(for: .milliseconds(80))
-                if followsAnswer && !Task.isCancelled { proxy.scrollTo(OutcomeAnchor.id, anchor: .top) }
+                guard followsLanding, !Task.isCancelled else { return }
+                if case .lastPosition(let y) = landing { position.scrollTo(y: y) }
+                else { proxy.scrollTo(OutcomeAnchor.id, anchor: .top) }
             }
             }
         }
