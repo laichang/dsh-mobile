@@ -57,7 +57,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | Hosted compatibility checks deferred; local runner available (§8) |
 | S13 | review | merged `c56d47f` | 2026-11-05 | User verifies the same Web session and latest reply on a paired iPhone (§9) |
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
-| S14 | doing | `claude/s14-drawer` `2d14273` | 2026-11-06 | Owner merges main (seam with S15), then review --resume (§8) |
+| S14 | done | merged `6a120f7` | 2026-11-06 | — (provisional D54 in §9) |
 | S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
 | S16 | doing | `claude/s16-session` `8c1bdb8` | 2026-11-06 | Owner merges main (seam with S15), then review --resume (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
@@ -66,7 +66,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S20 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S21 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S22 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
-| S23 | todo | — | 2026-11-06 | Next batch, after S14 |
+| S23 | todo | — | 2026-11-06 | Next batch (S14 is merged) |
 
 ## 1. Approach
 
@@ -1279,6 +1279,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-06 · S16 review PASS; merge conflict.** `scripts/review S16` at `8c1bdb8`: `RESULT: PASS` (`/tmp/dshm-review/S16-8c1bdb8.txt`), no flaky part. The merge into `main` conflicted with S15 in the same three files as S14; the coordinator aborted it. The S16 owner merges `main` and reruns `s16.sh` and `s15.sh`. S14 and S16 merge `main` at the same time; the one that lands second merges `main` again.
 
+- **2026-11-06 · S14 merged.** The owner merged `main` (S15 seam) as `d2cd506`; `scripts/review S14 --resume` there: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S14-d2cd506.txt`). Merged as `6a120f7`; `scripts/check-plan --base` passed. No open `[human]` items, so S14 is `done`. S16 now needs one more merge of `main`.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1330,3 +1332,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 47 | T1 | decision | D51, provisional: first-message routing in the shell; supersedes D34 (row 33 stays until the user confirms D51). | `claude/t1-ui-shell` | `7b4a0c0` |
 | 48 | T1 | resource | Provisional: the S9 second host in `scripts/demo/t1.sh --all` uses bridge 47830 and web 3303 (`DSHM_SECOND_BRIDGE_PORT`, `DSHM_SECOND_WEB_PORT`). | `claude/t1-ui-shell` | `7b4a0c0` |
 | 49 | S15 | decision | D55, provisional: 所有任务 (screen 03) as a drawer page; sections, approval cards, offline hosts. | `claude/s15-all-tasks` | `bfd3d67` |
+| 50 | S14 | decision | D54, provisional: drawer levels host › workspace › session, status marks, local read state; `TaskSummary.workspace` (field 280), capability `drawer.v1`. | `claude/s14-drawer` | `d2cd506` |
