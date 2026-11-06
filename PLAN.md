@@ -1063,7 +1063,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: Fresh install. Paste a pairing link. 01 opens with the first task.
 
 **Done when**
-- [ ] [ui] After the first pairing, 01 opens with a first task that you can edit — Evidence:
+- [x] [ui] After the first pairing, 01 opens with a first task that you can edit — Evidence: test:S22FirstRunUITests/testPastedLinkPairsAndOpensTheFirstTask · cmd:scripts/demo/s22.sh · shot:evidence/S22/s22-welcome.png · shot:evidence/S22/s22-first-task.png · shot:evidence/S22/s22-first-task-edited.png
 
 **Not**: Pairing from inside the DSH interface (needs upstream). The S11 `[human]` items stay in S11 (see §6).
 
