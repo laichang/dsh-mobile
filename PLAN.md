@@ -57,11 +57,11 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | Hosted compatibility checks deferred; local runner available (§8) |
 | S13 | review | merged `c56d47f` | 2026-11-05 | User verifies the same Web session and latest reply on a paired iPhone (§9) |
 | T1 | review | merged `4f289bc` | 2026-11-06 | User accepts the dark-mode `[human]` item (§9) |
-| S14 | doing | `claude/s14-drawer` | 2026-11-06 | Slice owner builds the drawer (§8) |
-| S15 | doing | `claude/s15-all-tasks` | 2026-11-06 | Slice owner builds 所有任务 (§8) |
-| S16 | doing | `claude/s16-session` | 2026-11-06 | Slice owner builds the session page (§8) |
+| S14 | doing | `claude/s14-drawer` `2d14273` | 2026-11-06 | Owner merges main (seam with S15), then review --resume (§8) |
+| S15 | done | merged `a298f38` | 2026-11-06 | — (provisional D55 in §9) |
+| S16 | doing | `claude/s16-session` `8c1bdb8` | 2026-11-06 | Reviewer runs `scripts/review S16` (§8) |
 | S17 | todo | — | 2026-11-05 | Wait for S16 |
-| S18 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
+| S18 | doing | `claude/s18-approval-sheet` | 2026-11-06 | Slice owner builds the approval sheet (§8) |
 | S19 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S20 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
 | S21 | todo | — | 2026-11-06 | Next batch (max 3 at a time) |
@@ -813,10 +813,14 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Verification: `scripts/demo/s14.sh --shots` exit 0 on `dshm-S14`, after an app restart stopped one run: bridge 59/59, `swift test` 64/64, S14 UI tests 5/5. The `session/list` diagnostic now shows the same DSH `cwd` for the Web session and the phone session.
   - Flaky, not S14 (not repaired): `NoiseResumeTests` failed again at a high load (2 tests, 1 run). Five runs in a row at a load of about 100 passed.
   - Next: `scripts/review S14 --resume` on this commit.
+- **2026-11-06 · merged `main` (S15) into the slice branch.** The review at `2d14273` passed, but the merge into `main` conflicted with S15 (`a298f38`). S14 lands second, so it owns the seam.
+  - Done: kept both sides. `FakeHost` takes `seed`, `extraCapabilities` and S15's `approvals`; its Hello capabilities are the T0–S3 ones, then `approvals.v1` when it has approvals, then the extra ones. `DebugLaunchOptions` parses both `approvals…` and `drawer…`. ARCHITECTURE.md keeps D54 (S14) and D55 (S15).
+  - Verification on the merged code, with the S14 resources (`dshm-S14`, 47811, 3284): `swift test` 65/65; `scripts/demo/s14.sh` exit 0 (bridge, swift, S14 UI 5/5); `scripts/demo/s15.sh` exit 0 (S15 UI 2/2, and the T1, S2, S3, S9 FakeBridge UI tests that use 所有任务, 5/5).
+  - Next: `scripts/review S14 --resume` on this commit, then merge.
 
 ### S15 · All tasks
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s15-all-tasks`
+**Status** doing · **Needs** T1 · **Branch** `claude/s15-all-tasks`
 
 **Why**: STORY §4 (one place for all hosts), §5 (approvals show the command), screen 03.
 
@@ -825,12 +829,19 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: One approval waits on an offline host and one on an online host. Approve the online one from 所有任务.
 
 **Done when**
-- [ ] [ui] 所有任务 opens from the drawer and shows the three sections across hosts — Evidence:
-- [ ] [ui] An approval for an offline host has grey buttons and tells that the host must reconnect first — Evidence:
+- [x] [ui] 所有任务 opens from the drawer and shows the three sections across hosts — Evidence: test:S15AllTasksUITests/testAllTasksShowsThreeSectionsAcrossHosts · cmd:scripts/demo/s15.sh · shot:evidence/S15/s15-all-tasks.png · shot:evidence/S15/s15-tool-arguments.png
+- [x] [ui] An approval for an offline host has grey buttons and tells that the host must reconnect first — Evidence: test:S15AllTasksUITests/testOfflineHostApprovalIsGreyAndTheOnlineOneIsApproved · cmd:scripts/demo/s15.sh · shot:evidence/S15/s15-offline-approval.png · shot:evidence/S15/s15-approved-online.png
+- [x] [auto] An answer from 所有任务 (allow or deny) resolves a seeded FakeHost approval, and the task runs on to its reply — Evidence: test:AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval · cmd:scripts/demo/s15.sh
 
 **Not**: Risk tiers and Face ID (M2, screen P3).
 
-**Log**: —
+**Log**
+- **2026-11-06 · built, to review.**
+  - Done: 所有任务 (screen 03) as a drawer page in the DSH style: sections 等我处理 / 正在跑 / 已完成 with counts, across hosts, from the cache; one line for each offline host; approval cards (`AllTasksApprovalCard`) with tool, host, task title (opens the session), command or path in SF Mono, reason, 工具参数 › (full arguments), 拒绝 / 允许一次; grey buttons and one line of reason when the host is not online; short answers inline in rows (D51 rule). Own string catalog `Features/TaskList/AllTasks.xcstrings`, tokens in `Theme+S15.swift`. FakeBridge scenario `-DSHMFakeBridge approvals` / `approvals-office-offline` (`FakeHost(approvals:)`, seeded task ids stable across launches). Decision: see **D55**. *Provisional, pending user confirmation.* No new dependencies. No board or STORY change: the code follows screen 03 as drawn.
+  - Resume (WORKFLOW.md §5.4): the stopped workflow owner left WIP `f63c6c7`. Kept it. Repaired: a row that moved from 等我处理 to 已完成 after 允许一次 kept its old view in the `LazyVStack` (same id in another section); 所有任务 now uses a `VStack`. Added `AllTasksApprovalTests` (store level) and wrapped `s15.sh` parts in `demo_part`.
+  - Verification: `scripts/demo/s15.sh --shots` exit 0 on `dshm-S15`: `swift test` 60 tests in 15 suites; UI 7/7 (S15 ×2, T1 `testAllTasksAndDrawerOpenSessions`, S2 ×2, S3 ×1, S9 ×1), 0 skipped. `scripts/demo/t0.sh` passed at the start.
+  - Flaky: none in S15 tests. The first `s15.sh` run failed in all earlier-slice tests (main thread busy, `kAXErrorServerNotFound`, terminate failed) while the Mac load average was 87–316 on 12 CPUs (TencentMeeting and simulator daemons); all passed on the next run. In `t0.sh`, `testPairDeepLinkOpensPairingStub` showed twice as passed (a retry by xcodebuild); not this slice's test.
+  - Not done: —. Next: independent `scripts/review S15`, then merge. For the coordinator: §0 S15 → review after the merge; add D55 to §9.
 
 ### S16 · Session page
 
@@ -1239,6 +1250,32 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
   - S15: branch `claude/s15-all-tasks`, simulator `dshm-S15`, DSHM_HOME `~/.dshm/home-s15`, bridge 47812, web 3285.
   - S16: branch `claude/s16-session`, simulator `dshm-S16`, DSHM_HOME `~/.dshm/home-s16`, bridge 47813, web 3286.
   - Ports 47830 and 3303 stay reserved for the S9 second host in `scripts/demo/t1.sh --all` (§9 row 48).
+  - Fallback (WORKFLOW.md §5.3, step 3): the app refused to start sessions from the review-completion turn (the chain had ended across heartbeat turns). Batch UI-1 runs as workflow `wf_20f9600c-fdc` (task `wc826829r`): one slice-owner agent per slice in worktrees `.claude/worktrees/s14-drawer`, `s15-all-tasks`, `s16-session` (created from `426049b`), then an independent reviewer agent runs `scripts/review <ID>`, with up to 3 repair rounds on FAIL. The coordinator merges. Second-host ports, if a demo needs one: S14 47841/3314, S15 47842/3315.
+
+- **2026-11-06 · Run paused by the user.** Workflow `wf_20f9600c-fdc` stopped. Heartbeat `d4a0e2c2` deleted. Slice demo jobs stopped and `dshm-S14`–`dshm-S16` shut down. No slice commit yet: the work is uncommitted in `.claude/worktrees/s14-drawer` (32 changed paths), `s15-all-tasks` (11) and `s16-session` (12), all on base `426049b`. To resume: create a new heartbeat, then continue each slice in its worktree (WORKFLOW.md §5.4) or resume the workflow with `resumeFromRunId`.
+
+- **2026-11-06 · Run resumed by the user.** Keep-awake on. New heartbeat cron job `0f66e06d` (`7,27,47 * * * *`, recurring, durable), created 2026-11-06; `d4a0e2c2` is deleted. The uncommitted work of the stopped workflow agents is saved as unreviewed WIP commits: S14 `a4fb1ad`, S15 `f63c6c7`, S16 `cb38321`. The coordinator worktrees under `.claude/worktrees/s1x-*` are removed. S14, S15 and S16 now continue as slice sessions (`s14-drawer`, `s15-all-tasks`, `s16-session`), each in its own app worktree cut from its WIP commit; each owner takes back the canonical branch name `claude/<id>-<name>`. Resources do not change.
+
+- **2026-11-06 · S14 and S15 built; reviews started.** S14 at `c270ce1` (D54) and S15 at `bfd3d67` (D55): all `[auto]` and `[ui]` items ticked, worktrees clean, no guard file changed. The app refused to start reviewer sessions from the completion-event turn, so the reviewers run as background agents (WORKFLOW.md §5.3, step 3) in the slice worktrees (`.claude/worktrees/x2-noise-b1b3cc` for S14, a folder name the app reused; `.claude/worktrees/s15-all-tasks-3cf42f`) with the slice resources.
+  - Flaky, not repaired (reported by S14; M1 tests that S14 did not change): under load averages of 150–400, `swift test` failed in two of six runs in `MilestoneStoreTests/todosTickOffOnTheTimelineAgainstFakeBridge`, `NoiseResumeTests/pairingASecondHostPreservesTheFirstConnectionAndRoutesEachPrompt`, `NoiseResumeTests/droppedNoiseConnectionReconnectsAndReplaysOnlyTheGap`, `TaskListStoreTests/reconnectsAfterTheConnectionDropsAndReplaysOnlyTheGap`. For a later slice.
+  - Reported by S15: under the same load, a first `s15.sh` run failed all earlier-slice UI tests (`kAXErrorServerNotFound`); the next run passed. In `t0.sh`, xcodebuild retried `testPairDeepLinkOpensPairingStub` once.
+  - Reported by S14: parallel slices share `/tmp/dshm-t0` logs when they run `scripts/demo/t0.sh` at the same time. A later change can give each simulator its own log directory.
+  - Load: the Mac ran at load averages of 150–400 on 12 CPUs for hours (simulators, TencentMeeting, `mediaanalysisd`).
+
+- **2026-11-06 · S14 review FAIL.** `scripts/review S14` at `c270ce1`: `RESULT: FAIL` (`/tmp/dshm-review/S14-c270ce1.txt`). Part `s14-ui-fake` failed on all 3 runs: `testOfflineHostSessionsOpenFromTheCache` read the host label once, while the label (`Office-PC is offline, 上次连接 …`) was still being updated. The real-DSH part did not run. Sent to the S14 owner as repair round 1 (WORKFLOW.md §10.1). Load average 120–500 during the run.
+
+- **2026-11-06 · S15 merged.** Background reviewer ran `scripts/review S15` at `bfd3d67`: `RESULT: PASS` (`/tmp/dshm-review/S15-bfd3d67.txt`). Merged as `a298f38`; `scripts/check-plan --base` passed. No open `[human]` items, so S15 is `done`.
+  - Flaky: part `s15-ui` passed on run 2 of 3. Run 1 failed only in `S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge` ("Neither element nor any descendant has keyboard focus" when it typed into `composer.prompt`). S15 did not change that test. For a later slice: wait for keyboard focus before typing.
+
+- **2026-11-06 · S18 assigned.** Branch `claude/s18-approval-sheet`, worktree `.claude/worktrees/s18-approval-sheet` (from `29f90a1`), simulator `dshm-S18`, DSHM_HOME `~/.dshm/home-s18`, bridge 47814, web 3287. The owner runs as a background agent (WORKFLOW.md §5.3, step 3): the app refuses session starts from event turns.
+
+- **2026-11-06 · Interruption: app restart (about 17:40).** Recovery (WORKFLOW.md §5.4): S14's session survived and runs its repair demo (`s14.sh --shots`, uncommitted test change). S16's session was idle with its `s16.sh --shots` run stopped and uncommitted PLAN.md, `s16.sh` and `evidence/S16/`; the coordinator sent it a brief to continue. The S18 background agent stopped with uncommitted changes; the coordinator resumed it with a message. Heartbeat `0f66e06d` survived; keep-awake requested again.
+
+- **2026-11-06 · S14 repair round 1 done.** The owner made the UI tests wait for labels and values with predicates (`2d14273`); `s14.sh --shots` passed (UI 5/5). A background reviewer runs `scripts/review S14 --resume` on `2d14273`.
+
+- **2026-11-06 · S16 built; review started.** S16 at `8c1bdb8` (D56; D23 (b) updated): all `[auto]` and `[ui]` items ticked, worktree clean, no guard file changed. A background reviewer runs `scripts/review S16`. Flaky under load (reported by S16, not repaired): `S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge` once lost the last typed key. Load averages of 300–770 were seen.
+
+- **2026-11-06 · S14 review PASS; merge conflict.** `scripts/review S14 --resume` at `2d14273`: `RESULT: PASS` (`/tmp/dshm-review/S14-2d14273.txt`); `cmd1` flaky (`swift test` passed on run 3; `NoiseResumeTests` ×3 on run 1, `MilestoneStoreTests/todosTickOffOnTheTimelineAgainstFakeBridge` on run 2; already listed above). The merge into `main` conflicted with S15 in `FakeBridge.swift`, `DebugEntryPoints.swift` and `ARCHITECTURE.md`; the coordinator aborted it. S14 lands second and owns the seam (§1): the owner merges `main`, reruns `s14.sh` and `s15.sh`, then the reviewer runs `--resume` on the new commit.
 
 ## 9. Pending user confirmation
 
@@ -1290,3 +1327,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 46 | T1 | `[human]` | Accept that the app always uses dark mode. Needs the T1 app on the Simulator or an iPhone. | `main` | `4f289bc` |
 | 47 | T1 | decision | D51, provisional: first-message routing in the shell; supersedes D34 (row 33 stays until the user confirms D51). | `claude/t1-ui-shell` | `7b4a0c0` |
 | 48 | T1 | resource | Provisional: the S9 second host in `scripts/demo/t1.sh --all` uses bridge 47830 and web 3303 (`DSHM_SECOND_BRIDGE_PORT`, `DSHM_SECOND_WEB_PORT`). | `claude/t1-ui-shell` | `7b4a0c0` |
+| 49 | S15 | decision | D55, provisional: 所有任务 (screen 03) as a drawer page; sections, approval cards, offline hosts. | `claude/s15-all-tasks` | `bfd3d67` |
