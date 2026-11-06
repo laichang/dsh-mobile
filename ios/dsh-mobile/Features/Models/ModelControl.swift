@@ -2,8 +2,8 @@ import DSHCore
 import DSHProtocol
 import SwiftUI
 
-/// The model pill (S6): the composer's choice, or a running task's. It opens `ModelPicker` as a
-/// sheet (`SheetRoute.model`).
+/// The model pill (S6, restyled in S20 to screen 01): the composer's choice, or a running task's.
+/// It opens `ModelPicker` as a sheet (`SheetRoute.model`).
 struct ModelControl: View {
     let store: TaskListStore
     let hostKey: String
@@ -20,116 +20,239 @@ struct ModelControl: View {
         Button {
             shell.present(.model(hostKey: hostKey, taskKey: task?.key))
         } label: {
-            Label(label, systemImage: "slider.horizontal.3")
-                .font(.subheadline)
-                .lineLimit(1)
+            HStack(spacing: 5) {
+                Text(verbatim: name).foregroundStyle(DSHTheme.textPrimary)
+                if let effort {
+                    Text(verbatim: "·").foregroundStyle(DSHTheme.textTertiary)
+                    Text(verbatim: effort).foregroundStyle(DSHTheme.textTertiary)
+                }
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(DSHTheme.textSecondary)
+            }
+            .font(.subheadline)
+            .lineLimit(1)
         }
+        .accessibilityLabel([name, effort].compactMap { $0 }.joined(separator: " · "))
         .accessibilityIdentifier("model.open")
+        .task(id: catalog) { if let catalog { PickerNames.shared.remember(catalog) } }
     }
 
-    private var label: String {
-        guard let selection else { return task == nil ? "Model" : "Change model" }
-        guard let model = catalog?.entry(for: selection) else { return selection.model }
+    private var name: String {
+        guard let selection else {
+            return task == nil ? String(localized: "Model", table: "Pickers") : String(localized: "Change model", table: "Pickers")
+        }
+        return catalog?.entry(for: selection)?.name ?? PickerNames.shared.names[selection.model] ?? selection.model
+    }
+
+    private var effort: String? {
+        guard let selection, let model = catalog?.entry(for: selection) else { return nil }
         let effortID = selection.hasReasoningEffort ? selection.reasoningEffort : model.defaultEffort
-        let effort = model.efforts.first { $0.id == effortID }?.name
-        return [model.name, effort].compactMap { $0 }.joined(separator: " · ")
+        return model.efforts.first { $0.id == effortID }?.name
     }
-
 }
 
+/// S20 · the model sheet (screens M and X4, STORY §8). Groups by provider with the provider's own
+/// model names, reasoning effort as its own group. A selection the host can no longer run is
+/// named in an amber note; nothing else is selected in its place, and 应用 stays off until the
+/// user picks a model (ARCHITECTURE D58). A provider whose list failed is one row with 重试.
 struct ModelPicker: View {
     let store: TaskListStore
     let hostKey: String
     let task: TaskListStore.TaskRow?
     @Environment(\.dismiss) private var dismiss
     @State private var draft: ModelSelection?
+    @State private var touched = false
     @State private var saving = false
     @State private var error: String?
 
     private var catalog: ModelCatalog? { store.catalogs[hostKey] }
+    private var hostName: String { store.hosts.first { $0.key == hostKey }?.name ?? hostKey }
+    /// A task with no recorded selection runs on the host default, so the sheet starts there.
     private var selection: ModelSelection? {
-        if let task { return task.modelSelection }
+        if let task { return task.modelSelection ?? catalog?.defaultSelection }
         return store.composerSelections[hostKey] ?? catalog?.defaultSelection
     }
+    private var sheet: ModelSheetState { ModelSheetState(catalog: catalog, current: selection) }
+    /// Until the user taps a row, the draft follows the current selection (and the catalog).
+    private var effectiveDraft: ModelSelection? { touched ? draft : sheet.initialDraft }
 
     var body: some View {
         NavigationStack {
-            List {
-                if let message = store.catalogErrors[hostKey] {
-                    Text(message).foregroundStyle(.orange)
-                    Button("Retry") { Task { await store.refreshCatalog(hostKey: hostKey) } }
-                }
-                if let catalog {
-                    ForEach(catalog.groups, id: \.id) { group in
-                        Section(group.name) {
-                            ForEach(group.models, id: \.id) { model in
-                                let selected = draft?.provider == group.id && draft?.model == model.id
-                                choice(model.name, checked: selected, id: "model.option.\(group.id).\(model.id)") {
-                                    if !selected {
-                                        draft = ModelSelection(provider: group.id, model: model.id,
-                                            effort: model.hasDefaultEffort ? model.defaultEffort : nil)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(DSHTheme.textSecondary)
+                        .accessibilityIdentifier("model.provider")
+                    if let gone = sheet.unavailable { unavailableNote(gone) }
+                    if let catalog {
+                        ForEach(groups(catalog), id: \.id) { group in
+                            PickerGroupTitle(text: group.name)
+                            PickerCard {
+                                ForEach(Array(group.models.enumerated()), id: \.element.id) { index, model in
+                                    if index > 0 { PickerDivider() }
+                                    modelRow(model, provider: group.id, catalog: catalog)
+                                }
+                            }
+                        }
+                        if let draft = effectiveDraft, catalog.isAvailable(draft),
+                           let model = catalog.entry(for: draft), !model.efforts.isEmpty {
+                            PickerGroupTitle(text: String(localized: "Reasoning effort", table: "Pickers"))
+                            PickerCard {
+                                ForEach(Array(model.efforts.enumerated()), id: \.element.id) { index, effort in
+                                    if index > 0 { PickerDivider() }
+                                    let current = draft.hasReasoningEffort ? draft.reasoningEffort : model.defaultEffort
+                                    PickerRow(id: "model.effort.\(effort.id)", checked: current == effort.id) {
+                                        Text(verbatim: effort.name)
+                                    } action: {
+                                        pick(ModelSelection(provider: draft.provider, model: draft.model, effort: effort.id))
                                     }
                                 }
                             }
                         }
+                        ForEach(catalog.failures, id: \.id) { failure in failureRow(failure) }
+                    } else if let message = store.catalogErrors[hostKey] {
+                        failureLine(message, id: "host")
+                    } else {
+                        ProgressView().frame(maxWidth: .infinity).padding(.top, 24)
                     }
-                    if let draft, let model = catalog.entry(for: draft), !model.efforts.isEmpty {
-                        Section("Reasoning effort") {
-                            ForEach(model.efforts, id: \.id) { effort in
-                                let current = draft.hasReasoningEffort ? draft.reasoningEffort : model.defaultEffort
-                                choice(effort.name, checked: current == effort.id, id: "model.effort.\(effort.id)") {
-                                    self.draft = ModelSelection(provider: draft.provider, model: draft.model, effort: effort.id)
-                                }
-                            }
-                        }
+                    if let error {
+                        Text(verbatim: error)
+                            .font(.footnote)
+                            .foregroundStyle(DSHTheme.amber)
+                            .padding(.top, 12)
+                            .accessibilityIdentifier("model.error")
                     }
-                    ForEach(catalog.failures, id: \.id) { failure in
-                        Text("\(failure.name): \(failure.message)").foregroundStyle(.secondary)
-                    }
-                } else if store.catalogErrors[hostKey] == nil {
-                    ProgressView()
                 }
-                if let error { Text(error).foregroundStyle(.orange) }
+                .padding(.horizontal, 18)
+                .padding(.bottom, 24)
             }
-            .navigationTitle("Model")
+            .pickerSheetChrome(title: String(localized: "Model", table: "Pickers"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.disabled(saving)
+                    Button(String(localized: "Cancel", table: "Pickers")) { dismiss() }
+                        .disabled(saving)
+                        .accessibilityIdentifier("model.cancel")
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Apply") { Task { await apply() } }
-                        .disabled(saving || !available)
+                    Button(String(localized: "Apply", table: "Pickers")) { Task { await apply() } }
+                        .disabled(saving || !ModelSheetState.canApply(effectiveDraft, in: catalog))
                         .accessibilityIdentifier("model.apply")
                 }
             }
-            .onAppear { if draft == nil { draft = selection } }
             .task {
+                if let catalog { PickerNames.shared.remember(catalog) }
                 await store.refreshCatalog(hostKey: hostKey)
-                if draft == nil { draft = selection ?? catalog?.defaultSelection }
             }
         }
         .interactiveDismissDisabled(saving)
     }
 
-    private var available: Bool {
-        guard let draft, let entry = catalog?.entry(for: draft) else { return false }
-        return !draft.hasReasoningEffort || entry.efforts.contains { $0.id == draft.reasoningEffort }
+    private var subtitle: String {
+        task.map { !$0.state.isTerminal } == true
+            ? String(localized: "From \(hostName) · this task is running", table: "Pickers")
+            : String(localized: "From \(hostName)", table: "Pickers")
     }
 
-    private func choice(_ name: String, checked: Bool, id: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack {
-                Text(name)
-                Spacer()
-                if checked { Image(systemName: "checkmark") }
+    /// The catalog's groups, plus the selection that went away, so the user sees which one it was.
+    private func groups(_ catalog: ModelCatalog) -> [Dshm_V1_ModelGroup] {
+        var groups = catalog.groups
+        if let gone = sheet.unavailable, catalog.entry(for: gone) == nil {
+            var missing = Dshm_V1_CatalogModel()
+            missing.id = gone.model
+            missing.name = gone.model
+            if let at = groups.firstIndex(where: { $0.id == gone.provider }) {
+                groups[at].models.append(missing)
+            } else {
+                var group = Dshm_V1_ModelGroup()
+                group.id = gone.provider
+                group.name = catalog.providerName(gone.provider)
+                group.models = [missing]
+                groups.append(group)
             }
         }
-        .accessibilityIdentifier(id)
-        .accessibilityAddTraits(checked ? .isSelected : [])
+        return groups
+    }
+
+    @ViewBuilder
+    private func modelRow(_ model: Dshm_V1_CatalogModel, provider: String, catalog: ModelCatalog) -> some View {
+        let gone = sheet.unavailable.map { $0.provider == provider && $0.model == model.id } ?? false
+        let name = gone ? (lastKnownName(model.id) ?? model.name) : model.name
+        if gone {
+            PickerRow(id: "model.option.\(provider).\(model.id)", checked: false, enabled: false) {
+                Text(verbatim: name).foregroundStyle(DSHTheme.textTertiary)
+                Spacer()
+                Text("Unavailable", tableName: "Pickers").font(.subheadline).foregroundStyle(DSHTheme.amber)
+            } action: {}
+            .accessibilityValue("unavailable")
+        } else {
+            let draft = effectiveDraft
+            let checked = draft.map { $0.provider == provider && $0.model == model.id && catalog.isAvailable($0) } ?? false
+            PickerRow(id: "model.option.\(provider).\(model.id)", checked: checked) {
+                Text(verbatim: model.name)
+                Spacer()
+                if catalog.isHostDefault(provider: provider, model: model.id) && !checked {
+                    Text("Host default", tableName: "Pickers").font(.subheadline).foregroundStyle(DSHTheme.textTertiary)
+                }
+            } action: {
+                if !checked {
+                    pick(ModelSelection(provider: provider, model: model.id,
+                                        effort: model.hasDefaultEffort ? model.defaultEffort : nil))
+                }
+            }
+            .accessibilityValue(catalog.isHostDefault(provider: provider, model: model.id) ? "default" : "")
+        }
+    }
+
+    /// The name the phone last showed for a model that left the catalog (the id when it never had one).
+    private func lastKnownName(_ id: String) -> String? {
+        PickerNames.shared.names[id]
+    }
+
+    private func unavailableNote(_ gone: ModelSelection) -> some View {
+        let name = lastKnownName(gone.model) ?? gone.model
+        return Text("Your choice, \(name), is no longer available on \(hostName). No other model was picked for you; choose one.",
+                    tableName: "Pickers")
+            .font(.subheadline)
+            .foregroundStyle(DSHTheme.amber)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .background(DSHTheme.amberSoft, in: .rect(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(DSHTheme.amberBorder))
+            .padding(.top, 14)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("model.unavailable")
+    }
+
+    private func failureRow(_ failure: Dshm_V1_ModelCatalogFailure) -> some View {
+        failureLine(String(localized: "\(failure.name): \(failure.message)", table: "Pickers"), id: failure.id)
+    }
+
+    private func failureLine(_ text: String, id: String) -> some View {
+        HStack(spacing: 4) {
+            Text(verbatim: text + " ·").foregroundStyle(DSHTheme.textTertiary)
+            Button(String(localized: "Retry", table: "Pickers")) {
+                Task { await store.refreshCatalog(hostKey: hostKey) }
+            }
+            .foregroundStyle(DSHTheme.link)
+            .accessibilityIdentifier("model.retry.\(id)")
+        }
+        .font(.subheadline)
+        .padding(.top, 16)
+        .padding(.horizontal, 4)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("model.failure.\(id)")
+    }
+
+    private func pick(_ selection: ModelSelection) {
+        touched = true
+        draft = selection
+        error = nil
     }
 
     private func apply() async {
-        guard let draft else { return }
+        guard let draft = effectiveDraft, ModelSheetState.canApply(draft, in: catalog) else { return }
         saving = true
         defer { saving = false }
         do {
@@ -143,5 +266,17 @@ struct ModelPicker: View {
             self.error = String(describing: error)
             await store.refreshCatalog(hostKey: hostKey)
         }
+    }
+}
+
+/// The display names the phone has seen in catalogs, so a model that leaves the catalog is still
+/// named the way its provider names it (STORY §8), not by its id.
+@MainActor
+final class PickerNames {
+    static let shared = PickerNames()
+    private(set) var names: [String: String] = [:]
+
+    func remember(_ catalog: ModelCatalog) {
+        for group in catalog.groups { for model in group.models { names[model.id] = model.name } }
     }
 }
