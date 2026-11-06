@@ -955,7 +955,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S20 · Pickers
 
-**Status** todo · **Needs** T1 · **Branch** `claude/s20-pickers`
+**Status** doing · **Needs** T1 · **Branch** `claude/s20-pickers`
 
 **Why**: STORY §3 (defaults that you can change at the composer), §8 (the user picks the model; no silent swap), screens 07, M and X4.
 
@@ -964,12 +964,43 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: Pick the `dsh-mobile` workspace and DeepSeek-V41-Pro. Make Pro unavailable on the host. The sheet asks you to pick again.
 
 **Done when**
-- [ ] [ui] The workspace choice does not stay after a relaunch — Evidence:
-- [ ] [ui] With an unavailable model, 应用 is off and no other model is selected — Evidence:
+- [x] [ui] The workspace choice does not stay after a relaunch — Evidence: test:S20PickersUITests/testWorkspaceChoiceDoesNotStayAfterRelaunch · cmd:scripts/demo/s20.sh · shot:evidence/S20/s20-workspace-sheet.png · shot:evidence/S20/s20-workspace-picked.png · shot:evidence/S20/s20-relaunch-default.png
+- [x] [ui] With an unavailable model, 应用 is off and no other model is selected — Evidence: test:S20PickersUITests/testUnavailableModelKeepsApplyOffAndSelectsNothing · cmd:scripts/demo/s20.sh · shot:evidence/S20/s20-model-sheet.png · shot:evidence/S20/s20-model-unavailable.png
+- [x] [auto] Against the FakePickers hosts, a model that leaves the catalog is named, nothing is selected in its place, 应用 accepts only an available model, and a sent task clears the workspace choice — Evidence: test:PickerTests/unavailableModelIsNamedAndNothingIsSelectedInItsPlace · cmd:scripts/demo/s20.sh
 
 **Not**: A host guessed from the prompt (later).
 
-**Log**: —
+**Log**
+- **2026-11-07 · built, to review.**
+  - Resume (WORKFLOW.md §5.4): the stopped background owner left WIP `3763c00`. I examined it and kept it: `ModelAvailability.swift` (`ModelSheetState`: the unavailable selection, the first draft, when 应用 is on), `FakePickers` (`-DSHMFakeBridge pickers`: MacBook-Pro and Office-PC with models and workspaces; DeepSeek-V41-Pro leaves the catalog once a task uses it; the OpenRouter list fails), `FakeHost(pickers:)` (`models.v1`, `workspaces.v1`, catalog, `SelectModel`, workspace list), `Features/Pickers/` (shared sheet parts, `Pickers.xcstrings`, `Theme+S20.swift`), the restyled `WorkspacePicker` (07: host switch, host default, recent, absolute path) and `ModelPicker` (M, X4), `TaskListStore` clears the workspace choice when the first message creates the session, `PickerTests`, `S20PickersUITests`, `scripts/demo/s20.sh`. No accessibility identifier renamed; new ones: `model.unavailable`, `model.provider`, `model.retry.<id>`, `model.failure.<id>`, `model.cancel`, `model.error`, `workspace.host`, `workspace.cancel`, `workspace.retry`.
+  - Repaired: a running task with no recorded model selection opens the model sheet at the host default (the WIP showed no row and no effort group there). After the merge of S18, `Theme+S18.swift` also declares `DSHTheme.sheet` (same value), so `Theme+S20.swift` no longer declares it.
+  - Decision: see **D58** (picker sheets). *Provisional, pending user confirmation.* No new dependencies. No board or STORY change: the code follows 07, M and X4 as drawn.
+  - Merged `main` twice (guard fixes `2a6a0ed`, `51009d0`, README and signing config; then S18 `8d25764`). Conflicts in `ARCHITECTURE.md` (D57 and D58), `DebugEntryPoints.swift` (`fakePickers` and `fakeAsk`) and `FakeBridge.swift` (`pickers` and `answersApprovals`); kept both sides.
+  - Verification on the merged code, with the S20 resources (`dshm-S20`, 47815, 3288, `~/.dshm/home-s20`): `scripts/demo/t0.sh` exit 0 at the start; `scripts/demo/s20.sh --shots --regress` exit 0: `swift test` 68 tests in 18 suites, UI 4/4 (S20 ×2, T1 `testLaunchShowsBlankNewSession`, S9), then `s6.sh` and `s7.sh` with real DSH (the model and workspace sheets against the real bridge).
+  - Flaky, not S20 (not repaired): under high load (load average 100–290), `swift test` failed one run each in `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval` ("not connected to the bridge"), `CachedMilestoneTests` and `TaskListStoreTests/streamsATaskIntoTheUnifiedList` (`send()` → nil); each passed on the next run. `S6ModelsUITests` failed twice because a DSH from a run killed by the pause still listened on 47815 with a dead mock LLM ("DeepSeek Messages transport failed"); after I stopped that process it passed. Suggestion for the coordinator: the demo scripts reuse any bridge that listens on their port, so a killed run can leave an orphan that breaks the next run on that port.
+  - Slow, not failed: in one run `testWorkspaceChoiceDoesNotStayAfterRelaunch` took 559 s because the app did not go idle after the send (XCUITest waited 60 s for animations before each of 8 taps); other runs took 63–76 s.
+  - Not done: the third line of the X4 caption on the board (a running task stops and waits in 等我处理 when its model goes away) is host behavior and not in this slice's Cuts; the FakeBridge task keeps running. For a later slice or upstream DSH.
+  - For the coordinator: §0 S20 → review after `scripts/review S20`; add D58 to §9.
+  - Next: independent `scripts/review S20`, then merge.
+- **2026-11-07 · merged main (S16), rerun.**
+  - Done: merged `main` at `9385fd2` (S16 session page, P0 process tooling). Conflict in `FakeBridge.swift` (`goneModels` and S16's `stopped`, `lastMilestones`); kept both sides.
+  - Verification on the merged code, with `eval "$(scripts/slice-env S20)"`: `scripts/demo/s20.sh --shots --regress` exit 0: `swift test` 69 tests in 19 suites, UI 4/4 (S20 ×2, T1, S9), `s6.sh` and `s7.sh` with real DSH. The first run failed in `S16CodingTaskTests/codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt` (`send()` → nil at load average 200, not S20); it passed on the next run.
+  - Earlier Log entries of this slice were edited by hand, before `scripts/plan` was on `main`.
+  - Next: independent `scripts/review S20`, then merge.
+- **2026-11-07 · merged main (PLAN only); s16.sh green.**
+  - Done: merged `main` at `e275b16`; it added only PLAN.md bookkeeping (S16 `66fd823` was already in this branch). S20 restyles the model pill that sits on S16's session page, so I ran `scripts/demo/s16.sh` on `dshm-S20` (no `--shots`): exit 0, `swift test`, S16 UI 2/2, T1 and S3 shell UI tests all passed. The S20 code did not change since the green `s20.sh --shots --regress` run at `f75fff3`.
+  - Next: independent `scripts/review S20`, then merge.
+- **2026-11-07 · merged main (S21), rerun.**
+  - Done: merged `main` at `f6e9afc` (S21 hosts and control). Conflicts in `ARCHITECTURE.md` (D58 and D59), `DebugEntryPoints.swift` (`pickers` and `hosts…`), `FakeBridge.swift` (`FakeHost(… pickers:, devices:)`, both capabilities, both request handlers) and `AppComposition.swift` (both scenarios); kept both sides.
+  - Verification on the merged code (`eval "$(scripts/slice-env S20)"`): `scripts/demo/s20.sh --shots --regress`, then `DSHM_RESUME=1` for the failed part: `swift test` 71 tests in 20 suites, UI 4/4 (S20 ×2, T1, S9), `s6.sh` and `s7.sh` with real DSH all passed. The `swift test` inside `s7.sh` failed once in `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval` ("not connected to the bridge", S15's flaky test, already in §8); it passed on the rerun. The screenshots in `evidence/S20/` are from `f75fff3`; the S20 views did not change since then.
+  - Next: independent `scripts/review S20`, then merge.
+- **2026-11-07 · review repair round 1 of 3.**
+  - Done: `scripts/review S20` at `2108a3e` failed in `s20-swift-test` on all 3 runs, each time in a test of another slice: `AllTasksApprovalTests/answerFromTheListResolvesTheSeededApproval` ("not connected to the bridge"), `S16CodingTaskTests`, `CachedMilestoneTests`, `TaskListStoreTests` (`send()` → nil).
+  - Cause, not S20: I ran `swift test` on this branch and on `main` side by side under the same load. `main` failed 3 of 3 runs (`send()` → nil in `NoiseResumeTests` ×3, `S16CodingTaskTests`, and the `AllTasksApprovalTests` race). The tests gave `send()` only 500 ms (`sendWaitsFor`) for the first connect, and under load the connect takes longer. In `AllTasksApprovalTests` the seeded task can arrive before the host is marked online, and `answerApproval` needs it online. S20's `FakeHost(pickers:)` adds nothing to a host without pickers, and its `TaskListStore` change runs only after `createTask` succeeds.
+  - Repair (seam, test code only): `CachedMilestoneTests`, `S16CodingTaskTests`, `TaskListStoreTests` and `NoiseResumeTests` set `sendWaitsFor` to 5 s; `send()` still returns as soon as the host is online, and the tests that expect nil fail fast (no host online, bridge update). `AllTasksApprovalTests` also waits until the host is online before it answers. With the repair, the branch passed 3 of 3 of the same side-by-side runs where `main` failed 3 of 3.
+  - Verification: `scripts/demo/s20.sh` exit 0 on `dshm-S20`: `swift test` 71 tests in 20 suites, UI 4/4 (S20 ×2, T1, S9).
+  - For the coordinator: this repairs the `send()` → nil family in §8 for all slices once it is on `main`.
+  - Next: `scripts/review S20 --resume` on this commit.
 
 ### S21 · Hosts and control
 

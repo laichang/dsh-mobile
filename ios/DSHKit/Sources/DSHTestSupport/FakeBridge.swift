@@ -138,6 +138,21 @@ public final class FakeBridge: BridgeTransport {
         }
     }
 
+    /// S20: the host advertises `models.v1` and `workspaces.v1` and answers their requests.
+    /// A model in `goneAfterUse` leaves the catalog once a task uses it (the scenario's stand-in
+    /// for a provider key that expired on the host).
+    public struct Pickers: Sendable {
+        public var catalog: ModelCatalog
+        public var workspaces: Dshm_V1_WorkspaceList
+        public var goneAfterUse: Set<String>
+
+        public init(catalog: ModelCatalog, workspaces: Dshm_V1_WorkspaceList, goneAfterUse: Set<String> = []) {
+            self.catalog = catalog
+            self.workspaces = workspaces
+            self.goneAfterUse = goneAfterUse
+        }
+    }
+
     public static let defaultReply = Script().reply.joined()
     public static let codingTodoItems = ["Find the failing test", "Reproduce it", "Fix the order of replayed events",
                                          "Run the tests", "Open a pull request"]
@@ -276,6 +291,8 @@ public final class FakeHost: Sendable {
     private let extraCapabilities: [String]
     /// S15: with any, the host advertises `approvals.v1` and answers `AnswerApproval`.
     private let approvals: [FakeBridge.PendingApproval]
+    /// S20: with a value, the host answers model and workspace requests.
+    private let pickers: FakeBridge.Pickers?
     /// S15, S18: seeded approvals or a script that asks for one.
     private var answersApprovals: Bool { !approvals.isEmpty || script.ask != nil }
 
@@ -295,6 +312,8 @@ public final class FakeHost: Sendable {
         var prompts: [String] = []
         var tasksCreated = 0
         var incarnation = 0
+        /// S20: models that left the catalog (`Pickers.goneAfterUse`).
+        var goneModels: Set<String> = []
         /// S21: `devices.v1` records; `revoked` once this phone's device lost its access.
         var devices: FakeDevices?
         var revoked = false
@@ -310,7 +329,9 @@ public final class FakeHost: Sendable {
     public init(script: FakeBridge.Script = .init(), hostName: String = "FakeBridge Mac", reachable: Bool = true,
                 incompatibleDsh: (installed: String, supported: String)? = nil,
                 seed: [Dshm_V1_TaskSummary] = [], extraCapabilities: [String] = [],
-                approvals: [FakeBridge.PendingApproval] = [], devices: FakeDevices? = nil) {
+                approvals: [FakeBridge.PendingApproval] = [], pickers: FakeBridge.Pickers? = nil,
+                devices: FakeDevices? = nil) {
+        self.pickers = pickers
         self.incompatibleDsh = incompatibleDsh
         self.script = script
         self.hostName = hostName
@@ -432,6 +453,7 @@ public final class FakeHost: Sendable {
                     if script.interruptible { hello.capabilities.append(DSHProtocolInfo.interruptCapability) }
                     if answersApprovals { hello.capabilities.append(DSHProtocolInfo.approvalsCapability) }
                     hello.capabilities += extraCapabilities
+                    if pickers != nil { hello.capabilities += ["models.v1", "workspaces.v1"] }
                     if s.devices != nil { hello.capabilities.append(FakeDevices.capability) }
                 }
                 bridge.deliver(Self.response(id, .hello(hello)))
@@ -449,6 +471,12 @@ public final class FakeHost: Sendable {
                 summary.state = .running
                 summary.createdAtMs = Self.nowMs()
                 summary.updatedAtMs = summary.createdAtMs
+                if let pickers {
+                    let selection = create.hasModelSelection ? create.modelSelection : pickers.catalog.defaultSelection
+                    summary.modelSelection = selection
+                    if pickers.goneAfterUse.contains(selection.model) { s.goneModels.insert(selection.model) }
+                    if create.hasWorkspace { summary.workspace = create.workspace }
+                }
                 s.tasks.append(summary)
                 s.connections[bridge.id] = conn
                 Self.upserted(summary, in: &s)
@@ -510,6 +538,12 @@ public final class FakeHost: Sendable {
                 Self.append(event, taskID: interrupt.taskID, in: &s)
             case .answerApproval(let answer)? where answersApprovals:
                 answerApproval(answer, requestID: id, bridge: bridge, in: &s)
+            case .getModelCatalog? where pickers != nil:
+                bridge.deliver(Self.response(id, .modelCatalog(Self.catalog(pickers!, gone: s.goneModels))))
+            case .selectModel(let select)? where pickers != nil:
+                selectModel(select, requestID: id, bridge: bridge, in: &s)
+            case .listWorkspaces? where pickers != nil:
+                bridge.deliver(Self.response(id, .workspaceList(pickers!.workspaces)))
             case let body? where s.devices != nil && FakeDevices.handles(body):
                 guard let (answer, revokedCurrent) = s.devices?.answer(body) else { break }
                 bridge.deliver(Self.response(id, answer))
@@ -527,6 +561,32 @@ public final class FakeHost: Sendable {
                 break
             }
         }
+    }
+
+    /// S20: the catalog without the models that left it.
+    private static func catalog(_ pickers: FakeBridge.Pickers, gone: Set<String>) -> ModelCatalog {
+        var catalog = pickers.catalog
+        for i in catalog.groups.indices { catalog.groups[i].models.removeAll { gone.contains($0.id) } }
+        return catalog
+    }
+
+    /// S20: a running task switches model; a model that is not in the catalog is refused.
+    private func selectModel(_ select: Dshm_V1_SelectModel, requestID: UInt64, bridge: FakeBridge, in s: inout State) {
+        guard let pickers, Self.catalog(pickers, gone: s.goneModels).entry(for: select.selection) != nil,
+              let at = s.tasks.firstIndex(where: { $0.taskID == select.taskID }) else {
+            var error = Dshm_V1_Error()
+            error.code = "model/unavailable"
+            error.message = "\(select.selection.model) is not available on \(hostName)."
+            bridge.deliver(Self.response(requestID, .error(error)))
+            return
+        }
+        s.tasks[at].modelSelection = select.selection
+        s.tasks[at].updatedAtMs = Self.nowMs()
+        var selected = Dshm_V1_ModelSelected()
+        selected.taskID = select.taskID
+        selected.selection = select.selection
+        bridge.deliver(Self.response(requestID, .modelSelected(selected)))
+        Self.upserted(s.tasks[at], in: &s)
     }
 
     /// S15: the answer resolves the approval, and the task goes on to its reply.

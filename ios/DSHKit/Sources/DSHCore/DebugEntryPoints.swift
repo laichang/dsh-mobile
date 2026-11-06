@@ -10,6 +10,7 @@ public enum DebugLaunchOptions {
     /// sessions in workspaces (`FakeDrawer`).
     /// `-DSHMFakeBridge approvals` (S15): two hosts, each with a task that waits on an approval;
     /// `approvals-office-offline`: the same, with Office Mac unreachable.
+    /// `-DSHMFakeBridge pickers` (S20): two hosts with models and workspaces (`FakePickers`).
     /// `-DSHMFakeBridge hosts`, `hosts-one` (S21): the hosts of screens H, X2 and X3 (`FakeHosts`).
     public static let fakeBridgeKey = "DSHMFakeBridge"
     /// `-DSHMPresetPrompt <text>`: pre-fill the composer.
@@ -50,6 +51,8 @@ public enum DebugLaunchOptions {
         /// S14: the `FakeDrawer` variant (`drawer`, `drawer-office-offline`, `drawer-v0`).
         public var fakeDrawer: String?
         public var fakeApprovals = false
+        /// S20: the `FakePickers` hosts.
+        public var fakePickers = false
         public var fakeAsk: String?
         /// S21: the `FakeHosts` variant (`hosts`, `hosts-one`).
         public var fakeHosts: String?
@@ -93,6 +96,7 @@ public enum DebugLaunchOptions {
             options.multipleFakeHosts = v == "multi" || v == "multi-office-offline" || options.fakeApprovals
             options.fakeBridgeOffline = v == "offline" || v == "multi-office-offline" || v == "approvals-office-offline"
             if v.hasPrefix("drawer") { options.fakeDrawer = v }
+            options.fakePickers = v == "pickers"
             if v.hasPrefix("hosts") { options.fakeHosts = v }
         }
         if let v = values[resetStoreKey] { options.resetStore = yes.contains(v) }

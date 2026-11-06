@@ -82,6 +82,7 @@ final class AppModel {
         #if DEBUG
         let options = DebugLaunchOptions.parse(ProcessInfo.processInfo.arguments)
         if let drawer = options.fakeDrawer.flatMap(FakeDrawer.Variant.init(rawValue:)) { return FakeDrawer.hosts(drawer) }
+        if options.fakePickers { return FakePickers.hosts(hold: options.fakeHold) }
         if let variant = options.fakeHosts.flatMap(FakeHosts.Variant.init(rawValue:)) { return fakeHosts(variant) }
         if options.multipleFakeHosts {
             return ["Office Mac", "Home Mac"].enumerated().map { index, name in

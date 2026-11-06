@@ -27,7 +27,9 @@ import Testing
             container: try TaskCache.container(url: storeURL),
             hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Fix the failing test.")
         store.backoff = (.milliseconds(20), .milliseconds(100))
-        store.sendWaitsFor = .milliseconds(500)
+        // send() returns as soon as the host is online; under load the first connect can take
+        // longer than 500 ms, and then send() gave nil (S20 review, 2026-11-07).
+        store.sendWaitsFor = .seconds(5)
         return store
     }
 
