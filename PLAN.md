@@ -71,6 +71,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S25 | done | merged `2a189da` | 2026-11-07 | — |
 | S26 | done | merged `bfd1c39` | 2026-11-07 | — |
 | S27 | doing | `claude/s27-outcome-footer` | 2026-11-07 | Slice owner builds (§8) |
+| S28 | todo | — | 2026-11-07 | Fix: Markdown tables; start a fix session |
 
 ## 1. Approach
 
@@ -1194,6 +1195,24 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Status** todo · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-07: "用时2小时37分钟15秒"，离谱了；"停在这里·最终回答开头"，这是什么？（用户选择：Remove the label）. (Coordinator: 用时 runs from the session's first message, 21:07, to its last update, so it counts the idle time between turns. The marker is S19's landing line, D60.)
+
+**Cuts**: Find the cause. Fix it. Add a test that fails without the fix.
+
+**Demo**: —
+
+**Done when**
+- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [ ] [human] The user no longer sees the bug — Evidence:
+
+**Not**: Other changes. Report other bugs to the coordinator as new fix slices.
+
+**Log**: —
+
+### S28 · Fix: Markdown tables
+
+**Status** todo · **Needs** — · **Branch** —
+
+**Why**: The user reported a bug on 2026-11-07: dsh web上，展示了表格；dsh-mobile上，展示的还是markdown的表格，没有渲染出来.
 
 **Cuts**: Find the cause. Fix it. Add a test that fails without the fix.
 
