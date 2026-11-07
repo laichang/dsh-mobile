@@ -1116,7 +1116,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S24 · Fix: Keyboard dismiss
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-07: 键盘弹起后，我点击展开侧边栏，键盘没有收起。应该说，键盘弹起后，只要没有发生用户输入的情况，其他的动作都应该先让键盘收起.
 
