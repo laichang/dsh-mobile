@@ -710,7 +710,7 @@ Each slice needs only T0, unless "Needs" says otherwise.
 - [x] [auto] A Web session created before pairing and another created after pairing each appear once under their host and DSH session ID. A session started on the phone also appears only once. — Evidence: test:webSessionsBeforeAndAfterPairingAndPhoneTaskHaveOneHostRowEach
 - [x] [ui] Send “网页第一条” in the Web default workspace. Open the session on the phone and read the message and assistant reply. Send “网页第二条” in the same Web session and see the open detail view update without refreshing. — Evidence: test:S13SessionVisibilityUITests/testWebTurnsUpdateOpenDetailAndResumeAfterDisconnect · cmd:scripts/demo/s13.sh · shot:evidence/S13/s13-live-turn.png
 - [x] [ui] While the phone is disconnected, continue the same session on the Web. After reconnect, the phone shows each missed message once and in order. — Evidence: test:S13SessionVisibilityUITests/testWebTurnsUpdateOpenDetailAndResumeAfterDisconnect · cmd:scripts/demo/s13.sh · shot:evidence/S13/s13-reconnected.png
-- [ ] [human] On a paired iPhone and Mac, repeat the two-message Web demo and verify that the phone shows the same session and its latest reply. — Evidence:
+- [x] [human] On a paired iPhone and Mac, repeat the two-message Web demo and verify that the phone shows the same session and its latest reply. — Evidence: human:2026-11-07 two Web messages, then a third live; the phone showed the same session, title and latest reply
 
 **Not**: Sending a reply from the phone into an existing session belongs to M2 (§7).
 
