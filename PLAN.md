@@ -1102,7 +1102,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 **Done when**
 - [x] [ui] The three landing positions are correct — Evidence: test:S23DrawerMotionUITests/testDoneUnreadLandsAtTheAnswerAndReadReturnsToTheLastPosition · test:S23DrawerMotionUITests/testRunningSessionLandsAtTheBottom · cmd:scripts/demo/s23.sh · shot:evidence/S23/s23-done-unread.png · shot:evidence/S23/s23-read-last-position.png · shot:evidence/S23/s23-running-bottom.png
-- [ ] [human] The drawer motion feels smooth on a real iPhone — Evidence:
+- [x] [human] The drawer motion feels smooth on a real iPhone — Evidence: human:2026-11-07 drawer open/close and session switching feel smooth on iPhone 17 Pro
 
 **Not**: Settings for haptics.
 
