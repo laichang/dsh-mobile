@@ -72,6 +72,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S26 | done | merged `bfd1c39` | 2026-11-07 | — |
 | S27 | doing | `claude/s27-outcome-footer` | 2026-11-07 | Slice owner builds (§8) |
 | S28 | doing | `claude/s28-markdown-tables` | 2026-11-07 | Slice owner builds (§8) |
+| S29 | todo | — | 2026-11-08 | Fix: Revoke this device; start a fix session |
 
 ## 1. Approach
 
@@ -1213,6 +1214,24 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Status** todo · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-07: dsh web上，展示了表格；dsh-mobile上，展示的还是markdown的表格，没有渲染出来.
+
+**Cuts**: Find the cause. Fix it. Add a test that fails without the fix.
+
+**Demo**: —
+
+**Done when**
+- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [ ] [human] The user no longer sees the bug — Evidence:
+
+**Not**: Other changes. Report other bugs to the coordinator as new fix slices.
+
+**Log**: —
+
+### S29 · Fix: Revoke this device
+
+**Status** todo · **Needs** — · **Branch** —
+
+**Why**: The user reported a bug on 2026-11-08: 我revoke了，发现UI上，侧边栏的设备，会间隔几秒出现loading去自动请求连线. (Coordinator: D59 says the app forgets the host after a revoke of this device and shows 08; on the real bridge it keeps the host and retries.)
 
 **Cuts**: Find the cause. Fix it. Add a test that fails without the fix.
 
