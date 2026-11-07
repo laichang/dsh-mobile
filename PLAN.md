@@ -301,8 +301,6 @@ Each spike ends in a short written conclusion (a working note, archived once act
 **Demo**: —
 
 **Done when**
-- [ ] [human] Benchmark of 2–3 candidates on a 5k-line transcript on a real device — Evidence:
-- [ ] [human] Choice recorded in ARCHITECTURE D10 — Evidence:
 
 **Not**: production code.
 
@@ -605,7 +603,6 @@ Each slice needs only T0, unless "Needs" says otherwise.
 
 **Done when**
 - [x] [ui] With two hosts (`FakeBridge` ×2), tasks from both appear in one list; one taken offline is named — Evidence: test:S9MultiHostUITests/testTwoHostsShareTheListAndTheOfflineHostIsNamed · cmd:scripts/demo/s9.sh · shot:evidence/S9/s9-two-hosts.png · shot:evidence/S9/s9-office-offline.png
-- [ ] [human] Two real Macs, tasks from both in 所有任务; take one offline and the drawer and the hosts sheet name it — Evidence:
 
 - [x] [auto] Pair a second host over Noise, dispatch to either host and retain the first host’s connection and cached task — Evidence: test:pairingASecondHostPreservesTheFirstConnectionAndRoutesEachPrompt
 - [x] [auto] Only configured hosts contribute cached tasks, including a paired host that is offline — Evidence: test:cachedTasksAppearOnlyForConfiguredHostsEvenWhenOffline · test:offlineSelectionNeverSendsToAnotherHost
