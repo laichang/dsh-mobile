@@ -20,7 +20,9 @@ each of which must resolve:
 With --staged it also fails when guard files (PROTECTED below) are staged;
 only the user commits those, by hand. It also fails on staged build output
 (.build/, node_modules/, DerivedData/, *.xcresult) and on staged files larger
-than MAX_FILE_MB.
+than MAX_FILE_MB. On main, it fails on a commit that is not a merge and changes
+code (CODE_PATHS): code reaches main only by the merge of a slice branch. A bug
+that the user reports becomes a fix slice (WORKFLOW.md §5.2, `scripts/plan fix`).
 
 During a merge (MERGE_HEAD exists; pre-merge-commit, or the commit after a merge
 with conflicts) of main into another branch, the plan file is checked against
@@ -57,6 +59,8 @@ PROTECTED = ["scripts/check-plan", ".githooks/*", ".claude/hooks/*", ".claude/se
              ".codex/hooks.json", ".codex/hooks/*"]
 BUILD_OUTPUT = re.compile(r"(^|/)(\.build|node_modules|DerivedData)/|\.xcresult(/|$)")
 MAX_FILE_MB = 4
+# Code that reaches main only by a merge. scripts/resources.tsv is bookkeeping (scripts/plan assign).
+CODE_PATHS = re.compile(r"^(ios|bridge|protocol|spikes|scripts)/(?!resources\.tsv$)")
 POINTER_SEP = " · "
 SKIP_DIRS = {".git", "node_modules", "DerivedData", "build", ".build", ".archive", "evidence"}
 
@@ -333,6 +337,19 @@ def staged_problems(trusted=None):
     return errors
 
 
+def code_on_main():
+    """Code in the index of a commit on main that is not a merge (WORKFLOW.md §3, §5.2)."""
+    if git_run("symbolic-ref", "-q", "--short", "HEAD").stdout.strip() != "main":
+        return []
+    merging = (git_run("rev-parse", "-q", "--verify", "MERGE_HEAD").returncode == 0
+               or os.environ.get("GIT_REFLOG_ACTION", "").split()[:1] == ["merge"])
+    if merging:
+        return []
+    return [f"CODE ON MAIN: {f} (code reaches main only by the merge of a slice branch; "
+            f"for a bug, start a fix slice: scripts/plan fix, WORKFLOW.md §5.2)"
+            for f in staged_files() if CODE_PATHS.search(f) and not is_protected(f)]
+
+
 def closest(old, pool):
     same = [p for p in pool if p.section == old.section] or pool
     if not same:
@@ -366,6 +383,7 @@ def main(argv=None):
         errors += [f"GUARD FILE STAGED: {f} (only the user commits guard changes, by hand)"
                    for f in protected_staged(trusted)]
         errors += staged_problems(trusted)
+        errors += code_on_main()
         new = git_show(f":{PLAN}")  # None if PLAN.md isn't in the index
     elif args.new == "-":
         new = sys.stdin.read()
@@ -382,7 +400,7 @@ def main(argv=None):
         print("check-plan: PLAN.md Done when items may only be ticked ([ ] -> [x] with "
               "valid evidence) or added. Never deleted, reworded, re-tiered or unticked. "
               "Guard files are changed by the user only. Build output and large files stay "
-              "out of git.\n")
+              "out of git. Code reaches main only by a merge.\n")
         print("\n".join(errors))
         print("\nIf an item or a guard truly has to change, explain the original text, the "
               "new text and the reason to the user, and let the user make the change.")
