@@ -1200,7 +1200,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: —
 
 **Done when**
-- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S27OutcomeFooterUITests/testDoneFooterCountsTheLatestTurnOnly · test:S27OutcomeFooterUITests/testUnreadDoneSessionOpensAtTheFinalAnswerWithNoLabel · test:S19OutcomesUITests/testDoneSessionNotReadOpensAtTheStartOfTheFinalAnswer · test:S23DrawerMotionUITests/testDoneUnreadLandsAtTheAnswerAndReadReturnsToTheLastPosition · shot:evidence/S27/s27-footer-latest-turn.png · shot:evidence/S27/s27-unread-answer-start.png
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
