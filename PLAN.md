@@ -1155,6 +1155,7 @@ Follow-ups the user asked for (2026-11-07):
 
 - **First after M1 closes:** a reconnect tries every saved address of a host, not only the first (for example LAN, then Tailscale). Changes D21 (e).
 - **M2:** write the bridge host log to disk, so that a bridge or Mac restart does not mark running tasks as failed. Do it together with S4's held approvals (D20).
+- **Later:** with `transcript.v1` (D61), "N 步" on the done row can count tool calls instead of milestones (D60). Then the row's › opens the tool calls, so that the user sees each step.
 
 For M2, a reply sent from the phone's session detail view goes into that same DSH session and appears there on the Web. Sending from the home screen creates a new task.
 
@@ -1490,57 +1491,28 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · User confirmed D24, D25, D28, D31.** D24 and D28 confirmed as written. D25 confirmed with the 24-hour approval timeout. D31 confirmed: a model choice on the phone also sets the DSH host default, so the phone and the Web stay in sync. D34 stays in §9 until D51 is confirmed (D51 supersedes it). §9 rows 22, 26, 29 and 30 removed.
 
+- **2026-11-07 · User confirmed D37, D40, D43, D46, D49.** D37 and D43 confirmed as written. D40 confirmed: every paired device has the same rights in M1. D46 confirmed: a DSH update stops new tasks until the bridge supports it. D49 confirmed; D63 changes its first-pairing part. §9 rows 31, 32, 35, 37 and 41 removed.
+
+- **2026-11-07 · User confirmed the remaining decisions, dependencies and downloads.** The user confirmed D6, D15, D16, D34 (closed: D51 supersedes it), D50, D51 (the app always opens on a new session), D54 (read state stays local to the phone), D55–D59, D60, D61, D63, D65 (cross-fade only on 03; scroll positions in memory only), the `scripts/review` change (`4f91fc1`), the default-choices rule text, the second-host demo ports, and every dependency and download (rows 2, 3, 6–9, 23, 38–40). Follow-up for later in §7: "N 步" counts tool calls with `transcript.v1`, and its › opens the tool calls. §9 now holds only `[human]` items and D10 (after the X3 device benchmark). Rows 11 and 12 (reading D15 and D16) are the user's to tick in T0.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
-| 1 | — | rule | "Default choices" rule text (now WORKFLOW.md §9) and this section (the user approved the rules, not this wording) | `main` | see Plan log 2026-11-05 · default choices |
-| 2 | X2 | dependency | npm `@noble/ciphers` 2.4.0, `@noble/curves` 2.4.0, `@noble/hashes` 2.4.0 (spike only, `spikes/x2-noise/ts/`) | `main` (merged `e34a8bc`) | `3f4d72e` |
-| 3 | X2 | download | Noise test vectors: `cacophony.txt` (haskell-cryptography/cacophony @ `18b7348`) and `snow.txt` (mcginty/snow @ `d00b360`); sha256 in `spikes/x2-noise/vectors/SHA256SUMS`; a filtered subset is committed | `main` (merged `e34a8bc`) | `3f4d72e` |
-| 4 | T0 | decision | ARCHITECTURE D15 (toolchain: buf + protoc-gen-es / swift-protobuf codegen, pnpm bridge, `ios/DSHKit` package layout) and D16 (debug-only testability entry points), *provisional* | `main` (merged `84db2e8`) | `03cc202` |
-| 5 | X2 | decision | ARCHITECTURE D6 refined, *provisional*: pairing `Noise_IKpsk1_25519_ChaChaPoly_SHA256` (psk = the QR's one-time secret), reconnect `Noise_IK_25519_ChaChaPoly_SHA256`, mode + protocol version in the prologue, own Noise state machine on CryptoKit / `@noble/*` | `main` (merged `e34a8bc`) | `ce9ee4c` |
-| 6 | T0 | dependency | Bridge (`bridge/pnpm-lock.yaml`): runtime `@bufbuild/protobuf` 2.16.0, `ws` 8.22.1; dev `@bufbuild/buf` 1.75.0, `@bufbuild/protoc-gen-es` 2.16.0, `typescript` 7.0.2, `@types/node` 24.19.2, `@types/ws` 8.18.2; pnpm 11.28.5 via corepack | `main` (merged `84db2e8`) | `28d1bda` |
-| 7 | T0 | dependency | Swift: `apple/swift-protobuf` 1.39.0, revision `3d537cb` (`ios/DSHKit/Package.resolved`) | `main` (merged `84db2e8`) | `b54c8d5` |
-| 8 | T0 | download | npm `@deepseek-ai/dsh@0.2.2-rc.1` and `@deepseek-ai/dsh-llm-mock-server@0.2.2-rc.1` in `~/.dshm/runtime` (sha512 in T0's Log); shallow swift-protobuf 1.39.0 clone in `~/.dshm/mirrors/swift-protobuf` | outside the repo | `71dd78c` (Log) |
-| 9 | T0 | local setup | `~/.dshm/bin/pnpm` shim (corepack pnpm 11.28.5); SwiftPM cache entry seeded from the shallow clone; DSH location `~/.dshm` with `DSH_HOME=~/.dshm/home` (`~/.dsh` untouched) | outside the repo | `71dd78c` (Log) |
 | 10 | T0 | `[human]` | "Following `bridge/README.md` installs and enables the plugin in a DSH profile". Needs: this Mac with DSH 0.2.2-rc.1 (`~/.dshm`), about 10 minutes | `main` | `84db2e8` |
 | 11 | T0 | `[human]` | "Toolchain choices … recorded in ARCHITECTURE.md". Needs: reading D15 (confirms row 4) | `main` | `84db2e8` |
 | 12 | T0 | `[human]` | "Testability entry points … recorded in ARCHITECTURE.md". Needs: reading D16 (confirms row 4) | `main` | `84db2e8` |
-| 23 | S1 | dependency | Bridge runtime: `@noble/curves`, `@noble/ciphers`, `@noble/hashes` 2.4.0 (previously spike-only, row 2), `uqr` 0.1.3 (terminal QR) | `main` (merged `1f35fa2`) | `6b1f0bf` |
 | 24 | S1 | `[human]` | "A fresh iPhone scans the QR and runs the T0 demo over Wi-Fi or Tailscale". Needs: a real iPhone, this Mac running `scripts/dsh-up.mjs` with the bridge reachable on the LAN or Tailscale, and the app installed with your free Apple team | `main` | `1f35fa2` |
 | 25 | S1 | `[human]` | "A packet capture of that session shows only ciphertext". Needs: the session from row 24, plus Wireshark or `tcpdump` on this Mac | `main` | `1f35fa2` |
 | 27 | X3 | `[human]` | Benchmark 2 candidates on a 5,000-line transcript on a real iPhone. Run the signed test in spikes/x3-markdown/README.md. | `main` | `7f1b4b8` |
 | 28 | X3 | `[human]` / decision | Confirm provisional D10 streaming renderer choice after the device benchmark. | `main` | `7f1b4b8` |
-| 31 | S7 | decision | D37, provisional: DSH registry supplies canonical host paths and recents; explicit paths are validated by DSH and sent with the model selection. | `main` | merged `21aabd8` |
-| 32 | S10 | decision | D40, provisional: Noise-authenticated device management, registry revocation with active socket closure, and combined pairing/approval audit. | `main` | merged `4a983eb` |
-| 33 | S8 | decision | D34, provisional: short answers remain in the list based on actual reply size and task events. | `main` | merged `8e9fa87` |
 | 34 | S8 | `[human]` | Check a coding task’s diff and terminal output for readability on a real iPhone. | `main` | `8e9fa87` |
-| 35 | S9 | decision | D43, provisional: persistent target key, host-keyed connections and rows only for configured paired hosts. | `main` | merged `575bf62` |
 | 36 | S9 | `[human]` | Use two real Macs, send a task to each, then disconnect one and verify its name and cached task in the unified list. | `main` | `575bf62` |
-| 37 | S12 | decision | D46, provisional: exact supported DSH release, version-only Hello for other hosts, per-host error and retained draft. | `main` | merged `ed3f7bf` |
-| 38 | S12 | download | Real UI fixture @deepseek-ai/dsh@0.2.2-alpha.3, sha512 in the S12 Log. | `main` | `ed3f7bf` |
-| 39 | S12 | dependency | CI-only actions/checkout v7.0.1 at 3d3c42e5aac5ba805825da76410c181273ba90b1 and actions/setup-node v7.0.0 at 820762786026740c76f36085b0efc47a31fe5020. | `main` | `ed3f7bf` |
-| 40 | S12 | download | DSH default branch at fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159; archive SHA-256 a169c6128a7fd7d142291ce5abc4764e95b42f0c922110e271211b4b6b2f6fa1. | `main` | `ed3f7bf` |
-| 41 | S11 | decision | D49, provisional: first-run pairing guide, editable first task suggestion and recovery for unusable saved hosts. | `main` | merged `12e1afc` |
 | 42 | S11 | `[human]` | On a fresh install, check that the app explains its purpose and the need for a reachable DSH host. | `main` | `12e1afc` |
 | 43 | S11 | `[human]` | Have someone unfamiliar with DSH pair with an already-running host and obtain the first answer without help. | `main` | `12e1afc` |
-| 44 | S13 | decision | D50, provisional: use the DSH session directory and durable message journal for cross-client history and recovery. | `codex/s13-visibility` | `08de88d` |
 | 45 | S13 | `[human]` | On a paired iPhone and Mac, send two messages in one Web session and verify the same open phone detail shows the latest reply. Needs the S13 app and bridge. | `main` | `c56d47f` |
 | 46 | T1 | `[human]` | Accept that the app always uses dark mode. Needs the T1 app on the Simulator or an iPhone. | `main` | `4f289bc` |
-| 47 | T1 | decision | D51, provisional: first-message routing in the shell; supersedes D34 (row 33 stays until the user confirms D51). | `claude/t1-ui-shell` | `7b4a0c0` |
-| 48 | T1 | resource | Provisional: the S9 second host in `scripts/demo/t1.sh --all` uses bridge 47830 and web 3303 (`DSHM_SECOND_BRIDGE_PORT`, `DSHM_SECOND_WEB_PORT`). | `claude/t1-ui-shell` | `7b4a0c0` |
-| 49 | S15 | decision | D55, provisional: 所有任务 (screen 03) as a drawer page; sections, approval cards, offline hosts. | `claude/s15-all-tasks` | `bfd3d67` |
-| 50 | S14 | decision | D54, provisional: drawer levels host › workspace › session, status marks, local read state; `TaskSummary.workspace` (field 280), capability `drawer.v1`. | `claude/s14-drawer` | `d2cd506` |
-| 51 | S18 | decision | D57, provisional: the approval sheet comes up on session open and on a new approval, closes when the approval is gone, and comes back from a one-line bar after a swipe down. | `claude/s18-approval-sheet` | `9599cc6` |
-| 52 | S16 | decision | D56, provisional: session page layout (milestone bar at the top, "done / total" counts finished todos; stop key in the send position); D23 (b) updated. | `claude/s16-session` | `1388a9c` |
-| 53 | S21 | decision | D59, provisional: hosts sheet (H) from the drawer pill, host devices and audit (X2), all-offline card on 01 (X3). | `claude/s21-hosts` | `477f9bd` |
 | 54 | S21 | `[human]` | On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that. Needs a paired iPhone and a running host with the S21 app. | `main` | `13648eb` |
-| 55 | S20 | decision | D58, provisional: picker sheets (07, M, X4): workspace and model pickers as SheetRoute sheets; a task with no selection opens the model sheet at the host default. | `claude/s20-pickers` | merged `e849e8e` |
-| 56 | S19 | decision | D60, provisional: done and failed on the session page (06, X1): TaskOutcome reads an ended task from the cache only; retry opens 01 in a new session with the original prompt. | `claude/s19-outcomes` | merged `077a9f3` |
-| 57 | S17 | decision | Coordinator change to scripts/review (4f91fc1): a test: pointer to a DSHKit Swift Testing @Test is checked with `swift test --filter Suite/name` and its own pass line. Before, such pointers could never pass. Please confirm or change. | `main` | `4f91fc1` |
-| 58 | S17 | decision | D61, provisional: structured transcript (transcript.v1, TranscriptBlock field 340): thinking and tool rows mapped by the bridge from DSH events, with the S16 view as the fallback. | `claude/s17-transcript` | merged `3a9f11e` |
-| 59 | S22 | decision | D63, provisional: after the first pairing, 01 opens with the first task filled in (no tap); paste mode on 08; restyled pairing review. | `claude/s22-first-run` | merged `4deb8d0` |
-| 60 | S23 | decision | D65, provisional: drawer motion timings and landing positions; on 03 an approval card only cross-fades, then 05; saved scroll positions in memory only. | `claude/s23-drawer-motion` | merged `47acc0d` |
 | 61 | S23 | `[human]` | The drawer motion feels smooth on a real iPhone. | `main` | `47acc0d` |
