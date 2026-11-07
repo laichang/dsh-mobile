@@ -1,5 +1,6 @@
 import DSHCore
 import SwiftUI
+import UIKit
 
 /// T1 · the navigation state of the shell (DESIGN.md "Navigation"): which page shows, which
 /// bottom sheet is up, and whether the workspace drawer is open. There is no navigation stack:
@@ -12,9 +13,11 @@ import SwiftUI
 @Observable
 final class ShellModel {
     /// The app opens on a blank new session (STORY §3), never on the last place.
-    var page: ShellPage = .newSession
-    var sheet: SheetRoute?
-    var drawerOpen = false
+    /// S24 (D67): each change of page, sheet or drawer puts the keyboard away first. Typing and
+    /// the send key do not come here; every other action that moves the shell does.
+    var page: ShellPage = .newSession { didSet { if page != oldValue { Keyboard.dismiss() } } }
+    var sheet: SheetRoute? { didSet { if sheet != nil { Keyboard.dismiss() } } }
+    var drawerOpen = false { didSet { if drawerOpen { Keyboard.dismiss() } } }
     /// S23: true from a tap in the drawer until the page fills the screen (F1–F4). A pending
     /// approval's sheet waits for it.
     private(set) var moving = false
@@ -69,6 +72,15 @@ final class ShellModel {
     }
 
     func present(_ route: SheetRoute) { sheet = route }
+}
+
+/// S24 (D67): puts the keyboard away, wherever the focus is (the composer's prompt, a sheet's
+/// field). The shell calls it on each move; `NewSessionBody` on a tap or a swipe down.
+@MainActor
+enum Keyboard {
+    static func dismiss() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
 }
 
 /// The pages of the shell. Each is a full page beside the drawer, not a pushed view.

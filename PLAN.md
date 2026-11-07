@@ -1117,7 +1117,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S24 · Fix: Keyboard dismiss
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-07: 键盘弹起后，我点击展开侧边栏，键盘没有收起。应该说，键盘弹起后，只要没有发生用户输入的情况，其他的动作都应该先让键盘收起.
 
@@ -1126,12 +1126,18 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: —
 
 **Done when**
-- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S24KeyboardDismissUITests/testDrawerButtonPutsKeyboardAway · test:S24KeyboardDismissUITests/testEdgeDragPutsKeyboardAway · test:S24KeyboardDismissUITests/testPickerSheetsPutKeyboardAway · test:T1ShellUITests/testKeyboardGoesAwayOnTapOrSwipeDown
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
 **Log**: —
+- **2026-11-07 · Fix: keyboard goes away before any non-typing action.** Cause: only `NewSessionBody` (04a3d0e) dismissed the keyboard. The drawer button, the edge drag and the sheets changed `ShellModel` state and nothing resigned the prompt's focus.
+  Fix (ee144b9, D67 provisional): `ShellModel.page`, `sheet` and `drawerOpen` call `Keyboard.dismiss()` in `didSet` (page change, a sheet comes up, the drawer opens); the edge drag dismisses when it starts. One place, no per-button code. DESIGN.md "Navigation" has the rule.
+  Tests: `S24KeyboardDismissUITests` (drawer button, edge drag, workspace and model sheets). Red run on the unfixed code: all 3 failed at the focus check after the action. Green: `scripts/demo/s24.sh` passed, with `T1ShellUITests` (6/6). No flaky part seen.
+  New resource: created the simulator `dshm-S24` (iPhone 17 Pro, iOS 26.4); it did not exist and the guard does not create one.
+  Not covered: the host menu (`Picker` `.menu`, only with 2+ hosts) is a menu, not a sheet.
+  Next: reviewer runs `scripts/review S24`; then `[human]` on the iPhone.
 
 ### S25 · Fix: App icon
 

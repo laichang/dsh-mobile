@@ -88,6 +88,8 @@ struct ShellView: View {
                 if dragOffset == nil {
                     let horizontal = abs(value.translation.width) > abs(value.translation.height)
                     guard horizontal, shell.drawerOpen || value.startLocation.x <= Self.edgeWidth else { return }
+                    // S24 (D67): the keyboard goes when the drag starts, not when the drawer settles.
+                    Keyboard.dismiss()
                 }
                 dragOffset = min(max(base + value.translation.width, 0), width)
             }
