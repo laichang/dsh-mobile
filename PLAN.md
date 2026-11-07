@@ -43,14 +43,14 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
 | X3 | review | merged `7f1b4b8` | 2026-11-05 | User runs the benchmark on a real phone and confirms D10 (§9) |
 | X4 | done | merged `ccc8ff9` | 2026-11-05 | — |
-| S1 | review | merged `1f35fa2` (batch 1) | 2026-11-07 | User accepts 1 `[human]` item: packet capture (§9) |
+| S1 | done | merged `1f35fa2` (batch 1) | 2026-11-08 | — |
 | S2 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D20, D23 in §9) |
 | S3 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D19 in §9) |
 | S4 | done | merged `acbf2c0` | 2026-11-05 | — (provisional D25 in §9) |
 | S5 | done | merged `529bb16` | 2026-11-05 | — (provisional D28 in §9) |
 | S6 | done | merged `d62fd6d` | 2026-11-05 | — (provisional D31 in §9) |
 | S7 | done | merged `21aabd8` | 2026-11-05 | — (provisional D37 in §9) |
-| S8 | review | merged `8e9fa87` | 2026-11-05 | User checks real iPhone readability (§9) |
+| S8 | done | merged `8e9fa87` | 2026-11-08 | — |
 | S9 | review | merged `575bf62` | 2026-11-05 | User tests two real Macs (§9) |
 | S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
 | S11 | review | merged `12e1afc` | 2026-11-05 | User checks onboarding on a fresh install (§9) |
@@ -1638,16 +1638,16 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-08 · S23: user accepted drawer motion on iPhone.** User commit 1442968. S23 is done; §9 row 61 removed.
 
+- **2026-11-08 · S1, S8: user accepted packet capture and diff readability.** User commit 812ac38. S1 and S8 are done; §9 rows 25 and 34 removed. Capture: 70 packets iPhone↔Mac on 47801, no plain task or reply text, only the WebSocket upgrade headers readable, no compression negotiated.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
-| 25 | S1 | `[human]` | "A packet capture of that session shows only ciphertext". Needs: the session from row 24, plus Wireshark or `tcpdump` on this Mac | `main` | `1f35fa2` |
 | 27 | X3 | `[human]` | Benchmark 2 candidates on a 5,000-line transcript on a real iPhone. Run the signed test in spikes/x3-markdown/README.md. | `main` | `7f1b4b8` |
 | 28 | X3 | `[human]` / decision | Confirm provisional D10 streaming renderer choice after the device benchmark. | `main` | `7f1b4b8` |
-| 34 | S8 | `[human]` | Check a coding task’s diff and terminal output for readability on a real iPhone. | `main` | `8e9fa87` |
 | 36 | S9 | `[human]` | Use two real Macs, send a task to each, then disconnect one and verify its name and cached task in the unified list. | `main` | `575bf62` |
 | 42 | S11 | `[human]` | On a fresh install, check that the app explains its purpose and the need for a reachable DSH host. | `main` | `12e1afc` |
 | 43 | S11 | `[human]` | Have someone unfamiliar with DSH pair with an already-running host and obtain the first answer without help. | `main` | `12e1afc` |
