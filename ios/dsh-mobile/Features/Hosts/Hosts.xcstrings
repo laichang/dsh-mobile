@@ -352,12 +352,12 @@
         }
       }
     },
-    "This phone will lose access to %@. To use it again, pair again.": {
+    "This phone will be removed from %@. %@ will leave the drawer, with nothing left to tap, and the phone will not reconnect to it. To use it again, pair again.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这台手机将不能再连 %@。要再用，需要重新配对。"
+            "value": "这台手机会从 %1$@ 移除。之后侧边栏里不再有 %2$@，没有可点的入口，手机也不会再去连它。要再用，需要重新配对。"
           }
         }
       }

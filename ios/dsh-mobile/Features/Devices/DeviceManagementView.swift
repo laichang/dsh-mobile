@@ -58,7 +58,12 @@ struct DeviceManagementView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: { device in
-            Text("Device \(device.id) will disconnect from \(host). It must pair again to reconnect.")
+            if device.id == list?.currentDeviceID {
+                // S29: the same words as X2 (HostDetailView).
+                Text(HostDetailView.revokeThisDeviceMessage(host))
+            } else {
+                Text("Device \(device.id) will disconnect from \(host). It must pair again to reconnect.")
+            }
         }
     }
 

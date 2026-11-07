@@ -123,6 +123,15 @@ final class S29RevokeUITests: XCTestCase {
         }
     }
 
+    /// The user (2026-11-08): the alert before a revoke of this device says that this device is
+    /// removed and the host leaves the drawer, with nothing left to tap.
+    private func expectRevokeThisDeviceMessage(_ alert: XCUIElement) {
+        for part in ["这台手机会从", "移除", "侧边栏里不再有", "没有可点的入口", "不会再去连它"] {
+            XCTAssertTrue(alert.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", part)).firstMatch.exists,
+                          "the alert does not say \"\(part)\": \(alert.debugDescription)")
+        }
+    }
+
     /// The hosts sheet path on a real bridge (scripts/dsh-up.mjs on S29's ports, Noise): pair,
     /// revoke this device in X2. The bridge answers, then closes with 4003 and refuses the phone.
     func testRevokeThisDeviceInHostsSheetOnTheRealBridgeOpens08AndStays() throws {
@@ -136,6 +145,8 @@ final class S29RevokeUITests: XCTestCase {
         app.buttons["device.revoke.\(own.label)"].tap()
         let alert = app.alerts.firstMatch
         XCTAssertTrue(alert.waitForExistence(timeout: 5), app.debugDescription)
+        expectRevokeThisDeviceMessage(alert)
+        saveShot("s29-revoke-confirm")
         alert.buttons.matching(NSPredicate(format: "label == %@", "吊销")).firstMatch.tap()
         expect08AndStays(app, shot: "s29-real-bridge-08")
     }
@@ -153,6 +164,7 @@ final class S29RevokeUITests: XCTestCase {
         app.buttons["device.revoke.\(own.label)"].tap()
         let alert = app.alerts.firstMatch
         XCTAssertTrue(alert.waitForExistence(timeout: 5), app.debugDescription)
+        expectRevokeThisDeviceMessage(alert)
         alert.buttons.matching(NSPredicate(format: "label IN {'Revoke', '吊销'}")).firstMatch.tap()
         expect08AndStays(app, shot: "s29-real-bridge-drawer-08")
     }
