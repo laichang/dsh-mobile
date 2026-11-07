@@ -760,7 +760,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 - [x] [ui] The session page has no back button. The milestone timeline opens as a sheet. — Evidence: test:T1ShellUITests/testNoBackButtonAndTimelineSheet · cmd:scripts/demo/t1.sh · shot:evidence/T1/t1-session-page.png · shot:evidence/T1/t1-timeline-sheet.png
 - [x] [ui] All M1 UITest files pass on the new shell, with no accessibility identifier renamed — Evidence: cmd:scripts/demo/t1.sh --all · test:T1ShellUITests · test:S9MultiHostUITests/testTwoHostsShareTheListAndTheOfflineHostIsNamed
 - [x] [auto] ARCHITECTURE.md has the new `Dxx` for first-message routing, and D34 says "superseded" — Evidence: commit:7f4b8cd
-- [ ] [human] The user accepts that the app always uses dark mode — Evidence:
+- [x] [human] The user accepts that the app always uses dark mode — Evidence: human:2026-11-07 confirmed, the app is dark only by design
 
 **Not**: Drawer animation (S23). Unread marks and workspace levels (S14). Restyled cards (S15, S18).
 
