@@ -1,14 +1,24 @@
 #!/usr/bin/env python3
 """Feeds codex-guard synthetic Codex hook inputs and checks each decision. Run: .codex/hooks/codex-guard-test"""
 
-import json, subprocess
+import json, os, shutil, subprocess, tempfile
 import pathlib
 HERE = pathlib.Path(__file__).resolve()
-R = str(HERE.parents[2])
-G = str(HERE.parent / "codex-guard")
-plan = open(R + "/PLAN.md").read()
-human = [l for l in plan.split("\n") if l.startswith("- [ ] [human]")][0]
-auto_unt = [l for l in plan.split("\n") if l.startswith("- [ ] [auto]")][0]
+REPO = HERE.parents[2]
+# The tests do not depend on the state of the live PLAN.md (it can have no open items).
+# They run a copy of the guards in a temporary root, with this slice added to a copy of PLAN.md.
+human = "- [ ] [human] The guard test fixture reads well — Evidence:"
+auto_unt = "- [ ] [auto] The guard test fixture runs — Evidence:"
+FIXTURE = f"\n### S99 · Guard test fixture\n\n{auto_unt}\n{human}\n"
+TMP = tempfile.TemporaryDirectory()
+R = os.path.realpath(TMP.name)
+for f in [".codex/hooks/codex-guard", ".claude/hooks/git-guard", ".claude/hooks/plan-guard", "scripts/check-plan"]:
+    (pathlib.Path(R) / f).parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(REPO / f, pathlib.Path(R) / f)
+(pathlib.Path(R) / ".git").mkdir()
+(pathlib.Path(R) / "PLAN.md").write_text((REPO / "PLAN.md").read_text() + FIXTURE)
+G = R + "/.codex/hooks/codex-guard"
+ENV = {k: v for k, v in os.environ.items() if k != "CLAUDE_PROJECT_DIR"}
 ESC = "CHECK_PLAN" + "_ALLOW"
 NOV = "--no-" + "verify"
 HP = "core.hooks" + "Path"
@@ -16,7 +26,7 @@ HP = "core.hooks" + "Path"
 
 def run(tool, cmd, cwd=R):
     r = subprocess.run([G], input=json.dumps({"tool_name": tool, "tool_input": {"command": cmd}, "cwd": cwd}),
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, env=ENV)
     if r.returncode:
         print(r.stderr)
     out = r.stdout.strip()
