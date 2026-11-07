@@ -6,6 +6,7 @@
  */
 import { catalogFrame, type HostCatalog, type Selection } from './models/catalog.ts'
 import { randomUUID } from 'node:crypto'
+import { homedir } from 'node:os'
 import { isAbsolute } from 'node:path'
 import { MilestoneMapper, describeFailure, isUserInterrupt, type Milestone } from './milestones/mapper.ts'
 import { TranscriptMapper, type BlockOut } from './transcript/mapper.ts'
@@ -39,7 +40,7 @@ export interface SessionControllerLike {
 
 export interface DshServices {
   sessionController: SessionControllerLike
-  workspaceRegistry: { list(): readonly { path: string; updatedAt: string }[] }
+  workspaceRegistry: { list(): readonly { path: string; title?: string; updatedAt: string }[] }
   workspaceController: WorkspaceControllerLike
 }
 
@@ -58,18 +59,37 @@ export interface StartedTask {
   workspace?: string
 }
 
+/**
+ * DSH's own default Workspace: the first-use directory `<Documents>/deepseek-harness/default-workspace`,
+ * whose automatic title DSH Web labels 默认工作区 (`DEFAULT_WORKSPACE_DIRECTORY` in
+ * `@deepseek-ai/dsh-api-workspace-controller`).
+ */
+export const DSH_DEFAULT_WORKSPACE_TITLE = 'default-workspace'
+
 /** Starts tasks on DSH. `cwd` is the default when the phone sends no workspace. */
 export class DshTasks {
   readonly sessions = new Set<string>()
 
-  constructor(private readonly dsh: DshServices, private readonly cwd: string) {}
+  /**
+   * @param configured - the `cwd` from the plugin config. Without it, the default is DSH's own default
+   * Workspace, so the phone's 默认工作区 is the one DSH Web shows; without that, the home directory.
+   */
+  constructor(private readonly dsh: DshServices, private readonly configured?: string,
+              private readonly fallback = homedir()) {}
+
+  get cwd(): string {
+    return this.configured
+      ?? this.dsh.workspaceRegistry.list().find(w => w.title === DSH_DEFAULT_WORKSPACE_TITLE)?.path
+      ?? this.fallback
+  }
 
   listWorkspaces() {
+    const cwd = this.cwd
     const recentPaths = this.dsh.workspaceRegistry.list()
-      .filter(workspace => workspace.path !== this.cwd)
+      .filter(workspace => workspace.path !== cwd)
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       .map(workspace => workspace.path)
-    return { defaultPath: this.cwd, recentPaths }
+    return { defaultPath: cwd, recentPaths }
   }
 
   interrupt(taskId: string): void {
@@ -88,7 +108,8 @@ export class DshTasks {
     return selected
   }
 
-  async start(prompt: string, signal: AbortSignal, selection?: Selection, path = this.cwd): Promise<StartedTask> {
+  async start(prompt: string, signal: AbortSignal, selection?: Selection, path?: string): Promise<StartedTask> {
+    path ??= this.cwd
     if (!isAbsolute(path)) throw new Error('Choose an absolute workspace path on this host.')
     const { workspace } = await this.dsh.workspaceController.create({ path })
     const { sessionId } = await this.dsh.sessionController.create({ workspaceId: workspace.workspaceId })

@@ -24,7 +24,7 @@ export interface Config {
   /** Listen address. Default 0.0.0.0: every payload is Noise-encrypted (ARCHITECTURE D21). */
   host?: string
   port?: number
-  /** Default workspace directory for tasks without an explicit choice. */
+  /** Default workspace directory for tasks without an explicit choice. Default: DSH's default Workspace, else the home directory. */
   cwd?: string
   /** Host key, pairing offers and device registry. Default `$DSH_HOME/dsh-mobile-bridge`. */
   stateDir?: string
@@ -47,7 +47,7 @@ export function resolveConfig(config: Config = {}, env: NodeJS.ProcessEnv = proc
   return {
     host: config.host ?? env.DSHM_BRIDGE_HOST ?? '0.0.0.0',
     port: config.port ?? (env.DSHM_BRIDGE_PORT ? Number(env.DSHM_BRIDGE_PORT) : DEFAULT_PORT),
-    cwd: config.cwd ?? homedir(),
+    cwd: config.cwd,
     stateDir: config.stateDir ?? env.DSHM_BRIDGE_STATE_DIR ?? join(dshHome, 'dsh-mobile-bridge'),
     approvalTimeoutMs: config.approvalTimeoutMs,
     devPlaintext: config.devPlaintext ?? env.DSHM_BRIDGE_DEV_PLAINTEXT === '1',

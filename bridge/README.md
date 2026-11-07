@@ -62,7 +62,7 @@ To remove it, run `dsh plugin --profile web remove @dsh-mobile/bridge`.
 
 ## Configuration
 
-Defaults: `host: 0.0.0.0`, `port: 47801`, `cwd`: your home directory (the default workspace for new tasks), `stateDir: $DSH_HOME/dsh-mobile-bridge`, `devPlaintext: false`. To change them, add an entry with id `dsh-mobile-bridge` to the profile's `cordis.yml`:
+Defaults: `host: 0.0.0.0`, `port: 47801`, `cwd`: DSH's own default Workspace (`<Documents>/deepseek-harness/default-workspace`, shown as 默认工作区 in DSH Web), else your home directory (the default workspace for new tasks), `stateDir: $DSH_HOME/dsh-mobile-bridge`, `devPlaintext: false`. To change them, add an entry with id `dsh-mobile-bridge` to the profile's `cordis.yml`:
 
 ```yaml
 - id: dsh-mobile-bridge

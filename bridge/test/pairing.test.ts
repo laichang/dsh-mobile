@@ -164,6 +164,7 @@ describe('PairingOffer', () => {
     assert.equal(c.host, '0.0.0.0')
     assert.equal(c.devPlaintext, false)
     assert.equal(c.stateDir, '/tmp/h/dsh-mobile-bridge')
+    assert.equal(c.cwd, undefined) // DshTasks then uses DSH's default Workspace
     const e = resolveConfig({}, { DSHM_BRIDGE_PORT: '47810', DSHM_BRIDGE_HOST: '127.0.0.1', DSHM_BRIDGE_DEV_PLAINTEXT: '1' })
     assert.equal(e.port, 47810)
     assert.equal(e.devPlaintext, true)

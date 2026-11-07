@@ -71,7 +71,8 @@ export class FakeDSH implements DshServices {
   readonly workspaces: string[] = []
   readonly sessionWorkspaces: string[] = []
   readonly workspaceRegistry = {
-    list: () => this.workspaces.map((path, index) => ({ path, updatedAt: new Date(index).toISOString() })),
+    // DSH titles a new Workspace after its final path segment.
+    list: () => this.workspaces.map((path, index) => ({ path, title: path.split('/').at(-1), updatedAt: new Date(index).toISOString() })),
   }
   readonly prompts: { sessionId: string; text: string }[] = []
   private sessions = new Map<string, { followers: Channel<FollowFrame>[]; seq: number; turn: number }>()

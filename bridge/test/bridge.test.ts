@@ -97,6 +97,24 @@ describe('BridgeAgainstFakeDSH', () => {
     } finally { client.close() }
   })
 
+  test('defaultWorkspaceIsDshDefaultUnlessConfigured', async () => {
+    // Real-iPhone finding (2026-11-07): the phone said 默认工作区 but used the home directory, so its
+    // session was not in the Workspace that DSH Web labels 默认工作区.
+    const dsh = new FakeDSH()
+    const tasks = new DshTasks(dsh, undefined, '/home/user')
+    assert.equal(tasks.cwd, '/home/user')
+    await dsh.workspaceController.create({ path: '/home/user/Documents/deepseek-harness/default-workspace' })
+    await dsh.workspaceController.create({ path: '/tmp/another-repo' })
+    assert.equal(tasks.cwd, '/home/user/Documents/deepseek-harness/default-workspace')
+    assert.deepEqual(tasks.listWorkspaces(), {
+      defaultPath: '/home/user/Documents/deepseek-harness/default-workspace', recentPaths: ['/tmp/another-repo'],
+    })
+    const started = await tasks.start('hi', new AbortController().signal)
+    assert.equal(started.workspace, '/home/user/Documents/deepseek-harness/default-workspace')
+    for await (const _ of started.output) { /* drain */ }
+    assert.equal(new DshTasks(dsh, '/srv/configured', '/home/user').cwd, '/srv/configured')
+  })
+
   test('plaintextCannotReadOrChangeDeviceManagement', async () => {
     const { client } = await bridgeWith()
     client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
