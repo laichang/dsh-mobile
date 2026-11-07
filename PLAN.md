@@ -70,7 +70,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S24 | done | merged `28a6409` | 2026-11-07 | — |
 | S25 | done | merged `2a189da` | 2026-11-07 | — |
 | S26 | done | merged `bfd1c39` | 2026-11-07 | — |
-| S27 | todo | — | 2026-11-07 | Fix: Outcome duration and marker; start a fix session |
+| S27 | doing | `claude/s27-outcome-footer` | 2026-11-07 | Slice owner builds (§8) |
 
 ## 1. Approach
 
@@ -1610,6 +1610,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-07 · S24, S25, S26: user accepted the fixes on iPhone.** User commit bc31b6e. S24, S25 and S26 are done. §9 rows 63, 65 and 66 removed. D67 and D70 stay provisional in §9.
 
 - **2026-11-07 · User confirmed D67 and D70.** D67 (keyboard goes away before any non-typing action, S24) and D70 (app icon as an asset catalog, S25) are confirmed in ARCHITECTURE.md. §9 rows 62 and 64 removed.
+
+- **2026-11-07 · S27 assigned.** Branch `claude/s27-outcome-footer`, simulator `dshm-S27`, DSHM_HOME `~/.dshm/home-s27`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D76–D78. `eval "$(scripts/slice-env S27)"` exports them.
 
 ## 9. Pending user confirmation
 
