@@ -4,3 +4,4 @@ DerivedData/
 build/
 *.xcuserstate
 ios/Config/Signing.local.xcconfig
+__pycache__/
