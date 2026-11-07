@@ -1165,7 +1165,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S26 · Fix: Page title centering
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-07: "新会话" 没有左右居中，不符合预期.
 
@@ -1174,12 +1174,19 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: —
 
 **Done when**
-- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S26TitleCenterUITests/testNewSessionTitleIsCentered · test:S26TitleCenterUITests/testSessionAndAllTasksTitlesAreCentered · test:S26TitleCenterUITests/testLongTitleTruncatesWithoutOverlap · shot:evidence/S26/s26-new-session.png
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
 **Log**: —
+- **2026-11-07 · Fix: the page title is centered on the screen.**
+  - Cause: `PageBar` (Shell/ShellView.swift) is an HStack: the 40-pt drawer button, 12-pt spacing, the title with `maxWidth: .infinity`, then `trailing.frame(minWidth: 40)`. All three pages (new session, session, 所有任务) use the `EmptyView` init. An `EmptyView` takes no width, also in a frame, so the right side had no slot. The title was centered in the space right of the button: 26 pt to the right (title midX 227 pt, window midX 201 pt on an iPhone 17 Pro).
+  - Fix: the trailing slot is always 40 pt (`Color.clear.frame(width: 40, height: 40)`, with the trailing view as an overlay), as on design screen 04. No decision number used.
+  - Test: `S26TitleCenterUITests` (3 tests) compares the `page.title` and `page.subtitle` midX with the window midX, within 1 pt, on the new session, a session page and 所有任务. A long title must truncate, stay centered, and stay clear of the drawer button.
+  - Red (unfixed code, `ef88c1f` + the test): all 3 tests failed, each with "227.0 is not equal to 201.0 +/- 1.0".
+  - Green (`fd8938c`): `scripts/demo/s26.sh` passed: S26TitleCenterUITests 3/3, T1ShellUITests 6/6 (seam). Shots: evidence/S26/.
+  - Not done: the [human] item (the user checks it on the iPhone). Next: review, then the coordinator merges.
 
 ## 6. M1 exit
 

@@ -149,7 +149,12 @@ struct PageBar<Trailing: View>: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            trailing.frame(minWidth: 40)
+            // S26: the trailing slot is always as wide as the drawer button, so the title is
+            // centered on the screen, not in the space right of the button. `EmptyView` takes no
+            // width, also in a frame; `Color.clear` does. A trailing view sits in the slot.
+            Color.clear
+                .frame(width: 40, height: 40)
+                .overlay(alignment: .trailing) { trailing }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 6)
