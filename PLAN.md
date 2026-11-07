@@ -71,7 +71,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S25 | done | merged `2a189da` | 2026-11-07 | — |
 | S26 | done | merged `bfd1c39` | 2026-11-07 | — |
 | S27 | doing | `claude/s27-outcome-footer` | 2026-11-07 | Slice owner builds (§8) |
-| S28 | todo | — | 2026-11-07 | Fix: Markdown tables; start a fix session |
+| S28 | doing | `claude/s28-markdown-tables` | 2026-11-07 | Slice owner builds (§8) |
 
 ## 1. Approach
 
@@ -1633,6 +1633,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-07 · S27 assigned.** Branch `claude/s27-outcome-footer`, simulator `dshm-S27`, DSHM_HOME `~/.dshm/home-s27`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D76–D78. `eval "$(scripts/slice-env S27)"` exports them.
 
 - **2026-11-07 · S13: user accepted Web sync on iPhone.** User commit 843e213. S13 is done; §9 row 45 removed. The user also passed the S23 drawer motion check (not ticked yet) and reported that Markdown tables do not render on the phone (fix slice next).
+
+- **2026-11-07 · S28 assigned.** Branch `claude/s28-markdown-tables`, simulator `dshm-S28`, DSHM_HOME `~/.dshm/home-s28`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D79–D81. `eval "$(scripts/slice-env S28)"` exports them.
 
 ## 9. Pending user confirmation
 
