@@ -1125,7 +1125,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: —
 
 **Done when**
-- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S24KeyboardDismissUITests/testDrawerButtonPutsKeyboardAway · test:S24KeyboardDismissUITests/testEdgeDragPutsKeyboardAway · test:S24KeyboardDismissUITests/testPickerSheetsPutKeyboardAway · test:T1ShellUITests/testKeyboardGoesAwayOnTapOrSwipeDown
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
