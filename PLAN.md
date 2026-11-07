@@ -38,7 +38,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
-| T0 | review | merged `84db2e8` | 2026-11-05 | User accepts 3 `[human]` items (§9) |
+| T0 | review | merged `84db2e8` | 2026-11-07 | User accepts 1 `[human]` item: install the bridge from its README (§9) |
 | X1 | done | merged `ccc8ff9` | 2026-11-05 | — |
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
 | X3 | review | merged `7f1b4b8` | 2026-11-05 | User runs the benchmark on a real phone and confirms D10 (§9) |
@@ -1497,6 +1497,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · T1 done.** The user ticked the dark-mode `[human]` item (`eb59160`). T1 has no open items, so T1 is `done`. §9 row 46 removed.
 
+- **2026-11-07 · T0: user read D15 and D16.** The user ticked the two T0 reading items (`bb5746b`). §9 rows 11 and 12 removed. T0 keeps one `[human]` item (row 10: install the bridge from `bridge/README.md`). The same commit also added `DEVELOPMENT_TEAM = R9JF9M64R9` to `project.pbxproj` (Xcode signing for the real iPhone).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1504,8 +1506,6 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
 | 10 | T0 | `[human]` | "Following `bridge/README.md` installs and enables the plugin in a DSH profile". Needs: this Mac with DSH 0.2.2-rc.1 (`~/.dshm`), about 10 minutes | `main` | `84db2e8` |
-| 11 | T0 | `[human]` | "Toolchain choices … recorded in ARCHITECTURE.md". Needs: reading D15 (confirms row 4) | `main` | `84db2e8` |
-| 12 | T0 | `[human]` | "Testability entry points … recorded in ARCHITECTURE.md". Needs: reading D16 (confirms row 4) | `main` | `84db2e8` |
 | 24 | S1 | `[human]` | "A fresh iPhone scans the QR and runs the T0 demo over Wi-Fi or Tailscale". Needs: a real iPhone, this Mac running `scripts/dsh-up.mjs` with the bridge reachable on the LAN or Tailscale, and the app installed with your free Apple team | `main` | `1f35fa2` |
 | 25 | S1 | `[human]` | "A packet capture of that session shows only ciphertext". Needs: the session from row 24, plus Wireshark or `tcpdump` on this Mac | `main` | `1f35fa2` |
 | 27 | X3 | `[human]` | Benchmark 2 candidates on a 5,000-line transcript on a real iPhone. Run the signed test in spikes/x3-markdown/README.md. | `main` | `7f1b4b8` |
