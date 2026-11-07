@@ -1128,7 +1128,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 **Done when**
 - [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S24KeyboardDismissUITests/testDrawerButtonPutsKeyboardAway · test:S24KeyboardDismissUITests/testEdgeDragPutsKeyboardAway · test:S24KeyboardDismissUITests/testPickerSheetsPutKeyboardAway · test:T1ShellUITests/testKeyboardGoesAwayOnTapOrSwipeDown
-- [ ] [human] The user no longer sees the bug — Evidence:
+- [x] [human] The user no longer sees the bug — Evidence: human:2026-11-07 keyboard goes away before the drawer, edge drag and pickers on iPhone
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
@@ -1152,7 +1152,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 **Done when**
 - [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: cmd:scripts/demo/s25.sh · shot:evidence/S25/s25-home-light.png · shot:evidence/S25/s25-home-dark.png
-- [ ] [human] The user no longer sees the bug — Evidence:
+- [x] [human] The user no longer sees the bug — Evidence: human:2026-11-07 icon shows on the iPhone Home Screen
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
@@ -1175,7 +1175,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 **Done when**
 - [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S26TitleCenterUITests/testNewSessionTitleIsCentered · test:S26TitleCenterUITests/testSessionAndAllTasksTitlesAreCentered · test:S26TitleCenterUITests/testLongTitleTruncatesWithoutOverlap · shot:evidence/S26/s26-new-session.png
-- [ ] [human] The user no longer sees the bug — Evidence:
+- [x] [human] The user no longer sees the bug — Evidence: human:2026-11-07 page titles are centered on iPhone
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
