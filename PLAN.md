@@ -72,7 +72,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S26 | done | merged `bfd1c39` | 2026-11-07 | — |
 | S27 | doing | `claude/s27-outcome-footer` | 2026-11-07 | Slice owner builds (§8) |
 | S28 | doing | `claude/s28-markdown-tables` | 2026-11-07 | Slice owner builds (§8) |
-| S29 | todo | — | 2026-11-08 | Fix: Revoke this device; start a fix session |
+| S29 | doing | `claude/s29-revoke-forget` | 2026-11-08 | Slice owner builds (§8) |
 
 ## 1. Approach
 
@@ -1658,6 +1658,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-08 · S23: user accepted drawer motion on iPhone.** User commit 1442968. S23 is done; §9 row 61 removed.
 
 - **2026-11-08 · S1, S8: user accepted packet capture and diff readability.** User commit 812ac38. S1 and S8 are done; §9 rows 25 and 34 removed. Capture: 70 packets iPhone↔Mac on 47801, no plain task or reply text, only the WebSocket upgrade headers readable, no compression negotiated.
+
+- **2026-11-08 · S29 assigned.** Branch `claude/s29-revoke-forget`, simulator `dshm-S29`, DSHM_HOME `~/.dshm/home-s29`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D82–D84. `eval "$(scripts/slice-env S29)"` exports them.
 
 ## 9. Pending user confirmation
 
