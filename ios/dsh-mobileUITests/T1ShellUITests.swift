@@ -197,4 +197,33 @@ final class T1ShellUITests: XCTestCase {
         XCTAssertEqual(status(app).value as? String, "completed")
         XCTAssertFalse(app.otherElements["drawer"].exists)
     }
+
+    /// Real-iPhone finding (2026-11-07): with the keyboard up and nothing typed, there was no way to
+    /// put it away. A tap on the empty page, or a swipe down on it, does that now.
+    func testKeyboardGoesAwayOnTapOrSwipeDown() {
+        let app = launch(["-DSHMFakeBridge", "YES"])
+        assertNewSession(app)
+        let field = app.textFields["composer.prompt"]
+        let body = app.descendants(matching: .any)["newSession.body"]
+        XCTAssertTrue(body.exists, app.debugDescription)
+
+        // Focus, not the on-screen keyboard: a Simulator with a hardware keyboard shows none.
+        let focused = NSPredicate(format: "hasKeyboardFocus == true")
+        let unfocused = NSPredicate(format: "hasKeyboardFocus == false")
+        func wait(_ predicate: NSPredicate, _ message: String) {
+            let found = XCTWaiter().wait(for: [expectation(for: predicate, evaluatedWith: field)], timeout: 5)
+            XCTAssertEqual(found, .completed, message)
+        }
+
+        field.tap()
+        wait(focused, "the prompt takes focus")
+        body.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
+        wait(unfocused, "a tap on the page")
+
+        field.tap()
+        wait(focused, "the prompt takes focus again")
+        body.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
+            .press(forDuration: 0.05, thenDragTo: body.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)))
+        wait(unfocused, "a swipe down on the page")
+    }
 }

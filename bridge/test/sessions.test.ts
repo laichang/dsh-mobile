@@ -54,6 +54,13 @@ test('webSessionsBeforeAndAfterPairingAndPhoneTaskHaveOneHostRowEach', async () 
   events.push({ type: 'session/title', seq: events.length, time: 44, data: { source: { kind: 'user' }, title: 'Release notes' } })
   await directory.reconcile()
   assert.equal(hub.list().find(row => row.taskId === 'web-before')?.title, 'Release notes')
+  // Real-iPhone finding (2026-11-07): DSH titles a session after its first turn, and Web shows that
+  // title; the phone showed the prompt. DSH's generated title now replaces the prompt, also for a phone task.
+  const phone = journals.get('phone')!
+  phone.push({ type: 'session/title', seq: phone.length, time: 45, data: { source: { kind: 'generated' }, title: 'AI身份询问' } })
+  directory.changed('phone', phone.at(-1)!)
+  await directory.reconcile()
+  assert.equal(hub.list().find(row => row.taskId === 'phone')?.title, 'AI身份询问')
   directory.close()
   await hub.close()
 })

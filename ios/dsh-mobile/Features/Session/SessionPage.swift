@@ -1,6 +1,7 @@
 import DSHCore
 import DSHProtocol
 import SwiftUI
+import UIKit
 
 /// T1 · one page for a new session (01) and a session (04). The app opens on it with no task:
 /// a blank new session with the default host and workspace (STORY §3). The first message creates
@@ -86,7 +87,21 @@ private struct NewSessionBody: View {
             }
             Spacer()
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // The page has no scroll view to drag the keyboard away, and the prompt field takes Return
+        // as a new line: a tap on the empty page or a swipe down on it puts the keyboard away,
+        // as in Messages. Buttons on the page keep their own taps.
+        .contentShape(.rect)
+        .onTapGesture { endEditing() }
+        .gesture(DragGesture(minimumDistance: 20).onEnded { drag in
+            if drag.translation.height > 30 { endEditing() }
+        })
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("newSession.body")
+    }
+
+    private func endEditing() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 

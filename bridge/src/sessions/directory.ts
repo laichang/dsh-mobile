@@ -87,11 +87,14 @@ export class SessionDirectory {
           const reply = state === TaskState.COMPLETED && latest && !latest.fromUser && latest.text.length <= 280 ? latest.text : ''
           const rename = page.records.findLast(({event}) => event.type === 'session/title')?.event.data as
             { source?: { kind?: string }; title?: string } | undefined
+          // DSH's title wins once it has one: a user rename, or the title DSH generates after the first
+          // turn (Web shows it). Until then the first prompt stands in.
+          const hostTitle = rename?.title || row.projections?.values.title || undefined
           const title = page.hasMore ? row.projections?.values.title ?? prompt : prompt ?? row.projections?.values.title
           const at = page.records.at(-1)?.event.time ?? row.updatedAt
           this.hub.observeSession(row.sessionId, BigInt(page.cursor), title ?? row.sessionId,
             state, state === TaskState.FAILED ? describeFailure(reason?.kind ?? 'unknown', reason?.error) : '',
-            BigInt(at), BigInt(page.records[0]?.event.time ?? row.updatedAt), reply, rename?.source?.kind === 'user' ? rename.title : undefined, row.cwd)
+            BigInt(at), BigInt(page.records[0]?.event.time ?? row.updatedAt), reply, hostTitle, row.cwd)
         } catch (error) {
           this.abort.signal.throwIfAborted()
           this.log('cannot read session ' + row.sessionId + ': ' + error)
