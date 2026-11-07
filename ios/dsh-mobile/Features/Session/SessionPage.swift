@@ -100,9 +100,7 @@ private struct NewSessionBody: View {
         .accessibilityIdentifier("newSession.body")
     }
 
-    private func endEditing() {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-    }
+    private func endEditing() { Keyboard.dismiss() }
 }
 
 /// The thin session page: milestone card on top (a tap opens the timeline sheet), approvals,

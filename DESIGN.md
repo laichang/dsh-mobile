@@ -38,6 +38,7 @@ System font (PingFang SC for Chinese), SF Mono for commands and paths. Thinking 
 - **Launch**: a blank new session with the default host and workspace (STORY §3). The first message creates the session.
 - **Workspace drawer**: swipe right from the left edge, or tap the drawer button. It pushes the page (it doesn't cover it). Contents: new session → 所有任务 → host › workspace › sessions.
 - **Tap a session in the drawer**: the peeking edge swaps to that session first (from the cache), then slides in (about 350 ms).
+- **The keyboard goes first** (D67): with the keyboard up, any action other than typing (the drawer button or edge drag, a picker or sheet, another page, a tap or swipe down on the page) puts the keyboard away first.
 - **Session pages have no back button.** Details (tool calls, approvals, pickers) open as bottom sheets, so the left edge belongs to the drawer.
 - **iPad** (not drawn yet): the drawer stays open as a sidebar.
 
