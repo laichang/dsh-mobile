@@ -53,7 +53,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S8 | done | merged `8e9fa87` | 2026-11-08 | — |
 | S9 | review | merged `575bf62` | 2026-11-08 | Deferred by the user to after M1: two real Macs (§7) |
 | S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
-| S11 | review | merged `12e1afc` | 2026-11-05 | User checks onboarding on a fresh install (§9) |
+| S11 | done | merged `12e1afc` | 2026-11-08 | — |
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | Hosted compatibility checks deferred; local runner available (§8) |
 | S13 | done | merged `c56d47f` | 2026-11-07 | — |
 | T1 | done | merged `4f289bc` | 2026-11-07 | — |
@@ -1664,12 +1664,12 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-08 · User deferred the X3 benchmark and S9's two-Mac check; S29 started.** The user deferred the X3 device benchmark and the D10 confirmation until the version is stable, and S9's two-Mac check until a second Mac is available. Agents cannot delete Done when items, so the items stay open; §9 rows 27, 28 and 36 move to a §7 note. The user passed S11's two first-run checks (ticks pending). The revoke of this device on the real iPhone kept the host and retried every few seconds: fix slice S29 (e94a04e).
 
+- **2026-11-08 · S11: user accepted the first-run checks.** User commit 237fbad. S11 is done; §9 rows 42 and 43 removed.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
-| 42 | S11 | `[human]` | On a fresh install, check that the app explains its purpose and the need for a reachable DSH host. | `main` | `12e1afc` |
-| 43 | S11 | `[human]` | Have someone unfamiliar with DSH pair with an already-running host and obtain the first answer without help. | `main` | `12e1afc` |
 | 54 | S21 | `[human]` | On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that. Needs a paired iPhone and a running host with the S21 app. | `main` | `13648eb` |
