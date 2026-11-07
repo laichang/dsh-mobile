@@ -307,7 +307,7 @@ The coordinator merges a slice branch into `main` without permission when all th
 
 1. Each `[auto]` and `[ui]` item of the slice is ticked, and each evidence pointer resolves.
 2. A reviewer ran `scripts/review <ID>` on the head commit of the slice branch, and the result is `RESULT: PASS`.
-3. `scripts/check-plan` passes. For a merge commit, run `scripts/check-plan --base <PLAN.md before the merge> --new PLAN.md` by hand, because the pre-commit hook does not run on a merge commit.
+3. `scripts/check-plan` passes. On a merge commit, the `pre-merge-commit` hook runs it. `scripts/plan merged` runs it again on the merge commit.
 
 The merge does not wait for `[human]` items. After the merge, run `scripts/plan merged <ID> <merge commit> --commit`. It does condition 3 for the merge commit and the bookkeeping below:
 
@@ -356,10 +356,11 @@ Only the user can do these things:
 
 | Guard | Applies to | What it does |
 |---|---|---|
-| `.githooks/pre-commit` | All tools | Runs `scripts/check-plan` on each commit. |
-| `.claude/hooks/plan-guard` | Claude Code only | Stops a bad edit of the plan file before it occurs. Asks the user before an edit of a guard file. |
-| `.claude/hooks/git-guard` | Claude Code only | Stops `--no-verify`, `core.hooksPath` changes, and `CHECK_PLAN_ALLOW`. |
-| `.codex/hooks/codex-guard` (from `.codex/hooks.json`) | Codex only | Runs `git-guard` on shell commands. Runs the plan-guard checks on `apply_patch` edits. Denies each edit of a guard file. |
+| `.githooks/pre-commit` | All tools | Runs `scripts/check-plan` on each commit. It also stops build output (`.build/`, `node_modules/`, `DerivedData/`, `*.xcresult`) and files larger than 4 MB. |
+| `.githooks/pre-merge-commit` | All tools | Runs the same checks on each merge commit. In a merge of `main` into a slice branch, it judges the plan changes of the slice against `main`, and it lets through guard files that come unchanged from `main`. |
+| `.claude/hooks/plan-guard` | Claude Code only | Stops a bad edit of the plan file before it occurs. Stops a shell command that writes the plan file: use `scripts/plan` (§3.1) or the Edit tool. Asks the user before an edit of a guard file, also from a shell command. It checks the paths in each worktree of the repository. |
+| `.claude/hooks/git-guard` | Claude Code only | Stops `--no-verify` on git, `core.hooksPath` changes, and `CHECK_PLAN_ALLOW`. It parses the command. A command that only reads or writes text with these words (`grep`, a commit message, a file) passes. |
+| `.codex/hooks/codex-guard` (from `.codex/hooks.json`) | Codex only | Runs `git-guard` and the shell checks of `plan-guard` on shell commands. Runs the plan-guard checks on `apply_patch` edits. Denies each edit of a guard file. |
 
 Rules for all agents:
 
@@ -373,7 +374,7 @@ Differences in Codex:
 
 - Codex does not support the `ask` decision. Thus `codex-guard` denies each change that Claude Code asks about. If a guard stops you, ask the user in the chat.
 - Codex runs the project hooks only after the user trusts them (§2.1). Without trust, only the pre-commit hook applies.
-- After a change to `codex-guard`, run `.codex/hooks/codex-guard-test`.
+- After a change to a file in `.claude/hooks/` or `.codex/hooks/`, run `.claude/hooks/guard-test`. It also runs `.codex/hooks/codex-guard-test`. Make sure that it ends with `failures: 0`.
 
 Guard files: `scripts/check-plan`, `.githooks/`, `.claude/hooks/`, `.claude/settings.json`, `.codex/hooks.json`, `.codex/hooks/`. The list is `PROTECTED` in `scripts/check-plan`. `.claude/hooks/plan-guard` keeps a copy of the list. Keep the two lists the same.
 
@@ -403,3 +404,4 @@ If a tool has no function for a capability, use the fallback in this table. Then
 - **2026-11-06**: The guard (§6.1) now checks the CPU idle time, not the load average. It also stops the iOS background services in each `dshm-*` simulator.
 - **2026-11-06**: The shutdown by the guard (§6.1) now also occurs after a tool kills the script. The guard shuts down a `dshm-*` simulator whose owner is not running.
 - **2026-11-07**: Added the bookkeeping commands (§3.1, `scripts/plan`), the run status (`scripts/status`, in §5.4 and §5.5), and the resource registry with blocks of decision numbers (§6, `scripts/slice-env`, `scripts/resources.tsv`). The code key of the parts (§10.1) is now the content of the worktree, not the commit. Reason: a review of all sessions to 2026-11-07. About one quarter of all commits were hand edits of §0, §8, and §9. The user asked for the progress more than 15 times, and each answer was a set of hand-made commands. Parallel slices took the same `Dxx` number, and agents renumbered decisions 10 times. A commit with no code change made the review run the passed parts again.
+- **2026-11-07**: Guards (§10, §12). git-guard parses the command. A command that only mentions a blocked word passes. plan-guard also checks shell commands (writes to the plan file and to guard files) and the paths in each worktree. `scripts/check-plan` with no arguments runs as `--staged`. It also stops build output and large files. The new `pre-merge-commit` hook checks each merge commit. `.claude/hooks/guard-test` tests the guards. Reason: git-guard stopped read-only commands. Agents edited the plan file through shell commands, and plan-guard did not see these edits. A session in `main` edited files in a worktree with no check. A 28 MB build directory went into a commit. Merge commits had no automatic check.

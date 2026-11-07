@@ -18,9 +18,16 @@ each of which must resolve:
   human:<YYYY-MM-DD> <device or note>   [human] items only
 
 With --staged it also fails when guard files (PROTECTED below) are staged;
-only the user commits those, by hand.
+only the user commits those, by hand. It also fails on staged build output
+(.build/, node_modules/, DerivedData/, *.xcresult) and on staged files larger
+than MAX_FILE_MB.
+
+During a merge (MERGE_HEAD exists; pre-merge-commit, or the commit after a merge
+with conflicts) of main into another branch, the plan file is checked against
+the plan file of main, and guard files that come unchanged from main pass.
 
 Usage:
+  scripts/check-plan                          # the same as --staged
   scripts/check-plan --staged                 # HEAD vs index (pre-commit)
   scripts/check-plan --new FILE|-             # HEAD vs FILE (or stdin)
   scripts/check-plan --base FILE --new FILE   # explicit base
@@ -48,6 +55,8 @@ PLAN = "PLAN.md"
 ROOT = Path(__file__).resolve().parents[1]
 PROTECTED = ["scripts/check-plan", ".githooks/*", ".claude/hooks/*", ".claude/settings.json",
              ".codex/hooks.json", ".codex/hooks/*"]
+BUILD_OUTPUT = re.compile(r"(^|/)(\.build|node_modules|DerivedData)/|\.xcresult(/|$)")
+MAX_FILE_MB = 4
 POINTER_SEP = " · "
 SKIP_DIRS = {".git", "node_modules", "DerivedData", "build", ".build", ".archive", "evidence"}
 
@@ -266,10 +275,62 @@ def is_protected(relpath):
     return any(fnmatch.fnmatch(relpath, pat) for pat in PROTECTED)
 
 
-def protected_staged():
-    r = subprocess.run(["git", "-C", str(ROOT), "diff", "--cached", "--name-only"],
-                       capture_output=True, text=True)
-    return [f for f in r.stdout.splitlines() if is_protected(f)]
+def git_run(*args):
+    return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True)
+
+
+def merging_main():
+    """The other side of a merge in progress, when it is main (or an older commit of main).
+    In pre-merge-commit git has no MERGE_HEAD yet, but sets GIT_REFLOG_ACTION="merge <ref>";
+    after a merge with conflicts, the commit has MERGE_HEAD."""
+    candidates = []
+    r = git_run("rev-parse", "-q", "--verify", "MERGE_HEAD")
+    if r.returncode == 0:
+        candidates.append(r.stdout.strip())
+    action = os.environ.get("GIT_REFLOG_ACTION", "").split()
+    if action[:1] == ["merge"]:
+        candidates += [a for a in action[1:] if not a.startswith("-")]
+    for c in candidates:
+        r = git_run("rev-parse", "-q", "--verify", f"{c}^{{commit}}")
+        if r.returncode != 0:
+            continue
+        head = r.stdout.strip()
+        if git_run("merge-base", "--is-ancestor", head, "main").returncode == 0:
+            return head
+    return None
+
+
+def from_commit(path, commit):
+    """True if the staged blob of path is the blob in commit (the file comes from there)."""
+    a, b = git_run("rev-parse", "-q", f":{path}"), git_run("rev-parse", "-q", f"{commit}:{path}")
+    return a.returncode == 0 and a.stdout == b.stdout
+
+
+def staged_files(*filters):
+    r = git_run("diff", "--cached", "--name-only", "-z", *filters)
+    return [f for f in r.stdout.split("\0") if f]
+
+
+def protected_staged(trusted=None):
+    return [f for f in staged_files() if is_protected(f)
+            and not (trusted and from_commit(f, trusted))]
+
+
+def staged_problems(trusted=None):
+    """Build output and files larger than MAX_FILE_MB in the index."""
+    errors = []
+    for f in staged_files("--diff-filter=AM"):
+        if trusted and from_commit(f, trusted):
+            continue
+        if BUILD_OUTPUT.search(f):
+            errors.append(f"BUILD OUTPUT STAGED: {f} (add its directory to .gitignore and unstage it)")
+            continue
+        r = git_run("cat-file", "-s", f":{f}")
+        size = int(r.stdout) if r.returncode == 0 and r.stdout.strip().isdigit() else 0
+        if size > MAX_FILE_MB * 1024 * 1024:
+            errors.append(f"LARGE FILE STAGED: {f} ({size / 1048576:.1f} MB, the limit is "
+                          f"{MAX_FILE_MB} MB; keep recordings and builds out of git)")
+    return errors
 
 
 def closest(old, pool):
@@ -281,23 +342,30 @@ def closest(old, pool):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    src = ap.add_mutually_exclusive_group(required=True)
+    src = ap.add_mutually_exclusive_group()
     src.add_argument("--staged", action="store_true", help="check the index against HEAD")
     src.add_argument("--new", metavar="FILE", help="proposed PLAN.md content ('-' = stdin)")
     ap.add_argument("--base", metavar="FILE", help="base PLAN.md (default: git HEAD)")
     ap.add_argument("--agent", action="store_true",
                     help="also reject ticking [human] items and adding ticked items")
     args = ap.parse_args(argv)
+    if not args.new:
+        args.staged = True
+    trusted = merging_main() if args.staged else None
 
     if args.base:
         base = Path(args.base).read_text() if Path(args.base).exists() else ""
+    elif trusted:
+        # A merge of main into this branch: judge this branch's plan changes against main.
+        base = git_show(f"{trusted}:{PLAN}") or ""
     else:
         base = git_show(f"HEAD:{PLAN}") or ""
 
     errors = []
     if args.staged:
         errors += [f"GUARD FILE STAGED: {f} (only the user commits guard changes, by hand)"
-                   for f in protected_staged()]
+                   for f in protected_staged(trusted)]
+        errors += staged_problems(trusted)
         new = git_show(f":{PLAN}")  # None if PLAN.md isn't in the index
     elif args.new == "-":
         new = sys.stdin.read()
@@ -313,7 +381,8 @@ def main(argv=None):
     if errors:
         print("check-plan: PLAN.md Done when items may only be ticked ([ ] -> [x] with "
               "valid evidence) or added. Never deleted, reworded, re-tiered or unticked. "
-              "Guard files are changed by the user only.\n")
+              "Guard files are changed by the user only. Build output and large files stay "
+              "out of git.\n")
         print("\n".join(errors))
         print("\nIf an item or a guard truly has to change, explain the original text, the "
               "new text and the reason to the user, and let the user make the change.")

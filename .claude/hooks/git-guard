@@ -1,16 +1,25 @@
 #!/usr/bin/env python3
 """Claude Code PreToolUse hook (Bash): block ways around the repo's git hooks.
 
+It parses the shell command (lines, heredocs, pipelines, `sh -c`, `eval`) and judges what the
+command does, not the words in it. A read-only command that only mentions a blocked word
+(`grep -n "--no-verify" WORKFLOW.md`, a commit message, a heredoc into `cat > file`) passes.
+
 Denies:
-  * --no-verify anywhere, and `git commit -n` (its short form)
+  * --no-verify as an argument of git, and `git commit -n` (its short form)
   * changing core.hooksPath to anything but .githooks:
       git config [scope flags] core.hooksPath <value>      (also `git config set`)
       git config --unset / --unset-all core.hooksPath     (also `git config unset`)
       git config --remove-section / --rename-section core
       git -c core.hooksPath=<value> …  /  git --config-env=core.hooksPath=…
-      GIT_CONFIG_* environment variables mentioning hooksPath
-  * CHECK_PLAN_ALLOW (the user's own escape hatch, see AGENTS.md "Hooks")
+      GIT_CONFIG_* variables (assigned or exported) that mention hooksPath
+  * setting CHECK_PLAN_ALLOW (the user's own escape hatch, see AGENTS.md "Hooks"):
+      as an assignment, with export/declare/env, or from program code
+  * any of these words in program code that starts processes or sets the environment
+    (python -c, a heredoc into python/node/perl/…, awk), or in text piped into a shell
 Read-only queries (`git config core.hooksPath`, `--get`, `--get-regexp`, `--list`) pass.
+
+Other hooks load this file for its parser: shell_segments(), command_of().
 """
 
 import json
@@ -21,7 +30,11 @@ import sys
 
 KEY = "core.hookspath"
 OK_VALUE = ".githooks"
-SEPARATORS = re.compile(r"^[;&|()\n]+$")
+ESCAPE = "CHECK_PLAN_ALLOW"
+SKIP = "--no-verify"
+SEPARATOR = re.compile(r"^[;&|()]+$")
+ASSIGN = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)=(.*)$", re.S)
+HEREDOC = re.compile(r"(?<!<)<<(-?)\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
 GLOBAL_OPTS_WITH_VALUE = {"-C", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
 CONFIG_OPTS_WITH_VALUE = {"-f", "--file", "--blob", "--type", "--default", "--comment", "--value"}
 CONFIG_READ = {"--get", "--get-all", "--get-regexp", "--get-urlmatch", "--get-color",
@@ -29,6 +42,17 @@ CONFIG_READ = {"--get", "--get-all", "--get-regexp", "--get-urlmatch", "--get-co
 CONFIG_READ_MODES = {"get", "list"}
 CONFIG_UNSET = {"--unset", "--unset-all"}
 CONFIG_SECTION = {"--remove-section", "--rename-section", "remove-section", "rename-section"}
+
+SHELLS = {"sh", "bash", "zsh", "dash", "ksh", "fish"}
+WRAPPERS = {"env", "sudo", "command", "nohup", "time", "nice", "timeout", "xargs", "exec",
+            "builtin", "caffeinate", "stdbuf"}
+DECLARE = {"export", "declare", "typeset", "readonly", "local", "set", "setenv"}
+# Programs whose arguments or stdin are program code (not shell).
+INTERPRETER = re.compile(r"^(python[0-9.]*|node|nodejs|deno|bun|perl|ruby|php|osascript|swift|awk|gawk|nawk|jq)$")
+# Code that starts a process or changes the environment.
+CODE_ACTS = re.compile(r"subprocess|os\.system|os\.exec|os\.spawn|popen|check_call|check_output|"
+                       r"child_process|execSync|spawnSync|execFile|system\s*\(|exec\s*\(|`|qx|"
+                       r"environ|putenv|setenv|process\.env|ENV\[", re.I)
 
 
 def deny(reason):
@@ -41,28 +65,122 @@ def deny(reason):
     sys.exit(0)
 
 
-def tokenize(cmd):
-    lex = shlex.shlex(cmd, posix=True, punctuation_chars=";&|()")
+# ------------------------------------------------------------------------------- the parser
+
+def tokenize(line):
+    lex = shlex.shlex(line, posix=True, punctuation_chars=";&|()<>")
     lex.whitespace_split = True
     lex.commenters = ""
-    try:
-        return list(lex)
-    except ValueError:
-        return cmd.split()
+    return list(lex)
 
 
-def segments(tokens):
-    seg = []
-    for t in tokens:
-        if SEPARATORS.match(t):
-            if seg:
-                yield seg
-            seg = []
-        else:
-            seg.append(t)
-    if seg:
-        yield seg
+def logical_lines(text):
+    """[(tokens, [heredoc bodies])] for each shell line. A line continues after a trailing
+    backslash and while its quotes are open. Heredoc bodies are cut out of the text."""
+    lines, out, i = text.split("\n"), [], 0
+    while i < len(lines):
+        line = lines[i]
+        i += 1
+        while True:
+            while line.endswith("\\") and i < len(lines):
+                line = line[:-1] + " " + lines[i]
+                i += 1
+            try:
+                tokens = tokenize(line)
+                break
+            except ValueError:            # an open quote: the string goes on
+                if i >= len(lines):
+                    tokens = line.split()
+                    break
+                line = line + "\n" + lines[i]
+                i += 1
+        bodies = []
+        for m in HEREDOC.finditer(line):
+            dash, term, body = m.group(1), m.group(3), []
+            while i < len(lines):
+                l = lines[i]
+                i += 1
+                if (l.lstrip("\t") if dash else l) == term:
+                    break
+                body.append(l)
+            bodies.append("\n".join(body))
+        out.append((tokens, bodies))
+    return out
 
+
+def shell_segments(text):
+    """Yield (tokens, heredoc bodies, pipeline) for each simple command in a shell script.
+    pipeline is the list of the token lists in the same pipeline."""
+    for tokens, bodies in logical_lines(text):
+        segs, seg, joins = [], [], []
+        for t in tokens:
+            if SEPARATOR.match(t):
+                segs.append(seg)
+                joins.append(t in ("|", "|&"))
+                seg = []
+            else:
+                seg.append(t)
+        segs.append(seg)
+        pipelines, cur = [], [segs[0]]
+        for s, pipe in zip(segs[1:], joins):
+            if pipe:
+                cur.append(s)
+            else:
+                pipelines.append(cur)
+                cur = [s]
+        pipelines.append(cur)
+        body_iter = iter(bodies)
+        for pl in pipelines:
+            for s in pl:
+                if not s:
+                    continue
+                mine = [next(body_iter, "") for t in s if t in ("<<", "<<-")]
+                yield s, mine, pl
+
+
+def command_of(seg):
+    """(assignments, program basename, args) of a simple command, past assignments and
+    wrappers such as env, sudo, xargs, timeout."""
+    assigns, i = [], 0
+    while i < len(seg):
+        t = seg[i]
+        m = ASSIGN.match(t)
+        if m:
+            assigns.append((m.group(1), m.group(2)))
+            i += 1
+            continue
+        base = os.path.basename(t)
+        if base in WRAPPERS:
+            i += 1
+            while i < len(seg) and (seg[i].startswith("-") or ASSIGN.match(seg[i])
+                                    or (base == "timeout" and re.match(r"^\d", seg[i]))):
+                m = ASSIGN.match(seg[i])
+                if m:
+                    assigns.append((m.group(1), m.group(2)))
+                i += 1
+            continue
+        return assigns, base, seg[i + 1:]
+    return assigns, "", []
+
+
+def shell_script_args(prog, args):
+    """The scripts that a shell runs from `-c` (also `-lc`, `-ec`)."""
+    for j, a in enumerate(args):
+        if re.fullmatch(r"-[a-zA-Z]*c[a-zA-Z]*", a) and j + 1 < len(args):
+            return [args[j + 1]]
+    return []
+
+
+def reads_stdin_as_code(prog, args):
+    """A shell or interpreter in a pipeline that takes its program from stdin."""
+    if prog in SHELLS:
+        return not shell_script_args(prog, args) and not [a for a in args if not a.startswith("-")]
+    if INTERPRETER.match(prog or ""):
+        return not args or "-" in args
+    return False
+
+
+# ------------------------------------------------------------------------------- the checks
 
 def check_hookspath_assignment(kv):
     k, _, v = kv.partition("=")
@@ -95,7 +213,7 @@ def check_config(args):
         return
     if flags & CONFIG_SECTION or mode in CONFIG_SECTION:
         if positional and positional[0].lower() == "core":
-            deny(f"Blocked: removing or renaming the core section drops core.hooksPath.")
+            deny("Blocked: removing or renaming the core section drops core.hooksPath.")
         return
     lowered = [p.lower() for p in positional]
     if KEY not in lowered:
@@ -107,19 +225,19 @@ def check_config(args):
         deny(f"Blocked: core.hooksPath must stay {OK_VALUE}.")
 
 
-def check_git(seg):
-    """seg starts with the git executable."""
-    i = 1
-    while i < len(seg):
-        t = seg[i]
-        if t == "-c" and i + 1 < len(seg):
-            check_hookspath_assignment(seg[i + 1])
+def check_git(args):
+    """args: the tokens after the git executable."""
+    i = 0
+    while i < len(args):
+        t = args[i]
+        if t == "-c" and i + 1 < len(args):
+            check_hookspath_assignment(args[i + 1])
             i += 2
             continue
         if t.startswith("-c") and len(t) > 2:
             check_hookspath_assignment(t[2:])
         if t.startswith("--config-env"):
-            val = t.split("=", 1)[1] if "=" in t else (seg[i + 1] if i + 1 < len(seg) else "")
+            val = t.split("=", 1)[1] if "=" in t else (args[i + 1] if i + 1 < len(args) else "")
             if val.lower().startswith(KEY + "="):
                 deny(f"Blocked: core.hooksPath must stay {OK_VALUE}.")
             i += 1 if "=" in t else 2
@@ -131,13 +249,15 @@ def check_git(seg):
             i += 1
             continue
         break
-    if i >= len(seg):
+    if i >= len(args):
         return
-    sub, rest = seg[i], seg[i + 1:]
+    sub, rest = args[i], args[i + 1:]
+    if SKIP in rest or any(r.startswith(SKIP + "=") for r in rest):
+        deny(f"Blocked: {SKIP} skips the repo's git hooks.")
     if sub == "config":
         check_config(rest)
     elif sub == "commit" and commit_short_n(rest):
-        deny("Blocked: `git commit -n` is --no-verify.")
+        deny(f"Blocked: `git commit -n` is {SKIP}.")
 
 
 def commit_short_n(args):
@@ -155,29 +275,73 @@ def commit_short_n(args):
     return False
 
 
-def scan(cmd, depth=0):
-    for seg in segments(tokenize(cmd)):
-        for j, t in enumerate(seg):
-            if os.path.basename(t) == "git":
-                check_git(seg[j:])
-                break
-        if depth < 3:  # nested commands: sh -c "git …", eval "…"
-            for t in seg:
-                if "git" in t and (" " in t or ";" in t):
-                    scan(t, depth + 1)
+def check_assignment(name, value):
+    if name == ESCAPE:
+        deny(f"{ESCAPE} is for the user only.")
+    if name.startswith("GIT_CONFIG") and "hookspath" in value.lower():
+        deny("Blocked: GIT_CONFIG_* must not set core.hooksPath.")
+
+
+def check_code(code):
+    """Program code (not shell): deny the blocked words where the code acts."""
+    if not CODE_ACTS.search(code):
+        return
+    if ESCAPE in code:
+        deny(f"{ESCAPE} is for the user only (found in program code that starts processes or "
+             "sets the environment).")
+    if SKIP in code:
+        deny(f"Blocked: {SKIP} skips the repo's git hooks (found in program code that starts "
+             "processes).")
+    if "GIT_CONFIG" in code and "hookspath" in code.lower():
+        deny("Blocked: GIT_CONFIG_* must not set core.hooksPath (found in program code).")
+    if re.search(r"hookspath", code, re.I) and re.search(r"\bconfig\b", code):
+        if not re.search(r"hookspath['\"]?\s*,\s*['\"]\.githooks", code, re.I):
+            deny(f"Blocked: core.hooksPath must stay {OK_VALUE} (found in program code).")
+
+
+def scan(text, depth=0):
+    for seg, bodies, pipeline in shell_segments(text):
+        assigns, prog, args = command_of(seg)
+        for name, value in assigns:
+            check_assignment(name, value)
+        if prog in DECLARE:
+            for a in args:
+                m = ASSIGN.match(a)
+                if m:
+                    check_assignment(m.group(1), m.group(2))
+                elif a == ESCAPE:
+                    deny(f"{ESCAPE} is for the user only.")
+        if prog == "git":
+            check_git(args)
+        elif prog == "find":
+            for j, a in enumerate(args):
+                if a in ("-exec", "-execdir", "-ok") and j + 1 < len(args):
+                    scan(shlex.join(args[j + 1:]), depth + 1)
+        if depth >= 4:
+            continue
+        if prog in SHELLS:
+            for script in shell_script_args(prog, args) + [b for b in bodies if b]:
+                scan(script, depth + 1)
+        elif prog == "eval":
+            scan(" ".join(args), depth + 1)
+        elif INTERPRETER.match(prog or ""):
+            check_code("\n".join(args + bodies))
+        # Text piped into a shell or an interpreter is code.
+        if len(pipeline) > 1:
+            later = [command_of(s) for s in pipeline[pipeline.index(seg) + 1:]]
+            if any(reads_stdin_as_code(p, a) for _, p, a in later):
+                text_in = "\n".join(seg + bodies)
+                if any(p in SHELLS for _, p, _ in later):
+                    scan("\n".join([" ".join(args)] + bodies), depth + 1)
+                else:
+                    check_code(text_in + "\nsubprocess")
 
 
 def main():
     data = json.load(sys.stdin)
     cmd = (data.get("tool_input") or {}).get("command", "")
-    if "CHECK_PLAN_ALLOW" in cmd:
-        deny("CHECK_PLAN_ALLOW is for the user only.")
-    if "git" not in cmd and "GIT_CONFIG" not in cmd:
+    if "git" not in cmd and "GIT_CONFIG" not in cmd and ESCAPE not in cmd:
         return
-    if "--no-verify" in cmd:
-        deny("Blocked: --no-verify skips the repo's git hooks.")
-    if re.search(r"GIT_CONFIG_\w*", cmd) and "hookspath" in cmd.lower():
-        deny(f"Blocked: GIT_CONFIG_* must not set core.hooksPath.")
     scan(cmd)
 
 

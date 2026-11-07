@@ -9,7 +9,9 @@ adapter covers:
     So everything that is "ask" under Claude Code is "deny" here; the agent asks the
     user in the chat instead.
 
-Bash   -> .claude/hooks/git-guard, unchanged (same tool_input.command string).
+Bash   -> .claude/hooks/git-guard, unchanged (same tool_input.command string); then the
+          Bash checks of .claude/hooks/plan-guard (a write to PLAN.md or to a guard file
+          from a shell command) -> deny.
 Patch  -> guard files (PROTECTED in scripts/check-plan) -> deny;
           PLAN.md -> the file as it would be after the patch, judged by
           scripts/check-plan --agent against the on-disk version -> deny on any error.
@@ -159,7 +161,17 @@ def main():
     if tool == "Bash":
         r = subprocess.run([str(ROOT / ".claude" / "hooks" / "git-guard")],
                            input=json.dumps(data), capture_output=True, text=True)
-        sys.stdout.write(r.stdout)
+        if r.stdout.strip():
+            sys.stdout.write(r.stdout)
+            sys.exit(0)
+        loader = SourceFileLoader("plan_guard", str(ROOT / ".claude" / "hooks" / "plan-guard"))
+        spec = importlib.util.spec_from_loader("plan_guard", loader)
+        pg = importlib.util.module_from_spec(spec)
+        loader.exec_module(pg)
+        result = pg.bash_decision((data.get("tool_input") or {}).get("command", ""),
+                                  data.get("cwd") or str(ROOT))
+        if result:
+            deny(result[1])
         sys.exit(0)
     if tool == "apply_patch":
         guard_patch(data)

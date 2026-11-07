@@ -1,0 +1,217 @@
+#!/usr/bin/env python3
+"""Feeds git-guard and plan-guard synthetic Claude Code hook inputs and checks each decision.
+Run: .claude/hooks/guard-test   (ends with "failures: 0"). Also runs .codex/hooks/codex-guard-test.
+Run it after each change to a file in .claude/hooks/ or .codex/hooks/ (WORKFLOW.md §12).
+"""
+
+import json
+import os
+import pathlib
+import shutil
+import subprocess
+import tempfile
+
+HERE = pathlib.Path(__file__).resolve()
+R = str(HERE.parents[2])
+GG = str(HERE.parent / "git-guard")
+PG = str(HERE.parent / "plan-guard")
+# The words are built here, so that this file does not trip the guards when it is shown.
+ESC = "CHECK_PLAN" + "_ALLOW"
+NOV = "--no-" + "verify"
+HP = "core.hooks" + "Path"
+
+
+def decision(hook, data, env=None):
+    r = subprocess.run([hook], input=json.dumps(data), capture_output=True, text=True,
+                       env={**os.environ, **(env or {})})
+    if r.returncode:
+        print(r.stderr)
+    out = r.stdout.strip()
+    return json.loads(out)["hookSpecificOutput"]["permissionDecision"] if out else "allow"
+
+
+def bash(cmd, cwd=R):
+    data = {"tool_name": "Bash", "tool_input": {"command": cmd}, "cwd": cwd}
+    for hook in (GG, PG):
+        d = decision(hook, data, {"CLAUDE_PROJECT_DIR": R})
+        if d != "allow":
+            return d
+    return "allow"
+
+
+GIT_CASES = [
+    # from the 2026-11-04 harness
+    ("allow", f"git config {HP}; git status"),
+    ("allow", f"git config {HP}"),
+    ("allow", f"git config --get {HP}"),
+    ("allow", "git config --get-regexp hooks"),
+    ("allow", "git config --local --list"),
+    ("allow", f"git config {HP} .githooks"),
+    ("deny", f"git config --local {HP} /tmp/x"),
+    ("deny", f"git config --global {HP} ''"),
+    ("deny", f"git config set {HP} /tmp/x"),
+    ("deny", f"git config --unset {HP}"),
+    ("deny", f"git config --unset-all {HP}"),
+    ("deny", f"git config unset {HP}"),
+    ("deny", "git config --remove-section core"),
+    ("deny", f"git -c {HP}=/dev/null commit -m x"),
+    ("allow", f"git -c {HP}=.githooks commit -m x"),
+    ("deny", f"GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0={HP} GIT_CONFIG_VALUE_0=/dev/null git commit -m x"),
+    ("deny", f'sh -c "git -c {HP}=/dev/null commit -m x"'),
+    ("deny", f"git commit {NOV} -m x"),
+    ("deny", "git commit -nm x"),
+    ("allow", "git commit -am x"),
+    ("allow", 'git commit -m "-n flag"'),
+    ("allow", "git push -n"),
+    ("allow", "git status && git log --oneline -1"),
+    ("deny", f"{ESC}=1 git commit -m x"),
+    ("allow", "ls -la"),
+    # read-only text that only mentions the words (blocked before 2026-11-07)
+    ("allow", f'grep -n "{NOV}" WORKFLOW.md AGENTS.md'),
+    ("allow", f"rg {ESC} AGENTS.md | head -3"),
+    ("allow", f"cat > /tmp/note.md <<'EOF'\nNever use {NOV}. Never set {ESC}.\nEOF\ngit status"),
+    ("allow", f'git commit -m "docs: explain {ESC} and {NOV}"'),
+    ("allow", f"git log -S'{NOV}' --oneline"),
+    ("allow", f"python3 - <<'EOF'\nopen('/tmp/w.md','a').write('do not use {NOV} or {ESC}')\nEOF"),
+    ("allow", f'echo "{NOV}" && git status'),
+    # ways around the hooks
+    ("deny", f"export {ESC}=1; git commit -m x"),
+    ("deny", f"env {ESC}=1 git commit -m x"),
+    ("deny", f"declare -x {ESC}=1"),
+    ("deny", f"python3 -c \"import os,subprocess; os.environ['{ESC}']='1'; subprocess.run(['git','commit'])\""),
+    ("deny", f"python3 - <<'EOF'\nimport subprocess\nsubprocess.run(['git', 'commit', '{NOV}', '-m', 'x'])\nEOF"),
+    ("deny", f"node -e \"require('child_process').execSync('git commit {NOV} -m x')\""),
+    ("deny", f'echo "git commit {NOV} -m x" | sh'),
+    ("deny", f"bash <<'EOF'\ngit commit {NOV} -m x\nEOF"),
+    ("deny", f"bash -lc 'cd /tmp && git commit {NOV} -m x'"),
+    ("deny", f"cd ios && git commit {NOV} -m x"),
+    ("deny", f"ls\ngit commit {NOV} -m x"),
+    ("deny", f"xargs git commit {NOV} -m x < /dev/null"),
+    ("deny", f'eval "git commit {NOV} -m x"'),
+    ("deny", f"git push {NOV}"),
+    ("deny", f"git merge {NOV} claude/x"),
+    ("deny", f"export GIT_CONFIG_KEY_0={HP}"),
+    ("deny", f"timeout 60 git commit {NOV} -m x"),
+]
+
+PLAN_BASH_CASES = [
+    ("deny", "echo x >> PLAN.md"),
+    ("deny", "sed -i '' 's/a/b/' PLAN.md"),
+    ("deny", "python3 - <<'EOF'\np = 'PLAN.md'\ns = open(p).read()\nopen(p, 'w').write(s)\nEOF"),
+    ("deny", "python3 -c \"from pathlib import Path; Path('PLAN.md').write_text('x')\""),
+    ("deny", "cp /tmp/x.md PLAN.md"),
+    ("deny", "tee -a PLAN.md < /tmp/x"),
+    ("deny", 'bash -c "echo x > PLAN.md"'),
+    ("deny", "cd ios && echo x > ../PLAN.md"),
+    ("allow", "cat PLAN.md | head"),
+    ("allow", "grep -n S16 PLAN.md"),
+    ("allow", "cp PLAN.md /tmp/p.md"),
+    ("allow", "git add PLAN.md && git commit -m x"),
+    ("allow", "git checkout -- PLAN.md"),
+    ("allow", 'scripts/plan log "A note about PLAN.md" --commit'),
+    ("allow", "python3 -c \"print(open('PLAN.md').read()[:10])\""),
+    ("allow", "echo x > /tmp/PLAN.md"),
+    ("ask", "echo x > .claude/hooks/git-guard"),
+    ("ask", "cp /tmp/x scripts/check-plan"),
+    ("ask", "sed -i '' s/a/b/ .githooks/pre-commit"),
+    ("ask", "python3 - <<'EOF'\nopen('.claude/settings.json', 'w').write('{}')\nEOF"),
+    ("allow", "cat .claude/hooks/git-guard"),
+    ("allow", ".claude/hooks/guard-test"),
+]
+
+
+def edit_cases(tmp):
+    """Edit/Write in another checkout of this repo (a worktree), with CLAUDE_PROJECT_DIR = R."""
+    wt = pathlib.Path(tmp) / "wt"
+    (wt / "scripts").mkdir(parents=True)
+    (wt / ".git").write_text("gitdir: /nowhere\n")
+    shutil.copy(pathlib.Path(R) / "scripts" / "check-plan", wt / "scripts" / "check-plan")
+    plan = (pathlib.Path(R) / "PLAN.md").read_text()
+    (wt / "PLAN.md").write_text(plan)
+    human = [l for l in plan.split("\n") if l.startswith("- [ ] [human]")][0]
+    auto = [l for l in plan.split("\n") if l.startswith("- [ ] [auto]")][0]
+
+    def edit(path, old="x", new="y"):
+        return {"tool_name": "Edit", "tool_input": {"file_path": str(path), "old_string": old,
+                                                    "new_string": new}}
+    return [
+        ("ask", "guard file in a worktree", edit(wt / ".claude/hooks/git-guard")),
+        ("ask", "settings in a worktree", edit(wt / ".claude/settings.json")),
+        ("deny", "tick [human] in a worktree PLAN.md",
+         edit(wt / "PLAN.md", human, human.replace("- [ ]", "- [x]") + " human:2026-11-07 x")),
+        ("ask", "reword an item in a worktree PLAN.md",
+         edit(wt / "PLAN.md", auto, auto.replace("[auto] ", "[auto] Reworded: ", 1))),
+        ("allow", "harmless edit in a worktree PLAN.md", edit(wt / "PLAN.md", "# PLAN", "# PLAN")),
+        ("allow", "normal file in a worktree", edit(wt / "bridge/src/index.ts")),
+        ("ask", "guard file in this checkout", edit(pathlib.Path(R) / ".githooks/pre-commit")),
+        ("allow", "file outside the repo", edit("/tmp/whatever.txt")),
+    ]
+
+
+GIT_HOOKS_SCRIPT = r'''
+set -u
+W="$1"; T="$2"
+git clone -q "$W" "$T/r" && cd "$T/r" && git checkout -q -B main HEAD
+git config user.name t; git config user.email t@e
+for f in scripts/check-plan .githooks/pre-commit .githooks/pre-merge-commit; do cp "$W/$f" "$f"; done
+git add -A; git commit -q -m tools --allow-empty
+item=$(grep -m1 '^- \[ \] \[auto\]' PLAN.md)
+# Set-up commits, made before the hooks are on (as if the user forced them).
+git checkout -q -b claude/s22-x
+python3 -c "import sys; s=open('PLAN.md').read(); i=sys.argv[1]; open('PLAN.md','w').write(s.replace(i, i.replace('[auto] ','[auto] Reworded ',1),1))" "$item"
+git commit -qam reword; git checkout -q main
+echo "# x" >> .githooks/pre-commit; git commit -qam "guard change on main"
+git checkout -q -b claude/s23-y HEAD~1; echo "// s23" >> ios/DSHKit/Package.swift; git commit -qam s23
+git checkout -q -b claude/s24-z main~1; echo "# changed" >> scripts/check-plan; git commit -qam guard
+git checkout -q main
+git config core.hooksPath .githooks
+r() { echo "$1 $2"; }
+git merge --no-ff -q -m m claude/s22-x >/dev/null 2>&1; r reworded-slice-into-main $?; git merge --abort 2>/dev/null
+git merge --no-ff -q -m m claude/s24-z >/dev/null 2>&1; r guard-change-slice-into-main $?; git merge --abort 2>/dev/null
+git checkout -q claude/s23-y
+git merge --no-ff -q -m m main >/dev/null 2>&1; r main-with-guard-change-into-slice $?
+git checkout -q main
+mkdir -p ios/DSHKit/.build && echo x > ios/DSHKit/.build/a.o && git add -f ios/DSHKit/.build/a.o
+git commit -qm b >/dev/null 2>&1; r build-output $?; git reset -q; rm -rf ios/DSHKit/.build
+head -c 5000000 /dev/urandom > big.bin; git add big.bin; git commit -qm b >/dev/null 2>&1; r large-file $?; git reset -q; rm big.bin
+echo "// ok" >> ios/DSHKit/Package.swift; git commit -qam ok >/dev/null 2>&1; r normal-commit $?
+scripts/check-plan >/dev/null 2>&1; r check-plan-no-args $?
+'''
+GIT_HOOKS_WANT = {"reworded-slice-into-main": "1", "guard-change-slice-into-main": "1",
+                  "main-with-guard-change-into-slice": "0", "build-output": "1", "large-file": "1",
+                  "normal-commit": "0", "check-plan-no-args": "0"}
+
+
+def main():
+    fail = 0
+
+    def report(ok, name, got):
+        nonlocal fail
+        fail += not ok
+        print(("PASS" if ok else "FAIL"), name.replace("\n", "⏎")[:110], "->", got)
+
+    print("git-guard and plan-guard, Bash")
+    for want, cmd in GIT_CASES + PLAN_BASH_CASES:
+        got = bash(cmd)
+        report(got == want, cmd, got)
+    print("plan-guard, Edit")
+    with tempfile.TemporaryDirectory() as tmp:
+        for want, name, data in edit_cases(tmp):
+            got = decision(PG, data, {"CLAUDE_PROJECT_DIR": R})
+            report(got == want, name, got)
+    print("git hooks (pre-commit, pre-merge-commit), in a temporary clone")
+    with tempfile.TemporaryDirectory() as tmp:
+        r = subprocess.run(["bash", "-c", GIT_HOOKS_SCRIPT, "x", R, tmp], capture_output=True, text=True)
+        got = dict(l.split() for l in r.stdout.strip().split("\n") if len(l.split()) == 2)
+        for name, want in GIT_HOOKS_WANT.items():
+            report(got.get(name) == want, f"{name}: exit {want}", got.get(name))
+    print("codex-guard")
+    r = subprocess.run([str(pathlib.Path(R) / ".codex/hooks/codex-guard-test")], capture_output=True, text=True)
+    last = r.stdout.strip().split("\n")[-1] if r.stdout.strip() else r.stderr
+    report(r.returncode == 0, f"codex-guard-test ({last})", r.returncode)
+    print("failures:", fail)
+    raise SystemExit(1 if fail else 0)
+
+
+if __name__ == "__main__":
+    main()
