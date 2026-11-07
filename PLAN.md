@@ -68,6 +68,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S22 | done | merged `4deb8d0` | 2026-11-07 | — (provisional D63 in §9) |
 | S23 | review | merged `47acc0d` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
 | S24 | doing | `claude/s24-keyboard-dismiss` | 2026-11-07 | Slice owner builds (§8) |
+| S25 | todo | — | 2026-11-07 | Fix: App icon; start a fix session |
 
 ## 1. Approach
 
@@ -1119,6 +1120,24 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Status** todo · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-07: 键盘弹起后，我点击展开侧边栏，键盘没有收起。应该说，键盘弹起后，只要没有发生用户输入的情况，其他的动作都应该先让键盘收起.
+
+**Cuts**: Find the cause. Fix it. Add a test that fails without the fix.
+
+**Demo**: —
+
+**Done when**
+- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [ ] [human] The user no longer sees the bug — Evidence:
+
+**Not**: Other changes. Report other bugs to the coordinator as new fix slices.
+
+**Log**: —
+
+### S25 · Fix: App icon
+
+**Status** todo · **Needs** — · **Branch** —
+
+**Why**: The user reported a bug on 2026-11-07: dsh-mobile 应该要有个app图标，适配下. (Coordinator: `ios/dsh-mobile/Assets.xcassets/AppIcon.appiconset` has slots and no images.)
 
 **Cuts**: Find the cause. Fix it. Add a test that fails without the fix.
 
