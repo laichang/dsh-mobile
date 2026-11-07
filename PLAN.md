@@ -655,8 +655,8 @@ Each slice needs only T0, unless "Needs" says otherwise.
 **Demo**: someone who has never seen DSH gets from install to their first answer without help, given a DSH that's already running.
 
 **Done when**
-- [ ] [human] With no host paired, the app explains what it is and what's missing — Evidence:
-- [ ] [human] Someone who has never seen DSH gets from install to their first answer without help, given a DSH that's already running — Evidence:
+- [x] [human] With no host paired, the app explains what it is and what's missing — Evidence: human:2026-11-08 checked on iPhone; the first screen explains the app and the need for a DSH host
+- [x] [human] Someone who has never seen DSH gets from install to their first answer without help, given a DSH that's already running — Evidence: human:2026-11-08 checked by the user on iPhone
 
 - [x] [ui] A fresh Release install explains what runs on the phone and computer, and shows where to get a pairing code in English and Simplified Chinese — Evidence: test:S11FirstRunUITests/testChineseWelcomeAndGuide · test:S11FirstRunUITests/testFirstRunFromWelcomeToReply · cmd:scripts/demo/s11.sh · shot:evidence/S11/s11-welcome.png · shot:evidence/S11/s11-guide.png
 - [x] [ui] Paste a real pairing link, edit the suggested first task, send it, and receive the reply over Noise — Evidence: test:S11FirstRunUITests/testFirstRunFromWelcomeToReply · cmd:scripts/demo/s11.sh · shot:evidence/S11/s11-first-task.png
