@@ -33,6 +33,16 @@ Aligned with DSH desktop and Web ([deepseek.com/harness](https://www.deepseek.co
 
 System font (PingFang SC for Chinese), SF Mono for commands and paths. Thinking and tool calls collapse to one line; tool calls are `verb · target · +/−` rows.
 
+### App icon
+
+![App icon: default, dark, tinted](design/icon-preview.png)
+
+A phone in front sends work up to a terminal window: the user's own computer (STORY §1, execution elsewhere). Original artwork. It doesn't use the DeepSeek whale or any other mark: dsh-mobile is a client, not DeepSeek's app.
+
+- **Source**: [design/icon.svg](design/icon.svg). Run `scripts/render-icon` after an edit; it writes the three PNGs into `ios/dsh-mobile/Assets.xcassets/AppIcon.appiconset/` (`--preview` also rewrites `design/icon-preview.png`). Asset catalog, not an Icon Composer `.icon` file (ARCHITECTURE.md D70).
+- **Appearances**: default = Blue background, a Canvas terminal, a white phone with a Blue arrow. Dark = transparent background (iOS draws the dark one), a Slate terminal, a Blue phone. Tinted = grayscale on transparent; iOS tints it from the brightness.
+- **Safe area**: every shape stays inside x 170–854, y 200–860 of 1024, clear of the masked corners.
+
 ## Navigation
 
 - **Launch**: a blank new session with the default host and workspace (STORY §3). The first message creates the session.

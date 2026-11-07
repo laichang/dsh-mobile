@@ -1,0 +1,67 @@
+#!/bin/bash
+# Render the app icon (design/icon.svg, DESIGN.md "App icon") to the asset catalog with headless
+# Chrome, as scripts/render-design does for the board. One 1024×1024 PNG per iOS appearance (D70):
+#   AppIcon.png         default (light): opaque, blue background, no alpha channel
+#   AppIcon-dark.png    dark: transparent background (iOS draws its dark background)
+#   AppIcon-tinted.png  tinted: grayscale on transparent (iOS applies the tint from luminance)
+#   scripts/render-icon            writes them to ios/dsh-mobile/Assets.xcassets/AppIcon.appiconset/
+#   scripts/render-icon --preview  also writes design/icon-preview.png (three appearances, masked)
+# Each appearance only sets the CSS variables of the SVG; the shapes stay in one file.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
+[ -x "$CHROME" ] || { echo "render-icon: set CHROME to a Chrome or Chromium binary" >&2; exit 1; }
+SVG="$ROOT/design/icon.svg"
+OUT="$ROOT/ios/dsh-mobile/Assets.xcassets/AppIcon.appiconset"
+PREVIEW=0; [ "${1:-}" = --preview ] && PREVIEW=1
+TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
+
+# name | CSS variables
+VARIANTS=(
+  "AppIcon|--bg-top:#5B78FF;--bg-bottom:#3049D8;--window:#151517;--prompt:#F9FAFB;--phone:#F9FAFB;--send:#4D6BFE"
+  "AppIcon-dark|--bg-display:none;--window:#343A43;--prompt:#F9FAFB;--phone:#4D6BFE;--send:#F9FAFB"
+  "AppIcon-tinted|--bg-display:none;--window:#7A7A7A;--prompt:#FFFFFF;--phone:#FFFFFF;--send:#000000"
+)
+
+page() { # $1 = CSS variables, $2 = output html
+  { printf '<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:transparent}'
+    printf ':root{%s}svg{display:block}</style>' "$1"
+    sed '1{/^<?xml/d;}' "$SVG"; } > "$2"
+}
+
+for v in "${VARIANTS[@]}"; do
+  name=${v%%|*}; vars=${v#*|}
+  page "$vars" "$TMP/$name.html"
+  "$CHROME" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 \
+    --default-background-color=00000000 --window-size=1024,1024 \
+    --screenshot="$TMP/$name.png" "file://$TMP/$name.html" 2>/dev/null
+  [ -s "$TMP/$name.png" ] || { echo "render-icon: Chrome wrote no $name.png" >&2; exit 1; }
+done
+
+# The default icon must be opaque with no alpha channel (App Store rule for the 1024 icon).
+swift "$ROOT/scripts/lib/flatten-png.swift" "$TMP/AppIcon.png" "$OUT/AppIcon.png"
+cp "$TMP/AppIcon-dark.png" "$TMP/AppIcon-tinted.png" "$OUT/"
+for f in AppIcon AppIcon-dark AppIcon-tinted; do
+  printf '%s %s\n' "$OUT/$f.png" "$(sips -g pixelWidth -g pixelHeight -g hasAlpha "$OUT/$f.png" | awk 'NR>1 {printf "%s=%s ", $1, $2}')"
+done
+
+if [ $PREVIEW = 1 ]; then
+  # The three appearances side by side, in the iOS rounded mask, on a light and a dark wallpaper.
+  cat > "$TMP/preview.html" <<HTML
+<!doctype html><meta charset="utf-8"><style>
+body{margin:0;display:grid;grid-template-columns:repeat(3,300px);gap:0;font:600 18px -apple-system,sans-serif}
+div{height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+img{width:180px;height:180px;border-radius:40px}
+.l{background:#E9ECF2;color:#333}.d{background:#0B0B0D;color:#ccc}
+.d img.dk{background:linear-gradient(#2A2B30,#121214)}
+.d img.t{background:#000;filter:sepia(1) saturate(4) hue-rotate(170deg) brightness(.95)}
+</style>
+<div class="l"><img src="file://$OUT/AppIcon.png"><span>Default</span></div>
+<div class="d"><img class="dk" src="file://$OUT/AppIcon-dark.png"><span>Dark</span></div>
+<div class="d"><img class="t" src="file://$OUT/AppIcon-tinted.png"><span>Tinted</span></div>
+HTML
+  "$CHROME" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 \
+    --allow-file-access-from-files --window-size=900,300 \
+    --screenshot="$ROOT/design/icon-preview.png" "file://$TMP/preview.html" 2>/dev/null
+  echo "render-icon: design/icon-preview.png"
+fi
