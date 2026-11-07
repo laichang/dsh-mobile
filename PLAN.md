@@ -70,6 +70,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S24 | done | merged `28a6409` | 2026-11-07 | — |
 | S25 | done | merged `2a189da` | 2026-11-07 | — |
 | S26 | done | merged `bfd1c39` | 2026-11-07 | — |
+| S27 | todo | — | 2026-11-07 | Fix: Outcome duration and marker; start a fix session |
 
 ## 1. Approach
 
@@ -1187,6 +1188,24 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Red (unfixed code, `ef88c1f` + the test): all 3 tests failed, each with "227.0 is not equal to 201.0 +/- 1.0".
   - Green (`fd8938c`): `scripts/demo/s26.sh` passed: S26TitleCenterUITests 3/3, T1ShellUITests 6/6 (seam). Shots: evidence/S26/.
   - Not done: the [human] item (the user checks it on the iPhone). Next: review, then the coordinator merges.
+
+### S27 · Fix: Outcome duration and marker
+
+**Status** todo · **Needs** — · **Branch** —
+
+**Why**: The user reported a bug on 2026-11-07: "用时2小时37分钟15秒"，离谱了；"停在这里·最终回答开头"，这是什么？（用户选择：Remove the label）. (Coordinator: 用时 runs from the session's first message, 21:07, to its last update, so it counts the idle time between turns. The marker is S19's landing line, D60.)
+
+**Cuts**: Find the cause. Fix it. Add a test that fails without the fix.
+
+**Demo**: —
+
+**Done when**
+- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [ ] [human] The user no longer sees the bug — Evidence:
+
+**Not**: Other changes. Report other bugs to the coordinator as new fix slices.
+
+**Log**: —
 
 ## 6. M1 exit
 
