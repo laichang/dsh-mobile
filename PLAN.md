@@ -1150,6 +1150,11 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
 **Log**: —
+- **2026-11-07 · App icon added; review PASS.** Cause: `AppIcon.appiconset` had slots and no images, so the built app had no `CFBundleIcons` and iOS showed a blank icon. Fix: an original icon (a phone that sends work to a terminal window) in `design/icon.svg`, rendered by `scripts/render-icon` (headless Chrome, as `scripts/render-design`; `scripts/lib/flatten-png.swift` removes the alpha channel of the default PNG) into one 1024 PNG per appearance: default, dark (transparent), tinted (grayscale). Mac slots removed. DESIGN.md "App icon"; ARCHITECTURE.md D70 (provisional: asset catalog, not an Icon Composer `.icon` file). No new dependency.
+  Check: `scripts/demo/s25.sh` builds the Release app and checks `CFBundleIconName = AppIcon` and the default, `UIAppearanceDark` and `ISAppearanceTintable` renditions in `Assets.car`. Against the old asset catalog it fails ("Info.plist has no CFBundleIcons"); with the fix it passes. Review: `/tmp/dshm-review/S25-95265b9.txt`, RESULT: PASS, no flaky parts.
+  Shots: `--shots` installs the app, puts it in the dock (edits SpringBoard's `IconState.plist` while the simulator is shut down) and saves light and dark Home Screen shots. Limit: in a fresh simulator the iOS 26 Home Screen icon style stays Default, and it has no command-line switch, so the dark shot shows the dark Home Screen with the default icon. The dark and tinted renditions are proven by `assetutil` and shown in `design/icon-preview.png`. The [human] item checks them on the iPhone.
+  Setup note: the `dshm-S25` simulator did not exist; I created it (iPhone 17 Pro, iOS 26.4). `scripts/slice-env --assign` could create it (report to coordinator).
+  Next: the user checks the icon on the iPhone (light, dark, tinted). Coordinator merges per §10.
 
 ## 6. M1 exit
 
