@@ -1199,12 +1199,16 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: —
 
 **Done when**
-- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S27OutcomeFooterUITests/testDoneFooterCountsTheLatestTurnOnly · test:S27OutcomeFooterUITests/testUnreadDoneSessionOpensAtTheFinalAnswerWithNoLabel · test:S19OutcomesUITests/testDoneSessionNotReadOpensAtTheStartOfTheFinalAnswer · test:S23DrawerMotionUITests/testDoneUnreadLandsAtTheAnswerAndReadReturnsToTheLastPosition · shot:evidence/S27/s27-footer-latest-turn.png · shot:evidence/S27/s27-unread-answer-start.png
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
 **Log**: —
+- **2026-11-08 · Fix done; review PASS.** Done. Cause 1: `OutcomeFooter` showed `updatedAt − createdAt`; for a Web session `createdAt` is the first turn, so 用时 took in the idle time between turns. Journal messages have no time on the phone, so the bridge now sends `TaskSummary.turn_started_at_ms` (optional, field 540): the latest `turn/start`, else the latest user message. The footer counts from it (`TaskRow.lastTurnStart`), else from `createdAt` (older bridge, single turn: same value as before). Cause 2: the user chose to remove the S19 marker. `AnswerStartMarker`, its strings and colors are gone; an unread done session still opens at the start of its final answer (`OutcomeAnchor.id` on the process row, `SessionLanding.answerStart`). Decision D76 (provisional, amends D60); DESIGN.md, board 06 and its render updated. New golden fixture `s27_web_session_upserted_event` (S14's stays as the older bridge's frame). FakeBridge: `-DSHMFakeScenario turns` (`FakeTurns`), and `FakeHost` answers `ReadSession` for seeded journals.
+  Red (6be4f38 + tests, app unchanged): testDoneFooterCountsTheLatestTurnOnly failed with "用时 2小时37分钟15秒" (the user's exact text); testUnreadDoneSessionOpensAtTheFinalAnswerWithNoLabel failed (the marker sits between the process row and the answer). Green: scripts/demo/s27.sh passed: bridge pnpm test 70/70, LastTurnTests 2/2, S27 2/2, S19 3/3, S23 2/2. Review: `scripts/review S27` on 03aa1ba → RESULT: PASS, no flaky parts (/tmp/dshm-review/S27-03aa1ba.txt).
+  Not done: the [human] item. Next: the coordinator merges (WORKFLOW §10); the user checks 用时 and the landing on the iPhone (needs the updated bridge on the Mac).
+- **2026-11-08 · Correction: red run base.** Correction to the entry above: the red run was on 97f645d (main at assignment) plus the S27 tests, fake and bridge change, with the app code unchanged; not 6be4f38.
 
 ### S28 · Fix: Markdown tables
 

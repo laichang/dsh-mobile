@@ -63,6 +63,9 @@ public final class CachedTask {
     /// S17: the task's thinking and tool-call rows, a JSON-encoded `StructuredTranscript`; empty
     /// when it has none. Each row keeps its place in `transcript` (`TranscriptItem.offset`).
     public var transcriptBlocksData: Data = Data()
+    /// S27: when the session's latest turn started, from the bridge (`turn_started_at_ms`); nil
+    /// from an older bridge. The done footer's 用时 counts from here.
+    public var turnStartedAt: Date?
 
     public init(hostKey: String, taskID: String, title: String, createdAt: Date) {
         self.key = Self.key(hostKey: hostKey, taskID: taskID)

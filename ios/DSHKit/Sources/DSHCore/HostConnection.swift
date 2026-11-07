@@ -78,6 +78,8 @@ public struct TaskSnapshot: Sendable, Equatable {
     public var latestReply: String?
     /// S14 (`drawer.v1`): the session's workspace directory on the host.
     public var workspace: String?
+    /// S27: when the latest turn started; nil from an older bridge (then `createdAt` stands in).
+    public var turnStartedAt: Date?
 
     public init(taskID: String, title: String, state: TaskState, createdAt: Date, updatedAt: Date, message: String = "") {
         self.taskID = taskID
@@ -105,6 +107,7 @@ public struct TaskSnapshot: Sendable, Equatable {
         externalSession = s.externalSession
         latestReply = s.hasLatestReply ? s.latestReply : nil
         workspace = s.hasWorkspace && !s.workspace.isEmpty ? s.workspace : nil
+        turnStartedAt = s.hasTurnStartedAtMs ? Date(timeIntervalSince1970: Double(s.turnStartedAtMs) / 1000) : nil
         approvals = s.pendingApprovals.map(Approval.init)
         approvalOnly = s.approvalOnly
         modelSelection = s.hasModelSelection ? s.modelSelection : nil

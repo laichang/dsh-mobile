@@ -64,3 +64,35 @@ test('webSessionsBeforeAndAfterPairingAndPhoneTaskHaveOneHostRowEach', async () 
   directory.close()
   await hub.close()
 })
+
+// S27 · Real-iPhone bug (2026-11-07): a Web session with turns hours apart showed "用时 2小时37分钟15秒",
+// because the phone counted from the first turn. The summary now says when the latest turn started.
+test('webSessionSummarySaysWhenItsLatestTurnStarted', async () => {
+  const hub = new TaskHub({ interrupt() {}, async start() { return { taskId: 'phone', output: (async function* () {})() } } })
+  const hour = 3_600_000
+  const events: { type: string; seq: number; time: number; data: unknown }[] = []
+  function emit(type: string, data: unknown, time: number) { events.push({ type, data, seq: events.length, time }) }
+  function turn(text: string, start: number, took: number) {
+    emit('turn/start', {}, start)
+    emit('user/message', { source: { kind: 'user' }, content: [{ type: 'text', text }] }, start + 10)
+    emit('assistant/message', { message: { content: [{ type: 'text', text: 'reply ' + text }] } }, start + took - 10)
+    emit('turn/end', { reason: { kind: 'completed' } }, start + took)
+  }
+  const reader: SessionReader = {
+    async list() { return { items: [{ sessionId: 'web', blank: false, running: false, updatedAt: 1 }] } },
+    async events() { return { cursor: events.length - 1, hasMore: false, records: events.map(event => ({ event })) } },
+  }
+  const directory = new SessionDirectory(reader, hub, assert.fail)
+  turn('first', 21 * hour, 60_000)
+  await directory.reconcile()
+  assert.equal(hub.list()[0]?.turnStartedAtMs, BigInt(21 * hour))
+  turn('second', 23 * hour + 40 * 60_000, 84_000)
+  directory.changed('web', events.at(-1)!)
+  await directory.reconcile()
+  const row = hub.list()[0]!
+  assert.equal(row.createdAtMs, BigInt(21 * hour))
+  assert.equal(row.turnStartedAtMs, BigInt(23 * hour + 40 * 60_000))
+  assert.equal(row.updatedAtMs - row.turnStartedAtMs!, 84_000n)
+  directory.close()
+  await hub.close()
+})

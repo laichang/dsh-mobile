@@ -46,6 +46,10 @@ message TaskSummary {
   // S14 (drawer.v1, fields 280–299): the absolute directory of the session's workspace on the
   // host, from the DSH session (`cwd`) or the phone's CreateTask. Absent when the host does not know it.
   optional string workspace = 280;
+  // S27 (fields 540–559): when the session's latest turn started (its `turn/start`, else its user
+  // message), Unix milliseconds. The done footer's 用时 runs from here to updated_at_ms. Absent from
+  // an older bridge: the app counts from created_at_ms, as before.
+  optional int64 turn_started_at_ms = 540;
 }
 
 // Request: every task this bridge knows, newest first.

@@ -92,9 +92,13 @@ export class SessionDirectory {
           const hostTitle = rename?.title || row.projections?.values.title || undefined
           const title = page.hasMore ? row.projections?.values.title ?? prompt : prompt ?? row.projections?.values.title
           const at = page.records.at(-1)?.event.time ?? row.updatedAt
+          // S27: the latest turn's start, so that the phone's 用时 leaves out the idle time between turns.
+          const turnStart = page.records.findLast(({event}) => event.type === 'turn/start')?.event.time ??
+            page.records.findLast(({event}) => message(event)?.fromUser)?.event.time
           this.hub.observeSession(row.sessionId, BigInt(page.cursor), title ?? row.sessionId,
             state, state === TaskState.FAILED ? describeFailure(reason?.kind ?? 'unknown', reason?.error) : '',
-            BigInt(at), BigInt(page.records[0]?.event.time ?? row.updatedAt), reply, hostTitle, row.cwd)
+            BigInt(at), BigInt(page.records[0]?.event.time ?? row.updatedAt), reply, hostTitle, row.cwd,
+            turnStart === undefined ? undefined : BigInt(turnStart))
         } catch (error) {
           this.abort.signal.throwIfAborted()
           this.log('cannot read session ' + row.sessionId + ': ' + error)

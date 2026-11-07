@@ -87,6 +87,15 @@ public final class TaskListStore {
         public var approvalsAnswered = 0
         /// S17: thinking and tool-call rows (`transcript.v1`), in transcript order.
         public var blocks = StructuredTranscript()
+        /// S27: when the latest turn started, if the host said (D76).
+        public var turnStartedAt: Date? = nil
+
+        /// S27: where the done footer's 用时 starts: the latest turn's start, else the task's
+        /// creation (a single turn, or an older bridge). Never before `createdAt` or after `updatedAt`.
+        public var lastTurnStart: Date {
+            guard let turnStartedAt else { return createdAt }
+            return min(max(turnStartedAt, createdAt), updatedAt)
+        }
 
         /// Chunks stream the first phone turn. Its committed journal restores text after a truncated replay.
         public func singleTurnTranscript(_ messages: [Dshm_V1_SessionMessage]) -> String {
@@ -571,6 +580,7 @@ public final class TaskListStore {
             task.state = snapshot.state
             task.message = snapshot.message
             task.updatedAt = snapshot.updatedAt
+            task.turnStartedAt = snapshot.turnStartedAt
         }
     }
 
@@ -688,7 +698,8 @@ public final class TaskListStore {
                 workspace: t.workspace, unread: t.state.isTerminal && (t.readThrough.map { $0 < t.updatedAt } ?? true),
                 approvalsAnswered: t.approvalsAnswered,
                 blocks: link.capabilities?.contains(DSHProtocolInfo.transcriptCapability) == false
-                    ? StructuredTranscript() : structuredTranscript(of: t))
+                    ? StructuredTranscript() : structuredTranscript(of: t),
+                turnStartedAt: t.turnStartedAt)
         }
     }
 

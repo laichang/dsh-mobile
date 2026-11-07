@@ -111,7 +111,8 @@ export class TaskHub {
 
   /** The DSH session ID is also CreateTask's ID, even if the journal arrives before its response. */
   observeSession(taskId: string, revision: bigint, title: string, state: TaskState, message: string,
-    updatedAt: bigint, createdAt: bigint, latestReply?: string, hostTitle?: string, workspace?: string) {
+    updatedAt: bigint, createdAt: bigint, latestReply?: string, hostTitle?: string, workspace?: string,
+    turnStartedAt?: bigint) {
     const old = this.summaries.get(taskId)
     if (old?.sessionRevision !== undefined && old.sessionRevision >= revision) return
     const pending = this.approvalsFor(taskId)
@@ -125,6 +126,7 @@ export class TaskHub {
     summary.workspace = sessionWorkspace(workspace, summary.workspace)
     summary.sessionRevision = revision
     summary.updatedAtMs = summary.updatedAtMs > updatedAt ? summary.updatedAtMs : updatedAt
+    if (turnStartedAt !== undefined) summary.turnStartedAtMs = turnStartedAt
     summary.state = pending.length ? TaskState.WAITING_ON_USER : state
     summary.message = message
     this.summaries.set(taskId, summary)

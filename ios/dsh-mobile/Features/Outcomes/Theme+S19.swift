@@ -14,9 +14,6 @@ extension DSHTheme {
     static let s19ErrorFill = Color.black.opacity(0.35)
     /// The stopped card: neutral, like the stopped bar.
     static let s19StoppedFill = Color.white.opacity(0.03)
-    /// "停在这里 · 最终回答开头": a blue line with blue text.
-    static let s19MarkerLine = DSHTheme.blue.opacity(0.45)
-    static let s19MarkerText = Color(hex: 0x8B9DFE)
     /// The secondary button in the card ("复制错误").
     static let s19SecondaryButton = Color.white.opacity(0.08)
 }

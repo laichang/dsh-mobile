@@ -65,8 +65,8 @@ final class S19OutcomesUITests: XCTestCase {
         app.buttons.matching(identifier: "drawer.session").matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
     }
 
-    /// A done session that this phone has not shown opens at the start of its final answer, under
-    /// "停在这里 · 最终回答开头". Once read, it opens at the end, as before.
+    /// A done session that this phone has not shown opens at the start of its final answer, right
+    /// under the process row, with no marker (S27, D76). Once read, it opens at the end, as before.
     func testDoneSessionNotReadOpensAtTheStartOfTheFinalAnswer() {
         let app = launch()
         send(app, Self.donePrompt)
@@ -90,21 +90,20 @@ final class S19OutcomesUITests: XCTestCase {
         waitFor("value == 'unread'", on: mark)
         row.tap()
 
-        // It opens at the start of the final answer: the marker is at the top of the transcript,
-        // the answer starts under it and goes on below the screen.
-        let marker = any(app, "outcome.answerStart")
-        XCTAssertTrue(marker.waitForExistence(timeout: 15), app.debugDescription)
-        waitFor("label == '停在这里 · 最终回答开头'", on: marker)
+        // It opens at the start of the final answer: the process row is at the top of the
+        // transcript, the answer starts right under it and goes on below the screen.
         let scroll = app.scrollViews["session.transcript"]
+        waitFor("value == 'answerStart'", on: scroll)
         let transcript = any(app, "transcript.text")
         let footer = any(app, "outcome.footer")
         waitFor("value BEGINSWITH 'Done: the CI test passes again'", on: transcript)
         let process = any(app, "outcome.process")
-        eventually("the process row and the marker are at the top of the transcript") {
-            process.isHittable && marker.isHittable && abs(process.frame.minY - scroll.frame.minY) < 40
-                && marker.frame.minY - scroll.frame.minY < 90
+        eventually("the process row and the answer's start are at the top of the transcript") {
+            process.isHittable && abs(process.frame.minY - scroll.frame.minY) < 40
+                && transcript.frame.minY - scroll.frame.minY < 90
         }
-        XCTAssertGreaterThanOrEqual(transcript.frame.minY, marker.frame.maxY - 1, "the answer starts under the marker")
+        XCTAssertGreaterThanOrEqual(transcript.frame.minY, process.frame.maxY - 1, "the answer starts under the process row")
+        XCTAssertFalse(any(app, "outcome.answerStart").exists, "no marker (S27)")
         XCTAssertGreaterThan(transcript.frame.maxY, scroll.frame.maxY, "the rest of the answer is below the screen")
         XCTAssertFalse(footer.isHittable, "the page did not open at the end")
         // The process is one row: steps and the approval answered on the Web.
@@ -120,14 +119,13 @@ final class S19OutcomesUITests: XCTestCase {
         app.buttons["sheet.done"].tap()
         XCTAssertTrue(any(app, "milestone.timeline").waitForNonExistence(timeout: 10))
 
-        // Read now: the next time it opens at the end, with no marker.
+        // Read now: the next time it opens at the end.
         newSession(app)
         openDrawer(app)
         waitFor("value != 'unread'", on: mark)
         drawerRow(app, Self.donePrompt).tap()
         XCTAssertTrue(footer.waitForExistence(timeout: 15), app.debugDescription)
         eventually("the read session opens at the end") { footer.isHittable }
-        XCTAssertFalse(marker.exists, "no marker once read")
         saveShot("s19-done-read")
     }
 

@@ -402,92 +402,98 @@ public nonisolated struct Dshm_V1_Response: Sendable {
 }
 
 /// Bridge → app, unsolicited.
-public nonisolated struct Dshm_V1_Event: Sendable {
+public nonisolated struct Dshm_V1_Event: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var body: Dshm_V1_Event.OneOf_Body? = nil
+  public var body: OneOf_Body? {
+    get {return _storage._body}
+    set {_uniqueStorage()._body = newValue}
+  }
 
   /// T0: 1–19
   public var assistantChunk: Dshm_V1_AssistantChunk {
     get {
-      if case .assistantChunk(let v)? = body {return v}
+      if case .assistantChunk(let v)? = _storage._body {return v}
       return Dshm_V1_AssistantChunk()
     }
-    set {body = .assistantChunk(newValue)}
+    set {_uniqueStorage()._body = .assistantChunk(newValue)}
   }
 
   public var taskEnded: Dshm_V1_TaskEnded {
     get {
-      if case .taskEnded(let v)? = body {return v}
+      if case .taskEnded(let v)? = _storage._body {return v}
       return Dshm_V1_TaskEnded()
     }
-    set {body = .taskEnded(newValue)}
+    set {_uniqueStorage()._body = .taskEnded(newValue)}
   }
 
   /// S3: 60–79
   public var milestoneAdded: Dshm_V1_MilestoneAdded {
     get {
-      if case .milestoneAdded(let v)? = body {return v}
+      if case .milestoneAdded(let v)? = _storage._body {return v}
       return Dshm_V1_MilestoneAdded()
     }
-    set {body = .milestoneAdded(newValue)}
+    set {_uniqueStorage()._body = .milestoneAdded(newValue)}
   }
 
   /// S2: 40–59 (s2.proto)
   public var taskUpserted: Dshm_V1_TaskUpserted {
     get {
-      if case .taskUpserted(let v)? = body {return v}
+      if case .taskUpserted(let v)? = _storage._body {return v}
       return Dshm_V1_TaskUpserted()
     }
-    set {body = .taskUpserted(newValue)}
+    set {_uniqueStorage()._body = .taskUpserted(newValue)}
   }
 
   public var logReset: Dshm_V1_LogReset {
     get {
-      if case .logReset(let v)? = body {return v}
+      if case .logReset(let v)? = _storage._body {return v}
       return Dshm_V1_LogReset()
     }
-    set {body = .logReset(newValue)}
+    set {_uniqueStorage()._body = .logReset(newValue)}
   }
 
   public var approvalPending: Dshm_V1_ApprovalPending {
     get {
-      if case .approvalPending(let v)? = body {return v}
+      if case .approvalPending(let v)? = _storage._body {return v}
       return Dshm_V1_ApprovalPending()
     }
-    set {body = .approvalPending(newValue)}
+    set {_uniqueStorage()._body = .approvalPending(newValue)}
   }
 
   public var approvalResolved: Dshm_V1_ApprovalResolved {
     get {
-      if case .approvalResolved(let v)? = body {return v}
+      if case .approvalResolved(let v)? = _storage._body {return v}
       return Dshm_V1_ApprovalResolved()
     }
-    set {body = .approvalResolved(newValue)}
+    set {_uniqueStorage()._body = .approvalResolved(newValue)}
   }
 
   public var modelSelected: Dshm_V1_ModelSelected {
     get {
-      if case .modelSelected(let v)? = body {return v}
+      if case .modelSelected(let v)? = _storage._body {return v}
       return Dshm_V1_ModelSelected()
     }
-    set {body = .modelSelected(newValue)}
+    set {_uniqueStorage()._body = .modelSelected(newValue)}
   }
 
   /// S17 (transcript.proto)
   public var transcriptBlock: Dshm_V1_TranscriptBlock {
     get {
-      if case .transcriptBlock(let v)? = body {return v}
+      if case .transcriptBlock(let v)? = _storage._body {return v}
       return Dshm_V1_TranscriptBlock()
     }
-    set {body = .transcriptBlock(newValue)}
+    set {_uniqueStorage()._body = .transcriptBlock(newValue)}
   }
 
   /// S2: per-host monotonic sequence number in the bridge's event log (s2.proto), from 1.
   /// 0 when the event isn't logged (LogReset).
-  public var hostSeq: UInt64 = 0
+  public var hostSeq: UInt64 {
+    get {_storage._hostSeq}
+    set {_uniqueStorage()._hostSeq = newValue}
+  }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -509,6 +515,8 @@ public nonisolated struct Dshm_V1_Event: Sendable {
   }
 
   public init() {}
+
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 /// First request on every connection; the bridge answers with its own Hello.
@@ -1246,191 +1254,229 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
   public static let protoMessageName: String = _protobuf_package + ".Event"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}&host_seq\0\u{3}task_upserted\0\u{3}log_reset\0\u{4}\u{12}milestone_added\0\u{4}\u{14}approval_pending\0\u{3}approval_resolved\0\u{4}'model_selected\0\u{4}\\\u{3}transcript_block\0")
 
+  fileprivate class _StorageClass {
+    var _body: Dshm_V1_Event.OneOf_Body?
+    var _hostSeq: UInt64 = 0
+
+      // This property is used as the initial default value for new instances of the type.
+      // The type itself is protecting the reference to its storage via CoW semantics.
+      // This will force a copy to be made of this reference when the first mutation occurs;
+      // hence, it is safe to mark this as `nonisolated(unsafe)`.
+      static nonisolated(unsafe) let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _body = source._body
+      _hostSeq = source._hostSeq
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try {
-        var v: Dshm_V1_AssistantChunk?
-        var hadOneofValue = false
-        if let current = self.body {
-          hadOneofValue = true
-          if case .assistantChunk(let m) = current {v = m}
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try {
+          var v: Dshm_V1_AssistantChunk?
+          var hadOneofValue = false
+          if let current = _storage._body {
+            hadOneofValue = true
+            if case .assistantChunk(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {
+            if hadOneofValue {try decoder.handleConflictingOneOf()}
+            _storage._body = .assistantChunk(v)
+          }
+        }()
+        case 2: try {
+          var v: Dshm_V1_TaskEnded?
+          var hadOneofValue = false
+          if let current = _storage._body {
+            hadOneofValue = true
+            if case .taskEnded(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {
+            if hadOneofValue {try decoder.handleConflictingOneOf()}
+            _storage._body = .taskEnded(v)
+          }
+        }()
+        case 40: try { try decoder.decodeSingularUInt64Field(value: &_storage._hostSeq) }()
+        case 41: try {
+          var v: Dshm_V1_TaskUpserted?
+          var hadOneofValue = false
+          if let current = _storage._body {
+            hadOneofValue = true
+            if case .taskUpserted(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {
+            if hadOneofValue {try decoder.handleConflictingOneOf()}
+            _storage._body = .taskUpserted(v)
+          }
+        }()
+        case 42: try {
+          var v: Dshm_V1_LogReset?
+          var hadOneofValue = false
+          if let current = _storage._body {
+            hadOneofValue = true
+            if case .logReset(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {
+            if hadOneofValue {try decoder.handleConflictingOneOf()}
+            _storage._body = .logReset(v)
+          }
+        }()
+        case 60: try {
+          var v: Dshm_V1_MilestoneAdded?
+          var hadOneofValue = false
+          if let current = _storage._body {
+            hadOneofValue = true
+            if case .milestoneAdded(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {
+            if hadOneofValue {try decoder.handleConflictingOneOf()}
+            _storage._body = .milestoneAdded(v)
+          }
+        }()
+        case 80: try {
+          var v: Dshm_V1_ApprovalPending?
+          var hadOneofValue = false
+          if let current = _storage._body {
+            hadOneofValue = true
+            if case .approvalPending(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {
+            if hadOneofValue {try decoder.handleConflictingOneOf()}
+            _storage._body = .approvalPending(v)
+          }
+        }()
+        case 81: try {
+          var v: Dshm_V1_ApprovalResolved?
+          var hadOneofValue = false
+          if let current = _storage._body {
+            hadOneofValue = true
+            if case .approvalResolved(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {
+            if hadOneofValue {try decoder.handleConflictingOneOf()}
+            _storage._body = .approvalResolved(v)
+          }
+        }()
+        case 120: try {
+          var v: Dshm_V1_ModelSelected?
+          var hadOneofValue = false
+          if let current = _storage._body {
+            hadOneofValue = true
+            if case .modelSelected(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {
+            if hadOneofValue {try decoder.handleConflictingOneOf()}
+            _storage._body = .modelSelected(v)
+          }
+        }()
+        case 340: try {
+          var v: Dshm_V1_TranscriptBlock?
+          var hadOneofValue = false
+          if let current = _storage._body {
+            hadOneofValue = true
+            if case .transcriptBlock(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {
+            if hadOneofValue {try decoder.handleConflictingOneOf()}
+            _storage._body = .transcriptBlock(v)
+          }
+        }()
+        default: break
         }
-        try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {
-          if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.body = .assistantChunk(v)
-        }
-      }()
-      case 2: try {
-        var v: Dshm_V1_TaskEnded?
-        var hadOneofValue = false
-        if let current = self.body {
-          hadOneofValue = true
-          if case .taskEnded(let m) = current {v = m}
-        }
-        try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {
-          if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.body = .taskEnded(v)
-        }
-      }()
-      case 40: try { try decoder.decodeSingularUInt64Field(value: &self.hostSeq) }()
-      case 41: try {
-        var v: Dshm_V1_TaskUpserted?
-        var hadOneofValue = false
-        if let current = self.body {
-          hadOneofValue = true
-          if case .taskUpserted(let m) = current {v = m}
-        }
-        try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {
-          if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.body = .taskUpserted(v)
-        }
-      }()
-      case 42: try {
-        var v: Dshm_V1_LogReset?
-        var hadOneofValue = false
-        if let current = self.body {
-          hadOneofValue = true
-          if case .logReset(let m) = current {v = m}
-        }
-        try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {
-          if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.body = .logReset(v)
-        }
-      }()
-      case 60: try {
-        var v: Dshm_V1_MilestoneAdded?
-        var hadOneofValue = false
-        if let current = self.body {
-          hadOneofValue = true
-          if case .milestoneAdded(let m) = current {v = m}
-        }
-        try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {
-          if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.body = .milestoneAdded(v)
-        }
-      }()
-      case 80: try {
-        var v: Dshm_V1_ApprovalPending?
-        var hadOneofValue = false
-        if let current = self.body {
-          hadOneofValue = true
-          if case .approvalPending(let m) = current {v = m}
-        }
-        try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {
-          if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.body = .approvalPending(v)
-        }
-      }()
-      case 81: try {
-        var v: Dshm_V1_ApprovalResolved?
-        var hadOneofValue = false
-        if let current = self.body {
-          hadOneofValue = true
-          if case .approvalResolved(let m) = current {v = m}
-        }
-        try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {
-          if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.body = .approvalResolved(v)
-        }
-      }()
-      case 120: try {
-        var v: Dshm_V1_ModelSelected?
-        var hadOneofValue = false
-        if let current = self.body {
-          hadOneofValue = true
-          if case .modelSelected(let m) = current {v = m}
-        }
-        try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {
-          if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.body = .modelSelected(v)
-        }
-      }()
-      case 340: try {
-        var v: Dshm_V1_TranscriptBlock?
-        var hadOneofValue = false
-        if let current = self.body {
-          hadOneofValue = true
-          if case .transcriptBlock(let m) = current {v = m}
-        }
-        try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {
-          if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.body = .transcriptBlock(v)
-        }
-      }()
-      default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    switch self.body {
-    case .assistantChunk?: try {
-      guard case .assistantChunk(let v)? = self.body else { preconditionFailure() }
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    }()
-    case .taskEnded?: try {
-      guard case .taskEnded(let v)? = self.body else { preconditionFailure() }
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }()
-    default: break
-    }
-    if self.hostSeq != 0 {
-      try visitor.visitSingularUInt64Field(value: self.hostSeq, fieldNumber: 40)
-    }
-    switch self.body {
-    case .taskUpserted?: try {
-      guard case .taskUpserted(let v)? = self.body else { preconditionFailure() }
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 41)
-    }()
-    case .logReset?: try {
-      guard case .logReset(let v)? = self.body else { preconditionFailure() }
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 42)
-    }()
-    case .milestoneAdded?: try {
-      guard case .milestoneAdded(let v)? = self.body else { preconditionFailure() }
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 60)
-    }()
-    case .approvalPending?: try {
-      guard case .approvalPending(let v)? = self.body else { preconditionFailure() }
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 80)
-    }()
-    case .approvalResolved?: try {
-      guard case .approvalResolved(let v)? = self.body else { preconditionFailure() }
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 81)
-    }()
-    case .modelSelected?: try {
-      guard case .modelSelected(let v)? = self.body else { preconditionFailure() }
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 120)
-    }()
-    case .transcriptBlock?: try {
-      guard case .transcriptBlock(let v)? = self.body else { preconditionFailure() }
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 340)
-    }()
-    default: break
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
+      switch _storage._body {
+      case .assistantChunk?: try {
+        guard case .assistantChunk(let v)? = _storage._body else { preconditionFailure() }
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+      }()
+      case .taskEnded?: try {
+        guard case .taskEnded(let v)? = _storage._body else { preconditionFailure() }
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+      }()
+      default: break
+      }
+      if _storage._hostSeq != 0 {
+        try visitor.visitSingularUInt64Field(value: _storage._hostSeq, fieldNumber: 40)
+      }
+      switch _storage._body {
+      case .taskUpserted?: try {
+        guard case .taskUpserted(let v)? = _storage._body else { preconditionFailure() }
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 41)
+      }()
+      case .logReset?: try {
+        guard case .logReset(let v)? = _storage._body else { preconditionFailure() }
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 42)
+      }()
+      case .milestoneAdded?: try {
+        guard case .milestoneAdded(let v)? = _storage._body else { preconditionFailure() }
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 60)
+      }()
+      case .approvalPending?: try {
+        guard case .approvalPending(let v)? = _storage._body else { preconditionFailure() }
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 80)
+      }()
+      case .approvalResolved?: try {
+        guard case .approvalResolved(let v)? = _storage._body else { preconditionFailure() }
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 81)
+      }()
+      case .modelSelected?: try {
+        guard case .modelSelected(let v)? = _storage._body else { preconditionFailure() }
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 120)
+      }()
+      case .transcriptBlock?: try {
+        guard case .transcriptBlock(let v)? = _storage._body else { preconditionFailure() }
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 340)
+      }()
+      default: break
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Dshm_V1_Event, rhs: Dshm_V1_Event) -> Bool {
-    if lhs.body != rhs.body {return false}
-    if lhs.hostSeq != rhs.hostSeq {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._body != rhs_storage._body {return false}
+        if _storage._hostSeq != rhs_storage._hostSeq {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
