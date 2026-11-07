@@ -41,7 +41,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | T0 | done | merged `84db2e8` | 2026-11-07 | — |
 | X1 | done | merged `ccc8ff9` | 2026-11-05 | — |
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
-| X3 | review | merged `7f1b4b8` | 2026-11-05 | User runs the benchmark on a real phone and confirms D10 (§9) |
+| X3 | review | merged `7f1b4b8` | 2026-11-08 | Deferred by the user to after M1: device benchmark, then D10 (§7) |
 | X4 | done | merged `ccc8ff9` | 2026-11-05 | — |
 | S1 | done | merged `1f35fa2` (batch 1) | 2026-11-08 | — |
 | S2 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D20, D23 in §9) |
@@ -51,7 +51,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S6 | done | merged `d62fd6d` | 2026-11-05 | — (provisional D31 in §9) |
 | S7 | done | merged `21aabd8` | 2026-11-05 | — (provisional D37 in §9) |
 | S8 | done | merged `8e9fa87` | 2026-11-08 | — |
-| S9 | review | merged `575bf62` | 2026-11-05 | User tests two real Macs (§9) |
+| S9 | review | merged `575bf62` | 2026-11-08 | Deferred by the user to after M1: two real Macs (§7) |
 | S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
 | S11 | review | merged `12e1afc` | 2026-11-05 | User checks onboarding on a fresh install (§9) |
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | Hosted compatibility checks deferred; local runner available (§8) |
@@ -1288,6 +1288,7 @@ Follow-ups the user asked for (2026-11-07):
 - **First after M1 closes:** a reconnect tries every saved address of a host, not only the first (for example LAN, then Tailscale). Changes D21 (e).
 - **M2:** write the bridge host log to disk, so that a bridge or Mac restart does not mark running tasks as failed. Do it together with S4's held approvals (D20).
 - **Later:** with `transcript.v1` (D61), "N 步" on the done row can count tool calls instead of milestones (D60). Then the row's › opens the tool calls, so that the user sees each step.
+- **Deferred by the user (2026-11-08), not part of the M1 exit:** the X3 device benchmark and the D10 confirmation ("after the version is stable"; D10 stays provisional until then), and S9's two-Mac check ("when I have a second Mac"). Their `[human]` items stay open in the X3 and S9 sections; their §9 rows 27, 28 and 36 are removed. The user verifies them later.
 
 For M2, a reply sent from the phone's session detail view goes into that same DSH session and appears there on the Web. Sending from the home screen creates a new task.
 
@@ -1661,15 +1662,14 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-08 · S29 assigned.** Branch `claude/s29-revoke-forget`, simulator `dshm-S29`, DSHM_HOME `~/.dshm/home-s29`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D82–D84. `eval "$(scripts/slice-env S29)"` exports them.
 
+- **2026-11-08 · User deferred the X3 benchmark and S9's two-Mac check; S29 started.** The user deferred the X3 device benchmark and the D10 confirmation until the version is stable, and S9's two-Mac check until a second Mac is available. Agents cannot delete Done when items, so the items stay open; §9 rows 27, 28 and 36 move to a §7 note. The user passed S11's two first-run checks (ticks pending). The revoke of this device on the real iPhone kept the host and retried every few seconds: fix slice S29 (e94a04e).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
-| 27 | X3 | `[human]` | Benchmark 2 candidates on a 5,000-line transcript on a real iPhone. Run the signed test in spikes/x3-markdown/README.md. | `main` | `7f1b4b8` |
-| 28 | X3 | `[human]` / decision | Confirm provisional D10 streaming renderer choice after the device benchmark. | `main` | `7f1b4b8` |
-| 36 | S9 | `[human]` | Use two real Macs, send a task to each, then disconnect one and verify its name and cached task in the unified list. | `main` | `575bf62` |
 | 42 | S11 | `[human]` | On a fresh install, check that the app explains its purpose and the need for a reachable DSH host. | `main` | `12e1afc` |
 | 43 | S11 | `[human]` | Have someone unfamiliar with DSH pair with an already-running host and obtain the first answer without help. | `main` | `12e1afc` |
 | 54 | S21 | `[human]` | On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that. Needs a paired iPhone and a running host with the S21 app. | `main` | `13648eb` |
