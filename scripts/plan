@@ -14,6 +14,9 @@ Coordinator (on main):
   plan row <ID> <status> [--branch T] [--next T]       change the §0 row (Updated = today)
   plan log "<title>" [--body T|-]                       add a §8 entry (- = body from stdin)
   plan pending <slice> <kind> "<item>" [--branch B] [--commit-ref C]   add a §9 row
+  plan fix "<name>" --bug "<what the user saw>" [--needs ID]
+        a bug that the user reported: add a fix slice (next S number, a §0 row, a section);
+        then `plan assign` and start a session for it. The coordinator does not fix code.
   plan assign <ID> --branch B [--worktree P] [--from C] [--decisions N] [--note T]
         give the slice its resources (scripts/slice-env), set §0 to doing, add the §8 entry
   plan merged <ID> <merge-commit> [--note T]
@@ -207,6 +210,44 @@ def cmd_log(p, a):
     return p.save(a, f"PLAN §8: {a.title.strip().rstrip('.')}")
 
 
+def cmd_fix(p, a):
+    """A bug that the user reported becomes a fix slice: a §0 row and a section (WORKFLOW.md §5.2)."""
+    need_main()
+    rows = dshm.status_table(p.lines)
+    nums = [int(r["id"][1:]) for _, r in rows if re.fullmatch(r"S\d+", r["id"])]
+    nums += [int(m.group(1)) for l in p.lines if (m := re.match(r"### S(\d+) ·", l))]
+    sid = f"S{max(nums, default=0) + 1}"
+    name, bug = a.name.strip().rstrip("."), " ".join(a.bug.split()).rstrip(".")
+    section = [
+        f"### {sid} · Fix: {name}",
+        "",
+        f"**Status** todo · **Needs** {a.needs or '—'} · **Branch** —",
+        "",
+        f"**Why**: The user reported a bug on {dshm.today()}: {bug}.",
+        "",
+        "**Cuts**: Find the cause. Fix it. Add a test that fails without the fix.",
+        "",
+        "**Demo**: —",
+        "",
+        "**Done when**",
+        "- [ ] [auto] A test reproduces the reported bug and passes with the fix — Evidence:",
+        "- [ ] [human] The user no longer sees the bug — Evidence:",
+        "",
+        "**Not**: Other changes. Report other bugs to the coordinator as new fix slices.",
+        "",
+        "**Log**: —",
+        "",
+    ]
+    last = max(i for i, l in enumerate(p.lines) if re.match(r"### S\d+ ·", l))
+    _, end = dshm.slice_bounds(p.lines, p.lines[last].split(" ·")[0][4:])
+    p.lines[end:end] = section
+    i = rows[-1][0]
+    p.lines.insert(i + 1, dshm.format_row([sid, "todo", "—", dshm.today(),
+                                          f"Fix: {name.replace('|', '/')}; start a fix session"]))
+    print(f"plan: new fix slice {sid}")
+    return p.save(a, f"PLAN: {sid} fix slice ({name})")
+
+
 def cmd_pending(p, a):
     need_main()
     n = p.add_pending(a.slice, a.kind, a.item, f"`{a.branch}`", f"`{a.commit_ref}`" if a.commit_ref else "—")
@@ -360,6 +401,8 @@ def main():
     sp = add("row", cmd_row); sp.add_argument("id"); sp.add_argument("status")
     sp.add_argument("--branch"); sp.add_argument("--next")
     sp = add("log", cmd_log); sp.add_argument("title"); sp.add_argument("--body")
+    sp = add("fix", cmd_fix); sp.add_argument("name"); sp.add_argument("--bug", required=True)
+    sp.add_argument("--needs")
     sp = add("pending", cmd_pending); sp.add_argument("slice"); sp.add_argument("kind"); sp.add_argument("item")
     sp.add_argument("--branch", default="main"); sp.add_argument("--commit-ref")
     sp = add("assign", cmd_assign); sp.add_argument("id"); sp.add_argument("--branch", required=True)

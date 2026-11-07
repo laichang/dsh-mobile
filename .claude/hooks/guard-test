@@ -173,16 +173,27 @@ git merge --no-ff -q -m m claude/s22-x >/dev/null 2>&1; r reworded-slice-into-ma
 git merge --no-ff -q -m m claude/s24-z >/dev/null 2>&1; r guard-change-slice-into-main $?; git merge --abort 2>/dev/null
 git checkout -q claude/s23-y
 git merge --no-ff -q -m m main >/dev/null 2>&1; r main-with-guard-change-into-slice $?
-git checkout -q main
+# On a slice branch: build output, large files, and code.
+git checkout -q -b claude/s25-w main
 mkdir -p ios/DSHKit/.build && echo x > ios/DSHKit/.build/a.o && git add -f ios/DSHKit/.build/a.o
 git commit -qm b >/dev/null 2>&1; r build-output $?; git reset -q; rm -rf ios/DSHKit/.build
 head -c 5000000 /dev/urandom > big.bin; git add big.bin; git commit -qm b >/dev/null 2>&1; r large-file $?; git reset -q; rm big.bin
-echo "// ok" >> ios/DSHKit/Package.swift; git commit -qam ok >/dev/null 2>&1; r normal-commit $?
+echo "// ok" >> ios/DSHKit/Package.swift; git commit -qam ok >/dev/null 2>&1; r code-on-slice-branch $?
+# On main: code only by a merge (a bug becomes a fix slice).
+git checkout -q main
+echo "// fix" >> bridge/src/index.ts
+git commit -qam fix 2>&1 | grep -q "CODE ON MAIN: bridge/src/index.ts"; r code-on-main-says-why $?
+git commit -qam fix >/dev/null 2>&1; r code-on-main $?; git checkout -q -- bridge/src/index.ts
+echo "note" >> README.md; git commit -qam docs >/dev/null 2>&1; r docs-on-main $?
+echo "# x" >> scripts/resources.tsv; git commit -qam registry >/dev/null 2>&1; r registry-on-main $?
+git merge --no-ff -q -m m claude/s25-w >/dev/null 2>&1; r code-slice-merge-into-main $?
 scripts/check-plan >/dev/null 2>&1; r check-plan-no-args $?
 '''
 GIT_HOOKS_WANT = {"reworded-slice-into-main": "1", "guard-change-slice-into-main": "1",
                   "main-with-guard-change-into-slice": "0", "build-output": "1", "large-file": "1",
-                  "normal-commit": "0", "check-plan-no-args": "0"}
+                  "code-on-slice-branch": "0", "code-on-main-says-why": "0", "code-on-main": "1",
+                  "docs-on-main": "0", "registry-on-main": "0",
+                  "code-slice-merge-into-main": "0", "check-plan-no-args": "0"}
 
 
 def main():

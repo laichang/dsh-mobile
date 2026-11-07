@@ -47,4 +47,6 @@ git config core.hooksPath .githooks
 
 The pre-commit and pre-merge-commit hooks run `scripts/check-plan`. **Never bypass it**: no `git commit --no-verify` / `-n`, no overriding `core.hooksPath`. If a check blocks you, ask the user in the conversation.
 
+Code reaches `main` only through the merge of a slice branch; on `main` the pre-commit hook stops any other commit that changes code. A bug the user reports becomes a fix slice (`scripts/plan fix`, WORKFLOW.md §5.2), even when the coordinator is the session that hears about it.
+
 A PLAN.md rewrite the user has approved is made and committed by the user, by hand, with `CHECK_PLAN_ALLOW=1 git commit …`. Agents never set `CHECK_PLAN_ALLOW`.

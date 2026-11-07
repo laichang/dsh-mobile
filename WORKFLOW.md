@@ -76,11 +76,13 @@ Note: Codex records trust against the hash of each hook. When a hook file change
 | Plan file §9 (pending user confirmation) | Coordinator | `main` |
 | One slice section, its Done when items, and its Log | Slice owner | Slice branch |
 | Code and tests of a slice | Slice owner | Slice branch |
+| Fix of a bug that the user reports | Owner of the fix slice (§5.2) | Fix slice branch |
 | Merge into `main` | Coordinator | `main` |
 | `[human]` items, `Dxx` confirmation, push, pull request | User | — |
 
 Rules:
 
+- The coordinator does not change code (`ios/`, `bridge/`, `protocol/`, `spikes/`, `scripts/`). Code goes into `main` only through the merge of a slice branch. The pre-commit hook stops a commit on `main` that changes code and is not a merge (§12).
 - A slice owner edits only the section of its own slice.
 - A slice owner does not edit §0, §8, or §9. Parallel branches that edit adjacent rows cause merge conflicts.
 - If §0 must change, the slice owner writes this in its Log and its report. The coordinator then changes §0.
@@ -95,6 +97,7 @@ Rules:
 |---|---|---|
 | Coordinator | `scripts/plan assign <ID> --branch <branch> --commit` | Gives the resources (§6), sets §0 to `doing`, and adds the §8 entry |
 | Coordinator | `scripts/plan merged <ID> <merge commit> --commit` | Checks the merge commit (§10, condition 3), sets §0, adds the §9 rows and the §8 entry |
+| Coordinator | `scripts/plan fix "<name>" --bug "<what the user saw>" --commit` | Adds a fix slice for a bug that the user reports (§5.2): the next S number, a §0 row, and a section with a regression test item |
 | Coordinator | `scripts/plan row`, `scripts/plan log`, `scripts/plan pending` | Changes one §0 row, adds one §8 entry, adds one §9 row |
 | Coordinator | `scripts/plan title` | Writes the coordinator status title (§7.1) from §0 |
 | Slice owner | `scripts/plan tick <ID> "<part of the item>" --evidence "<pointers>"` | Ticks one `[auto]` or `[ui]` item |
@@ -149,6 +152,12 @@ This message gives the coordinator permission for sessions, workflows, backgroun
   - If no next event arrives and the slice session is idle, do the recovery steps (§5.4) for that slice.
 - Each brief tells the slice owner: "When a background job ends, examine its result and end a turn with a report. Do not end the slice work while a job runs."
 - Do not add merge conditions to §10. If a condition in §10 is not sufficient, propose a change to this file (§14).
+- When the user reports a bug, do not fix it in the coordinator session. This rule also applies after the run ends, for example while the user does the `[human]` items. Do these steps:
+  1. Add a fix slice: `scripts/plan fix "<name>" --bug "<what the user saw>" --commit`. Use one fix slice for each bug. Bugs in the same part of the code can share one fix slice.
+  2. Give it its resources: `scripts/plan assign <ID> --branch claude/<id>-<name> --commit`.
+  3. Start a session for it (§5.3). Put the words of the user in the brief.
+  4. Merge it with the conditions in §10, as for each slice.
+  Only the user can put a code change directly into `main` (`CHECK_PLAN_ALLOW=1`, by hand).
 - Stop only when no slice can move without the user. Then tell the user what waits for them.
 
 ### 5.3 Session start limit and fallback
@@ -356,7 +365,7 @@ Only the user can do these things:
 
 | Guard | Applies to | What it does |
 |---|---|---|
-| `.githooks/pre-commit` | All tools | Runs `scripts/check-plan` on each commit. It also stops build output (`.build/`, `node_modules/`, `DerivedData/`, `*.xcresult`) and files larger than 4 MB. |
+| `.githooks/pre-commit` | All tools | Runs `scripts/check-plan` on each commit. It also stops build output (`.build/`, `node_modules/`, `DerivedData/`, `*.xcresult`) and files larger than 4 MB. On `main`, it stops a commit that changes code and is not a merge (§3). Git does not run this hook for `git cherry-pick`, `git rebase`, or `git revert`. Thus do not use these commands on `main`. |
 | `.githooks/pre-merge-commit` | All tools | Runs the same checks on each merge commit. In a merge of `main` into a slice branch, it judges the plan changes of the slice against `main`, and it lets through guard files that come unchanged from `main`. |
 | `.claude/hooks/plan-guard` | Claude Code only | Stops a bad edit of the plan file before it occurs. Stops a shell command that writes the plan file: use `scripts/plan` (§3.1) or the Edit tool. Asks the user before an edit of a guard file, also from a shell command. It checks the paths in each worktree of the repository. |
 | `.claude/hooks/git-guard` | Claude Code only | Stops `--no-verify` on git, `core.hooksPath` changes, and `CHECK_PLAN_ALLOW`. It parses the command. A command that only reads or writes text with these words (`grep`, a commit message, a file) passes. |
@@ -369,6 +378,7 @@ Rules for all agents:
 - Do not set `CHECK_PLAN_ALLOW`. Only the user sets it, by hand.
 - Do not tick a `[human]` item. The pre-commit hook cannot tell who ticked an item. Thus this rule depends on you.
 - Do not edit a guard file without permission.
+- Do not change code on `main`. Code goes into `main` only through the merge of a slice branch. A bug that the user reports becomes a fix slice (§5.2).
 
 Differences in Codex:
 
@@ -405,3 +415,4 @@ If a tool has no function for a capability, use the fallback in this table. Then
 - **2026-11-06**: The shutdown by the guard (§6.1) now also occurs after a tool kills the script. The guard shuts down a `dshm-*` simulator whose owner is not running.
 - **2026-11-07**: Added the bookkeeping commands (§3.1, `scripts/plan`), the run status (`scripts/status`, in §5.4 and §5.5), and the resource registry with blocks of decision numbers (§6, `scripts/slice-env`, `scripts/resources.tsv`). The code key of the parts (§10.1) is now the content of the worktree, not the commit. Reason: a review of all sessions to 2026-11-07. About one quarter of all commits were hand edits of §0, §8, and §9. The user asked for the progress more than 15 times, and each answer was a set of hand-made commands. Parallel slices took the same `Dxx` number, and agents renumbered decisions 10 times. A commit with no code change made the review run the passed parts again.
 - **2026-11-07**: Guards (§10, §12). git-guard parses the command. A command that only mentions a blocked word passes. plan-guard also checks shell commands (writes to the plan file and to guard files) and the paths in each worktree. `scripts/check-plan` with no arguments runs as `--staged`. It also stops build output and large files. The new `pre-merge-commit` hook checks each merge commit. `.claude/hooks/guard-test` tests the guards. Reason: git-guard stopped read-only commands. Agents edited the plan file through shell commands, and plan-guard did not see these edits. A session in `main` edited files in a worktree with no check. A 28 MB build directory went into a commit. Merge commits had no automatic check.
+- **2026-11-07**: Bug fixes (§3, §3.1, §5.2, §12). The coordinator does not change code. A bug that the user reports becomes a fix slice (`scripts/plan fix`), with its own branch, session, and merge (§10). On `main`, the pre-commit hook stops a commit that changes code and is not a merge. Reason: after the run ended, the user reported bugs from a real iPhone to the coordinator. The coordinator fixed them on `main` (`505aa7d`, `2c650d1`), with no slice branch and no review run. No rule said who fixes a bug after a merge, and no hook stopped code commits on `main`.
