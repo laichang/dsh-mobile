@@ -69,7 +69,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S23 | review | merged `47acc0d` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
 | S24 | review | merged `28a6409` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
 | S25 | doing | `claude/s25-app-icon` | 2026-11-07 | Slice owner builds (§8) |
-| S26 | todo | — | 2026-11-07 | Fix: Page title centering; start a fix session |
+| S26 | doing | `claude/s26-title-center` | 2026-11-07 | Slice owner builds (§8) |
 
 ## 1. Approach
 
@@ -1567,6 +1567,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-07 · S25 assigned.** Branch `claude/s25-app-icon`, simulator `dshm-S25`, DSHM_HOME `~/.dshm/home-s25`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D70–D72. `eval "$(scripts/slice-env S25)"` exports them.
 
 - **2026-11-07 · S24 merged.** Merged as `28a6409`; `scripts/check-plan` on the merge commit passed. `scripts/review S24` at `8ca4d55`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S24-8ca4d55.txt`). 1 open `[human]` item, so S24 is `review`. §9 rows 62, 63 (D67).
+
+- **2026-11-07 · S26 assigned.** Branch `claude/s26-title-center`, simulator `dshm-S26`, DSHM_HOME `~/.dshm/home-s26`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D73–D75. `eval "$(scripts/slice-env S26)"` exports them.
 
 ## 9. Pending user confirmation
 
