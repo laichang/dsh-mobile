@@ -1169,7 +1169,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: —
 
 **Done when**
-- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S26TitleCenterUITests/testNewSessionTitleIsCentered · test:S26TitleCenterUITests/testSessionAndAllTasksTitlesAreCentered · test:S26TitleCenterUITests/testLongTitleTruncatesWithoutOverlap · shot:evidence/S26/s26-new-session.png
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
