@@ -19,6 +19,11 @@ PG = str(HERE.parent / "plan-guard")
 ESC = "CHECK_PLAN" + "_ALLOW"
 NOV = "--no-" + "verify"
 HP = "core.hooks" + "Path"
+# The tests do not depend on the state of the live PLAN.md (it can have no open items).
+# They add this slice to a copy of it and edit only these items.
+FIX_AUTO = "- [ ] [auto] The guard test fixture runs — Evidence:"
+FIX_HUMAN = "- [ ] [human] The guard test fixture reads well — Evidence:"
+FIXTURE = f"\n### S99 · Guard test fixture\n\n{FIX_AUTO}\n{FIX_HUMAN}\n"
 
 
 def decision(hook, data, env=None):
@@ -126,10 +131,8 @@ def edit_cases(tmp):
     (wt / "scripts").mkdir(parents=True)
     (wt / ".git").write_text("gitdir: /nowhere\n")
     shutil.copy(pathlib.Path(R) / "scripts" / "check-plan", wt / "scripts" / "check-plan")
-    plan = (pathlib.Path(R) / "PLAN.md").read_text()
-    (wt / "PLAN.md").write_text(plan)
-    human = [l for l in plan.split("\n") if l.startswith("- [ ] [human]")][0]
-    auto = [l for l in plan.split("\n") if l.startswith("- [ ] [auto]")][0]
+    (wt / "PLAN.md").write_text((pathlib.Path(R) / "PLAN.md").read_text() + FIXTURE)
+    human, auto = FIX_HUMAN, FIX_AUTO
 
     def edit(path, old="x", new="y"):
         return {"tool_name": "Edit", "tool_input": {"file_path": str(path), "old_string": old,
@@ -150,12 +153,12 @@ def edit_cases(tmp):
 
 GIT_HOOKS_SCRIPT = r'''
 set -u
-W="$1"; T="$2"
+W="$1"; T="$2"; FIXTURE="$3"; item="$4"
 git clone -q "$W" "$T/r" && cd "$T/r" && git checkout -q -B main HEAD
 git config user.name t; git config user.email t@e
 for f in scripts/check-plan .githooks/pre-commit .githooks/pre-merge-commit; do cp "$W/$f" "$f"; done
+printf '%s' "$FIXTURE" >> PLAN.md
 git add -A; git commit -q -m tools --allow-empty
-item=$(grep -m1 '^- \[ \] \[auto\]' PLAN.md)
 # Set-up commits, made before the hooks are on (as if the user forced them).
 git checkout -q -b claude/s22-x
 python3 -c "import sys; s=open('PLAN.md').read(); i=sys.argv[1]; open('PLAN.md','w').write(s.replace(i, i.replace('[auto] ','[auto] Reworded ',1),1))" "$item"
@@ -201,7 +204,7 @@ def main():
             report(got == want, name, got)
     print("git hooks (pre-commit, pre-merge-commit), in a temporary clone")
     with tempfile.TemporaryDirectory() as tmp:
-        r = subprocess.run(["bash", "-c", GIT_HOOKS_SCRIPT, "x", R, tmp], capture_output=True, text=True)
+        r = subprocess.run(["bash", "-c", GIT_HOOKS_SCRIPT, "x", R, tmp, FIXTURE, FIX_AUTO], capture_output=True, text=True)
         got = dict(l.split() for l in r.stdout.strip().split("\n") if len(l.split()) == 2)
         for name, want in GIT_HOOKS_WANT.items():
             report(got.get(name) == want, f"{name}: exit {want}", got.get(name))
