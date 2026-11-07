@@ -41,7 +41,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | T0 | done | merged `84db2e8` | 2026-11-07 | — |
 | X1 | done | merged `ccc8ff9` | 2026-11-05 | — |
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
-| X3 | review | merged `7f1b4b8` | 2026-11-08 | Deferred by the user to after M1: device benchmark, then D10 (§7) |
+| X3 | done | merged `7f1b4b8` | 2026-11-08 | — (device benchmark and D10 deferred, §7) |
 | X4 | done | merged `ccc8ff9` | 2026-11-05 | — |
 | S1 | done | merged `1f35fa2` (batch 1) | 2026-11-08 | — |
 | S2 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D20, D23 in §9) |
@@ -51,7 +51,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S6 | done | merged `d62fd6d` | 2026-11-05 | — (provisional D31 in §9) |
 | S7 | done | merged `21aabd8` | 2026-11-05 | — (provisional D37 in §9) |
 | S8 | done | merged `8e9fa87` | 2026-11-08 | — |
-| S9 | review | merged `575bf62` | 2026-11-08 | Deferred by the user to after M1: two real Macs (§7) |
+| S9 | done | merged `575bf62` | 2026-11-08 | — (two-Mac check deferred, §7) |
 | S10 | done | merged `4a983eb` | 2026-11-05 | — (provisional D40 in §9) |
 | S11 | done | merged `12e1afc` | 2026-11-08 | — |
 | S12 | done | merged `ed3f7bf` | 2026-11-05 | Hosted compatibility checks deferred; local runner available (§8) |
@@ -1285,7 +1285,7 @@ Follow-ups the user asked for (2026-11-07):
 - **First after M1 closes:** a reconnect tries every saved address of a host, not only the first (for example LAN, then Tailscale). Changes D21 (e).
 - **M2:** write the bridge host log to disk, so that a bridge or Mac restart does not mark running tasks as failed. Do it together with S4's held approvals (D20).
 - **Later:** with `transcript.v1` (D61), "N 步" on the done row can count tool calls instead of milestones (D60). Then the row's › opens the tool calls, so that the user sees each step.
-- **Deferred by the user (2026-11-08), not part of the M1 exit:** the X3 device benchmark and the D10 confirmation ("after the version is stable"; D10 stays provisional until then), and S9's two-Mac check ("when I have a second Mac"). Their `[human]` items stay open in the X3 and S9 sections; their §9 rows 27, 28 and 36 are removed. The user verifies them later.
+- **Deferred by the user (2026-11-08), not part of the M1 exit:** the X3 device benchmark and the D10 confirmation ("after the version is stable"; D10 stays provisional until then), and S9's two-Mac check ("when I have a second Mac"). The user removed their `[human]` items from the X3 and S9 sections (`b7b01b8`) and the §9 rows 27, 28 and 36. The user verifies them later.
 
 For M2, a reply sent from the phone's session detail view goes into that same DSH session and appears there on the Web. Sending from the home screen creates a new task.
 
@@ -1662,6 +1662,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-08 · User deferred the X3 benchmark and S9's two-Mac check; S29 started.** The user deferred the X3 device benchmark and the D10 confirmation until the version is stable, and S9's two-Mac check until a second Mac is available. Agents cannot delete Done when items, so the items stay open; §9 rows 27, 28 and 36 move to a §7 note. The user passed S11's two first-run checks (ticks pending). The revoke of this device on the real iPhone kept the host and retried every few seconds: fix slice S29 (e94a04e).
 
 - **2026-11-08 · S11: user accepted the first-run checks.** User commit 237fbad. S11 is done; §9 rows 42 and 43 removed.
+
+- **2026-11-08 · User removed the deferred X3 and S9 items.** User commit b7b01b8 (CHECK_PLAN_ALLOW) removed the X3 benchmark, the D10 confirmation and S9's two-Mac items. X3 and S9 are done; the §7 note keeps the deferred checks. D10 stays provisional.
 
 ## 9. Pending user confirmation
 
