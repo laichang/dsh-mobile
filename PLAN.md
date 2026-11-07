@@ -67,9 +67,9 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
 | S22 | done | merged `4deb8d0` | 2026-11-07 | — (provisional D63 in §9) |
 | S23 | review | merged `47acc0d` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
-| S24 | review | merged `28a6409` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
-| S25 | review | merged `2a189da` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
-| S26 | review | merged `bfd1c39` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
+| S24 | done | merged `28a6409` | 2026-11-07 | — (provisional D67 in §9) |
+| S25 | done | merged `2a189da` | 2026-11-07 | — (provisional D70 in §9) |
+| S26 | done | merged `bfd1c39` | 2026-11-07 | — |
 
 ## 1. Approach
 
@@ -1588,6 +1588,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · T0, S1: user ticked bridge install and real-iPhone pairing.** User commit e9142dc. T0 is done. S1 waits on the packet capture (§9). §9 rows 10 and 24 removed. The user noted a README gap: the pairing QR does not show in dsh web's terminal; pair.js works.
 
+- **2026-11-07 · S24, S25, S26: user accepted the fixes on iPhone.** User commit bc31b6e. S24, S25 and S26 are done. §9 rows 63, 65 and 66 removed. D67 and D70 stay provisional in §9.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1605,7 +1607,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 54 | S21 | `[human]` | On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that. Needs a paired iPhone and a running host with the S21 app. | `main` | `13648eb` |
 | 61 | S23 | `[human]` | The drawer motion feels smooth on a real iPhone. | `main` | `47acc0d` |
 | 62 | S24 | decision | ARCHITECTURE D67, *provisional*: The keyboard goes away before any action that is not typing | `claude/s24-keyboard-dismiss` | merged `28a6409` |
-| 63 | S24 | `[human]` | The user no longer sees the bug | `main` | `28a6409` |
 | 64 | S25 | decision | ARCHITECTURE D70, *provisional*: App icon (DESIGN.md "App icon") | `claude/s25-app-icon` | merged `2a189da` |
-| 65 | S25 | `[human]` | The user no longer sees the bug | `main` | `2a189da` |
-| 66 | S26 | `[human]` | The user no longer sees the bug | `main` | `bfd1c39` |
