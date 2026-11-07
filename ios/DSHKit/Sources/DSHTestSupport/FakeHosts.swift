@@ -91,7 +91,8 @@ public struct FakeDevices: Sendable {
 /// S21 · the hosts of screens H, X2 and X3 (`-DSHMFakeBridge hosts…`): MacBook-Pro (online, with
 /// devices and audit records), hk-1 (its DSH is too old for the bridge) and 公司-PC (a session
 /// waits on the user there). A UI test stops and starts the reachable hosts with the Darwin
-/// notifications `hostsDown` and `hostsUp` (the app's `FakeHostsSwitch`).
+/// notifications `hostsDown` and `hostsUp`, and revokes this phone on MacBook-Pro from another
+/// client with `hostsRevoke` (the app's `FakeHostsSwitch`).
 public enum FakeHosts {
     public enum Variant: String, Sendable, CaseIterable {
         /// The three hosts of screen H.
@@ -107,6 +108,8 @@ public enum FakeHosts {
     public static let otherDevice = "dshm-77b0e4d2"
     public static let hostsDown = "chang.dsh-mobile.fake.hosts-down"
     public static let hostsUp = "chang.dsh-mobile.fake.hosts-up"
+    /// S29: another client revokes this phone on MacBook-Pro (`FakeHost.revokeThisDevice()`).
+    public static let hostsRevoke = "chang.dsh-mobile.fake.hosts-revoke"
 
     /// MacBook-Pro's records, newest first: two fit on the first page, one more on the next.
     public static func macDevices() -> FakeDevices {

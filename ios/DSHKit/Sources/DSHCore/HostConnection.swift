@@ -133,6 +133,9 @@ public enum HostConnectionError: Error, Equatable, CustomStringConvertible {
     case bridgeUpdateRequired(version: String, supported: String)
     case unexpectedResponse
     case disconnected
+    /// S29: the host refused this device with close 4003 (device unknown, D21): it was revoked
+    /// (or never paired), on a live connection. Final: retrying cannot succeed (D82).
+    case deviceRevoked
 
     public var description: String {
         switch self {
@@ -141,6 +144,7 @@ public enum HostConnectionError: Error, Equatable, CustomStringConvertible {
         case .bridgeUpdateRequired(let version, let supported): "This host needs a bridge update. DSH \(version) is installed. This bridge supports \(supported)."
         case .unexpectedResponse: "the bridge sent an unexpected response"
         case .disconnected: "the connection to the bridge closed"
+        case .deviceRevoked: "this host revoked this phone's access"
         }
     }
 }
@@ -173,6 +177,19 @@ public actor HostConnection {
     public nonisolated let events: AsyncStream<HostEvent>
     /// Capabilities from the bridge's Hello; empty until connected.
     public private(set) var capabilities: [String] = []
+    /// S29 (D82): the host refused this device with close 4003 (device unknown), on a live
+    /// connection (the close after a revoke) or on a reconnect (the Noise handshake). A revoked
+    /// device stays refused, so `TaskListStore` does not retry it. Cleared by a connect that works.
+    public private(set) var deviceRevoked = false
+
+    /// S29: whether `error` is the host's refusal of this device (close 4003 device unknown).
+    public static func isDeviceRefusal(_ error: any Error) -> Bool {
+        switch error {
+        case NoiseChannelError.deviceUnknown, HostConnectionError.deviceRevoked: true
+        case BridgeTransportError.closed(let code, _): code == PairingWire.CloseCode.deviceUnknown.rawValue
+        default: false
+        }
+    }
 
     public init(endpoint: HostEndpoint, channel: any SecureChannel, transport: @escaping BridgeTransportFactory) {
         self.endpoint = endpoint
@@ -197,13 +214,18 @@ public actor HostConnection {
 
     private func open() async throws {
         try channel.validate(endpoint)
-        let t = try await makeTransport(endpoint.webSocketURL(path: channel.path))
+        let t: any BridgeTransport
         let established: any FrameCipher
+        do {
+            t = try await makeTransport(endpoint.webSocketURL(path: channel.path))
+        } catch {
+            throw refusal(error)
+        }
         do {
             established = try await channel.establish(over: t)
         } catch {
             await t.close()
-            throw error
+            throw refusal(error)
         }
         generation += 1
         let gen = generation
@@ -227,10 +249,17 @@ public actor HostConnection {
                 throw HostConnectionError.bridgeUpdateRequired(version: theirs.dshVersion, supported: theirs.supportedDshRange)
             }
             capabilities = theirs.capabilities
+            deviceRevoked = false
         } catch {
             await teardown(generation: gen)
-            throw error
+            throw refusal(error)
         }
+    }
+
+    /// Records a refusal of this device (S29); returns the error unchanged.
+    private func refusal(_ error: any Error) -> any Error {
+        if Self.isDeviceRefusal(error) { deviceRevoked = true }
+        return error
     }
 
     /// Starts a task; its output arrives on `events`.
@@ -376,7 +405,7 @@ public actor HostConnection {
         receiveLoop?.cancel()
         receiveLoop = nil
         await t.close()
-        failPending(HostConnectionError.disconnected)
+        failPending(deviceRevoked ? HostConnectionError.deviceRevoked : HostConnectionError.disconnected)
         let waiters = disconnectWaiters
         disconnectWaiters = []
         for waiter in waiters { waiter.resume() }
@@ -418,6 +447,8 @@ public actor HostConnection {
                 let bytes = try cipher.open(try await transport.receive())
                 frame = try Dshm_V1_Frame(serializedBytes: bytes)
             } catch {
+                // S29: a close 4003 here is the host revoking this device (bridge/src/server.ts).
+                if gen == generation, Self.isDeviceRefusal(error) { deviceRevoked = true }
                 break
             }
             guard gen == generation else { break }

@@ -169,6 +169,10 @@ struct HostDetailView: View {
                 } else {
                     await load()
                 }
+            } catch where isCurrent && HostConnection.isDeviceRefusal(error) {
+                // S29: the close 4003 came before the response; the revoke took effect.
+                shell.sheet = nil
+                actions.forget(hostKey)
             } catch { self.error = String(describing: error) }
         }
     }

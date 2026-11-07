@@ -231,6 +231,12 @@ public final class FakeBridge: BridgeTransport {
         var inbox: [Data] = []
         var waiter: CheckedContinuation<Data, any Error>?
         var closed = false
+        /// S29: the WebSocket close code the bridge sent (4003 device unknown), if any.
+        var closeCode: Int?
+
+        var closedError: any Error {
+            if let closeCode { BridgeTransportError.closed(code: closeCode, reason: "device revoked") } else { HostConnectionError.disconnected }
+        }
     }
 
     private let host: FakeHost
@@ -244,7 +250,7 @@ public final class FakeBridge: BridgeTransport {
     // MARK: BridgeTransport (the app's side of the pipe)
 
     public func send(_ message: Data) async throws {
-        if state.withLock({ $0.closed }) { throw HostConnectionError.disconnected }
+        if let error = state.withLock({ $0.closed ? $0.closedError : nil }) { throw error }
         let frame = try Dshm_V1_Frame(serializedBytes: message)
         guard case .request(let request)? = frame.kind else { return }
         host.handle(request, from: self)
@@ -256,7 +262,7 @@ public final class FakeBridge: BridgeTransport {
                 if !s.inbox.isEmpty {
                     continuation.resume(returning: s.inbox.removeFirst())
                 } else if s.closed {
-                    continuation.resume(throwing: HostConnectionError.disconnected)
+                    continuation.resume(throwing: s.closedError)
                 } else {
                     s.waiter = continuation
                 }
@@ -271,11 +277,14 @@ public final class FakeBridge: BridgeTransport {
 
     // MARK: Bridge side
 
-    /// The bridge closes this connection (it went away, or the network dropped).
-    func drop() {
+    /// The bridge closes this connection (it went away, or the network dropped). S29: with a
+    /// `code`, it closes with that WebSocket close code, like the bridge's 4003 after a revoke.
+    func drop(code: Int? = nil) {
         state.withLock { s in
+            guard !s.closed else { return }
             s.closed = true
-            s.waiter?.resume(throwing: HostConnectionError.disconnected)
+            s.closeCode = code
+            s.waiter?.resume(throwing: s.closedError)
             s.waiter = nil
         }
     }
@@ -337,6 +346,8 @@ public final class FakeHost: Sendable {
         /// S21: `devices.v1` records; `revoked` once this phone's device lost its access.
         var devices: FakeDevices?
         var revoked = false
+        /// S29: every attempt to open a connection, also the refused ones.
+        var connectAttempts = 0
         /// S16: interrupted tasks; their stream stops.
         var stopped: Set<String> = []
         /// S16: each task's latest milestone seq and todos, for the INTERRUPTED milestone.
@@ -406,6 +417,24 @@ public final class FakeHost: Sendable {
     public var logID: String { state.withLock { $0.logID } }
     public var head: UInt64 { state.withLock { UInt64($0.log.count) } }
     public var connectionCount: Int { state.withLock { $0.connections.count } }
+    /// S29: connection attempts so far (a refused or unreachable attempt counts too).
+    public var connectAttempts: Int { state.withLock { $0.connectAttempts } }
+
+    /// S29: another client (the web UI, another phone) revokes this phone's device, as with
+    /// `RevokeDevice` from there: the host records it, closes this device's connections with
+    /// 4003 (device unknown) and refuses it from now on. The phone gets no response.
+    public func revokeThisDevice() {
+        let dropped = state.withLock { s -> [FakeBridge] in
+            if var devices = s.devices {
+                _ = devices.answer(.revokeDevice(.with { $0.deviceID = devices.current }))
+                s.devices = devices
+            }
+            s.revoked = true
+            defer { s.connections = [:] }
+            return s.connections.values.map(\.bridge)
+        }
+        for bridge in dropped { bridge.drop(code: PairingWire.CloseCode.deviceUnknown.rawValue) }
+    }
 
     /// Unreachable: new connections fail and live ones drop (the Mac slept, Wi-Fi went away).
     public func setReachable(_ reachable: Bool) {
@@ -444,7 +473,13 @@ public final class FakeHost: Sendable {
     func connection() throws -> FakeBridge {
         let bridge = FakeBridge(host: self)
         try state.withLock { s in
-            guard s.reachable, !s.revoked else { throw FakeHostError.unreachable }
+            s.connectAttempts += 1
+            guard s.reachable else { throw FakeHostError.unreachable }
+            // S29: like the bridge's handshake (bridge/src/pairing/handshake.ts), a revoked
+            // device is refused with close 4003 device unknown.
+            guard !s.revoked else {
+                throw BridgeTransportError.closed(code: PairingWire.CloseCode.deviceUnknown.rawValue, reason: "device not paired")
+            }
             s.connections[bridge.id] = Connection(bridge: bridge)
         }
         return bridge
@@ -569,9 +604,10 @@ public final class FakeHost: Sendable {
                 guard let (answer, revokedCurrent) = s.devices?.answer(body) else { break }
                 bridge.deliver(Self.response(id, answer))
                 if revokedCurrent {
+                    // Like bridge/src/server.ts: the response first, then every socket of this
+                    // device closes with 4003 (device unknown), and new ones are refused.
                     s.revoked = true
-                    let dropped = s.connections.values.map(\.bridge)
-                    Task { for bridge in dropped { bridge.drop() } }
+                    for conn in s.connections.values { conn.bridge.drop(code: PairingWire.CloseCode.deviceUnknown.rawValue) }
                 }
             case .answerApproval?, .interrupt?, .getModelCatalog?, .selectModel?, .listWorkspaces?, .listDevices?, .listAudit?, .revokeDevice?, .readSession?:
                 var error = Dshm_V1_Error()
