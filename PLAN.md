@@ -66,7 +66,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S20 | done | merged `e849e8e` | 2026-11-07 | — (provisional D58 in §9) |
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
 | S22 | done | merged `4deb8d0` | 2026-11-07 | — (provisional D63 in §9) |
-| S23 | review | merged `47acc0d` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
+| S23 | done | merged `47acc0d` | 2026-11-08 | — |
 | S24 | done | merged `28a6409` | 2026-11-07 | — |
 | S25 | done | merged `2a189da` | 2026-11-07 | — |
 | S26 | done | merged `bfd1c39` | 2026-11-07 | — |
@@ -1636,6 +1636,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · S28 assigned.** Branch `claude/s28-markdown-tables`, simulator `dshm-S28`, DSHM_HOME `~/.dshm/home-s28`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D79–D81. `eval "$(scripts/slice-env S28)"` exports them.
 
+- **2026-11-08 · S23: user accepted drawer motion on iPhone.** User commit 1442968. S23 is done; §9 row 61 removed.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1650,4 +1652,3 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 42 | S11 | `[human]` | On a fresh install, check that the app explains its purpose and the need for a reachable DSH host. | `main` | `12e1afc` |
 | 43 | S11 | `[human]` | Have someone unfamiliar with DSH pair with an already-running host and obtain the first answer without help. | `main` | `12e1afc` |
 | 54 | S21 | `[human]` | On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that. Needs a paired iPhone and a running host with the S21 app. | `main` | `13648eb` |
-| 61 | S23 | `[human]` | The drawer motion feels smooth on a real iPhone. | `main` | `47acc0d` |
