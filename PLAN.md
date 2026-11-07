@@ -1160,7 +1160,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S26 · Fix: Page title centering
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-07: "新会话" 没有左右居中，不符合预期.
 
