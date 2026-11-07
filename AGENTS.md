@@ -45,6 +45,6 @@ After cloning, enable the repo's git hooks (this repo only):
 git config core.hooksPath .githooks
 ```
 
-The pre-commit hook runs `scripts/check-plan`. **Never bypass it**: no `git commit --no-verify` / `-n`, no overriding `core.hooksPath`. If a check blocks you, ask the user in the conversation.
+The pre-commit and pre-merge-commit hooks run `scripts/check-plan`. **Never bypass it**: no `git commit --no-verify` / `-n`, no overriding `core.hooksPath`. If a check blocks you, ask the user in the conversation.
 
 A PLAN.md rewrite the user has approved is made and committed by the user, by hand, with `CHECK_PLAN_ALLOW=1 git commit …`. Agents never set `CHECK_PLAN_ALLOW`.

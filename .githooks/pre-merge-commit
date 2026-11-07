@@ -1,0 +1,4 @@
+#!/bin/sh
+# Runs on `git merge` before the merge commit; the pre-commit hook does not run there.
+# The same checks as pre-commit: WORKFLOW.md §10, condition 3. Never bypass it. See AGENTS.md "Hooks".
+exec "$(git rev-parse --show-toplevel)/scripts/check-plan" --staged

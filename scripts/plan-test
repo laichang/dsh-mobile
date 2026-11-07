@@ -119,7 +119,11 @@ has "§8 merge entry with the review result" PLAN.md "· S22 merged.** Merged as
 expect "merged on a commit that is not a merge is refused" 1 scripts/plan merged S22 HEAD
 expect "slot of a merged slice is free again" 0 scripts/plan assign S23 --branch claude/s23-test
 s23=$(awk -F'\t' '$1=="S23"{print $3}' scripts/resources.tsv)
-[ "$s23" = "$slot" ] && ok "S23 reuses slot $slot" || bad "S23 got slot $s23, expected $slot"
+busy() { for p in $((47810 + $1)) $((3283 + $1)) $((47840 + $1)) $((3313 + $1)); do
+  lsof -nP -iTCP:$p -sTCP:LISTEN -t >/dev/null 2>&1 && return 0; done; return 1; }
+if [ "$s23" = "$slot" ]; then ok "S23 reuses slot $slot"
+elif busy "$slot"; then ok "S23 skips slot $slot (a process listens on its ports now)"
+else bad "S23 got slot $s23, expected $slot"; fi
 
 echo "code key (scripts/demo/lib.sh)"
 cp "$SRC"/scripts/demo/lib.sh scripts/demo/lib.sh
