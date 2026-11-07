@@ -1255,6 +1255,12 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Environment: the disk was full (187 MB free, an xcresult write failed). I deleted stale DerivedData of merged slices in /tmp (`dshm-{int,rev,review,readme,release-check,s1–s4,s14–s23,t1,t1r}*-dd`, about 18 GB); kept t0, S24–S29.
   - Not done: `[human]` item.
   - Next: `scripts/review S29`.
+- **2026-11-08 · scope addition: the revoke alert says what happens.** The user (relayed by the coordinator, 2026-11-08): 这里有个小点：revoke的时候，出二确弹窗，明确告知会将该设备移除，侧边栏也不会出现这个对应的设备，让用户无处点击.
+  - Done: the alert before a revoke of this device now says "这台手机会从 <host> 移除。之后侧边栏里不再有 <host>，没有可点的入口，手机也不会再去连它。要再用，需要重新配对。" (en: "This phone will be removed from <host>. <host> will leave the drawer, with nothing left to tap, and the phone will not reconnect to it. To use it again, pair again."), in `Hosts.xcstrings`. The same words in X2 (`HostDetailView`) and in the drawer's "Devices and audit" (`DeviceManagementView`). A revoke of another device keeps its own message. The destructive button stays "吊销" (the brief said 撤销; the app and the board use 吊销).
+  - Tests: both real-bridge tests in `S29RevokeUITests` check the alert's message (`expectRevokeThisDeviceMessage`). Shot: evidence/S29/s29-revoke-confirm.png.
+  - Docs: D82 states the wording; the X2 caption on the board (`scripts/render-design`). DESIGN.md's table needs no change.
+  - Verification: `scripts/demo/s29.sh --shots` passed at 12ef8c5 (swift test 83/83, S29 fakes 2/2, real bridge 2/2, S21 revoke seam, S10 demo).
+  - Next: `scripts/review S29 --resume`.
 
 ## 6. M1 exit
 
