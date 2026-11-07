@@ -1488,6 +1488,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · User confirmed D19–D23.** D19, D20, D22 and D23 confirmed as written. D20: in M2, write the host log to disk with S4's held approvals (§7). D21 confirmed except (e): after M1 closes, a reconnect tries every saved address, not only the first (§7). D22: the user accepts that an M1 approval is as safe as the phone lock screen. §9 rows 17–21 removed.
 
+- **2026-11-07 · User confirmed D24, D25, D28, D31.** D24 and D28 confirmed as written. D25 confirmed with the 24-hour approval timeout. D31 confirmed: a model choice on the phone also sets the DSH host default, so the phone and the Web stay in sync. D34 stays in §9 until D51 is confirmed (D51 supersedes it). §9 rows 22, 26, 29 and 30 removed.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1506,15 +1508,11 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 10 | T0 | `[human]` | "Following `bridge/README.md` installs and enables the plugin in a DSH profile". Needs: this Mac with DSH 0.2.2-rc.1 (`~/.dshm`), about 10 minutes | `main` | `84db2e8` |
 | 11 | T0 | `[human]` | "Toolchain choices … recorded in ARCHITECTURE.md". Needs: reading D15 (confirms row 4) | `main` | `84db2e8` |
 | 12 | T0 | `[human]` | "Testability entry points … recorded in ARCHITECTURE.md". Needs: reading D16 (confirms row 4) | `main` | `84db2e8` |
-| 22 | S1 × S2 | decision | ARCHITECTURE D24, *provisional*: one TaskListStore per host, swapped on pairing; every reconnect is a fresh IK handshake followed by `Resume` | `main` (merged `1f35fa2`) | `08abaa6` |
 | 23 | S1 | dependency | Bridge runtime: `@noble/curves`, `@noble/ciphers`, `@noble/hashes` 2.4.0 (previously spike-only, row 2), `uqr` 0.1.3 (terminal QR) | `main` (merged `1f35fa2`) | `6b1f0bf` |
 | 24 | S1 | `[human]` | "A fresh iPhone scans the QR and runs the T0 demo over Wi-Fi or Tailscale". Needs: a real iPhone, this Mac running `scripts/dsh-up.mjs` with the bridge reachable on the LAN or Tailscale, and the app installed with your free Apple team | `main` | `1f35fa2` |
 | 25 | S1 | `[human]` | "A packet capture of that session shows only ciphertext". Needs: the session from row 24, plus Wireshark or `tcpdump` on this Mac | `main` | `1f35fa2` |
-| 26 | S5 | decision | ARCHITECTURE D28, provisional: acknowledge the interrupt, then derive the terminal state from the durable DSH aborted/user event. | `main` | `529bb16` |
 | 27 | X3 | `[human]` | Benchmark 2 candidates on a 5,000-line transcript on a real iPhone. Run the signed test in spikes/x3-markdown/README.md. | `main` | `7f1b4b8` |
 | 28 | X3 | `[human]` / decision | Confirm provisional D10 streaming renderer choice after the device benchmark. | `main` | `7f1b4b8` |
-| 29 | S6 | decision | ARCHITECTURE D31, provisional: host catalog/default passthrough, pre-prompt selection, and transcript replay of durable model selections. | `main` | merged `d62fd6d` |
-| 30 | S4 | decision | ARCHITECTURE D25, provisional: fail-closed timeout, per-device audit, resume snapshot and temporary pending cards for upstream sessions. | `main` | merged `acbf2c0` |
 | 31 | S7 | decision | D37, provisional: DSH registry supplies canonical host paths and recents; explicit paths are validated by DSH and sent with the model selection. | `main` | merged `21aabd8` |
 | 32 | S10 | decision | D40, provisional: Noise-authenticated device management, registry revocation with active socket closure, and combined pairing/approval audit. | `main` | merged `4a983eb` |
 | 33 | S8 | decision | D34, provisional: short answers remain in the list based on actual reply size and task events. | `main` | merged `8e9fa87` |
