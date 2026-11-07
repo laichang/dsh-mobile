@@ -34,7 +34,7 @@ extension ButtonStyle where Self == DrawerPressStyle {
 }
 
 /// F4 · where a session page lands when it opens (ARCHITECTURE D65, on top of D60):
-/// - done (or failed, or stopped) and not read: at the start of the final answer (S19's marker);
+/// - done (or failed, or stopped) and not read: at the start of the final answer (S19's scroll; no marker since S27, D76);
 /// - running or waiting: at the bottom, and it follows the stream;
 /// - already read: at the last position the user scrolled to on this phone; with none, at the end.
 enum SessionLanding: Equatable {

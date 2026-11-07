@@ -315,6 +315,9 @@ public final class FakeHost: Sendable {
     private let pickers: FakeBridge.Pickers?
     /// S15, S18: seeded approvals or a script that asks for one.
     private var answersApprovals: Bool { !approvals.isEmpty || script.ask != nil }
+    /// S27: with any, the host advertises `sessions.v1` and answers `ReadSession` with these
+    /// journals (task id → its latest page), like a DSH session made on the Web.
+    private let journals: [String: Dshm_V1_SessionPage]
 
     private struct Connection {
         let bridge: FakeBridge
@@ -350,8 +353,9 @@ public final class FakeHost: Sendable {
                 incompatibleDsh: (installed: String, supported: String)? = nil,
                 seed: [Dshm_V1_TaskSummary] = [], extraCapabilities: [String] = [],
                 approvals: [FakeBridge.PendingApproval] = [], pickers: FakeBridge.Pickers? = nil,
-                devices: FakeDevices? = nil) {
+                devices: FakeDevices? = nil, journals: [String: Dshm_V1_SessionPage] = [:]) {
         self.pickers = pickers
+        self.journals = journals
         self.incompatibleDsh = incompatibleDsh
         self.script = script
         self.hostName = hostName
@@ -475,6 +479,7 @@ public final class FakeHost: Sendable {
                     hello.capabilities += extraCapabilities
                     if pickers != nil { hello.capabilities += ["models.v1", "workspaces.v1"] }
                     if s.devices != nil { hello.capabilities.append(FakeDevices.capability) }
+                    if !journals.isEmpty { hello.capabilities.append("sessions.v1") }
                 }
                 bridge.deliver(Self.response(id, .hello(hello)))
             case .createTask(let create)?:
@@ -565,6 +570,8 @@ public final class FakeHost: Sendable {
                 selectModel(select, requestID: id, bridge: bridge, in: &s)
             case .listWorkspaces? where pickers != nil:
                 bridge.deliver(Self.response(id, .workspaceList(pickers!.workspaces)))
+            case .readSession(let read)? where journals[read.taskID] != nil:
+                bridge.deliver(Self.response(id, .sessionPage(journals[read.taskID]!)))
             case let body? where s.devices != nil && FakeDevices.handles(body):
                 guard let (answer, revokedCurrent) = s.devices?.answer(body) else { break }
                 bridge.deliver(Self.response(id, answer))

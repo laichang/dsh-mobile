@@ -74,6 +74,8 @@
       "frame": { "event": { "hostSeq": "1", "taskUpserted": { "task": { "taskId": "session-1", "title": "修复 CI 挂掉的测试", "state": "TASK_STATE_RUNNING", "createdAtMs": "1793000000000", "updatedAtMs": "1793000000000", "workspace": "/work/app" } } } } },
     { "name": "s14_web_session_upserted_event",
       "frame": { "event": { "hostSeq": "1", "taskUpserted": { "task": { "taskId": "web-1", "title": "网页第一条", "state": "TASK_STATE_COMPLETED", "createdAtMs": "1793000000000", "updatedAtMs": "1793000003000", "sessionRevision": "3", "externalSession": true, "latestReply": "已收到。", "workspace": "/work/app" } } } } },
+    { "name": "s27_web_session_upserted_event",
+      "frame": { "event": { "hostSeq": "1", "taskUpserted": { "task": { "taskId": "web-1", "title": "网页第一条", "state": "TASK_STATE_COMPLETED", "createdAtMs": "1793000000000", "updatedAtMs": "1793000003000", "sessionRevision": "3", "externalSession": true, "latestReply": "已收到。", "workspace": "/work/app", "turnStartedAtMs": "1793000000000" } } } } },
     { "name": "s17_thinking_block_event",
       "frame": { "event": { "hostSeq": "7", "transcriptBlock": { "taskId": "session-1", "blockId": "thinking-attempt-1-0", "state": "TRANSCRIPT_BLOCK_STATE_DONE", "thinking": { "durationMs": "8000", "text": "先看测试为什么失败。" }, "timeMs": "1793000000000" } } } },
     { "name": "s17_tool_block_event",

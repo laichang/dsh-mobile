@@ -122,8 +122,9 @@ private struct SessionTranscript: View {
     @State private var followsLanding = true
     /// S23: scrolls a read session back to its last position.
     @State private var position = ScrollPosition()
-    /// S23: the height of S19's rows before the final answer. Only an unread visit has the marker,
-    /// so a saved position counts from below them: the same text comes back to the same place.
+    /// S23: the height of S19's rows before the final answer. A saved position counts from below
+    /// them, so the same text comes back to the same place (S27, D76: the rows are now the same on
+    /// every visit, because the marker of the unread visit is gone).
     @State private var leadHeight: CGFloat = 0
 
     init(store: TaskListStore, taskKey: String, lastPosition: CGFloat? = nil) {

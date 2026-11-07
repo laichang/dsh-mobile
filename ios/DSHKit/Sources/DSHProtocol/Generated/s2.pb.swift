@@ -148,6 +148,18 @@ public nonisolated struct Dshm_V1_TaskSummary: Sendable {
   /// Clears the value of `workspace`. Subsequent reads from it will return its default value.
   public mutating func clearWorkspace() {self._workspace = nil}
 
+  /// S27 (fields 540–559): when the session's latest turn started (its `turn/start`, else its user
+  /// message), Unix milliseconds. The done footer's 用时 runs from here to updated_at_ms. Absent from
+  /// an older bridge: the app counts from created_at_ms, as before.
+  public var turnStartedAtMs: Int64 {
+    get {_turnStartedAtMs ?? 0}
+    set {_turnStartedAtMs = newValue}
+  }
+  /// Returns true if `turnStartedAtMs` has been explicitly set.
+  public var hasTurnStartedAtMs: Bool {self._turnStartedAtMs != nil}
+  /// Clears the value of `turnStartedAtMs`. Subsequent reads from it will return its default value.
+  public mutating func clearTurnStartedAtMs() {self._turnStartedAtMs = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -156,6 +168,7 @@ public nonisolated struct Dshm_V1_TaskSummary: Sendable {
   fileprivate var _sessionRevision: UInt64? = nil
   fileprivate var _latestReply: String? = nil
   fileprivate var _workspace: String? = nil
+  fileprivate var _turnStartedAtMs: Int64? = nil
 }
 
 /// Request: every task this bridge knows, newest first.
@@ -275,7 +288,7 @@ nonisolated extension Dshm_V1_TaskState: SwiftProtobuf._ProtoNameProviding {
 
 nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TaskSummary"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0\u{4}L\u{2}session_revision\0\u{3}external_session\0\u{3}latest_reply\0\u{2}\u{12}workspace\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0\u{4}L\u{2}session_revision\0\u{3}external_session\0\u{3}latest_reply\0\u{2}\u{12}workspace\0\u{4}D\u{4}turn_started_at_ms\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -296,6 +309,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
       case 261: try { try decoder.decodeSingularBoolField(value: &self.externalSession) }()
       case 262: try { try decoder.decodeSingularStringField(value: &self._latestReply) }()
       case 280: try { try decoder.decodeSingularStringField(value: &self._workspace) }()
+      case 540: try { try decoder.decodeSingularInt64Field(value: &self._turnStartedAtMs) }()
       default: break
       }
     }
@@ -345,6 +359,9 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     try { if let v = self._workspace {
       try visitor.visitSingularStringField(value: v, fieldNumber: 280)
     } }()
+    try { if let v = self._turnStartedAtMs {
+      try visitor.visitSingularInt64Field(value: v, fieldNumber: 540)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -362,6 +379,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     if lhs.externalSession != rhs.externalSession {return false}
     if lhs._latestReply != rhs._latestReply {return false}
     if lhs._workspace != rhs._workspace {return false}
+    if lhs._turnStartedAtMs != rhs._turnStartedAtMs {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

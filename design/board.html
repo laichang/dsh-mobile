@@ -281,8 +281,6 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
 .timeline .tk i{display:block;width:12px;height:12px;border-radius:50%;background:var(--canvas);border:2px solid var(--blue);margin:8px auto 0}
 .timeline .tk.dim{color:var(--t3)}
 .ms{font:600 12px var(--mono);color:var(--blue);margin-bottom:12px;letter-spacing:.04em}
-.anchor{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#C7D0FF;margin:2px 0 10px}
-.anchor::before,.anchor::after{content:"";flex:1;height:1px;background:rgba(142,162,255,.35)}
 .rowtitle{font-size:22px;font-weight:600;margin:70px 0 26px;display:flex;gap:14px;align-items:baseline}
 .rowtitle small{font-size:15px;color:var(--t2);font-weight:400}
 </style>
@@ -448,7 +446,6 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <div class="scroll" style="display:flex;flex-direction:column">
     <div class="ubub" style="opacity:.5;margin-top:0">把 Q3 的数据做成 12 页汇报</div>
     <div class="thought" style="margin:0 0 6px"><svg class="i xs" style="color:var(--green)"><use href="#check"/></svg>已工作 · 23 步 · 1 次审批<svg class="i xs"><use href="#chev"/></svg></div>
-    <div class="anchor">停在这里 · 最终回答开头</div>
     <div class="para">做好了：12 页，存在 <code>~/Desktop/Q3/Q3 summary.pptx</code>。数据来自 <code>Q3.xlsx</code> 的 4 个工作表；第 5 页的华东数据口径和上季度不同，加了脚注。</div>
     <div style="border:1px dashed var(--hair-2);border-radius:14px;padding:11px 12px;display:flex;align-items:center;gap:10px">
       <span class="fi ppt">P</span>
@@ -619,7 +616,8 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
 </div>
 <div class="cap"><h3><i>06</i>会话 · 完成<span class="mtag m1">M1 · 换样式</span></h3><ul>
   <li>过程折叠成一行“已工作 · 23 步 · 1 次审批 ›”：步数是时间线上的里程碑数，点开就是这些步骤；审批数是这个任务里已经回答的审批（任何一端回答的都算）。</li>
-  <li>未读的会话打开时停在最终回答开头；已读的会话照常停在末尾。</li>
+  <li>未读的会话打开时停在最终回答开头，那里不画标记；已读的会话照常停在末尾。</li>
+  <li>“用时”只算最后一轮：从这一轮开始到结束，不算两轮之间的空闲。</li>
   <li>M1 的结果是文字：写清楚产物在执行端的哪个路径。</li>
   <li>虚线文件卡是 <b>M3</b>：Quick Look 预览、分享、存到文件。在同一会话里继续追问是 M2。</li>
 </ul></div>

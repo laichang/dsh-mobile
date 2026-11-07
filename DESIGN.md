@@ -49,6 +49,7 @@ A phone in front sends work up to a terminal window: the user's own computer (ST
 - **Workspace drawer**: swipe right from the left edge, or tap the drawer button. It pushes the page (it doesn't cover it). Contents: new session → 所有任务 → host › workspace › sessions.
 - **Tap a session in the drawer**: the peeking edge swaps to that session first (from the cache), then slides in (about 350 ms).
 - **The keyboard goes first** (D67): with the keyboard up, any action other than typing (the drawer button or edge drag, a picker or sheet, another page, a tap or swipe down on the page) puts the keyboard away first.
+- **Back to a finished session** (06, D60, D76): unread → the page opens at the start of the final answer, with no marker drawn there; read → at the end. 用时 counts the latest turn only.
 - **Session pages have no back button.** Details (tool calls, approvals, pickers) open as bottom sheets, so the left edge belongs to the drawer.
 - **iPad** (not drawn yet): the drawer stays open as a sidebar.
 

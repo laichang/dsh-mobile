@@ -6,18 +6,18 @@ import UIKit
 /// S19 · done and failed on the session page (screens 06 and X1, STORY §4, ARCHITECTURE D60).
 /// When a task has ended, the page shows:
 /// - the process as one row, "已工作 · N 步 · M 次审批 ›", which opens all the steps in a sheet;
-/// - when the session was finished and not read on this phone, a marker at the start of the final
-///   answer, and the page opens there (`OutcomeAnchor`);
-/// - done: a footer with the time the task took; failed or stopped: a card with the raw failure
+/// - when the session was finished and not read on this phone, the page opens at the start of the
+///   final answer (`OutcomeAnchor`), with no marker there (S27, D76);
+/// - done: a footer with the time the latest turn took (D76); failed or stopped: a card with the raw failure
 ///   message, "复制错误" and "新会话里再试" (the original prompt in a new session, 01).
 /// The milestone bar turns red and says the step (`TaskOutcome.barAlert`).
 ///
-/// Identifiers: `outcome.process` (value: "steps/approvals"), `outcome.answerStart`,
+/// Identifiers: `outcome.process` (value: "steps/approvals"),
 /// `outcome.card` (value: the kind), `outcome.error`, `outcome.copy`, `outcome.retry`,
 /// `outcome.footer`.
 enum OutcomeAnchor {
-    /// The scroll target when the page opens at the final answer: the process row right above the
-    /// marker, so that the page shows the process row, the marker and the answer's start.
+    /// The scroll target when the page opens at the final answer: the process row right above it,
+    /// so that the page shows the process row and the answer's start.
     static let id = "outcome.lead"
 
     /// A finished session that this phone has not shown yet opens at the start of its final
@@ -50,8 +50,8 @@ extension TaskOutcome {
     }
 }
 
-/// What comes before the final answer of a finished task: the process row and, when the page
-/// opens there, the marker.
+/// What comes before the final answer of a finished task: the process row. When the page opens
+/// at the answer, the row is the scroll target; S27 (D76) removed the marker under it.
 struct OutcomeLead: View {
     let row: TaskListStore.TaskRow
     let outcome: TaskOutcome?
@@ -64,9 +64,8 @@ struct OutcomeLead: View {
             } else {
                 OutcomeProcessRow(row: row, outcome: outcome)
             }
-        }
-        if marksAnswer {
-            AnswerStartMarker()
+        } else if marksAnswer {
+            Color.clear.frame(height: 0).id(OutcomeAnchor.id) // the scroll target, with nothing drawn
         }
     }
 }
@@ -108,24 +107,6 @@ private struct OutcomeProcessRow: View {
     }
 }
 
-/// "停在这里 · 最终回答开头", between two blue lines.
-private struct AnswerStartMarker: View {
-    var body: some View {
-        HStack(spacing: 8) {
-            Rectangle().fill(DSHTheme.s19MarkerLine).frame(height: 1)
-            Text("Stopped here · start of the final answer", tableName: "Outcomes")
-                .font(.caption)
-                .foregroundStyle(DSHTheme.s19MarkerText)
-                .lineLimit(1)
-                .fixedSize()
-            Rectangle().fill(DSHTheme.s19MarkerLine).frame(height: 1)
-        }
-        .padding(.vertical, 2)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("outcome.answerStart")
-    }
-}
-
 /// After the final answer: a footer when the task is done, a card when it failed or stopped.
 struct OutcomeEnd: View {
     let store: TaskListStore
@@ -141,12 +122,14 @@ struct OutcomeEnd: View {
     }
 }
 
-/// "用时 5 分 24 秒 · <model>", under a hairline.
+/// "用时 5 分 24 秒 · <model>", under a hairline. S27 (D76): the latest turn's time, from its
+/// start (`TaskRow.lastTurnStart`) to the task's last update, so that the idle time between the
+/// turns of a Web session does not count.
 private struct OutcomeFooter: View {
     let row: TaskListStore.TaskRow
 
     var body: some View {
-        let took = Duration.seconds(max(0, row.updatedAt.timeIntervalSince(row.createdAt).rounded()))
+        let took = Duration.seconds(max(0, row.updatedAt.timeIntervalSince(row.lastTurnStart).rounded()))
             .formatted(.units(allowed: [.hours, .minutes, .seconds], width: .abbreviated))
         var parts = [String(localized: "Took \(took)", table: "Outcomes")]
         if let model = row.modelSelection?.model, !model.isEmpty { parts.append(model) }

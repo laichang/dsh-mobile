@@ -127,16 +127,6 @@
         }
       }
     },
-    "Stopped here · start of the final answer": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "停在这里 · 最终回答开头"
-          }
-        }
-      }
-    },
     "Task failed": {
       "localizations": {
         "zh-Hans": {

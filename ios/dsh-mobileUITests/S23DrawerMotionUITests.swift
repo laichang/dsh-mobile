@@ -138,14 +138,15 @@ final class S23DrawerMotionUITests: XCTestCase {
         // 1. Done and not read: the page lands at the start of the final answer.
         tapInDrawer(app, Self.donePrompt)
         let scroll = app.scrollViews["session.transcript"]
-        let marker = any(app, "outcome.answerStart")
+        let process = any(app, "outcome.process")
         let transcript = any(app, "transcript.text")
         let footer = any(app, "outcome.footer")
         waitFor("value == 'answerStart'", on: scroll)
-        XCTAssertTrue(marker.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(process.waitForExistence(timeout: 15), app.debugDescription)
         waitFor("value BEGINSWITH 'Done: the CI test passes again'", on: transcript)
-        eventually("the marker is at the top of the transcript") {
-            marker.isHittable && marker.frame.minY - scroll.frame.minY < 90
+        eventually("the process row and the answer's start are at the top of the transcript") {
+            process.isHittable && abs(process.frame.minY - scroll.frame.minY) < 40
+                && transcript.frame.minY - scroll.frame.minY < 90
         }
         XCTAssertGreaterThan(transcript.frame.maxY, scroll.frame.maxY, "the rest of the answer is below the screen")
         XCTAssertFalse(footer.isHittable, "the page did not land at the end")
@@ -158,7 +159,7 @@ final class S23DrawerMotionUITests: XCTestCase {
         XCTAssertLessThan(readTop, answerTop - 60, "the user scrolled down into the answer")
         XCTAssertFalse(footer.isHittable, "the user did not reach the end")
 
-        // 2. Already read: the page lands where the user left it, with no marker.
+        // 2. Already read: the page lands where the user left it.
         newSession(app)
         openDrawer(app)
         waitFor("value != 'unread'", on: mark)
@@ -169,7 +170,6 @@ final class S23DrawerMotionUITests: XCTestCase {
             abs(transcript.frame.minY - readTop) < 24
         }
         XCTAssertEqual(transcript.frame.minY, readTop, accuracy: 24, "the answer's top, back from \(answerTop)")
-        XCTAssertFalse(marker.exists, "no marker once read")
         XCTAssertFalse(footer.isHittable, "not at the end: at the last position")
         saveShot("s23-read-last-position")
     }
