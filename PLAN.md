@@ -67,7 +67,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S21 | review | merged `13648eb` | 2026-11-07 | User checks revoke on a real iPhone (§9) |
 | S22 | done | merged `4deb8d0` | 2026-11-07 | — (provisional D63 in §9) |
 | S23 | review | merged `47acc0d` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
-| S24 | todo | — | 2026-11-07 | Fix: Keyboard dismiss; start a fix session |
+| S24 | doing | `claude/s24-keyboard-dismiss` | 2026-11-07 | Slice owner builds (§8) |
 
 ## 1. Approach
 
@@ -1517,6 +1517,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-07 · T1 done.** The user ticked the dark-mode `[human]` item (`eb59160`). T1 has no open items, so T1 is `done`. §9 row 46 removed.
 
 - **2026-11-07 · T0: user read D15 and D16.** The user ticked the two T0 reading items (`bb5746b`). §9 rows 11 and 12 removed. T0 keeps one `[human]` item (row 10: install the bridge from `bridge/README.md`). The same commit also added `DEVELOPMENT_TEAM = R9JF9M64R9` to `project.pbxproj` (Xcode signing for the real iPhone).
+
+- **2026-11-07 · S24 assigned.** Branch `claude/s24-keyboard-dismiss`, simulator `dshm-S24`, DSHM_HOME `~/.dshm/home-s24`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D67–D69. `eval "$(scripts/slice-env S24)"` exports them.
 
 ## 9. Pending user confirmation
 
