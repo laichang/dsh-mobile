@@ -1151,6 +1151,11 @@ When all of these are ticked and S13 is done, archive this file and plan M2 the 
 | M3 | Quick Look + share-out · Share Extension + attachment upload · photos as context | Verify App Groups on the signing team first |
 | M4 | Live Activities / Dynamic Island · voice entry · relay `Transport` | Relay design note |
 
+Follow-ups the user asked for (2026-11-07):
+
+- **First after M1 closes:** a reconnect tries every saved address of a host, not only the first (for example LAN, then Tailscale). Changes D21 (e).
+- **M2:** write the bridge host log to disk, so that a bridge or Mac restart does not mark running tasks as failed. Do it together with S4's held approvals (D20).
+
 For M2, a reply sent from the phone's session detail view goes into that same DSH session and appears there on the Web. Sending from the home screen creates a new task.
 
 ## 8. Plan log
@@ -1481,6 +1486,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · Run ended: all slices merged.** All M1 slices are merged into `main`. No slice is `todo`, `doing` or `blocked`. What is left is for the user: the `[human]` items and the provisional decisions in §9, then the M1 exit (§6). The coordinator stopped the heartbeat (`5dd6aa73`). Tool note for the user: `scripts/plan merged` refuses every merge of a slice that added an item on its branch (the `--agent` check of parent 1 sees it as added already ticked), so S20, S19, S17, S22 and S23 were recorded with `row`, `pending` and `log`.
 
+- **2026-11-07 · User confirmed D19–D23.** D19, D20, D22 and D23 confirmed as written. D20: in M2, write the host log to disk with S4's held approvals (§7). D21 confirmed except (e): after M1 closes, a reconnect tries every saved address, not only the first (§7). D22: the user accepts that an M1 approval is as safe as the phone lock screen. §9 rows 17–21 removed.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1499,11 +1506,6 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 10 | T0 | `[human]` | "Following `bridge/README.md` installs and enables the plugin in a DSH profile". Needs: this Mac with DSH 0.2.2-rc.1 (`~/.dshm`), about 10 minutes | `main` | `84db2e8` |
 | 11 | T0 | `[human]` | "Toolchain choices … recorded in ARCHITECTURE.md". Needs: reading D15 (confirms row 4) | `main` | `84db2e8` |
 | 12 | T0 | `[human]` | "Testability entry points … recorded in ARCHITECTURE.md". Needs: reading D16 (confirms row 4) | `main` | `84db2e8` |
-| 17 | S3 | decision | ARCHITECTURE D19, *provisional*: milestone mapping from DSH session events (turn/start, todo/write, plan/mode, llm/retry, turn/end), `MilestoneAdded` carries the whole todo list, card + timeline UI | `main` (merged `1f35fa2`) | `debb402` |
-| 18 | S2 | decision | ARCHITECTURE D20, *provisional*: in-memory per-host event log (`log_id` + `host_seq`), `ListTasks` / `Resume` / `LogReset`, SwiftData cache + cursor, reconnect backoff 0.5 s → 30 s, refresh on foreground | `main` (merged `1f35fa2`) | `2b14fd0` |
-| 19 | S1 | decision | ARCHITECTURE D21, *provisional*: pairing offer URL, 10-minute single-use offers, wire header in the Noise prologue, close codes 4000–4003, bridge listens on 0.0.0.0 Noise-only (plaintext only in dev, on loopback `/plaintext`) | `main` (merged `1f35fa2`) | `4181b8f` |
-| 20 | S1 | decision | ARCHITECTURE D22, *provisional*: no Secure Enclave identity key in M1; one Keychain X25519 Noise static key per device; the SE signing key returns with Face ID approvals in M2 | `main` (merged `1f35fa2`) | `4181b8f` |
-| 21 | S2 × S3 | decision | ARCHITECTURE D23, *provisional*: milestones are written into the host log and cached with the task; the card shows in list rows and in the detail view | `main` (merged `1f35fa2`) | `67bb77c` |
 | 22 | S1 × S2 | decision | ARCHITECTURE D24, *provisional*: one TaskListStore per host, swapped on pairing; every reconnect is a fresh IK handshake followed by `Resume` | `main` (merged `1f35fa2`) | `08abaa6` |
 | 23 | S1 | dependency | Bridge runtime: `@noble/curves`, `@noble/ciphers`, `@noble/hashes` 2.4.0 (previously spike-only, row 2), `uqr` 0.1.3 (terminal QR) | `main` (merged `1f35fa2`) | `6b1f0bf` |
 | 24 | S1 | `[human]` | "A fresh iPhone scans the QR and runs the T0 demo over Wi-Fi or Tailscale". Needs: a real iPhone, this Mac running `scripts/dsh-up.mjs` with the bridge reachable on the LAN or Tailscale, and the app installed with your free Apple team | `main` | `1f35fa2` |
