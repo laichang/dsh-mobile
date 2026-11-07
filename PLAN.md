@@ -38,12 +38,12 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
-| T0 | review | merged `84db2e8` | 2026-11-07 | User accepts 1 `[human]` item: install the bridge from its README (§9) |
+| T0 | done | merged `84db2e8` | 2026-11-07 | — |
 | X1 | done | merged `ccc8ff9` | 2026-11-05 | — |
 | X2 | done | merged `e34a8bc` | 2026-11-05 | — (provisional D6 and deps in §9) |
 | X3 | review | merged `7f1b4b8` | 2026-11-05 | User runs the benchmark on a real phone and confirms D10 (§9) |
 | X4 | done | merged `ccc8ff9` | 2026-11-05 | — |
-| S1 | review | merged `1f35fa2` (batch 1) | 2026-11-05 | User accepts 2 `[human]` items: real iPhone, packet capture (§9) |
+| S1 | review | merged `1f35fa2` (batch 1) | 2026-11-07 | User accepts 1 `[human]` item: packet capture (§9) |
 | S2 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D20, D23 in §9) |
 | S3 | done | merged `1f35fa2` (batch 1) | 2026-11-05 | — (provisional D19 in §9) |
 | S4 | done | merged `acbf2c0` | 2026-11-05 | — (provisional D25 in §9) |
@@ -1586,14 +1586,14 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · S26 merged.** Merged as `bfd1c39`; `scripts/check-plan` on the merge commit passed. `scripts/review S26` at `4f60f1b`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S26-4f60f1b.txt`). 1 open `[human]` item, so S26 is `review`. §9 rows 66.
 
+- **2026-11-07 · T0, S1: user ticked bridge install and real-iPhone pairing.** User commit e9142dc. T0 is done. S1 waits on the packet capture (§9). §9 rows 10 and 24 removed. The user noted a README gap: the pairing QR does not show in dsh web's terminal; pair.js works.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
-| 10 | T0 | `[human]` | "Following `bridge/README.md` installs and enables the plugin in a DSH profile". Needs: this Mac with DSH 0.2.2-rc.1 (`~/.dshm`), about 10 minutes | `main` | `84db2e8` |
-| 24 | S1 | `[human]` | "A fresh iPhone scans the QR and runs the T0 demo over Wi-Fi or Tailscale". Needs: a real iPhone, this Mac running `scripts/dsh-up.mjs` with the bridge reachable on the LAN or Tailscale, and the app installed with your free Apple team | `main` | `1f35fa2` |
 | 25 | S1 | `[human]` | "A packet capture of that session shows only ciphertext". Needs: the session from row 24, plus Wireshark or `tcpdump` on this Mac | `main` | `1f35fa2` |
 | 27 | X3 | `[human]` | Benchmark 2 candidates on a 5,000-line transcript on a real iPhone. Run the signed test in spikes/x3-markdown/README.md. | `main` | `7f1b4b8` |
 | 28 | X3 | `[human]` / decision | Confirm provisional D10 streaming renderer choice after the device benchmark. | `main` | `7f1b4b8` |
