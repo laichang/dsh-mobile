@@ -69,7 +69,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S23 | review | merged `47acc0d` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
 | S24 | review | merged `28a6409` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
 | S25 | review | merged `2a189da` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
-| S26 | doing | `claude/s26-title-center` | 2026-11-07 | Slice owner builds (§8) |
+| S26 | review | merged `bfd1c39` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
 
 ## 1. Approach
 
@@ -1584,6 +1584,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-07 · S25 merged.** Merged as `2a189da`; `scripts/check-plan` on the merge commit passed. `scripts/review S25` at `95265b9`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S25-95265b9.txt`). 1 open `[human]` item, so S25 is `review`. §9 rows 64, 65 (D70).
 
+- **2026-11-07 · S26 merged.** Merged as `bfd1c39`; `scripts/check-plan` on the merge commit passed. `scripts/review S26` at `4f60f1b`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S26-4f60f1b.txt`). 1 open `[human]` item, so S26 is `review`. §9 rows 66.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1606,3 +1608,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 63 | S24 | `[human]` | The user no longer sees the bug | `main` | `28a6409` |
 | 64 | S25 | decision | ARCHITECTURE D70, *provisional*: App icon (DESIGN.md "App icon") | `claude/s25-app-icon` | merged `2a189da` |
 | 65 | S25 | `[human]` | The user no longer sees the bug | `main` | `2a189da` |
+| 66 | S26 | `[human]` | The user no longer sees the bug | `main` | `bfd1c39` |
