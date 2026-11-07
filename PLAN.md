@@ -1135,7 +1135,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S25 · Fix: App icon
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-07: dsh-mobile 应该要有个app图标，适配下. (Coordinator: `ios/dsh-mobile/Assets.xcassets/AppIcon.appiconset` has slots and no images.)
 
