@@ -69,6 +69,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S23 | review | merged `47acc0d` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
 | S24 | review | merged `28a6409` | 2026-11-07 | User accepts 1 `[human]` item (§9) |
 | S25 | doing | `claude/s25-app-icon` | 2026-11-07 | Slice owner builds (§8) |
+| S26 | todo | — | 2026-11-07 | Fix: Page title centering; start a fix session |
 
 ## 1. Approach
 
@@ -1144,6 +1145,24 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Status** todo · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-07: dsh-mobile 应该要有个app图标，适配下. (Coordinator: `ios/dsh-mobile/Assets.xcassets/AppIcon.appiconset` has slots and no images.)
+
+**Cuts**: Find the cause. Fix it. Add a test that fails without the fix.
+
+**Demo**: —
+
+**Done when**
+- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [ ] [human] The user no longer sees the bug — Evidence:
+
+**Not**: Other changes. Report other bugs to the coordinator as new fix slices.
+
+**Log**: —
+
+### S26 · Fix: Page title centering
+
+**Status** todo · **Needs** — · **Branch** —
+
+**Why**: The user reported a bug on 2026-11-07: "新会话" 没有左右居中，不符合预期.
 
 **Cuts**: Find the cause. Fix it. Add a test that fails without the fix.
 
