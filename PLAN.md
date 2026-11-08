@@ -55,7 +55,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S9 | todo | — | 2026-11-08 | Assign it and start a session |
 | S10 | todo | — | 2026-11-08 | Assign it and start a session |
 | S11 | todo | — | 2026-11-08 | Assign it and start a session |
-| S12 | doing | `claude/s12-store-test-waits` | 2026-11-09 | Slice owner builds (§8) |
+| S12 | done | merged `2574d2f` | 2026-11-09 | — |
 | S13 | todo | — | 2026-11-08 | Assign it and start a session |
 
 ## 1. Approach
@@ -666,6 +666,8 @@ Append-only, dated.
 - **2026-11-09 · S8 assigned.** Branch `claude/s8-bridge-listen-errors`, simulator `dshm-S8`, DSHM_HOME `~/.dshm/home-s8`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D125–D127. `eval "$(scripts/slice-env S8)"` exports them.
 
 - **2026-11-09 · S8 runs as a background agent.** S8 assigned (D125–D127) and started as a background agent. Running: S6, S8, S12. S11 (hosts tests) waits for S8, which also changes the hosts row.
+
+- **2026-11-09 · S12 merged.** Merged as `2574d2f`; `scripts/check-plan` on the merge commit passed. No open `[human]` items, so S12 is `done`.
 
 ## 9. Pending user confirmation
 
