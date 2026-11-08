@@ -470,6 +470,9 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
   - Finding for an issue: `dsh web` 0.2.2-rc.1 attaches no console exporter to the Cordis logger, so every bridge `logger.info` line is invisible, including "listening on" and the startup pairing QR that bridge/README.md says DSH's log prints. This slice sends only the listen error line to stderr too.
   - Flaky: none seen. One demo fix: the X3 card's own identifier `hosts.offlineCard` did not show in the accessibility tree; the UI test waits on `hosts.offlineCard.host` instead.
   - Next: reviewer runs `scripts/review S8` on the head commit.
+- **2026-11-09 · Review 851a84c PASS with one flaky part; repaired.**
+  - Review of 851a84c: RESULT: PASS (/tmp/dshm-review/S8-851a84c.txt). Flaky: `ui-bridge-errors-taken` passed on run 2 of 3.
+  - Cause: the test read the row label a second time after its wait; the store retries in the background, and the row reads "connecting" for a moment on each try, so the second read missed the address. Repair (round 1 of 3): each UI check waits on one predicate with every part (value, reason, address, fix). A new review runs on the new head.
 
 ### S9 · Fix: UI tests wait for keyboard focus and for animations
 

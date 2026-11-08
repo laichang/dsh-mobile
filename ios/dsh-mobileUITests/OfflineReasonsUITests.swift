@@ -46,9 +46,10 @@ final class OfflineReasonsUITests: XCTestCase {
         let app = launch()
 
         let row = hostRow(app)
-        waitFor("value == 'offline' AND label CONTAINS %@", "另一个程序占用了这个端口", row, timeout: 60)
-        XCTAssertTrue(row.label.contains(address), row.label)
-        XCTAssertTrue(row.label.contains("换个端口"), row.label) // the fix
+        // One predicate for all parts: the store retries in the background, and the row reads
+        // "connecting" for a moment on each try, so a second read of the label can miss them.
+        waitFor(row, timeout: 60, "value == 'offline' AND label CONTAINS %@ AND label CONTAINS %@ AND label CONTAINS %@",
+                "另一个程序占用了这个端口", address, "换个端口") // the reason, the address, the fix
         saveShot("bridge-errors-hosts-taken")
         closeHostsSheet(app)
 
@@ -63,9 +64,8 @@ final class OfflineReasonsUITests: XCTestCase {
         let app = launch()
 
         let row = hostRow(app)
-        waitFor("value == 'offline' AND label CONTAINS %@", "没有程序在这个端口上监听", row, timeout: 60)
-        XCTAssertTrue(row.label.contains(address), row.label)
-        XCTAssertFalse(row.label.contains("另一个程序"), row.label)
+        waitFor(row, timeout: 60, "value == 'offline' AND label CONTAINS %@ AND label CONTAINS %@ AND NOT (label CONTAINS %@)",
+                "没有程序在这个端口上监听", address, "另一个程序")
         saveShot("bridge-errors-hosts-nothing")
     }
 
@@ -106,7 +106,12 @@ final class OfflineReasonsUITests: XCTestCase {
 
     private func waitFor(_ format: String, _ argument: String, _ element: XCUIElement, timeout: TimeInterval = 30,
                          file: StaticString = #filePath, line: UInt = #line) {
-        let predicate = NSPredicate(format: format, argument)
+        waitFor(element, timeout: timeout, format, argument, file: file, line: line)
+    }
+
+    private func waitFor(_ element: XCUIElement, timeout: TimeInterval = 30, _ format: String, _ arguments: String...,
+                         file: StaticString = #filePath, line: UInt = #line) {
+        let predicate = NSPredicate(format: format, argumentArray: arguments)
         let result = XCTWaiter().wait(for: [expectation(for: predicate, evaluatedWith: element)], timeout: timeout)
         XCTAssertEqual(result, .completed, "\(predicate): \(element.debugDescription)", file: file, line: line)
     }
