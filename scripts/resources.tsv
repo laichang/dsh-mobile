@@ -8,3 +8,4 @@ T1	claude/t1-questions	1	47811	3284	47841	3314	dshm-T1	~/.dshm/home-t1	D92-D94	2
 T2	claude/t2-attachments	2	47812	3285	47842	3315	dshm-T2	~/.dshm/home-t2	D95-D97	2026-11-08
 S7	claude/s7-reconnect	1	47811	3284	47841	3314	dshm-S7	~/.dshm/home-s7	D98-D100	2026-11-08
 S1	claude/s1-followup-queue	0	47810	3283	47840	3313	dshm-S1	~/.dshm/home-s1	D101-D103	2026-11-08
+X1	claude/x1-model-failures	1	47811	3284	47841	3314	dshm-X1	~/.dshm/home-x1	D104-D106	2026-11-08

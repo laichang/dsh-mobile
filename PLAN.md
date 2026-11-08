@@ -43,7 +43,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | T0 | done | merged `71577b2` | 2026-11-08 | — (provisional D89 in §9) |
 | T1 | done | merged `8f55a72` | 2026-11-08 | — (provisional D92 in §9) |
 | T2 | doing | `claude/t2-attachments` | 2026-11-08 | Slice owner builds (§8) |
-| X1 | todo | — | 2026-11-08 | Assign it and start a session |
+| X1 | doing | `claude/x1-model-failures` | 2026-11-08 | Slice owner builds (§8) |
 | S1 | doing | `claude/s1-followup-queue` | 2026-11-08 | Slice owner builds (§8) |
 | S2 | todo | — | 2026-11-08 | Assign it and start a session |
 | S3 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -549,6 +549,8 @@ Append-only, dated.
 - **2026-11-08 · T0 merged; S1 runs as a background agent.** T0 merged as 71577b2 (review PASS on 7f6c6c1 after the merge of main, T0-7f6c6c1.txt). D89 is in §9. To merge, the coordinator stashed the user's uncommitted Localizable.xcstrings (Xcode reformat); it did not apply cleanly after the merge, so it stays as stash@{0} for the user and the file on main is the merged version. T2 asked to merge main again. S1 assigned; the app refused start_session in this event turn, so S1 runs as a background agent in its own worktree (§5.3 step 3).
 
 - **2026-11-08 · S7 merged.** Merged as `1978046`; `scripts/check-plan` on the merge commit passed. `scripts/review S7` at `90b3822`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S7-90b3822.txt`). No open `[human]` items, so S7 is `done`. §9 rows 3 (D98).
+
+- **2026-11-08 · X1 assigned.** Branch `claude/x1-model-failures`, simulator `dshm-X1`, DSHM_HOME `~/.dshm/home-x1`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D104–D106. `eval "$(scripts/slice-env X1)"` exports them.
 
 ## 9. Pending user confirmation
 
