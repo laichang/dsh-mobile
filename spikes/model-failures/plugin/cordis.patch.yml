@@ -1,0 +1,4 @@
+# Bundle layer for the throwaway model-failures spike plugin.
+- insert:
+    - id: dshm-spike-model-failures
+      name: '@dshm-spike/model-failures'

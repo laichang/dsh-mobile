@@ -25,7 +25,7 @@ import type { SessionDirectory } from './sessions/directory.ts'
 import { MILESTONES_CAPABILITY } from './milestones/wire.ts'
 import { DRAWER_CAPABILITY } from './drawer/workspace.ts'
 import { TRANSCRIPT_CAPABILITY } from './transcript/wire.ts'
-import { MessageMode } from './gen/conversation_pb.ts'
+import { MessageMode, QueueAction } from './gen/conversation_pb.ts'
 import { HandshakeRejected, type NoiseResponder } from './pairing/handshake.ts'
 import type { LoggedEvent } from './s2/host-log.ts'
 import { TaskHub, type TaskStarter } from './s2/task-hub.ts'
@@ -42,6 +42,8 @@ export const QUESTIONS_CAPABILITY = 'questions.v1'
 export const CAPABILITIES = ['tasks.v1', MILESTONES_CAPABILITY, 'resume.v1', 'interrupt.v1', TRANSCRIPT_CAPABILITY] as const
 /** D89: SendMessage, MessageAccepted and UserMessage (protocol/conversation.proto). */
 export const CONVERSATION_CAPABILITY = 'conversation.v1'
+/** D101: follow-ups while the task runs: QueuedMessage, EditQueue and QueueEdited. */
+export const QUEUE_CAPABILITY = 'conversation.v2'
 /** Where the dev-only plaintext channel is served. */
 export const PLAINTEXT_PATH = '/plaintext'
 
@@ -115,12 +117,15 @@ function serveConnection(
 ) {
   const { hub, hostName } = host
   const supported = supportsDsh(options.dshVersion)
+  // D101: the host can queue follow-ups while a task runs, and edit the queue.
+  const queues = !!(options.tasks.followUp && options.tasks.prompt && options.tasks.editQueue)
   let device = 'dev loopback'
   let helloDone = false
   let clientSessions = false
   let clientApprovals = false
   let clientTranscript = false
   let clientConversation = false
+  let clientQueue = false
   let clientQuestions = false
   let codec: FrameCodec | undefined
   const uploads = new UploadStaging() // D95: this connection's attachments
@@ -159,6 +164,8 @@ function serveConnection(
     if (!clientTranscript && event.body?.case === 'transcriptBlock') return
     // D89: only apps that send follow-ups read them back.
     if (!clientConversation && event.body?.case === 'userMessage') return
+    // D101: only apps that show the queue get its changes.
+    if (!clientQueue && event.body?.case === 'queuedMessage') return
     // Apps without `questions.v1` cannot answer, so they get no card.
     if (!clientQuestions && (event.body?.case === 'questionPending' || event.body?.case === 'questionResolved')) return
     // Older apps cannot withdraw temporary upstream approval rows.
@@ -186,6 +193,7 @@ function serveConnection(
         clientApprovals = request.body.value.capabilities.includes('approvals.v1')
         clientTranscript = request.body.value.capabilities.includes(TRANSCRIPT_CAPABILITY)
         clientConversation = request.body.value.capabilities.includes(CONVERSATION_CAPABILITY)
+        clientQueue = queues && request.body.value.capabilities.includes(QUEUE_CAPABILITY)
         clientQuestions = !!options.questions && request.body.value.capabilities.includes(QUESTIONS_CAPABILITY)
         return respond(id, {
           case: 'hello',
@@ -199,6 +207,7 @@ function serveConnection(
             ...(options.tasks.listWorkspaces ? ['workspaces.v1', DRAWER_CAPABILITY] : []),
             ...(host.authenticated.has(socket) ? ['devices.v1'] : []),
             ...(options.tasks.followUp ? [CONVERSATION_CAPABILITY] : []),
+            ...(queues ? [QUEUE_CAPABILITY] : []),
             ...(options.tasks.attachments ? [ATTACHMENTS_CAPABILITY] : []),
           ] : [] },
         })
@@ -287,6 +296,21 @@ function serveConnection(
           return fail(id, 'message/refused', error instanceof Error ? error.message : String(error))
         }
         return
+      }
+      case 'editQueue': {
+        if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
+        if (!queues) return fail(id, 'request/unsupported', 'This host cannot change the queue.')
+        const { taskId, messageId, action } = request.body.value
+        if (action !== QueueAction.STEER && action !== QueueAction.REMOVE) {
+          return fail(id, 'queue/action-invalid', 'Steer or remove a queued message.')
+        }
+        try {
+          const placement = await hub.editQueue(taskId, messageId, action === QueueAction.STEER ? 'steer' : 'remove')
+          return respond(id, { case: 'queueEdited', value: { taskId, messageId, placement } })
+        } catch (error) {
+          log(`queue edit failed: ${String(error)}`)
+          return fail(id, 'queue/refused', error instanceof Error ? error.message : String(error))
+        }
       }
       case 'listWorkspaces': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')

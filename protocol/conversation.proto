@@ -1,5 +1,5 @@
-// Conversation: more messages into the DSH session of a task (ARCHITECTURE D18, D89).
-// Capability "conversation.v1". Field numbers in frame.proto: 360–379.
+// Conversation: more messages into the DSH session of a task (ARCHITECTURE D18, D89, D101).
+// Capability "conversation.v1"; the queue while a task runs adds "conversation.v2". Field numbers in frame.proto: 360–379.
 //
 // A task is one DSH session (D13). After its first prompt the user can send more messages into
 // the same session. Each message starts (or joins) a turn whose output streams under the same
@@ -45,4 +45,56 @@ message UserMessage {
   int64 time_ms = 4;
   // The files sent with it, in order (D107).
   repeated AttachmentRef attachments = 400;
+}
+
+// ---- The queue while a task runs (D101; capability "conversation.v2") ----
+//
+// A message sent while the task runs waits in the task's DSH inbox until the agent takes it.
+// The bridge logs a QueuedMessage when it waits and each time its place changes, and the usual
+// UserMessage (same message_id) when DSH takes it: then the wait is over, and the message sits
+// in the transcript where DSH took it. Resume replays both, so the queue survives a reconnect.
+
+// Where a message waits, or why it stopped waiting without running.
+enum QueuePlacement {
+  QUEUE_PLACEMENT_UNSPECIFIED = 0;
+  // As a new turn after the running turn (and after the messages queued before it).
+  QUEUE_PLACEMENT_QUEUED = 1;
+  // At the next step of the running turn ("send now").
+  QUEUE_PLACEMENT_STEERING = 2;
+  // The user removed it. It does not run.
+  QUEUE_PLACEMENT_REMOVED = 3;
+  // The task stopped (interrupt, failure) before the message ran. The bridge took it out of the
+  // inbox, so it does not run by itself; the app gives its text back to the composer.
+  QUEUE_PLACEMENT_RETURNED = 4;
+}
+
+message QueuedMessage {
+  string task_id = 1;
+  string message_id = 2;
+  string text = 3;
+  // When the bridge accepted the message, Unix milliseconds.
+  int64 time_ms = 4;
+  QueuePlacement placement = 5;
+}
+
+enum QueueAction {
+  QUEUE_ACTION_UNSPECIFIED = 0;
+  // Move a queued message into the running turn: the agent takes it at its next step.
+  QUEUE_ACTION_STEER = 1;
+  // Take the message out of the queue.
+  QUEUE_ACTION_REMOVE = 2;
+}
+
+message EditQueue {
+  string task_id = 1;
+  string message_id = 2;
+  QueueAction action = 3;
+}
+
+// The message's place after the edit: STEERING or REMOVED, or QUEUED when the turn ended
+// before DSH could steer it (it then runs as the next turn).
+message QueueEdited {
+  string task_id = 1;
+  string message_id = 2;
+  QueuePlacement placement = 3;
 }

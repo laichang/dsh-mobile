@@ -43,10 +43,10 @@ This file exists only while this requirement is in progress. It serves this requ
 | T0 | done | merged `71577b2` | 2026-11-08 | — (provisional D89 in §9) |
 | T1 | done | merged `8f55a72` | 2026-11-08 | — (provisional D92 in §9) |
 | T2 | done | merged `1762164` | 2026-11-08 | — (provisional D95 in §9) |
-| X1 | doing | `claude/x1-model-failures` | 2026-11-08 | Slice owner builds (§8) |
-| S1 | doing | `claude/s1-followup-queue` | 2026-11-08 | Slice owner builds (§8) |
-| S2 | todo | — | 2026-11-08 | Assign it and start a session |
-| S3 | todo | — | 2026-11-08 | Assign it and start a session |
+| X1 | done | merged `9d4cb67` | 2026-11-08 | — (provisional D104 in §9) |
+| S1 | done | merged `55300a7` | 2026-11-09 | — (provisional D101, D102 in §9) |
+| S2 | doing | `claude/s2-questions-more` | 2026-11-09 | Slice owner builds (§8) |
+| S3 | doing | `claude/s3-model-failures` | 2026-11-08 | Slice owner builds (§8) |
 | S4 | doing | `claude/s4-attach-files` | 2026-11-08 | Slice owner builds (§8) |
 | S5 | todo | — | 2026-11-08 | Assign it and start a session |
 | S6 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -208,7 +208,7 @@ Each spike ends in a short written conclusion, plus throwaway code if needed. No
 
 ### X1 · Spike: Model failures in DSH
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: For #4 (S3). What does DSH 0.2.2-rc.1 send when the model of a running task is unavailable, its key is not valid, or the account has no balance (DeepSeek answers 402 "Insufficient Balance")? Does DSH retry, pause, or end the turn, and with which text? Can the mock LLM of DSH, or a small fake provider, make each case for tests?
 
@@ -217,12 +217,19 @@ Each spike ends in a short written conclusion, plus throwaway code if needed. No
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A script runs one task against real DSH for each failure (model not found, key not valid, no balance, rate limit) and records the events and the text that DSH sends — Evidence:
-- [ ] [auto] The README says for each failure whether DSH retries, pauses or ends the turn, and which text the phone can show; the recorded events are fixtures that S3 can replay — Evidence:
+- [x] [auto] A script runs one task against real DSH for each failure (model not found, key not valid, no balance, rate limit) and records the events and the text that DSH sends — Evidence: cmd:spikes/model-failures/run.sh · commit:5198f68
+- [x] [auto] The README says for each failure whether DSH retries, pauses or ends the turn, and which text the phone can show; the recorded events are fixtures that S3 can replay — Evidence: commit:5198f68
 
 **Not**: Production code.
 
 **Log**: —
+- **2026-11-08 · Spike done: model failures end the turn, rate limit retries first.** Done:
+  - spikes/model-failures/run.sh runs one task against real DSH 0.2.2-rc.1 per failure, with a fake DeepSeek provider (fake-provider.mjs), and records every sessionController.follow frame into spikes/model-failures/fixtures/<case>.json (10 cases, incl. 3 from DSH's mock LLM).
+  - Finding: DSH never pauses. Every failure ends the turn with turn/end reason {kind: error, error: {message, code, status}}: 404 → HTTP_404, 400 → INVALID_REQUEST, 401 → AUTH, 402 → QUOTA, at once. 429 → RATE_LIMIT after 5 retries in the same turn (llm/retry events, ~16 s; Retry-After is honored). An unlisted model is refused by selectModel (session/model-unavailable) before any turn. A new message after the failure runs turn 2 normally.
+  - D104 (provisional, pending user confirmation): bridge forwards code + message; the app shows its own copy for AUTH and QUOTA, DSH's message otherwise.
+  - No new dependencies.
+  Not done: real DeepSeek wording (the bodies follow DeepSeek's documented error codes); failures mid-task; DeepSeek account sign-in route.
+  Next: S3 copies the fixtures it replays into bridge/test/fixtures/model-failures/ and carries code to the app.
 
 ## 5. Slices
 
@@ -230,7 +237,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S1 · Follow-ups while a task runs and after an interrupt
 
-**Status** todo · **Needs** T0 · **Branch** —
+**Status** review · **Needs** T0 · **Branch** —
 
 **Why**: Part of #1. STORY §7: "任务进行中也能补充：追加一句话…纠正方向，不必打断重来". The user, 2026-11-08: "参考codex、claude，用户发送后，先排队，但给定"立即发送"/steer的标识，用户点击后直接发送". This changes the default of D18 from steer to queue.
 
@@ -244,13 +251,16 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/followup.sh --running`: while a task runs, send a follow-up; it waits as queued; tap 立即发送 on a second one; the next step answers it. Interrupt, then continue.
 
 **Done when**
-- [ ] [auto] A follow-up on a running session is queued and runs as the next turn; send-now moves a queued message into the current turn at its next step; remove takes it out; the queue and the order stay the same after a reconnect (`FakeDSH`, `FakeBridge`) — Evidence:
-- [ ] [ui] While a task runs, send a follow-up: it shows as queued above the composer and runs after the turn; tap 立即发送 on another one: the next step of the agent answers it, and the stop key stays (`cmd:scripts/demo/followup.sh`) — Evidence:
-- [ ] [ui] After an interrupt, send a new message in the same session: the task runs again and the interrupted card goes (`cmd:scripts/demo/followup.sh`) — Evidence:
+- [x] [auto] A follow-up on a running session is queued and runs as the next turn; send-now moves a queued message into the current turn at its next step; remove takes it out; the queue and the order stay the same after a reconnect (`FakeDSH`, `FakeBridge`) — Evidence: test:FollowUpQueueAgainstFakeDSH/aFollowUpWhileTheTaskRunsIsQueuedAndRunsAsTheNextTurn · test:FollowUpQueueAgainstFakeDSH/sendNowMovesAQueuedMessageIntoTheCurrentTurnAtItsNextStep · test:FollowUpQueueAgainstFakeDSH/removeTakesAQueuedMessageOut · test:FollowUpQueueAgainstFakeDSH/theQueueAndItsOrderStayTheSameAfterAReconnect · test:FollowUpQueueTests/aFollowUpWhileTheTaskRunsWaitsAndRunsAsTheNextTurn · test:FollowUpQueueTests/sendNowMovesAQueuedMessageIntoTheTurnAndRemoveTakesOneOut · test:FollowUpQueueTests/theQueueAndItsOrderStayTheSameAfterAReconnect
+- [x] [ui] While a task runs, send a follow-up: it shows as queued above the composer and runs after the turn; tap 立即发送 on another one: the next step of the agent answers it, and the stop key stays (`cmd:scripts/demo/followup.sh`) — Evidence: cmd:scripts/demo/followup.sh --running · test:FollowUpQueueUITests/testFollowUpsWhileATaskRunsAgainstRealDSH · shot:evidence/S1/followup-queued.png · shot:evidence/S1/followup-steered.png · shot:evidence/S1/followup-queue-done.png
+- [x] [ui] After an interrupt, send a new message in the same session: the task runs again and the interrupted card goes (`cmd:scripts/demo/followup.sh`) — Evidence: cmd:scripts/demo/followup.sh --running · test:FollowUpQueueUITests/testContinueAfterAnInterruptAgainstRealDSH · shot:evidence/S1/followup-interrupted.png · shot:evidence/S1/followup-continued.png
 
 **Not**: Attachments in follow-ups (S4). A failed task (S3). Editing the text of a queued message.
 
 **Log**: —
+- **2026-11-09 · Built; review PASS at ff68333.** Done: all three items ticked. Protocol: conversation.v2 in protocol/conversation.proto (QueuedMessage event, EditQueue request, QueueEdited response). Field 361 is in the existing conversation block 360–379, not a new block of 20: one registration on each existing conversation line of frame.proto. Bridge: a follow-up while the task runs is a sessionController.prompt with mode queue. 立即发送 is updateQueue steer, and remove is updateQueue remove. One follow continues across queued turns (D102). A stop gives waiting messages back as RETURNED and removes them from DSH's queue. After a stop, a new message starts a new turn in the same DSH session. App: FollowUpQueueView above the composer. While the field has text, the send key replaces the stop key. Returned messages go back into the composer. After a continued stop or finish, the milestone bar says the current state (it said Interrupted before). Demo: scripts/demo/followup.sh --running, with a slow mock reply (1.5 s per chunk) so that a turn runs while the test types. The DSH host check reads each session and confirms the order: the message sent now is in turn 1, then the queued one runs as turn 2. Merged main once (T2, S7, X1); the conflicts were additive (start() takes images, then continues; capabilities list conversation.v2 and then attachments.v1); codegen ran, all tests pass. Learned: DSH 0.2.2-rc.1 keeps its queue after cancel; steer on an idle session gives session/steer-unavailable; DSH renames the session from the mock reply, so the page title changes after the first turn (DSH behaviour, not changed here). Flaky: one full swift test run timed out in S16CodingTaskTests under machine load; it passed 3 runs out of 3 by itself and in every later full run. The review had no FLAKY parts.
+  Review: /tmp/dshm-review/S1-ff68333.txt RESULT: PASS (full run).
+  Provisional: D101 (the queue protocol and UX; amends D18 to default QUEUE with send-now, amends D89), D102 (one follow across turns). No new dependencies. D103 is not used.
 
 ### S2 · Agent questions: typed answers, 等我处理, and replay
 
@@ -572,6 +582,20 @@ Append-only, dated.
 
 - **2026-11-08 · S4 runs as a background agent.** S4 assigned (D107–D109) and started as a background agent in its own worktree (§5.3 step 3). Running: S1, X1, S4.
 
+- **2026-11-08 · X1 merged.** Merged as `9d4cb67`; `scripts/check-plan` on the merge commit passed. No open `[human]` items, so X1 is `done`. §9 rows 5 (D104).
+
+- **2026-11-08 · S3 assigned.** Branch `claude/s3-model-failures`, simulator `dshm-S3`, DSHM_HOME `~/.dshm/home-s3`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D110–D112. `eval "$(scripts/slice-env S3)"` exports them.
+
+- **2026-11-08 · X1 merged; S3 runs as a background agent.** X1 merged as 9d4cb67 (no [ui] items, so scripts/review X1 has nothing to run). Findings in spikes/model-failures/README.md: DSH never pauses on a model failure; every failure ends the turn with turn/end reason error {message, code, status} (rate limit after 5 retries in ~16 s); a new prompt after a failed turn continues the same session. D104 in §9. Not covered by the spike: real DeepSeek wording, failures mid-task, ACCOUNT_QUOTA. S3 assigned (D110–D112) and started as a background agent with the X1 findings in its brief.
+
+- **2026-11-09 · S1 merged.** Merged as `55300a7`; `scripts/check-plan` on the merge commit passed. `scripts/review S1` at `ff68333`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S1-ff68333.txt`). No open `[human]` items, so S1 is `done`. §9 rows 6, 7 (D101, D102).
+
+- **2026-11-09 · S1 merged.** S1 merged as 55300a7 (review PASS on ff68333, S1-ff68333.txt, no flaky part; head 50558d6 adds only PLAN changes). Capability conversation.v2 (QueuedMessage, EditQueue/QueueEdited, field 361 in the conversation block). D18 amended (default queue, 立即发送 steers; D18 was user-confirmed, the amendment is provisional), D89 amended, D101 and D102 new: all in §9. Flaky outside the review: one full swift test run failed in S16CodingTaskTests under load (S12 covers it). S1 and S3 both touched the X1 caption and MilestoneBar.swift; S3 owns that seam when it lands.
+
+- **2026-11-09 · S2 assigned.** Branch `claude/s2-questions-more`, simulator `dshm-S2`, DSHM_HOME `~/.dshm/home-s2`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D113–D115. `eval "$(scripts/slice-env S2)"` exports them.
+
+- **2026-11-09 · S2 runs as a background agent.** S2 assigned (D113–D115) and started as a background agent. Its brief names the conflict between the Cuts (a held question times out, as D25) and D92 (no timeout): the owner decides and records it in D92. Running: S2, S3, S4.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -582,3 +606,8 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 2 | T0 | decision | ARCHITECTURE D89, *provisional*: A follow-up message continues the task (screen 04) | `claude/t0-followup` | merged `71577b2` |
 | 3 | S7 | decision | ARCHITECTURE D98, *provisional*: A reconnect tries every saved address of the host, one at a time, the last working one first (amends D21 e) | `claude/s7-reconnect` | merged `1978046` |
 | 4 | T2 | decision | ARCHITECTURE D95, *provisional*: Attachments: one photo in a new task, sent in parts | `claude/t2-attachments` | merged `1762164` |
+| 5 | X1 | decision | ARCHITECTURE D104, *provisional*: A model failure ends the task as failed; the phone shows text chosen by the failure code | `claude/x1-model-failures` | merged `9d4cb67` |
+| 6 | S1 | decision | ARCHITECTURE D101, *provisional*: Follow-ups while a task runs, and after a stop (screens 04, X1; amends D18, D89) | `claude/s1-followup-queue` | merged `55300a7` |
+| 7 | S1 | decision | ARCHITECTURE D102, *provisional*: One follow across turns (bridge, extends D89) | `claude/s1-followup-queue` | merged `55300a7` |
+| 8 | S1 | decision | D18 amended: default QUEUE for a follow-up while a task runs, 立即发送 steers (D18 itself was user-confirmed) | `claude/s1-followup-queue` | `7c1a8cd` |
+| 9 | S1 | decision | D89 amended: a follow-up can be sent while the task runs and after a stop | `claude/s1-followup-queue` | `7c1a8cd` |

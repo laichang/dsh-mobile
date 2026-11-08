@@ -85,7 +85,7 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
     }
 
     /// The row id of the follow-up message with the bridge's `message_id`.
-    public static func userMessageID(_ messageID: String) -> String { "message-\(messageID)" }
+    public static func userMessageID(_ messageID: String) -> String { messagePrefix + messageID }
 
     /// D89: a follow-up message, placed like a row: after the text that streamed before it.
     public init(_ wire: Dshm_V1_UserMessage) {
@@ -93,6 +93,9 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
                   time: Date(timeIntervalSince1970: TimeInterval(wire.timeMs) / 1000),
                   attachments: wire.attachments.isEmpty ? nil : wire.attachments.map(MessageAttachment.init))
     }
+
+    /// The row ID of a follow-up message is this prefix and the bridge's message ID.
+    public static let messagePrefix = "message-"
 
     public var isUserMessage: Bool {
         if case .userMessage = kind { true } else { false }

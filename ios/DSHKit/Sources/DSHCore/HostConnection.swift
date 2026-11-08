@@ -20,7 +20,10 @@ public enum TaskEvent: Sendable, Equatable {
     /// S17: a thinking or tool-call row was added or changed (`transcript.v1`).
     case transcriptBlock(TranscriptItem)
     /// D89: the user sent one more message into the task (`conversation.v1`). Its turn follows.
+    /// D101: for a message that waited, this is where DSH took it.
     case userMessage(TranscriptItem)
+    /// D101: a follow-up waits while the task runs, moved, or stopped waiting (`conversation.v2`).
+    case queuedMessage(QueuedMessage)
     /// An agent question waits for an answer (`questions.v1`): its card as a transcript row.
     case questionPending(TranscriptItem)
     case questionResolved(Dshm_V1_QuestionResolved)
@@ -360,7 +363,7 @@ public actor HostConnection {
             var hello = Dshm_V1_Hello()
             hello.protocolVersion = DSHProtocolInfo.version
             hello.capabilities = [DSHProtocolInfo.approvalsCapability, "sessions.v1", DSHProtocolInfo.transcriptCapability,
-                                  DSHProtocolInfo.conversationCapability,
+                                  DSHProtocolInfo.conversationCapability, DSHProtocolInfo.queueCapability,
                                   DSHProtocolInfo.questionsCapability]
             let response = try await request(.hello(hello))
             guard case .hello(let theirs)? = response.body else { throw HostConnectionError.unexpectedResponse }
@@ -491,6 +494,22 @@ public actor HostConnection {
         let response = try await request(.sendMessage(message))
         guard case .messageAccepted(let accepted)? = response.body else { throw HostConnectionError.unexpectedResponse }
         return accepted.messageID
+    }
+
+    /// D101: moves a waiting follow-up into the running turn (`.steer`), or takes it out
+    /// (`.remove`). Returns where it waits now; its `.queuedMessage` event follows.
+    @discardableResult
+    public func editQueue(taskID: String, messageID: String, action: Dshm_V1_QueueAction) async throws -> QueuedMessage.Placement {
+        guard capabilities.contains(DSHProtocolInfo.queueCapability) else {
+            throw HostConnectionError.bridge(code: "request/unsupported", message: "This host cannot change the queue.")
+        }
+        var edit = Dshm_V1_EditQueue()
+        edit.taskID = taskID
+        edit.messageID = messageID
+        edit.action = action
+        let response = try await request(.editQueue(edit))
+        guard case .queueEdited(let edited)? = response.body else { throw HostConnectionError.unexpectedResponse }
+        return QueuedMessage.Placement(wire: edited.placement)
     }
 
     public func modelCatalog() async throws -> ModelCatalog {
@@ -677,6 +696,8 @@ public actor HostConnection {
             return TranscriptItem(b).map { .transcriptBlock($0) }
         case .userMessage(let m)?:
             return .userMessage(TranscriptItem(m))
+        case .queuedMessage(let q)?:
+            return .queuedMessage(QueuedMessage(q))
         case .questionPending(let q)?:
             return .questionPending(AgentQuestion.pendingRow(q))
         case .questionResolved(let r)?:

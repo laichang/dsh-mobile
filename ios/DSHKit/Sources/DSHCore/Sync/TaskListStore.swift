@@ -93,6 +93,8 @@ public final class TaskListStore {
         public var blocks = StructuredTranscript()
         /// S27: when the latest turn started, if the host said (D76).
         public var turnStartedAt: Date? = nil
+        /// D101: follow-ups that wait while the task runs, in the order they were sent.
+        public var queue: [QueuedMessage] = []
         /// The files this phone sent with the first message (D95, D107), with image thumbnails.
         public var attachments: [MessageAttachment] = []
 
@@ -286,9 +288,10 @@ public final class TaskListStore {
             && $0.capabilities.contains(DSHProtocolInfo.attachmentsCapability) }
     }
 
-    /// D107: whether a follow-up to `row` can take attachments.
+    /// D107: whether a follow-up to `row` can take attachments: once the task is done (completed or
+    /// stopped), not while it runs (a queued message carries text only, D101).
     public func canAttach(to row: TaskRow) -> Bool {
-        canFollowUp(row) && links.first { $0.key == row.hostKey }?.capabilities?.contains(DSHProtocolInfo.attachmentsCapability) == true
+        row.state.isTerminal && canFollowUp(row) && links.first { $0.key == row.hostKey }?.capabilities?.contains(DSHProtocolInfo.attachmentsCapability) == true
     }
 
     public func attachments(on target: AttachTarget) -> [ComposerAttachment] {
@@ -453,17 +456,25 @@ public final class TaskListStore {
         try await link.connection.interrupt(taskID: row.taskID)
     }
 
-    /// D89: the host can take a follow-up for this task now: it is done, and the host is online
-    /// with `conversation.v1`. Follow-ups while it runs, or after a failure or a stop, come later.
+    /// The host can take a follow-up for this task now: the host is online with `conversation.v1`,
+    /// and the task is done (D89). With `conversation.v2` (D101) also while it runs (the message
+    /// waits in a queue) and after the user stopped it (the session goes on). Not after a failure.
     public func canFollowUp(_ row: TaskRow) -> Bool {
-        guard row.state == .completed, !row.externalSession, !row.approvalOnly,
-              let link = links.first(where: { $0.key == row.hostKey }), link.reachability == .online else { return false }
-        return link.capabilities?.contains(DSHProtocolInfo.conversationCapability) == true
+        guard !row.externalSession, !row.approvalOnly,
+              let link = links.first(where: { $0.key == row.hostKey }), link.reachability == .online,
+              let capabilities = link.capabilities, capabilities.contains(DSHProtocolInfo.conversationCapability) else { return false }
+        switch row.state {
+        case .completed: return true
+        case .running, .waitingOnUser, .interrupted: return capabilities.contains(DSHProtocolInfo.queueCapability)
+        case .failed: return false
+        }
     }
 
-    /// D89: sends `text` into the DSH session of `row`. The user message and the new turn arrive
-    /// as host events, so the page shows them in order, and a reconnect replays them.
-    /// D107: the files on the page's composer go up first and with the message; then they leave it.
+    /// Sends `text` into the DSH session of `row`. The user message and the new turn arrive as host
+    /// events, so the page shows them in order, and a reconnect replays them. D101: while the task
+    /// runs, the message waits in its queue (`QUEUE`): the next turn, unless the user sends it now.
+    /// D107: once the task is done, the files on the page's composer go up first and with the
+    /// message; then they leave it.
     public func sendFollowUp(_ text: String, for row: TaskRow) async throws {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
@@ -476,8 +487,9 @@ public final class TaskListStore {
                                              message: "Remove the files larger than \(Attachments.sizeText(Attachments.maxBytes)).")
         }
         let sent = attachments(on: target).map(\.attachment.sent)
-        let uploadIDs = try await uploadAttachments(on: target, via: link.connection)
-        let messageID = try await link.connection.sendMessage(taskID: row.taskID, text: trimmed, uploadIDs: uploadIDs)
+        let mode: Dshm_V1_MessageMode = row.state.isTerminal ? .steer : .queue
+        let uploadIDs = sent.isEmpty ? [] : try await uploadAttachments(on: target, via: link.connection)
+        let messageID = try await link.connection.sendMessage(taskID: row.taskID, text: trimmed, mode: mode, uploadIDs: uploadIDs)
         setAttachments([], on: target)
         if sent.contains(where: { $0.thumbnail != nil }) { keepThumbnails(sent, messageID: messageID, taskKey: row.key) }
     }
@@ -498,6 +510,31 @@ public final class TaskListStore {
             scheduleSave()
             refresh()
         }
+    }
+
+    /// D101 · "立即发送": the waiting message goes in at the next step of the running turn.
+    public func sendNow(_ message: QueuedMessage, for row: TaskRow) async throws {
+        try await editQueue(message, for: row, action: .steer)
+    }
+
+    /// D101: takes a waiting message out of the queue; it does not run.
+    public func removeQueued(_ message: QueuedMessage, for row: TaskRow) async throws {
+        try await editQueue(message, for: row, action: .remove)
+    }
+
+    private func editQueue(_ message: QueuedMessage, for row: TaskRow, action: Dshm_V1_QueueAction) async throws {
+        guard let link = links.first(where: { $0.key == row.hostKey }), link.reachability == .online else {
+            throw HostConnectionError.notConnected
+        }
+        try await link.connection.editQueue(taskID: row.taskID, messageID: message.id, action: action)
+    }
+
+    /// D101: the texts of follow-ups that the task did not run because it stopped, for the
+    /// composer of the task's page. They leave the store when the page takes them.
+    public private(set) var returnedDrafts: [String: [String]] = [:]
+
+    public func takeReturnedDrafts(for taskKey: String) -> [String] {
+        returnedDrafts.removeValue(forKey: taskKey) ?? []
     }
 
     public func answerApproval(_ approval: Approval, hostKey: String, allow: Bool) async throws {
@@ -709,6 +746,19 @@ public final class TaskListStore {
                 task.structuredTranscript = blocks
                 structuredTranscripts[task.key] = blocks
             }
+            // D101: a follow-up that waited is in the transcript now, where DSH took it.
+            if case .userMessage = event.event, item.id.hasPrefix(TranscriptItem.messagePrefix), !task.queueData.isEmpty {
+                var queue = task.followUpQueue
+                if queue.taken(String(item.id.dropFirst(TranscriptItem.messagePrefix.count))) { task.followUpQueue = queue }
+            }
+            task.logID = host.logID
+        case .queuedMessage(let message):
+            let task = taskRecord(hostKey: link.key, taskID: message.taskID, title: "")
+            var queue = task.followUpQueue
+            let waited = queue.messages.contains { $0.id == message.id }
+            if queue.apply(message) { task.followUpQueue = queue }
+            // The task stopped before it ran: its text goes back to this phone's composer.
+            if message.placement == .returned, waited { returnedDrafts[task.key, default: []].append(message.text) }
             task.logID = host.logID
         case .questionPending(let item):
             // The card sits after the text streamed so far, as a transcript row does (S17).
@@ -915,7 +965,8 @@ public final class TaskListStore {
                 approvalsAnswered: t.approvalsAnswered,
                 blocks: link.capabilities?.contains(DSHProtocolInfo.transcriptCapability) == false
                     ? structuredTranscript(of: t).userMessagesOnly : structuredTranscript(of: t),
-                turnStartedAt: t.turnStartedAt, attachments: t.sentAttachments)
+                turnStartedAt: t.turnStartedAt,
+                queue: t.queueData.isEmpty ? [] : t.followUpQueue.messages, attachments: t.sentAttachments)
         }
     }
 

@@ -40,6 +40,22 @@ export interface SessionControllerLike {
     request: { address: { kind: 'session'; sessionId: string }; assistantStream: true; activate?: boolean },
     signal: AbortSignal,
   ): AsyncIterable<FollowFrame>
+  /** D101: the session's inbox: messages that wait for the next step (`steering`) or the next turn (`queued`). */
+  state(request: { sessionId: string }, signal: AbortSignal): Promise<{ running: boolean; queue: readonly QueueItem[] | null }>
+  /** D101: moves a waiting message into the running turn, or takes it out. `itemId` is DSH's own ID of the item. */
+  updateQueue(request: { sessionId: string; itemId: string; action: { kind: 'steer' } | { kind: 'remove' } }): Promise<unknown>
+}
+
+/** One waiting message of `sessionController.state().queue`; `rpcId` is the prompt's `requestId`. */
+export interface QueueItem {
+  id: string
+  placement: 'queued' | 'steering' | 'context'
+  rpcId?: string
+}
+
+/** D101: the message is not in the session's inbox any more (DSH took it, or it was removed). */
+export class QueueItemGone extends Error {
+  constructor() { super('This message is no longer waiting.') }
 }
 
 /** A prompt part: text, or a file staged through `fileUploads` (an image receipt enters as that image, D95; a file receipt as a saved-path note, D107). */
@@ -70,6 +86,7 @@ export type TaskOutput =
   | { kind: 'milestone'; milestone: Milestone }
   | { kind: 'block'; block: BlockOut } // S17
   | { kind: 'turn'; turn: number } // D89: the DSH turn number, once the turn starts
+  | { kind: 'user'; messageId: string; text: string } // D101: DSH took a user message into the turn (its `requestId`)
   | { kind: 'end'; status: 'completed' | 'interrupted' | 'failed'; message?: string }
 
 /** One more turn of a task's session (D89): its output, and the DSH turn it waits for. */
@@ -79,11 +96,14 @@ export interface FollowUpOptions {
   mode: PromptMode
   /** The latest DSH turn number the task has seen; the new turn has a larger one. */
   afterTurn?: number
-  /** A prefix for the transcript block IDs of this turn, so they stay unique within the task. */
-  blockPrefix: string
+  /** D101: asked when a turn completes; true when another turn of the task follows (a queued message). */
+  continues?: Continues
   /** D107: staged files that go into the message after its text, in order. */
   files?: readonly StagedFile[]
 }
+
+/** D101: asked when a turn completes; true keeps following the session into its next turn. */
+export type Continues = () => Promise<boolean>
 
 export interface StartedTask {
   taskId: string
@@ -163,7 +183,7 @@ export class DshTasks {
   }
 
   async start(prompt: string, signal: AbortSignal, selection?: Selection, path?: string,
-              files: readonly StagedFile[] = []): Promise<StartedTask> {
+              files: readonly StagedFile[] = [], continues?: Continues): Promise<StartedTask> {
     if (files.length && !this.dsh.fileUploads) throw new Error('This host cannot take attachments.')
     path ??= this.cwd
     if (!isAbsolute(path)) throw new Error('Choose an absolute workspace path on this host.')
@@ -178,17 +198,18 @@ export class DshTasks {
 
     // An approval can arrive before prompt() returns. Distinguish our tasks from requests made by another client.
     this.sessions.add(sessionId)
+    const requestId = randomUUID()
     try {
       if (selection) await this.selectModel(sessionId, selection)
       const content = await this.content(sessionId, prompt, files, signal)
-      await this.dsh.sessionController.prompt({ requestId: randomUUID(), sessionId, mode: 'queue', content }, signal)
+      await this.dsh.sessionController.prompt({ requestId, sessionId, mode: 'queue', content }, signal)
     } catch (error) {
       this.sessions.delete(sessionId)
       await iterator.return?.()
       throw error
     }
 
-    return { taskId: sessionId, output: mapFollow(first, iterator), workspace: path }
+    return { taskId: sessionId, output: mapFollow(first, iterator, { continues, ownRequest: requestId }), workspace: path }
   }
 
   /**
@@ -208,16 +229,58 @@ export class DshTasks {
       await iterator.return?.()
       throw error
     }
-    return mapFollow(first, iterator, { afterTurn: options.afterTurn, blockPrefix: options.blockPrefix, milestones: false })
+    return mapFollow(first, iterator, { afterTurn: options.afterTurn, prefixTurns: true, milestones: false, continues: options.continues })
+  }
+
+  /**
+   * D101: a message into the session of a running task, with no follow of its own: the task's
+   * running follow maps what it brings. `queue` waits for the next turn; `steer` goes in at the next step.
+   */
+  async prompt(taskId: string, text: string, options: { messageId: string; mode: PromptMode }, signal: AbortSignal): Promise<void> {
+    await this.dsh.sessionController.prompt(
+      { requestId: options.messageId, sessionId: taskId, mode: options.mode, content: [{ type: 'text', text }] }, signal)
+  }
+
+  /**
+   * D101: moves a waiting message into the running turn (`steer`), or takes it out (`remove`), with
+   * DSH's own queue edit. Finds DSH's item by the message's `requestId`. Returns false when DSH can
+   * no longer steer into the turn (the turn is ending; the message then runs as the next turn).
+   * Throws `QueueItemGone` when the message does not wait any more.
+   */
+  async editQueue(taskId: string, messageId: string, action: 'steer' | 'remove'): Promise<boolean> {
+    const controller = this.dsh.sessionController
+    const { queue } = await controller.state({ sessionId: taskId }, AbortSignal.timeout(10_000))
+    const item = queue?.find(i => i.rpcId === messageId)
+    if (!item) throw new QueueItemGone()
+    try {
+      await controller.updateQueue({ sessionId: taskId, itemId: item.id, action: { kind: action } })
+      return true
+    } catch (error) {
+      const code = (error as { code?: unknown } | null)?.code
+      if (code === 'session/steer-unavailable') return false
+      if (code === 'session/queue-item-not-found') throw new QueueItemGone()
+      throw error
+    }
+  }
+
+  /** D101: whether the session's agent runs, and the `requestId`s of the messages in its inbox. */
+  async inbox(taskId: string): Promise<{ running: boolean; waiting: string[] }> {
+    const { running, queue } = await this.dsh.sessionController.state({ sessionId: taskId }, AbortSignal.timeout(10_000))
+    return { running, waiting: (queue ?? []).flatMap(i => i.placement !== 'context' && i.rpcId ? [i.rpcId] : []) }
   }
 }
 
 interface MapOptions {
   /** Wait for a turn after this one (follow-ups); undefined takes the first turn that starts. */
   afterTurn?: number
-  blockPrefix?: string
+  /** D89: the first mapped turn's block IDs get a `turn-N-` prefix too (later turns always do). */
+  prefixTurns?: boolean
   /** Milestones map the task's first turn only (S3). */
   milestones?: boolean
+  /** D101: asked when a turn completes; true maps the session's next turn too (a queued message). */
+  continues?: Continues
+  /** The `requestId` of the task's first prompt: its user message is the task's title, not a follow-up. */
+  ownRequest?: string
 }
 
 async function* once(data: Uint8Array): AsyncGenerator<Uint8Array> { yield data }
@@ -226,12 +289,21 @@ async function* mapFollow(
   first: IteratorResult<FollowFrame>, iterator: AsyncIterator<FollowFrame>, options: MapOptions = {},
 ): AsyncGenerator<TaskOutput> {
   let turn: number | undefined
-  const mapsMilestones = options.milestones ?? true
+  let afterTurn = options.afterTurn
+  let prefixTurns = options.prefixTurns ?? false
+  let mapsMilestones = options.milestones ?? true
   const milestones = new MilestoneMapper()
-  const blocks = new TranscriptMapper(options.blockPrefix) // S17
+  let blocks = new TranscriptMapper() // S17
   try {
     for (let next = first; !next.done; next = await iterator.next()) {
       const f = next.value
+      if (f.type === 'event' && f.event.type === 'turn/start' && turn === undefined && prefixTurns) {
+        // D89: a later turn's thinking block IDs get its DSH turn number, so they stay unique per task.
+        const started = (f.event.data as { turn?: unknown } | null)?.turn
+        if (typeof started === 'number' && (afterTurn === undefined || started > afterTurn)) {
+          blocks = new TranscriptMapper(`turn-${started}-`)
+        }
+      }
       if (f.type === 'assistant-stream') for (const block of blocks.stream(f.frame)) yield { kind: 'block', block }
       if (f.type === 'event') for (const block of blocks.event(f.event)) yield { kind: 'block', block }
       if (f.type === 'assistant-stream' && f.frame.type === 'chunk') {
@@ -247,13 +319,28 @@ async function* mapFollow(
         if (mapsMilestones) for (const milestone of milestones.map(f.event)) yield { kind: 'milestone', milestone }
         const data = f.event.data as { turn?: number; reason?: { kind?: string; error?: unknown; reason?: { kind?: string } } } | null
         if (f.event.type === 'turn/start' && turn === undefined
-            && (options.afterTurn === undefined || (typeof data?.turn === 'number' && data.turn > options.afterTurn))) {
+            && (afterTurn === undefined || (typeof data?.turn === 'number' && data.turn > afterTurn))) {
           turn = data?.turn
           if (typeof turn === 'number') yield { kind: 'turn', turn }
+        }
+        // D101: DSH took a user message into the turn (a follow-up, queued or sent now): it sits here.
+        const user = f.event.data as { source?: { kind?: string; rpcId?: unknown }; content?: { type?: string; text?: unknown }[] } | null
+        if (f.event.type === 'user/message' && turn !== undefined && user?.source?.kind === 'user'
+            && typeof user.source.rpcId === 'string' && user.source.rpcId !== options.ownRequest) {
+          const text = (user.content ?? []).flatMap(c => c.type === 'text' && typeof c.text === 'string' ? [c.text] : []).join('')
+          yield { kind: 'user', messageId: user.source.rpcId, text }
         }
         if (f.event.type === 'turn/end' && (turn === undefined || data?.turn === turn)) {
           for (const block of blocks.finish(f.event.time)) yield { kind: 'block', block }
           const kind = data?.reason?.kind ?? 'unknown'
+          if (kind === 'completed' && turn !== undefined && options.continues && await options.continues()) {
+            // D101: a queued message runs as the next turn of the same session: follow it too.
+            afterTurn = turn
+            turn = undefined
+            prefixTurns = true
+            mapsMilestones = false
+            continue
+          }
           if (kind === 'completed') yield { kind: 'end', status: 'completed' }
           else if (isUserInterrupt(data?.reason)) yield { kind: 'end', status: 'interrupted' }
           else yield { kind: 'end', status: 'failed', message: describeFailure(kind, data?.reason?.error) }

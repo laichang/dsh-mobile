@@ -8,8 +8,8 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-/// Conversation: more messages into the DSH session of a task (ARCHITECTURE D18, D89).
-/// Capability "conversation.v1". Field numbers in frame.proto: 360–379.
+/// Conversation: more messages into the DSH session of a task (ARCHITECTURE D18, D89, D101).
+/// Capability "conversation.v1"; the queue while a task runs adds "conversation.v2". Field numbers in frame.proto: 360–379.
 ///
 /// A task is one DSH session (D13). After its first prompt the user can send more messages into
 /// the same session. Each message starts (or joins) a turn whose output streams under the same
@@ -74,6 +74,104 @@ public nonisolated enum Dshm_V1_MessageMode: SwiftProtobuf.Enum, Swift.CaseItera
 
 }
 
+/// Where a message waits, or why it stopped waiting without running.
+public nonisolated enum Dshm_V1_QueuePlacement: SwiftProtobuf.Enum, Swift.CaseIterable {
+  public typealias RawValue = Int
+  case unspecified // = 0
+
+  /// As a new turn after the running turn (and after the messages queued before it).
+  case queued // = 1
+
+  /// At the next step of the running turn ("send now").
+  case steering // = 2
+
+  /// The user removed it. It does not run.
+  case removed // = 3
+
+  /// The task stopped (interrupt, failure) before the message ran. The bridge took it out of the
+  /// inbox, so it does not run by itself; the app gives its text back to the composer.
+  case returned // = 4
+  case UNRECOGNIZED(Int)
+
+  public init() {
+    self = .unspecified
+  }
+
+  public init?(rawValue: Int) {
+    switch rawValue {
+    case 0: self = .unspecified
+    case 1: self = .queued
+    case 2: self = .steering
+    case 3: self = .removed
+    case 4: self = .returned
+    default: self = .UNRECOGNIZED(rawValue)
+    }
+  }
+
+  public var rawValue: Int {
+    switch self {
+    case .unspecified: return 0
+    case .queued: return 1
+    case .steering: return 2
+    case .removed: return 3
+    case .returned: return 4
+    case .UNRECOGNIZED(let i): return i
+    }
+  }
+
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static let allCases: [Dshm_V1_QueuePlacement] = [
+    .unspecified,
+    .queued,
+    .steering,
+    .removed,
+    .returned,
+  ]
+
+}
+
+public nonisolated enum Dshm_V1_QueueAction: SwiftProtobuf.Enum, Swift.CaseIterable {
+  public typealias RawValue = Int
+  case unspecified // = 0
+
+  /// Move a queued message into the running turn: the agent takes it at its next step.
+  case steer // = 1
+
+  /// Take the message out of the queue.
+  case remove // = 2
+  case UNRECOGNIZED(Int)
+
+  public init() {
+    self = .unspecified
+  }
+
+  public init?(rawValue: Int) {
+    switch rawValue {
+    case 0: self = .unspecified
+    case 1: self = .steer
+    case 2: self = .remove
+    default: self = .UNRECOGNIZED(rawValue)
+    }
+  }
+
+  public var rawValue: Int {
+    switch self {
+    case .unspecified: return 0
+    case .steer: return 1
+    case .remove: return 2
+    case .UNRECOGNIZED(let i): return i
+    }
+  }
+
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static let allCases: [Dshm_V1_QueueAction] = [
+    .unspecified,
+    .steer,
+    .remove,
+  ]
+
+}
+
 public nonisolated struct Dshm_V1_SendMessage: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -133,12 +231,75 @@ public nonisolated struct Dshm_V1_UserMessage: Sendable {
   public init() {}
 }
 
+public nonisolated struct Dshm_V1_QueuedMessage: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var taskID: String = String()
+
+  public var messageID: String = String()
+
+  public var text: String = String()
+
+  /// When the bridge accepted the message, Unix milliseconds.
+  public var timeMs: Int64 = 0
+
+  public var placement: Dshm_V1_QueuePlacement = .unspecified
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Dshm_V1_EditQueue: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var taskID: String = String()
+
+  public var messageID: String = String()
+
+  public var action: Dshm_V1_QueueAction = .unspecified
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// The message's place after the edit: STEERING or REMOVED, or QUEUED when the turn ended
+/// before DSH could steer it (it then runs as the next turn).
+public nonisolated struct Dshm_V1_QueueEdited: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var taskID: String = String()
+
+  public var messageID: String = String()
+
+  public var placement: Dshm_V1_QueuePlacement = .unspecified
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_MessageMode: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0MESSAGE_MODE_UNSPECIFIED\0\u{1}MESSAGE_MODE_STEER\0\u{1}MESSAGE_MODE_QUEUE\0")
+}
+
+nonisolated extension Dshm_V1_QueuePlacement: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0QUEUE_PLACEMENT_UNSPECIFIED\0\u{1}QUEUE_PLACEMENT_QUEUED\0\u{1}QUEUE_PLACEMENT_STEERING\0\u{1}QUEUE_PLACEMENT_REMOVED\0\u{1}QUEUE_PLACEMENT_RETURNED\0")
+}
+
+nonisolated extension Dshm_V1_QueueAction: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0QUEUE_ACTION_UNSPECIFIED\0\u{1}QUEUE_ACTION_STEER\0\u{1}QUEUE_ACTION_REMOVE\0")
 }
 
 nonisolated extension Dshm_V1_SendMessage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
@@ -266,6 +427,136 @@ nonisolated extension Dshm_V1_UserMessage: SwiftProtobuf.Message, SwiftProtobuf.
     if lhs.text != rhs.text {return false}
     if lhs.timeMs != rhs.timeMs {return false}
     if lhs.attachments != rhs.attachments {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Dshm_V1_QueuedMessage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".QueuedMessage"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{3}message_id\0\u{1}text\0\u{3}time_ms\0\u{1}placement\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.taskID) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.messageID) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.text) }()
+      case 4: try { try decoder.decodeSingularInt64Field(value: &self.timeMs) }()
+      case 5: try { try decoder.decodeSingularEnumField(value: &self.placement) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.taskID.isEmpty {
+      try visitor.visitSingularStringField(value: self.taskID, fieldNumber: 1)
+    }
+    if !self.messageID.isEmpty {
+      try visitor.visitSingularStringField(value: self.messageID, fieldNumber: 2)
+    }
+    if !self.text.isEmpty {
+      try visitor.visitSingularStringField(value: self.text, fieldNumber: 3)
+    }
+    if self.timeMs != 0 {
+      try visitor.visitSingularInt64Field(value: self.timeMs, fieldNumber: 4)
+    }
+    if self.placement != .unspecified {
+      try visitor.visitSingularEnumField(value: self.placement, fieldNumber: 5)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Dshm_V1_QueuedMessage, rhs: Dshm_V1_QueuedMessage) -> Bool {
+    if lhs.taskID != rhs.taskID {return false}
+    if lhs.messageID != rhs.messageID {return false}
+    if lhs.text != rhs.text {return false}
+    if lhs.timeMs != rhs.timeMs {return false}
+    if lhs.placement != rhs.placement {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Dshm_V1_EditQueue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".EditQueue"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{3}message_id\0\u{1}action\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.taskID) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.messageID) }()
+      case 3: try { try decoder.decodeSingularEnumField(value: &self.action) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.taskID.isEmpty {
+      try visitor.visitSingularStringField(value: self.taskID, fieldNumber: 1)
+    }
+    if !self.messageID.isEmpty {
+      try visitor.visitSingularStringField(value: self.messageID, fieldNumber: 2)
+    }
+    if self.action != .unspecified {
+      try visitor.visitSingularEnumField(value: self.action, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Dshm_V1_EditQueue, rhs: Dshm_V1_EditQueue) -> Bool {
+    if lhs.taskID != rhs.taskID {return false}
+    if lhs.messageID != rhs.messageID {return false}
+    if lhs.action != rhs.action {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Dshm_V1_QueueEdited: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".QueueEdited"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{3}message_id\0\u{1}placement\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.taskID) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.messageID) }()
+      case 3: try { try decoder.decodeSingularEnumField(value: &self.placement) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.taskID.isEmpty {
+      try visitor.visitSingularStringField(value: self.taskID, fieldNumber: 1)
+    }
+    if !self.messageID.isEmpty {
+      try visitor.visitSingularStringField(value: self.messageID, fieldNumber: 2)
+    }
+    if self.placement != .unspecified {
+      try visitor.visitSingularEnumField(value: self.placement, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Dshm_V1_QueueEdited, rhs: Dshm_V1_QueueEdited) -> Bool {
+    if lhs.taskID != rhs.taskID {return false}
+    if lhs.messageID != rhs.messageID {return false}
+    if lhs.placement != rhs.placement {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
