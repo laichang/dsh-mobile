@@ -44,7 +44,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | T1 | done | merged `8f55a72` | 2026-11-08 | — (provisional D92 in §9) |
 | T2 | doing | `claude/t2-attachments` | 2026-11-08 | Slice owner builds (§8) |
 | X1 | todo | — | 2026-11-08 | Assign it and start a session |
-| S1 | todo | — | 2026-11-08 | Assign it and start a session |
+| S1 | doing | `claude/s1-followup-queue` | 2026-11-08 | Slice owner builds (§8) |
 | S2 | todo | — | 2026-11-08 | Assign it and start a session |
 | S3 | todo | — | 2026-11-08 | Assign it and start a session |
 | S4 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -542,6 +542,8 @@ Append-only, dated.
 - **2026-11-08 · T2 review PASS, but it conflicts with main.** T2 review PASS on 0752a3d (T2-0752a3d.txt; head 3ce48d2 adds only PLAN changes). It conflicts with T1 on main in 8 files (frame.proto, generated code, FakeBridge, ARCHITECTURE.md, ...). The T2 owner merges main now and reviews again; one more small merge follows after T0 lands.
 
 - **2026-11-08 · T0 merged.** Merged as `71577b2`; `scripts/check-plan` on the merge commit passed. `scripts/review T0` at `7f6c6c1`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/T0-7f6c6c1.txt`). No open `[human]` items, so T0 is `done`. §9 rows 2 (D89).
+
+- **2026-11-08 · S1 assigned.** Branch `claude/s1-followup-queue`, simulator `dshm-S1`, DSHM_HOME `~/.dshm/home-s1`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D101–D103. `eval "$(scripts/slice-env S1)"` exports them.
 
 ## 9. Pending user confirmation
 
