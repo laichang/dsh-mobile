@@ -42,7 +42,7 @@ This file exists only while this requirement is in progress. It serves this requ
 |---|---|---|---|---|
 | T0 | doing | `claude/t0-followup` | 2026-11-08 | Slice owner builds (§8) |
 | T1 | doing | `claude/t1-questions` | 2026-11-08 | Slice owner builds (§8) |
-| T2 | todo | — | 2026-11-08 | Assign it and start a session |
+| T2 | doing | `claude/t2-attachments` | 2026-11-08 | Slice owner builds (§8) |
 | X1 | todo | — | 2026-11-08 | Assign it and start a session |
 | S1 | todo | — | 2026-11-08 | Assign it and start a session |
 | S2 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -519,6 +519,8 @@ Append-only, dated.
 - **2026-11-08 · T0 assigned.** Branch `claude/t0-followup`, simulator `dshm-T0`, DSHM_HOME `~/.dshm/home-t0`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D89–D91. `eval "$(scripts/slice-env T0)"` exports them.
 
 - **2026-11-08 · T1 assigned.** Branch `claude/t1-questions`, simulator `dshm-T1`, DSHM_HOME `~/.dshm/home-t1`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D92–D94. `eval "$(scripts/slice-env T1)"` exports them.
+
+- **2026-11-08 · T2 assigned.** Branch `claude/t2-attachments`, simulator `dshm-T2`, DSHM_HOME `~/.dshm/home-t2`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D95–D97. `eval "$(scripts/slice-env T2)"` exports them.
 
 ## 9. Pending user confirmation
 
