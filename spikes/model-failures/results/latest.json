@@ -1,0 +1,593 @@
+{
+  "recordedAt": "2026-11-08T15:46:26.885Z",
+  "dsh": "0.2.2-rc.1",
+  "cases": [
+    {
+      "case": "model-not-found",
+      "turnEnds": [
+        {
+          "turn": 1,
+          "reason": {
+            "kind": "error",
+            "error": {
+              "message": "Model Not Exist",
+              "code": "HTTP_404",
+              "status": 404
+            }
+          },
+          "atMs": 574
+        },
+        {
+          "turn": 2,
+          "reason": {
+            "kind": "completed"
+          },
+          "atMs": 1232
+        }
+      ],
+      "retries": [],
+      "firstTurnEndMs": 574,
+      "eventTypes": [
+        "agent/inbox/spliced",
+        "turn/start",
+        "step/start",
+        "system/message",
+        "user/message",
+        "request/header",
+        "request/context",
+        "session/title",
+        "session/title-llm-request",
+        "assistant/attempt",
+        "step/end",
+        "turn/end",
+        "session-log-deepseek/delivery-accepted",
+        "assistant/message"
+      ],
+      "assistantText": "X1 recovered: the model answered normally.",
+      "sessionId": "session-20bc1024-1bfd-4a3b-be2b-fc634c2e6e8a",
+      "followUp": {
+        "at": 1794152798560,
+        "value": {
+          "accepted": true
+        }
+      },
+      "providerRequests": [
+        "551ms POST /v1/messages agent → 404",
+        "555ms POST /v1/messages side → 200",
+        "1216ms POST /v1/messages agent → 200"
+      ]
+    },
+    {
+      "case": "model-not-exist-400",
+      "turnEnds": [
+        {
+          "turn": 1,
+          "reason": {
+            "kind": "error",
+            "error": {
+              "message": "Model Not Exist",
+              "code": "INVALID_REQUEST",
+              "status": 400
+            }
+          },
+          "atMs": 326
+        },
+        {
+          "turn": 2,
+          "reason": {
+            "kind": "completed"
+          },
+          "atMs": 1114
+        }
+      ],
+      "retries": [],
+      "firstTurnEndMs": 326,
+      "eventTypes": [
+        "agent/inbox/spliced",
+        "turn/start",
+        "step/start",
+        "system/message",
+        "user/message",
+        "request/header",
+        "request/context",
+        "session/title",
+        "session/title-llm-request",
+        "assistant/attempt",
+        "step/end",
+        "turn/end",
+        "session-log-deepseek/delivery-accepted",
+        "assistant/message"
+      ],
+      "assistantText": "X1 recovered: the model answered normally.",
+      "sessionId": "session-0e3fd36b-1b4e-4677-b770-fbe0348cdd16",
+      "followUp": {
+        "at": 1794152800614,
+        "value": {
+          "accepted": true
+        }
+      },
+      "providerRequests": [
+        "314ms POST /v1/messages side → 200",
+        "320ms POST /v1/messages agent → 400",
+        "1103ms POST /v1/messages agent → 200"
+      ]
+    },
+    {
+      "case": "model-unlisted",
+      "turnEnds": [
+        {
+          "turn": 1,
+          "reason": {
+            "kind": "completed"
+          },
+          "atMs": 310
+        },
+        {
+          "turn": 2,
+          "reason": {
+            "kind": "completed"
+          },
+          "atMs": 911
+        }
+      ],
+      "retries": [],
+      "firstTurnEndMs": 310,
+      "eventTypes": [
+        "agent/inbox/spliced",
+        "turn/start",
+        "step/start",
+        "system/message",
+        "user/message",
+        "request/header",
+        "request/context",
+        "session/title",
+        "session/title-llm-request",
+        "session-log-deepseek/delivery-accepted",
+        "assistant/message",
+        "step/end",
+        "turn/end"
+      ],
+      "assistantText": "X1 recovered: the model answered normally.X1 recovered: the model answered normally.",
+      "sessionId": "session-fb73f6e0-db9d-4b46-a3f2-5bb76e54e1c9",
+      "selected": {
+        "error": "Select an available model before sending a message.",
+        "code": "session/model-unavailable"
+      },
+      "followUp": {
+        "at": 1794152802458,
+        "value": {
+          "accepted": true
+        }
+      },
+      "providerRequests": [
+        "293ms POST /v1/messages side → 200",
+        "295ms POST /v1/messages agent → 200",
+        "902ms POST /v1/messages agent → 200"
+      ]
+    },
+    {
+      "case": "invalid-key",
+      "turnEnds": [
+        {
+          "turn": 1,
+          "reason": {
+            "kind": "error",
+            "error": {
+              "message": "Authentication Fails, Your api key: ****-key is invalid",
+              "code": "AUTH",
+              "status": 401
+            }
+          },
+          "atMs": 293
+        },
+        {
+          "turn": 2,
+          "reason": {
+            "kind": "completed"
+          },
+          "atMs": 902
+        }
+      ],
+      "retries": [],
+      "firstTurnEndMs": 293,
+      "eventTypes": [
+        "agent/inbox/spliced",
+        "turn/start",
+        "step/start",
+        "system/message",
+        "user/message",
+        "request/header",
+        "request/context",
+        "session/title",
+        "session/title-llm-request",
+        "assistant/attempt",
+        "step/end",
+        "turn/end",
+        "session-log-deepseek/delivery-accepted",
+        "assistant/message"
+      ],
+      "assistantText": "X1 recovered: the model answered normally.",
+      "sessionId": "session-10c21e3a-a578-41ff-94b2-be7d3ef3d533",
+      "followUp": {
+        "at": 1794152804291,
+        "value": {
+          "accepted": true
+        }
+      },
+      "providerRequests": [
+        "288ms POST /v1/messages agent → 401",
+        "290ms POST /v1/messages side → 401",
+        "894ms POST /v1/messages agent → 200"
+      ]
+    },
+    {
+      "case": "no-balance",
+      "turnEnds": [
+        {
+          "turn": 1,
+          "reason": {
+            "kind": "error",
+            "error": {
+              "message": "Insufficient Balance",
+              "code": "QUOTA",
+              "status": 402
+            }
+          },
+          "atMs": 350
+        },
+        {
+          "turn": 2,
+          "reason": {
+            "kind": "completed"
+          },
+          "atMs": 1099
+        }
+      ],
+      "retries": [],
+      "firstTurnEndMs": 350,
+      "eventTypes": [
+        "agent/inbox/spliced",
+        "turn/start",
+        "step/start",
+        "system/message",
+        "user/message",
+        "request/header",
+        "request/context",
+        "session/title",
+        "session/title-llm-request",
+        "assistant/attempt",
+        "step/end",
+        "turn/end",
+        "session-log-deepseek/delivery-accepted",
+        "assistant/message"
+      ],
+      "assistantText": "X1 recovered: the model answered normally.",
+      "sessionId": "session-3f06a2e2-4613-4398-81d1-2342eb8d564a",
+      "followUp": {
+        "at": 1794152806324,
+        "value": {
+          "accepted": true
+        }
+      },
+      "providerRequests": [
+        "344ms POST /v1/messages side → 402",
+        "346ms POST /v1/messages agent → 402",
+        "1089ms POST /v1/messages agent → 200"
+      ]
+    },
+    {
+      "case": "rate-limit",
+      "turnEnds": [
+        {
+          "turn": 1,
+          "reason": {
+            "kind": "error",
+            "error": {
+              "message": "Rate Limit Reached",
+              "code": "RATE_LIMIT",
+              "status": 429
+            }
+          },
+          "atMs": 16435
+        },
+        {
+          "turn": 2,
+          "reason": {
+            "kind": "completed"
+          },
+          "atMs": 17073
+        }
+      ],
+      "retries": [
+        {
+          "retry": 1,
+          "maxRetries": 5,
+          "mode": "normal",
+          "delayMs": 483.001506045584,
+          "failure": {
+            "message": "Rate Limit Reached",
+            "code": "RATE_LIMIT",
+            "status": 429
+          },
+          "atMs": 282
+        },
+        {
+          "retry": 2,
+          "maxRetries": 5,
+          "mode": "normal",
+          "delayMs": 926.6979938126938,
+          "failure": {
+            "message": "Rate Limit Reached",
+            "code": "RATE_LIMIT",
+            "status": 429
+          },
+          "atMs": 806
+        },
+        {
+          "retry": 3,
+          "maxRetries": 5,
+          "mode": "normal",
+          "delayMs": 2140.0731891292467,
+          "failure": {
+            "message": "Rate Limit Reached",
+            "code": "RATE_LIMIT",
+            "status": 429
+          },
+          "atMs": 1771
+        },
+        {
+          "retry": 4,
+          "maxRetries": 5,
+          "mode": "normal",
+          "delayMs": 3851.600615323082,
+          "failure": {
+            "message": "Rate Limit Reached",
+            "code": "RATE_LIMIT",
+            "status": 429
+          },
+          "atMs": 3947
+        },
+        {
+          "retry": 5,
+          "maxRetries": 5,
+          "mode": "normal",
+          "delayMs": 8549.848245733348,
+          "failure": {
+            "message": "Rate Limit Reached",
+            "code": "RATE_LIMIT",
+            "status": 429
+          },
+          "atMs": 7845
+        }
+      ],
+      "firstTurnEndMs": 16435,
+      "eventTypes": [
+        "agent/inbox/spliced",
+        "turn/start",
+        "step/start",
+        "system/message",
+        "user/message",
+        "request/header",
+        "request/context",
+        "session/title",
+        "session/title-llm-request",
+        "assistant/attempt",
+        "llm/retry",
+        "llm/retry-started",
+        "step/end",
+        "turn/end",
+        "session-log-deepseek/delivery-accepted",
+        "assistant/message"
+      ],
+      "assistantText": "X1 recovered: the model answered normally.",
+      "sessionId": "session-6a9eef33-853f-4922-a724-c0b4bd193687",
+      "followUp": {
+        "at": 1794152824326,
+        "value": {
+          "accepted": true
+        }
+      },
+      "providerRequests": [
+        "278ms POST /v1/messages side → 429",
+        "279ms POST /v1/messages agent → 429",
+        "803ms POST /v1/messages agent → 429",
+        "1766ms POST /v1/messages agent → 429",
+        "3945ms POST /v1/messages agent → 429",
+        "7841ms POST /v1/messages agent → 429",
+        "16431ms POST /v1/messages agent → 429",
+        "17062ms POST /v1/messages agent → 200"
+      ]
+    },
+    {
+      "case": "rate-limit-recovers",
+      "turnEnds": [
+        {
+          "turn": 1,
+          "reason": {
+            "kind": "completed"
+          },
+          "atMs": 4380
+        }
+      ],
+      "retries": [
+        {
+          "retry": 1,
+          "maxRetries": 5,
+          "mode": "normal",
+          "delayMs": 2000,
+          "failure": {
+            "message": "Rate Limit Reached",
+            "code": "RATE_LIMIT",
+            "status": 429,
+            "providerRetryAfterMs": 2000
+          },
+          "atMs": 294
+        },
+        {
+          "retry": 2,
+          "maxRetries": 5,
+          "mode": "normal",
+          "delayMs": 2000,
+          "failure": {
+            "message": "Rate Limit Reached",
+            "code": "RATE_LIMIT",
+            "status": 429,
+            "providerRetryAfterMs": 2000
+          },
+          "atMs": 2332
+        }
+      ],
+      "firstTurnEndMs": 4380,
+      "eventTypes": [
+        "agent/inbox/spliced",
+        "turn/start",
+        "step/start",
+        "system/message",
+        "user/message",
+        "request/header",
+        "request/context",
+        "session/title",
+        "session/title-llm-request",
+        "assistant/attempt",
+        "llm/retry",
+        "session-log-deepseek/delivery-accepted",
+        "llm/retry-started",
+        "assistant/message",
+        "step/end",
+        "turn/end"
+      ],
+      "assistantText": "X1 recovered: the model answered normally.",
+      "sessionId": "session-23e6ca46-2a6c-4a89-a6a6-462221b53ee8",
+      "providerRequests": [
+        "291ms POST /v1/messages agent → 429",
+        "292ms POST /v1/messages side → 200",
+        "2330ms POST /v1/messages agent → 429",
+        "4369ms POST /v1/messages agent → 200"
+      ]
+    },
+    {
+      "case": "mock-auth-error",
+      "turnEnds": [
+        {
+          "turn": 1,
+          "reason": {
+            "kind": "error",
+            "error": {
+              "message": "mock authentication failed",
+              "code": "AUTH",
+              "status": 401
+            }
+          },
+          "atMs": 277
+        }
+      ],
+      "retries": [],
+      "firstTurnEndMs": 277,
+      "eventTypes": [
+        "agent/inbox/spliced",
+        "turn/start",
+        "step/start",
+        "system/message",
+        "user/message",
+        "request/header",
+        "request/context",
+        "session/title",
+        "session/title-llm-request",
+        "session-log-deepseek/delivery-accepted",
+        "assistant/attempt",
+        "step/end",
+        "turn/end"
+      ],
+      "assistantText": "",
+      "sessionId": "session-9ba7d6ea-f0d5-4cb5-bbbd-bd423ec37ec3",
+      "providerRequests": [
+        "265ms POST /v1/messages agent → 401",
+        "266ms POST /v1/messages side → 200"
+      ]
+    },
+    {
+      "case": "mock-quota-exceeded",
+      "turnEnds": [
+        {
+          "turn": 1,
+          "reason": {
+            "kind": "error",
+            "error": {
+              "message": "mock insufficient quota",
+              "code": "QUOTA",
+              "status": 429
+            }
+          },
+          "atMs": 304
+        }
+      ],
+      "retries": [],
+      "firstTurnEndMs": 304,
+      "eventTypes": [
+        "agent/inbox/spliced",
+        "turn/start",
+        "step/start",
+        "system/message",
+        "user/message",
+        "request/header",
+        "request/context",
+        "session/title",
+        "session/title-llm-request",
+        "session-log-deepseek/delivery-accepted",
+        "assistant/attempt",
+        "step/end",
+        "turn/end"
+      ],
+      "assistantText": "",
+      "sessionId": "session-6e0eab45-66e5-47ff-b2f4-9a188f849f87",
+      "providerRequests": [
+        "289ms POST /v1/messages agent → 429",
+        "291ms POST /v1/messages side → 200"
+      ]
+    },
+    {
+      "case": "mock-invalid-request",
+      "turnEnds": [
+        {
+          "turn": 1,
+          "reason": {
+            "kind": "error",
+            "error": {
+              "message": "mock invalid request",
+              "code": "INVALID_REQUEST",
+              "status": 400
+            }
+          },
+          "atMs": 309
+        }
+      ],
+      "retries": [],
+      "firstTurnEndMs": 309,
+      "eventTypes": [
+        "agent/inbox/spliced",
+        "turn/start",
+        "step/start",
+        "system/message",
+        "user/message",
+        "request/header",
+        "request/context",
+        "session/title",
+        "session/title-llm-request",
+        "session-log-deepseek/delivery-accepted",
+        "assistant/attempt",
+        "step/end",
+        "turn/end"
+      ],
+      "assistantText": "",
+      "sessionId": "session-51766e62-d934-47f5-b0ab-83f3241b32fd",
+      "providerRequests": [
+        "295ms POST /v1/messages agent → 400",
+        "296ms POST /v1/messages side → 200"
+      ]
+    }
+  ],
+  "catalogDefault": {
+    "provider": "deepseek-official",
+    "model": "deepseek-flash"
+  }
+}

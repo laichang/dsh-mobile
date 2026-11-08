@@ -208,7 +208,7 @@ Each spike ends in a short written conclusion, plus throwaway code if needed. No
 
 ### X1 · Spike: Model failures in DSH
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: For #4 (S3). What does DSH 0.2.2-rc.1 send when the model of a running task is unavailable, its key is not valid, or the account has no balance (DeepSeek answers 402 "Insufficient Balance")? Does DSH retry, pause, or end the turn, and with which text? Can the mock LLM of DSH, or a small fake provider, make each case for tests?
 
@@ -217,12 +217,19 @@ Each spike ends in a short written conclusion, plus throwaway code if needed. No
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A script runs one task against real DSH for each failure (model not found, key not valid, no balance, rate limit) and records the events and the text that DSH sends — Evidence:
-- [ ] [auto] The README says for each failure whether DSH retries, pauses or ends the turn, and which text the phone can show; the recorded events are fixtures that S3 can replay — Evidence:
+- [x] [auto] A script runs one task against real DSH for each failure (model not found, key not valid, no balance, rate limit) and records the events and the text that DSH sends — Evidence: cmd:spikes/model-failures/run.sh · commit:5198f68
+- [x] [auto] The README says for each failure whether DSH retries, pauses or ends the turn, and which text the phone can show; the recorded events are fixtures that S3 can replay — Evidence: commit:5198f68
 
 **Not**: Production code.
 
 **Log**: —
+- **2026-11-08 · Spike done: model failures end the turn, rate limit retries first.** Done:
+  - spikes/model-failures/run.sh runs one task against real DSH 0.2.2-rc.1 per failure, with a fake DeepSeek provider (fake-provider.mjs), and records every sessionController.follow frame into spikes/model-failures/fixtures/<case>.json (10 cases, incl. 3 from DSH's mock LLM).
+  - Finding: DSH never pauses. Every failure ends the turn with turn/end reason {kind: error, error: {message, code, status}}: 404 → HTTP_404, 400 → INVALID_REQUEST, 401 → AUTH, 402 → QUOTA, at once. 429 → RATE_LIMIT after 5 retries in the same turn (llm/retry events, ~16 s; Retry-After is honored). An unlisted model is refused by selectModel (session/model-unavailable) before any turn. A new message after the failure runs turn 2 normally.
+  - D104 (provisional, pending user confirmation): bridge forwards code + message; the app shows its own copy for AUTH and QUOTA, DSH's message otherwise.
+  - No new dependencies.
+  Not done: real DeepSeek wording (the bodies follow DeepSeek's documented error codes); failures mid-task; DeepSeek account sign-in route.
+  Next: S3 copies the fixtures it replays into bridge/test/fixtures/model-failures/ and carries code to the app.
 
 ## 5. Slices
 
