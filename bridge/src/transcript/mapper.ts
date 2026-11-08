@@ -44,6 +44,9 @@ export interface BlockOut {
 export const THINKING_TEXT_LIMIT = 8000
 export const ARGUMENTS_LIMIT = 4000
 
+/** DSH's agent question tool; its call shows as the question card instead (D92). */
+export const QUESTION_TOOL = 'ask_user_question'
+
 /** Argument keys that name what a call acts on, in order of preference. */
 const TARGET_KEYS = ['file_path', 'path', 'filePath', 'command', 'pattern', 'url', 'query', 'cwd'] as const
 
@@ -165,6 +168,8 @@ export class TranscriptMapper {
     if (event.type === 'tool/call') {
       const { callId, name, arguments: raw } = (event.data ?? {}) as { callId?: unknown; name?: unknown; arguments?: unknown }
       if (typeof callId !== 'string' || typeof name !== 'string') return []
+      // The question card stands for this call (questions.v1); a tool row would repeat it.
+      if (name === QUESTION_TOOL) return this.closeThinking(event.time)
       const rawArguments = typeof raw === 'string' ? raw : ''
       const [args, truncated] = cut(rawArguments, ARGUMENTS_LIMIT)
       const block: BlockOut = {

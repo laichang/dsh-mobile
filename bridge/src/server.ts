@@ -12,6 +12,7 @@
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import { WebSocketServer, type WebSocket } from 'ws'
 import type { ApprovalHolder } from './approvals/holder.ts'
+import type { QuestionHolder } from './questions/holder.ts'
 import { SUPPORTED_DSH, supportsDsh } from './compatibility.ts'
 import { ApprovalDecision } from './gen/approvals_pb.ts'
 import { deviceId } from './pairing/store.ts'
@@ -34,6 +35,8 @@ type ResponseBody = MessageInitShape<typeof ResponseSchema>['body']
 
 export const PROTOCOL_VERSION = 1
 /** `resume.v1`: ListTasks, Resume and `Event.host_seq` (S2). `milestones.v1`: MilestoneAdded (S3). */
+/** Agent questions (protocol/questions.proto, D92). */
+export const QUESTIONS_CAPABILITY = 'questions.v1'
 export const CAPABILITIES = ['tasks.v1', MILESTONES_CAPABILITY, 'resume.v1', 'interrupt.v1', TRANSCRIPT_CAPABILITY] as const
 /** Where the dev-only plaintext channel is served. */
 export const PLAINTEXT_PATH = '/plaintext'
@@ -54,6 +57,8 @@ export interface BridgeServerOptions {
   hub?: TaskHub
   sessions?: SessionDirectory
   approvals?: ApprovalHolder
+  /** Agent questions (`questions.v1`, D92). */
+  questions?: QuestionHolder
   log?: (message: string) => void
 }
 
@@ -111,6 +116,7 @@ function serveConnection(
   let clientSessions = false
   let clientApprovals = false
   let clientTranscript = false
+  let clientQuestions = false
   let codec: FrameCodec | undefined
 
   const path = new URL(url, 'ws://bridge').pathname
@@ -145,6 +151,8 @@ function serveConnection(
     }
     // S17: only apps that read transcript blocks get them.
     if (!clientTranscript && event.body?.case === 'transcriptBlock') return
+    // Apps without `questions.v1` cannot answer, so they get no card.
+    if (!clientQuestions && (event.body?.case === 'questionPending' || event.body?.case === 'questionResolved')) return
     // Older apps cannot withdraw temporary upstream approval rows.
     if (!clientApprovals && (event.body?.case === 'approvalPending' || event.body?.case === 'approvalResolved'
       || (event.body?.case === 'taskUpserted' && event.body.value.task?.approvalOnly))) return
@@ -169,6 +177,7 @@ function serveConnection(
         clientSessions = !!options.sessions && request.body.value.capabilities.includes('sessions.v1')
         clientApprovals = request.body.value.capabilities.includes('approvals.v1')
         clientTranscript = request.body.value.capabilities.includes(TRANSCRIPT_CAPABILITY)
+        clientQuestions = !!options.questions && request.body.value.capabilities.includes(QUESTIONS_CAPABILITY)
         return respond(id, {
           case: 'hello',
           value: { protocolVersion: PROTOCOL_VERSION, dshVersion: options.dshVersion,
@@ -177,6 +186,7 @@ function serveConnection(
             ...(options.sessions ? ['sessions.v1'] : []),
             ...(options.tasks.modelCatalog && options.tasks.selectModel ? ['models.v1'] : []),
             ...(options.approvals ? ['approvals.v1'] : []),
+            ...(options.questions ? [QUESTIONS_CAPABILITY] : []),
             ...(options.tasks.listWorkspaces ? ['workspaces.v1', DRAWER_CAPABILITY] : []),
             ...(host.authenticated.has(socket) ? ['devices.v1'] : []),
           ] : [] },
@@ -212,6 +222,7 @@ function serveConnection(
           const taskId = request.body.value.taskId
           hub.interrupt(taskId)
           options.approvals?.cancelTask(taskId, device)
+          options.questions?.cancelTask(taskId)
           return respond(id, { case: 'interruptAccepted', value: {} })
         } catch (error) {
           return fail(id, 'task/interrupt-failed', error instanceof Error ? error.message : String(error))
@@ -275,6 +286,18 @@ function serveConnection(
           return fail(id, 'devices/failed', error instanceof Error ? error.message : String(error))
         }
         return
+      }
+      case 'answerQuestion': {
+        if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
+        if (!options.questions) return fail(id, 'request/unsupported', 'questions unavailable')
+        const answer = request.body.value
+        try {
+          const resolved = options.questions.answer(answer.id, answer.answers.map(a => ({ questionId: a.questionId, selected: [...a.selected] })))
+          log(`question ${answer.id} answered by ${device}`)
+          return respond(id, { case: 'questionResolved', value: resolved })
+        } catch (error) {
+          return fail(id, 'question/refused', error instanceof Error ? error.message : String(error))
+        }
       }
       case 'answerApproval': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')

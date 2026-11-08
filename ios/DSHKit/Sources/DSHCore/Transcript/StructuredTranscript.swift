@@ -13,6 +13,8 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
         /// `durationMs` is 0 while it runs. `text` is DSH's reasoning, cut by the bridge.
         case thinking(durationMs: UInt64, text: String, truncated: Bool)
         case tool(Tool)
+        /// An agent question, shown as a card (`questions.v1`, screen P1).
+        case question(AgentQuestion)
     }
 
     public struct Tool: Codable, Equatable, Sendable {

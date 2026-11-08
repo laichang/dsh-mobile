@@ -6,6 +6,7 @@
  */
 import type { Selection } from '../models/catalog.ts'
 import type { Pending, Resolved } from '../approvals/holder.ts'
+import type * as Questions from '../questions/holder.ts'
 import { TaskStatus } from '../gen/frame_pb.ts'
 import { TaskState, type TaskSummary } from '../gen/s2_pb.ts'
 import type { DshTasks, StartedTask, TaskOutput } from '../dsh.ts'
@@ -98,6 +99,15 @@ export class TaskHub {
     }
     summary.updatedAtMs = BigInt(this.now())
     this.upserted(summary)
+  }
+
+  /**
+   * Agent questions are logged like any other event, so a phone that resumes gets the card. The
+   * task's state stays as DSH reports it.
+   */
+  questionChanged(event: Questions.Pending | Questions.Resolved) {
+    if ('outcome' in event) this.log.append(event.taskId, { case: 'questionResolved', value: event })
+    else this.log.append(event.taskId, { case: 'questionPending', value: event })
   }
 
   private approvalsFor(taskId: string) {

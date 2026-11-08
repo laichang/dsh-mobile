@@ -195,10 +195,16 @@ private struct SessionTranscript: View {
                         }
                         if !showJournal {
                             lead(row, outcome)
-                            StructuredTranscriptView(row: row, text: row.singleTurnTranscript(messages)) // S17
+                            StructuredTranscriptView(row: row, text: row.singleTurnTranscript(messages), store: store) // S17, P1
                         } else if history == nil && historyError == nil {
                             if host?.reachability == .online { ProgressView() }
                             else { Text("Connect to this host to load the conversation.").foregroundStyle(DSHTheme.textSecondary) }
+                        }
+                        if showJournal {
+                            // P1: the journal has no place for a card; a waiting question goes last.
+                            ForEach(row.blocks.items.filter { $0.question != nil && $0.question?.outcome == nil }) { item in
+                                QuestionCard(store: store, row: row, question: item.question!)
+                            }
                         }
                         if let historyError {
                             Text(historyError).font(.footnote)

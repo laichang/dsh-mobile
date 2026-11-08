@@ -12,7 +12,7 @@ The screens and interactions of dsh-mobile. This is a living doc: it doesn't get
 - Every STORY principle maps to at least one screen (table below). Every screen's caption cites the STORY section it serves.
 - When STORY changes, update the board in the same change. When a design decision changes what the app does, update STORY in the same change. Don't leave them out of sync.
 - The code is the truth for what ships (AGENTS.md). Each screen carries a milestone tag that says how far the code is:
-  - **M1 · 已有 / 换样式 / 改导航 / 补状态**: the code has the capability. The screen is the target look or navigation for it.
+  - **M1 · 已有 / 换样式 / 改导航 / 补状态**, **M2 · 已有**: the code has the capability. The screen is the target look or navigation for it.
   - **M2 / M3 / M4**: the capability is in a later milestone (ARCHITECTURE.md §7). The screen is a placeholder that fixes its shape.
 - Data on the screens is real data: the fields the protocol and the code have (for example, devices have IDs, not names). If a screen needs data that doesn't exist yet, tag it with the milestone that brings it.
 - Going against STORY or this board needs the user's confirmation, the same as STORY.
@@ -62,7 +62,7 @@ A phone in front sends work up to a terminal window: the user's own computer (ST
 | §1 Execution elsewhere; the phone's four jobs | 01, 04, 05, 06 · relay between hosts: not drawn (M3) |
 | §2 Hosts treated the same | 02, H |
 | §3 One entry; open on a new session; default host and workspace; all hosts offline | 01, 07, X3 · host guessed from the prompt: not drawn (later) |
-| §4 Async first; milestones; 所有任务; sessions from other clients; failed or stuck | 02, 03, 04, F1–F4, X1, L |
+| §4 Async first; milestones; 所有任务; sessions from other clients; failed or stuck; agent questions | 02, 03, 04, P1, F1–F4, X1, L |
 | §5 Approvals show impact; never allowed by default; risk tiers; plan and pre-authorization; re-confirm | 03, 05, P3, P2, P4, L |
 | §6 Usable by anyone; first run | 08 |
 | §7 Results come to the phone; phone as context; add to a running task | 06 (M3 card), 04 (M2 composer), P1 · share sheet, photos, voice: not drawn (M3/M4) |
