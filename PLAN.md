@@ -353,9 +353,9 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/voice.sh`.
 
 **Done when**
-- [ ] [auto] Partial and final results replace the dictated range in the field and keep the typed text (fake transcriber) — Evidence:
-- [ ] [ui] Tap the mic, the fake transcriber says a task, the field fills, tap send: the task starts with that text (`cmd:scripts/demo/voice.sh`) — Evidence:
-- [ ] [ui] With speech permission denied, the mic tells how to turn it on and the field does not change (`cmd:scripts/demo/voice.sh`) — Evidence:
+- [x] [auto] Partial and final results replace the dictated range in the field and keep the typed text (fake transcriber) — Evidence: test:DictationTests/partialAndFinalResultsReplaceTheDictatedRangeAndKeepTheTypedText · test:DictationTests/revisedPartialsReplaceOnlyTheDictatedWordsInChinese · test:DictationTests/textTypedWhileSpeakingStaysAfterTheDictatedWords · test:DictationTests/editingTheDictatedWordsStopsDictationAndKeepsTheEdit · cmd:scripts/demo/voice.sh
+- [x] [ui] Tap the mic, the fake transcriber says a task, the field fills, tap send: the task starts with that text (`cmd:scripts/demo/voice.sh`) — Evidence: cmd:scripts/demo/voice.sh · test:VoiceUITests/testDictateATaskThenAFollowUpAndSend · shot:evidence/S5/voice-listening.png · shot:evidence/S5/voice-composer.png · shot:evidence/S5/voice-followup.png · shot:evidence/S5/voice-followup-sent.png
+- [x] [ui] With speech permission denied, the mic tells how to turn it on and the field does not change (`cmd:scripts/demo/voice.sh`) — Evidence: cmd:scripts/demo/voice.sh · test:VoiceUITests/testDeniedSpeechSaysHowToTurnItOnAndKeepsTheField · test:DictationTests/deniedPermissionLeavesTheFieldAsItWas · shot:evidence/S5/voice-denied.png
 
 **Not**: Spoken replies. Sending without a tap. Transcription on the host.
 
