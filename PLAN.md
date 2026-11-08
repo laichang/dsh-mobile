@@ -41,7 +41,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
 | T0 | doing | `claude/t0-followup` | 2026-11-08 | Slice owner builds (§8) |
-| T1 | doing | `claude/t1-questions` | 2026-11-08 | Slice owner builds (§8) |
+| T1 | done | merged `8f55a72` | 2026-11-08 | — (provisional D92 in §9) |
 | T2 | doing | `claude/t2-attachments` | 2026-11-08 | Slice owner builds (§8) |
 | X1 | todo | — | 2026-11-08 | Assign it and start a session |
 | S1 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -50,7 +50,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S4 | todo | — | 2026-11-08 | Assign it and start a session |
 | S5 | todo | — | 2026-11-08 | Assign it and start a session |
 | S6 | todo | — | 2026-11-08 | Assign it and start a session |
-| S7 | todo | — | 2026-11-08 | Assign it and start a session |
+| S7 | doing | `claude/s7-reconnect` | 2026-11-08 | Slice owner builds (§8) |
 | S8 | todo | — | 2026-11-08 | Assign it and start a session |
 | S9 | todo | — | 2026-11-08 | Assign it and start a session |
 | S10 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -146,7 +146,7 @@ A tracer is one thin round trip that one session can finish without running out 
 
 ### T1 · Tracer bullet: Answer an agent question
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: Part of #1. STORY §4 and §5: a question from the agent is a decision, like an approval. The task waits and the phone answers. The thinnest round trip: one question with options, answered with one tap (screen P1).
 
@@ -159,12 +159,18 @@ A tracer is one thin round trip that one session can finish without running out 
 **Demo**: `scripts/demo/questions.sh`: a task asks which of two templates to use; tap one; the task continues with that answer.
 
 **Done when**
-- [ ] [auto] The bridge holds a `user-questions/request`, sends `QuestionPending` with the text and options of DSH, and answers DSH with the chosen option; an answer from the web withdraws the card (`FakeDSH`) — Evidence:
-- [ ] [ui] The P1 card shows the question and its options; a tap on an option answers it and the task continues, against real DSH with the mock model (`cmd:scripts/demo/questions.sh`) — Evidence:
+- [x] [auto] The bridge holds a `user-questions/request`, sends `QuestionPending` with the text and options of DSH, and answers DSH with the chosen option; an answer from the web withdraws the card (`FakeDSH`) — Evidence: test:Questions/bridgeHoldsQuestionSendsPendingAndAnswersDshWithTheChosenOption · test:Questions/answerFromTheWebWithdrawsTheCard · test:Questions/noOtherAnswererKeepsTheQuestionHeldAndInterruptCancelsIt
+- [x] [ui] The P1 card shows the question and its options; a tap on an option answers it and the task continues, against real DSH with the mock model (`cmd:scripts/demo/questions.sh`) — Evidence: test:AgentQuestionUITests/testTapAnOptionAnswersAndTheTaskContinues · cmd:scripts/demo/questions.sh · shot:evidence/T1/questions-pending.png · shot:evidence/T1/questions-answered.png
 
 **Not**: Typed and multi-select answers, 等我处理 and the drawer badge, replay after a reconnect (S2).
 
 **Log**: —
+- **2026-11-08 · Built; review PASS.** Done: questions.v1 end to end. protocol/questions.proto (QuestionPending, AnswerQuestion, QuestionResolved; fields 380–399). Bridge QuestionHolder: prepended user-questions/request answerer, holds for the phone, fans a copy out to DSH Web, first answer wins, no timeout, interrupt cancels; the ask_user_question tool row is hidden (the card replaces it). App: P1 card as a .question transcript row; a tap answers; the card then shows the answer. FakeDSH asks through a question waterfall (bridge/test/questions.test.ts). Demo scripts/demo/questions.sh on real DSH + mock model; shots in evidence/T1/. DESIGN P1 tag: M2 · 已有.
+  Review: /tmp/dshm-review/T1-5012584.txt RESULT: PASS (full run). No flaky parts.
+  Provisional: D92 (agent questions holder, wire, no timeout). No new dependencies.
+  Notes for §8: (1) no script creates the dshm-<ID> simulator; T1 made dshm-T1 by hand (simctl create, iPhone 17 Pro, iOS 26.4). (2) scripts/review --resume cannot pass a test: pointer whose demo part it skips: the skipped part's output is not in the new log (T1-5012584 failed that way before the full run passed). (3) scripts/demo/t0.sh writes logs to a fixed /tmp/dshm-t0, so parallel slices overwrite each other's logs.
+  Not done: typed and multi-select answers, 等我处理 and the drawer badge, pending questions in TaskSummary for replay after a trimmed log (slice Not).
+  Next: coordinator merge.
 
 ### T2 · Tracer bullet: A photo in a new task
 
@@ -523,9 +529,18 @@ Append-only, dated.
 
 - **2026-11-08 · T2 assigned.** Branch `claude/t2-attachments`, simulator `dshm-T2`, DSHM_HOME `~/.dshm/home-t2`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D95–D97. `eval "$(scripts/slice-env T2)"` exports them.
 
+- **2026-11-08 · T1 merged.** Merged as `8f55a72`; `scripts/check-plan` on the merge commit passed. `scripts/review T1` at `5012584`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/T1-5012584.txt`). No open `[human]` items, so T1 is `done`. §9 rows 1 (D92).
+
+- **2026-11-08 · T1 findings for the tooling.** From the T1 report (handled at the end of the plan as issues): (1) no script creates the dshm-<ID> simulator; the first T0 baseline failed with "did not boot" and the T1 owner made dshm-T1 by hand. (2) scripts/review --resume cannot pass a test: pointer whose demo part it skips (the skipped part's output is not in the new log); a bare test:<name> is read as a suite, so pointers need Suite/name. (3) scripts/demo/t0.sh writes its logs to a fixed /tmp/dshm-t0, so parallel baselines overwrite each other. No flaky part in the T1 review.
+
+- **2026-11-08 · S7 assigned.** Branch `claude/s7-reconnect`, simulator `dshm-S7`, DSHM_HOME `~/.dshm/home-s7`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D98–D100. `eval "$(scripts/slice-env S7)"` exports them.
+
+- **2026-11-08 · T1 merged; S7 runs as a background agent.** T1 merged (review PASS on 5012584, T1-5012584.txt; head 91f12c8 only adds PLAN changes). D92 is in §9. S7 assigned. The app refused start_session in the heartbeat turn (the chain from the user turn ended), so S7 runs as a background agent in its own worktree (WORKFLOW §5.3 step 3).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
+| 1 | T1 | decision | ARCHITECTURE D92, *provisional*: Agent questions (screen P1, extends D18) | `claude/t1-questions` | merged `8f55a72` |

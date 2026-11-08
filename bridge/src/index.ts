@@ -4,6 +4,7 @@
  */
 import { runtimeDshVersion, supportsDsh } from './compatibility.ts'
 import { ApprovalHolder, type ApprovalContext } from './approvals/holder.ts'
+import { QuestionHolder, type QuestionContext } from './questions/holder.ts'
 import { SessionDirectory, type SessionReader } from './sessions/directory.ts'
 import { TaskHub } from './s2/task-hub.ts'
 import { homedir } from 'node:os'
@@ -54,7 +55,7 @@ export function resolveConfig(config: Config = {}, env: NodeJS.ProcessEnv = proc
   }
 }
 
-type PluginContext = DshServices & ApprovalContext & {
+type PluginContext = DshServices & ApprovalContext & QuestionContext & {
   sessionController: SessionReader
   on(name: 'session/event', callback: (session: { id: string }, event: Parameters<SessionDirectory['changed']>[1]) => void): () => void
   effect(setup: () => () => void): void
@@ -75,12 +76,14 @@ export function apply(ctx: PluginContext, config: Config = {}) {
     const stopSessions = sessions && ctx.on('session/event', (session, event) => sessions.changed(session.id, event))
     const approvals = new ApprovalHolder(join(c.stateDir, 'approvals.jsonl'), event => hub.approvalChanged(event, !tasks.sessions.has(event.taskId)), c.approvalTimeoutMs)
     const unregister = supported ? approvals.register(ctx) : undefined
+    const questions = new QuestionHolder(event => hub.questionChanged(event))
+    const unregisterQuestions = supported ? questions.register(ctx) : undefined
     startBridgeServer({
       host: c.host,
       port: c.port,
       noise: new NoiseResponder(store, log),
       channel: c.devPlaintext ? new PlaintextChannel() : undefined,
-      tasks, hub, approvals, sessions, dshVersion,
+      tasks, hub, approvals, questions, sessions, dshVersion,
       log,
     }).then(
       (s) => {
@@ -93,12 +96,12 @@ export function apply(ctx: PluginContext, config: Config = {}) {
       },
       (error) => {
         stopSessions?.(); sessions?.close()
-        unregister?.()
-        approvals.close()
+        unregister?.(); unregisterQuestions?.()
+        approvals.close(); questions.close()
         if (logger) logger.warn(`failed to start: ${String(error)}`)
         else console.error(error)
       },
     )
-    return () => { disposed = true; stopSessions?.(); sessions?.close(); unregister?.(); approvals.close(); void server?.close() }
+    return () => { disposed = true; stopSessions?.(); sessions?.close(); unregister?.(); unregisterQuestions?.(); approvals.close(); questions.close(); void server?.close() }
   })
 }

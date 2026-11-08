@@ -246,6 +246,14 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .sendMessage(newValue)}
   }
 
+  public var answerQuestion: Dshm_V1_AnswerQuestion {
+    get {
+      if case .answerQuestion(let v)? = body {return v}
+      return Dshm_V1_AnswerQuestion()
+    }
+    set {body = .answerQuestion(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -266,6 +274,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     case readSession(Dshm_V1_ReadSession)
     /// conversation.proto
     case sendMessage(Dshm_V1_SendMessage)
+    case answerQuestion(Dshm_V1_AnswerQuestion)
 
   }
 
@@ -397,6 +406,14 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .messageAccepted(newValue)}
   }
 
+  public var questionResolved: Dshm_V1_QuestionResolved {
+    get {
+      if case .questionResolved(let v)? = body {return v}
+      return Dshm_V1_QuestionResolved()
+    }
+    set {body = .questionResolved(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -417,6 +434,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     case sessionPage(Dshm_V1_SessionPage)
     /// conversation.proto
     case messageAccepted(Dshm_V1_MessageAccepted)
+    case questionResolved(Dshm_V1_QuestionResolved)
 
   }
 
@@ -519,6 +537,23 @@ public nonisolated struct Dshm_V1_Event: @unchecked Sendable {
     set {_uniqueStorage()._body = .userMessage(newValue)}
   }
 
+  /// questions.proto
+  public var questionPending: Dshm_V1_QuestionPending {
+    get {
+      if case .questionPending(let v)? = _storage._body {return v}
+      return Dshm_V1_QuestionPending()
+    }
+    set {_uniqueStorage()._body = .questionPending(newValue)}
+  }
+
+  public var questionResolved: Dshm_V1_QuestionResolved {
+    get {
+      if case .questionResolved(let v)? = _storage._body {return v}
+      return Dshm_V1_QuestionResolved()
+    }
+    set {_uniqueStorage()._body = .questionResolved(newValue)}
+  }
+
   /// S2: per-host monotonic sequence number in the bridge's event log (s2.proto), from 1.
   /// 0 when the event isn't logged (LogReset).
   public var hostSeq: UInt64 {
@@ -544,6 +579,9 @@ public nonisolated struct Dshm_V1_Event: @unchecked Sendable {
     case transcriptBlock(Dshm_V1_TranscriptBlock)
     /// conversation.proto
     case userMessage(Dshm_V1_UserMessage)
+    /// questions.proto
+    case questionPending(Dshm_V1_QuestionPending)
+    case questionResolved(Dshm_V1_QuestionResolved)
 
   }
 
@@ -767,7 +805,7 @@ nonisolated extension Dshm_V1_Frame: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
 nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Request"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0\u{4}%list_tasks\0\u{1}resume\0\u{4}'answer_approval\0\u{2}\u{14}interrupt\0\u{4}\u{14}get_model_catalog\0\u{3}select_model\0\u{4}\u{13}list_workspaces\0\u{4}<list_devices\0\u{3}revoke_device\0\u{3}list_audit\0\u{4}:read_session\0\u{4}d\u{1}send_message\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0\u{4}%list_tasks\0\u{1}resume\0\u{4}'answer_approval\0\u{2}\u{14}interrupt\0\u{4}\u{14}get_model_catalog\0\u{3}select_model\0\u{4}\u{13}list_workspaces\0\u{4}<list_devices\0\u{3}revoke_device\0\u{3}list_audit\0\u{4}:read_session\0\u{4}d\u{1}send_message\0\u{4}\u{14}answer_question\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -958,6 +996,19 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.body = .sendMessage(v)
         }
       }()
+      case 380: try {
+        var v: Dshm_V1_AnswerQuestion?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .answerQuestion(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .answerQuestion(v)
+        }
+      }()
       default: break
       }
     }
@@ -1028,6 +1079,10 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
       guard case .sendMessage(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 360)
     }()
+    case .answerQuestion?: try {
+      guard case .answerQuestion(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 380)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -1043,7 +1098,7 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
 
 nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Response"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0\u{4}$task_list\0\u{1}resumed\0\u{4}'approval_resolved\0\u{4}\u{14}interrupt_accepted\0\u{4}\u{14}model_catalog\0\u{3}model_selected\0\u{4}\u{13}workspace_list\0\u{4}<device_list\0\u{4}\u{2}audit_page\0\u{4}:session_page\0\u{4}d\u{1}message_accepted\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0\u{4}$task_list\0\u{1}resumed\0\u{4}'approval_resolved\0\u{4}\u{14}interrupt_accepted\0\u{4}\u{14}model_catalog\0\u{3}model_selected\0\u{4}\u{13}workspace_list\0\u{4}<device_list\0\u{4}\u{2}audit_page\0\u{4}:session_page\0\u{4}d\u{1}message_accepted\0\u{4}\u{14}question_resolved\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1234,6 +1289,19 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
           self.body = .messageAccepted(v)
         }
       }()
+      case 380: try {
+        var v: Dshm_V1_QuestionResolved?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .questionResolved(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .questionResolved(v)
+        }
+      }()
       default: break
       }
     }
@@ -1304,6 +1372,10 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
       guard case .messageAccepted(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 360)
     }()
+    case .questionResolved?: try {
+      guard case .questionResolved(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 380)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -1319,7 +1391,7 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
 
 nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Event"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}&host_seq\0\u{3}task_upserted\0\u{3}log_reset\0\u{4}\u{12}milestone_added\0\u{4}\u{14}approval_pending\0\u{3}approval_resolved\0\u{4}'model_selected\0\u{4}\\\u{3}transcript_block\0\u{4}\u{14}user_message\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}&host_seq\0\u{3}task_upserted\0\u{3}log_reset\0\u{4}\u{12}milestone_added\0\u{4}\u{14}approval_pending\0\u{3}approval_resolved\0\u{4}'model_selected\0\u{4}\\\u{3}transcript_block\0\u{4}\u{14}user_message\0\u{4}\u{14}question_pending\0\u{3}question_resolved\0")
 
   fileprivate class _StorageClass {
     var _body: Dshm_V1_Event.OneOf_Body?
@@ -1485,6 +1557,32 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
             _storage._body = .userMessage(v)
           }
         }()
+        case 380: try {
+          var v: Dshm_V1_QuestionPending?
+          var hadOneofValue = false
+          if let current = _storage._body {
+            hadOneofValue = true
+            if case .questionPending(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {
+            if hadOneofValue {try decoder.handleConflictingOneOf()}
+            _storage._body = .questionPending(v)
+          }
+        }()
+        case 381: try {
+          var v: Dshm_V1_QuestionResolved?
+          var hadOneofValue = false
+          if let current = _storage._body {
+            hadOneofValue = true
+            if case .questionResolved(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {
+            if hadOneofValue {try decoder.handleConflictingOneOf()}
+            _storage._body = .questionResolved(v)
+          }
+        }()
         default: break
         }
       }
@@ -1543,6 +1641,14 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
       case .userMessage?: try {
         guard case .userMessage(let v)? = _storage._body else { preconditionFailure() }
         try visitor.visitSingularMessageField(value: v, fieldNumber: 360)
+      }()
+      case .questionPending?: try {
+        guard case .questionPending(let v)? = _storage._body else { preconditionFailure() }
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 380)
+      }()
+      case .questionResolved?: try {
+        guard case .questionResolved(let v)? = _storage._body else { preconditionFailure() }
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 381)
       }()
       default: break
       }

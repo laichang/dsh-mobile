@@ -8,6 +8,8 @@ import SwiftUI
 struct StructuredTranscriptView: View {
     let row: TaskListStore.TaskRow
     let text: String
+    /// Answers agent questions (screen P1); nil shows the cards without an answer path.
+    var store: TaskListStore? = nil
 
     var body: some View {
         if row.blocks.isEmpty {
@@ -23,6 +25,10 @@ struct StructuredTranscriptView: View {
                         UserBubble(text: text) // D89: a follow-up, under the answer before it
                     case .thinking(let item):
                         TranscriptBlockRow(taskKey: row.key, item: item)
+                    case .question(let item):
+                        if let question = item.question {
+                            QuestionCard(store: store, row: row, question: question).id(item.id)
+                        }
                     case .tools(let items):
                         // Screen 04: consecutive tool calls sit together under a hairline on the left.
                         VStack(alignment: .leading, spacing: 0) {
@@ -46,6 +52,7 @@ struct StructuredTranscriptView: View {
         case user(String)
         case thinking(TranscriptItem)
         case tools([TranscriptItem])
+        case question(TranscriptItem)
     }
 
     static func groups(_ segments: [StructuredTranscript.Segment]) -> [Group] {
@@ -63,6 +70,8 @@ struct StructuredTranscriptView: View {
                     } else {
                         out.append(.tools([item]))
                     }
+                } else if case .question = item.kind {
+                    out.append(.question(item))
                 } else {
                     out.append(.thinking(item))
                 }
@@ -93,6 +102,8 @@ struct TranscriptBlockRow: View {
                 .font(.subheadline)
                 .foregroundStyle(DSHTheme.textSecondary)
                 .padding(.vertical, 2)
+            case .question:
+                EmptyView()
             case .tool(let tool):
                 HStack(spacing: 8) {
                     Text(item.verb)

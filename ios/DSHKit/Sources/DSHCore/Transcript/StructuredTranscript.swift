@@ -15,6 +15,8 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
         case tool(Tool)
         /// D89: a message the user sent into the task after its first prompt (`conversation.v1`).
         case userMessage(text: String)
+        /// An agent question, shown as a card (`questions.v1`, screen P1).
+        case question(AgentQuestion)
     }
 
     public struct Tool: Codable, Equatable, Sendable {

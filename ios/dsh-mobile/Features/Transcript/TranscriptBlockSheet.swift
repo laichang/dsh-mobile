@@ -22,6 +22,8 @@ struct TranscriptBlockSheet: View {
                                 .font(.headline)
                                 .accessibilityIdentifier("transcript.sheet.title")
                             section("Reasoning", text: text, truncated: truncated, mono: false)
+                        case .question:
+                            EmptyView() // A question is a card in the transcript; it has no sheet.
                         case .tool(let tool):
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
                                 Text(item.verb).font(.headline)

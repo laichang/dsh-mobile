@@ -384,6 +384,13 @@ public final class TaskListStore {
         try await link.connection.answerApproval(id: approval.id, allow: allow)
     }
 
+    /// Answers an agent question (`questions.v1`). The card closes on the host's `QuestionResolved`.
+    public func answerQuestion(_ question: AgentQuestion, hostKey: String, answers: [String: [String]]) async throws {
+        guard let link = links.first(where: { $0.key == hostKey }), link.reachability == .online,
+              link.capabilities?.contains(DSHProtocolInfo.questionsCapability) == true else { throw HostConnectionError.notConnected }
+        try await link.connection.answerQuestion(id: question.requestID, answers: answers)
+    }
+
     /// Waits for the host to be online: through a connection attempt in progress, or one
     /// started now if the host was offline. False once that attempt fails, or on timeout.
     private func waitOnline(_ link: Link) async -> Bool {
@@ -566,6 +573,28 @@ public final class TaskListStore {
             if blocks.upsert(item, offset: task.transcript.utf8.count) {
                 task.structuredTranscript = blocks
                 structuredTranscripts[task.key] = blocks
+            }
+            task.logID = host.logID
+        case .questionPending(let item):
+            // The card sits after the text streamed so far, as a transcript row does (S17).
+            let task = taskRecord(hostKey: link.key, taskID: item.taskID, title: "")
+            var blocks = structuredTranscript(of: task)
+            if !blocks.items.contains(where: { $0.id == item.id }), blocks.upsert(item, offset: task.transcript.utf8.count) {
+                task.structuredTranscript = blocks
+                structuredTranscripts[task.key] = blocks
+            }
+            task.logID = host.logID
+        case .questionResolved(let result):
+            let task = taskRecord(hostKey: link.key, taskID: result.taskID, title: "")
+            var blocks = structuredTranscript(of: task)
+            if var row = blocks.items.first(where: { $0.id == AgentQuestion.rowID(result.id) }), let question = row.question {
+                let closed = question.resolved(result)
+                row.kind = .question(closed)
+                row.state = closed.outcome == .cancelled ? .failed : .done
+                if blocks.upsert(row, offset: row.offset) {
+                    task.structuredTranscript = blocks
+                    structuredTranscripts[task.key] = blocks
+                }
             }
             task.logID = host.logID
         case .approvalPending(let approval):
