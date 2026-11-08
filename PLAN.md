@@ -198,6 +198,9 @@ A tracer is one thin round trip that one session can finish without running out 
   Provisional: D95 (part size 48 KiB, 20 MiB limit, SHA-256, JPEG ≤2048 px, per-connection staging). No new dependencies.
   Notes: the slice simulator dshm-T2 did not exist; I created it (iPhone 17 Pro, iOS 26.4). The first T0 baseline failed only because it raced with my proto edit; re-run passed. The picker's photo cells report "not hittable" to XCUITest; the test taps the cell centre and finds it by the locale-free id `PXGGridLayout-Info`. DSH session logs are multi-frame zstd; node's zstdDecompressSync reads one frame, so the check splits frames.
   Not done (out of scope): files that are not photos, more than one attachment, attachments in follow-ups. No §0 change needed.
+- **2026-11-08 · Merged main twice (T1, T0); review PASS at 0f0bbc8, one flaky part.** Merged main into the branch twice at the coordinator's request: af1c314 (T1 agent questions) and 0f0bbc8 (T0 follow-ups). Kept both sides everywhere: questions.v1 (380–399, D92), conversation.v1 (360–379, D89) and attachments.v1 (400–419, D95); generated code regenerated with scripts/codegen; FakeDSH and FakeHost keep every side's recorders; the design board re-rendered from the merged board.html. Bridge tests 83 pass, swift test 108 pass. The review of af1c314 was stopped, unfinished, once main took T0.
+  Review: full `scripts/review T2` by a separate reviewer at 0f0bbc8 → RESULT: PASS, /tmp/dshm-review/T2-0f0bbc8.txt.
+  Flaky: attachments-ui passed on run 2 of 3. Run 1 failed at AttachmentsUITests.swift:23: the system photo picker (out of process) did not show its grid cell `PXGGridLayout-Info` within 15 s after the photo key was tapped. Run 2 passed, and the DSH session check found the photo. Likely cause: the picker is slow on its first open in a fresh app install. Not repaired in this round; a possible repair is a longer wait for the first grid cell.
 
 ## 4. Spikes
 
