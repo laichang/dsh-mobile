@@ -56,7 +56,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S10 | done | merged `f333abc` | 2026-11-09 | — |
 | S11 | doing | `claude/s11-hosts-tests` | 2026-11-09 | Slice owner builds (§8) |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
-| S13 | todo | — | 2026-11-08 | Assign it and start a session |
+| S13 | doing | `claude/s13-keyboard-host-menu` | 2026-11-09 | Slice owner builds (§8) |
 
 ## 1. Approach
 
@@ -722,6 +722,8 @@ Append-only, dated.
 - **2026-11-09 · S10 merged.** Merged as `f333abc`; `scripts/check-plan` on the merge commit passed. `scripts/review S10` at `676ce30`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S10-676ce30.txt`). No open `[human]` items, so S10 is `done`.
 
 - **2026-11-09 · S10 merged; Live Activity launch race in UI demos.** S10 merged as f333abc (review PASS on 676ce30, S10-676ce30.txt, no flaky part, no retry). #22 reproduced on d48c93f: the test looked for the prompt, but since D50 a row shows DSH's session title (the mock model titles it '## Patch'); the test now matches 'patch'. No app change. s8.sh renamed to rich-detail.sh; s28.sh has no --no-s8. New, cross-cutting: since S6, liveactivitiesd opens the app in the background right after a reinstall when the part before left a recent Live Activity, and XCTest attaches to that process without launch arguments (seen in S10, and on dshm-S9). S10 guards its own launches (preset prompt check, relaunch); a shared fix (a launch check in UITestSupport, or no Live Activities under UI tests unless a test asks) is passed to S9 or becomes an issue.
+
+- **2026-11-09 · S13 assigned.** Branch `claude/s13-keyboard-host-menu`, simulator `dshm-S13`, DSHM_HOME `~/.dshm/home-s13`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D137–D139. `eval "$(scripts/slice-env S13)"` exports them.
 
 ## 9. Pending user confirmation
 
