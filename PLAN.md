@@ -45,7 +45,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | T2 | done | merged `1762164` | 2026-11-08 | — (provisional D95 in §9) |
 | X1 | done | merged `9d4cb67` | 2026-11-08 | — (provisional D104 in §9) |
 | S1 | done | merged `55300a7` | 2026-11-09 | — (provisional D101, D102 in §9) |
-| S2 | todo | — | 2026-11-08 | Assign it and start a session |
+| S2 | doing | `claude/s2-questions-more` | 2026-11-09 | Slice owner builds (§8) |
 | S3 | doing | `claude/s3-model-failures` | 2026-11-08 | Slice owner builds (§8) |
 | S4 | doing | `claude/s4-attach-files` | 2026-11-08 | Slice owner builds (§8) |
 | S5 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -591,6 +591,8 @@ Append-only, dated.
 - **2026-11-09 · S1 merged.** Merged as `55300a7`; `scripts/check-plan` on the merge commit passed. `scripts/review S1` at `ff68333`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S1-ff68333.txt`). No open `[human]` items, so S1 is `done`. §9 rows 6, 7 (D101, D102).
 
 - **2026-11-09 · S1 merged.** S1 merged as 55300a7 (review PASS on ff68333, S1-ff68333.txt, no flaky part; head 50558d6 adds only PLAN changes). Capability conversation.v2 (QueuedMessage, EditQueue/QueueEdited, field 361 in the conversation block). D18 amended (default queue, 立即发送 steers; D18 was user-confirmed, the amendment is provisional), D89 amended, D101 and D102 new: all in §9. Flaky outside the review: one full swift test run failed in S16CodingTaskTests under load (S12 covers it). S1 and S3 both touched the X1 caption and MilestoneBar.swift; S3 owns that seam when it lands.
+
+- **2026-11-09 · S2 assigned.** Branch `claude/s2-questions-more`, simulator `dshm-S2`, DSHM_HOME `~/.dshm/home-s2`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D113–D115. `eval "$(scripts/slice-env S2)"` exports them.
 
 ## 9. Pending user confirmation
 
