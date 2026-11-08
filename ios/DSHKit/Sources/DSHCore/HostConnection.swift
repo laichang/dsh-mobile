@@ -93,6 +93,8 @@ public struct TaskSnapshot: Sendable, Equatable {
     public var workspace: String?
     /// S27: when the latest turn started; nil from an older bridge (then `createdAt` stands in).
     public var turnStartedAt: Date?
+    /// Agent questions the task waits on (`pending_questions`, D92), as card rows.
+    public var questions: [TranscriptItem] = []
 
     public init(taskID: String, title: String, state: TaskState, createdAt: Date, updatedAt: Date, message: String = "") {
         self.taskID = taskID
@@ -123,6 +125,7 @@ public struct TaskSnapshot: Sendable, Equatable {
         workspace = s.hasWorkspace && !s.workspace.isEmpty ? s.workspace : nil
         turnStartedAt = s.hasTurnStartedAtMs ? Date(timeIntervalSince1970: Double(s.turnStartedAtMs) / 1000) : nil
         approvals = s.pendingApprovals.map(Approval.init)
+        questions = s.pendingQuestions.map { AgentQuestion.pendingRow($0) }
         approvalOnly = s.approvalOnly
         modelSelection = s.hasModelSelection ? s.modelSelection : nil
     }
@@ -540,14 +543,15 @@ public actor HostConnection {
               result.outcome == (allow ? .allowed : .denied) else { throw HostConnectionError.unexpectedResponse }
     }
 
-    /// Answers a held agent question with one chosen label per question.
-    public func answerQuestion(id: String, answers: [String: [String]]) async throws {
+    /// Answers a held agent question: for each question, the chosen labels or the typed text.
+    public func answerQuestion(id: String, answers: [String: AgentQuestion.Reply]) async throws {
         var answer = Dshm_V1_AnswerQuestion()
         answer.id = id
-        answer.answers = answers.sorted { $0.key < $1.key }.map { questionID, selected in
+        answer.answers = answers.sorted { $0.key < $1.key }.map { questionID, reply in
             var a = Dshm_V1_QuestionAnswer()
             a.questionID = questionID
-            a.selected = selected
+            a.selected = reply.selected
+            a.custom = reply.custom
             return a
         }
         let response = try await request(.answerQuestion(answer))

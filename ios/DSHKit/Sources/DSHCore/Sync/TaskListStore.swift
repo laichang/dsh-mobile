@@ -547,10 +547,21 @@ public final class TaskListStore {
     }
 
     /// Answers an agent question (`questions.v1`). The card closes on the host's `QuestionResolved`.
-    public func answerQuestion(_ question: AgentQuestion, hostKey: String, answers: [String: [String]]) async throws {
-        guard let link = links.first(where: { $0.key == hostKey }), link.reachability == .online,
-              link.capabilities?.contains(DSHProtocolInfo.questionsCapability) == true else { throw HostConnectionError.notConnected }
-        try await link.connection.answerQuestion(id: question.requestID, answers: answers)
+    public func answerQuestion(_ question: AgentQuestion, hostKey: String, answers: [String: AgentQuestion.Reply]) async throws {
+        guard canAnswerQuestions(hostKey: hostKey) else { throw HostConnectionError.notConnected }
+        try await links.first { $0.key == hostKey }!.connection.answerQuestion(id: question.requestID, answers: answers)
+    }
+
+    /// Answers an agent question with what the user typed in the session's composer ("回答 Agent…",
+    /// D113): the text goes to the question, not into the task as a follow-up.
+    public func answerQuestion(_ question: AgentQuestion, hostKey: String, typed text: String) async throws {
+        try await answerQuestion(question, hostKey: hostKey, answers: question.replies(typed: text))
+    }
+
+    /// Whether this phone can answer the questions of the host now: online, with `questions.v1`.
+    public func canAnswerQuestions(hostKey: String) -> Bool {
+        links.contains { $0.key == hostKey && $0.reachability == .online
+            && $0.capabilities?.contains(DSHProtocolInfo.questionsCapability) == true }
     }
 
     /// Waits for the host to be online: through a connection attempt in progress, or one
@@ -852,6 +863,12 @@ public final class TaskListStore {
             task.failureCode = snapshot.failureCode
             task.updatedAt = snapshot.updatedAt
             task.turnStartedAt = snapshot.turnStartedAt
+        }
+        // D113: the questions of the summary, as D25 does for approvals: a card the trimmed log lost.
+        var blocks = structuredTranscript(of: task)
+        if blocks.restoreQuestions(snapshot.questions, offset: task.transcript.utf8.count, ended: task.state.isTerminal) {
+            task.structuredTranscript = blocks
+            structuredTranscripts[task.key] = blocks
         }
     }
 

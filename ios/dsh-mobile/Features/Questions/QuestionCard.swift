@@ -1,15 +1,19 @@
 import DSHCore
 import SwiftUI
 
-/// Screen P1 · a question from the agent, as a card in the transcript (STORY §4–§5). One chip per
-/// option; a tap answers. The task waits and never chooses by itself. Once answered (here or on
-/// DSH Web) the card shows the answer in place of the chips.
+/// Screen P1 · a question from the agent, as a card in the transcript and under 等我处理 in 所有任务
+/// (STORY §4–§5). One chip per option; a tap answers. A multi-select question takes one or more
+/// chips and then 回答. On the session page the composer can answer too ("回答 Agent…", D113). The
+/// task waits and never chooses by itself. Once answered (here, in the composer or on DSH Web) the
+/// card shows the answer in place of the chips.
 struct QuestionCard: View {
     let store: TaskListStore?
     let row: TaskListStore.TaskRow
     let question: AgentQuestion
-    /// Choices made on this card, by question id, until every question has one.
-    @State private var chosen: [String: String] = [:]
+    /// On the session page, where the composer below can answer too.
+    var answersBelow = false
+    /// Choices made on this card, by question id, in the order of the options.
+    @State private var chosen: [String: [String]] = [:]
     @State private var sending = false
     @State private var error: String?
 
@@ -41,6 +45,9 @@ struct QuestionCard: View {
                     }
                 }
             }
+            if question.outcome == nil && needsSubmit {
+                submit
+            }
             footer
         }
         .padding(14)
@@ -53,7 +60,7 @@ struct QuestionCard: View {
     private func chips(_ item: AgentQuestion.Item) -> some View {
         FlowLayout(spacing: 8) {
             ForEach(item.options, id: \.label) { option in
-                let selected = chosen[item.id] == option.label
+                let selected = chosen[item.id]?.contains(option.label) == true
                 Button { choose(option.label, for: item) } label: {
                     Text(verbatim: option.label)
                         .font(.subheadline)
@@ -67,6 +74,7 @@ struct QuestionCard: View {
                 .disabled(sending)
                 .accessibilityLabel(option.label)
                 .accessibilityHint(option.description)
+                .accessibilityAddTraits(selected ? .isSelected : [])
                 .accessibilityIdentifier("question.option")
             }
         }
@@ -91,6 +99,8 @@ struct QuestionCard: View {
                 Text(verbatim: error).foregroundStyle(DSHTheme.red)
             } else {
                 switch question.outcome {
+                case nil where answersBelow:
+                    Text("You can also answer below. The task is waiting for you and will not choose by itself.", tableName: "Questions")
                 case nil: Text("The task is waiting for you and will not choose by itself.", tableName: "Questions")
                 case .answered?: Text("You answered. The task continues.", tableName: "Questions")
                 case .answeredElsewhere?: Text("Answered on another client.", tableName: "Questions")
@@ -103,11 +113,41 @@ struct QuestionCard: View {
         .accessibilityIdentifier("question.footer")
     }
 
+    /// A multi-select question needs a 回答 key: a tap cannot tell when the choice is complete.
+    /// A question with no options has no chips; the composer answers it.
+    private var needsSubmit: Bool { question.items.contains { $0.multiSelect } }
+
+    /// 回答: sends the choices once every question has at least one.
+    private var submit: some View {
+        let complete = question.items.allSatisfy { !(chosen[$0.id] ?? []).isEmpty }
+        return Button { send() } label: {
+            Text("Answer", tableName: "Questions")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(complete ? Color.black : DSHTheme.textTertiary)
+                .frame(maxWidth: .infinity, minHeight: 36)
+                .background(complete ? DSHTheme.textPrimary : Color.white.opacity(0.08), in: .rect(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .disabled(!complete || sending)
+        .accessibilityIdentifier("question.submit")
+    }
+
     private func choose(_ label: String, for item: AgentQuestion.Item) {
-        chosen[item.id] = label
+        if item.multiSelect {
+            // A multi-select chip toggles; 回答 sends.
+            let picked = Set(chosen[item.id] ?? []).symmetricDifference([label])
+            chosen[item.id] = item.options.map(\.label).filter(picked.contains)
+            return
+        }
+        chosen[item.id] = [label]
         // One tap answers a single question; with several, the last missing choice sends.
-        guard question.items.allSatisfy({ chosen[$0.id] != nil }), let store else { return }
-        let answers = chosen.mapValues { [$0] }
+        guard !needsSubmit, question.items.allSatisfy({ chosen[$0.id] != nil }) else { return }
+        send()
+    }
+
+    private func send() {
+        guard let store else { return }
+        let answers = chosen.mapValues { AgentQuestion.Reply(selected: $0) }
         sending = true
         error = nil
         Task {

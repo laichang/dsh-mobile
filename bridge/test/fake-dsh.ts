@@ -349,7 +349,7 @@ export class FakeDSH implements DshServices {
           { questions: this.options.ask, agent: { session: { id: sessionId } }, signal: abort.signal },
           () => Promise.reject(new Error('no user-questions answerer accepted the request')))
         this.answers.push(answer)
-        reply = this.options.reply ?? ['Using ', answer.answers.flatMap(a => a.selected).join(', '), '.']
+        reply = this.options.reply ?? ['Using ', answer.answers.flatMap(a => a.custom ? [a.custom, ...a.selected] : a.selected).join(', '), '.']
       } catch {
         if (s.stopped.has(turn)) return
         reply = this.options.reply ?? ['No answer.']

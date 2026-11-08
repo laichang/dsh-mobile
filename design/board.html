@@ -630,6 +630,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
 <div class="cap"><h3><i>03</i>所有任务 · 从抽屉打开<span class="mtag m1">M1 · 换样式</span></h3><ul>
   <li>就是现在的 Tasks 列表（等我处理 / 正在跑 / 已完成，跨执行端），挪进抽屉、换成 DSH 风格。</li>
   <li>审批卡用 M1 已有的字段：工具名、命令、理由、工具参数；<b>拒绝 / 允许一次</b>。</li>
+  <li>Agent 提问也在等我处理里，显示成提问卡（P1），可以直接在这里回答；点标题打开会话。</li>
   <li>执行端离线时按钮置灰并说明原因（和代码一致）；短任务的回答直接显示在行内。</li>
 </ul></div>
 </div>
@@ -1112,9 +1113,9 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <div class="homebar"></div>
 </div>
 <div class="cap"><h3><i>P1</i>Agent 提问<span class="mtag m1">M2 · 已有</span></h3><ul>
-  <li>§4/§5：提问和审批一样是“需要决策”，在「所有任务」的等我处理、角标和推送里都算。</li>
-  <li>有选项就给快捷回复，一点即答，卡片随后显示答案；在 Web 上先答了，卡片也收起。任务暂停等你，不替你选。直接在输入框回答还没有。</li>
-  <li>上游区分“提问”和“审批”（ARCHITECTURE D18、D92）。</li>
+  <li>§4/§5：提问和审批一样是“需要决策”，在「所有任务」的等我处理和角标里都算，顶部条变成琥珀色「等你回答」；重启 App 后还在。推送还没有。</li>
+  <li>有选项就给快捷回复，一点即答；多选题选好后点「回答」。也可以直接在输入框回答（「回答 Agent…」），这句话交给提问，不会变成追加消息。卡片随后显示答案；在 Web 上先答了，卡片也收起。</li>
+  <li>任务暂停等你，不替你选，也不会超时放弃（没有安全的默认答案）。上游区分“提问”和“审批”（ARCHITECTURE D18、D92、D113、D114）。</li>
 </ul></div>
 </div>
 

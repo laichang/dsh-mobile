@@ -11,12 +11,14 @@ struct MilestoneBar: View {
     /// S19: when the task failed, the line that replaces the headline ("失败 · 第 3 步"); the
     /// bar then has a red border (screen X1).
     var alert: String? = nil
+    /// P1: an agent question waits for the user: "等你回答", with an amber border.
+    var asking = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 icon.frame(width: 20, height: 20)
-                Text(Self.line(timeline, state: state, alert: alert))
+                Text(Self.line(timeline, state: state, alert: alert, asking: asking))
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(DSHTheme.textPrimary)
                     .lineLimit(1)
@@ -38,15 +40,17 @@ struct MilestoneBar: View {
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(DSHTheme.s16BarFill, in: .rect(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(alert == nil ? DSHTheme.hairline : DSHTheme.s19FailBarBorder))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(alert != nil ? DSHTheme.s19FailBarBorder
+            : asking ? DSHTheme.amber.opacity(0.4) : DSHTheme.hairline))
         .contentShape(.rect)
     }
 
     /// The bar's one line. After a stop or a finish, a follow-up continues the task (D89, D101),
     /// and its turns add no milestones: the last milestone is history then, so the line says what
     /// the task does now.
-    static func line(_ timeline: MilestoneTimeline, state: TaskState?, alert: String?) -> String {
+    static func line(_ timeline: MilestoneTimeline, state: TaskState?, alert: String?, asking: Bool = false) -> String {
         if let alert { return alert }
+        if asking { return String(localized: "Waiting for your answer") }
         guard outdated(timeline, state: state) else { return timeline.headline }
         return state == .completed ? String(localized: "Done") : String(localized: "Running")
     }
@@ -68,6 +72,8 @@ struct MilestoneBar: View {
     private var icon: some View {
         if alert != nil {
             Image(systemName: "exclamationmark.triangle").foregroundStyle(DSHTheme.s19FailText)
+        } else if asking {
+            Image(systemName: "bubble.left").foregroundStyle(DSHTheme.amber)
         } else {
             stateIcon
         }
@@ -96,7 +102,7 @@ struct MilestoneBar: View {
         case .finished?: DSHTheme.green
         case .failed?: DSHTheme.red
         case .interrupted?: DSHTheme.textTertiary
-        default: state == .waitingOnUser ? DSHTheme.amber : DSHTheme.blue
+        default: state == .waitingOnUser || asking ? DSHTheme.amber : DSHTheme.blue
         }
     }
 }

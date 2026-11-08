@@ -9,7 +9,7 @@
 //   https://github.com/apple/swift-protobuf/
 
 /// Agent questions (ARCHITECTURE D18, D92): DSH's `ask_user_question` tool, held by the bridge
-/// like an approval. Capability `questions.v1`. Frame fields 380–399.
+/// like an approval. Capability `questions.v1`. Frame fields 380–399; `TaskSummary` field 380.
 
 import SwiftProtobuf
 
@@ -136,15 +136,19 @@ public nonisolated struct Dshm_V1_QuestionAnswer: Sendable {
 
   public var questionID: String = String()
 
-  /// Labels of the chosen options.
+  /// Labels of the chosen options (one or more when the question is multi-select).
   public var selected: [String] = []
+
+  /// What the user typed instead of, or with, the options: DSH's free-text "other" answer.
+  public var custom: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
 
-/// Request: answer every question of a pending request.
+/// Request: answer every question of a pending request. Each answer names offered options, or has
+/// typed text in `custom` (the composer's "回答 Agent…"), or both when the question is multi-select.
 public nonisolated struct Dshm_V1_AnswerQuestion: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -319,7 +323,7 @@ nonisolated extension Dshm_V1_QuestionPending: SwiftProtobuf.Message, SwiftProto
 
 nonisolated extension Dshm_V1_QuestionAnswer: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".QuestionAnswer"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}question_id\0\u{1}selected\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}question_id\0\u{1}selected\0\u{1}custom\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -329,6 +333,7 @@ nonisolated extension Dshm_V1_QuestionAnswer: SwiftProtobuf.Message, SwiftProtob
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.questionID) }()
       case 2: try { try decoder.decodeRepeatedStringField(value: &self.selected) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.custom) }()
       default: break
       }
     }
@@ -341,12 +346,16 @@ nonisolated extension Dshm_V1_QuestionAnswer: SwiftProtobuf.Message, SwiftProtob
     if !self.selected.isEmpty {
       try visitor.visitRepeatedStringField(value: self.selected, fieldNumber: 2)
     }
+    if !self.custom.isEmpty {
+      try visitor.visitSingularStringField(value: self.custom, fieldNumber: 3)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Dshm_V1_QuestionAnswer, rhs: Dshm_V1_QuestionAnswer) -> Bool {
     if lhs.questionID != rhs.questionID {return false}
     if lhs.selected != rhs.selected {return false}
+    if lhs.custom != rhs.custom {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

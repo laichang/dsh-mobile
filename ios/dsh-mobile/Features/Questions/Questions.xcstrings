@@ -11,6 +11,16 @@
         }
       }
     },
+    "Answer": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回答"
+          }
+        }
+      }
+    },
     "Answered on another client.": {
       "localizations": {
         "zh-Hans": {
@@ -57,6 +67,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "已回答，任务继续。"
+          }
+        }
+      }
+    },
+    "You can also answer below. The task is waiting for you and will not choose by itself.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "也可以在下面直接回答。任务在等你，不会自己选。"
           }
         }
       }

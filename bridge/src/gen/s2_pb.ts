@@ -15,13 +15,15 @@ import type { ApprovalPending } from "./approvals_pb.js";
 import { file_approvals } from "./approvals_pb.js";
 import type { ModelSelection } from "./models_pb.js";
 import { file_models } from "./models_pb.js";
+import type { QuestionPending } from "./questions_pb.js";
+import { file_questions } from "./questions_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file s2.proto.
  */
 export const file_s2: GenFile = /*@__PURE__*/
-  fileDesc("CghzMi5wcm90bxIHZHNobS52MSKBBAoLVGFza1N1bW1hcnkSDwoHdGFza19pZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIhCgVzdGF0ZRgDIAEoDjISLmRzaG0udjEuVGFza1N0YXRlEhUKDWNyZWF0ZWRfYXRfbXMYBCABKAMSFQoNdXBkYXRlZF9hdF9tcxgFIAEoAxIPCgdtZXNzYWdlGAYgASgJEhUKDGZhaWx1cmVfY29kZRikAyABKAkSMwoRcGVuZGluZ19hcHByb3ZhbHMYUCADKAsyGC5kc2htLnYxLkFwcHJvdmFsUGVuZGluZxIVCg1hcHByb3ZhbF9vbmx5GFEgASgIEjAKD21vZGVsX3NlbGVjdGlvbhh4IAEoCzIXLmRzaG0udjEuTW9kZWxTZWxlY3Rpb24SHgoQc2Vzc2lvbl9yZXZpc2lvbhiEAiABKARIAIgBARIZChBleHRlcm5hbF9zZXNzaW9uGIUCIAEoCBIaCgxsYXRlc3RfcmVwbHkYhgIgASgJSAGIAQESFwoJd29ya3NwYWNlGJgCIAEoCUgCiAEBEiAKEnR1cm5fc3RhcnRlZF9hdF9tcxicBCABKANIA4gBAUITChFfc2Vzc2lvbl9yZXZpc2lvbkIPCg1fbGF0ZXN0X3JlcGx5QgwKCl93b3Jrc3BhY2VCFQoTX3R1cm5fc3RhcnRlZF9hdF9tcyILCglMaXN0VGFza3MiUgoIVGFza0xpc3QSIwoFdGFza3MYASADKAsyFC5kc2htLnYxLlRhc2tTdW1tYXJ5Eg4KBmxvZ19pZBgCIAEoCRIRCglob3N0X25hbWUYAyABKAkiKwoGUmVzdW1lEg4KBmxvZ19pZBgBIAEoCRIRCglhZnRlcl9zZXEYAiABKAQiXwoHUmVzdW1lZBIOCgZsb2dfaWQYASABKAkSEAoIaGVhZF9zZXEYAiABKAQSEQoJaG9zdF9uYW1lGAMgASgJEg0KBXJlc2V0GAQgASgIEhAKCHJlcGxheWVkGAUgASgEIjIKDFRhc2tVcHNlcnRlZBIiCgR0YXNrGAEgASgLMhQuZHNobS52MS5UYXNrU3VtbWFyeSIaCghMb2dSZXNldBIOCgZsb2dfaWQYASABKAkqrAEKCVRhc2tTdGF0ZRIaChZUQVNLX1NUQVRFX1VOU1BFQ0lGSUVEEAASFgoSVEFTS19TVEFURV9SVU5OSU5HEAESHgoaVEFTS19TVEFURV9XQUlUSU5HX09OX1VTRVIQAhIYChRUQVNLX1NUQVRFX0NPTVBMRVRFRBADEhUKEVRBU0tfU1RBVEVfRkFJTEVEEAQSGgoWVEFTS19TVEFURV9JTlRFUlJVUFRFRBAFYgZwcm90bzM", [file_approvals, file_models]);
+  fileDesc("CghzMi5wcm90bxIHZHNobS52MSK3BAoLVGFza1N1bW1hcnkSDwoHdGFza19pZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIhCgVzdGF0ZRgDIAEoDjISLmRzaG0udjEuVGFza1N0YXRlEhUKDWNyZWF0ZWRfYXRfbXMYBCABKAMSFQoNdXBkYXRlZF9hdF9tcxgFIAEoAxIPCgdtZXNzYWdlGAYgASgJEhUKDGZhaWx1cmVfY29kZRikAyABKAkSMwoRcGVuZGluZ19hcHByb3ZhbHMYUCADKAsyGC5kc2htLnYxLkFwcHJvdmFsUGVuZGluZxIVCg1hcHByb3ZhbF9vbmx5GFEgASgIEjAKD21vZGVsX3NlbGVjdGlvbhh4IAEoCzIXLmRzaG0udjEuTW9kZWxTZWxlY3Rpb24SHgoQc2Vzc2lvbl9yZXZpc2lvbhiEAiABKARIAIgBARIZChBleHRlcm5hbF9zZXNzaW9uGIUCIAEoCBIaCgxsYXRlc3RfcmVwbHkYhgIgASgJSAGIAQESFwoJd29ya3NwYWNlGJgCIAEoCUgCiAEBEiAKEnR1cm5fc3RhcnRlZF9hdF9tcxicBCABKANIA4gBARI0ChFwZW5kaW5nX3F1ZXN0aW9ucxj8AiADKAsyGC5kc2htLnYxLlF1ZXN0aW9uUGVuZGluZ0ITChFfc2Vzc2lvbl9yZXZpc2lvbkIPCg1fbGF0ZXN0X3JlcGx5QgwKCl93b3Jrc3BhY2VCFQoTX3R1cm5fc3RhcnRlZF9hdF9tcyILCglMaXN0VGFza3MiUgoIVGFza0xpc3QSIwoFdGFza3MYASADKAsyFC5kc2htLnYxLlRhc2tTdW1tYXJ5Eg4KBmxvZ19pZBgCIAEoCRIRCglob3N0X25hbWUYAyABKAkiKwoGUmVzdW1lEg4KBmxvZ19pZBgBIAEoCRIRCglhZnRlcl9zZXEYAiABKAQiXwoHUmVzdW1lZBIOCgZsb2dfaWQYASABKAkSEAoIaGVhZF9zZXEYAiABKAQSEQoJaG9zdF9uYW1lGAMgASgJEg0KBXJlc2V0GAQgASgIEhAKCHJlcGxheWVkGAUgASgEIjIKDFRhc2tVcHNlcnRlZBIiCgR0YXNrGAEgASgLMhQuZHNobS52MS5UYXNrU3VtbWFyeSIaCghMb2dSZXNldBIOCgZsb2dfaWQYASABKAkqrAEKCVRhc2tTdGF0ZRIaChZUQVNLX1NUQVRFX1VOU1BFQ0lGSUVEEAASFgoSVEFTS19TVEFURV9SVU5OSU5HEAESHgoaVEFTS19TVEFURV9XQUlUSU5HX09OX1VTRVIQAhIYChRUQVNLX1NUQVRFX0NPTVBMRVRFRBADEhUKEVRBU0tfU1RBVEVfRkFJTEVEEAQSGgoWVEFTS19TVEFURV9JTlRFUlJVUFRFRBAFYgZwcm90bzM", [file_approvals, file_models, file_questions]);
 
 /**
  * @generated from message dshm.v1.TaskSummary
@@ -124,6 +126,15 @@ export type TaskSummary = Message<"dshm.v1.TaskSummary"> & {
    * @generated from field: optional int64 turn_started_at_ms = 540;
    */
   turnStartedAtMs?: bigint | undefined;
+
+  /**
+   * Agent questions (questions.v1, fields 380–399): every question the task waits on now, including
+   * any older than the retained log, as for approvals. A pending question makes the task
+   * WAITING_ON_USER.
+   *
+   * @generated from field: repeated dshm.v1.QuestionPending pending_questions = 380;
+   */
+  pendingQuestions: QuestionPending[];
 };
 
 /**
@@ -307,7 +318,7 @@ export enum TaskState {
   RUNNING = 1,
 
   /**
-   * Needs a decision from the user (approvals, S4). Nothing sets it before S4.
+   * Needs a decision from the user: an approval or an agent question.
    *
    * @generated from enum value: TASK_STATE_WAITING_ON_USER = 2;
    */
