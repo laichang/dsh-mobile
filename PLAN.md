@@ -47,7 +47,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S1 | doing | `claude/s1-followup-queue` | 2026-11-08 | Slice owner builds (§8) |
 | S2 | todo | — | 2026-11-08 | Assign it and start a session |
 | S3 | todo | — | 2026-11-08 | Assign it and start a session |
-| S4 | todo | — | 2026-11-08 | Assign it and start a session |
+| S4 | doing | `claude/s4-attach-files` | 2026-11-08 | Slice owner builds (§8) |
 | S5 | todo | — | 2026-11-08 | Assign it and start a session |
 | S6 | todo | — | 2026-11-08 | Assign it and start a session |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
@@ -567,6 +567,8 @@ Append-only, dated.
 - **2026-11-08 · T2 merged.** Merged as `1762164`; `scripts/check-plan` on the merge commit passed. `scripts/review T2` at `eb877f4`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/T2-eb877f4.txt`). No open `[human]` items, so T2 is `done`. §9 rows 4 (D95).
 
 - **2026-11-08 · T2 merged.** T2 merged as 1762164 (review PASS on eb877f4, T2-eb877f4.txt, no flaky part; the earlier review on 0f0bbc8 had attachments-ui flaky, passed on run 2 of 3). Before the merge, T2 merged main with T0+T1+S7: bridge tests 83/83 and swift test 112/112 pass on that combination, so the auto-merged S7+T0 code on main builds and passes.
+
+- **2026-11-08 · S4 assigned.** Branch `claude/s4-attach-files`, simulator `dshm-S4`, DSHM_HOME `~/.dshm/home-s4`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D107–D109. `eval "$(scripts/slice-env S4)"` exports them.
 
 ## 9. Pending user confirmation
 
