@@ -33,7 +33,7 @@ public nonisolated enum Dshm_V1_TaskState: SwiftProtobuf.Enum, Swift.CaseIterabl
   case unspecified // = 0
   case running // = 1
 
-  /// Needs a decision from the user (approvals, S4). Nothing sets it before S4.
+  /// Needs a decision from the user: an approval or an agent question.
   case waitingOnUser // = 2
   case completed // = 3
   case failed // = 4
@@ -193,6 +193,14 @@ public nonisolated struct Dshm_V1_TaskSummary: @unchecked Sendable {
   /// Clears the value of `turnStartedAtMs`. Subsequent reads from it will return its default value.
   public mutating func clearTurnStartedAtMs() {_uniqueStorage()._turnStartedAtMs = nil}
 
+  /// Agent questions (questions.v1, fields 380–399): every question the task waits on now, including
+  /// any older than the retained log, as for approvals. A pending question makes the task
+  /// WAITING_ON_USER.
+  public var pendingQuestions: [Dshm_V1_QuestionPending] {
+    get {_storage._pendingQuestions}
+    set {_uniqueStorage()._pendingQuestions = newValue}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -317,7 +325,7 @@ nonisolated extension Dshm_V1_TaskState: SwiftProtobuf._ProtoNameProviding {
 
 nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TaskSummary"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0\u{4}L\u{2}session_revision\0\u{3}external_session\0\u{3}latest_reply\0\u{2}\u{12}workspace\0\u{4}L\u{2}failure_code\0\u{4}x\u{1}turn_started_at_ms\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0\u{4}L\u{2}session_revision\0\u{3}external_session\0\u{3}latest_reply\0\u{2}\u{12}workspace\0\u{4}d\u{1}pending_questions\0\u{4}(failure_code\0\u{4}x\u{1}turn_started_at_ms\0")
 
   fileprivate class _StorageClass {
     var _taskID: String = String()
@@ -335,6 +343,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     var _latestReply: String? = nil
     var _workspace: String? = nil
     var _turnStartedAtMs: Int64? = nil
+    var _pendingQuestions: [Dshm_V1_QuestionPending] = []
 
       // This property is used as the initial default value for new instances of the type.
       // The type itself is protecting the reference to its storage via CoW semantics.
@@ -360,6 +369,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
       _latestReply = source._latestReply
       _workspace = source._workspace
       _turnStartedAtMs = source._turnStartedAtMs
+      _pendingQuestions = source._pendingQuestions
     }
   }
 
@@ -391,6 +401,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
         case 261: try { try decoder.decodeSingularBoolField(value: &_storage._externalSession) }()
         case 262: try { try decoder.decodeSingularStringField(value: &_storage._latestReply) }()
         case 280: try { try decoder.decodeSingularStringField(value: &_storage._workspace) }()
+        case 380: try { try decoder.decodeRepeatedMessageField(value: &_storage._pendingQuestions) }()
         case 420: try { try decoder.decodeSingularStringField(value: &_storage._failureCode) }()
         case 540: try { try decoder.decodeSingularInt64Field(value: &_storage._turnStartedAtMs) }()
         default: break
@@ -444,6 +455,9 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
       try { if let v = _storage._workspace {
         try visitor.visitSingularStringField(value: v, fieldNumber: 280)
       } }()
+      if !_storage._pendingQuestions.isEmpty {
+        try visitor.visitRepeatedMessageField(value: _storage._pendingQuestions, fieldNumber: 380)
+      }
       if !_storage._failureCode.isEmpty {
         try visitor.visitSingularStringField(value: _storage._failureCode, fieldNumber: 420)
       }
@@ -474,6 +488,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
         if _storage._latestReply != rhs_storage._latestReply {return false}
         if _storage._workspace != rhs_storage._workspace {return false}
         if _storage._turnStartedAtMs != rhs_storage._turnStartedAtMs {return false}
+        if _storage._pendingQuestions != rhs_storage._pendingQuestions {return false}
         return true
       }
       if !storagesAreEqual {return false}

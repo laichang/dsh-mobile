@@ -82,6 +82,16 @@ public final class FakeBridge: BridgeTransport {
         /// then each queued one runs as its own turn; the task ends after the last. A stop returns them.
         /// A follow-up after a stop continues the task.
         public var queuesFollowUps = false
+        /// Agent questions (`questions.v1`): a task whose prompt contains `question.prompt` asks
+        /// `question.items` before its reply and waits for the answer, as the real bridge's holder
+        /// does. The answer (here, or from elsewhere with `answerQuestionFromElsewhere`) is checked
+        /// like the bridge checks it, recorded in `questionAnswers`, and the reply streams.
+        public var question: (prompt: String, items: [AgentQuestion.Item])?
+
+        func questions(_ prompt: String) -> [AgentQuestion.Item]? {
+            guard let question, !question.prompt.isEmpty, prompt.contains(question.prompt) else { return nil }
+            return question.items
+        }
 
         public init(
             reply: [String] = ["Hello", " from", " FakeBridge", ". ", "No DSH", " was", " involved."],
@@ -412,6 +422,8 @@ public final class FakeHost: Sendable {
         var queued: [String: [Dshm_V1_QueuedMessage]] = [:]
         /// D101: every queue edit, as "steer <text>" or "remove <text>".
         var queueEdits: [String] = []
+        /// Every accepted answer to an agent question, as DSH got it.
+        var questionAnswers: [Dshm_V1_AnswerQuestion] = []
         /// S16: each task's latest milestone seq and todos, for the INTERRUPTED milestone.
         var lastMilestones: [String: (seq: UInt64, todos: [Todo])] = [:]
     }
@@ -479,6 +491,8 @@ public final class FakeHost: Sendable {
     public var prompts: [String] { state.withLock { $0.prompts } }
     /// D89: the follow-up messages this host accepted, in order.
     public var followUps: [String] { state.withLock { $0.followUps } }
+    /// Every accepted answer to an agent question, in order: what reached DSH.
+    public var questionAnswers: [Dshm_V1_AnswerQuestion] { state.withLock { $0.questionAnswers } }
     /// D101: the queue edits this host made, in order ("steer <text>", "remove <text>").
     public var queueEdits: [String] { state.withLock { $0.queueEdits } }
     /// D95: per created task, the staged files it named: (media type, name, bytes).
@@ -602,6 +616,7 @@ public final class FakeHost: Sendable {
                         if script.reportsFailures { hello.capabilities.append(DSHProtocolInfo.failuresCapability) } // D110
                     }
                     if script.followUpReply != nil && script.queuesFollowUps { hello.capabilities.append(DSHProtocolInfo.queueCapability) }
+                    if script.question != nil { hello.capabilities.append(DSHProtocolInfo.questionsCapability) }
                 }
                 bridge.deliver(Self.response(id, .hello(hello)))
             case .createTask(let create)? where !create.uploadIds.isEmpty && (!takesAttachments
@@ -640,8 +655,9 @@ public final class FakeHost: Sendable {
                 let incarnation = s.incarnation
                 let hold = script.holds(create.prompt)
                 let ask = script.asks(create.prompt)
+                let question = script.questions(create.prompt)
                 let variant = script.variant(for: create.prompt) // S19
-                Task { await self.stream(taskID: taskID, incarnation: incarnation, hold: hold, ask: ask, using: variant) }
+                Task { await self.stream(taskID: taskID, incarnation: incarnation, hold: hold, ask: ask, question: question, using: variant) }
             case .uploadBegin(let begin)? where takesAttachments:
                 // D107: any media type; the four image types enter as images, the rest as files.
                 s.uploadBegins += 1
@@ -863,6 +879,8 @@ public final class FakeHost: Sendable {
                 Self.append(event, taskID: edit.taskID, in: &s)
             case .answerApproval(let answer)? where answersApprovals:
                 answerApproval(answer, requestID: id, bridge: bridge, in: &s)
+            case .answerQuestion(let answer)? where script.question != nil:
+                answerQuestion(answer, requestID: id, bridge: bridge, in: &s)
             case .getModelCatalog? where pickers != nil:
                 bridge.deliver(Self.response(id, .modelCatalog(Self.catalog(pickers!, gone: s.goneModels))))
             case .selectModel(let select)? where pickers != nil:
@@ -931,6 +949,81 @@ public final class FakeHost: Sendable {
         bridge.deliver(Self.response(requestID, .approvalResolved(resolved)))
     }
 
+    /// Checks an answer as the bridge's `QuestionHolder` does; a valid one resolves the question.
+    private func answerQuestion(_ answer: Dshm_V1_AnswerQuestion, requestID: UInt64, bridge: FakeBridge, in s: inout State) {
+        func refuse(_ code: String, _ message: String) {
+            var error = Dshm_V1_Error()
+            error.code = code
+            error.message = message
+            bridge.deliver(Self.response(requestID, .error(error)))
+        }
+        guard let at = s.tasks.firstIndex(where: { $0.pendingQuestions.contains { $0.id == answer.id } }),
+              let pending = s.tasks[at].pendingQuestions.first(where: { $0.id == answer.id }) else {
+            return refuse("question/refused", "This question has already closed.")
+        }
+        guard answer.answers.count == pending.questions.count else { return refuse("question/refused", "Answer every question.") }
+        for q in pending.questions {
+            guard let a = answer.answers.first(where: { $0.questionID == q.id }) else { return refuse("question/refused", "Answer every question.") }
+            let typed = a.custom.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0 : 1
+            if a.selected.count + typed == 0 { return refuse("question/refused", "Answer every question.") }
+            if !q.multiSelect && a.selected.count + typed != 1 { return refuse("question/refused", "Choose one option, or type an answer.") }
+            if a.selected.contains(where: { label in !q.options.contains { $0.label == label } }) {
+                return refuse("question/refused", "Choose one of the offered options.")
+            }
+        }
+        let resolved = resolveQuestion(answer, at: at, outcome: .answered, in: &s)
+        bridge.deliver(Self.response(requestID, .questionResolved(resolved)))
+    }
+
+    /// Another client (DSH Web) answers every pending question of this host with these labels,
+    /// by question id. The phone gets only the `QuestionResolved` event, as from the real bridge.
+    public func answerQuestionFromElsewhere(_ selected: [String: [String]]) {
+        state.withLock { s in
+            for at in s.tasks.indices {
+                for pending in s.tasks[at].pendingQuestions {
+                    var answer = Dshm_V1_AnswerQuestion()
+                    answer.id = pending.id
+                    answer.answers = pending.questions.map { q in
+                        var a = Dshm_V1_QuestionAnswer()
+                        a.questionID = q.id
+                        a.selected = selected[q.id] ?? []
+                        return a
+                    }
+                    _ = resolveQuestion(answer, at: at, outcome: .answeredElsewhere, in: &s)
+                }
+            }
+        }
+    }
+
+    /// Logs the resolution, records what DSH got, and the task goes on to its reply.
+    private func resolveQuestion(_ answer: Dshm_V1_AnswerQuestion, at: Int, outcome: Dshm_V1_QuestionOutcome,
+                                 in s: inout State) -> Dshm_V1_QuestionResolved {
+        let taskID = s.tasks[at].taskID
+        var given = answer
+        given.answers = answer.answers.map { a in
+            var trimmed = a
+            trimmed.custom = a.custom.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed
+        }
+        s.questionAnswers.append(given)
+        var resolved = Dshm_V1_QuestionResolved()
+        resolved.id = answer.id
+        resolved.taskID = taskID
+        resolved.outcome = outcome
+        resolved.answers = given.answers
+        var event = Dshm_V1_Event()
+        event.questionResolved = resolved
+        Self.append(event, taskID: taskID, in: &s)
+        s.tasks[at].pendingQuestions.removeAll { $0.id == answer.id }
+        s.tasks[at].state = .running
+        s.tasks[at].updatedAtMs = Self.nowMs()
+        Self.upserted(s.tasks[at], in: &s)
+        let incarnation = s.incarnation
+        let variant = script.variant(for: s.tasks[at].title)
+        Task { await self.stream(taskID: taskID, incarnation: incarnation, using: variant) }
+        return resolved
+    }
+
     /// S18: another client (the Web) answers every pending approval of this host. The phone
     /// gets only the `ApprovalResolved` event, as from the real bridge.
     public func answerFromElsewhere(allow: Bool) {
@@ -964,7 +1057,8 @@ public final class FakeHost: Sendable {
     }
 
     private func stream(taskID: String, incarnation: Int, hold: Bool = false,
-                        ask: FakeBridge.PendingApproval? = nil, using variant: FakeBridge.Script? = nil) async {
+                        ask: FakeBridge.PendingApproval? = nil, question: [AgentQuestion.Item]? = nil,
+                        using variant: FakeBridge.Script? = nil) async {
         let script = variant ?? self.script // S19: the task's own script, if its prompt picks one
         let turn = state.withLock { $0.turns[taskID, default: 0] } // D101: a stop ends this turn's stream
         // S3: milestones are logged like any other event, so Resume replays them.
@@ -1006,6 +1100,39 @@ public final class FakeHost: Sendable {
                 event.approvalPending = pending
                 Self.append(event, taskID: taskID, in: &s)
                 s.tasks[at].pendingApprovals = [pending]
+                s.tasks[at].state = .waitingOnUser
+                s.tasks[at].updatedAtMs = Self.nowMs()
+                Self.upserted(s.tasks[at], in: &s)
+            }
+            return
+        }
+        if let question {
+            // The task waits on the question; `resolveQuestion` streams the reply after the answer.
+            try? await Task.sleep(for: script.chunkDelay)
+            state.withLock { s in
+                guard s.incarnation == incarnation, let at = s.tasks.firstIndex(where: { $0.taskID == taskID }) else { return }
+                var pending = Dshm_V1_QuestionPending()
+                pending.id = "\(taskID)-question"
+                pending.taskID = taskID
+                pending.questions = question.map { item in
+                    var q = Dshm_V1_Question()
+                    q.id = item.id
+                    q.text = item.text
+                    q.header = item.header
+                    q.detail = item.detail
+                    q.multiSelect = item.multiSelect
+                    q.options = item.options.map { option in
+                        var o = Dshm_V1_QuestionOption()
+                        o.label = option.label
+                        o.description_p = option.description
+                        return o
+                    }
+                    return q
+                }
+                var event = Dshm_V1_Event()
+                event.questionPending = pending
+                Self.append(event, taskID: taskID, in: &s)
+                s.tasks[at].pendingQuestions = [pending]
                 s.tasks[at].state = .waitingOnUser
                 s.tasks[at].updatedAtMs = Self.nowMs()
                 Self.upserted(s.tasks[at], in: &s)

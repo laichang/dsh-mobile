@@ -13,6 +13,7 @@ struct dsh_mobileApp: App {
                 // DESIGN.md "Visual language": the app always uses dark mode (T1).
                 .preferredColorScheme(.dark)
                 .environment(\.hostActions, HostActions(pair: { app.startPairing() }, forget: { app.forgetHost($0) }))
+                .environment(\.transcriber, app.transcriber)
                 // S29 (D82): a host revoked this phone; the app forgot it. Said once.
                 .alert(Text("Access removed", tableName: "Hosts"), isPresented: Binding(
                     get: { app.revokedNotice != nil }, set: { if !$0 { app.revokedNotice = nil } })) {

@@ -45,17 +45,17 @@ This file exists only while this requirement is in progress. It serves this requ
 | T2 | done | merged `1762164` | 2026-11-08 | — (provisional D95 in §9) |
 | X1 | done | merged `9d4cb67` | 2026-11-08 | — (provisional D104 in §9) |
 | S1 | done | merged `55300a7` | 2026-11-09 | — (provisional D101, D102 in §9) |
-| S2 | doing | `claude/s2-questions-more` | 2026-11-09 | Slice owner builds (§8) |
+| S2 | done | merged `966be4b` | 2026-11-09 | — (provisional D113, D114 in §9) |
 | S3 | done | merged `33e96ff` | 2026-11-09 | — (provisional D110 in §9) |
 | S4 | done | merged `83c82ce` | 2026-11-09 | — (provisional D107, D108 in §9) |
-| S5 | doing | `claude/s5-voice` | 2026-11-09 | Slice owner builds (§8) |
+| S5 | done | merged `5362e43` | 2026-11-09 | — (provisional D116, D117 in §9) |
 | S6 | doing | `claude/s6-live-activity` | 2026-11-09 | Slice owner builds (§8) |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
-| S8 | todo | — | 2026-11-08 | Assign it and start a session |
+| S8 | doing | `claude/s8-bridge-listen-errors` | 2026-11-09 | Slice owner builds (§8) |
 | S9 | todo | — | 2026-11-08 | Assign it and start a session |
 | S10 | todo | — | 2026-11-08 | Assign it and start a session |
 | S11 | todo | — | 2026-11-08 | Assign it and start a session |
-| S12 | todo | — | 2026-11-08 | Assign it and start a session |
+| S12 | doing | `claude/s12-store-test-waits` | 2026-11-09 | Slice owner builds (§8) |
 | S13 | todo | — | 2026-11-08 | Assign it and start a session |
 
 ## 1. Approach
@@ -264,7 +264,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S2 · Agent questions: typed answers, 等我处理, and replay
 
-**Status** todo · **Needs** T1 · **Branch** —
+**Status** doing · **Needs** T1 · **Branch** —
 
 **Why**: Closes #1 (with T0, T1 and S1). Screen P1: the user can also answer in the composer, and a question counts as "需要决策" in 等我处理, the drawer badge and the session marks, like an approval.
 
@@ -276,13 +276,21 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/questions.sh --all`.
 
 **Done when**
-- [ ] [auto] A pending question is in the S2 summary and the replay and counts in 等我处理; a typed and a multi-select answer reach DSH as given (`FakeDSH`, `FakeBridge`) — Evidence:
-- [ ] [ui] Answer a question by typing in the composer: the card shows the answer and the task continues (`cmd:scripts/demo/questions.sh`) — Evidence:
-- [ ] [ui] A pending question shows under 等我处理 in 所有任务 and in the drawer badge, and is still there after a relaunch (`cmd:scripts/demo/questions.sh`) — Evidence:
+- [x] [auto] A pending question is in the S2 summary and the replay and counts in 等我处理; a typed and a multi-select answer reach DSH as given (`FakeDSH`, `FakeBridge`) — Evidence: test:Questions/pendingQuestionIsInTheSummaryAndTheReplayAndWaitsOnUser · test:Questions/typedAndMultiSelectAnswersReachDshAsGiven · test:QuestionAnswersTests/aQuestionOnlyInTheSummaryComesBackAndStaysAfterARelaunch · test:QuestionAnswersTests/aPendingQuestionWaitsOnMeAndATypedAnswerReachesDshAsGiven · test:QuestionAnswersTests/aMultiSelectAnswerReachesDshAsGiven · test:QuestionAnswersTests/anAnswerFromAnotherClientWithdrawsTheCard · cmd:scripts/demo/questions.sh
+- [x] [ui] Answer a question by typing in the composer: the card shows the answer and the task continues (`cmd:scripts/demo/questions.sh`) — Evidence: cmd:scripts/demo/questions.sh --all · test:AgentQuestionUITests/testTypeAnAnswerInTheComposer · shot:evidence/S2/questions-typed.png · shot:evidence/S2/questions-typed-answered.png
+- [x] [ui] A pending question shows under 等我处理 in 所有任务 and in the drawer badge, and is still there after a relaunch (`cmd:scripts/demo/questions.sh`) — Evidence: cmd:scripts/demo/questions.sh --all · test:AgentQuestionUITests/testAWaitingQuestionIsUnderWaitingOnMeAcrossARelaunch · shot:evidence/S2/questions-waiting.png · shot:evidence/S2/questions-waiting-relaunched.png · shot:evidence/S2/questions-multi-answered.png
 
 **Not**: Push for questions. Plan alignment and pre-authorization (#9).
 
 **Log**: —
+- **2026-11-09 · Built; review next.**
+  - Done: typed answer from the composer ("回答 Agent…", AnswerQuestion with `custom`, never a follow-up); multi-select chips with 回答; `TaskSummary.pending_questions` (field 380) and WAITING_ON_USER, so 等我处理, the drawer badge and the amber drawer mark count a question; the card under 等我处理 in 所有任务 answers there too; 等你回答 in the milestone bar; a summary restores a card the log lost, and an ended task closes a stale one; an answer from another client withdraws the card (FakeBridge test). Bridge tests, DSHKit tests (QuestionAnswersTests), golden fixtures `questions_typed_answer_request`, `questions_waiting_task_upserted_event`, `scripts/demo/questions.sh --all` (3 UI tests on real DSH) all pass.
+  - Timeout: kept D92's no-timeout and amended D92 (provisional) with the reasons: a question has no safe default (a made-up answer reaches the model as the user's choice); DSH's own opt-in timed mode returns *pending* at its deadline and never refuses; DSH Web waits too. The Cut's "times out to a refusal" is not done, by this decision.
+  - New provisional decisions: D113 (typed and multi-select answers, composer rule), D114 (pending questions in the summary, 等我处理, bar). No new dependency.
+  - Setup found: `~/.dshm/home-s2` was a stale M1 profile whose cordis.patch.yml pinned the bridge to 47811, so the T0 baseline failed ("bridge did not come up"). Moved it to /tmp/dshm-s2-stale-home; T0 then passed. Swift tests and SwiftPM fetches need the sandbox off (network).
+  - Flaky (not this slice's tests, under load avg 75+): DSHKit FollowUpQueueTests/sendNowMovesAQueuedMessageIntoTheTurnAndRemoveTakesOneOut and S16CodingTaskTests/codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt failed in a full `swift test` and passed alone; they can fail `questions.sh` before the UI part.
+  - Merged main twice (S4, S3): resolved SessionPage (attachments hide while answering), task-hub, ARCHITECTURE; regenerated code and board.
+  - Next: the reviewer runs `scripts/review S2`.
 
 ### S3 · Model failures: a red failure, then continue with a new message
 
@@ -349,7 +357,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S5 · Voice input
 
-**Status** todo · **Needs** T0 · **Branch** —
+**Status** doing · **Needs** T0 · **Branch** —
 
 **Why**: Closes #3. STORY §7: "语音下任务". Typing a task on a phone is slow.
 
@@ -362,13 +370,20 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/voice.sh`.
 
 **Done when**
-- [ ] [auto] Partial and final results replace the dictated range in the field and keep the typed text (fake transcriber) — Evidence:
-- [ ] [ui] Tap the mic, the fake transcriber says a task, the field fills, tap send: the task starts with that text (`cmd:scripts/demo/voice.sh`) — Evidence:
-- [ ] [ui] With speech permission denied, the mic tells how to turn it on and the field does not change (`cmd:scripts/demo/voice.sh`) — Evidence:
+- [x] [auto] Partial and final results replace the dictated range in the field and keep the typed text (fake transcriber) — Evidence: test:DictationTests/partialAndFinalResultsReplaceTheDictatedRangeAndKeepTheTypedText · test:DictationTests/revisedPartialsReplaceOnlyTheDictatedWordsInChinese · test:DictationTests/textTypedWhileSpeakingStaysAfterTheDictatedWords · test:DictationTests/editingTheDictatedWordsStopsDictationAndKeepsTheEdit · cmd:scripts/demo/voice.sh
+- [x] [ui] Tap the mic, the fake transcriber says a task, the field fills, tap send: the task starts with that text (`cmd:scripts/demo/voice.sh`) — Evidence: cmd:scripts/demo/voice.sh · test:VoiceUITests/testDictateATaskThenAFollowUpAndSend · shot:evidence/S5/voice-listening.png · shot:evidence/S5/voice-composer.png · shot:evidence/S5/voice-followup.png · shot:evidence/S5/voice-followup-sent.png
+- [x] [ui] With speech permission denied, the mic tells how to turn it on and the field does not change (`cmd:scripts/demo/voice.sh`) — Evidence: cmd:scripts/demo/voice.sh · test:VoiceUITests/testDeniedSpeechSaysHowToTurnItOnAndKeepsTheField · test:DictationTests/deniedPermissionLeavesTheFieldAsItWas · shot:evidence/S5/voice-denied.png
 
 **Not**: Spoken replies. Sending without a tap. Transcription on the host.
 
 **Log**: —
+- **2026-11-09 · Built; all auto and ui items ticked; review next.** Done: mic key on composer 01 and on the session page's follow-up composer (`ios/dsh-mobile/Features/Voice/`, small hooks in `ComposerView` and `SessionComposer`). On-device speech to text with iOS 26 `SpeechAnalyzer` (`SpeechTranscriber`, else `DictationTranscriber`); `Transcriber` protocol, `Dictation` model and `DictationSplice` in DSHCore; `FakeTranscriber` in DSHTestSupport, chosen by `-DSHMFakeSpeech <phrase>|denied`. `-DSHMFakeScenario conversation` gives the FakeBridge session page its composer. Info.plist keys `NSMicrophoneUsageDescription` and `NSSpeechRecognitionUsageDescription` (only those lines in project.pbxproj). `scripts/check-release-clean` also checks `DSHMFakeSpeech` and `FakeTranscriber`: OK. Full DSHKit suite passes (129 tests).
+  Decisions (provisional, pending user confirmation): D116 (speech API: SpeechAnalyzer; alternatives SFSpeechRecognizer on-device, server recognition, keyboard dictation only, host transcription), D117 (mic UX: tap toggle left of send, words replace the dictated range at the end of the field, send while listening sends the field as it is, denied line with Open Settings). D118 not used. No new dependency.
+  Design: mic key drawn on 01, 04, 06, X1, X3; new screens V1 (listening) and V2 (permission off); DESIGN §7 row and known gaps updated. `scripts/render-design` default height 7500 → 9700, because the board was cut at the M2 row.
+  Merged main (S3 model failures) at 48e4889: conflicts in ARCHITECTURE (D110 next to D116/D117), DESIGN (§7/§8 rows), board.png (re-rendered). A failed task now takes follow-ups, so X1 has the mic too.
+  Notes: the permission-denied case uses the fake (`-DSHMFakeSpeech denied`), not `simctl privacy revoke`. The real Speech path is only compiled, not run: the simulator tests use the fake; a real-device check of dictation (Chinese and English) is for the user. No flaky part seen in 4 voice.sh runs. `scripts/render-design` exited 2 three times while another worktree rendered; the 4th try passed.
+  Next: reviewer runs `scripts/review S5`.
+- **2026-11-09 · Merged main again (S2 agent questions).** Review of 8d443b5 passed (`/tmp/dshm-review/S5-8d443b5.txt`, no flaky part). Then main moved (S2 merged). Merged main at 47d0c45: conflicts in `SessionPage.swift` (the session composer now also answers an agent question; the mic shows for a follow-up or an answer, and an answer stops dictation first), ARCHITECTURE (D113/D114 next to D116/D117), board.png (re-rendered; mic also on P1's composer). The app builds. Next: review again on the new head.
 
 ### S6 · Live Activity: show on the lock screen that a task runs
 
@@ -638,6 +653,22 @@ Append-only, dated.
 
 - **2026-11-09 · S6 runs as a background agent.** S6 assigned (D119–D121) and started as a background agent; its brief asks for free-team signing (no App Group) and a pbxproj change limited to the new widget target. S2 was told about its stale home-s2 port pin. Running: S2, S5, S6.
 
+- **2026-11-09 · S2 merged.** Merged as `966be4b`; `scripts/check-plan` on the merge commit passed. `scripts/review S2` at `03e231e`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S2-03e231e.txt`). No open `[human]` items, so S2 is `done`. §9 rows 17, 18 (D113, D114).
+
+- **2026-11-09 · S2 merged; the question timeout stays out.** S2 merged as 966be4b (review PASS on 03e231e, S2-03e231e.txt, no flaky part). D113, D114 new; D92 amended: in §9. Not done by decision: the Cut 'a held question times out to a refusal' (D92 keeps no timeout: a question has no safe default, DSH's own timed mode returns pending and never refuses, DSH Web waits) — the user confirms or changes this with D92. Flaky outside the review, at load 75+: FollowUpQueueTests/sendNowMovesAQueuedMessageIntoTheTurnAndRemoveTakesOneOut and S16CodingTaskTests/codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt (S12). The stale M1 home-s2 was moved to /tmp/dshm-s2-stale-home.
+
+- **2026-11-09 · S12 assigned.** Branch `claude/s12-store-test-waits`, simulator `dshm-S12`, DSHM_HOME `~/.dshm/home-s12`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D122–D124. `eval "$(scripts/slice-env S12)"` exports them.
+
+- **2026-11-09 · S12 runs as a background agent.** S12 assigned (D122–D124) and started as a background agent, with the flaky DSHKit tests that this run saw under load. Running: S5, S6, S12.
+
+- **2026-11-09 · S5 merged.** Merged as `5362e43`; `scripts/check-plan` on the merge commit passed. `scripts/review S5` at `bad4780`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S5-bad4780.txt`). No open `[human]` items, so S5 is `done`. §9 rows 20, 21 (D116, D117).
+
+- **2026-11-09 · S5 merged.** S5 merged as 5362e43 (review PASS on bad4780, S5-bad4780.txt, no flaky part in 4 demo runs and 2 reviews). D116 (SpeechAnalyzer), D117 (mic UX) in §9, and the render-design height change. Not verified by any test: the real Speech framework path (all simulator tests use the fake transcriber); the exit item for Chinese dictation on a real iPhone covers it. The user's DEVELOPMENT_TEAM line in project.pbxproj was stashed for the merge and applied back cleanly. render-design exits 2 while another worktree renders (3 retries).
+
+- **2026-11-09 · S8 assigned.** Branch `claude/s8-bridge-listen-errors`, simulator `dshm-S8`, DSHM_HOME `~/.dshm/home-s8`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D125–D127. `eval "$(scripts/slice-env S8)"` exports them.
+
+- **2026-11-09 · S8 runs as a background agent.** S8 assigned (D125–D127) and started as a background agent. Running: S6, S8, S12. S11 (hosts tests) waits for S8, which also changes the hosts row.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -660,3 +691,9 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 14 | S3 | decision | ARCHITECTURE D110, *provisional*: A new message continues a task after a model failure (screens X1, X4) | `claude/s3-model-failures` | merged `33e96ff` |
 | 15 | S3 | decision | D104 amended: failure_code (field 420) on TaskEnded and TaskSummary, message without the 'error: ' prefix, capability failures.v1 | `claude/s3-model-failures` | `0c66430` |
 | 16 | S3 | decision | D107 amended: a follow-up after a failure can carry attachments | `claude/s3-model-failures` | `8822d67` |
+| 17 | S2 | decision | ARCHITECTURE D113, *provisional*: A typed answer and multi-select answers (screen P1, amends D92) | `claude/s2-questions-more` | merged `966be4b` |
+| 18 | S2 | decision | ARCHITECTURE D114, *provisional*: A waiting question needs a decision, as an approval does (STORY §4, screens P1, 03, 02; extends D25, D92) | `claude/s2-questions-more` | merged `966be4b` |
+| 19 | S2 | decision | D92 amended: a question keeps no timeout (the Cut asked for a timeout to a refusal, as D25); DSH timed mode closes the card as not answered | `claude/s2-questions-more` | `b3f148d` |
+| 20 | S5 | decision | ARCHITECTURE D116, *provisional*: Voice input: on-device speech to text with iOS 26's `SpeechAnalyzer` | `claude/s5-voice` | merged `5362e43` |
+| 21 | S5 | decision | ARCHITECTURE D117, *provisional*: The mic key and where the words go (screens 01, 06, V1, V2) | `claude/s5-voice` | merged `5362e43` |
+| 22 | S5 | tooling | scripts/render-design renders the board 9700 px tall (was 7500): board.png was cut off at the M2 row | `claude/s5-voice` | `7846a92` |

@@ -1,5 +1,5 @@
 // Agent questions (ARCHITECTURE D18, D92): DSH's `ask_user_question` tool, held by the bridge
-// like an approval. Capability `questions.v1`. Frame fields 380–399.
+// like an approval. Capability `questions.v1`. Frame fields 380–399; `TaskSummary` field 380.
 syntax = "proto3";
 package dshm.v1;
 
@@ -31,11 +31,14 @@ message QuestionPending {
 
 message QuestionAnswer {
   string question_id = 1;
-  // Labels of the chosen options.
+  // Labels of the chosen options (one or more when the question is multi-select).
   repeated string selected = 2;
+  // What the user typed instead of, or with, the options: DSH's free-text "other" answer.
+  string custom = 3;
 }
 
-// Request: answer every question of a pending request.
+// Request: answer every question of a pending request. Each answer names offered options, or has
+// typed text in `custom` (the composer's "回答 Agent…"), or both when the question is multi-select.
 message AnswerQuestion {
   string id = 1;
   repeated QuestionAnswer answers = 2;

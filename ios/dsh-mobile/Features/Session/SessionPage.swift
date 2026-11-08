@@ -148,16 +148,18 @@ private struct SessionTranscript: View {
         VStack(spacing: 0) {
             // S16: the milestone bar and the status line sit above the scroll view, so they stay
             // at the top while the transcript scrolls (ARCHITECTURE D23 (b)).
-            if let timeline = row?.milestones, !timeline.isEmpty {
+            // P1: an agent question waits: the bar says 等你回答, also before the first milestone.
+            let asking = row?.blocks.pendingQuestion != nil
+            if let timeline = row?.milestones, !timeline.isEmpty || asking {
                 // S19: red, with the step, when the task failed (screen X1).
                 let alert = row.flatMap(TaskOutcome.init)?.barAlert
                 // S3: milestone summary by default; the timeline on demand, in a sheet.
                 Button { shell.present(.milestones(taskKey: taskKey)) } label: {
-                    MilestoneBar(timeline: timeline, state: row?.state, alert: alert)
+                    MilestoneBar(timeline: timeline, state: row?.state, alert: alert, asking: asking)
                 }
                 .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel(MilestoneBar.line(timeline, state: row?.state, alert: alert))
+                .accessibilityLabel(MilestoneBar.line(timeline, state: row?.state, alert: alert, asking: asking))
                 .accessibilityValue(timeline.progressToken)
                 .accessibilityHint("Shows all steps")
                 .accessibilityIdentifier("milestone.card")
@@ -210,7 +212,7 @@ private struct SessionTranscript: View {
                         if showJournal {
                             // P1: the journal has no place for a card; a waiting question goes last.
                             ForEach(row.blocks.items.filter { $0.question != nil && $0.question?.outcome == nil }) { item in
-                                QuestionCard(store: store, row: row, question: item.question!)
+                                QuestionCard(store: store, row: row, question: item.question!, answersBelow: true)
                             }
                         }
                         if let historyError {
@@ -366,12 +368,15 @@ private struct SessionComposer: View {
     @State private var draft = ""
     @State private var sending = false
     @State private var sendError: String?
+    @State private var dictation = Dictation() // D117
     @FocusState private var editing: Bool
 
     var body: some View {
         let row = store.task(taskKey)
         let host = store.hosts.first { $0.key == row?.hostKey }
         let followUp = row.map(store.canFollowUp) ?? false
+        // P1 (D113): while an agent question waits, the field answers it; it is not a follow-up.
+        let question = host?.capabilities.contains(DSHProtocolInfo.questionsCapability) == true ? row?.blocks.pendingQuestion : nil
         let typed = !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         VStack(alignment: .leading, spacing: 10) {
             if let row, !row.queue.isEmpty {
@@ -383,9 +388,13 @@ private struct SessionComposer: View {
                     .foregroundStyle(DSHTheme.amber)
                     .accessibilityIdentifier("session.followUpError")
             }
-            if followUp {
-                AttachmentChips(store: store, target: .followUp(taskKey: taskKey), disabled: sending) // D107
-                TextField(row?.state.isTerminal == false ? "Add a message for the next turn" : "Reply to your agent",
+            if followUp || question != nil {
+                if question == nil { // D107: an answer to a question takes no attachment
+                    AttachmentChips(store: store, target: .followUp(taskKey: taskKey), disabled: sending)
+                }
+                DictationNotice(dictation: dictation) // D117
+                TextField(question != nil ? "Answer the agent…"
+                            : row?.state.isTerminal == false ? "Add a message for the next turn" : "Reply to your agent",
                           text: $draft, axis: .vertical)
                     .lineLimit(1...5)
                     .focused($editing)
@@ -409,7 +418,7 @@ private struct SessionComposer: View {
                 }
             }
             HStack(spacing: 8) {
-                if followUp, let row, store.canAttach(to: row) {
+                if followUp, question == nil, let row, store.canAttach(to: row) {
                     AttachMenu(store: store, target: .followUp(taskKey: row.key), disabled: sending) // D107
                 }
                 if let row, !row.state.isTerminal, store.modelHosts.contains(row.hostKey) {
@@ -418,7 +427,11 @@ private struct SessionComposer: View {
                         .buttonBorderShape(.capsule)
                 }
                 Spacer()
-                if let row, !row.state.isTerminal, let host, !(followUp && (typed || sending)),
+                if followUp || question != nil {
+                    MicKey(dictation: dictation, identifier: "session.mic", disabled: sending,
+                           read: { draft }, write: { draft = $0 }) // D117
+                }
+                if let row, !row.state.isTerminal, let host, !((followUp || question != nil) && (typed || sending)),
                    host.reachability == .online, host.capabilities.contains(DSHProtocolInfo.interruptCapability) {
                     Button {
                         requestingStop = true
@@ -437,6 +450,10 @@ private struct SessionComposer: View {
                     .disabled(requestingStop)
                     .accessibilityLabel("Stop")
                     .accessibilityIdentifier("task.interrupt")
+                } else if let row, let question {
+                    SendKey(enabled: typed && !sending, sending: sending) { answer(question, for: row) }
+                        .accessibilityLabel("Answer")
+                        .accessibilityIdentifier("session.send")
                 } else if followUp, let row {
                     SendKey(enabled: typed && !sending, sending: sending) { send(row) }
                         .accessibilityLabel("Send")
@@ -448,7 +465,8 @@ private struct SessionComposer: View {
             }
         }
         .composerChrome()
-        .onChange(of: taskKey) { draft = ""; sendError = nil }
+        .onChange(of: taskKey) { dictation.cancel(); draft = ""; sendError = nil }
+        .onDisappear { dictation.cancel() }
         // D101: follow-ups that a stop gave back come back into the field, to send again or not.
         .task(id: "\(taskKey)/\(store.returnedDrafts[taskKey]?.count ?? 0)") {
             let returned = store.takeReturnedDrafts(for: taskKey)
@@ -466,6 +484,7 @@ private struct SessionComposer: View {
 extension SessionComposer {
     /// D89: the message goes to the host; the page shows it when the host logs it.
     private func send(_ row: TaskListStore.TaskRow) {
+        dictation.cancel() // D117: the field as it is now is what goes
         let text = draft
         sending = true
         sendError = nil
@@ -480,6 +499,25 @@ extension SessionComposer {
             }
         }
     }
+
+    /// P1 (D113): the typed text answers the waiting question; the card shows it when the host
+    /// resolves the question, and the task continues.
+    private func answer(_ question: AgentQuestion, for row: TaskListStore.TaskRow) {
+        dictation.cancel() // D117
+        let text = draft
+        sending = true
+        sendError = nil
+        Task {
+            defer { sending = false }
+            do {
+                try await store.answerQuestion(question, hostKey: row.hostKey, typed: text)
+                draft = ""
+                editing = false
+            } catch {
+                sendError = String(localized: "The answer was not sent: \(String(describing: error))")
+            }
+        }
+    }
 }
 
 /// The composer of a new session: one line with "host · workspace" (and the host picker when
@@ -487,6 +525,7 @@ extension SessionComposer {
 struct ComposerView: View {
     @Bindable var store: TaskListStore
     let opened: (String) -> Void
+    @State private var dictation = Dictation() // D117
     @FocusState private var editingPrompt: Bool
 
     var body: some View {
@@ -501,6 +540,7 @@ struct ComposerView: View {
                     .accessibilityIdentifier("composer.error")
             }
             AttachmentChips(store: store, target: .composer, disabled: store.isSending) // D107
+            DictationNotice(dictation: dictation) // D117
             TextField("One sentence for your agent", text: $store.prompt, axis: .vertical)
                 .lineLimit(1...5)
                 .focused($editingPrompt)
@@ -515,12 +555,15 @@ struct ComposerView: View {
                     modelControl(key)
                 }
                 Spacer()
+                MicKey(dictation: dictation, identifier: "composer.mic", disabled: store.isSending,
+                       read: { store.prompt }, write: { store.prompt = $0 }) // D117
                 SendKey(enabled: store.canSend, sending: store.isSending, action: send)
                     .accessibilityLabel("Send")
                     .accessibilityIdentifier("composer.send")
             }
         }
         .composerChrome()
+        .onDisappear { dictation.cancel() }
     }
 
     /// "host · workspace", above the prompt.
@@ -581,6 +624,7 @@ struct ComposerView: View {
     }
 
     private func send() {
+        dictation.cancel() // D117: the field as it is now is what goes
         Task {
             if let key = await store.send() {
                 editingPrompt = false

@@ -36,6 +36,8 @@ final class AppModel {
     @ObservationIgnored private lazy var liveActivities = LiveActivities(client: activityClient) { row in
         MilestoneBar.line(row.milestones, state: row.state, alert: nil)
     }
+    /// D116: the mic key's speech to text: the Speech framework, or in Debug `-DSHMFakeSpeech`.
+    let transcriber: TranscriberFactory
     @ObservationIgnored private let container: ModelContainer
     @ObservationIgnored private var presetPrompt = ""
     @ObservationIgnored private var connectDelay: Duration = .zero
@@ -51,6 +53,7 @@ final class AppModel {
         let keys = KeychainDeviceKeyStore()
         let hosts = FilePairedHostStore()
         var transport: BridgeTransportFactory = WebSocketTransport.factory
+        var transcriber = SpeechFrameworkTranscriber.factory
         container = Self.makeContainer()
         #if DEBUG
         let options = DebugLaunchOptions.parse(ProcessInfo.processInfo.arguments)
@@ -65,7 +68,9 @@ final class AppModel {
         if options.useFakeBridge { transport = FakeBridge.factory() }
         presetPrompt = options.presetPrompt ?? ""
         if let seconds = options.connectDelay { connectDelay = .milliseconds(Int(seconds * 1000)) }
+        if let speech = options.fakeSpeech { transcriber = FakeTranscriber.factory(speech) }
         #endif
+        self.transcriber = transcriber
         pairing = Pairing(keys: keys, hosts: hosts, transport: transport)
         store = makeStore()
     }
@@ -128,6 +133,7 @@ final class AppModel {
             if options.fakeScenario == "outcomes" { script = .outcomes() } // S19
             if options.fakeScenario?.hasPrefix("transcript") == true { script = FakeTranscript.script() } // S17
             if options.fakeScenario == "live-activity" { script = .threeTodos(delay: .seconds(5)) } // D121: time to lock the screen
+            if options.fakeScenario == "conversation" { script.followUpReply = ["Got it", ", ", "on it", "."] } // D117
             script.holdPrompt = options.fakeHold ?? script.holdPrompt
             let fake = options.fakeScenario == "turns" ? FakeTurns.host() // S27
                 : FakeHost(script: script, reachable: !options.fakeBridgeOffline,
