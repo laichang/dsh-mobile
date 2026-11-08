@@ -49,7 +49,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S3 | done | merged `33e96ff` | 2026-11-09 | — (provisional D110 in §9) |
 | S4 | done | merged `83c82ce` | 2026-11-09 | — (provisional D107, D108 in §9) |
 | S5 | done | merged `5362e43` | 2026-11-09 | — (provisional D116, D117 in §9) |
-| S6 | doing | `claude/s6-live-activity` | 2026-11-09 | Slice owner builds (§8) |
+| S6 | review | merged `b4d0a65` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | doing | `claude/s8-bridge-listen-errors` | 2026-11-09 | Slice owner builds (§8) |
 | S9 | doing | `claude/s9-ui-test-waits` | 2026-11-09 | Slice owner builds (§8) |
@@ -687,6 +687,8 @@ Append-only, dated.
 
 - **2026-11-09 · S9 runs as a background agent.** S9 assigned (D128–D130) and started as a background agent. Running: S6, S8, S9.
 
+- **2026-11-09 · S6 merged.** Merged as `b4d0a65`; `scripts/check-plan` on the merge commit passed. `scripts/review S6` at `2cfe69c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S6-2cfe69c.txt`). 1 open `[human]` item, so S6 is `review`. §9 rows 23, 24, 25, 26 (D119, D120, D121).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -715,3 +717,7 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 20 | S5 | decision | ARCHITECTURE D116, *provisional*: Voice input: on-device speech to text with iOS 26's `SpeechAnalyzer` | `claude/s5-voice` | merged `5362e43` |
 | 21 | S5 | decision | ARCHITECTURE D117, *provisional*: The mic key and where the words go (screens 01, 06, V1, V2) | `claude/s5-voice` | merged `5362e43` |
 | 22 | S5 | tooling | scripts/render-design renders the board 9700 px tall (was 7500): board.png was cut off at the M2 row | `claude/s5-voice` | `7846a92` |
+| 23 | S6 | decision | ARCHITECTURE D119, *provisional*: The Live Activity of a running task, local only (screen L) | `claude/s6-live-activity` | merged `b4d0a65` |
+| 24 | S6 | decision | ARCHITECTURE D120, *provisional*: The data path and the signing of the widget extension | `claude/s6-live-activity` | merged `b4d0a65` |
+| 25 | S6 | decision | ARCHITECTURE D121, *provisional*: Testability of the Live Activity (extends D16) | `claude/s6-live-activity` | merged `b4d0a65` |
+| 26 | S6 | `[human]` | On a real iPhone signed with the free team, the app starts a Live Activity for a running task | `main` | `b4d0a65` |
