@@ -629,6 +629,8 @@ Append-only, dated.
 
 - **2026-11-09 · S6 assigned.** Branch `claude/s6-live-activity`, simulator `dshm-S6`, DSHM_HOME `~/.dshm/home-s6`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D119–D121. `eval "$(scripts/slice-env S6)"` exports them.
 
+- **2026-11-09 · S6 runs as a background agent.** S6 assigned (D119–D121) and started as a background agent; its brief asks for free-team signing (no App Group) and a pbxproj change limited to the new widget target. S2 was told about its stale home-s2 port pin. Running: S2, S5, S6.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
