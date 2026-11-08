@@ -126,6 +126,10 @@ export class FakeDSH implements DshServices {
   readonly promptParts: { sessionId: string; parts: readonly PromptPart[] }[] = []
   /** D95: images staged through `fileUploads.uploadImageStream`, by receipt. */
   readonly stagedImages: { sessionId: string; receiptId: string; mediaType: string; name?: string; data: Uint8Array }[] = []
+  /** D107: other files staged through `fileUploads.uploadStream`, by receipt. */
+  readonly stagedFiles: { sessionId: string; receiptId: string; name?: string; data: Uint8Array }[] = []
+  /** Every receipt in the order it was staged, images and files. */
+  private readonly receipts: { sessionId: string; receiptId: string }[] = []
   /** The `mode` and `requestId` of each prompt, in the order of `prompts`. */
   readonly promptOptions: { mode?: string; requestId?: string }[] = []
   /** D101: every `updateQueue` call, in order. */
@@ -173,9 +177,19 @@ export class FakeDSH implements DshServices {
       this.session(request.sessionId)
       const parts: Uint8Array[] = []
       for await (const part of request.data) parts.push(part)
-      const receiptId = `receipt-${this.stagedImages.length + 1}`
+      const receiptId = `receipt-${this.receipts.length + 1}`
+      this.receipts.push({ sessionId: request.sessionId, receiptId })
       this.stagedImages.push({ sessionId: request.sessionId, receiptId, mediaType: request.mediaType, name: request.name,
         data: new Uint8Array(Buffer.concat(parts)) })
+      return { receiptId }
+    },
+    uploadStream: async (request: { sessionId: string; data: AsyncIterable<Uint8Array>; name?: string }) => {
+      this.session(request.sessionId)
+      const parts: Uint8Array[] = []
+      for await (const part of request.data) parts.push(part)
+      const receiptId = `receipt-${this.receipts.length + 1}`
+      this.receipts.push({ sessionId: request.sessionId, receiptId })
+      this.stagedFiles.push({ sessionId: request.sessionId, receiptId, name: request.name, data: new Uint8Array(Buffer.concat(parts)) })
       return { receiptId }
     },
   }
@@ -215,7 +229,7 @@ export class FakeDSH implements DshServices {
     ) => {
       const s = this.session(request.sessionId)
       for (const part of request.content) {
-        if (part.type === 'file' && !this.stagedImages.some((i) => i.receiptId === part.receiptId && i.sessionId === request.sessionId)) {
+        if (part.type === 'file' && !this.receipts.some((i) => i.receiptId === part.receiptId && i.sessionId === request.sessionId)) {
           throw new Error(`unknown receipt ${part.receiptId}`)
         }
       }

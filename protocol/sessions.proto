@@ -1,6 +1,8 @@
 syntax = "proto3";
 package dshm.v1;
 
+import "attachments.proto";
+
 // Backwards pages share one fixed DSH journal cut. An absent before_seq opens the latest page.
 message ReadSession {
   string task_id = 1;
@@ -11,6 +13,8 @@ message SessionMessage {
   uint64 seq = 1;
   bool from_user = 2;
   string text = 3;
+  // A user message's images and files, from the DSH journal, in order (D107).
+  repeated AttachmentRef attachments = 400;
 }
 message SessionPage {
   repeated SessionMessage messages = 1;

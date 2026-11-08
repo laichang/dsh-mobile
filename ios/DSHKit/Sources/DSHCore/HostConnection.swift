@@ -411,29 +411,35 @@ public actor HostConnection {
         return created.taskID
     }
 
-    /// Sends a photo to the host in parts (D95) and returns its upload id for `createTask`.
+    /// Sends a file to the host in parts (D95, D107) and returns its upload id for `createTask`
+    /// or `sendMessage`. A file over `Attachments.maxBytes` is refused here, before any frame.
     /// The host checks the size and the SHA-256; a refusal throws `HostConnectionError.bridge`.
-    public func upload(_ photo: PhotoAttachment) async throws -> String {
+    /// `progress` gets the fraction sent after each part the host acknowledged.
+    public func upload(_ file: FileAttachment,
+                       progress: @escaping @MainActor @Sendable (Double) -> Void = { _ in }) async throws -> String {
         guard capabilities.contains(DSHProtocolInfo.attachmentsCapability) else {
             throw HostConnectionError.bridge(code: "upload/unavailable", message: "This host cannot take attachments.")
         }
-        guard photo.data.count <= Attachments.maxBytes else {
-            throw HostConnectionError.bridge(code: "upload/too-large", message: "The photo is larger than \(Attachments.maxBytes / 1024 / 1024) MiB.")
+        guard !file.isTooLarge else {
+            throw HostConnectionError.bridge(code: "upload/too-large",
+                                             message: "\(file.name) is larger than \(Attachments.sizeText(Attachments.maxBytes)).")
         }
         let uploadID = UUID().uuidString.lowercased()
         var begin = Dshm_V1_UploadBegin()
         begin.uploadID = uploadID
-        begin.mediaType = photo.mediaType
-        begin.name = photo.name
-        begin.size = UInt64(photo.data.count)
-        begin.sha256 = Attachments.sha256(photo.data)
+        begin.mediaType = file.mediaType
+        begin.name = file.name
+        begin.size = UInt64(file.data.count)
+        begin.sha256 = Attachments.sha256(file.data)
         _ = try await request(.uploadBegin(begin))
-        for (index, part) in Attachments.parts(of: photo.data).enumerated() {
+        let parts = Attachments.parts(of: file.data)
+        for (index, part) in parts.enumerated() {
             var chunk = Dshm_V1_UploadChunk()
             chunk.uploadID = uploadID
             chunk.index = UInt32(index)
             chunk.data = part
             _ = try await request(.uploadChunk(chunk))
+            await progress(Double(index + 1) / Double(parts.count))
         }
         var end = Dshm_V1_UploadEnd()
         end.uploadID = uploadID
@@ -482,11 +488,13 @@ public actor HostConnection {
     /// D89: one more message into the DSH session of `taskID`. Returns the message's ID once DSH
     /// accepted it; its `.userMessage` event and the new turn's events follow.
     @discardableResult
-    public func sendMessage(taskID: String, text: String, mode: Dshm_V1_MessageMode = .steer) async throws -> String {
+    public func sendMessage(taskID: String, text: String, mode: Dshm_V1_MessageMode = .steer,
+                            uploadIDs: [String] = []) async throws -> String {
         var message = Dshm_V1_SendMessage()
         message.taskID = taskID
         message.text = text
         message.mode = mode
+        message.uploadIds = uploadIDs // D107: staged files, after the text
         let response = try await request(.sendMessage(message))
         guard case .messageAccepted(let accepted)? = response.body else { throw HostConnectionError.unexpectedResponse }
         return accepted.messageID

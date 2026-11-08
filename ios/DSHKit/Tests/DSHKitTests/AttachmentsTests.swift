@@ -34,13 +34,15 @@ import Testing
         }
     }
 
-    func photo() throws -> PhotoAttachment {
+    func photo() throws -> FileAttachment {
         let (fixture, data) = try Self.fixture()
-        return PhotoAttachment(data: data, mediaType: fixture.mediaType, name: fixture.name, thumbnail: Data([0xFF, 0xD8, 1, 2]))
+        return FileAttachment(data: data, mediaType: fixture.mediaType, name: fixture.name, thumbnail: Data([0xFF, 0xD8, 1, 2]))
     }
 
-    func launch(attachments: Bool = true) async throws -> (TaskListStore, FakeHost, String) {
-        let fake = FakeHost(script: .init(reply: ["I see ", "a photo."]), hostName: "Photo Mac",
+    func launch(attachments: Bool = true, followUps: Bool = false) async throws -> (TaskListStore, FakeHost, String) {
+        var script = FakeBridge.Script(reply: ["I see ", "a photo."], chunkDelay: .milliseconds(10))
+        if followUps { script.followUpReply = ["Read ", "them."] }
+        let fake = FakeHost(script: script, hostName: "Photo Mac",
                             extraCapabilities: attachments ? [DSHProtocolInfo.attachmentsCapability] : [])
         let key = "fake:photo"
         let store = TaskListStore(container: try TaskCache.container(inMemory: true), hosts: [
@@ -69,12 +71,12 @@ import Testing
     @Test func photoGoesUpInPartsBeforeTheTaskAndTheRowKeepsItsThumbnail() async throws {
         let (store, fake, _) = try await launch()
         defer { store.background() }
-        #expect(store.canAttachPhoto)
+        #expect(store.canAttach)
         let photo = try photo()
-        store.attachPhoto(photo)
+        store.attach(photo)
         store.prompt = "What is in this photo?"
         let taskKey = try #require(await store.send(), "\(store.sendError ?? "")")
-        #expect(store.composerPhoto == nil, "the photo is for this one task")
+        #expect(store.composerAttachments.isEmpty, "the photo is for this one task")
         #expect(fake.prompts == ["What is in this photo?"])
         let files = try #require(fake.attachments.first)
         #expect(files.count == 1)
@@ -83,19 +85,19 @@ import Testing
         #expect(fake.uploadFrameSizes.count == Attachments.parts(of: photo.data).count)
         #expect(fake.uploadFrameSizes.allSatisfy { $0 <= Self.noiseMaxPlaintext })
         try await waitUntil("row") { store.task(taskKey) != nil }
-        #expect(store.task(taskKey)?.photoThumbnail == photo.thumbnail)
+        #expect(store.task(taskKey)?.attachments.map(\.thumbnail) == [photo.thumbnail])
     }
 
     /// A refused upload (here: the host does not take attachments) sends no task and keeps the photo.
     @Test func refusedUploadSendsNoTaskAndKeepsThePhoto() async throws {
         let (store, fake, _) = try await launch(attachments: false)
         defer { store.background() }
-        #expect(!store.canAttachPhoto)
-        store.attachPhoto(try photo())
+        #expect(!store.canAttach)
+        store.attach(try photo())
         store.prompt = "What is in this photo?"
         #expect(await store.send() == nil)
         #expect(store.sendError?.contains("upload/unavailable") == true, "\(store.sendError ?? "")")
-        #expect(store.composerPhoto != nil)
+        #expect(store.composerAttachments.count == 1)
         #expect(fake.prompts.isEmpty)
     }
 
@@ -139,5 +141,97 @@ import Testing
         #expect(code(try await send(.createTask(.with { $0.prompt = "x"; $0.uploadIds = ["a"] }))) == "upload/unknown")
         #expect(fake.prompts.isEmpty)
         await bridge.close()
+    }
+
+    // MARK: - D107: files of any type, more than one, in follow-ups
+
+    static let notes = FileAttachment(data: Data("Buy milk.\n买牛奶。\n".utf8), mediaType: "text/plain", name: "notes.txt")
+    static let report = FileAttachment(data: Data(("%PDF-1.4\n" + String(repeating: "x", count: Attachments.partSize + 10) + "\n%%EOF\n").utf8),
+                                   mediaType: "application/pdf", name: "report.pdf")
+    static let unknown = FileAttachment(data: Data([0, 1, 2, 3, 254, 255]), mediaType: "application/octet-stream", name: "data.xyz")
+
+    /// A photo, a text file, a PDF and a file of an unknown type, with one removed: the others go
+    /// up in their order with their names and types, and the row keeps them for the bubble.
+    @Test func filesOfAnyTypeGoUpInOrderAndOneRemovedStaysHome() async throws {
+        let (store, fake, _) = try await launch()
+        defer { store.background() }
+        let photo = try photo()
+        for file in [photo, Self.notes, Self.unknown, Self.report] { #expect(store.attach(file)) }
+        store.removeAttachment(Self.unknown.id)
+        #expect(store.composerAttachments.map(\.attachment.name) == ["photo.jpg", "notes.txt", "report.pdf"])
+        #expect(store.composerAttachments.map(\.attachment.kind) == [.image, .file, .file])
+        store.prompt = "Read these."
+        let taskKey = try #require(await store.send(), "\(store.sendError ?? "")")
+        #expect(store.composerAttachments.isEmpty)
+        let files = try #require(fake.attachments.first)
+        #expect(files.map(\.name) == ["photo.jpg", "notes.txt", "report.pdf"])
+        #expect(files.map(\.mediaType) == ["image/jpeg", "text/plain", "application/pdf"])
+        #expect(files.map(\.data) == [photo.data, Self.notes.data, Self.report.data], "byte-identical")
+        try await waitUntil("row") { store.task(taskKey) != nil }
+        let sent = try #require(store.task(taskKey)?.attachments)
+        #expect(sent.map(\.name) == ["photo.jpg", "notes.txt", "report.pdf"])
+        #expect(sent.map(\.kind) == [.image, .file, .file])
+        #expect(sent.map(\.size) == [photo.data.count, Self.notes.data.count, Self.report.data.count])
+        #expect(sent.map { $0.thumbnail != nil } == [true, false, false])
+
+        // An unknown type goes too, as a file.
+        #expect(store.attach(Self.unknown))
+        store.prompt = "And this?"
+        #expect(await store.send() != nil, "\(store.sendError ?? "")")
+        #expect(fake.attachments.last?.map(\.name) == ["data.xyz"])
+    }
+
+    /// A file over the limit is refused on the phone before any upload frame: its chip says so,
+    /// the send key stays off, and the host gets nothing. A composer takes at most `maxCount` files.
+    @Test func aFileOverTheLimitIsRefusedBeforeTheUpload() async throws {
+        let (store, fake, _) = try await launch()
+        defer { store.background() }
+        let big = FileAttachment(data: Data(count: Attachments.maxBytes + 1), mediaType: "application/pdf", name: "big.pdf")
+        #expect(store.attach(big))
+        #expect(store.composerAttachments.first?.status == .tooLarge)
+        store.prompt = "Read this."
+        #expect(!store.canSend)
+        #expect(await store.send() == nil)
+        let connection = HostConnection(endpoint: .localBridge(port: 47801), channel: PlaintextChannel(), transport: fake.factory)
+        try await connection.connect()
+        await #expect(throws: HostConnectionError.self) { _ = try await connection.upload(big) }
+        await connection.disconnect()
+        #expect(fake.uploadBegins == 0, "refused before the upload")
+        #expect(fake.prompts.isEmpty)
+        store.removeAttachment(big.id)
+        #expect(store.canSend)
+
+        for i in 0..<Attachments.maxCount {
+            #expect(store.attach(FileAttachment(data: Data([UInt8(i)]), mediaType: "text/plain", name: "\(i).txt")))
+        }
+        #expect(!store.attach(Self.notes), "at most \(Attachments.maxCount) files in one message")
+    }
+
+    /// A follow-up in a completed session carries files: they reach the same task on the host, the
+    /// user message names them, and the bubble keeps this phone's thumbnail of the photo.
+    @Test func aFollowUpCarriesFilesIntoTheSameTask() async throws {
+        let (store, fake, _) = try await launch(followUps: true)
+        defer { store.background() }
+        store.prompt = "Hello."
+        let taskKey = try #require(await store.send())
+        try await waitUntil("first turn done") { store.task(taskKey)?.state == .completed }
+        let done = try #require(store.task(taskKey))
+        #expect(store.canAttach(to: done))
+        let target = AttachTarget.followUp(taskKey: taskKey)
+        let photo = try photo()
+        #expect(store.attach(Self.notes, to: target))
+        #expect(store.attach(photo, to: target))
+        #expect(store.composerAttachments.isEmpty, "the page's files are not on composer 01")
+        try await store.sendFollowUp("And these?", for: done)
+        #expect(store.attachments(on: target).isEmpty)
+        #expect(fake.followUps == ["And these?"])
+        #expect(fake.followUpAttachments.first?.map(\.name) == ["notes.txt", "photo.jpg"])
+        #expect(fake.followUpAttachments.first?.map(\.data) == [Self.notes.data, photo.data])
+        try await waitUntil("second turn done") { store.task(taskKey)?.state == .completed && store.task(taskKey)?.blocks.followUpCount == 1 }
+        let items = store.task(taskKey)?.blocks.items ?? []
+        let message = try #require(items.first { $0.isUserMessage })
+        #expect(message.attachments?.map(\.name) == ["notes.txt", "photo.jpg"])
+        #expect(message.attachments?.map(\.kind) == [.file, .image])
+        #expect(message.attachments?.map { $0.thumbnail != nil } == [false, true], "this phone keeps the photo's thumbnail")
     }
 }

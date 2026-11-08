@@ -21,8 +21,9 @@ struct StructuredTranscriptView: View {
                     switch groups[index] {
                     case .text(let piece):
                         TranscriptView(source: piece)
-                    case .user(let text):
-                        UserBubble(text: text) // D89: a follow-up, under the answer before it
+                    case .user(let item):
+                        // D89: a follow-up, under the answer before it; D107: with its files.
+                        if case .userMessage(let text) = item.kind { UserBubble(text: text, attachments: item.attachments ?? []) }
                     case .thinking(let item):
                         TranscriptBlockRow(taskKey: row.key, item: item)
                     case .question(let item):
@@ -49,7 +50,7 @@ struct StructuredTranscriptView: View {
 
     enum Group {
         case text(String)
-        case user(String)
+        case user(TranscriptItem)
         case thinking(TranscriptItem)
         case tools([TranscriptItem])
         case question(TranscriptItem)
@@ -62,8 +63,8 @@ struct StructuredTranscriptView: View {
             case .text(let piece):
                 out.append(.text(piece))
             case .item(let item):
-                if case .userMessage(let text) = item.kind {
-                    out.append(.user(text))
+                if case .userMessage = item.kind {
+                    out.append(.user(item))
                 } else if case .tool = item.kind {
                     if case .tools(let items)? = out.last {
                         out[out.count - 1] = .tools(items + [item])

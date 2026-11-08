@@ -47,8 +47,8 @@ This file exists only while this requirement is in progress. It serves this requ
 | S1 | done | merged `55300a7` | 2026-11-09 | — (provisional D101, D102 in §9) |
 | S2 | doing | `claude/s2-questions-more` | 2026-11-09 | Slice owner builds (§8) |
 | S3 | doing | `claude/s3-model-failures` | 2026-11-08 | Slice owner builds (§8) |
-| S4 | doing | `claude/s4-attach-files` | 2026-11-08 | Slice owner builds (§8) |
-| S5 | todo | — | 2026-11-08 | Assign it and start a session |
+| S4 | done | merged `83c82ce` | 2026-11-09 | — (provisional D107, D108 in §9) |
+| S5 | doing | `claude/s5-voice` | 2026-11-09 | Slice owner builds (§8) |
 | S6 | todo | — | 2026-11-08 | Assign it and start a session |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -315,7 +315,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S4 · Attach files: photos, text, PDF, other files
 
-**Status** todo · **Needs** T0, T2 · **Branch** —
+**Status** review · **Needs** T0, T2 · **Branch** —
 
 **Why**: Closes #2. User, 2026-11-08: "这个要支持，不仅是照片，也可以是txt、pdf或其他文件，你参考claude、codex的交互".
 
@@ -328,13 +328,23 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/attachments.sh --all`.
 
 **Done when**
-- [ ] [auto] Text, PDF and an unknown file type are staged and reach DSH as file parts with their names; more than one attachment keeps its order; a file over the limit is refused before the upload (`FakeDSH`, `FakeBridge`) — Evidence:
-- [ ] [ui] Attach a photo, a .txt and a .pdf on 01, remove one, and send: the bubble shows the other two and the DSH session has them (`cmd:scripts/demo/attachments.sh`) — Evidence:
-- [ ] [ui] Attach a file to a follow-up in a completed session: it reaches the same DSH session (`cmd:scripts/demo/attachments.sh`) — Evidence:
+- [x] [auto] Text, PDF and an unknown file type are staged and reach DSH as file parts with their names; more than one attachment keeps its order; a file over the limit is refused before the upload (`FakeDSH`, `FakeBridge`) — Evidence: test:Attachments/textPdfAndUnknownFilesReachDshAsFilePartsWithTheirNamesInOrder · test:Attachments/aFileOverTheLimitIsRefusedBeforeAnyPartAndNothingIsStaged · test:Attachments/stagingRefusesTooLargeAndTooMany · test:Attachments/aFollowUpTakesFilesIntoTheSameSessionAndItsUserMessageNamesThem · test:AttachmentsTests/filesOfAnyTypeGoUpInOrderAndOneRemovedStaysHome · test:AttachmentsTests/aFileOverTheLimitIsRefusedBeforeTheUpload · test:AttachmentsTests/aFollowUpCarriesFilesIntoTheSameTask · cmd:scripts/demo/attachments.sh
+- [x] [ui] Attach a photo, a .txt and a .pdf on 01, remove one, and send: the bubble shows the other two and the DSH session has them (`cmd:scripts/demo/attachments.sh`) — Evidence: cmd:scripts/demo/attachments.sh --all · test:AttachmentsUITests/testAttachPhotoTextAndPDFRemoveOneAndSend · shot:evidence/S4/attachments-files-composer.png · shot:evidence/S4/attachments-files-session.png
+- [x] [ui] Attach a file to a follow-up in a completed session: it reaches the same DSH session (`cmd:scripts/demo/attachments.sh`) — Evidence: cmd:scripts/demo/attachments.sh --all · test:AttachmentsUITests/testAttachFileToFollowUp · shot:evidence/S4/attachments-followup-composer.png · shot:evidence/S4/attachments-followup-session.png
 
 **Not**: The Share Extension (#18). Artifacts back to the phone (#17).
 
 **Log**: —
+- **2026-11-09 · Built; review PASS at 1fc0d40.** Done: all three items ticked. Review: /tmp/dshm-review/S4-1fc0d40.txt (PASS, no flaky part).
+  - Protocol: `AttachmentKind`, `AttachmentRef` (attachments.proto); `SendMessage.upload_ids` = 400, `UserMessage.attachments` = 400, `SessionMessage.attachments` = 400 (attachments block). `upload/media-type` gone; `upload/too-many` added. Two golden fixtures.
+  - Bridge: any media type; images go through `uploadImageStream`, other files through `uploadStream` with their names; prompt order = add order; max 5 per message; follow-ups take `uploadIds`; the hub refuses files for a running task (a queued message carries text only); the journal's image/file blocks become `AttachmentRef`.
+  - App: "+" menu (Photo Library, Camera, Files) on 01 and on the follow-up composer once the task is done; chips with remove, upload progress, amber error; a file over 20 MiB is refused before the upload; the user bubble shows thumbnails and file cards, also after a replay (`CachedTask.sentAttachments`, an old `photoThumbnail` reads as one image).
+  - Demo: `scripts/demo/attachments.sh --all` seeds notes.txt and report.pdf into Files > On My iPhone, runs the two new UI tests, and checks the DSH sessions (`attachments-files-check.mjs`, shared reader `dsh-journal.mjs`).
+  - Design: board 01 (menu and chips) and 06 (attachment in the bubble, "+" on the follow-up composer); STORY §7, DESIGN map row. Drawn on 06, not 04: the code attaches on a follow-up once the task is done (06); 04 is the running page, where S1's queue carries text only.
+  - Merged main (S1) into the branch: start/followUp take both `continues` and `files`; codegen rerun; board re-rendered.
+  - Decisions (provisional, pending user confirmation): D107 (files of any type, 5 per message, follow-ups once done, replay, upload at send), D108 (the "+" menu and chips; one item per menu use). D109 not used. Dependencies: none added.
+  - Flaky notes: the system photo picker's first open after an install can take more than 15 s (wait raised to 30 s). The document picker opens on Recents, the Browse root, or the last folder; the test handles all three (the location cell is `DOC.sidebar.item.<name>`, label 我的iPhone without a space). `scripts/render-design` exits 2 when another worktree renders at the same time (headless Chrome); run it again when no other render runs.
+  - Not done: multi-select in the pickers; attachments in a queued message while a task runs.
 
 ### S5 · Voice input
 
@@ -604,6 +614,14 @@ Append-only, dated.
 
 - **2026-11-09 · S2 runs as a background agent.** S2 assigned (D113–D115) and started as a background agent. Its brief names the conflict between the Cuts (a held question times out, as D25) and D92 (no timeout): the owner decides and records it in D92. Running: S2, S3, S4.
 
+- **2026-11-09 · S4 merged.** Merged as `83c82ce`; `scripts/check-plan` on the merge commit passed. `scripts/review S4` at `1fc0d40`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S4-1fc0d40.txt`). No open `[human]` items, so S4 is `done`. §9 rows 10, 11 (D107, D108).
+
+- **2026-11-09 · S4 merged.** S4 merged as 83c82ce (review PASS on 1fc0d40, S4-1fc0d40.txt, no flaky part; head eda8f01 adds only PLAN changes). D107, D108 new; D95 and D18 amended: in §9. Differs from the Cuts: the '+' is drawn on 06 (a done task), not 04 (running), because a queued message carries text only; pickers add one item per use. Flaky in development: the photo picker's first open after an install can take more than 15 s (wait now 30 s); scripts/render-design exits 2 when two worktrees render at the same time. The user's uncommitted DEVELOPMENT_TEAM line in project.pbxproj was stashed for the merge and applied back cleanly.
+
+- **2026-11-09 · S5 assigned.** Branch `claude/s5-voice`, simulator `dshm-S5`, DSHM_HOME `~/.dshm/home-s5`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D116–D118. `eval "$(scripts/slice-env S5)"` exports them.
+
+- **2026-11-09 · S5 runs as a background agent.** S5 assigned (D116–D118) and started as a background agent. S3 was told that S4 landed and to merge main before its handover if it conflicts. Running: S2, S3, S5.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -619,3 +637,7 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 7 | S1 | decision | ARCHITECTURE D102, *provisional*: One follow across turns (bridge, extends D89) | `claude/s1-followup-queue` | merged `55300a7` |
 | 8 | S1 | decision | D18 amended: default QUEUE for a follow-up while a task runs, 立即发送 steers (D18 itself was user-confirmed) | `claude/s1-followup-queue` | `7c1a8cd` |
 | 9 | S1 | decision | D89 amended: a follow-up can be sent while the task runs and after a stop | `claude/s1-followup-queue` | `7c1a8cd` |
+| 10 | S4 | decision | ARCHITECTURE D107, *provisional*: Attachments: files of any type, more than one, also in a follow-up (amends D95, D18, D89) | `claude/s4-attach-files` | merged `83c82ce` |
+| 11 | S4 | decision | ARCHITECTURE D108, *provisional*: The "+" menu and the attachment chips (screens 01, 06) | `claude/s4-attach-files` | merged `83c82ce` |
+| 12 | S4 | decision | D95 amended: attachments of any type (not only photos) | `claude/s4-attach-files` | `da00e84` |
+| 13 | S4 | decision | D18 amended: file parts reach DSH by name; attachments only once a task is done, not in a queued message | `claude/s4-attach-files` | `d2904bb` |

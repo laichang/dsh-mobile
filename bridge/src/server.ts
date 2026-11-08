@@ -29,7 +29,7 @@ import { MessageMode, QueueAction } from './gen/conversation_pb.ts'
 import { HandshakeRejected, type NoiseResponder } from './pairing/handshake.ts'
 import type { LoggedEvent } from './s2/host-log.ts'
 import { TaskHub, type TaskStarter } from './s2/task-hub.ts'
-import { ATTACHMENTS_CAPABILITY, UploadError, UploadStaging, type StagedImage } from './attachments/staging.ts'
+import { ATTACHMENTS_CAPABILITY, UploadError, UploadStaging, type StagedFile } from './attachments/staging.ts'
 
 export type { TaskStarter } from './s2/task-hub.ts'
 
@@ -228,15 +228,15 @@ function serveConnection(
           if (request.body.value.workspace !== undefined && !options.tasks.listWorkspaces) {
             return fail(id, 'workspace/unavailable', 'This host cannot select a workspace.')
           }
-          let images: StagedImage[] | undefined
+          let files: StagedFile[] | undefined
           if (request.body.value.uploadIds.length) {
             if (!options.tasks.attachments) return fail(id, 'upload/unavailable', 'This host cannot take attachments.')
-            images = uploads.take(request.body.value.uploadIds)
+            files = uploads.take(request.body.value.uploadIds)
           }
           await hub.create(prompt, (taskId) => {
             ownTasks.add(taskId)
             respond(id, { case: 'taskCreated', value: { taskId } })
-          }, request.body.value.modelSelection, request.body.value.workspace, images)
+          }, request.body.value.modelSelection, request.body.value.workspace, files)
         } catch (error) {
           if (error instanceof UploadError) return fail(id, error.code, error.message)
           log(`create task failed: ${String(error)}`)
@@ -277,13 +277,22 @@ function serveConnection(
       case 'sendMessage': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
         if (!options.tasks.followUp) return fail(id, 'request/unsupported', 'This host cannot take follow-up messages.')
-        const { taskId, text, mode } = request.body.value
+        const { taskId, text, mode, uploadIds } = request.body.value
         if (!text.trim()) return fail(id, 'message/empty', 'the message is empty')
+        if (uploadIds.length && !options.tasks.attachments) return fail(id, 'upload/unavailable', 'This host cannot take attachments.')
         if (!resumed) { ownTasks.add(taskId); subscribeOwnTasks() }
+        let files: StagedFile[] = []
+        try {
+          // D107: the files are used up by this message, also when DSH refuses it.
+          files = uploadIds.length ? uploads.take(uploadIds) : []
+        } catch (error) {
+          if (error instanceof UploadError) return fail(id, error.code, error.message)
+          throw error
+        }
         try {
           // Answer first, as for CreateTask: then the UserMessage and the turn's events follow.
           await hub.sendMessage(taskId, text, mode === MessageMode.QUEUE ? 'queue' : 'steer',
-            (messageId) => respond(id, { case: 'messageAccepted', value: { taskId, messageId } }))
+            (messageId) => respond(id, { case: 'messageAccepted', value: { taskId, messageId } }), files)
         } catch (error) {
           log(`follow-up failed: ${String(error)}`)
           return fail(id, 'message/refused', error instanceof Error ? error.message : String(error))

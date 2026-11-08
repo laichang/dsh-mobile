@@ -1,8 +1,9 @@
 /**
- * Attachments (ARCHITECTURE D95) against FakeDSH, over the Noise listener: the golden photo
+ * Attachments (ARCHITECTURE D95, D107) against FakeDSH, over the Noise listener: the golden photo
  * (protocol/fixtures/attachments, also read by the Swift tests) goes up in several Noise
  * messages, arrives byte-identical, is staged through `fileUploads`, and enters the first prompt
- * as an image part. A wrong hash or a missing part is refused.
+ * as an image part. Text, PDF and other files enter as file parts with their names, in order, in
+ * a first prompt and in a follow-up. A wrong hash, a missing part or a file over the limit is refused.
  */
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
@@ -15,7 +16,10 @@ import { WebSocket } from 'ws'
 import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { DshTasks } from '../src/dsh.ts'
 import { FrameSchema, RequestSchema, type Frame } from '../src/gen/frame_pb.ts'
-import { ATTACHMENTS_CAPABILITY, MAX_UPLOAD_BYTES, PART_SIZE, UploadStaging } from '../src/attachments/staging.ts'
+import { ATTACHMENTS_CAPABILITY, MAX_UPLOAD_BYTES, MAX_UPLOADS_PER_CONNECTION, PART_SIZE, UploadStaging } from '../src/attachments/staging.ts'
+import { AttachmentKind } from '../src/gen/attachments_pb.ts'
+import { TaskStatus } from '../src/gen/frame_pb.ts'
+import { CONVERSATION_CAPABILITY } from '../src/server.ts'
 import { makeOffer } from '../src/pairing/announce.ts'
 import { NoiseInitiator, NoiseResponder, type NoiseSession } from '../src/pairing/handshake.ts'
 import { generateKeyPair } from '../src/pairing/noise.ts'
@@ -99,9 +103,41 @@ async function phone() {
     },
     close() { ws.close() },
   }
-  const hello = await c.request({ case: 'hello', value: { protocolVersion: 1 } })
+  const hello = await c.request({ case: 'hello', value: { protocolVersion: 1, capabilities: [CONVERSATION_CAPABILITY] } })
   assert.ok(hello.case === 'hello' && hello.value.capabilities.includes(ATTACHMENTS_CAPABILITY))
   return c
+}
+
+/** Waits until the frames match. */
+async function until(c: { frames: Frame[] }, pred: (fs: Frame[]) => boolean, ms = 3000) {
+  const deadline = Date.now() + ms
+  while (!pred(c.frames)) {
+    if (Date.now() > deadline) throw new Error(`timed out; got ${c.frames.length} frames`)
+    await new Promise((r) => setTimeout(r, 10))
+  }
+}
+
+const ended = (fs: Frame[]) => fs.filter((f) => f.kind.case === 'event' && f.kind.value.body.case === 'taskEnded'
+  && f.kind.value.body.value.status === TaskStatus.COMPLETED).length
+
+/** Three files that are not images: text, a PDF of two parts, and a type nobody knows (sent with no media type). */
+const files = [
+  { name: 'notes.txt', mediaType: 'text/plain', data: new TextEncoder().encode('Buy milk.\n买牛奶。\n') },
+  { name: 'report.pdf', mediaType: 'application/pdf', data: new TextEncoder().encode(`%PDF-1.4\n${'x'.repeat(PART_SIZE + 10)}\n%%EOF\n`) },
+  { name: 'data.xyz', mediaType: '', data: new Uint8Array([0, 1, 2, 3, 254, 255]) },
+]
+
+/** Uploads any file in parts; returns the last response. */
+async function uploadFile(c: Phone, uploadId: string, file: { name: string; mediaType: string; data: Uint8Array }) {
+  const begin = await c.request({ case: 'uploadBegin', value: {
+    uploadId, mediaType: file.mediaType, name: file.name, size: BigInt(file.data.length), sha256: sha256(file.data),
+  } })
+  if (begin.case === 'error') return begin
+  for (const [index, part] of parts(file.data).entries()) {
+    const ack = await c.request({ case: 'uploadChunk', value: { uploadId, index, data: part } })
+    if (ack.case === 'error') return ack
+  }
+  return c.request({ case: 'uploadEnd', value: { uploadId } })
 }
 
 type Phone = Awaited<ReturnType<typeof phone>>
@@ -181,12 +217,85 @@ describe('Attachments', () => {
     } finally { c.close() }
   })
 
-  test('stagingRefusesTooLargeAndOtherMediaTypes', () => {
+  test('stagingRefusesTooLargeAndTooMany', () => {
     const s = new UploadStaging()
     const hash = sha256(photo)
     assert.throws(() => s.begin({ uploadId: 'a', mediaType: 'image/jpeg', name: '', size: BigInt(MAX_UPLOAD_BYTES + 1), sha256: hash }),
       { code: 'upload/too-large' })
-    assert.throws(() => s.begin({ uploadId: 'b', mediaType: 'image/heic', name: '', size: 10n, sha256: hash }), { code: 'upload/media-type' })
+    assert.throws(() => s.begin({ uploadId: 'b', mediaType: 'application/zip', name: '', size: BigInt(MAX_UPLOAD_BYTES + 1), sha256: hash }),
+      { code: 'upload/too-large' })
+    // D107: any media type is taken; a type DSH does not take as an image goes as a file.
+    for (let i = 0; i < MAX_UPLOADS_PER_CONNECTION; i++) {
+      s.begin({ uploadId: `ok-${i}`, mediaType: 'image/heic', name: '', size: 10n, sha256: hash })
+    }
+    assert.throws(() => s.begin({ uploadId: 'one-more', mediaType: 'text/plain', name: '', size: 10n, sha256: hash }),
+      { code: 'upload/too-many' })
     assert.throws(() => s.chunk({ uploadId: 'c', index: 0, data: photo }), { code: 'upload/unknown' })
+  })
+
+  test('textPdfAndUnknownFilesReachDshAsFilePartsWithTheirNamesInOrder', async () => {
+    const c = await phone()
+    try {
+      for (const [i, file] of files.entries()) {
+        const staged = await uploadFile(c, `file-${i}`, file)
+        assert.ok(staged.case === 'uploadStaged', JSON.stringify(staged))
+      }
+      assert.equal((await upload(c, 'photo', photo)).case, 'uploadStaged')
+      // The photo between the files: one prompt keeps the order the app chose.
+      const order = ['file-0', 'photo', 'file-1', 'file-2']
+      const created = await c.request({ case: 'createTask', value: { prompt: 'Read these.', uploadIds: order } })
+      assert.equal(created.case, 'taskCreated')
+      assert.deepEqual(c.dsh.stagedFiles.map((f) => f.name), ['notes.txt', 'report.pdf', 'data.xyz'])
+      for (const [i, file] of files.entries()) assert.deepEqual(Buffer.from(c.dsh.stagedFiles[i].data), Buffer.from(file.data))
+      assert.deepEqual(c.dsh.stagedImages.map((i) => i.name), ['photo.jpg'])
+      const [prompt] = c.dsh.promptParts
+      const byReceipt = new Map([...c.dsh.stagedFiles, ...c.dsh.stagedImages].map((f) => [f.receiptId, f.name]))
+      assert.deepEqual(prompt.parts.map((p) => (p.type === 'text' ? `text:${p.text}` : `file:${byReceipt.get(p.receiptId)}`)),
+        ['text:Read these.', 'file:notes.txt', 'file:photo.jpg', 'file:report.pdf', 'file:data.xyz'])
+      assert.ok([...c.dsh.stagedFiles, ...c.dsh.stagedImages].every((f) => f.sessionId === prompt.sessionId))
+    } finally { c.close() }
+  })
+
+  test('aFileOverTheLimitIsRefusedBeforeAnyPartAndNothingIsStaged', async () => {
+    const c = await phone()
+    try {
+      const begin = await c.request({ case: 'uploadBegin', value: {
+        uploadId: 'big', mediaType: 'application/pdf', name: 'big.pdf', size: BigInt(MAX_UPLOAD_BYTES + 1), sha256: sha256(photo),
+      } })
+      assert.ok(begin.case === 'error' && begin.value.code === 'upload/too-large', JSON.stringify(begin))
+      const part = await c.request({ case: 'uploadChunk', value: { uploadId: 'big', index: 0, data: photo.subarray(0, 10) } })
+      assert.ok(part.case === 'error' && part.value.code === 'upload/unknown')
+      assert.deepEqual(c.dsh.stagedFiles, [])
+      assert.deepEqual(c.dsh.stagedImages, [])
+    } finally { c.close() }
+  })
+
+  test('aFollowUpTakesFilesIntoTheSameSessionAndItsUserMessageNamesThem', async () => {
+    const c = await phone()
+    try {
+      const created = await c.request({ case: 'createTask', value: { prompt: 'Hello.' } })
+      assert.ok(created.case === 'taskCreated')
+      const taskId = created.value.taskId
+      await until(c, (fs) => ended(fs) === 1)
+      assert.equal((await uploadFile(c, 'f-txt', files[0])).case, 'uploadStaged')
+      assert.equal((await uploadFile(c, 'f-pdf', files[1])).case, 'uploadStaged')
+      const accepted = await c.request({ case: 'sendMessage', value: { taskId, text: 'And these?', uploadIds: ['f-pdf', 'f-txt'] } })
+      assert.ok(accepted.case === 'messageAccepted', JSON.stringify(accepted))
+      await until(c, (fs) => ended(fs) === 2)
+      assert.deepEqual(c.dsh.stagedFiles.map((f) => [f.sessionId, f.name]), [[taskId, 'report.pdf'], [taskId, 'notes.txt']])
+      const followUp = c.dsh.promptParts.at(-1)!
+      assert.equal(followUp.sessionId, taskId)
+      assert.deepEqual(followUp.parts.map((p) => p.type), ['text', 'file', 'file'])
+      const messages = c.frames.flatMap((f) =>
+        f.kind.case === 'event' && f.kind.value.body.case === 'userMessage' ? [f.kind.value.body.value] : [])
+      assert.equal(messages.length, 1)
+      assert.deepEqual(messages[0].attachments.map((a) => [a.kind, a.name, Number(a.size), a.mediaType]), [
+        [AttachmentKind.FILE, 'report.pdf', files[1].data.length, 'application/pdf'],
+        [AttachmentKind.FILE, 'notes.txt', files[0].data.length, 'text/plain'],
+      ])
+      // The uploads are used up by the message.
+      const again = await c.request({ case: 'sendMessage', value: { taskId, text: 'again', uploadIds: ['f-pdf'] } })
+      assert.ok(again.case === 'error' && again.value.code === 'upload/unknown')
+    } finally { c.close() }
   })
 })
