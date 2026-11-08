@@ -362,6 +362,16 @@
         }
       }
     },
+    "Via %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "经 %@"
+          }
+        }
+      }
+    },
     "installed %@, supported %@": {
       "localizations": {
         "zh-Hans": {
