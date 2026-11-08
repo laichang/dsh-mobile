@@ -725,6 +725,8 @@ Append-only, dated.
 
 - **2026-11-09 · S13 assigned.** Branch `claude/s13-keyboard-host-menu`, simulator `dshm-S13`, DSHM_HOME `~/.dshm/home-s13`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D137–D139. `eval "$(scripts/slice-env S13)"` exports them.
 
+- **2026-11-09 · S13 runs as a background agent; all slices started.** S13 assigned (D137–D139) and started as a background agent. Every slice of the plan is now started or merged. Running: S9, S11, S13.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
