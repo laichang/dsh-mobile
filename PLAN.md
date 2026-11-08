@@ -297,7 +297,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S4 · Attach files: photos, text, PDF, other files
 
-**Status** todo · **Needs** T0, T2 · **Branch** —
+**Status** doing · **Needs** T0, T2 · **Branch** —
 
 **Why**: Closes #2. User, 2026-11-08: "这个要支持，不仅是照片，也可以是txt、pdf或其他文件，你参考claude、codex的交互".
 
