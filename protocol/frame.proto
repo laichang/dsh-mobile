@@ -58,7 +58,7 @@ message Request {
     RevokeDevice revoke_device = 201;
     ListAudit list_audit = 202;
     ReadSession read_session = 260;
-    SendMessage send_message = 360; // conversation.proto
+    SendMessage send_message = 360; EditQueue edit_queue = 361; // conversation.proto
     AnswerQuestion answer_question = 380;
   }
 }
@@ -83,7 +83,7 @@ message Response {
     DeviceList device_list = 200;
     AuditPage audit_page = 202;
     SessionPage session_page = 260;
-    MessageAccepted message_accepted = 360; // conversation.proto
+    MessageAccepted message_accepted = 360; QueueEdited queue_edited = 361; // conversation.proto
     QuestionResolved question_resolved = 380;
   }
 }
@@ -103,7 +103,7 @@ message Event {
     ApprovalResolved approval_resolved = 81;
     ModelSelected model_selected = 120;
     TranscriptBlock transcript_block = 340; // S17 (transcript.proto)
-    UserMessage user_message = 360; // conversation.proto
+    UserMessage user_message = 360; QueuedMessage queued_message = 361; // conversation.proto
     QuestionPending question_pending = 380; // questions.proto
     QuestionResolved question_resolved = 381;
   }
