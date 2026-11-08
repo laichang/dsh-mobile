@@ -590,6 +590,8 @@ Append-only, dated.
 
 - **2026-11-09 · S1 merged.** Merged as `55300a7`; `scripts/check-plan` on the merge commit passed. `scripts/review S1` at `ff68333`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S1-ff68333.txt`). No open `[human]` items, so S1 is `done`. §9 rows 6, 7 (D101, D102).
 
+- **2026-11-09 · S1 merged.** S1 merged as 55300a7 (review PASS on ff68333, S1-ff68333.txt, no flaky part; head 50558d6 adds only PLAN changes). Capability conversation.v2 (QueuedMessage, EditQueue/QueueEdited, field 361 in the conversation block). D18 amended (default queue, 立即发送 steers; D18 was user-confirmed, the amendment is provisional), D89 amended, D101 and D102 new: all in §9. Flaky outside the review: one full swift test run failed in S16CodingTaskTests under load (S12 covers it). S1 and S3 both touched the X1 caption and MilestoneBar.swift; S3 owns that seam when it lands.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
