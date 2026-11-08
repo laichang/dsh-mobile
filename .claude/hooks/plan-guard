@@ -193,8 +193,16 @@ def bash_writes(cmd, cwd=None, depth=0, gg=None):
         elif prog in IN_PLACE and any(re.match(r"^-[a-zA-Z]*i", a) for a in args):
             for a in plain:
                 target(a)
+        elif prog == "mv" and plain:
+            for a in plain:          # mv also removes its source
+                target(a)
         elif prog in COPIERS and plain:
             target(plain[-1])
+        elif prog == "git":
+            sub = next((a for a in plain if a in ("mv", "rm")), None)
+            if sub:                  # git mv / git rm move or remove tracked files
+                for a in plain[plain.index(sub) + 1:]:
+                    target(a)
         elif prog in REMOVERS:
             for a in plain:
                 target(a)

@@ -385,6 +385,8 @@ def main(argv=None):
         errors += staged_problems(trusted)
         errors += code_on_main()
         new = git_show(f":{PLAN}")  # None if PLAN.md isn't in the index
+        if new is None and git_show(f"HEAD:{PLAN}") is not None:
+            errors.append(f"PLAN FILE REMOVED: {PLAN} (archiving or deleting the plan is the user's step, by hand)")
     elif args.new == "-":
         new = sys.stdin.read()
     else:

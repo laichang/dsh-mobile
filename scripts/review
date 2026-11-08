@@ -29,9 +29,11 @@ for a in "$@"; do
 done
 [ -n "$ID" ] || { echo "usage: scripts/review <ID> [--resume] [--dry-run]" >&2; exit 2; }
 
-# The slice section: from "### <ID> ·" to the next "### ".
+[ -f PLAN.md ] || { echo "review: no PLAN.md: no requirement is in progress" >&2; exit 2; }
+
+# The slice section: from "### <ID> ·" to the next "### " or "## ".
 SECTION=$(awk -v id="$ID" '
-  /^### / { f = (index($0, "### " id " ") == 1) ; next }
+  /^##+ / { f = (index($0, "### " id " ") == 1) ; next }
   f' PLAN.md)
 [ -n "$SECTION" ] || { echo "review: no section '### $ID ·' in PLAN.md" >&2; exit 2; }
 UI=$(printf '%s\n' "$SECTION" | grep -E '^- \[[x ]\] \[ui\]' || true)

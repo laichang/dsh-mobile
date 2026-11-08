@@ -25,6 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import dshm  # noqa: E402
+import plangen  # noqa: E402
 
 
 def registry_text(root, prefer_main=False):
@@ -85,6 +86,8 @@ def assign(sid, branch_name, block, root):
     old = [r for r in rows if r["id"] == sid]
     if old:
         return old[-1], False
+    if not (root / "PLAN.md").exists():
+        raise dshm.PlanError(plangen.NO_PLAN)
     status = dshm.statuses(dshm.split_lines((root / "PLAN.md").read_text()))
     if sid not in status:
         raise dshm.PlanError(f"{sid} has no row in PLAN.md §0")
@@ -119,8 +122,8 @@ def main():
     root = dshm.toplevel()
     try:
         if a.list:
-            plan = (root / "PLAN.md").read_text()
-            status = dshm.statuses(dshm.split_lines(plan))
+            plan_file = root / "PLAN.md"
+            status = dshm.statuses(dshm.split_lines(plan_file.read_text())) if plan_file.exists() else {}
             print("\t".join(dshm.REGISTRY_COLUMNS + ("status",)))
             for r in dshm.parse_registry(registry_text(root)):
                 print("\t".join([r[c] for c in dshm.REGISTRY_COLUMNS] + [status.get(r["id"], "?")]))

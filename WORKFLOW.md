@@ -1,6 +1,6 @@
 # WORKFLOW
 
-This file tells people and agents how work moves in this repository. It applies to all agents: Claude Code, Codex, and others. Product intent is in [STORY.md](STORY.md). Technical design is in [ARCHITECTURE.md](ARCHITECTURE.md). The current work items are in the plan file, [PLAN.md](PLAN.md).
+This file tells people and agents how work moves in this repository. It applies to all agents: Claude Code, Codex, and others. Product intent is in [STORY.md](STORY.md). Technical design is in [ARCHITECTURE.md](ARCHITECTURE.md). The work items of the current requirement are in the plan file, `PLAN.md`. The plan file exists only while a requirement is in progress (§3.2).
 
 Writing rules for this file: English, in the ASD-STE100 style. Use short sentences. Use one instruction in each sentence. Use the active voice. Use the terms in §1 and no synonyms for them.
 
@@ -26,6 +26,8 @@ Writing rules for this file: English, in the ASD-STE100 style. Use short sentenc
 | Term | Meaning |
 |---|---|
 | **User** | The human who owns this repository. The user gives instructions only in the chat of a session. |
+| **Requirement** | A piece of work that the user sets, for example a milestone. One plan file serves one requirement, from its start to its exit. |
+| **Issue** | A GitHub issue on `laichang/dsh-mobile`. Each idea, follow-up, deferred check, or bug that the current plan does not do is an issue. |
 | **Coordinator** | The one session that runs the plan. It works only on `main`. |
 | **Slice** | One work item in the plan file: a tracer (T0), a spike (Xn), or a slice (Sn). It has an ID, a section, and a branch. |
 | **Slice owner** | The session or agent that builds one slice, on the slice branch, in its own worktree. |
@@ -93,8 +95,13 @@ Rules:
 
 `scripts/plan` makes each change, checks it with `scripts/check-plan`, and commits it with `--commit`. Use `--dry-run` to see the change first. The file header of `scripts/plan` lists all commands.
 
+Before each write, `scripts/plan` draws §2 Map again from the **Needs** fields and checks the format of the plan file (`scripts/lib/plangen.py`). If the format is not correct, it stops. When no plan file exists, each command except `new` and `cleanup` stops and tells you so.
+
 | Who | Command | What it does |
 |---|---|---|
+| Coordinator | `scripts/plan new "<title>" --commit` | Writes the plan file of a requirement that the user sets, from `scripts/lib/plan-template.md`. It stops if a plan file exists |
+| Coordinator | `scripts/plan add tracer\|spike\|slice "<name>" --why <text> --cuts <text> --done "[auto] <item>" --commit` | Adds one section in the plan format: the next ID, a §0 row, and the fields in their order. A slice needs the first tracer, unless `--needs` gives other IDs |
+| Coordinator | `scripts/plan add exit "<item>" --commit` | Adds one `[human]` item to §6 Exit |
 | Coordinator | `scripts/plan assign <ID> --branch <branch> --commit` | Gives the resources (§6), sets §0 to `doing`, and adds the §8 entry |
 | Coordinator | `scripts/plan merged <ID> <merge commit> --commit` | Checks the merge commit (§10, condition 3), sets §0, adds the §9 rows and the §8 entry |
 | Coordinator | `scripts/plan fix "<name>" --bug "<what the user saw>" --commit` | Adds a fix slice for a bug that the user reports (§5.2): the next S number, a §0 row, and a section with a regression test item |
@@ -104,6 +111,29 @@ Rules:
 | Slice owner | `scripts/plan slice-log <ID> "<title>" --body -` | Adds a dated Log entry. The body comes from stdin |
 | Slice owner | `scripts/plan slice-status <ID> <status>` | Changes the Status field of the slice |
 | All | `scripts/plan show <ID>` | Shows the §0 row and the section of the slice |
+| All | `scripts/plan lint` | Checks the format of the plan file |
+
+### 3.2 The plan file and issues
+
+- The plan file exists only while a requirement is in progress. When no requirement is in progress, there is no plan file.
+- The plan file serves only the current requirement. While the user sets a requirement, other ideas come up. Do not put them in the plan file. Open an issue for each of them.
+- Each item that the current plan does not do is an issue: an idea, a follow-up, a deferred check, or a known bug. Do not list these items in the plan file. `scripts/plan lint` stops a list in §7 of the plan file.
+- Living documents (AGENTS.md, STORY.md, DESIGN.md, ARCHITECTURE.md, README.md, this file) and the code do not refer to the content of a plan: its sections, its items, or its slice IDs. Refer to an issue or to a `Dxx` entry instead. This file tells how a plan file works. It does not refer to one plan.
+
+To start a requirement:
+
+1. The user sets the requirement in the chat.
+2. The coordinator updates `main` and reads the open issues that the requirement includes.
+3. The coordinator writes the plan file: `scripts/plan new "<Mx · name>" --commit`, then `scripts/plan add` for each tracer, spike, slice, and exit item. In the Why field of each slice, write the issues that it closes ("Closes #12").
+4. The user approves the plan file before the first slice starts.
+
+To end a requirement, after the exit (§6 of the plan file) passes:
+
+1. The coordinator opens an issue for each open item that the plan did not do. Show the list to the user first.
+2. The coordinator moves each fact that stays true into a living document or a code comment.
+3. The coordinator runs `scripts/plan cleanup <ID>` for each slice that left resources (§6.1), and resets `scripts/resources.tsv` to its header.
+4. The user deletes the plan file and `evidence/`, and commits by hand with `CHECK_PLAN_ALLOW=1`. The hooks stop an agent that deletes the plan file (§12).
+5. The user tags the last commit on `main` that still has the plan file (for example `m1`), and pushes the tag. The tag keeps the plan file and the evidence readable on GitHub.
 
 ## 4. Start and stop a work session
 
@@ -158,6 +188,7 @@ This message gives the coordinator permission for sessions, workflows, backgroun
   3. Start a session for it (§5.3). Put the words of the user in the brief.
   4. Merge it with the conditions in §10, as for each slice.
   Only the user can put a code change directly into `main` (`CHECK_PLAN_ALLOW=1`, by hand).
+  If no plan file exists, open an issue for the bug, with the words of the user and the label `bug`. Do not fix it. The user decides when a requirement includes it.
 - Stop only when no slice can move without the user. Then tell the user what waits for them.
 
 ### 5.3 Session start limit and fallback
@@ -365,14 +396,15 @@ Only the user can do these things:
 - Push to GitHub, or open a pull request.
 - Commit a change to a guard file (§12).
 - Approve a change to this file or to the rules in the plan file (§14).
+- Set a requirement, approve its plan file, and delete the plan file at the end of the requirement (§3.2).
 
 ## 12. Guards
 
 | Guard | Applies to | What it does |
 |---|---|---|
-| `.githooks/pre-commit` | All tools | Runs `scripts/check-plan` on each commit. It also stops build output (`.build/`, `node_modules/`, `DerivedData/`, `*.xcresult`) and files larger than 4 MB. On `main`, it stops a commit that changes code and is not a merge (§3). Git does not run this hook for `git cherry-pick`, `git rebase`, or `git revert`. Thus do not use these commands on `main`. |
+| `.githooks/pre-commit` | All tools | Runs `scripts/check-plan` on each commit. It also stops build output (`.build/`, `node_modules/`, `DerivedData/`, `*.xcresult`) and files larger than 4 MB. On `main`, it stops a commit that changes code and is not a merge (§3). It stops a commit that deletes the plan file (§3.2). Git does not run this hook for `git cherry-pick`, `git rebase`, or `git revert`. Thus do not use these commands on `main`. |
 | `.githooks/pre-merge-commit` | All tools | Runs the same checks on each merge commit. In a merge of `main` into a slice branch, it judges the plan changes of the slice against `main`, and it lets through guard files that come unchanged from `main`. |
-| `.claude/hooks/plan-guard` | Claude Code only | Stops a bad edit of the plan file before it occurs. Stops a shell command that writes the plan file: use `scripts/plan` (§3.1) or the Edit tool. Asks the user before an edit of a guard file, also from a shell command. It checks the paths in each worktree of the repository. |
+| `.claude/hooks/plan-guard` | Claude Code only | Stops a bad edit of the plan file before it occurs. Stops a shell command that writes, moves, or deletes the plan file (also `git mv` and `git rm`): use `scripts/plan` (§3.1) or the Edit tool. Asks the user before an edit of a guard file, also from a shell command. It checks the paths in each worktree of the repository. |
 | `.claude/hooks/git-guard` | Claude Code only | Stops `--no-verify` on git, `core.hooksPath` changes, and `CHECK_PLAN_ALLOW`. It parses the command. A command that only reads or writes text with these words (`grep`, a commit message, a file) passes. |
 | `.codex/hooks/codex-guard` (from `.codex/hooks.json`) | Codex only | Runs `git-guard` and the shell checks of `plan-guard` on shell commands. Runs the plan-guard checks on `apply_patch` edits. Denies each edit of a guard file. |
 
@@ -422,3 +454,4 @@ If a tool has no function for a capability, use the fallback in this table. Then
 - **2026-11-07**: Guards (§10, §12). git-guard parses the command. A command that only mentions a blocked word passes. plan-guard also checks shell commands (writes to the plan file and to guard files) and the paths in each worktree. `scripts/check-plan` with no arguments runs as `--staged`. It also stops build output and large files. The new `pre-merge-commit` hook checks each merge commit. `.claude/hooks/guard-test` tests the guards. Reason: git-guard stopped read-only commands. Agents edited the plan file through shell commands, and plan-guard did not see these edits. A session in `main` edited files in a worktree with no check. A 28 MB build directory went into a commit. Merge commits had no automatic check.
 - **2026-11-07**: Bug fixes (§3, §3.1, §5.2, §12). The coordinator does not change code. A bug that the user reports becomes a fix slice (`scripts/plan fix`), with its own branch, session, and merge (§10). On `main`, the pre-commit hook stops a commit that changes code and is not a merge. Reason: after the run ended, the user reported bugs from a real iPhone to the coordinator. The coordinator fixed them on `main` (`505aa7d`, `2c650d1`), with no slice branch and no review run. No rule said who fixes a bug after a merge, and no hook stopped code commits on `main`.
 - **2026-11-08**: Free space and cleanup (§5.4, §6, §6.1, §10). The guard stops a demo or review when the data volume has less than 30 GB free. `scripts/plan merged` removes the simulator, the `/tmp/dshm-*` paths, the merged worktrees and branches, and the `DSHM_HOME` of the slice. `scripts/plan cleanup <ID>` does the same for a slice in `review` or `done`. `scripts/status` shows the free space and the leftovers. Reason: on 2026-11-08 the data volume had 8.3 GB free. The run left 23 `dshm-*` simulators, 30 merged worktrees, and about 230 `/tmp/dshm-*` directories. No script removed them.
+- **2026-11-08**: The plan file and issues (§1, §3.1, §3.2, §5.2, §11, §12). The plan file exists only while a requirement is in progress. `scripts/plan new` writes it from a template, and `scripts/plan add` adds each section in the format. Each write draws §2 Map again and checks the format. Each item that the plan does not do is a GitHub issue. Living documents and the code do not refer to the content of a plan. At the end of a requirement, the user deletes the plan file. There is no archive. Reason: at the M1 exit, the plan file had 1800 lines. Its §7 and the slice logs held follow-ups that no one tracked. Living documents referred to the plan file in 14 places, and these references stop being true when the plan ends. The M1 format was good, but each section was written by hand.
