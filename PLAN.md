@@ -538,6 +538,8 @@ Append-only, dated.
 
 - **2026-11-08 · T0 review PASS, but it conflicts with main.** T0 review PASS on 08e35d3 (T0-08e35d3.txt). git merge-tree shows conflicts with T1 on main in 12 files (frame.proto, generated code, HostConnection, ARCHITECTURE.md, ...). The coordinator does not change code, so it asked the T0 owner to merge main into claude/t0-followup, regenerate with scripts/codegen, and run a full scripts/review T0 again. T2 waits on its review run; it will need the same step after T0 merges.
 
+- **2026-11-08 · T2 review PASS, but it conflicts with main.** T2 review PASS on 0752a3d (T2-0752a3d.txt; head 3ce48d2 adds only PLAN changes). It conflicts with T1 on main in 8 files (frame.proto, generated code, FakeBridge, ARCHITECTURE.md, ...). The T2 owner merges main now and reviews again; one more small merge follows after T0 lands.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
