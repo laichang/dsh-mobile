@@ -98,9 +98,10 @@ final class OfflineReasonsUITests: XCTestCase {
     private func offlineCardLine(_ app: XCUIApplication) -> XCUIElement {
         newSession(app)
         closeDrawer(app)
-        // The card's own identifier does not always reach the tree; its host lines do.
-        let line = app.descendants(matching: .any).matching(identifier: "hosts.offlineCard.host").firstMatch
-        XCTAssertTrue(line.waitForExistence(timeout: 30), app.debugDescription)
+        let card = app.descendants(matching: .any).matching(identifier: "hosts.offlineCard").firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30), app.debugDescription)
+        let line = card.descendants(matching: .any).matching(identifier: "hosts.offlineCard.host").firstMatch
+        XCTAssertTrue(line.waitForExistence(timeout: 10), card.debugDescription)
         return line
     }
 

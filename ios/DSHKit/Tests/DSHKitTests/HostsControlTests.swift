@@ -32,6 +32,12 @@ import Testing
         }
         #expect(!store.allHostsOffline)
         #expect(store.hosts.first?.capabilities.contains(FakeDevices.capability) == true)
+        // D59: MacBook-Pro sends its model catalog; screen H shows the default model.
+        let mac = "fake:\(FakeHosts.macName)"
+        try await waitUntil("MacBook-Pro's catalog") { store.catalogs[mac] != nil }
+        let catalog = try #require(store.catalogs[mac])
+        #expect(catalog.hasDefaultSelection)
+        #expect(catalog.entry(for: catalog.defaultSelection)?.name == FakeHosts.defaultModelName)
 
         for host in switchable { host.setReachable(false) }
         try await waitUntil("all offline") { store.allHostsOffline }
