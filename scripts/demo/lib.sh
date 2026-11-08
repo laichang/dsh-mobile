@@ -39,13 +39,15 @@ demo_no_skipped_ui() {
 # ---------------------------------------------------------------------------------------------
 # Machine guard (WORKFLOW.md §6.1). Runs when this file is sourced. Rules that live in code, not
 # in a prompt:
+#   - Refuses at once when the data volume has less than DSHM_MIN_FREE_GB (30) GB free.
 #   - Waits while the CPU is less than DSHM_MIN_IDLE (15) percent idle, then fails.
 #   - Waits while DSHM_SIM_LIMIT (3) other dshm-* simulators are booted, then fails.
 #   - When the top-level script exits (also on error or kill), shuts down its simulator if it is
 #     a dshm-* simulator or was not booted before. A simulator of the user stays as it was.
 #   - Boots a dshm-* simulator and stops the iOS services in DSHM_SIM_NOISE (dshm_quiet_sim).
 # A nested demo (t1.sh --all runs s1.sh … s13.sh) sees DSHM_GUARD_OWNER and skips the guard; the
-# top-level script owns the simulator. Env: DSHM_SIM_LIMIT (3), DSHM_GUARD_WAIT (seconds, 1800).
+# top-level script owns the simulator. Env: DSHM_SIM_LIMIT (3), DSHM_GUARD_WAIT (seconds, 1800),
+# DSHM_MIN_FREE_GB (30). Bridge-only scripts (no simulator, also on CI runners) skip the guard.
 
 # CPU idle percent, from a 2-second sample. Not the load average: on macOS it also counts
 # threads that only wait, and it showed 139 on 12 CPUs while the CPU was 75% idle (2026-11-06).
@@ -115,8 +117,32 @@ dshm_reap_orphans() {
   done
 }
 
+# Free space floor. A simulator takes 2-4 GB and a DerivedData copy 1-3 GB. On 2026-11-08 the data
+# volume had 8.3 GB free after the run left 23 simulators, 30 worktrees and ~230 /tmp/dshm-* dirs.
+# Free KB on the volume that holds $HOME (/System/Volumes/Data on macOS). DSHM_FREE_KB replaces
+# the measurement (tests only).
+dshm_free_kb() {
+  if [ -n "${DSHM_FREE_KB:-}" ]; then echo "$DSHM_FREE_KB"; return; fi
+  df -kP "$HOME" 2>/dev/null | awk 'NR == 2 { print $4 }'
+}
+
+# Refuses (one line on stderr, exit 1) when free space is below DSHM_MIN_FREE_GB (30). It does not
+# wait: space does not come back by itself.
+dshm_disk_ok() {
+  local kb floor=${DSHM_MIN_FREE_GB:-30} mount
+  kb=$(dshm_free_kb)
+  [ -n "$kb" ] || return 0   # no measurement: do not block
+  if [ "$kb" -lt $((floor * 1024 * 1024)) ]; then
+    mount=$(df -kP "$HOME" 2>/dev/null | awk 'NR == 2 { print $6 }')
+    echo "guard: $((kb / 1024 / 1024)) GB free on ${mount:-the data volume}, below the floor of $floor GB (DSHM_MIN_FREE_GB). Remove the leftovers that scripts/status lists (scripts/plan cleanup <ID>), then run again (WORKFLOW.md §6.1)." >&2
+    return 1
+  fi
+}
+
 dshm_guard() {
   local sim=$1 limit=${DSHM_SIM_LIMIT:-3} wait=${DSHM_GUARD_WAIT:-1800} waited=0 others n
+  # Before anything boots or builds.
+  dshm_disk_ok || return 1
   while :; do
     dshm_reap_orphans
     others=$(dshm_other_sims "$sim")

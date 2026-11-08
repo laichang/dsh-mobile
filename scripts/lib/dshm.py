@@ -174,3 +174,99 @@ def decision_range(text):
 
 def expand_home(path):
     return os.path.expanduser(path)
+
+
+# ---------------------------------------------------------------- disk and leftovers of a slice
+# A merged slice leaves a simulator (2-4 GB), a worktree, /tmp/dshm-<id>* dirs (DerivedData
+# copies, logs) and a DSHM_HOME. scripts/plan cleanup removes them; scripts/status counts them.
+
+MIN_FREE_GB_DEFAULT = 30       # the floor of the guard in scripts/demo/lib.sh (DSHM_MIN_FREE_GB)
+
+
+def min_free_gb():
+    try:
+        return int(os.environ.get("DSHM_MIN_FREE_GB", MIN_FREE_GB_DEFAULT))
+    except ValueError:
+        return MIN_FREE_GB_DEFAULT
+
+
+def disk_free():
+    """(free KB, mount point) of the volume that holds $HOME. DSHM_FREE_KB replaces the KB (tests)."""
+    r = subprocess.run(["df", "-kP", os.path.expanduser("~")], capture_output=True, text=True)
+    lines = r.stdout.strip().split("\n")
+    cells = lines[-1].split() if len(lines) > 1 else []
+    kb = int(cells[3]) if len(cells) >= 6 and cells[3].isdigit() else None
+    mount = cells[5] if len(cells) >= 6 else "?"
+    if os.environ.get("DSHM_FREE_KB"):
+        kb = int(os.environ["DSHM_FREE_KB"])
+    return kb, mount
+
+
+def tmp_root():
+    return Path(os.environ.get("DSHM_TMP_ROOT", "/tmp"))
+
+
+def simulators():
+    """All simulators: [dict(name, udid, state, size)]. [] when simctl is not there."""
+    import json
+    try:
+        r = subprocess.run(["xcrun", "simctl", "list", "devices", "-j"], capture_output=True, text=True)
+        data = json.loads(r.stdout) if r.returncode == 0 else {}
+    except (OSError, ValueError):
+        return []
+    out = []
+    for devs in data.get("devices", {}).values():
+        for d in devs:
+            out.append(dict(name=d.get("name", ""), udid=d.get("udid", ""), state=d.get("state", ""),
+                            size=int(d.get("dataPathSize") or 0)))
+    return out
+
+
+def slice_key_re(sid):
+    """Matches a branch name of slice <sid>: claude/s31-pair-tailscale-83a483, codex/s31-x."""
+    return re.compile(rf"(^|/){re.escape(sid.lower())}(-|$)")
+
+
+def slice_tmp_paths(sid):
+    """/tmp/dshm-<id> and /tmp/dshm-<id>-* (lowercase id). Exact: s1 does not match dshm-s10-dd."""
+    root, key = tmp_root(), sid.lower()
+    hits = [p for p in root.glob(f"dshm-{key}-*")]
+    if (root / f"dshm-{key}").exists() or (root / f"dshm-{key}").is_symlink():
+        hits.append(root / f"dshm-{key}")
+    return sorted(hits)
+
+
+def worktree_entries(cwd=None):
+    """[dict(path, head, branch)] from git worktree list; branch is '' when detached."""
+    out, cur = [], None
+    for line in git("worktree", "list", "--porcelain", cwd=cwd).split("\n"):
+        if line.startswith("worktree "):
+            cur = dict(path=line[9:], head="", branch="")
+            out.append(cur)
+        elif cur is not None and line.startswith("HEAD "):
+            cur["head"] = line[5:]
+        elif cur is not None and line.startswith("branch refs/heads/"):
+            cur["branch"] = line[18:]
+    return out
+
+
+def slice_branches(sid, cwd=None):
+    """Local branches whose name belongs to slice <sid> (slice_key_re)."""
+    rx = slice_key_re(sid)
+    names = git("for-each-ref", "--format=%(refname:short)", "refs/heads/", cwd=cwd).split("\n")
+    return [b for b in names if b and b != "main" and rx.search(b)]
+
+
+def safe_slice_home(home):
+    """The real path of a slice DSHM_HOME if it is inside ~/.dshm/ (not ~/.dshm itself, not the
+    shared runtime), else None."""
+    if not home:
+        return None
+    base = os.path.realpath(os.path.expanduser("~/.dshm"))
+    path = os.path.realpath(os.path.expanduser(home))
+    runtime = os.path.join(base, "runtime")
+    if path == base or os.path.commonpath([base, path]) != base:
+        return None
+    if path == runtime or os.path.commonpath([runtime, path]) == runtime:
+        return None
+    return path
