@@ -665,3 +665,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 16 | S3 | decision | D107 amended: a follow-up after a failure can carry attachments | `claude/s3-model-failures` | `8822d67` |
 | 17 | S2 | decision | ARCHITECTURE D113, *provisional*: A typed answer and multi-select answers (screen P1, amends D92) | `claude/s2-questions-more` | merged `966be4b` |
 | 18 | S2 | decision | ARCHITECTURE D114, *provisional*: A waiting question needs a decision, as an approval does (STORY §4, screens P1, 03, 02; extends D25, D92) | `claude/s2-questions-more` | merged `966be4b` |
+| 19 | S2 | decision | D92 amended: a question keeps no timeout (the Cut asked for a timeout to a refusal, as D25); DSH timed mode closes the card as not answered | `claude/s2-questions-more` | `b3f148d` |
