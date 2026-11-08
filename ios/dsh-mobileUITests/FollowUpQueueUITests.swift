@@ -48,10 +48,24 @@ final class FollowUpQueueUITests: XCTestCase {
         let send = app.buttons["session.send"]
         XCTAssertTrue(send.waitForExistence(timeout: 5) && send.isEnabled, app.debugDescription)
         send.tap()
+        dismissKeyboardTip(app)
     }
 
-    private func waitForCount(_ query: XCUIElementQuery, _ count: Int, timeout: TimeInterval) {
-        wait(for: [expectation(for: NSPredicate(format: "count == \(count)"), evaluatedWith: query)], timeout: timeout)
+    /// A fresh Simulator shows a one-time keyboard tip ("Speed up your typing…") over the page.
+    private func dismissKeyboardTip(_ app: XCUIApplication) {
+        let tip = app.buttons["Continue"]
+        if tip.exists { tip.tap() }
+    }
+
+    private func shot(_ app: XCUIApplication, _ name: String) {
+        dismissKeyboardTip(app)
+        saveShot(name)
+    }
+
+    private func waitForCount(_ query: XCUIElementQuery, _ count: Int, timeout: TimeInterval, in app: XCUIApplication) {
+        let predicate = NSPredicate(format: "count == \(count)")
+        _ = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: query)], timeout: timeout)
+        XCTAssertEqual(query.count, count, app.debugDescription)
     }
 
     func testFollowUpsWhileATaskRunsAgainstRealDSH() throws {
@@ -67,38 +81,38 @@ final class FollowUpQueueUITests: XCTestCase {
         // 1. A follow-up while it runs waits above the composer, and the stop key comes back.
         reply(app, later)
         let queued = any(app, "followup.queued")
-        waitForCount(queued, 1, timeout: 15)
+        waitForCount(queued, 1, timeout: 15, in: app)
         XCTAssertEqual(queued.element(boundBy: 0).label, later)
         XCTAssertEqual(queued.element(boundBy: 0).value as? String, "queued")
         XCTAssertTrue(stop.waitForExistence(timeout: 5), "the stop key stays")
         reply(app, now)
-        waitForCount(queued, 2, timeout: 15)
+        waitForCount(queued, 2, timeout: 15, in: app)
         XCTAssertEqual(queued.element(boundBy: 1).label, now)
         XCTAssertEqual(status.value as? String, "running")
-        saveShot("followup-queued")
+        shot(app, "followup-queued")
 
         // 2. 立即发送 on the second: the agent takes it at its next step, in this turn.
         app.buttons.matching(identifier: "followup.sendNow").element(boundBy: 1).tap()
         let bubbles = any(app, "session.message.user")
-        waitForCount(bubbles, 2, timeout: 60)
+        waitForCount(bubbles, 2, timeout: 60, in: app)
         XCTAssertEqual(bubbles.element(boundBy: 0).label, prompt)
         XCTAssertEqual(bubbles.element(boundBy: 1).label, now)
         XCTAssertEqual(queued.count, 1, "the first one still waits for the next turn")
         XCTAssertEqual(queued.element(boundBy: 0).label, later)
         XCTAssertEqual(status.value as? String, "running")
         XCTAssertTrue(stop.exists, "the stop key stays")
-        saveShot("followup-steered")
+        shot(app, "followup-steered")
 
         // 3. The queued one runs after the turn, as the next turn.
-        waitForCount(bubbles, 3, timeout: 90)
+        waitForCount(bubbles, 3, timeout: 90, in: app)
         XCTAssertEqual(bubbles.element(boundBy: 2).label, later)
-        waitForCount(queued, 0, timeout: 10)
+        waitForCount(queued, 0, timeout: 10, in: app)
         waitForValue(status, in: ["completed", "failed"], timeout: 120)
         XCTAssertEqual(status.value as? String, "completed", status.label)
         let transcript = any(app, "transcript.structured").firstMatch
         let text = transcript.value as? String ?? ""
         XCTAssertEqual(text.components(separatedBy: "streamed through the dsh-mobile bridge").count - 1, 3, text)
-        saveShot("followup-queue-done")
+        shot(app, "followup-queue-done")
 
         // The host checks the DSH session; it reads the messages from here, in the order sent.
         try "\(prompt)\n\(later)\n\(now)".write(to: try signals().appendingPathComponent("messages-queue"), atomically: true, encoding: .utf8)
@@ -118,20 +132,22 @@ final class FollowUpQueueUITests: XCTestCase {
         waitForValue(status, in: ["interrupted"], timeout: 30)
         let card = any(app, "outcome.card").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 15), app.debugDescription)
-        saveShot("followup-interrupted")
+        shot(app, "followup-interrupted")
 
         // 2. A new message continues the same session: it runs again, and the card goes.
         reply(app, goOn)
         waitForValue(status, in: ["running"], timeout: 30)
         XCTAssertTrue(card.waitForNonExistence(timeout: 15), "the stopped card goes")
         let bubbles = any(app, "session.message.user")
-        waitForCount(bubbles, 2, timeout: 30)
+        waitForCount(bubbles, 2, timeout: 30, in: app)
         XCTAssertEqual(bubbles.element(boundBy: 0).label, prompt)
         XCTAssertEqual(bubbles.element(boundBy: 1).label, goOn)
         waitForValue(status, in: ["completed", "failed"], timeout: 120)
         XCTAssertEqual(status.value as? String, "completed", status.label)
         XCTAssertFalse(any(app, "outcome.card").firstMatch.exists, "no stopped card after it completed")
-        saveShot("followup-continued")
+        let bar = any(app, "milestone.card").firstMatch
+        if bar.exists { XCTAssertFalse(bar.label.contains("Interrupted") || bar.label.contains("已中断"), bar.label) }
+        shot(app, "followup-continued")
 
         try "\(prompt)\n\(goOn)".write(to: try signals().appendingPathComponent("messages-interrupt"), atomically: true, encoding: .utf8)
     }

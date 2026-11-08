@@ -3,7 +3,7 @@
 // follow-up, and then reads DSH's own session list through the Web API: one DSH session must
 // hold both messages, each with a reply after it (ARCHITECTURE D89). Exits 0 when it does.
 //
-// DSHM_FOLLOWUP_MODE=running (ARCHITECTURE D101): a slower mock reply (about 15 s), so a turn runs
+// DSHM_FOLLOWUP_MODE=running (ARCHITECTURE D101): a slower mock reply (about 35 s), so a turn runs
 // while the phone queues follow-ups. It waits for two UI tests: `messages-queue` (a prompt, a
 // queued follow-up, and one sent now) and `messages-interrupt` (a prompt, stopped, and a message
 // that continues it). DSH must hold each conversation in one session, in the order the agent
@@ -40,7 +40,7 @@ const { startMockLlmServer } = await import(pathToFileURL(join(runtime,
   'node_modules/@deepseek-ai/dsh-llm-mock-server/lib/index.js')))
 const running = process.env.DSHM_FOLLOWUP_MODE === 'running'
 const mock = await startMockLlmServer({
-  sequence: ['slow_success'], repeatLast: true, successText: MOCK_TEXT, chunkSize: 4, chunkDelayMs: running ? 700 : 400,
+  sequence: ['slow_success'], repeatLast: true, successText: MOCK_TEXT, chunkSize: 4, chunkDelayMs: running ? 1500 : 400,
 })
 const host = spawn(dsh, ['web', '--no-open', '--port', port], {
   env: { ...env, DEEPSEEK_API_KEY: 'mock-key', DEEPSEEK_BASE_URL: mock.baseURL + '/v1' },

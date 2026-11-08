@@ -157,7 +157,7 @@ private struct SessionTranscript: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel(alert ?? timeline.headline)
+                .accessibilityLabel(MilestoneBar.line(timeline, state: row?.state, alert: alert))
                 .accessibilityValue(timeline.progressToken)
                 .accessibilityHint("Shows all steps")
                 .accessibilityIdentifier("milestone.card")
