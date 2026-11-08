@@ -1299,7 +1299,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S31 · Fix: Pair over Tailscale
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-08: 配对失败：couldn't reach the host at 30.34.227.222:47801, 100.79.171.34:47801（应该是我手机的wifi和我电脑的wifi不是同一个，怎么连？）. (Coordinator: the phone and Mac are on one tailnet; tcpdump on the Mac's utun6 shows Safari on the phone opening `http://100.79.171.34:47801` (SYN, handshake, HTTP), but 0 packets from the app's pairing attempt. Lead: App Transport Security blocks plain `ws://` to non-local IP addresses (the app has no ATS keys; LAN 192.168.x worked); verify it.)
 
