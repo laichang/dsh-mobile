@@ -95,8 +95,8 @@ final class AgentQuestionUITests: XCTestCase {
         let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: waiting)
         wait(for: [gone], timeout: 30)
         XCTAssertFalse(app.descendants(matching: .any)["drawer.badge"].exists)
-        // Other tasks of this host run (earlier tests): open this one.
-        app.buttons.matching(identifier: "tasklist.row").matching(NSPredicate(format: "label CONTAINS %@", "周报分几部分")).firstMatch.tap()
+        // The newest task first; DSH may have retitled it, so it is found by its place.
+        app.buttons.matching(identifier: "tasklist.row").firstMatch.tap()
         let answer = app.descendants(matching: .any)["question.answer"].firstMatch
         XCTAssertTrue(answer.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(answer.label.contains("进展, 下周计划"), answer.label)
