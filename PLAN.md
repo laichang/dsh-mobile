@@ -739,3 +739,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 25 | S6 | decision | ARCHITECTURE D121, *provisional*: Testability of the Live Activity (extends D16) | `claude/s6-live-activity` | merged `b4d0a65` |
 | 26 | S6 | `[human]` | On a real iPhone signed with the free team, the app starts a Live Activity for a running task | `main` | `b4d0a65` |
 | 27 | S8 | decision | ARCHITECTURE D125, *provisional*: A bridge that cannot listen: the reason comes from both sides (screens H, X3; amends D98) | `claude/s8-bridge-listen-errors` | merged `b62405c` |
+| 28 | S8 | decision | D98 amended by D125: a TCP check after a timeout raises the most a dead address can cost from 5 s to 6 s | `claude/s8-bridge-listen-errors` | `ffb2589` |
