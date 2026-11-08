@@ -1049,7 +1049,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 - [x] [ui] With all hosts offline the send key is off and a cached session still opens; when one host is back, the card goes away and the send key is on — Evidence: test:S21HostsUITests/testAllOfflineCardNamesEachHostAndGoesWhenOneIsBack · test:S2DurableListUITests/testOfflineHostIsNamedWithFakeBridge · cmd:scripts/demo/s21.sh · shot:evidence/S21/s21-host-back.png
 - [x] [auto] "All hosts offline" is set only when no host can take a task, stays set while hosts retry, and clears when one is online; the send key follows it — Evidence: test:HostsControlTests/allHostsOfflineOnlyWhenNoHostCanTakeATaskAndNotWhileOneComesBack · test:unreachableHostIsNamedAsOffline
 - [x] [auto] The fake host's devices, audit pages and revoke match the bridge; a revoke of this device ends its access — Evidence: test:HostsControlTests/devicesAuditPagesAndARevokeOfThisDeviceEndsItsAccess
-- [ ] [human] On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that — Evidence:
+- [x] [human] On a real paired iPhone, a revoke of this device in the hosts sheet opens 08, and the host refuses the phone after that — Evidence: human:2026-11-08 revoke of this iPhone removed the Mac and opened 08; pairing again needed a new QR
 
 **Not**: Device names (needs upstream).
 
@@ -1202,7 +1202,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 **Done when**
 - [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S27OutcomeFooterUITests/testDoneFooterCountsTheLatestTurnOnly · test:S27OutcomeFooterUITests/testUnreadDoneSessionOpensAtTheFinalAnswerWithNoLabel · test:S19OutcomesUITests/testDoneSessionNotReadOpensAtTheStartOfTheFinalAnswer · test:S23DrawerMotionUITests/testDoneUnreadLandsAtTheAnswerAndReadReturnsToTheLastPosition · shot:evidence/S27/s27-footer-latest-turn.png · shot:evidence/S27/s27-unread-answer-start.png
-- [ ] [human] The user no longer sees the bug — Evidence:
+- [x] [human] The user no longer sees the bug — Evidence: human:2026-11-08 用时 shows the latest turn and the answer-start label is gone on iPhone
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
@@ -1224,7 +1224,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 **Done when**
 - [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S28MarkdownTablesUITests/testReplyTableShowsAsTable · test:S28MarkdownTablesUITests/testWideTableScrollsInItsRow · test:S17TranscriptUITests · test:TranscriptTablesTests/unfinishedTableAtTheStreamingTail · cmd:scripts/demo/s28.sh --no-s8 · shot:evidence/S28/s28-table.png · shot:evidence/S28/s28-wide-table-scrolled.png
-- [ ] [human] The user no longer sees the bug — Evidence:
+- [x] [human] The user no longer sees the bug — Evidence: human:2026-11-08 Markdown tables render as tables on iPhone
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
@@ -1250,7 +1250,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 **Done when**
 - [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S29RevokeUITests/testRevokeThisDeviceInDrawerDevicesOnTheRealBridgeOpens08AndStays · test:S29RevokeUITests/testRevokedHostLeavesTheDrawerAndIsNotRetried · test:S29RevokeUITests/testRevokedLastHostOpens08 · test:RevokedHostTests/aHostThatClosesWith4003IsRevokedAndNotRetriedButAnOfflineHostIs · cmd:scripts/demo/s29.sh · shot:evidence/S29/s29-drawer-without-revoked-host.png · shot:evidence/S29/s29-revoked-notice.png · shot:evidence/S29/s29-real-bridge-drawer-08.png
-- [ ] [human] The user no longer sees the bug — Evidence:
+- [x] [human] The user no longer sees the bug — Evidence: human:2026-11-08 revoke alert says the Mac is removed; the Mac leaves the drawer with no reconnect loading on iPhone
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
@@ -1285,7 +1285,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 **Done when**
 - [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S30PairAgainUITests/testPairTheSameHostAgainAfterARevokeOpensTheDrawer · test:S29RevokeUITests · test:S21HostsUITests/testRevokeThisDeviceAsksThenOpens08 · cmd:scripts/demo/s30.sh · shot:evidence/S30/s30-revoked-08.png · shot:evidence/S30/s30-paired-again.png · shot:evidence/S30/s30-paired-again-drawer.png
-- [ ] [human] The user no longer sees the bug — Evidence:
+- [x] [human] The user no longer sees the bug — Evidence: human:2026-11-08 the same Mac pairs again after a revoke and shows in the drawer on iPhone
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
@@ -1309,7 +1309,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 **Done when**
 - [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S31PairTailscaleUITests/testPairAndConnectThroughANonLocalAddress · cmd:scripts/demo/s31.sh · shot:evidence/S31/s31-pair-review.png · shot:evidence/S31/s31-paired.png · shot:evidence/S31/s31-online.png
-- [ ] [human] The user no longer sees the bug — Evidence:
+- [x] [human] The user no longer sees the bug — Evidence: human:2026-11-08 iPhone pairs over Tailscale from another Wi-Fi
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
