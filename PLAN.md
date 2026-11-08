@@ -625,3 +625,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 9 | S1 | decision | D89 amended: a follow-up can be sent while the task runs and after a stop | `claude/s1-followup-queue` | `7c1a8cd` |
 | 10 | S4 | decision | ARCHITECTURE D107, *provisional*: Attachments: files of any type, more than one, also in a follow-up (amends D95, D18, D89) | `claude/s4-attach-files` | merged `83c82ce` |
 | 11 | S4 | decision | ARCHITECTURE D108, *provisional*: The "+" menu and the attachment chips (screens 01, 06) | `claude/s4-attach-files` | merged `83c82ce` |
+| 12 | S4 | decision | D95 amended: attachments of any type (not only photos) | `claude/s4-attach-files` | `da00e84` |
