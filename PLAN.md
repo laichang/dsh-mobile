@@ -286,7 +286,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S3 · Model failures: a red failure, then continue with a new message
 
-**Status** doing · **Needs** T0, X1 · **Branch** —
+**Status** review · **Needs** T0, X1 · **Branch** —
 
 **Why**: Closes #4. User, 2026-11-08: "模型失效，或者没token了，直接展示红色的失败文案，用户如果要继续做，他会去充值token，然后重新发消息触发任务继续执行". This replaces the pause into 等我处理 on screen X4: DESIGN X4 and STORY §8 change in the same commit.
 
