@@ -645,6 +645,8 @@ Append-only, dated.
 
 - **2026-11-09 · S12 assigned.** Branch `claude/s12-store-test-waits`, simulator `dshm-S12`, DSHM_HOME `~/.dshm/home-s12`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D122–D124. `eval "$(scripts/slice-env S12)"` exports them.
 
+- **2026-11-09 · S12 runs as a background agent.** S12 assigned (D122–D124) and started as a background agent, with the flaky DSHKit tests that this run saw under load. Running: S5, S6, S12.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
