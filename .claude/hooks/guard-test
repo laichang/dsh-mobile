@@ -113,6 +113,11 @@ PLAN_BASH_CASES = [
     ("allow", "cp PLAN.md /tmp/p.md"),
     ("allow", "git add PLAN.md && git commit -m x"),
     ("allow", "git checkout -- PLAN.md"),
+    ("deny", "git mv PLAN.md .archive/x/plan.md"),
+    ("deny", "git -C . rm PLAN.md"),
+    ("deny", "mv PLAN.md /tmp/p.md"),
+    ("allow", "git mv docs/a.md docs/b.md"),
+    ("allow", "git rm --cached big.bin"),
     ("allow", 'scripts/plan log "A note about PLAN.md" --commit'),
     ("allow", "python3 -c \"print(open('PLAN.md').read()[:10])\""),
     ("allow", "echo x > /tmp/PLAN.md"),
@@ -131,7 +136,8 @@ def edit_cases(tmp):
     (wt / "scripts").mkdir(parents=True)
     (wt / ".git").write_text("gitdir: /nowhere\n")
     shutil.copy(pathlib.Path(R) / "scripts" / "check-plan", wt / "scripts" / "check-plan")
-    (wt / "PLAN.md").write_text((pathlib.Path(R) / "PLAN.md").read_text() + FIXTURE)
+    live = pathlib.Path(R) / "PLAN.md"   # no PLAN.md while no requirement is in progress
+    (wt / "PLAN.md").write_text((live.read_text() if live.exists() else "# PLAN · guard test\n") + FIXTURE)
     human, auto = FIX_HUMAN, FIX_AUTO
 
     def edit(path, old="x", new="y"):
@@ -178,6 +184,7 @@ git checkout -q -b claude/s25-w main
 mkdir -p ios/DSHKit/.build && echo x > ios/DSHKit/.build/a.o && git add -f ios/DSHKit/.build/a.o
 git commit -qm b >/dev/null 2>&1; r build-output $?; git reset -q; rm -rf ios/DSHKit/.build
 head -c 5000000 /dev/urandom > big.bin; git add big.bin; git commit -qm b >/dev/null 2>&1; r large-file $?; git reset -q; rm big.bin
+git rm -q PLAN.md; git commit -qm rm >/dev/null 2>&1; r plan-removed $?; git reset -q --hard HEAD
 echo "// ok" >> ios/DSHKit/Package.swift; git commit -qam ok >/dev/null 2>&1; r code-on-slice-branch $?
 # On main: code only by a merge (a bug becomes a fix slice).
 git checkout -q main
@@ -191,7 +198,7 @@ scripts/check-plan >/dev/null 2>&1; r check-plan-no-args $?
 '''
 GIT_HOOKS_WANT = {"reworded-slice-into-main": "1", "guard-change-slice-into-main": "1",
                   "main-with-guard-change-into-slice": "0", "build-output": "1", "large-file": "1",
-                  "code-on-slice-branch": "0", "code-on-main-says-why": "0", "code-on-main": "1",
+                  "plan-removed": "1", "code-on-slice-branch": "0", "code-on-main-says-why": "0", "code-on-main": "1",
                   "docs-on-main": "0", "registry-on-main": "0",
                   "code-slice-merge-into-main": "0", "check-plan-no-args": "0"}
 

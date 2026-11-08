@@ -16,7 +16,8 @@ for f in [".codex/hooks/codex-guard", ".claude/hooks/git-guard", ".claude/hooks/
     (pathlib.Path(R) / f).parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(REPO / f, pathlib.Path(R) / f)
 (pathlib.Path(R) / ".git").mkdir()
-(pathlib.Path(R) / "PLAN.md").write_text((REPO / "PLAN.md").read_text() + FIXTURE)
+LIVE = REPO / "PLAN.md"   # no PLAN.md while no requirement is in progress
+(pathlib.Path(R) / "PLAN.md").write_text((LIVE.read_text() if LIVE.exists() else "# PLAN · guard test\n") + FIXTURE)
 G = R + "/.codex/hooks/codex-guard"
 ENV = {k: v for k, v in os.environ.items() if k != "CLAUDE_PROJECT_DIR"}
 ESC = "CHECK_PLAN" + "_ALLOW"

@@ -6,11 +6,24 @@ it. Add --commit to commit it (one commit, a standard message). Add --dry-run to
 and change nothing. The ownership rules of WORKFLOW.md §3 apply: coordinator commands run only
 on main, slice owner commands only on the branch of that slice.
 
+PLAN.md exists only while a requirement is in progress. With no PLAN.md, every command except
+`new` stops and says so. Every write redraws §2 Map from the Needs fields and lints the format
+(scripts/lib/plangen.py) before check-plan.
+
 Read-only (anywhere):
   plan show <ID>                       the §0 row and the slice section
   plan title [--milestone M1]          the coordinator status title, counted from §0
+  plan lint                            check the format of PLAN.md (exit 1 on an error)
 
 Coordinator (on main):
+  plan new "<title>"                   start the plan of a requirement the user has set, from
+        scripts/lib/plan-template.md (refused if PLAN.md exists). Title: "M2 · Push and replies"
+  plan add tracer|spike|slice "<name>" --why T --cuts T --done "[auto] …" [--done …]
+        [--needs "T0, X1"] [--demo T] [--not T]
+        add a section in the format: the next ID (T0, X1, S1, …), a §0 row (todo), the fields in
+        order. A slice needs the first tracer unless --needs says otherwise. A value with a
+        newline is written under the field name (bullets); --cuts - reads stdin
+  plan add exit "<item>"               add a [human] item to §6 Exit
   plan row <ID> <status> [--branch T] [--next T]       change the §0 row (Updated = today)
   plan log "<title>" [--body T|-]                       add a §8 entry (- = body from stdin)
   plan pending <slice> <kind> "<item>" [--branch B] [--commit-ref C]   add a §9 row
@@ -55,6 +68,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import dshm  # noqa: E402
+import plangen  # noqa: E402
 
 PlanError = dshm.PlanError
 TRAILER = "\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
@@ -64,8 +78,9 @@ class Plan:
     def __init__(self, root):
         self.root = root
         self.path = root / "PLAN.md"
-        self.before = self.path.read_text()
-        self.lines = dshm.split_lines(self.before)
+        self.exists = self.path.exists()
+        self.before = self.path.read_text() if self.exists else ""
+        self.lines = dshm.split_lines(self.before) if self.exists else []
         self.extra_files = []      # other files to commit with PLAN.md
 
     # -- write ------------------------------------------------------------------------------
@@ -73,6 +88,10 @@ class Plan:
         return "\n".join(self.lines)
 
     def save(self, args, message):
+        plangen.redraw_map(self.lines)
+        errors = plangen.lint(self.lines)
+        if errors:
+            raise PlanError("the plan format is broken (scripts/lib/plangen.py):\n  " + "\n  ".join(errors))
         after = self.text()
         if after == self.before:
             print("plan: no change")
@@ -209,8 +228,40 @@ def title_from(lines, milestone):
 
 
 def cmd_title(p, a):
-    print(title_from(p.lines, a.milestone))
+    print(title_from(p.lines, a.milestone or plangen.plan_title(p.lines)))
     return 0
+
+
+def cmd_lint(p, a):
+    errors = plangen.lint(p.lines)
+    for e in errors:
+        print(f"plan lint: {e}")
+    if not errors:
+        print("plan lint: OK")
+    return 1 if errors else 0
+
+
+def cmd_new(p, a):
+    """Start the plan of a requirement that the user has set (WORKFLOW.md §3.1)."""
+    need_main()
+    if p.exists:
+        raise PlanError("PLAN.md exists: one requirement at a time. The user deletes PLAN.md when "
+                        "its exit passes; then start the next one")
+    p.lines = dshm.split_lines(plangen.new_plan(a.title))
+    p.extra_files = []
+    return p.save(a, f"PLAN: start {plangen.plan_title(p.lines)}")
+
+
+def cmd_add(p, a):
+    need_main()
+    if a.kind == "exit":
+        plangen.add_exit(p.lines, a.name)
+        return p.save(a, "PLAN §6: exit item")
+    needs = None if a.needs is None else plangen.ID_RE.findall(a.needs)
+    sid = plangen.add(p.lines, a.kind, a.name, needs, read_body(a.why), read_body(a.cuts),
+                      read_body(a.demo), a.done or [], read_body(a.not_))
+    print(f"plan: new {a.kind} {sid}")
+    return p.save(a, f"PLAN: add {sid} ({a.name.strip()})")
 
 
 def cmd_row(p, a):
@@ -228,37 +279,15 @@ def cmd_log(p, a):
 def cmd_fix(p, a):
     """A bug that the user reported becomes a fix slice: a §0 row and a section (WORKFLOW.md §5.2)."""
     need_main()
-    rows = dshm.status_table(p.lines)
-    nums = [int(r["id"][1:]) for _, r in rows if re.fullmatch(r"S\d+", r["id"])]
-    nums += [int(m.group(1)) for l in p.lines if (m := re.match(r"### S(\d+) ·", l))]
-    sid = f"S{max(nums, default=0) + 1}"
     name, bug = a.name.strip().rstrip("."), " ".join(a.bug.split()).rstrip(".")
-    section = [
-        f"### {sid} · Fix: {name}",
-        "",
-        f"**Status** todo · **Needs** {a.needs or '—'} · **Branch** —",
-        "",
-        f"**Why**: The user reported a bug on {dshm.today()}: {bug}.",
-        "",
-        "**Cuts**: Find the cause. Fix it. Add a test that fails without the fix.",
-        "",
-        "**Demo**: —",
-        "",
-        "**Done when**",
-        "- [ ] [auto] A test reproduces the reported bug and passes with the fix — Evidence:",
-        "- [ ] [human] The user no longer sees the bug — Evidence:",
-        "",
-        "**Not**: Other changes. Report other bugs to the coordinator as new fix slices.",
-        "",
-        "**Log**: —",
-        "",
-    ]
-    last = max(i for i, l in enumerate(p.lines) if re.match(r"### S\d+ ·", l))
-    _, end = dshm.slice_bounds(p.lines, p.lines[last].split(" ·")[0][4:])
-    p.lines[end:end] = section
-    i = rows[-1][0]
-    p.lines.insert(i + 1, dshm.format_row([sid, "todo", "—", dshm.today(),
-                                          f"Fix: {name.replace('|', '/')}; start a fix session"]))
+    sid = plangen.add(
+        p.lines, "slice", f"Fix: {name}", plangen.ID_RE.findall(a.needs or ""),
+        why=f"The user reported a bug on {dshm.today()}: {bug}.",
+        cuts="Find the cause. Fix it. Add a test that fails without the fix.",
+        done=["[auto] A test reproduces the reported bug and passes with the fix",
+              "[human] The user no longer sees the bug"],
+        not_="Other changes. Report other bugs to the coordinator as new fix slices.",
+        nxt=f"Fix: {name}; start a fix session")
     print(f"plan: new fix slice {sid}")
     return p.save(a, f"PLAN: {sid} fix slice ({name})")
 
@@ -496,6 +525,8 @@ def cleanup(root, sid, target, dry):
 
 def cmd_cleanup(p, a):
     need_main()
+    if not p.exists:   # no plan: every slice of the last one is over; cleanup keeps its own checks
+        return cleanup(p.root, a.id, dshm.git("rev-parse", "--verify", "main^{commit}", cwd=p.root), cleanup_dry(a))
     _, r = p.row(a.id)
     if r["status"] not in ("review", "done"):
         raise PlanError(f"{a.id} is {r['status']} in §0; cleanup is only for a merged slice (review or done)")
@@ -552,7 +583,13 @@ def main():
         return sp
 
     sp = add("show", cmd_show); sp.add_argument("id")
-    sp = add("title", cmd_title); sp.add_argument("--milestone", default="M1")
+    sp = add("title", cmd_title); sp.add_argument("--milestone")
+    add("lint", cmd_lint)
+    sp = add("new", cmd_new); sp.add_argument("title")
+    sp = add("add", cmd_add); sp.add_argument("kind", choices=[*plangen.KINDS, "exit"]); sp.add_argument("name")
+    sp.add_argument("--why", default=""); sp.add_argument("--cuts", default="")
+    sp.add_argument("--demo", default=""); sp.add_argument("--not", dest="not_", default="")
+    sp.add_argument("--done", action="append"); sp.add_argument("--needs")
     sp = add("row", cmd_row); sp.add_argument("id"); sp.add_argument("status")
     sp.add_argument("--branch"); sp.add_argument("--next")
     sp = add("log", cmd_log); sp.add_argument("title"); sp.add_argument("--body")
@@ -576,7 +613,10 @@ def main():
         for attr in ("id",):
             if getattr(a, attr, None):
                 dshm.check_id(getattr(a, attr))
-        return a.fn(Plan(dshm.toplevel()), a)
+        p = Plan(dshm.toplevel())
+        if not p.exists and a.fn not in (cmd_new, cmd_cleanup):
+            raise PlanError(plangen.NO_PLAN)
+        return a.fn(p, a)
     except PlanError as e:
         print(f"plan: {e}", file=sys.stderr)
         return 1

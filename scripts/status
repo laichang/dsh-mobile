@@ -23,6 +23,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import dshm  # noqa: E402
+import plangen  # noqa: E402
 
 IDLE_AFTER_MIN = 45        # a doing slice with no process and no commit for this long needs a look
 HEARTBEAT_STALE_MIN = 30   # the heartbeat fires about every 20 minutes
@@ -160,8 +161,9 @@ def main():
     a = ap.parse_args()
     now = time.time()
     main_root = dshm.main_checkout()
-    plan = dshm.split_lines(dshm.read_main_file("PLAN.md"))
-    rows = [r for _, r in dshm.status_table(plan)]
+    has_plan = subprocess.run(["git", "cat-file", "-e", "main:PLAN.md"], capture_output=True).returncode == 0
+    plan = dshm.split_lines(dshm.read_main_file("PLAN.md")) if has_plan else []
+    rows = [r for _, r in dshm.status_table(plan)] if has_plan else []
     registry = {r["id"]: r for r in dshm.parse_registry(
         (main_root / dshm.REGISTRY).read_text() if (main_root / dshm.REGISTRY).exists() else "")}
     wts = worktrees()
@@ -172,8 +174,11 @@ def main():
     head, head_t = dshm.git("log", "-1", "--format=%h %ct", "main").split()
     print(f"dsh-mobile · {time.strftime('%Y-%m-%d %H:%M')} · main {head} ({ago(now - int(head_t))} ago)")
     marks = {"done": "✅", "review": "👀", "doing": "🔨", "blocked": "⏸"}
-    print("🎛 Coordinator · M1 · " + " ".join(
-        f"{marks[k]}{sum(r['status'] == k for r in rows)}" for k in marks))
+    if has_plan:
+        print(f"🎛 Coordinator · {plangen.plan_title(plan)} · " + " ".join(
+            f"{marks[k]}{sum(r['status'] == k for r in rows)}" for k in marks))
+    else:
+        print("🎛 Coordinator · no plan: no requirement in progress (ideas and bugs are GitHub issues)")
 
     hb = heartbeat(main_root)
     if hb:

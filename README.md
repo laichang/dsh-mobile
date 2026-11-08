@@ -174,9 +174,9 @@ Full install, configuration and state-file details: [bridge/README.md](bridge/RE
 This repo was planned, built and reviewed by AI coding agents (Claude Code and Codex) working in parallel, under one human's direction. The process itself is part of the project:
 
 - **[STORY.md](STORY.md)**: product vision and the nine design principles (in Chinese). Every principle maps to a screen on the **[design board](DESIGN.md)**.
-- **[PLAN.md](PLAN.md)**: a tracer bullet first, then vertical slices. Each "Done when" item has a tier (`[auto]`, `[ui]`, `[human]`) and evidence that must resolve, checked by a pre-commit hook.
+- **The plan** ([M1's, at tag `m1`](https://github.com/laichang/dsh-mobile/blob/m1/PLAN.md)): a tracer bullet first, then vertical slices. Each "Done when" item has a tier (`[auto]`, `[ui]`, `[human]`) and evidence that must resolve, checked by a pre-commit hook. A plan file exists only while a requirement is in progress; everything else is a [GitHub issue](https://github.com/laichang/dsh-mobile/issues).
 - **[WORKFLOW.md](WORKFLOW.md)**: how a coordinator session runs slice sessions in git worktrees, how independent reviewers rerun every UI check, and which decisions stay with the human.
-- **[`evidence/`](evidence/)**: the screenshots behind each completed slice.
+- **[`evidence/`](https://github.com/laichang/dsh-mobile/tree/m1/evidence)** (at tag `m1`): the screenshots behind each completed M1 slice.
 
 If you're curious how far long-horizon agentic development can go on a real native app, start with WORKFLOW.md.
 
@@ -189,7 +189,7 @@ protocol/       frame.proto + golden fixtures · regenerate with scripts/codegen
 design/         design board (board.html → board.png, screens/)
 spikes/         X1–X4 experiments behind key decisions
 scripts/        bootstrap · demo/<slice>.sh · codegen · check-plan · review
-evidence/       screenshots cited by PLAN.md
+evidence/       screenshots cited by the current plan (only while one is in progress)
 ```
 
 ## Development
