@@ -139,11 +139,7 @@ import Testing
         store.sendWaitsFor = .seconds(5)
         store.foreground()
         let key = try #require(await store.send())
-        let clock = ContinuousClock()
-        let deadline = clock.now + .seconds(5)
-        while store.task(key)?.transcript != FakeBridge.tablesReply + "\n", clock.now < deadline {
-            try await Task.sleep(for: .milliseconds(10))
-        }
+        await waitForStore("the whole reply") { store.task(key)?.transcript == FakeBridge.tablesReply + "\n" }
         let transcript = try #require(store.task(key)?.transcript)
         #expect(transcript == FakeBridge.tablesReply + "\n")
         var blocks = TranscriptBlocks()
