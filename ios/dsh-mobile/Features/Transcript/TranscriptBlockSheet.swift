@@ -38,6 +38,8 @@ struct TranscriptBlockSheet: View {
                             if !tool.arguments.isEmpty {
                                 section("Arguments", text: tool.arguments, truncated: tool.argumentsTruncated, mono: true)
                             }
+                        case .userMessage(let text):
+                            Text(verbatim: text).textSelection(.enabled) // D89: a bubble, no sheet; shown as is
                         }
                     }
                     .foregroundStyle(DSHTheme.textPrimary)

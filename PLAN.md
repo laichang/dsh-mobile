@@ -122,7 +122,7 @@ A tracer is one thin round trip that one session can finish without running out 
 
 ### T0 · Tracer bullet: Follow-up in a finished session
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: Part of #1. Today the phone sends one message per task and then takes no more input (user, 2026-11-08: "现在我只能发一条消息，然后就不给发了，不是连续的agent loop"). The thinnest round trip of a continuous conversation: one more message into the same DSH session after the task is done.
 

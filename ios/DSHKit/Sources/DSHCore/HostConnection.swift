@@ -2,7 +2,8 @@ import DSHProtocol
 import Foundation
 import SwiftProtobuf
 
-/// What the app learns about a task, in order. Exactly one `.ended` per task, always last.
+/// What the app learns about a task, in order. Each turn ends with one `.ended`; with
+/// `conversation.v1` a `.userMessage` can start another turn after it.
 public enum TaskEvent: Sendable, Equatable {
     case chunk(taskID: String, seq: UInt64, text: String)
     case ended(taskID: String, status: TaskEndStatus, message: String)
@@ -17,6 +18,8 @@ public enum TaskEvent: Sendable, Equatable {
     case logReset(logID: String)
     /// S17: a thinking or tool-call row was added or changed (`transcript.v1`).
     case transcriptBlock(TranscriptItem)
+    /// D89: the user sent one more message into the task (`conversation.v1`). Its turn follows.
+    case userMessage(TranscriptItem)
 }
 
 public enum TaskEndStatus: Sendable, Equatable {
@@ -245,7 +248,8 @@ public actor HostConnection {
         do {
             var hello = Dshm_V1_Hello()
             hello.protocolVersion = DSHProtocolInfo.version
-            hello.capabilities = [DSHProtocolInfo.approvalsCapability, "sessions.v1", DSHProtocolInfo.transcriptCapability]
+            hello.capabilities = [DSHProtocolInfo.approvalsCapability, "sessions.v1", DSHProtocolInfo.transcriptCapability,
+                                  DSHProtocolInfo.conversationCapability]
             let response = try await request(.hello(hello))
             guard case .hello(let theirs)? = response.body else { throw HostConnectionError.unexpectedResponse }
             if theirs.requiresBridgeUpdate {
@@ -319,6 +323,19 @@ public actor HostConnection {
         command.taskID = taskID
         let response = try await request(.interrupt(command))
         guard case .interruptAccepted? = response.body else { throw HostConnectionError.unexpectedResponse }
+    }
+
+    /// D89: one more message into the DSH session of `taskID`. Returns the message's ID once DSH
+    /// accepted it; its `.userMessage` event and the new turn's events follow.
+    @discardableResult
+    public func sendMessage(taskID: String, text: String, mode: Dshm_V1_MessageMode = .steer) async throws -> String {
+        var message = Dshm_V1_SendMessage()
+        message.taskID = taskID
+        message.text = text
+        message.mode = mode
+        let response = try await request(.sendMessage(message))
+        guard case .messageAccepted(let accepted)? = response.body else { throw HostConnectionError.unexpectedResponse }
+        return accepted.messageID
     }
 
     public func modelCatalog() async throws -> ModelCatalog {
@@ -489,6 +506,8 @@ public actor HostConnection {
             return Milestone(m).map { .milestone($0) }
         case .transcriptBlock(let b)?:
             return TranscriptItem(b).map { .transcriptBlock($0) }
+        case .userMessage(let m)?:
+            return .userMessage(TranscriptItem(m))
         case nil:
             return nil
         }

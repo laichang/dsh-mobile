@@ -81,6 +81,12 @@
     { "name": "s17_tool_block_event",
       "frame": { "event": { "hostSeq": "9", "transcriptBlock": { "taskId": "session-1", "blockId": "call_edit_1", "state": "TRANSCRIPT_BLOCK_STATE_DONE", "tool": { "tool": "edit", "target": "ios/DSHKit/Sources/DSHCore/Sync/TaskListStore.swift", "linesAdded": 12, "linesRemoved": 3, "arguments": "{\"file_path\":\"ios/DSHKit/Sources/DSHCore/Sync/TaskListStore.swift\"}" }, "timeMs": "1793000009000" } } } },
     { "name": "s17_failed_tool_block_event",
-      "frame": { "event": { "hostSeq": "11", "transcriptBlock": { "taskId": "session-1", "blockId": "call_bash_1", "state": "TRANSCRIPT_BLOCK_STATE_FAILED", "tool": { "tool": "bash", "target": "swift test", "arguments": "{\"command\":\"swift test\"}", "argumentsTruncated": true, "error": "exit code 1" }, "timeMs": "1793000011000" } } } }
+      "frame": { "event": { "hostSeq": "11", "transcriptBlock": { "taskId": "session-1", "blockId": "call_bash_1", "state": "TRANSCRIPT_BLOCK_STATE_FAILED", "tool": { "tool": "bash", "target": "swift test", "arguments": "{\"command\":\"swift test\"}", "argumentsTruncated": true, "error": "exit code 1" }, "timeMs": "1793000011000" } } } },
+    { "name": "conversation_send_message_request",
+      "frame": { "request": { "id": "8", "sendMessage": { "taskId": "session-1", "mode": "MESSAGE_MODE_STEER", "text": "再加一个测试。" } } } },
+    { "name": "conversation_message_accepted_response",
+      "frame": { "response": { "requestId": "8", "messageAccepted": { "taskId": "session-1", "messageId": "message-1" } } } },
+    { "name": "conversation_user_message_event",
+      "frame": { "event": { "hostSeq": "14", "userMessage": { "taskId": "session-1", "messageId": "message-1", "text": "再加一个测试。", "timeMs": "1793000014000" } } } }
   ]
 }

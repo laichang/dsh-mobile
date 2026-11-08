@@ -129,6 +129,9 @@ export class TranscriptMapper {
   private attempt = 0
   private readonly tools = new Map<string, BlockOut>()
 
+  /** @param prefix - D89: a later turn's prefix for the IDs of its thinking blocks; tool call IDs are DSH's own. */
+  constructor(private readonly prefix = '') {}
+
   /** One assistant-stream frame: `start`, `chunk` (with DSH's `time`) or `end`. */
   stream(frame: unknown): BlockOut[] {
     const f = frame as { type?: unknown; time?: unknown; chunk?: unknown; attemptId?: unknown } | null
@@ -149,7 +152,7 @@ export class TranscriptMapper {
       if (!chunk.text.trim()) return []
       const at = time ?? Date.now()
       const attempt = typeof f.attemptId === 'string' ? f.attemptId : String(this.attempt)
-      this.thinking = { blockId: `thinking-${attempt}-${String(chunk.index ?? 0)}`, start: at, last: at, text: chunk.text }
+      this.thinking = { blockId: `${this.prefix}thinking-${attempt}-${String(chunk.index ?? 0)}`, start: at, last: at, text: chunk.text }
       return [this.thinkingBlock('running', 0)]
     }
     if (chunk?.type === 'block-end' && chunk.block?.type === 'reasoning') return this.closeThinking(time)
