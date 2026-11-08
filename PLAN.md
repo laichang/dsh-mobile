@@ -46,7 +46,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | X1 | done | merged `9d4cb67` | 2026-11-08 | — (provisional D104 in §9) |
 | S1 | doing | `claude/s1-followup-queue` | 2026-11-08 | Slice owner builds (§8) |
 | S2 | todo | — | 2026-11-08 | Assign it and start a session |
-| S3 | todo | — | 2026-11-08 | Assign it and start a session |
+| S3 | doing | `claude/s3-model-failures` | 2026-11-08 | Slice owner builds (§8) |
 | S4 | doing | `claude/s4-attach-files` | 2026-11-08 | Slice owner builds (§8) |
 | S5 | todo | — | 2026-11-08 | Assign it and start a session |
 | S6 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -580,6 +580,8 @@ Append-only, dated.
 - **2026-11-08 · S4 runs as a background agent.** S4 assigned (D107–D109) and started as a background agent in its own worktree (§5.3 step 3). Running: S1, X1, S4.
 
 - **2026-11-08 · X1 merged.** Merged as `9d4cb67`; `scripts/check-plan` on the merge commit passed. No open `[human]` items, so X1 is `done`. §9 rows 5 (D104).
+
+- **2026-11-08 · S3 assigned.** Branch `claude/s3-model-failures`, simulator `dshm-S3`, DSHM_HOME `~/.dshm/home-s3`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D110–D112. `eval "$(scripts/slice-env S3)"` exports them.
 
 ## 9. Pending user confirmation
 
