@@ -36,11 +36,16 @@ public enum DebugLaunchOptions {
     /// `-DSHMFakeScenario transcript` (S17): a task with thinking and tool-call blocks
     /// (`FakeTranscript`); `transcript-v0`: the same blocks from a host without `transcript.v1`.
     /// `-DSHMFakeScenario turns` (S27): a done Web session with two turns hours apart (`FakeTurns`).
+    /// `-DSHMFakeScenario conversation` (D117): the default task, on a host that takes follow-ups
+    /// (`conversation.v1`), so the session page has its composer.
     public static let fakeScenarioKey = "DSHMFakeScenario"
     /// `-DSHMFakeAsk <text>` (S18): with the FakeBridge approvals scenario, a task whose prompt
     /// contains `<text>` asks for an approval before its reply, so a new approval arrives in an
     /// open session.
     public static let fakeAskKey = "DSHMFakeAsk"
+    /// `-DSHMFakeSpeech <phrase>` (D116): the mic key uses `FakeTranscriber`, which "hears"
+    /// `<phrase>`; `-DSHMFakeSpeech denied`: the user turned speech recognition off.
+    public static let fakeSpeechKey = "DSHMFakeSpeech"
 
     public struct Options: Equatable, Sendable {
         public var useFakeBridge = false
@@ -62,6 +67,8 @@ public enum DebugLaunchOptions {
         public var fakeAsk: String?
         /// S21: the `FakeHosts` variant (`hosts`, `hosts-one`).
         public var fakeHosts: String?
+        /// D116: the phrase of `FakeTranscriber`, or `denied`.
+        public var fakeSpeech: String?
 
         public init(
             useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil,
@@ -114,6 +121,7 @@ public enum DebugLaunchOptions {
         options.fakeHold = values[fakeHoldKey]
         options.fakeScenario = values[fakeScenarioKey]
         options.fakeAsk = values[fakeAskKey]
+        options.fakeSpeech = values[fakeSpeechKey]
         return options
     }
 }

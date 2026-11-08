@@ -31,6 +31,8 @@ final class AppModel {
     private(set) var scannerMode: ScannerView.Mode = .scan
 
     let pairing: Pairing
+    /// D116: the mic key's speech to text: the Speech framework, or in Debug `-DSHMFakeSpeech`.
+    let transcriber: TranscriberFactory
     @ObservationIgnored private let container: ModelContainer
     @ObservationIgnored private var presetPrompt = ""
     @ObservationIgnored private var connectDelay: Duration = .zero
@@ -46,6 +48,7 @@ final class AppModel {
         let keys = KeychainDeviceKeyStore()
         let hosts = FilePairedHostStore()
         var transport: BridgeTransportFactory = WebSocketTransport.factory
+        var transcriber = SpeechFrameworkTranscriber.factory
         container = Self.makeContainer()
         #if DEBUG
         let options = DebugLaunchOptions.parse(ProcessInfo.processInfo.arguments)
@@ -60,7 +63,9 @@ final class AppModel {
         if options.useFakeBridge { transport = FakeBridge.factory() }
         presetPrompt = options.presetPrompt ?? ""
         if let seconds = options.connectDelay { connectDelay = .milliseconds(Int(seconds * 1000)) }
+        if let speech = options.fakeSpeech { transcriber = FakeTranscriber.factory(speech) }
         #endif
+        self.transcriber = transcriber
         pairing = Pairing(keys: keys, hosts: hosts, transport: transport)
         store = makeStore()
     }
@@ -121,6 +126,7 @@ final class AppModel {
             if options.fakeScenario == "coding" { script = .codingTask() } // S16
             if options.fakeScenario == "outcomes" { script = .outcomes() } // S19
             if options.fakeScenario?.hasPrefix("transcript") == true { script = FakeTranscript.script() } // S17
+            if options.fakeScenario == "conversation" { script.followUpReply = ["Got it", ", ", "on it", "."] } // D117
             script.holdPrompt = options.fakeHold ?? script.holdPrompt
             let fake = options.fakeScenario == "turns" ? FakeTurns.host() // S27
                 : FakeHost(script: script, reachable: !options.fakeBridgeOffline,
