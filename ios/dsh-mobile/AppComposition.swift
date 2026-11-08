@@ -31,6 +31,11 @@ final class AppModel {
     private(set) var scannerMode: ScannerView.Mode = .scan
 
     let pairing: Pairing
+    /// The Live Activity of each running task (screen L, D119). One for the app: each store uses it.
+    let activityClient = ActivityKitClient()
+    @ObservationIgnored private lazy var liveActivities = LiveActivities(client: activityClient) { row in
+        MilestoneBar.line(row.milestones, state: row.state, alert: nil)
+    }
     /// D116: the mic key's speech to text: the Speech framework, or in Debug `-DSHMFakeSpeech`.
     let transcriber: TranscriberFactory
     @ObservationIgnored private let container: ModelContainer
@@ -78,6 +83,7 @@ final class AppModel {
             UserDefaults.standard.set(key, forKey: Self.preferredHostKey)
         }
         store.onHostRevoked = { [weak self] host in self?.hostRevoked(host) }
+        store.liveActivities = liveActivities
         return store
     }
 
@@ -126,6 +132,7 @@ final class AppModel {
             if options.fakeScenario == "coding" { script = .codingTask() } // S16
             if options.fakeScenario == "outcomes" { script = .outcomes() } // S19
             if options.fakeScenario?.hasPrefix("transcript") == true { script = FakeTranscript.script() } // S17
+            if options.fakeScenario == "live-activity" { script = .threeTodos(delay: .seconds(5)) } // D121: time to lock the screen
             if options.fakeScenario == "conversation" { script.followUpReply = ["Got it", ", ", "on it", "."] } // D117
             script.holdPrompt = options.fakeHold ?? script.holdPrompt
             let fake = options.fakeScenario == "turns" ? FakeTurns.host() // S27

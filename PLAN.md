@@ -387,7 +387,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S6 · Live Activity: show on the lock screen that a task runs
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: Closes #7. User, 2026-11-08: "dsh-mobile也做这个，这样我也能看到它在动". This moves the Live Activity of screen L from M4 to M2: DESIGN L and ARCHITECTURE §4 (Background) and §7 change with it.
 
@@ -400,13 +400,25 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/live-activity.sh`.
 
 **Done when**
-- [ ] [auto] The activity follows the task: it starts when the task runs, shows the latest step on each milestone, and ends with done, failed or waiting; one activity for each task, also after a relaunch (`FakeBridge`, a fake activity client) — Evidence:
-- [ ] [ui] A running task shows its Live Activity on the Simulator lock screen with the title, the host, a ticking time and the latest step, and it ends as done (`cmd:scripts/demo/live-activity.sh`) — Evidence:
+- [x] [auto] The activity follows the task: it starts when the task runs, shows the latest step on each milestone, and ends with done, failed or waiting; one activity for each task, also after a relaunch (`FakeBridge`, a fake activity client) — Evidence: test:LiveActivityTests/followsTheTaskFromStartThroughEachMilestoneToDone · test:LiveActivityTests/endsAsFailedWhenTheTaskFails · test:LiveActivityTests/endsWhileTheTaskWaitsOnAnApprovalAndStartsAgainAfterTheAnswer · test:LiveActivityTests/endsWhileAnAgentQuestionWaits · test:LiveActivityTests/oneActivityForEachTaskAlsoAfterARelaunch · test:LiveActivityTests/aTaskThatLeftTheListLeavesNoActivity · cmd:scripts/demo/live-activity.sh
+- [x] [ui] A running task shows its Live Activity on the Simulator lock screen with the title, the host, a ticking time and the latest step, and it ends as done (`cmd:scripts/demo/live-activity.sh`) — Evidence: cmd:scripts/demo/live-activity.sh · test:LiveActivityUITests/testRunningTaskShowsItsLiveActivityOnTheLockScreen · shot:evidence/S6/live-activity-running.png · shot:evidence/S6/live-activity-done.png
 - [ ] [human] On a real iPhone signed with the free team, the app starts a Live Activity for a running task — Evidence:
 
 **Not**: Push updates of the activity (no APNs).
 
 **Log**: —
+- **2026-11-09 · Built; review next.** Done: widget extension `LiveActivity` (lock screen view, minimal Dynamic Island views), `LiveActivities` in DSHCore (one local activity per running task: start, update on each milestone with a 15 min stale date, end on done / failed / stopped / approval / open question; taken over after a relaunch; removed when its task leaves the list), `ActivityKitClient` in the app, `DSHActivity` library shared with the extension. DESIGN L (tag M2), ARCHITECTURE D119–D121, §4 Background, §7, README roadmap, board re-rendered.
+  Provisional: D119 (local activity only, no APNs; ends on waiting), D120 (data through the ActivityKit content state, no App Group; extension signed like the app, no entitlements), D121 (testability: `-DSHMLiveActivityProbe`, `-DSHMFakeScenario live-activity`, `FakeHost.emit`, lock via XCTest's private `pressLockButton`). No new dependency.
+  Lock screen check: automated. The UI test locks the Simulator, wakes it, taps 允许 on the first "allow Live Activities" prompt, and reads the activity in SpringBoard's tree (`activity-content-view`): title, `host · step`, a time that changes; after unlock the task ends and the lock screen shows 已完成 with a stopped time.
+  Seen: in the background the app closes the socket, so the lock screen keeps the last step while the time ticks (expected without APNs; staleDate marks it later). In the demo the done activity can show a shorter time than the running one read earlier: the task ended while the screen was locked.
+  Flaky: one race in the approval test (the approval arrives before WAITING_ON_USER), repaired before the ticks. No other flaky part seen (demo passed 3 times).
+  Not done: the [human] item (real iPhone, free team) is the user's. §0 change: none.
+  Next: reviewer runs `scripts/review S6`.
+- **2026-11-09 · Merged main; review PASS.** Merged main (S2 agent questions, S5 voice input) at 2cfe69c: conflicts in the decisions table, project.pbxproj (Info.plist keys), AppComposition and check-release-clean markers, each kept both sides; board re-rendered. D119 now names D114 (a waiting question makes the task WAITING_ON_USER; the open card still decides for an older bridge).
+  Review: a reviewer that did not build the slice ran `scripts/review S6` on 2cfe69c: RESULT: PASS, no flaky part (/tmp/dshm-review/S6-2cfe69c.txt).
+  Correction to the entry before: the full lock screen UI test passed 4 times in all (2 before the merge, 1 after, 1 in the review), not 3.
+  Seen while waiting: another slice's load script (24 `yes` processes) made unrelated DSHKit timing tests fail; after it ended all 148 passed. Not a flaky part of this slice.
+  Not done: the [human] item (real iPhone, free team). §0 change: none. Ready to merge.
 
 ### S7 · Reconnect to every saved address of a host
 
