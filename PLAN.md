@@ -145,7 +145,7 @@ A tracer is one thin round trip that one session can finish without running out 
 
 ### T1 · Tracer bullet: Answer an agent question
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: Part of #1. STORY §4 and §5: a question from the agent is a decision, like an approval. The task waits and the phone answers. The thinnest round trip: one question with options, answered with one tap (screen P1).
 
