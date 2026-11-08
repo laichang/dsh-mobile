@@ -457,13 +457,19 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/bridge-errors.sh`: another program holds the bridge port.
 
 **Done when**
-- [ ] [auto] With the port taken, the bridge logs one line that names the port, the cause and the fix, and DSH keeps running (bridge test) — Evidence:
-- [ ] [auto] DSHKit sorts a refused connection, another service on the port, and a timeout into three reasons (fake sockets) — Evidence:
-- [ ] [ui] With another program on the bridge port, the hosts sheet says that another program uses the port, not only "offline" (`cmd:scripts/demo/bridge-errors.sh`) — Evidence:
+- [x] [auto] With the port taken, the bridge logs one line that names the port, the cause and the fix, and DSH keeps running (bridge test) — Evidence: test:ListenErrors/portTakenLogsOneLineWithPortCauseAndFixAndDshKeepsRunning · test:ListenErrors/eachCauseNamesItsFix · test:ListenErrors/anAddressThatIsNotOnThisComputerIsNamed · cmd:scripts/demo/bridge-errors.sh
+- [x] [auto] DSHKit sorts a refused connection, another service on the port, and a timeout into three reasons (fake sockets) — Evidence: test:OfflineReasonsTests/refusedOtherProgramAndTimeoutAreThreeReasons · test:OfflineReasonsTests/aWebSocketThatIsNoBridgeIsAnotherProgram · test:OfflineReasonsTests/aTimeoutWithoutAnAcceptedProbeIsNotAnotherProgram · test:OfflineReasonsTests/realSocketsGiveTheThreeReasons · test:ReconnectTests/allAddressesDeadShowTheHostOfflineWithTheErrorOfEach
+- [x] [ui] With another program on the bridge port, the hosts sheet says that another program uses the port, not only "offline" (`cmd:scripts/demo/bridge-errors.sh`) — Evidence: cmd:scripts/demo/bridge-errors.sh · test:OfflineReasonsUITests/testAnotherProgramOnTheBridgePort · test:OfflineReasonsUITests/testNothingListensOnTheBridgePort · shot:evidence/S8/bridge-errors-hosts-taken.png · shot:evidence/S8/bridge-errors-offline-card-taken.png · shot:evidence/S8/bridge-errors-hosts-nothing.png
 
 **Not**: Moving to another port without the user.
 
 **Log**: —
+- **2026-11-09 · All items ticked; reviewer next.**
+  - Done: bridge `describeListenError` (bridge/src/listen-error.ts): one line with address, cause (EADDRINUSE / EACCES / EADDRNOTAVAIL / other) and the setting to change, on stderr (tagged `[dsh-mobile-bridge]`) and to the Cordis logger; DSH keeps running. App: `AddressFailure.kind` (nothing listens / another program / not reachable), `TCPPortProbe` (Network.framework) after a timeout, `NoiseChannelError.notABridge`; H shows "address · reason (error)" plus a fix line, X3 the reason under each host and a "check DSH on the computer" hint when every computer answered. Demo scripts/demo/bridge-errors.sh (HTTP server holds the port; then the port is freed) passes; full bridge (115) and DSHKit (154) suites pass after merging main (S6, S12).
+  - Provisional: D125 (ARCHITECTURE.md). No new dependency. No protocol change (field block 440–459 unused).
+  - Finding for an issue: `dsh web` 0.2.2-rc.1 attaches no console exporter to the Cordis logger, so every bridge `logger.info` line is invisible, including "listening on" and the startup pairing QR that bridge/README.md says DSH's log prints. This slice sends only the listen error line to stderr too.
+  - Flaky: none seen. One demo fix: the X3 card's own identifier `hosts.offlineCard` did not show in the accessibility tree; the UI test waits on `hosts.offlineCard.host` instead.
+  - Next: reviewer runs `scripts/review S8` on the head commit.
 
 ### S9 · Fix: UI tests wait for keyboard focus and for animations
 
