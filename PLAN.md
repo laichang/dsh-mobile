@@ -641,6 +641,8 @@ Append-only, dated.
 
 - **2026-11-09 · S2 merged.** Merged as `966be4b`; `scripts/check-plan` on the merge commit passed. `scripts/review S2` at `03e231e`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S2-03e231e.txt`). No open `[human]` items, so S2 is `done`. §9 rows 17, 18 (D113, D114).
 
+- **2026-11-09 · S2 merged; the question timeout stays out.** S2 merged as 966be4b (review PASS on 03e231e, S2-03e231e.txt, no flaky part). D113, D114 new; D92 amended: in §9. Not done by decision: the Cut 'a held question times out to a refusal' (D92 keeps no timeout: a question has no safe default, DSH's own timed mode returns pending and never refuses, DSH Web waits) — the user confirms or changes this with D92. Flaky outside the review, at load 75+: FollowUpQueueTests/sendNowMovesAQueuedMessageIntoTheTurnAndRemoveTakesOneOut and S16CodingTaskTests/codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt (S12). The stale M1 home-s2 was moved to /tmp/dshm-s2-stale-home.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
