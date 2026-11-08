@@ -72,8 +72,10 @@ fi
 demo_no_skipped_ui "$LOGS/ui.log"
 
 step "the DSH session has the image"
-if [ "${DSHM_RESUME:-0}" = 1 ] && ! grep -q "Test Case.*passed" "$LOGS/ui.log"; then SINCE=0; fi
-node scripts/demo/attachments-check.mjs "$DSHM_HOME" "$SINCE"
+# A UI part skipped for the same code (DSHM_RESUME) made its session in an earlier run.
+grep -q "Test Case.*passed" "$LOGS/ui.log" || SINCE=0
+# The prompt of AttachmentsUITests, and the size of the golden photo (the app keeps it under 2048 px).
+node scripts/demo/attachments-check.mjs "$DSHM_HOME" "$SINCE" "What is in this photo?" 480x360
 kill "$DSH_PID" 2>/dev/null || true; wait "$DSH_PID" 2>/dev/null || true; DSH_PID=""
 
 if [ -n "$SHOTS" ]; then

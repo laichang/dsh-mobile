@@ -17,10 +17,12 @@ final class AttachmentsUITests: XCTestCase {
         let photoKey = app.buttons["composer.photo"]
         XCTAssertTrue(photoKey.waitForExistence(timeout: 20), "the host advertises attachments.v1")
         photoKey.tap()
-        // The system picker runs out of process; its grid lists the newest photo first.
-        let photo = app.images.matching(NSPredicate(format: "label BEGINSWITH 'Photo'")).firstMatch
+        // The system picker runs out of process; its grid lists the newest photo (the demo's) first.
+        // Its cells' identifier does not depend on the simulator's language.
+        let photo = app.images.matching(identifier: "PXGGridLayout-Info").firstMatch
         XCTAssertTrue(photo.waitForExistence(timeout: 15), app.debugDescription)
-        photo.tap()
+        // The picker's cells report "not hittable" to XCUITest; a tap at the cell's centre works.
+        photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         let chip = app.descendants(matching: .any)["composer.photoChip"]
         XCTAssertTrue(chip.waitForExistence(timeout: 10), app.debugDescription)
         saveShot("attachments-composer")
