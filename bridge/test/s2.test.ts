@@ -207,7 +207,7 @@ describe('ResumeAgainstFakeDSH', () => {
     assert.equal(list.body.value.hostName, 'test-mac')
     assert.equal(list.body.value.logId, server.hub.log.logId)
     assert.deepEqual(list.body.value.tasks.map((t) => t.title), ['second', 'first'])
-    assert.ok(list.body.value.tasks.every((t) => t.state === TaskState.FAILED && t.message === 'error: boom'))
+    assert.ok(list.body.value.tasks.every((t) => t.state === TaskState.FAILED && t.message === 'boom'))
     b.close()
   })
 

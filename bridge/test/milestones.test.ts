@@ -102,7 +102,7 @@ describe('MilestoneMapperAgainstFakeDSH', () => {
       events: [{ type: 'todo/write', data: todos('in_progress', 'pending') }],
     })
     assert.deepEqual(milestonesOf(frames).map(brief), [
-      'STARTED||', 'PLANNED||IP', 'TODO_STARTED|Step 1|IP', 'FAILED|error: model unavailable|IP',
+      'STARTED||', 'PLANNED||IP', 'TODO_STARTED|Step 1|IP', 'FAILED|model unavailable|IP',
     ])
   })
 

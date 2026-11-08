@@ -8,7 +8,7 @@ import { catalogFrame, type HostCatalog, type Selection } from './models/catalog
 import { randomUUID } from 'node:crypto'
 import { homedir } from 'node:os'
 import { isAbsolute } from 'node:path'
-import { MilestoneMapper, describeFailure, isUserInterrupt, type Milestone } from './milestones/mapper.ts'
+import { MilestoneMapper, failureOf, isUserInterrupt, type Milestone } from './milestones/mapper.ts'
 import { TranscriptMapper, type BlockOut } from './transcript/mapper.ts'
 import type { StagedFile } from './attachments/staging.ts'
 
@@ -87,7 +87,7 @@ export type TaskOutput =
   | { kind: 'block'; block: BlockOut } // S17
   | { kind: 'turn'; turn: number } // D89: the DSH turn number, once the turn starts
   | { kind: 'user'; messageId: string; text: string } // D101: DSH took a user message into the turn (its `requestId`)
-  | { kind: 'end'; status: 'completed' | 'interrupted' | 'failed'; message?: string }
+  | { kind: 'end'; status: 'completed' | 'interrupted' | 'failed'; message?: string; /** D104: DSH's failure class. */ code?: string }
 
 /** One more turn of a task's session (D89): its output, and the DSH turn it waits for. */
 export interface FollowUpOptions {
@@ -100,6 +100,8 @@ export interface FollowUpOptions {
   continues?: Continues
   /** D107: staged files that go into the message after its text, in order. */
   files?: readonly StagedFile[]
+  /** D110: map this turn's milestones too (it continues a task whose last turn failed). Default false. */
+  milestones?: boolean
 }
 
 /** D101: asked when a turn completes; true keeps following the session into its next turn. */
@@ -229,7 +231,8 @@ export class DshTasks {
       await iterator.return?.()
       throw error
     }
-    return mapFollow(first, iterator, { afterTurn: options.afterTurn, prefixTurns: true, milestones: false, continues: options.continues })
+    return mapFollow(first, iterator,
+      { afterTurn: options.afterTurn, prefixTurns: true, milestones: options.milestones ?? false, continues: options.continues })
   }
 
   /**
@@ -275,7 +278,7 @@ interface MapOptions {
   afterTurn?: number
   /** D89: the first mapped turn's block IDs get a `turn-N-` prefix too (later turns always do). */
   prefixTurns?: boolean
-  /** Milestones map the task's first turn only (S3). */
+  /** Milestones map the task's first turn (S3), and a turn that continues after a failure (D110). */
   milestones?: boolean
   /** D101: asked when a turn completes; true maps the session's next turn too (a queued message). */
   continues?: Continues
@@ -343,7 +346,7 @@ async function* mapFollow(
           }
           if (kind === 'completed') yield { kind: 'end', status: 'completed' }
           else if (isUserInterrupt(data?.reason)) yield { kind: 'end', status: 'interrupted' }
-          else yield { kind: 'end', status: 'failed', message: describeFailure(kind, data?.reason?.error) }
+          else yield { kind: 'end', status: 'failed', ...failureOf(kind, data?.reason?.error) }
           return
         }
       }

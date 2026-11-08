@@ -97,6 +97,8 @@ public final class TaskListStore {
         public var queue: [QueuedMessage] = []
         /// The files this phone sent with the first message (D95, D107), with image thumbnails.
         public var attachments: [MessageAttachment] = []
+        /// D104: DSH's failure class when the task failed on its model (`QUOTA`, `AUTH`, …); empty otherwise.
+        public var failureCode = ""
 
         /// S27: where the done footer's 用时 starts: the latest turn's start, else the task's
         /// creation (a single turn, or an older bridge). Never before `createdAt` or after `updatedAt`.
@@ -458,7 +460,8 @@ public final class TaskListStore {
 
     /// The host can take a follow-up for this task now: the host is online with `conversation.v1`,
     /// and the task is done (D89). With `conversation.v2` (D101) also while it runs (the message
-    /// waits in a queue) and after the user stopped it (the session goes on). Not after a failure.
+    /// waits in a queue) and after the user stopped it (the session goes on). With `failures.v1`
+    /// (D110) also after a failure: the user tops up or fixes the key, then goes on in the session.
     public func canFollowUp(_ row: TaskRow) -> Bool {
         guard !row.externalSession, !row.approvalOnly,
               let link = links.first(where: { $0.key == row.hostKey }), link.reachability == .online,
@@ -466,7 +469,7 @@ public final class TaskListStore {
         switch row.state {
         case .completed: return true
         case .running, .waitingOnUser, .interrupted: return capabilities.contains(DSHProtocolInfo.queueCapability)
-        case .failed: return false
+        case .failed: return capabilities.contains(DSHProtocolInfo.failuresCapability)
         }
     }
 
@@ -728,10 +731,11 @@ public final class TaskListStore {
             let task = taskRecord(hostKey: link.key, taskID: taskID, title: "")
             applyModel(selection, to: task)
             task.logID = host.logID
-        case .ended(let taskID, let status, let message):
+        case .ended(let taskID, let status, let message, let code):
             let task = taskRecord(hostKey: link.key, taskID: taskID, title: "")
             task.state = status.state
             task.message = message
+            task.failureCode = code
             task.logID = host.logID
         case .milestone(let milestone):
             let task = taskRecord(hostKey: link.key, taskID: milestone.taskID, title: "")
@@ -830,6 +834,7 @@ public final class TaskListStore {
             task.state = .failed
             task.approvals = []
             task.message = "The bridge on this host restarted and lost track of this task."
+            task.failureCode = ""
         }
         scheduleSave()
         refresh()
@@ -855,6 +860,7 @@ public final class TaskListStore {
             if let selection = snapshot.modelSelection { applyModel(selection, to: task) }
             task.state = snapshot.state
             task.message = snapshot.message
+            task.failureCode = snapshot.failureCode
             task.updatedAt = snapshot.updatedAt
             task.turnStartedAt = snapshot.turnStartedAt
         }
@@ -983,7 +989,8 @@ public final class TaskListStore {
                 blocks: link.capabilities?.contains(DSHProtocolInfo.transcriptCapability) == false
                     ? structuredTranscript(of: t).userMessagesOnly : structuredTranscript(of: t),
                 turnStartedAt: t.turnStartedAt,
-                queue: t.queueData.isEmpty ? [] : t.followUpQueue.messages, attachments: t.sentAttachments)
+                queue: t.queueData.isEmpty ? [] : t.followUpQueue.messages, attachments: t.sentAttachments,
+                failureCode: t.failureCode)
         }
     }
 

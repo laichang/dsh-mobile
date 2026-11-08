@@ -13,7 +13,7 @@ struct StructuredTranscriptView: View {
 
     var body: some View {
         if row.blocks.isEmpty {
-            TranscriptView(source: text)
+            TranscriptView(source: text, waiting: !row.state.isTerminal)
         } else {
             let groups = Self.groups(row.blocks.segments(of: text))
             VStack(alignment: .leading, spacing: 12) {

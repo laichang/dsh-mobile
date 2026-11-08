@@ -86,7 +86,7 @@ describe('DrawerWorkspaces', () => {
     await directory.reconcile()
     assert.equal(hub.list().find(t => t.taskId === 'session-1')?.workspace, '/private/tmp/app')
     // A later listing without a cwd keeps what the bridge knows.
-    hub.observeSession('session-1', 99n, 'Show the repo name', hub.list()[0].state, '', BigInt(AT), BigInt(AT))
+    hub.observeSession('session-1', 99n, 'Show the repo name', hub.list()[0].state, { message: '', code: '' }, BigInt(AT), BigInt(AT))
     assert.equal(hub.list().find(t => t.taskId === 'session-1')?.workspace, '/private/tmp/app')
     directory.close()
     await hub.close()

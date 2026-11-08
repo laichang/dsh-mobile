@@ -774,8 +774,13 @@ public nonisolated struct Dshm_V1_TaskEnded: Sendable {
 
   public var status: Dshm_V1_TaskStatus = .unspecified
 
-  /// Why it failed, when status is FAILED.
+  /// Why it failed, when status is FAILED. For a model failure: DSH's text as it is (D104).
   public var message: String = String()
+
+  /// Model failures (fields 420–439, D104): DSH's stable failure class when status is FAILED
+  /// (`AUTH`, `QUOTA`, `ACCOUNT_QUOTA`, `RATE_LIMIT`, `INVALID_REQUEST`, `HTTP_404`, …); empty when
+  /// DSH gave none. The app chooses its own text for some codes and shows `message` for the others.
+  public var failureCode: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -2047,7 +2052,7 @@ nonisolated extension Dshm_V1_AssistantChunk: SwiftProtobuf.Message, SwiftProtob
 
 nonisolated extension Dshm_V1_TaskEnded: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TaskEnded"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}status\0\u{1}message\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}status\0\u{1}message\0\u{4}a\u{6}failure_code\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -2058,6 +2063,7 @@ nonisolated extension Dshm_V1_TaskEnded: SwiftProtobuf.Message, SwiftProtobuf._M
       case 1: try { try decoder.decodeSingularStringField(value: &self.taskID) }()
       case 2: try { try decoder.decodeSingularEnumField(value: &self.status) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.message) }()
+      case 420: try { try decoder.decodeSingularStringField(value: &self.failureCode) }()
       default: break
       }
     }
@@ -2073,6 +2079,9 @@ nonisolated extension Dshm_V1_TaskEnded: SwiftProtobuf.Message, SwiftProtobuf._M
     if !self.message.isEmpty {
       try visitor.visitSingularStringField(value: self.message, fieldNumber: 3)
     }
+    if !self.failureCode.isEmpty {
+      try visitor.visitSingularStringField(value: self.failureCode, fieldNumber: 420)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -2080,6 +2089,7 @@ nonisolated extension Dshm_V1_TaskEnded: SwiftProtobuf.Message, SwiftProtobuf._M
     if lhs.taskID != rhs.taskID {return false}
     if lhs.status != rhs.status {return false}
     if lhs.message != rhs.message {return false}
+    if lhs.failureCode != rhs.failureCode {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -56,10 +56,31 @@ function parseTodos(data: unknown): TodoItem[] | undefined {
   return out
 }
 
-/** `error.message` when there is one, else a string form, prefixed with DSH's reason kind. */
+/** Why a turn failed, as the phone gets it: DSH's text and DSH's failure class (D104). */
+export interface Failure {
+  message: string
+  /** DSH's stable `HarnessError.code` (`AUTH`, `QUOTA`, `RATE_LIMIT`, `HTTP_404`, …); empty when DSH gave none. */
+  code: string
+}
+
+/**
+ * D104: a turn that ended with `{ kind: 'error', error: { message, code } }` (every model failure)
+ * gives DSH's `message` as it is, and its `code`. Any other end gives its reason kind, with the
+ * detail after it when there is one.
+ */
+export function failureOf(kind: string, error: unknown): Failure {
+  const fields = error && typeof error === 'object' ? error as { message?: unknown; code?: unknown } : undefined
+  const code = typeof fields?.code === 'string' ? fields.code : ''
+  if (fields && 'message' in fields) {
+    const message = String(fields.message)
+    return { message: kind === 'error' && message ? message : `${kind}: ${message}`, code }
+  }
+  return { message: error === undefined ? kind : `${kind}: ${String(error)}`, code }
+}
+
+/** `failureOf(kind, error).message`. */
 export function describeFailure(kind: string, error: unknown): string {
-  if (error && typeof error === 'object' && 'message' in error) return `${kind}: ${String(error.message)}`
-  return error === undefined ? kind : `${kind}: ${String(error)}`
+  return failureOf(kind, error).message
 }
 
 export function isUserInterrupt(reason: { kind?: unknown; reason?: { kind?: unknown } } | undefined): boolean {

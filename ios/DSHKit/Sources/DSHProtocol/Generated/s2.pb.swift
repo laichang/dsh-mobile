@@ -117,6 +117,12 @@ public nonisolated struct Dshm_V1_TaskSummary: @unchecked Sendable {
     set {_uniqueStorage()._message = newValue}
   }
 
+  /// When state is FAILED: DSH's failure class, as TaskEnded.failure_code (D104).
+  public var failureCode: String {
+    get {_storage._failureCode}
+    set {_uniqueStorage()._failureCode = newValue}
+  }
+
   /// S4: current requests, including any older than the retained log.
   public var pendingApprovals: [Dshm_V1_ApprovalPending] {
     get {_storage._pendingApprovals}
@@ -319,7 +325,7 @@ nonisolated extension Dshm_V1_TaskState: SwiftProtobuf._ProtoNameProviding {
 
 nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TaskSummary"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0\u{4}L\u{2}session_revision\0\u{3}external_session\0\u{3}latest_reply\0\u{2}\u{12}workspace\0\u{4}d\u{1}pending_questions\0\u{4}`\u{2}turn_started_at_ms\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0\u{4}L\u{2}session_revision\0\u{3}external_session\0\u{3}latest_reply\0\u{2}\u{12}workspace\0\u{4}d\u{1}pending_questions\0\u{4}(failure_code\0\u{4}x\u{1}turn_started_at_ms\0")
 
   fileprivate class _StorageClass {
     var _taskID: String = String()
@@ -328,6 +334,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     var _createdAtMs: Int64 = 0
     var _updatedAtMs: Int64 = 0
     var _message: String = String()
+    var _failureCode: String = String()
     var _pendingApprovals: [Dshm_V1_ApprovalPending] = []
     var _approvalOnly: Bool = false
     var _modelSelection: Dshm_V1_ModelSelection? = nil
@@ -353,6 +360,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
       _createdAtMs = source._createdAtMs
       _updatedAtMs = source._updatedAtMs
       _message = source._message
+      _failureCode = source._failureCode
       _pendingApprovals = source._pendingApprovals
       _approvalOnly = source._approvalOnly
       _modelSelection = source._modelSelection
@@ -394,6 +402,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
         case 262: try { try decoder.decodeSingularStringField(value: &_storage._latestReply) }()
         case 280: try { try decoder.decodeSingularStringField(value: &_storage._workspace) }()
         case 380: try { try decoder.decodeRepeatedMessageField(value: &_storage._pendingQuestions) }()
+        case 420: try { try decoder.decodeSingularStringField(value: &_storage._failureCode) }()
         case 540: try { try decoder.decodeSingularInt64Field(value: &_storage._turnStartedAtMs) }()
         default: break
         }
@@ -449,6 +458,9 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
       if !_storage._pendingQuestions.isEmpty {
         try visitor.visitRepeatedMessageField(value: _storage._pendingQuestions, fieldNumber: 380)
       }
+      if !_storage._failureCode.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._failureCode, fieldNumber: 420)
+      }
       try { if let v = _storage._turnStartedAtMs {
         try visitor.visitSingularInt64Field(value: v, fieldNumber: 540)
       } }()
@@ -467,6 +479,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
         if _storage._createdAtMs != rhs_storage._createdAtMs {return false}
         if _storage._updatedAtMs != rhs_storage._updatedAtMs {return false}
         if _storage._message != rhs_storage._message {return false}
+        if _storage._failureCode != rhs_storage._failureCode {return false}
         if _storage._pendingApprovals != rhs_storage._pendingApprovals {return false}
         if _storage._approvalOnly != rhs_storage._approvalOnly {return false}
         if _storage._modelSelection != rhs_storage._modelSelection {return false}

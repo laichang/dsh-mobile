@@ -163,6 +163,10 @@ enum TaskStatus {
 message TaskEnded {
   string task_id = 1;
   TaskStatus status = 2;
-  // Why it failed, when status is FAILED.
+  // Why it failed, when status is FAILED. For a model failure: DSH's text as it is (D104).
   string message = 3;
+  // Model failures (fields 420–439, D104): DSH's stable failure class when status is FAILED
+  // (`AUTH`, `QUOTA`, `ACCOUNT_QUOTA`, `RATE_LIMIT`, `INVALID_REQUEST`, `HTTP_404`, …); empty when
+  // DSH gave none. The app chooses its own text for some codes and shows `message` for the others.
+  string failure_code = 420;
 }

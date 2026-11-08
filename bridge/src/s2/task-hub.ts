@@ -18,6 +18,7 @@ import { AttachmentKind } from '../gen/attachments_pb.ts'
 import { milestoneAdded } from '../milestones/wire.ts'
 import { sessionWorkspace } from '../drawer/workspace.ts'
 import { transcriptBlock } from '../transcript/wire.ts'
+import type { Failure } from '../milestones/mapper.ts'
 
 export interface TaskStarter {
   interrupt(taskId: string): void
@@ -86,7 +87,7 @@ export class TaskHub {
     const at = BigInt(this.now())
     const summary: Summary = {
       taskId: task.taskId, title: prompt, state: TaskState.RUNNING,
-      createdAtMs: at, updatedAtMs: at, message: '', approvalOnly: false, externalSession: false,
+      createdAtMs: at, updatedAtMs: at, message: '', failureCode: '', approvalOnly: false, externalSession: false,
       sessionRevision: this.summaries.get(task.taskId)?.sessionRevision, pendingApprovals: this.approvalsFor(task.taskId),
       pendingQuestions: this.questionsFor(task.taskId),
       workspace: sessionWorkspace(this.summaries.get(task.taskId)?.workspace, task.workspace ?? workspace),
@@ -113,6 +114,8 @@ export class TaskHub {
    *
    * - D89: a task that is done (completed, or stopped by the user) runs again: the new turn streams
    *   under the same task ID, the chunk seq goes on, the task is RUNNING again, and TaskEnded ends it.
+   * - D110: so does a task that failed (a model failure leaves the session usable: the user tops up,
+   *   then goes on). That turn adds milestones, so the timeline goes on past the failure.
    * - D101: while the task runs, the message waits in DSH's inbox: `queue` for the next turn, `steer`
    *   for the next step of this one. A QueuedMessage says so; the UserMessage follows where DSH takes it.
    */
@@ -126,8 +129,10 @@ export class TaskHub {
       if (files.length) throw new Error('Attach files when the task is done.')
       return this.sendWhileRunning(taskId, text, mode, onAccepted)
     }
-    // Not after a failure (the failed task's own card), and not while an earlier send waits.
-    if ((summary.state !== TaskState.COMPLETED && summary.state !== TaskState.INTERRUPTED) || this.sending.has(taskId)) {
+    // Not while an earlier send waits. D110: a failed task takes a new message (the user fixed the cause).
+    const afterFailure = summary.state === TaskState.FAILED
+    if ((summary.state !== TaskState.COMPLETED && summary.state !== TaskState.INTERRUPTED && !afterFailure)
+        || this.sending.has(taskId)) {
       throw new Error('Send a follow-up when the task is done.')
     }
     const cursor = this.cursor(taskId)
@@ -136,7 +141,7 @@ export class TaskHub {
     let output: AsyncIterable<TaskOutput>
     try {
       output = await this.starter.followUp(taskId, text, {
-        messageId, mode, afterTurn: cursor.turn, continues: () => this.continues(taskId),
+        messageId, mode, afterTurn: cursor.turn, continues: () => this.continues(taskId), milestones: afterFailure,
         ...(files.length ? { files } : {}),
       }, this.abort.signal)
     } finally {
@@ -242,6 +247,7 @@ export class TaskHub {
   /** A new turn of the task: RUNNING, with its own start (S27: 用时 counts the latest turn only). */
   private turnStarted(summary: Summary, at: number) {
     summary.message = ''
+    summary.failureCode = ''
     summary.latestReply = undefined
     summary.updatedAtMs = BigInt(at)
     summary.turnStartedAtMs = BigInt(at)
@@ -272,7 +278,7 @@ export class TaskHub {
     if (!summary && external && !('outcome' in event)) {
       const at = BigInt(this.now())
       summary = { taskId: event.taskId, title: '', state: TaskState.WAITING_ON_USER, createdAtMs: at,
-        updatedAtMs: at, message: '', approvalOnly: true, externalSession: false, pendingApprovals: [], pendingQuestions: [] }
+        updatedAtMs: at, message: '', failureCode: '', approvalOnly: true, externalSession: false, pendingApprovals: [], pendingQuestions: [] }
       this.summaries.set(event.taskId, summary)
     }
     if (!summary) return // create() snapshots requests that arrived while DSH accepted our prompt.
@@ -330,14 +336,15 @@ export class TaskHub {
   }
 
   /** The DSH session ID is also CreateTask's ID, even if the journal arrives before its response. */
-  observeSession(taskId: string, revision: bigint, title: string, state: TaskState, message: string,
+  observeSession(taskId: string, revision: bigint, title: string, state: TaskState, failure: Failure,
     updatedAt: bigint, createdAt: bigint, latestReply?: string, hostTitle?: string, workspace?: string,
     turnStartedAt?: bigint) {
     const old = this.summaries.get(taskId)
     if (old?.sessionRevision !== undefined && old.sessionRevision >= revision) return
     const pending = this.approvalsFor(taskId)
     const summary: Summary = old ?? { taskId, title, createdAtMs: createdAt, updatedAtMs: updatedAt,
-      state, message, externalSession: true, approvalOnly: false, pendingApprovals: pending, pendingQuestions: [] }
+      state, message: failure.message, failureCode: failure.code, externalSession: true, approvalOnly: false, pendingApprovals: pending,
+      pendingQuestions: [] }
     summary.pendingQuestions = this.questionsFor(taskId)
     if (summary.approvalOnly) summary.externalSession = true
     summary.approvalOnly = false
@@ -349,7 +356,8 @@ export class TaskHub {
     summary.updatedAtMs = summary.updatedAtMs > updatedAt ? summary.updatedAtMs : updatedAt
     if (turnStartedAt !== undefined) summary.turnStartedAtMs = turnStartedAt
     summary.state = pending.length || summary.pendingQuestions.length ? TaskState.WAITING_ON_USER : state
-    summary.message = message
+    summary.message = failure.message
+    summary.failureCode = failure.code
     this.summaries.set(taskId, summary)
     this.upserted(summary)
   }
@@ -434,12 +442,13 @@ export class TaskHub {
     }
     summary.state = state
     summary.message = end.message ?? ''
+    summary.failureCode = end.code ?? ''
     summary.updatedAtMs = BigInt(this.now())
     // State first, then TaskEnded: TaskEnded stays the task's last event (T0's contract).
     this.upserted(summary)
     this.log.append(summary.taskId, {
       case: 'taskEnded',
-      value: { taskId: summary.taskId, status, message: summary.message },
+      value: { taskId: summary.taskId, status, message: summary.message, failureCode: summary.failureCode },
     })
   }
 

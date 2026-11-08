@@ -45,6 +45,8 @@ export const CAPABILITIES = ['tasks.v1', MILESTONES_CAPABILITY, 'resume.v1', 'in
 export const CONVERSATION_CAPABILITY = 'conversation.v1'
 /** D101: follow-ups while the task runs: QueuedMessage, EditQueue and QueueEdited. */
 export const QUEUE_CAPABILITY = 'conversation.v2'
+/** D104, D110: TaskEnded / TaskSummary carry `failure_code`, and a failed task takes a follow-up. */
+export const FAILURES_CAPABILITY = 'failures.v1'
 /** Where the dev-only plaintext channel is served. */
 export const PLAINTEXT_PATH = '/plaintext'
 
@@ -222,7 +224,7 @@ function serveConnection(
             ...(options.questions ? [QUESTIONS_CAPABILITY] : []),
             ...(options.tasks.listWorkspaces ? ['workspaces.v1', DRAWER_CAPABILITY] : []),
             ...(host.authenticated.has(socket) ? ['devices.v1'] : []),
-            ...(options.tasks.followUp ? [CONVERSATION_CAPABILITY] : []),
+            ...(options.tasks.followUp ? [CONVERSATION_CAPABILITY, FAILURES_CAPABILITY] : []),
             ...(queues ? [QUEUE_CAPABILITY] : []),
             ...(options.tasks.attachments ? [ATTACHMENTS_CAPABILITY] : []),
           ] : [] },

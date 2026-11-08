@@ -7,6 +7,9 @@
  * turn, between `turn/start` and the reply, each with its own `seq` and `time`.
  * S17: `reasoning` streams timed `reasoning-delta` chunks before the reply, and `tools` adds a
  * durable `tool/call` and `tool/result` pair for each call after it.
+ * Model failures (D104): `recorded` replays the follow frames that real DSH emitted for a turn
+ * (`test/fixtures/model-failures/`) instead of the scripted turn: unchanged, except that the
+ * user's message carries this prompt's `requestId`, as it would in a live run.
  * D101: the session's inbox, as real DSH keeps it (measured against DSH 0.2.2-rc.1): a prompt to an
  * idle session starts a turn; while a turn runs, `queue` waits for the next turn (one turn per
  * message, in order) and `steer` for the next step of this turn (after the reply streams). Each
@@ -28,7 +31,9 @@ export interface FakeDSHOptions {
   /** D101: the deltas of a step that steered messages start (default: the turn's reply). */
   stepReply?: string[]
   /** End the turn with this reason instead of `completed`. */
-  failWith?: { kind: string; error?: { message: string } }
+  failWith?: { kind: string; error?: { message: string; code?: string } }
+  /** Per turn of a session (1 = the first prompt): follow frames recorded from real DSH, replayed as they are. */
+  recorded?: Record<number, FollowFrame[]>
   /** Make `sessionController.create` reject. */
   createError?: string
   /** Durable events the agent appends during the turn, in order (S3). `turn` is added to `data`. */
@@ -328,6 +333,8 @@ export class FakeDSH implements DshServices {
 
   private async runTurn(sessionId: string, turn: number, item: InboxItem) {
     const s = this.session(sessionId)
+    const recorded = this.options.recorded?.[turn]
+    if (recorded) return this.replay(sessionId, recorded, item)
     let reply = this.options.replies?.[turn] ?? this.options.reply ?? ['Hello', ' from', ' FakeDSH.']
     this.emitEvent(sessionId, 'turn/start', { turn })
     this.userMessage(sessionId, turn, item)
@@ -391,5 +398,20 @@ export class FakeDSH implements DshServices {
     const queued = s.nextTurn.shift()
     if (queued && reason.kind === 'completed') this.startTurn(sessionId, queued)
     else if (queued) s.nextTurn.unshift(queued)
+  }
+
+  /** Model failures: one recorded turn of real DSH, frame by frame. */
+  private replay(sessionId: string, frames: FollowFrame[], item: InboxItem) {
+    const s = this.session(sessionId)
+    for (const frame of frames) {
+      if (frame.type !== 'event') { this.emit(sessionId, frame); continue }
+      let event = frame.event
+      const data = event.data as { source?: { kind?: string } } | null
+      if (event.type === 'user/message' && data?.source?.kind === 'user') {
+        event = { ...event, data: { ...data, source: { ...data.source, ...(item.rpcId === undefined ? {} : { rpcId: item.rpcId }) } } }
+      }
+      if (event.type === 'turn/end') s.running = false
+      this.emit(sessionId, { type: 'event', event })
+    }
   }
 }

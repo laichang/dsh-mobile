@@ -322,7 +322,7 @@ private struct SessionTranscript: View {
         case .interrupted: return String(localized: "Interrupted on \(where_)")
         case .waitingOnUser: return String(localized: "Waiting on you (\(where_))")
         case .completed: return String(localized: "Done on \(where_)")
-        case .failed: return row.message.isEmpty ? String(localized: "Failed: the task failed") : String(localized: "Failed: \(row.message)")
+        case .failed: return row.failureText.isEmpty ? String(localized: "Failed: the task failed") : String(localized: "Failed: \(row.failureText)")
         }
     }
 }

@@ -127,10 +127,11 @@ import Testing
         #expect(page.suffix(2) == ["user: Go on.", "agent: Second answer."], "\(page)")
     }
 
-    @Test func aFailedTaskTakesNoFollowUp() async throws {
+    @Test func aFailedTaskTakesNoFollowUpFromABridgeWithoutFailuresV1() async throws {
         var script = FakeBridge.Script(reply: ["Oops."], chunkDelay: .milliseconds(10), failWith: "error: rate limited")
         script.followUpReply = Self.second
         script.queuesFollowUps = true
+        script.reportsFailures = false // D110 needs `failures.v1`
         let store = try launch(FakeHost(script: script))
         store.foreground()
         defer { store.background() }
