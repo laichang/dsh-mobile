@@ -47,7 +47,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S1 | done | merged `55300a7` | 2026-11-09 | — (provisional D101, D102 in §9) |
 | S2 | doing | `claude/s2-questions-more` | 2026-11-09 | Slice owner builds (§8) |
 | S3 | doing | `claude/s3-model-failures` | 2026-11-08 | Slice owner builds (§8) |
-| S4 | doing | `claude/s4-attach-files` | 2026-11-08 | Slice owner builds (§8) |
+| S4 | done | merged `83c82ce` | 2026-11-09 | — (provisional D107, D108 in §9) |
 | S5 | todo | — | 2026-11-08 | Assign it and start a session |
 | S6 | todo | — | 2026-11-08 | Assign it and start a session |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
@@ -606,6 +606,8 @@ Append-only, dated.
 
 - **2026-11-09 · S2 runs as a background agent.** S2 assigned (D113–D115) and started as a background agent. Its brief names the conflict between the Cuts (a held question times out, as D25) and D92 (no timeout): the owner decides and records it in D92. Running: S2, S3, S4.
 
+- **2026-11-09 · S4 merged.** Merged as `83c82ce`; `scripts/check-plan` on the merge commit passed. `scripts/review S4` at `1fc0d40`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S4-1fc0d40.txt`). No open `[human]` items, so S4 is `done`. §9 rows 10, 11 (D107, D108).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -621,3 +623,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 7 | S1 | decision | ARCHITECTURE D102, *provisional*: One follow across turns (bridge, extends D89) | `claude/s1-followup-queue` | merged `55300a7` |
 | 8 | S1 | decision | D18 amended: default QUEUE for a follow-up while a task runs, 立即发送 steers (D18 itself was user-confirmed) | `claude/s1-followup-queue` | `7c1a8cd` |
 | 9 | S1 | decision | D89 amended: a follow-up can be sent while the task runs and after a stop | `claude/s1-followup-queue` | `7c1a8cd` |
+| 10 | S4 | decision | ARCHITECTURE D107, *provisional*: Attachments: files of any type, more than one, also in a follow-up (amends D95, D18, D89) | `claude/s4-attach-files` | merged `83c82ce` |
+| 11 | S4 | decision | ARCHITECTURE D108, *provisional*: The "+" menu and the attachment chips (screens 01, 06) | `claude/s4-attach-files` | merged `83c82ce` |
