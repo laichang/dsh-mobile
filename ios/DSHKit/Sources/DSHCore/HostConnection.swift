@@ -1,6 +1,7 @@
 import DSHProtocol
 import Foundation
 import SwiftProtobuf
+import Synchronization
 
 /// What the app learns about a task, in order. Each turn ends with one `.ended`; with
 /// `conversation.v1` a `.userMessage` can start another turn after it.
@@ -148,6 +149,8 @@ public enum HostConnectionError: Error, Equatable, CustomStringConvertible {
     /// S29: the host refused this device with close 4003 (device unknown, D21): it was revoked
     /// (or never paired), on a live connection. Final: retrying cannot succeed (D82).
     case deviceRevoked
+    /// D98: no address of the host worked; the last error of each address, in the order tried.
+    case unreachable([AddressFailure])
 
     public var description: String {
         switch self {
@@ -157,8 +160,17 @@ public enum HostConnectionError: Error, Equatable, CustomStringConvertible {
         case .unexpectedResponse: "the bridge sent an unexpected response"
         case .disconnected: "the connection to the bridge closed"
         case .deviceRevoked: "this host revoked this phone's access"
+        case .unreachable(let failures): "couldn't reach the host at \(failures.map(\.description).joined(separator: ", "))"
         }
     }
+}
+
+/// The transport of one address try, so a timeout can close it (D98).
+private final class OpenedTransport: Sendable {
+    private let transport = Mutex<(any BridgeTransport)?>(nil)
+
+    func set(_ t: any BridgeTransport) { transport.withLock { $0 = t } }
+    func close() async { await transport.withLock { $0 }?.close() }
 }
 
 /// One connection to one host's bridge (ARCHITECTURE §4). Owns the transport, runs the
@@ -166,11 +178,29 @@ public enum HostConnectionError: Error, Equatable, CustomStringConvertible {
 /// sealed and sent in order from one outbox, so Noise nonces never go out of order (S1). It can
 /// be connected again after it drops; reconnect policy and the resume cursor live in
 /// `TaskListStore` (S2). Each connect runs a fresh handshake (over Noise: IK reconnect).
+///
+/// A host can have more than one address (LAN, Tailscale, D21). Each connect tries them one at a
+/// time, the address that worked last first, each with `attemptTimeout` (D98).
 public actor HostConnection {
+    /// How long one address may take to open and finish the handshake (D98).
+    public static let defaultAttemptTimeout: Duration = .seconds(5)
+
+    /// The first address as configured: stable, for names (two hosts with one name) and logs.
     public nonisolated let endpoint: HostEndpoint
+    /// Every address, as configured.
+    public nonisolated let endpoints: [HostEndpoint]
     public nonisolated let channelName: String
+    public nonisolated let attemptTimeout: Duration
     private let channel: any SecureChannel
     private let makeTransport: BridgeTransportFactory
+    private let onAddressesChange: (@Sendable ([HostEndpoint]) -> Void)?
+
+    /// The order the next connect tries: the address that worked last first (D98).
+    public private(set) var addresses: [HostEndpoint]
+    /// The address of the live connection, or of the last one that worked.
+    public private(set) var currentEndpoint: HostEndpoint?
+    /// The last error of each address from the last connect that failed; empty after one that worked.
+    public private(set) var addressFailures: [AddressFailure] = []
 
     private var transport: (any BridgeTransport)?
     private var cipher: (any FrameCipher)?
@@ -204,7 +234,22 @@ public actor HostConnection {
     }
 
     public init(endpoint: HostEndpoint, channel: any SecureChannel, transport: @escaping BridgeTransportFactory) {
-        self.endpoint = endpoint
+        self.init(endpoints: [endpoint], channel: channel, transport: transport)
+    }
+
+    /// - Parameters:
+    ///   - endpoints: every address of the host, the one to try first first. Not empty.
+    ///   - onAddressesChange: called with the new order when a different address than the first
+    ///     worked, so the caller can save it (`Pairing.connection(to:)`).
+    public init(endpoints: [HostEndpoint], channel: any SecureChannel, transport: @escaping BridgeTransportFactory,
+                attemptTimeout: Duration = HostConnection.defaultAttemptTimeout,
+                onAddressesChange: (@Sendable ([HostEndpoint]) -> Void)? = nil) {
+        precondition(!endpoints.isEmpty, "a host connection needs at least one address")
+        self.endpoint = endpoints[0]
+        self.endpoints = endpoints
+        self.addresses = endpoints
+        self.attemptTimeout = attemptTimeout
+        self.onAddressesChange = onAddressesChange
         self.channel = channel
         self.channelName = channel.name
         self.makeTransport = transport
@@ -224,19 +269,82 @@ public actor HostConnection {
         try await attempt.value
     }
 
+    /// D98: tries each address, the one that worked last first, until one connects. Throws
+    /// `.unreachable` with the error of each address when none does.
     private func open() async throws {
-        try channel.validate(endpoint)
+        // Before any socket opens: a channel that may not reach one of the addresses (Debug's
+        // plaintext channel and a non-loopback address) is a wrong configuration, not a dead address.
+        for endpoint in addresses { try channel.validate(endpoint) }
+        var failures: [AddressFailure] = []
+        for endpoint in addresses {
+            try Task.checkCancellation()
+            do {
+                try await open(endpoint)
+            } catch {
+                if Self.endsTheSearch(error) {
+                    addressFailures = failures + [AddressFailure(endpoint: endpoint, error: error)]
+                    throw error
+                }
+                failures.append(AddressFailure(endpoint: endpoint, error: error))
+                continue
+            }
+            addressFailures = []
+            currentEndpoint = endpoint
+            if addresses.first != endpoint {
+                addresses = [endpoint] + addresses.filter { $0 != endpoint }
+                onAddressesChange?(addresses)
+            }
+            return
+        }
+        addressFailures = failures
+        throw HostConnectionError.unreachable(failures)
+    }
+
+    /// D98: the host answered at this address, so another address would get the same answer: it
+    /// revoked this device (4003), refused the pairing code (4001), or needs a DSH update. Or the
+    /// caller gave up (cancelled).
+    static func endsTheSearch(_ error: any Error) -> Bool {
+        switch error {
+        case HostConnectionError.bridgeUpdateRequired, NoiseChannelError.pairingRejected, is CancellationError: true
+        default: isDeviceRefusal(error)
+        }
+    }
+
+    /// Opens the transport and runs the handshake, within `attemptTimeout`.
+    private func handshake(_ endpoint: HostEndpoint) async throws -> (any BridgeTransport, any FrameCipher) {
+        let channel = self.channel, makeTransport = self.makeTransport, timeout = attemptTimeout
+        let url = endpoint.webSocketURL(path: channel.path)
+        let opened = OpenedTransport()
+        return try await withThrowingTaskGroup(of: (any BridgeTransport, any FrameCipher)?.self) { group in
+            group.addTask {
+                let t = try await makeTransport(url)
+                opened.set(t)
+                do {
+                    return (t, try await channel.establish(over: t))
+                } catch {
+                    await t.close()
+                    throw error
+                }
+            }
+            group.addTask {
+                try await Task.sleep(for: timeout)
+                return nil
+            }
+            defer { group.cancelAll() }
+            guard let first = try await group.next() else { throw CancellationError() }
+            if let established = first { return established }
+            // No answer in time: closing the transport ends the handshake's wait for a reply.
+            await opened.close()
+            throw AddressTimeout(after: timeout)
+        }
+    }
+
+    private func open(_ endpoint: HostEndpoint) async throws {
         let t: any BridgeTransport
         let established: any FrameCipher
         do {
-            t = try await makeTransport(endpoint.webSocketURL(path: channel.path))
+            (t, established) = try await handshake(endpoint)
         } catch {
-            throw refusal(error)
-        }
-        do {
-            established = try await channel.establish(over: t)
-        } catch {
-            await t.close()
             throw refusal(error)
         }
         generation += 1
@@ -277,9 +385,11 @@ public actor HostConnection {
     }
 
     /// Starts a task; its output arrives on `events`.
-    public func createTask(prompt: String, selection: ModelSelection? = nil, workspace: String? = nil) async throws -> String {
+    public func createTask(prompt: String, selection: ModelSelection? = nil, workspace: String? = nil,
+                           uploadIDs: [String] = []) async throws -> String {
         var create = Dshm_V1_CreateTask()
         create.prompt = prompt
+        create.uploadIds = uploadIDs
         if let workspace {
             guard capabilities.contains("workspaces.v1") else {
                 throw HostConnectionError.bridge(code: "workspace/unavailable", message: "This host cannot select the requested workspace.")
@@ -295,6 +405,39 @@ public actor HostConnection {
         let response = try await request(.createTask(create))
         guard case .taskCreated(let created)? = response.body else { throw HostConnectionError.unexpectedResponse }
         return created.taskID
+    }
+
+    /// Sends a photo to the host in parts (D95) and returns its upload id for `createTask`.
+    /// The host checks the size and the SHA-256; a refusal throws `HostConnectionError.bridge`.
+    public func upload(_ photo: PhotoAttachment) async throws -> String {
+        guard capabilities.contains(DSHProtocolInfo.attachmentsCapability) else {
+            throw HostConnectionError.bridge(code: "upload/unavailable", message: "This host cannot take attachments.")
+        }
+        guard photo.data.count <= Attachments.maxBytes else {
+            throw HostConnectionError.bridge(code: "upload/too-large", message: "The photo is larger than \(Attachments.maxBytes / 1024 / 1024) MiB.")
+        }
+        let uploadID = UUID().uuidString.lowercased()
+        var begin = Dshm_V1_UploadBegin()
+        begin.uploadID = uploadID
+        begin.mediaType = photo.mediaType
+        begin.name = photo.name
+        begin.size = UInt64(photo.data.count)
+        begin.sha256 = Attachments.sha256(photo.data)
+        _ = try await request(.uploadBegin(begin))
+        for (index, part) in Attachments.parts(of: photo.data).enumerated() {
+            var chunk = Dshm_V1_UploadChunk()
+            chunk.uploadID = uploadID
+            chunk.index = UInt32(index)
+            chunk.data = part
+            _ = try await request(.uploadChunk(chunk))
+        }
+        var end = Dshm_V1_UploadEnd()
+        end.uploadID = uploadID
+        let response = try await request(.uploadEnd(end))
+        guard case .uploadStaged(let staged)? = response.body, staged.uploadID == uploadID else {
+            throw HostConnectionError.unexpectedResponse
+        }
+        return uploadID
     }
 
     public func listWorkspaces() async throws -> Dshm_V1_WorkspaceList {

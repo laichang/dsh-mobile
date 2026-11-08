@@ -42,15 +42,15 @@ This file exists only while this requirement is in progress. It serves this requ
 |---|---|---|---|---|
 | T0 | done | merged `71577b2` | 2026-11-08 | — (provisional D89 in §9) |
 | T1 | done | merged `8f55a72` | 2026-11-08 | — (provisional D92 in §9) |
-| T2 | doing | `claude/t2-attachments` | 2026-11-08 | Slice owner builds (§8) |
-| X1 | todo | — | 2026-11-08 | Assign it and start a session |
+| T2 | done | merged `1762164` | 2026-11-08 | — (provisional D95 in §9) |
+| X1 | done | merged `9d4cb67` | 2026-11-08 | — (provisional D104 in §9) |
 | S1 | doing | `claude/s1-followup-queue` | 2026-11-08 | Slice owner builds (§8) |
 | S2 | todo | — | 2026-11-08 | Assign it and start a session |
-| S3 | todo | — | 2026-11-08 | Assign it and start a session |
-| S4 | todo | — | 2026-11-08 | Assign it and start a session |
+| S3 | doing | `claude/s3-model-failures` | 2026-11-08 | Slice owner builds (§8) |
+| S4 | doing | `claude/s4-attach-files` | 2026-11-08 | Slice owner builds (§8) |
 | S5 | todo | — | 2026-11-08 | Assign it and start a session |
 | S6 | todo | — | 2026-11-08 | Assign it and start a session |
-| S7 | doing | `claude/s7-reconnect` | 2026-11-08 | Slice owner builds (§8) |
+| S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | todo | — | 2026-11-08 | Assign it and start a session |
 | S9 | todo | — | 2026-11-08 | Assign it and start a session |
 | S10 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -187,12 +187,20 @@ A tracer is one thin round trip that one session can finish without running out 
 **Demo**: `scripts/demo/attachments.sh`: attach a photo, send a task; the DSH session has the image.
 
 **Done when**
-- [ ] [auto] A file of several Noise messages arrives byte-identical, is staged through `fileUploads`, and goes into the first prompt as an image part; a wrong hash or a missing part is refused (`FakeDSH`, a golden fixture that the Swift and TS tests both read) — Evidence:
-- [ ] [ui] Attach one photo on 01 and send: the user bubble shows its thumbnail and the DSH session has the image, against real DSH with the mock model (`cmd:scripts/demo/attachments.sh`) — Evidence:
+- [x] [auto] A file of several Noise messages arrives byte-identical, is staged through `fileUploads`, and goes into the first prompt as an image part; a wrong hash or a missing part is refused (`FakeDSH`, a golden fixture that the Swift and TS tests both read) — Evidence: test:Attachments/photoOfSeveralNoiseMessagesArrivesByteIdenticalAndEntersTheFirstPromptAsAnImage · test:Attachments/wrongHashIsRefusedAndNothingIsStaged · test:Attachments/missingPartIsRefused · test:Attachments/goldenPhotoSplitsIntoTheFixtureParts · test:AttachmentsTests/goldenPhotoSplitsIntoTheFixtureParts · test:AttachmentsTests/photoGoesUpInPartsBeforeTheTaskAndTheRowKeepsItsThumbnail · test:AttachmentsTests/wrongHashAndMissingPartAreRefused
+- [x] [ui] Attach one photo on 01 and send: the user bubble shows its thumbnail and the DSH session has the image, against real DSH with the mock model (`cmd:scripts/demo/attachments.sh`) — Evidence: cmd:scripts/demo/attachments.sh · test:AttachmentsUITests/testAttachOnePhotoAndSend · shot:evidence/T2/attachments-composer.png · shot:evidence/T2/attachments-session.png
 
 **Not**: Files that are not photos, more than one attachment, attachments in follow-ups (S4).
 
 **Log**: —
+- **2026-11-08 · Built; review PASS at 0752a3d.** Done: both items ticked. Protocol `protocol/attachments.proto` (UploadBegin/Chunk/End → UploadAck/UploadStaged, `CreateTask.upload_ids`; field block 400–402, one registration line per oneof in frame.proto: expect a one-line conflict with T0/T1 at merge). Bridge `bridge/src/attachments/staging.ts`: parts in order, size + SHA-256 checked, per-connection staging; `DshTasks.start` stages each photo with `fileUploads.uploadImageStream` and prompts `[text, {type:'file', receiptId}]`; `fileUploads` added to the plugin's `inject`. App: photo key (PhotosPicker) on 01, one chip, upload before CreateTask, thumbnail in the user bubble (`CachedTask.photoThumbnail`). Golden photo `protocol/fixtures/attachments/` (generated, 3 parts) read by TS and Swift tests; 7 golden frames added. Design board 01 + DESIGN.md updated.
+  Review: `scripts/review T2` by a separate reviewer → RESULT: PASS, /tmp/dshm-review/T2-0752a3d.txt, no flaky parts.
+  Provisional: D95 (part size 48 KiB, 20 MiB limit, SHA-256, JPEG ≤2048 px, per-connection staging). No new dependencies.
+  Notes: the slice simulator dshm-T2 did not exist; I created it (iPhone 17 Pro, iOS 26.4). The first T0 baseline failed only because it raced with my proto edit; re-run passed. The picker's photo cells report "not hittable" to XCUITest; the test taps the cell centre and finds it by the locale-free id `PXGGridLayout-Info`. DSH session logs are multi-frame zstd; node's zstdDecompressSync reads one frame, so the check splits frames.
+  Not done (out of scope): files that are not photos, more than one attachment, attachments in follow-ups. No §0 change needed.
+- **2026-11-08 · Merged main twice (T1, T0); review PASS at 0f0bbc8, one flaky part.** Merged main into the branch twice at the coordinator's request: af1c314 (T1 agent questions) and 0f0bbc8 (T0 follow-ups). Kept both sides everywhere: questions.v1 (380–399, D92), conversation.v1 (360–379, D89) and attachments.v1 (400–419, D95); generated code regenerated with scripts/codegen; FakeDSH and FakeHost keep every side's recorders; the design board re-rendered from the merged board.html. Bridge tests 83 pass, swift test 108 pass. The review of af1c314 was stopped, unfinished, once main took T0.
+  Review: full `scripts/review T2` by a separate reviewer at 0f0bbc8 → RESULT: PASS, /tmp/dshm-review/T2-0f0bbc8.txt.
+  Flaky: attachments-ui passed on run 2 of 3. Run 1 failed at AttachmentsUITests.swift:23: the system photo picker (out of process) did not show its grid cell `PXGGridLayout-Info` within 15 s after the photo key was tapped. Run 2 passed, and the DSH session check found the photo. Likely cause: the picker is slow on its first open in a fresh app install. Not repaired in this round; a possible repair is a longer wait for the first grid cell.
 
 ## 4. Spikes
 
@@ -200,7 +208,7 @@ Each spike ends in a short written conclusion, plus throwaway code if needed. No
 
 ### X1 · Spike: Model failures in DSH
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: For #4 (S3). What does DSH 0.2.2-rc.1 send when the model of a running task is unavailable, its key is not valid, or the account has no balance (DeepSeek answers 402 "Insufficient Balance")? Does DSH retry, pause, or end the turn, and with which text? Can the mock LLM of DSH, or a small fake provider, make each case for tests?
 
@@ -209,12 +217,19 @@ Each spike ends in a short written conclusion, plus throwaway code if needed. No
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A script runs one task against real DSH for each failure (model not found, key not valid, no balance, rate limit) and records the events and the text that DSH sends — Evidence:
-- [ ] [auto] The README says for each failure whether DSH retries, pauses or ends the turn, and which text the phone can show; the recorded events are fixtures that S3 can replay — Evidence:
+- [x] [auto] A script runs one task against real DSH for each failure (model not found, key not valid, no balance, rate limit) and records the events and the text that DSH sends — Evidence: cmd:spikes/model-failures/run.sh · commit:5198f68
+- [x] [auto] The README says for each failure whether DSH retries, pauses or ends the turn, and which text the phone can show; the recorded events are fixtures that S3 can replay — Evidence: commit:5198f68
 
 **Not**: Production code.
 
 **Log**: —
+- **2026-11-08 · Spike done: model failures end the turn, rate limit retries first.** Done:
+  - spikes/model-failures/run.sh runs one task against real DSH 0.2.2-rc.1 per failure, with a fake DeepSeek provider (fake-provider.mjs), and records every sessionController.follow frame into spikes/model-failures/fixtures/<case>.json (10 cases, incl. 3 from DSH's mock LLM).
+  - Finding: DSH never pauses. Every failure ends the turn with turn/end reason {kind: error, error: {message, code, status}}: 404 → HTTP_404, 400 → INVALID_REQUEST, 401 → AUTH, 402 → QUOTA, at once. 429 → RATE_LIMIT after 5 retries in the same turn (llm/retry events, ~16 s; Retry-After is honored). An unlisted model is refused by selectModel (session/model-unavailable) before any turn. A new message after the failure runs turn 2 normally.
+  - D104 (provisional, pending user confirmation): bridge forwards code + message; the app shows its own copy for AUTH and QUOTA, DSH's message otherwise.
+  - No new dependencies.
+  Not done: real DeepSeek wording (the bodies follow DeepSeek's documented error codes); failures mid-task; DeepSeek account sign-in route.
+  Next: S3 copies the fixtures it replays into bridge/test/fixtures/model-failures/ and carries code to the app.
 
 ## 5. Slices
 
@@ -358,7 +373,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S7 · Reconnect to every saved address of a host
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: Closes #12. The user asked for this first after M1. A reconnect tries only the first saved address (`AppComposition` uses `host.addresses.first`), so a phone off the LAN does not try Tailscale. Changes D21 (e).
 
@@ -370,12 +385,13 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/reconnect.sh`: a host saved with a dead first address and a live second address.
 
 **Done when**
-- [ ] [auto] With the first address dead and the second live, a reconnect uses the second and saves it first; with all addresses dead, the host is offline with the error of each address (DSHKit, two fake hosts) — Evidence:
-- [ ] [ui] A host paired with a dead first address shows online and takes a task (`cmd:scripts/demo/reconnect.sh`) — Evidence:
+- [x] [auto] With the first address dead and the second live, a reconnect uses the second and saves it first; with all addresses dead, the host is offline with the error of each address (DSHKit, two fake hosts) — Evidence: test:ReconnectTests/deadFirstAddressFallsThroughToTheSecondAndIsSavedFirst · test:ReconnectTests/allAddressesDeadShowTheHostOfflineWithTheErrorOfEach · cmd:scripts/demo/reconnect.sh
+- [x] [ui] A host paired with a dead first address shows online and takes a task (`cmd:scripts/demo/reconnect.sh`) — Evidence: cmd:scripts/demo/reconnect.sh · test:ReconnectUITests/testDeadFirstAddressFallsThroughToTheSecond · shot:evidence/S7/reconnect-online-via-second.png · shot:evidence/S7/reconnect-all-dead.png
 
 **Not**: Finding new addresses (Bonjour). A relay.
 
 **Log**: —
+- **2026-11-08 · built; review next.** Done: HostConnection tries every saved address, the last working one first, 5 s for each; a new working address is saved first (PairedHostStore.update keeps the host's place). All dead: HostConnectionError.unreachable with the error of each address. Hosts sheet (H) shows the address in use, and offline the error of each address; board H updated. Pairing uses the same loop. See D98 (provisional, in order and not raced); D21 (e) amended. No new dependencies. Demo scripts/demo/reconnect.sh: pairs through a proxy that dies after one connection, then the app reconnects through the bridge and runs a task; then DSH stops and H shows both errors. Both UI parts and DSHKit passed on the first run (no flaky parts). After that run I fixed the demo's EXIT trap (it returned 1 after 'reconnect demo passed'); the review run checks it. Learned: the dshm-S7 simulator did not exist (created it by hand); the first T0 run failed on a GitHub fetch of swift-protobuf (network reset), the second passed. Next: a reviewer runs scripts/review S7.
 
 ### S8 · Bridge cannot listen: tell the phone why
 
@@ -547,6 +563,28 @@ Append-only, dated.
 
 - **2026-11-08 · T0 merged; S1 runs as a background agent.** T0 merged as 71577b2 (review PASS on 7f6c6c1 after the merge of main, T0-7f6c6c1.txt). D89 is in §9. To merge, the coordinator stashed the user's uncommitted Localizable.xcstrings (Xcode reformat); it did not apply cleanly after the merge, so it stays as stash@{0} for the user and the file on main is the merged version. T2 asked to merge main again. S1 assigned; the app refused start_session in this event turn, so S1 runs as a background agent in its own worktree (§5.3 step 3).
 
+- **2026-11-08 · S7 merged.** Merged as `1978046`; `scripts/check-plan` on the merge commit passed. `scripts/review S7` at `90b3822`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S7-90b3822.txt`). No open `[human]` items, so S7 is `done`. §9 rows 3 (D98).
+
+- **2026-11-08 · X1 assigned.** Branch `claude/x1-model-failures`, simulator `dshm-X1`, DSHM_HOME `~/.dshm/home-x1`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D104–D106. `eval "$(scripts/slice-env X1)"` exports them.
+
+- **2026-11-08 · S7 merged; X1 runs as a background agent.** S7 merged as 1978046 (review PASS on 90b3822, S7-90b3822.txt, no flaky part). design/board.png conflicted (binary render); the coordinator rendered it again from the merged board.html with scripts/render-design in the merge commit (only board.png and screens/H.png changed). D98 in §9. The user's uncommitted Hosts.xcstrings (Xcode reformat) did not apply after the merge; it stays as a stash for the user. S7 findings for the tooling: no script creates dshm-<ID> (created by hand again); a reviewer that runs scripts/review in the background and waits on a monitor dies with the run (nohup + foreground wait works); the sandbox refuses eval "$(scripts/slice-env <ID>)". X1 assigned and runs as a background agent (§5.3 step 3).
+
+- **2026-11-08 · T2 review PASS; one more merge of main after S7.** T2 review PASS on 0f0bbc8 (T2-0f0bbc8.txt), flaky: attachments-ui (the photo picker's first open) passed on run 2 of 3. S7 merged meanwhile, so T2 conflicts in ARCHITECTURE.md and the design renders. The S7 merge auto-merged HostConnection.swift and TaskListStore.swift with T0, untested on main; the T2 owner merges main, runs the bridge tests and swift test (which checks that combination), and reviews again. Next merges go one at a time: before a merge, the next slice takes main first.
+
+- **2026-11-08 · T2 merged.** Merged as `1762164`; `scripts/check-plan` on the merge commit passed. `scripts/review T2` at `eb877f4`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/T2-eb877f4.txt`). No open `[human]` items, so T2 is `done`. §9 rows 4 (D95).
+
+- **2026-11-08 · T2 merged.** T2 merged as 1762164 (review PASS on eb877f4, T2-eb877f4.txt, no flaky part; the earlier review on 0f0bbc8 had attachments-ui flaky, passed on run 2 of 3). Before the merge, T2 merged main with T0+T1+S7: bridge tests 83/83 and swift test 112/112 pass on that combination, so the auto-merged S7+T0 code on main builds and passes.
+
+- **2026-11-08 · S4 assigned.** Branch `claude/s4-attach-files`, simulator `dshm-S4`, DSHM_HOME `~/.dshm/home-s4`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D107–D109. `eval "$(scripts/slice-env S4)"` exports them.
+
+- **2026-11-08 · S4 runs as a background agent.** S4 assigned (D107–D109) and started as a background agent in its own worktree (§5.3 step 3). Running: S1, X1, S4.
+
+- **2026-11-08 · X1 merged.** Merged as `9d4cb67`; `scripts/check-plan` on the merge commit passed. No open `[human]` items, so X1 is `done`. §9 rows 5 (D104).
+
+- **2026-11-08 · S3 assigned.** Branch `claude/s3-model-failures`, simulator `dshm-S3`, DSHM_HOME `~/.dshm/home-s3`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D110–D112. `eval "$(scripts/slice-env S3)"` exports them.
+
+- **2026-11-08 · X1 merged; S3 runs as a background agent.** X1 merged as 9d4cb67 (no [ui] items, so scripts/review X1 has nothing to run). Findings in spikes/model-failures/README.md: DSH never pauses on a model failure; every failure ends the turn with turn/end reason error {message, code, status} (rate limit after 5 retries in ~16 s); a new prompt after a failed turn continues the same session. D104 in §9. Not covered by the spike: real DeepSeek wording, failures mid-task, ACCOUNT_QUOTA. S3 assigned (D110–D112) and started as a background agent with the X1 findings in its brief.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -555,3 +593,6 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 |---|---|---|---|---|---|
 | 1 | T1 | decision | ARCHITECTURE D92, *provisional*: Agent questions (screen P1, extends D18) | `claude/t1-questions` | merged `8f55a72` |
 | 2 | T0 | decision | ARCHITECTURE D89, *provisional*: A follow-up message continues the task (screen 04) | `claude/t0-followup` | merged `71577b2` |
+| 3 | S7 | decision | ARCHITECTURE D98, *provisional*: A reconnect tries every saved address of the host, one at a time, the last working one first (amends D21 e) | `claude/s7-reconnect` | merged `1978046` |
+| 4 | T2 | decision | ARCHITECTURE D95, *provisional*: Attachments: one photo in a new task, sent in parts | `claude/t2-attachments` | merged `1762164` |
+| 5 | X1 | decision | ARCHITECTURE D104, *provisional*: A model failure ends the task as failed; the phone shows text chosen by the failure code | `claude/x1-model-failures` | merged `9d4cb67` |

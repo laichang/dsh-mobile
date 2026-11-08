@@ -1,0 +1,23 @@
+{
+  "_comment": "Golden multi-part upload (ARCHITECTURE D95). photo.jpg is a generated test image. Swift and TS tests split it into parts of partSize bytes, compare with `parts`, and check that the host gets it byte-identical. Never change this file or photo.jpg; add a new fixture instead.",
+  "file": "photo.jpg",
+  "name": "photo.jpg",
+  "mediaType": "image/jpeg",
+  "size": 129226,
+  "sha256": "6556fc97b51873e4e62141e5596804b8787ec2e5290cab6bcf94fb295bad37a4",
+  "partSize": 49152,
+  "parts": [
+    {
+      "size": 49152,
+      "sha256": "a1f697ebb120d8a26b1b10c4aa62dfaead790c1303ebae391cb3326294fd262f"
+    },
+    {
+      "size": 49152,
+      "sha256": "7520733681c27859c3828d44623bdf18fbc27895cecc6a167c9b6a69802aab6a"
+    },
+    {
+      "size": 30922,
+      "sha256": "ce3697decb445ce7678ab2e387a71e5e9e3a835681f9997619b04747e8f03345"
+    }
+  ]
+}

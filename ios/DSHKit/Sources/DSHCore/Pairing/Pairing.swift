@@ -14,24 +14,11 @@ public enum PairingError: Error, Equatable, CustomStringConvertible {
         }
     }
 
-    /// A short reason for a failed connection, for the failure detail.
-    public static func reason(for error: any Error) -> String {
-        let ns = error as NSError
-        guard ns.domain == NSURLErrorDomain else { return String(describing: error) }
-        let name: String? = switch ns.code {
-        case NSURLErrorAppTransportSecurityRequiresSecureConnection: "App Transport Security"
-        case NSURLErrorCannotConnectToHost: "connection refused"
-        case NSURLErrorTimedOut: "timed out"
-        case NSURLErrorNotConnectedToInternet: "no network"
-        case NSURLErrorNetworkConnectionLost: "connection lost"
-        case NSURLErrorCannotFindHost: "host not found"
-        default: nil
-        }
-        return name.map { "URL error \(ns.code), \($0)" } ?? "URL error \(ns.code)"
-    }
+    /// A short reason for a failed connection, for the failure detail (`AddressFailure.reason(for:)`).
+    public static func reason(for error: any Error) -> String { AddressFailure.reason(for: error) }
 }
 
-/// Pairs with the host behind a QR offer (PLAN S1): tries each address in order, runs the
+/// Pairs with the host behind a QR offer: tries each address in order, runs the
 /// `IKpsk1` handshake and Hello, then saves the host. Later connections use `IK`
 /// (`NoiseChannel` `.reconnect`) with the saved host key.
 public struct Pairing: Sendable {
@@ -52,30 +39,39 @@ public struct Pairing: Sendable {
         // The bridge enforces expiry too; refusing early keeps a stale QR off the network.
         guard !offer.isExpired(at: now()) else { throw PairingError.expired }
         let channel = NoiseChannel.pair(offer, identity: try keys.identity())
-        var tried: [String] = []
-        for endpoint in offer.addresses {
-            let connection = HostConnection(endpoint: endpoint, channel: channel, transport: transport)
-            do {
-                try await connection.connect()
-            } catch let error as NoiseChannelError {
-                // The bridge answered and said no: another address won't change that.
-                throw error
-            } catch {
-                tried.append("\(endpoint.description) (\(PairingError.reason(for: error)))")
-                continue
-            }
-            await connection.disconnect()
-            let others = offer.addresses.filter { $0 != endpoint }
-            let host = PairedHost(name: offer.hostName, addresses: [endpoint] + others, hostKey: offer.hostKey, pairedAt: now())
-            try hosts.save(host)
-            return host
+        // D98: the same loop over the addresses as a reconnect, each with its own timeout. A
+        // refused pairing code (the bridge answered and said no) ends it: another address won't
+        // change that.
+        let connection = HostConnection(endpoints: offer.addresses, channel: channel, transport: transport)
+        do {
+            try await connection.connect()
+        } catch HostConnectionError.unreachable(let failures) {
+            throw PairingError.unreachable(failures.map(\.description))
         }
-        throw PairingError.unreachable(tried)
+        let endpoint = await connection.currentEndpoint ?? offer.addresses[0]
+        await connection.disconnect()
+        let others = offer.addresses.filter { $0 != endpoint }
+        let host = PairedHost(name: offer.hostName, addresses: [endpoint] + others, hostKey: offer.hostKey, pairedAt: now())
+        try hosts.save(host)
+        return host
     }
 
     /// The channel for every connection after pairing.
     public func reconnectChannel(to host: PairedHost) throws -> NoiseChannel {
         NoiseChannel(identity: try keys.identity(), hostKey: host.hostKey, mode: .reconnect)
+    }
+
+    /// The connection to a paired host (D98): IK over each saved address, the one that worked
+    /// last first. When a different address works, it is saved first, so the next launch tries
+    /// it first too.
+    public func connection(to host: PairedHost, attemptTimeout: Duration = HostConnection.defaultAttemptTimeout) throws -> HostConnection {
+        let store = hosts, id = host.id
+        return HostConnection(endpoints: host.addresses, channel: try reconnectChannel(to: host), transport: transport,
+                              attemptTimeout: attemptTimeout) { addresses in
+            guard var saved = store.load().first(where: { $0.id == id }), saved.addresses != addresses else { return }
+            saved.addresses = addresses
+            try? store.update(saved)
+        }
     }
 }
 

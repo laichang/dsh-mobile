@@ -13,6 +13,7 @@ import { TaskState, type TaskSummary } from '../gen/s2_pb.ts'
 import { randomUUID } from 'node:crypto'
 import type { Continues, DshTasks, PromptMode, StartedTask, TaskOutput } from '../dsh.ts'
 import { HostLog } from './host-log.ts'
+import type { StagedImage } from '../attachments/staging.ts'
 import { milestoneAdded } from '../milestones/wire.ts'
 import { sessionWorkspace } from '../drawer/workspace.ts'
 import { transcriptBlock } from '../transcript/wire.ts'
@@ -28,7 +29,10 @@ export interface TaskStarter {
   inbox?: DshTasks['inbox']
   modelCatalog?: DshTasks['modelCatalog']
   selectModel?: DshTasks['selectModel']
-  start(prompt: string, signal: AbortSignal, selection?: Selection, workspace?: string, continues?: Continues): Promise<StartedTask>
+  start(prompt: string, signal: AbortSignal, selection?: Selection, workspace?: string, images?: readonly StagedImage[],
+        continues?: Continues): Promise<StartedTask>
+  /** Attachments (D95): the starter takes `images`. */
+  readonly attachments?: boolean
 }
 
 /** D101: a message sent while its task runs, until DSH takes it into a turn. */
@@ -70,9 +74,10 @@ export class TaskHub {
    * Starts a task. `onCreated` runs synchronously once the task id is known and before any of
    * the task's events are logged, so the caller can answer `CreateTask` first.
    */
-  async create(prompt: string, onCreated: (taskId: string) => void = () => {}, selection?: Selection, workspace?: string): Promise<string> {
+  async create(prompt: string, onCreated: (taskId: string) => void = () => {}, selection?: Selection, workspace?: string,
+                images?: readonly StagedImage[]): Promise<string> {
     let taskId: string | undefined
-    const task = await this.starter.start(prompt, this.abort.signal, selection, workspace,
+    const task = await this.starter.start(prompt, this.abort.signal, selection, workspace, images?.length ? images : undefined,
       () => taskId === undefined ? Promise.resolve(false) : this.continues(taskId))
     taskId = task.taskId
     const at = BigInt(this.now())

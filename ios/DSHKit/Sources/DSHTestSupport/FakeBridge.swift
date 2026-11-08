@@ -361,6 +361,15 @@ public final class FakeHost: Sendable {
         var resumed = false
         var ownTasks: Set<String> = []
         var helloDone = false
+        /// D95: this connection's uploads, like bridge/src/attachments/staging.ts.
+        var uploads: [String: FakeUpload] = [:]
+    }
+
+    private struct FakeUpload {
+        var begin: Dshm_V1_UploadBegin
+        var data = Data()
+        var parts = 0
+        var staged = false
     }
 
     private struct State {
@@ -370,6 +379,9 @@ public final class FakeHost: Sendable {
         var connections: [UUID: Connection] = [:]
         var reachable = true
         var prompts: [String] = []
+        /// D95: the files each CreateTask named, in order (one entry per task).
+        var attachments: [[(begin: Dshm_V1_UploadBegin, data: Data)]] = []
+        var uploadFrameSizes: [Int] = []
         var tasksCreated = 0
         var incarnation = 0
         /// S20: models that left the catalog (`Pickers.goneAfterUse`).
@@ -460,6 +472,13 @@ public final class FakeHost: Sendable {
     public var followUps: [String] { state.withLock { $0.followUps } }
     /// D101: the queue edits this host made, in order ("steer <text>", "remove <text>").
     public var queueEdits: [String] { state.withLock { $0.queueEdits } }
+    /// D95: per created task, the staged files it named: (media type, name, bytes).
+    public var attachments: [[(mediaType: String, name: String, data: Data)]] {
+        state.withLock { $0.attachments.map { $0.map { (mediaType: $0.begin.mediaType, name: $0.begin.name, data: $0.data) } } }
+    }
+    /// D95: the encoded size of every UploadChunk request frame received, in order.
+    public var uploadFrameSizes: [Int] { state.withLock { $0.uploadFrameSizes } }
+    private var takesAttachments: Bool { extraCapabilities.contains(DSHProtocolInfo.attachmentsCapability) }
     public var logID: String { state.withLock { $0.logID } }
     public var head: UInt64 { state.withLock { UInt64($0.log.count) } }
     public var connectionCount: Int { state.withLock { $0.connections.count } }
@@ -561,8 +580,18 @@ public final class FakeHost: Sendable {
                     if script.followUpReply != nil && script.queuesFollowUps { hello.capabilities.append(DSHProtocolInfo.queueCapability) }
                 }
                 bridge.deliver(Self.response(id, .hello(hello)))
+            case .createTask(let create)? where !create.uploadIds.isEmpty && (!takesAttachments
+                    || Set(create.uploadIds).count != create.uploadIds.count
+                    || !create.uploadIds.allSatisfy({ conn.uploads[$0]?.staged == true })):
+                bridge.deliver(Self.uploadError(id, "upload/unknown", "The attachment is not on the host. Send it again."))
             case .createTask(let create)?:
                 s.prompts.append(create.prompt)
+                if !create.uploadIds.isEmpty {
+                    s.attachments.append(create.uploadIds.map { uploadID in
+                        let upload = conn.uploads.removeValue(forKey: uploadID)!
+                        return (begin: upload.begin, data: upload.data)
+                    })
+                }
                 s.tasksCreated += 1
                 let taskID = "\(taskIDPrefix)-\(s.tasksCreated)"
                 conn.ownTasks.insert(taskID)
@@ -589,6 +618,50 @@ public final class FakeHost: Sendable {
                 let ask = script.asks(create.prompt)
                 let variant = script.variant(for: create.prompt) // S19
                 Task { await self.stream(taskID: taskID, incarnation: incarnation, hold: hold, ask: ask, using: variant) }
+            case .uploadBegin(let begin)? where takesAttachments:
+                let types = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+                if conn.uploads[begin.uploadID] != nil || begin.uploadID.isEmpty || begin.sha256.count != 32 || begin.size == 0 {
+                    bridge.deliver(Self.uploadError(id, "upload/invalid", "Bad upload."))
+                } else if !types.contains(begin.mediaType) {
+                    bridge.deliver(Self.uploadError(id, "upload/media-type", "The host takes \(types.joined(separator: ", ")), not \(begin.mediaType)."))
+                } else if begin.size > UInt64(Attachments.maxBytes) {
+                    bridge.deliver(Self.uploadError(id, "upload/too-large", "The file is too large."))
+                } else {
+                    conn.uploads[begin.uploadID] = FakeUpload(begin: begin)
+                    bridge.deliver(Self.response(id, .uploadAck(.with { $0.uploadID = begin.uploadID })))
+                }
+            case .uploadChunk(let chunk)? where takesAttachments:
+                s.uploadFrameSizes.append((try? Self.frame(request).serializedData().count) ?? 0)
+                guard var upload = conn.uploads[chunk.uploadID], !upload.staged else {
+                    bridge.deliver(Self.uploadError(id, "upload/unknown", "No upload with this id."))
+                    return
+                }
+                guard chunk.index == upload.parts, !chunk.data.isEmpty, chunk.data.count <= Attachments.partSize,
+                      UInt64(upload.data.count + chunk.data.count) <= upload.begin.size else {
+                    conn.uploads[chunk.uploadID] = nil
+                    bridge.deliver(Self.uploadError(id, "upload/missing-part", "Expected part \(upload.parts), got part \(chunk.index)."))
+                    return
+                }
+                upload.data.append(chunk.data)
+                upload.parts += 1
+                conn.uploads[chunk.uploadID] = upload
+                bridge.deliver(Self.response(id, .uploadAck(.with { $0.uploadID = chunk.uploadID; $0.received = UInt64(upload.data.count) })))
+            case .uploadEnd(let end)? where takesAttachments:
+                guard var upload = conn.uploads[end.uploadID], !upload.staged else {
+                    bridge.deliver(Self.uploadError(id, "upload/unknown", "No upload with this id."))
+                    return
+                }
+                if UInt64(upload.data.count) != upload.begin.size {
+                    conn.uploads[end.uploadID] = nil
+                    bridge.deliver(Self.uploadError(id, "upload/missing-part", "Received \(upload.data.count) of \(upload.begin.size) bytes."))
+                } else if Attachments.sha256(upload.data) != upload.begin.sha256 {
+                    conn.uploads[end.uploadID] = nil
+                    bridge.deliver(Self.uploadError(id, "upload/hash-mismatch", "The file does not match its SHA-256."))
+                } else {
+                    upload.staged = true
+                    conn.uploads[end.uploadID] = upload
+                    bridge.deliver(Self.response(id, .uploadStaged(.with { $0.uploadID = end.uploadID })))
+                }
             case .listTasks?:
                 var list = Dshm_V1_TaskList()
                 list.tasks = s.tasks.reversed()
@@ -750,7 +823,8 @@ public final class FakeHost: Sendable {
                     s.revoked = true
                     for conn in s.connections.values { conn.bridge.drop(code: PairingWire.CloseCode.deviceUnknown.rawValue) }
                 }
-            case .answerApproval?, .answerQuestion?, .interrupt?, .sendMessage?, .editQueue?, .getModelCatalog?, .selectModel?, .listWorkspaces?, .listDevices?, .listAudit?, .revokeDevice?, .readSession?:
+            case .answerApproval?, .answerQuestion?, .interrupt?, .sendMessage?, .editQueue?, .getModelCatalog?, .selectModel?, .listWorkspaces?, .listDevices?, .listAudit?, .revokeDevice?, .readSession?,
+                 .uploadBegin?, .uploadChunk?, .uploadEnd?:
                 var error = Dshm_V1_Error()
                 error.code = "request/unsupported"
                 error.message = "This test host does not advertise this capability."
@@ -1041,6 +1115,16 @@ public final class FakeHost: Sendable {
     }
 
     private static func nowMs() -> Int64 { Int64(Date().timeIntervalSince1970 * 1000) }
+
+    private static func uploadError(_ requestID: UInt64, _ code: String, _ message: String) -> Dshm_V1_Frame {
+        response(requestID, .error(.with { $0.code = code; $0.message = message }))
+    }
+
+    private static func frame(_ request: Dshm_V1_Request) -> Dshm_V1_Frame {
+        var frame = Dshm_V1_Frame()
+        frame.request = request
+        return frame
+    }
 
     private static func response(_ requestID: UInt64, _ body: Dshm_V1_Response.OneOf_Body) -> Dshm_V1_Frame {
         var response = Dshm_V1_Response()

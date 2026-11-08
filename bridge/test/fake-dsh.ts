@@ -15,7 +15,7 @@
  * then runs by itself.
  */
 import type { Selection } from '../src/models/catalog.ts'
-import type { DshServices, FollowFrame } from '../src/dsh.ts'
+import type { DshServices, FollowFrame, PromptPart } from '../src/dsh.ts'
 import type { AskAnswer, AskItem, QuestionRequest } from '../src/questions/holder.ts'
 
 type QuestionHandler = (this: unknown, req: QuestionRequest, next: () => Promise<AskAnswer>) => Promise<AskAnswer>
@@ -117,6 +117,10 @@ export class FakeDSH implements DshServices {
     list: () => this.workspaces.map((path, index) => ({ path, title: path.split('/').at(-1), updatedAt: new Date(index).toISOString() })),
   }
   readonly prompts: { sessionId: string; text: string }[] = []
+  /** D95: every prompt's content parts, in order (text and staged files). */
+  readonly promptParts: { sessionId: string; parts: readonly PromptPart[] }[] = []
+  /** D95: images staged through `fileUploads.uploadImageStream`, by receipt. */
+  readonly stagedImages: { sessionId: string; receiptId: string; mediaType: string; name?: string; data: Uint8Array }[] = []
   /** The `mode` and `requestId` of each prompt, in the order of `prompts`. */
   readonly promptOptions: { mode?: string; requestId?: string }[] = []
   /** D101: every `updateQueue` call, in order. */
@@ -159,6 +163,18 @@ export class FakeDSH implements DshServices {
     routableProviders: ['provider'], failures: [],
   }
 
+  fileUploads = {
+    uploadImageStream: async (request: { sessionId: string; data: AsyncIterable<Uint8Array>; mediaType: string; name?: string }) => {
+      this.session(request.sessionId)
+      const parts: Uint8Array[] = []
+      for await (const part of request.data) parts.push(part)
+      const receiptId = `receipt-${this.stagedImages.length + 1}`
+      this.stagedImages.push({ sessionId: request.sessionId, receiptId, mediaType: request.mediaType, name: request.name,
+        data: new Uint8Array(Buffer.concat(parts)) })
+      return { receiptId }
+    },
+  }
+
   sessionController = {
     modelCatalog: async () => this.catalog,
     selectModel: async ({ sessionId, ...selection }: Selection & { sessionId: string }) => {
@@ -189,12 +205,18 @@ export class FakeDSH implements DshServices {
     },
 
     prompt: async (
-      request: { sessionId: string; mode?: string; requestId?: string; content: readonly { type: 'text'; text: string }[] },
+      request: { sessionId: string; mode?: string; requestId?: string; content: readonly PromptPart[] },
       _signal: AbortSignal,
     ) => {
       const s = this.session(request.sessionId)
-      const text = request.content.map((c) => c.text).join('')
+      for (const part of request.content) {
+        if (part.type === 'file' && !this.stagedImages.some((i) => i.receiptId === part.receiptId && i.sessionId === request.sessionId)) {
+          throw new Error(`unknown receipt ${part.receiptId}`)
+        }
+      }
+      const text = request.content.map((c) => (c.type === 'text' ? c.text : '')).join('')
       this.prompts.push({ sessionId: request.sessionId, text })
+      this.promptParts.push({ sessionId: request.sessionId, parts: request.content })
       this.promptOptions.push({ mode: request.mode, requestId: request.requestId })
       const item: InboxItem = { id: `item-${this.nextItem++}`, rpcId: request.requestId, text }
       if (s.running) {

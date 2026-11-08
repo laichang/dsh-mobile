@@ -69,6 +69,9 @@ public final class CachedTask {
     /// D101: the follow-ups that wait while the task runs, a JSON-encoded `FollowUpQueue`; empty
     /// when none waits. From the host's `QueuedMessage` events, so a replay rebuilds it.
     public var queueData: Data = Data()
+    /// The thumbnail of the photo sent with the first message (D95), a small JPEG; nil without one.
+    /// Local to this phone: the host has the photo itself.
+    public var photoThumbnail: Data?
 
     public init(hostKey: String, taskID: String, title: String, createdAt: Date) {
         self.key = Self.key(hostKey: hostKey, taskID: taskID)

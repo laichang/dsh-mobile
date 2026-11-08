@@ -19,7 +19,8 @@ import { startBridgeServer, type BridgeServer } from './server.ts'
 export const name = 'dsh-mobile-bridge'
 const dshVersion = runtimeDshVersion()
 const supported = supportsDsh(dshVersion)
-export const inject = supported ? ['sessionController', 'workspaceController', 'workspaceRegistry'] : []
+// `fileUploads` stages attachments (D95); DSH 0.2.2-rc.1 has it in every profile.
+export const inject = supported ? ['sessionController', 'workspaceController', 'workspaceRegistry', 'fileUploads'] : []
 
 export interface Config {
   /** Listen address. Default 0.0.0.0: every payload is Noise-encrypted (ARCHITECTURE D21). */

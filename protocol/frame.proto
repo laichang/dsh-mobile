@@ -26,6 +26,7 @@ import "workspaces.proto";
 import "transcript.proto";
 import "conversation.proto";
 import "questions.proto";
+import "attachments.proto";
 
 // One WebSocket binary message carries exactly one Frame (inside the
 // SecureChannel; plaintext only on loopback in T0).
@@ -60,6 +61,7 @@ message Request {
     ReadSession read_session = 260;
     SendMessage send_message = 360; EditQueue edit_queue = 361; // conversation.proto
     AnswerQuestion answer_question = 380;
+    UploadBegin upload_begin = 400; UploadChunk upload_chunk = 401; UploadEnd upload_end = 402; // attachments.proto
   }
 }
 
@@ -85,6 +87,7 @@ message Response {
     SessionPage session_page = 260;
     MessageAccepted message_accepted = 360; QueueEdited queue_edited = 361; // conversation.proto
     QuestionResolved question_resolved = 380;
+    UploadAck upload_ack = 400; UploadStaged upload_staged = 401; // attachments.proto
   }
 }
 
@@ -135,6 +138,7 @@ message CreateTask {
   string prompt = 1;
   ModelSelection model_selection = 120;
   optional string workspace = 140; // Absolute directory on the host; absent uses its configured default.
+  repeated string upload_ids = 400; // Staged uploads (attachments.proto), in prompt order.
 }
 
 message TaskCreated {

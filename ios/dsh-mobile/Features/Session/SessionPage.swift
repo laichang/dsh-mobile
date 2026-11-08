@@ -180,15 +180,16 @@ private struct SessionTranscript: View {
                             || messages.filter(\.fromUser).count > 1 + row.blocks.followUpCount
                         // S19: the final answer of a finished session with a journal.
                         let finalSeq = showJournal && outcome != nil ? messages.last(where: { !$0.fromUser })?.seq : nil
-                        if !messages.contains(where: \.fromUser) && !row.title.isEmpty {
-                            UserBubble(text: row.title)
+                        let firstUserSeq = messages.first(where: \.fromUser)?.seq
+                        if firstUserSeq == nil && !row.title.isEmpty {
+                            UserBubble(text: row.title, photo: row.photoThumbnail)
                         }
                         // Without the journal: only the first prompt on top; the streamed transcript
                         // below holds the answers and this phone's follow-ups (D89).
                         let shown = showJournal ? messages : Array(messages.filter(\.fromUser).prefix(1))
                         ForEach(shown, id: \.seq) { message in
                             if message.fromUser {
-                                UserBubble(text: message.text)
+                                UserBubble(text: message.text, photo: message.seq == firstUserSeq ? row.photoThumbnail : nil)
                             } else {
                                 if message.seq == finalSeq {
                                     lead(row, outcome)
@@ -318,21 +319,32 @@ private struct SessionTranscript: View {
 }
 
 /// The user's message: a bubble on the right (DESIGN.md: bubble token).
+/// A photo sent with the message (D95) shows as a thumbnail above it.
 struct UserBubble: View {
     let text: String
+    var photo: Data? = nil
 
     var body: some View {
-        HStack {
-            Spacer(minLength: 48)
-            Text(verbatim: text)
-                .textSelection(.enabled)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(DSHTheme.bubble, in: .rect(cornerRadius: 18))
+        VStack(alignment: .trailing, spacing: 6) {
+            if let photo {
+                PhotoThumbnail(data: photo, size: 140)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Photo")
+                    .accessibilityIdentifier("session.message.user.photo")
+            }
+            HStack {
+                Spacer(minLength: 48)
+                Text(verbatim: text)
+                    .textSelection(.enabled)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(DSHTheme.bubble, in: .rect(cornerRadius: 18))
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(text)
+            .accessibilityIdentifier("session.message.user")
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(text)
-        .accessibilityIdentifier("session.message.user")
+        .frame(maxWidth: .infinity, alignment: .trailing)
     }
 }
 
@@ -480,6 +492,9 @@ struct ComposerView: View {
                     .foregroundStyle(DSHTheme.amber)
                     .accessibilityIdentifier("composer.error")
             }
+            if let photo = store.composerPhoto {
+                PhotoChip(store: store, photo: photo)
+            }
             TextField("One sentence for your agent", text: $store.prompt, axis: .vertical)
                 .lineLimit(1...5)
                 .focused($editingPrompt)
@@ -487,6 +502,9 @@ struct ComposerView: View {
                 .accessibilityIdentifier("composer.prompt")
                 .onSubmit(send)
             HStack(spacing: 8) {
+                if store.canAttachPhoto {
+                    PhotoKey(store: store)
+                }
                 if let key = store.composerHostKey {
                     modelControl(key)
                 }
