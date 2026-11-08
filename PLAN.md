@@ -673,6 +673,8 @@ Append-only, dated.
 
 - **2026-11-09 · S9 assigned.** Branch `claude/s9-ui-test-waits`, simulator `dshm-S9`, DSHM_HOME `~/.dshm/home-s9`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D128–D130. `eval "$(scripts/slice-env S9)"` exports them.
 
+- **2026-11-09 · S9 runs as a background agent.** S9 assigned (D128–D130) and started as a background agent. Running: S6, S8, S9.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
