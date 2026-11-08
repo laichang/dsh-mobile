@@ -1327,12 +1327,12 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 From a real iPhone over Tailscale, against a home Mac. All items are human-only.
 
-- [ ] [human] Pair by scanning a QR (S1) — Evidence:
-- [ ] [human] "Fix the failing CI test in `<repo>`, open a PR", with workspace and model picked (S6, S7) — Evidence:
-- [ ] [human] Watch milestones tick (S3); open the session and read the diff (S8) — Evidence:
-- [ ] [human] Approve the `git push` from an approval card showing the exact command (S4) — Evidence:
-- [ ] [human] Raise reasoning effort mid-task (S6). Kill the app and reopen it. Open the task from the drawer and find nothing lost (S2) — Evidence:
-- [ ] [human] Get the PR link in the result — Evidence:
+- [x] [human] Pair by scanning a QR (S1) — Evidence: human:2026-11-08 iPhone 17 Pro paired by QR over Tailscale
+- [x] [human] "Fix the failing CI test in `<repo>`, open a PR", with workspace and model picked (S6, S7) — Evidence: human:2026-11-08 task sent from the iPhone with workspace and model picked in the sheets
+- [x] [human] Watch milestones tick (S3); open the session and read the diff (S8) — Evidence: human:2026-11-08 milestones ticked; diff read on the session page
+- [x] [human] Approve the `git push` from an approval card showing the exact command (S4) — Evidence: human:2026-11-08 git push approved from the approval sheet showing the command
+- [x] [human] Raise reasoning effort mid-task (S6). Kill the app and reopen it. Open the task from the drawer and find nothing lost (S2) — Evidence: human:2026-11-08 effort raised mid-task; after kill and reopen the task was in the drawer with nothing lost
+- [x] [human] Get the PR link in the result — Evidence: human:2026-11-08 PR link in the result on the iPhone
 
 Do the exit on the new UI, after T1, S14, S15, S16, S18, S19 and S20 are done. If you do it on the M1 UI, you must check several items again after the UI slices land.
 
