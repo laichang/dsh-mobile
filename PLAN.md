@@ -50,7 +50,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S4 | todo | — | 2026-11-08 | Assign it and start a session |
 | S5 | todo | — | 2026-11-08 | Assign it and start a session |
 | S6 | todo | — | 2026-11-08 | Assign it and start a session |
-| S7 | doing | `claude/s7-reconnect` | 2026-11-08 | Slice owner builds (§8) |
+| S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | todo | — | 2026-11-08 | Assign it and start a session |
 | S9 | todo | — | 2026-11-08 | Assign it and start a session |
 | S10 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -548,6 +548,8 @@ Append-only, dated.
 
 - **2026-11-08 · T0 merged; S1 runs as a background agent.** T0 merged as 71577b2 (review PASS on 7f6c6c1 after the merge of main, T0-7f6c6c1.txt). D89 is in §9. To merge, the coordinator stashed the user's uncommitted Localizable.xcstrings (Xcode reformat); it did not apply cleanly after the merge, so it stays as stash@{0} for the user and the file on main is the merged version. T2 asked to merge main again. S1 assigned; the app refused start_session in this event turn, so S1 runs as a background agent in its own worktree (§5.3 step 3).
 
+- **2026-11-08 · S7 merged.** Merged as `1978046`; `scripts/check-plan` on the merge commit passed. `scripts/review S7` at `90b3822`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S7-90b3822.txt`). No open `[human]` items, so S7 is `done`. §9 rows 3 (D98).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -556,3 +558,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 |---|---|---|---|---|---|
 | 1 | T1 | decision | ARCHITECTURE D92, *provisional*: Agent questions (screen P1, extends D18) | `claude/t1-questions` | merged `8f55a72` |
 | 2 | T0 | decision | ARCHITECTURE D89, *provisional*: A follow-up message continues the task (screen 04) | `claude/t0-followup` | merged `71577b2` |
+| 3 | S7 | decision | ARCHITECTURE D98, *provisional*: A reconnect tries every saved address of the host, one at a time, the last working one first (amends D21 e) | `claude/s7-reconnect` | merged `1978046` |
