@@ -237,13 +237,21 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .readSession(newValue)}
   }
 
-  /// conversation.proto
   public var sendMessage: Dshm_V1_SendMessage {
     get {
       if case .sendMessage(let v)? = body {return v}
       return Dshm_V1_SendMessage()
     }
     set {body = .sendMessage(newValue)}
+  }
+
+  /// conversation.proto
+  public var editQueue: Dshm_V1_EditQueue {
+    get {
+      if case .editQueue(let v)? = body {return v}
+      return Dshm_V1_EditQueue()
+    }
+    set {body = .editQueue(newValue)}
   }
 
   public var answerQuestion: Dshm_V1_AnswerQuestion {
@@ -297,8 +305,9 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     case revokeDevice(Dshm_V1_RevokeDevice)
     case listAudit(Dshm_V1_ListAudit)
     case readSession(Dshm_V1_ReadSession)
-    /// conversation.proto
     case sendMessage(Dshm_V1_SendMessage)
+    /// conversation.proto
+    case editQueue(Dshm_V1_EditQueue)
     case answerQuestion(Dshm_V1_AnswerQuestion)
     case uploadBegin(Dshm_V1_UploadBegin)
     case uploadChunk(Dshm_V1_UploadChunk)
@@ -426,13 +435,21 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .sessionPage(newValue)}
   }
 
-  /// conversation.proto
   public var messageAccepted: Dshm_V1_MessageAccepted {
     get {
       if case .messageAccepted(let v)? = body {return v}
       return Dshm_V1_MessageAccepted()
     }
     set {body = .messageAccepted(newValue)}
+  }
+
+  /// conversation.proto
+  public var queueEdited: Dshm_V1_QueueEdited {
+    get {
+      if case .queueEdited(let v)? = body {return v}
+      return Dshm_V1_QueueEdited()
+    }
+    set {body = .queueEdited(newValue)}
   }
 
   public var questionResolved: Dshm_V1_QuestionResolved {
@@ -478,8 +495,9 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     case deviceList(Dshm_V1_DeviceList)
     case auditPage(Dshm_V1_AuditPage)
     case sessionPage(Dshm_V1_SessionPage)
-    /// conversation.proto
     case messageAccepted(Dshm_V1_MessageAccepted)
+    /// conversation.proto
+    case queueEdited(Dshm_V1_QueueEdited)
     case questionResolved(Dshm_V1_QuestionResolved)
     case uploadAck(Dshm_V1_UploadAck)
     /// attachments.proto
@@ -574,13 +592,21 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .transcriptBlock(newValue)}
   }
 
-  /// conversation.proto
   public var userMessage: Dshm_V1_UserMessage {
     get {
       if case .userMessage(let v)? = body {return v}
       return Dshm_V1_UserMessage()
     }
     set {body = .userMessage(newValue)}
+  }
+
+  /// conversation.proto
+  public var queuedMessage: Dshm_V1_QueuedMessage {
+    get {
+      if case .queuedMessage(let v)? = body {return v}
+      return Dshm_V1_QueuedMessage()
+    }
+    set {body = .queuedMessage(newValue)}
   }
 
   /// questions.proto
@@ -620,8 +646,9 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     case modelSelected(Dshm_V1_ModelSelected)
     /// S17 (transcript.proto)
     case transcriptBlock(Dshm_V1_TranscriptBlock)
-    /// conversation.proto
     case userMessage(Dshm_V1_UserMessage)
+    /// conversation.proto
+    case queuedMessage(Dshm_V1_QueuedMessage)
     /// questions.proto
     case questionPending(Dshm_V1_QuestionPending)
     case questionResolved(Dshm_V1_QuestionResolved)
@@ -854,7 +881,7 @@ nonisolated extension Dshm_V1_Frame: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
 nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Request"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0\u{4}%list_tasks\0\u{1}resume\0\u{4}'answer_approval\0\u{2}\u{14}interrupt\0\u{4}\u{14}get_model_catalog\0\u{3}select_model\0\u{4}\u{13}list_workspaces\0\u{4}<list_devices\0\u{3}revoke_device\0\u{3}list_audit\0\u{4}:read_session\0\u{4}d\u{1}send_message\0\u{4}\u{14}answer_question\0\u{4}\u{14}upload_begin\0\u{3}upload_chunk\0\u{3}upload_end\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0\u{4}%list_tasks\0\u{1}resume\0\u{4}'answer_approval\0\u{2}\u{14}interrupt\0\u{4}\u{14}get_model_catalog\0\u{3}select_model\0\u{4}\u{13}list_workspaces\0\u{4}<list_devices\0\u{3}revoke_device\0\u{3}list_audit\0\u{4}:read_session\0\u{4}d\u{1}send_message\0\u{3}edit_queue\0\u{4}\u{13}answer_question\0\u{4}\u{14}upload_begin\0\u{3}upload_chunk\0\u{3}upload_end\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1045,6 +1072,19 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
           self.body = .sendMessage(v)
         }
       }()
+      case 361: try {
+        var v: Dshm_V1_EditQueue?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .editQueue(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .editQueue(v)
+        }
+      }()
       case 380: try {
         var v: Dshm_V1_AnswerQuestion?
         var hadOneofValue = false
@@ -1167,6 +1207,10 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
       guard case .sendMessage(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 360)
     }()
+    case .editQueue?: try {
+      guard case .editQueue(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 361)
+    }()
     case .answerQuestion?: try {
       guard case .answerQuestion(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 380)
@@ -1198,7 +1242,7 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
 
 nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Response"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0\u{4}$task_list\0\u{1}resumed\0\u{4}'approval_resolved\0\u{4}\u{14}interrupt_accepted\0\u{4}\u{14}model_catalog\0\u{3}model_selected\0\u{4}\u{13}workspace_list\0\u{4}<device_list\0\u{4}\u{2}audit_page\0\u{4}:session_page\0\u{4}d\u{1}message_accepted\0\u{4}\u{14}question_resolved\0\u{4}\u{14}upload_ack\0\u{3}upload_staged\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0\u{4}$task_list\0\u{1}resumed\0\u{4}'approval_resolved\0\u{4}\u{14}interrupt_accepted\0\u{4}\u{14}model_catalog\0\u{3}model_selected\0\u{4}\u{13}workspace_list\0\u{4}<device_list\0\u{4}\u{2}audit_page\0\u{4}:session_page\0\u{4}d\u{1}message_accepted\0\u{3}queue_edited\0\u{4}\u{13}question_resolved\0\u{4}\u{14}upload_ack\0\u{3}upload_staged\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1389,6 +1433,19 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
           self.body = .messageAccepted(v)
         }
       }()
+      case 361: try {
+        var v: Dshm_V1_QueueEdited?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .queueEdited(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .queueEdited(v)
+        }
+      }()
       case 380: try {
         var v: Dshm_V1_QuestionResolved?
         var hadOneofValue = false
@@ -1498,6 +1555,10 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
       guard case .messageAccepted(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 360)
     }()
+    case .queueEdited?: try {
+      guard case .queueEdited(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 361)
+    }()
     case .questionResolved?: try {
       guard case .questionResolved(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 380)
@@ -1525,7 +1586,7 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
 
 nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Event"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}&host_seq\0\u{3}task_upserted\0\u{3}log_reset\0\u{4}\u{12}milestone_added\0\u{4}\u{14}approval_pending\0\u{3}approval_resolved\0\u{4}'model_selected\0\u{4}\\\u{3}transcript_block\0\u{4}\u{14}user_message\0\u{4}\u{14}question_pending\0\u{3}question_resolved\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}&host_seq\0\u{3}task_upserted\0\u{3}log_reset\0\u{4}\u{12}milestone_added\0\u{4}\u{14}approval_pending\0\u{3}approval_resolved\0\u{4}'model_selected\0\u{4}\\\u{3}transcript_block\0\u{4}\u{14}user_message\0\u{3}queued_message\0\u{4}\u{13}question_pending\0\u{3}question_resolved\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1664,6 +1725,19 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
           self.body = .userMessage(v)
         }
       }()
+      case 361: try {
+        var v: Dshm_V1_QueuedMessage?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .queuedMessage(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .queuedMessage(v)
+        }
+      }()
       case 380: try {
         var v: Dshm_V1_QuestionPending?
         var hadOneofValue = false
@@ -1746,6 +1820,10 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
     case .userMessage?: try {
       guard case .userMessage(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 360)
+    }()
+    case .queuedMessage?: try {
+      guard case .queuedMessage(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 361)
     }()
     case .questionPending?: try {
       guard case .questionPending(let v)? = self.body else { preconditionFailure() }

@@ -82,9 +82,12 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
 
     /// D89: a follow-up message, placed like a row: after the text that streamed before it.
     public init(_ wire: Dshm_V1_UserMessage) {
-        self.init(id: "message-\(wire.messageID)", taskID: wire.taskID, state: .done, kind: .userMessage(text: wire.text),
+        self.init(id: Self.messagePrefix + wire.messageID, taskID: wire.taskID, state: .done, kind: .userMessage(text: wire.text),
                   time: Date(timeIntervalSince1970: TimeInterval(wire.timeMs) / 1000))
     }
+
+    /// The row ID of a follow-up message is this prefix and the bridge's message ID.
+    public static let messagePrefix = "message-"
 
     public var isUserMessage: Bool {
         if case .userMessage = kind { true } else { false }

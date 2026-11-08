@@ -16,7 +16,7 @@ struct MilestoneBar: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 icon.frame(width: 20, height: 20)
-                Text(alert ?? timeline.headline)
+                Text(Self.line(timeline, state: state, alert: alert))
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(DSHTheme.textPrimary)
                     .lineLimit(1)
@@ -42,7 +42,27 @@ struct MilestoneBar: View {
         .contentShape(.rect)
     }
 
-    private var kind: Milestone.Kind? { timeline.current?.kind }
+    /// The bar's one line. After a stop or a finish, a follow-up continues the task (D89, D101),
+    /// and its turns add no milestones: the last milestone is history then, so the line says what
+    /// the task does now.
+    static func line(_ timeline: MilestoneTimeline, state: TaskState?, alert: String?) -> String {
+        if let alert { return alert }
+        guard outdated(timeline, state: state) else { return timeline.headline }
+        return state == .completed ? String(localized: "Done") : String(localized: "Running")
+    }
+
+    private static func outdated(_ timeline: MilestoneTimeline, state: TaskState?) -> Bool {
+        switch (timeline.current?.kind, state) {
+        case (.interrupted?, .running?), (.interrupted?, .waitingOnUser?), (.interrupted?, .completed?),
+             (.finished?, .running?), (.finished?, .waitingOnUser?): true
+        default: false
+        }
+    }
+
+    private var kind: Milestone.Kind? {
+        guard Self.outdated(timeline, state: state) else { return timeline.current?.kind }
+        return state == .completed ? .finished : nil
+    }
 
     @ViewBuilder
     private var icon: some View {

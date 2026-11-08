@@ -14,6 +14,10 @@ public enum DSHProtocolInfo {
     public static let transcriptCapability = "transcript.v1"
     /// D89: SendMessage, MessageAccepted and UserMessage (protocol/conversation.proto).
     public static let conversationCapability = "conversation.v1"
+    /// D101: follow-ups while a task runs: `QueuedMessage`, `EditQueue`, `QueueEdited` (protocol/conversation.proto).
+    public static let queueCapability = "conversation.v2"
+    /// D104, D110: `failure_code` on TaskEnded and TaskSummary, and a follow-up after a failure.
+    public static let failuresCapability = "failures.v1"
     /// Agent questions: `QuestionPending`, `AnswerQuestion`, `QuestionResolved` (protocol/questions.proto).
     public static let questionsCapability = "questions.v1"
     /// Attachments: UploadBegin / UploadChunk / UploadEnd and `CreateTask.upload_ids` (protocol/attachments.proto).

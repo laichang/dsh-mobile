@@ -1,5 +1,5 @@
-// Conversation: more messages into the DSH session of a task (ARCHITECTURE D18, D89).
-// Capability "conversation.v1". Field numbers in frame.proto: 360–379.
+// Conversation: more messages into the DSH session of a task (ARCHITECTURE D18, D89, D101).
+// Capability "conversation.v1"; the queue while a task runs adds "conversation.v2". Field numbers in frame.proto: 360–379.
 //
 // A task is one DSH session (D13). After its first prompt the user can send more messages into
 // the same session. Each message starts (or joins) a turn whose output streams under the same
@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file conversation.proto.
  */
 export const file_conversation: GenFile = /*@__PURE__*/
-  fileDesc("ChJjb252ZXJzYXRpb24ucHJvdG8SB2RzaG0udjEiUAoLU2VuZE1lc3NhZ2USDwoHdGFza19pZBgBIAEoCRIiCgRtb2RlGAIgASgOMhQuZHNobS52MS5NZXNzYWdlTW9kZRIMCgR0ZXh0GAMgASgJIjYKD01lc3NhZ2VBY2NlcHRlZBIPCgd0YXNrX2lkGAEgASgJEhIKCm1lc3NhZ2VfaWQYAiABKAkiUQoLVXNlck1lc3NhZ2USDwoHdGFza19pZBgBIAEoCRISCgptZXNzYWdlX2lkGAIgASgJEgwKBHRleHQYAyABKAkSDwoHdGltZV9tcxgEIAEoAypbCgtNZXNzYWdlTW9kZRIcChhNRVNTQUdFX01PREVfVU5TUEVDSUZJRUQQABIWChJNRVNTQUdFX01PREVfU1RFRVIQARIWChJNRVNTQUdFX01PREVfUVVFVUUQAmIGcHJvdG8z");
+  fileDesc("ChJjb252ZXJzYXRpb24ucHJvdG8SB2RzaG0udjEiUAoLU2VuZE1lc3NhZ2USDwoHdGFza19pZBgBIAEoCRIiCgRtb2RlGAIgASgOMhQuZHNobS52MS5NZXNzYWdlTW9kZRIMCgR0ZXh0GAMgASgJIjYKD01lc3NhZ2VBY2NlcHRlZBIPCgd0YXNrX2lkGAEgASgJEhIKCm1lc3NhZ2VfaWQYAiABKAkiUQoLVXNlck1lc3NhZ2USDwoHdGFza19pZBgBIAEoCRISCgptZXNzYWdlX2lkGAIgASgJEgwKBHRleHQYAyABKAkSDwoHdGltZV9tcxgEIAEoAyJ/Cg1RdWV1ZWRNZXNzYWdlEg8KB3Rhc2tfaWQYASABKAkSEgoKbWVzc2FnZV9pZBgCIAEoCRIMCgR0ZXh0GAMgASgJEg8KB3RpbWVfbXMYBCABKAMSKgoJcGxhY2VtZW50GAUgASgOMhcuZHNobS52MS5RdWV1ZVBsYWNlbWVudCJWCglFZGl0UXVldWUSDwoHdGFza19pZBgBIAEoCRISCgptZXNzYWdlX2lkGAIgASgJEiQKBmFjdGlvbhgDIAEoDjIULmRzaG0udjEuUXVldWVBY3Rpb24iXgoLUXVldWVFZGl0ZWQSDwoHdGFza19pZBgBIAEoCRISCgptZXNzYWdlX2lkGAIgASgJEioKCXBsYWNlbWVudBgDIAEoDjIXLmRzaG0udjEuUXVldWVQbGFjZW1lbnQqWwoLTWVzc2FnZU1vZGUSHAoYTUVTU0FHRV9NT0RFX1VOU1BFQ0lGSUVEEAASFgoSTUVTU0FHRV9NT0RFX1NURUVSEAESFgoSTUVTU0FHRV9NT0RFX1FVRVVFEAIqpgEKDlF1ZXVlUGxhY2VtZW50Eh8KG1FVRVVFX1BMQUNFTUVOVF9VTlNQRUNJRklFRBAAEhoKFlFVRVVFX1BMQUNFTUVOVF9RVUVVRUQQARIcChhRVUVVRV9QTEFDRU1FTlRfU1RFRVJJTkcQAhIbChdRVUVVRV9QTEFDRU1FTlRfUkVNT1ZFRBADEhwKGFFVRVVFX1BMQUNFTUVOVF9SRVRVUk5FRBAEKlwKC1F1ZXVlQWN0aW9uEhwKGFFVRVVFX0FDVElPTl9VTlNQRUNJRklFRBAAEhYKElFVRVVFX0FDVElPTl9TVEVFUhABEhcKE1FVRVVFX0FDVElPTl9SRU1PVkUQAmIGcHJvdG8z");
 
 /**
  * @generated from message dshm.v1.SendMessage
@@ -112,6 +112,102 @@ export const UserMessageSchema: GenMessage<UserMessage> = /*@__PURE__*/
   messageDesc(file_conversation, 2);
 
 /**
+ * @generated from message dshm.v1.QueuedMessage
+ */
+export type QueuedMessage = Message<"dshm.v1.QueuedMessage"> & {
+  /**
+   * @generated from field: string task_id = 1;
+   */
+  taskId: string;
+
+  /**
+   * @generated from field: string message_id = 2;
+   */
+  messageId: string;
+
+  /**
+   * @generated from field: string text = 3;
+   */
+  text: string;
+
+  /**
+   * When the bridge accepted the message, Unix milliseconds.
+   *
+   * @generated from field: int64 time_ms = 4;
+   */
+  timeMs: bigint;
+
+  /**
+   * @generated from field: dshm.v1.QueuePlacement placement = 5;
+   */
+  placement: QueuePlacement;
+};
+
+/**
+ * Describes the message dshm.v1.QueuedMessage.
+ * Use `create(QueuedMessageSchema)` to create a new message.
+ */
+export const QueuedMessageSchema: GenMessage<QueuedMessage> = /*@__PURE__*/
+  messageDesc(file_conversation, 3);
+
+/**
+ * @generated from message dshm.v1.EditQueue
+ */
+export type EditQueue = Message<"dshm.v1.EditQueue"> & {
+  /**
+   * @generated from field: string task_id = 1;
+   */
+  taskId: string;
+
+  /**
+   * @generated from field: string message_id = 2;
+   */
+  messageId: string;
+
+  /**
+   * @generated from field: dshm.v1.QueueAction action = 3;
+   */
+  action: QueueAction;
+};
+
+/**
+ * Describes the message dshm.v1.EditQueue.
+ * Use `create(EditQueueSchema)` to create a new message.
+ */
+export const EditQueueSchema: GenMessage<EditQueue> = /*@__PURE__*/
+  messageDesc(file_conversation, 4);
+
+/**
+ * The message's place after the edit: STEERING or REMOVED, or QUEUED when the turn ended
+ * before DSH could steer it (it then runs as the next turn).
+ *
+ * @generated from message dshm.v1.QueueEdited
+ */
+export type QueueEdited = Message<"dshm.v1.QueueEdited"> & {
+  /**
+   * @generated from field: string task_id = 1;
+   */
+  taskId: string;
+
+  /**
+   * @generated from field: string message_id = 2;
+   */
+  messageId: string;
+
+  /**
+   * @generated from field: dshm.v1.QueuePlacement placement = 3;
+   */
+  placement: QueuePlacement;
+};
+
+/**
+ * Describes the message dshm.v1.QueueEdited.
+ * Use `create(QueueEditedSchema)` to create a new message.
+ */
+export const QueueEditedSchema: GenMessage<QueueEdited> = /*@__PURE__*/
+  messageDesc(file_conversation, 5);
+
+/**
  * When a message reaches the agent (DSH `sessionController.prompt` modes).
  *
  * @generated from enum dshm.v1.MessageMode
@@ -144,4 +240,81 @@ export enum MessageMode {
  */
 export const MessageModeSchema: GenEnum<MessageMode> = /*@__PURE__*/
   enumDesc(file_conversation, 0);
+
+/**
+ * Where a message waits, or why it stopped waiting without running.
+ *
+ * @generated from enum dshm.v1.QueuePlacement
+ */
+export enum QueuePlacement {
+  /**
+   * @generated from enum value: QUEUE_PLACEMENT_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * As a new turn after the running turn (and after the messages queued before it).
+   *
+   * @generated from enum value: QUEUE_PLACEMENT_QUEUED = 1;
+   */
+  QUEUED = 1,
+
+  /**
+   * At the next step of the running turn ("send now").
+   *
+   * @generated from enum value: QUEUE_PLACEMENT_STEERING = 2;
+   */
+  STEERING = 2,
+
+  /**
+   * The user removed it. It does not run.
+   *
+   * @generated from enum value: QUEUE_PLACEMENT_REMOVED = 3;
+   */
+  REMOVED = 3,
+
+  /**
+   * The task stopped (interrupt, failure) before the message ran. The bridge took it out of the
+   * inbox, so it does not run by itself; the app gives its text back to the composer.
+   *
+   * @generated from enum value: QUEUE_PLACEMENT_RETURNED = 4;
+   */
+  RETURNED = 4,
+}
+
+/**
+ * Describes the enum dshm.v1.QueuePlacement.
+ */
+export const QueuePlacementSchema: GenEnum<QueuePlacement> = /*@__PURE__*/
+  enumDesc(file_conversation, 1);
+
+/**
+ * @generated from enum dshm.v1.QueueAction
+ */
+export enum QueueAction {
+  /**
+   * @generated from enum value: QUEUE_ACTION_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Move a queued message into the running turn: the agent takes it at its next step.
+   *
+   * @generated from enum value: QUEUE_ACTION_STEER = 1;
+   */
+  STEER = 1,
+
+  /**
+   * Take the message out of the queue.
+   *
+   * @generated from enum value: QUEUE_ACTION_REMOVE = 2;
+   */
+  REMOVE = 2,
+}
+
+/**
+ * Describes the enum dshm.v1.QueueAction.
+ */
+export const QueueActionSchema: GenEnum<QueueAction> = /*@__PURE__*/
+  enumDesc(file_conversation, 2);
 

@@ -98,6 +98,18 @@ import Testing
         #expect(TaskOutcome(row)?.kind == .done)
     }
 
+    @Test func aBridgeWithoutFailuresV1GetsNoFollowUpAfterAFailure() async throws {
+        var script = FakeBridge.Script(reply: [], chunkDelay: .milliseconds(10), failWith: "Insufficient Balance")
+        script.followUpReply = ["Topped ", "up."]
+        script.reportsFailures = false
+        let store = try launch(FakeHost(script: script))
+        store.foreground()
+        defer { store.background() }
+        let key = try #require(await store.send())
+        try await waitUntil("failed") { store.task(key)?.state == .failed }
+        #expect(!store.canFollowUp(try #require(store.task(key))))
+    }
+
     @Test func aReconnectKeepsTheFailureCode() async throws {
         let host = noBalance("Authentication Fails, Your api key: ****-key is invalid", code: "AUTH")
         let store = try launch(host)
