@@ -74,6 +74,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S28 | review | merged `f4594e5` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
 | S29 | review | merged `3b1a903` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
 | S30 | review | merged `4679afe` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
+| S31 | todo | — | 2026-11-08 | Fix: Pair over Tailscale; start a fix session |
 
 ## 1. Approach
 
@@ -1295,6 +1296,24 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Test: `S30PairAgainUITests` on a real bridge (three fresh links): pair, revoke in X2, 08, pair again, drawer 1/1, revoke again, pair a third time. Red without the fix: the root showed 无法打开已配对的电脑 (重试 / 配对电脑). Note: `openDeepLink` (`XCUIApplication.open`) relaunches the app and hid the bug; the test opens later links with `XCUIDevice.shared.system.open` in the running app.
   - `scripts/demo/s30.sh --shots` green: S30, S29RevokeUITests (fakes and real bridge), S21 revoke seam, swift test. Created simulator `dshm-S30` (it did not exist).
   - Provisional for §9: D85. Next: `scripts/review S30`; `[human]` stays with the user.
+
+### S31 · Fix: Pair over Tailscale
+
+**Status** todo · **Needs** — · **Branch** —
+
+**Why**: The user reported a bug on 2026-11-08: 配对失败：couldn't reach the host at 30.34.227.222:47801, 100.79.171.34:47801（应该是我手机的wifi和我电脑的wifi不是同一个，怎么连？）. (Coordinator: the phone and Mac are on one tailnet; tcpdump on the Mac's utun6 shows Safari on the phone opening `http://100.79.171.34:47801` (SYN, handshake, HTTP), but 0 packets from the app's pairing attempt. Lead: App Transport Security blocks plain `ws://` to non-local IP addresses (the app has no ATS keys; LAN 192.168.x worked); verify it.)
+
+**Cuts**: Find the cause. Fix it. Add a test that fails without the fix.
+
+**Demo**: —
+
+**Done when**
+- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [ ] [human] The user no longer sees the bug — Evidence:
+
+**Not**: Other changes. Report other bugs to the coordinator as new fix slices.
+
+**Log**: —
 
 ## 6. M1 exit
 
