@@ -10,7 +10,7 @@ import { homedir } from 'node:os'
 import { isAbsolute } from 'node:path'
 import { MilestoneMapper, describeFailure, isUserInterrupt, type Milestone } from './milestones/mapper.ts'
 import { TranscriptMapper, type BlockOut } from './transcript/mapper.ts'
-import type { StagedImage } from './attachments/staging.ts'
+import type { StagedFile } from './attachments/staging.ts'
 
 /** Subset of `ctx.workspaceController` (`@deepseek-ai/dsh-api-workspace-controller`). */
 export interface WorkspaceControllerLike {
@@ -42,13 +42,16 @@ export interface SessionControllerLike {
   ): AsyncIterable<FollowFrame>
 }
 
-/** A prompt part: text, or a file staged through `fileUploads` (an image receipt enters as that image). */
+/** A prompt part: text, or a file staged through `fileUploads` (an image receipt enters as that image, D95; a file receipt as a saved-path note, D107). */
 export type PromptPart = { type: 'text'; text: string } | { type: 'file'; receiptId: string }
 
 /** Subset of `ctx.fileUploads` (`@deepseek-ai/dsh-client-file-upload`). */
 export interface FileUploadsLike {
   uploadImageStream(request: {
     sessionId: string; data: AsyncIterable<Uint8Array>; mediaType: string; name?: string; signal?: AbortSignal
+  }): Promise<{ receiptId: string }>
+  uploadStream(request: {
+    sessionId: string; data: AsyncIterable<Uint8Array>; name?: string; signal?: AbortSignal
   }): Promise<{ receiptId: string }>
 }
 
@@ -78,6 +81,8 @@ export interface FollowUpOptions {
   afterTurn?: number
   /** A prefix for the transcript block IDs of this turn, so they stay unique within the task. */
   blockPrefix: string
+  /** D107: staged files that go into the message after its text, in order. */
+  files?: readonly StagedFile[]
 }
 
 export interface StartedTask {
@@ -136,12 +141,30 @@ export class DshTasks {
     return selected
   }
 
-  /** True when the host can stage images for a prompt (`attachments.v1`). */
+  /** True when the host can stage files for a prompt (`attachments.v1`). */
   get attachments(): boolean { return !!this.dsh.fileUploads }
 
+  /**
+   * The prompt content: the text, then each file staged for `sessionId`, in order. An image goes
+   * through `uploadImageStream` and enters as that image (D95); any other file goes through
+   * `uploadStream`, and the model gets its name and a saved path (D18, D107).
+   */
+  private async content(sessionId: string, text: string, files: readonly StagedFile[], signal: AbortSignal): Promise<PromptPart[]> {
+    if (files.length && !this.dsh.fileUploads) throw new Error('This host cannot take attachments.')
+    const content: PromptPart[] = [{ type: 'text', text }]
+    for (const file of files) {
+      const { receiptId } = file.kind === 'image'
+        ? await this.dsh.fileUploads!.uploadImageStream({
+          sessionId, data: once(file.data), mediaType: file.mediaType, name: file.name, signal })
+        : await this.dsh.fileUploads!.uploadStream({ sessionId, data: once(file.data), name: file.name, signal })
+      content.push({ type: 'file', receiptId })
+    }
+    return content
+  }
+
   async start(prompt: string, signal: AbortSignal, selection?: Selection, path?: string,
-              images: readonly StagedImage[] = []): Promise<StartedTask> {
-    if (images.length && !this.dsh.fileUploads) throw new Error('This host cannot take attachments.')
+              files: readonly StagedFile[] = []): Promise<StartedTask> {
+    if (files.length && !this.dsh.fileUploads) throw new Error('This host cannot take attachments.')
     path ??= this.cwd
     if (!isAbsolute(path)) throw new Error('Choose an absolute workspace path on this host.')
     const { workspace } = await this.dsh.workspaceController.create({ path })
@@ -157,14 +180,7 @@ export class DshTasks {
     this.sessions.add(sessionId)
     try {
       if (selection) await this.selectModel(sessionId, selection)
-      const content: PromptPart[] = [{ type: 'text', text: prompt }]
-      for (const image of images) {
-        // D95: stage the checked bytes as a prompt image; its receipt enters the message as that image.
-        const { receiptId } = await this.dsh.fileUploads!.uploadImageStream({
-          sessionId, data: once(image.data), mediaType: image.mediaType, name: image.name, signal,
-        })
-        content.push({ type: 'file', receiptId })
-      }
+      const content = await this.content(sessionId, prompt, files, signal)
       await this.dsh.sessionController.prompt({ requestId: randomUUID(), sessionId, mode: 'queue', content }, signal)
     } catch (error) {
       this.sessions.delete(sessionId)
@@ -185,8 +201,9 @@ export class DshTasks {
     const iterator = follow[Symbol.asyncIterator]()
     const first = await iterator.next()
     try {
+      const content = await this.content(taskId, text, options.files ?? [], signal)
       await this.dsh.sessionController.prompt(
-        { requestId: options.messageId, sessionId: taskId, mode: options.mode, content: [{ type: 'text', text }] }, signal)
+        { requestId: options.messageId, sessionId: taskId, mode: options.mode, content }, signal)
     } catch (error) {
       await iterator.return?.()
       throw error

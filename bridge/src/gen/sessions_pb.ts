@@ -4,13 +4,15 @@
 
 import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { AttachmentRef } from "./attachments_pb.js";
+import { file_attachments } from "./attachments_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file sessions.proto.
  */
 export const file_sessions: GenFile = /*@__PURE__*/
-  fileDesc("Cg5zZXNzaW9ucy5wcm90bxIHZHNobS52MSJwCgtSZWFkU2Vzc2lvbhIPCgd0YXNrX2lkGAEgASgJEhgKC3Rocm91Z2hfc2VxGAIgASgESACIAQESFwoKYmVmb3JlX3NlcRgDIAEoBEgBiAEBQg4KDF90aHJvdWdoX3NlcUINCgtfYmVmb3JlX3NlcSI+Cg5TZXNzaW9uTWVzc2FnZRILCgNzZXEYASABKAQSEQoJZnJvbV91c2VyGAIgASgIEgwKBHRleHQYAyABKAkifwoLU2Vzc2lvblBhZ2USKQoIbWVzc2FnZXMYASADKAsyFy5kc2htLnYxLlNlc3Npb25NZXNzYWdlEhMKC3Rocm91Z2hfc2VxGAIgASgEEhwKD25leHRfYmVmb3JlX3NlcRgDIAEoBEgAiAEBQhIKEF9uZXh0X2JlZm9yZV9zZXFiBnByb3RvMw");
+  fileDesc("Cg5zZXNzaW9ucy5wcm90bxIHZHNobS52MSJwCgtSZWFkU2Vzc2lvbhIPCgd0YXNrX2lkGAEgASgJEhgKC3Rocm91Z2hfc2VxGAIgASgESACIAQESFwoKYmVmb3JlX3NlcRgDIAEoBEgBiAEBQg4KDF90aHJvdWdoX3NlcUINCgtfYmVmb3JlX3NlcSJsCg5TZXNzaW9uTWVzc2FnZRILCgNzZXEYASABKAQSEQoJZnJvbV91c2VyGAIgASgIEgwKBHRleHQYAyABKAkSLAoLYXR0YWNobWVudHMYkAMgAygLMhYuZHNobS52MS5BdHRhY2htZW50UmVmIn8KC1Nlc3Npb25QYWdlEikKCG1lc3NhZ2VzGAEgAygLMhcuZHNobS52MS5TZXNzaW9uTWVzc2FnZRITCgt0aHJvdWdoX3NlcRgCIAEoBBIcCg9uZXh0X2JlZm9yZV9zZXEYAyABKARIAIgBAUISChBfbmV4dF9iZWZvcmVfc2VxYgZwcm90bzM", [file_attachments]);
 
 /**
  * Backwards pages share one fixed DSH journal cut. An absent before_seq opens the latest page.
@@ -59,6 +61,13 @@ export type SessionMessage = Message<"dshm.v1.SessionMessage"> & {
    * @generated from field: string text = 3;
    */
   text: string;
+
+  /**
+   * A user message's images and files, from the DSH journal, in order (D107).
+   *
+   * @generated from field: repeated dshm.v1.AttachmentRef attachments = 400;
+   */
+  attachments: AttachmentRef[];
 };
 
 /**

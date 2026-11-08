@@ -9,6 +9,8 @@
 syntax = "proto3";
 package dshm.v1;
 
+import "attachments.proto";
+
 // When a message reaches the agent (DSH `sessionController.prompt` modes).
 enum MessageMode {
   MESSAGE_MODE_UNSPECIFIED = 0; // The bridge reads it as STEER.
@@ -22,6 +24,8 @@ message SendMessage {
   string task_id = 1;
   MessageMode mode = 2;
   string text = 3;
+  // Staged uploads (attachments.proto), in prompt order, after the text (D107).
+  repeated string upload_ids = 400;
 }
 
 // DSH accepted the message. The UserMessage event and the turn's events follow.
@@ -39,4 +43,6 @@ message UserMessage {
   string text = 3;
   // When the bridge accepted it, Unix milliseconds.
   int64 time_ms = 4;
+  // The files sent with it, in order (D107).
+  repeated AttachmentRef attachments = 400;
 }

@@ -13,13 +13,15 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { AttachmentRef } from "./attachments_pb.js";
+import { file_attachments } from "./attachments_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file conversation.proto.
  */
 export const file_conversation: GenFile = /*@__PURE__*/
-  fileDesc("ChJjb252ZXJzYXRpb24ucHJvdG8SB2RzaG0udjEiUAoLU2VuZE1lc3NhZ2USDwoHdGFza19pZBgBIAEoCRIiCgRtb2RlGAIgASgOMhQuZHNobS52MS5NZXNzYWdlTW9kZRIMCgR0ZXh0GAMgASgJIjYKD01lc3NhZ2VBY2NlcHRlZBIPCgd0YXNrX2lkGAEgASgJEhIKCm1lc3NhZ2VfaWQYAiABKAkiUQoLVXNlck1lc3NhZ2USDwoHdGFza19pZBgBIAEoCRISCgptZXNzYWdlX2lkGAIgASgJEgwKBHRleHQYAyABKAkSDwoHdGltZV9tcxgEIAEoAypbCgtNZXNzYWdlTW9kZRIcChhNRVNTQUdFX01PREVfVU5TUEVDSUZJRUQQABIWChJNRVNTQUdFX01PREVfU1RFRVIQARIWChJNRVNTQUdFX01PREVfUVVFVUUQAmIGcHJvdG8z");
+  fileDesc("ChJjb252ZXJzYXRpb24ucHJvdG8SB2RzaG0udjEiZQoLU2VuZE1lc3NhZ2USDwoHdGFza19pZBgBIAEoCRIiCgRtb2RlGAIgASgOMhQuZHNobS52MS5NZXNzYWdlTW9kZRIMCgR0ZXh0GAMgASgJEhMKCnVwbG9hZF9pZHMYkAMgAygJIjYKD01lc3NhZ2VBY2NlcHRlZBIPCgd0YXNrX2lkGAEgASgJEhIKCm1lc3NhZ2VfaWQYAiABKAkifwoLVXNlck1lc3NhZ2USDwoHdGFza19pZBgBIAEoCRISCgptZXNzYWdlX2lkGAIgASgJEgwKBHRleHQYAyABKAkSDwoHdGltZV9tcxgEIAEoAxIsCgthdHRhY2htZW50cxiQAyADKAsyFi5kc2htLnYxLkF0dGFjaG1lbnRSZWYqWwoLTWVzc2FnZU1vZGUSHAoYTUVTU0FHRV9NT0RFX1VOU1BFQ0lGSUVEEAASFgoSTUVTU0FHRV9NT0RFX1NURUVSEAESFgoSTUVTU0FHRV9NT0RFX1FVRVVFEAJiBnByb3RvMw", [file_attachments]);
 
 /**
  * @generated from message dshm.v1.SendMessage
@@ -39,6 +41,13 @@ export type SendMessage = Message<"dshm.v1.SendMessage"> & {
    * @generated from field: string text = 3;
    */
   text: string;
+
+  /**
+   * Staged uploads (attachments.proto), in prompt order, after the text (D107).
+   *
+   * @generated from field: repeated string upload_ids = 400;
+   */
+  uploadIds: string[];
 };
 
 /**
@@ -102,6 +111,13 @@ export type UserMessage = Message<"dshm.v1.UserMessage"> & {
    * @generated from field: int64 time_ms = 4;
    */
   timeMs: bigint;
+
+  /**
+   * The files sent with it, in order (D107).
+   *
+   * @generated from field: repeated dshm.v1.AttachmentRef attachments = 400;
+   */
+  attachments: AttachmentRef[];
 };
 
 /**

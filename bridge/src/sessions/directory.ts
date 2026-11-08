@@ -1,3 +1,4 @@
+import { AttachmentKind } from '../gen/attachments_pb.ts'
 import { TaskState } from '../gen/s2_pb.ts'
 import { describeFailure, isUserInterrupt } from '../milestones/mapper.ts'
 import type { TaskHub } from '../s2/task-hub.ts'
@@ -23,15 +24,25 @@ export interface SessionReader {
     maxMessages: number }, signal: AbortSignal): Promise<Page>
 }
 
+type Block = { type: string; text?: string; attachment?: { name?: string; bytes?: number; mediaType?: string } }
+
+/** D107: a user message's image and file blocks, as chips. The journal has no media type for a file. */
+function attachments(content: readonly Block[] | undefined) {
+  return (content ?? []).flatMap(b => b.type === 'image' || b.type === 'file' ? [{
+    kind: b.type === 'image' ? AttachmentKind.IMAGE : AttachmentKind.FILE,
+    name: b.attachment?.name ?? '', size: BigInt(b.attachment?.bytes ?? 0), mediaType: b.attachment?.mediaType ?? '',
+  }] : [])
+}
+
 function message(event: Event) {
   if (event.surfaceOp !== undefined && event.surfaceOp !== 'append') return
-  const data = event.data as { source?: { kind: string }; content?: { type: string; text?: string }[];
-    message?: { content: { type: string; text?: string }[] } } | null
+  const data = event.data as { source?: { kind: string }; content?: Block[]; message?: { content: Block[] } } | null
   const fromUser = event.type === 'user/message' && data?.source?.kind === 'user'
   if (!fromUser && event.type !== 'assistant/message') return
   const content = fromUser ? data?.content : data?.message?.content
-  const text = content?.filter(b => b.type === 'text').map(b => b.text).join('')
-  if (text) return { seq: BigInt(event.seq), fromUser, text }
+  const text = content?.filter(b => b.type === 'text').map(b => b.text).join('') ?? ''
+  const files = fromUser ? attachments(content) : []
+  if (text || files.length) return { seq: BigInt(event.seq), fromUser, text, attachments: files }
 }
 
 /** The pinned DSH controller owns visibility, persistence, and message-aligned backwards pages.

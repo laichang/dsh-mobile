@@ -12,7 +12,8 @@ import { TaskState, type TaskSummary } from '../gen/s2_pb.ts'
 import { randomUUID } from 'node:crypto'
 import type { DshTasks, PromptMode, StartedTask, TaskOutput } from '../dsh.ts'
 import { HostLog } from './host-log.ts'
-import type { StagedImage } from '../attachments/staging.ts'
+import type { StagedFile } from '../attachments/staging.ts'
+import { AttachmentKind } from '../gen/attachments_pb.ts'
 import { milestoneAdded } from '../milestones/wire.ts'
 import { sessionWorkspace } from '../drawer/workspace.ts'
 import { transcriptBlock } from '../transcript/wire.ts'
@@ -24,8 +25,8 @@ export interface TaskStarter {
   followUp?: DshTasks['followUp']
   modelCatalog?: DshTasks['modelCatalog']
   selectModel?: DshTasks['selectModel']
-  start(prompt: string, signal: AbortSignal, selection?: Selection, workspace?: string, images?: readonly StagedImage[]): Promise<StartedTask>
-  /** Attachments (D95): the starter takes `images`. */
+  start(prompt: string, signal: AbortSignal, selection?: Selection, workspace?: string, files?: readonly StagedFile[]): Promise<StartedTask>
+  /** Attachments (D95, D107): the starter takes `files`, and `followUp` takes `options.files`. */
   readonly attachments?: boolean
 }
 
@@ -53,9 +54,9 @@ export class TaskHub {
    * the task's events are logged, so the caller can answer `CreateTask` first.
    */
   async create(prompt: string, onCreated: (taskId: string) => void = () => {}, selection?: Selection, workspace?: string,
-                images?: readonly StagedImage[]): Promise<string> {
-    const task = images?.length
-      ? await this.starter.start(prompt, this.abort.signal, selection, workspace, images)
+                files?: readonly StagedFile[]): Promise<string> {
+    const task = files?.length
+      ? await this.starter.start(prompt, this.abort.signal, selection, workspace, files)
       : await this.starter.start(prompt, this.abort.signal, selection, workspace)
     const at = BigInt(this.now())
     const summary: Summary = {
@@ -86,7 +87,7 @@ export class TaskHub {
    * the turn. `onAccepted` runs once DSH accepted the message, before the task's new events.
    */
   async sendMessage(taskId: string, text: string, mode: PromptMode,
-    onAccepted: (messageId: string) => void = () => {}): Promise<string> {
+    onAccepted: (messageId: string) => void = () => {}, files: readonly StagedFile[] = []): Promise<string> {
     const summary = this.summaries.get(taskId)
     if (!this.starter.followUp) throw new Error('This host cannot take follow-up messages.')
     if (!summary || summary.approvalOnly || summary.externalSession) throw new Error('Unknown bridge task')
@@ -99,15 +100,22 @@ export class TaskHub {
     this.sending.add(taskId)
     let output: AsyncIterable<TaskOutput>
     try {
-      output = await this.starter.followUp(taskId, text,
-        { messageId, mode, afterTurn: cursor.turn, blockPrefix: `turn-${cursor.turns + 1}-` }, this.abort.signal)
+      output = await this.starter.followUp(taskId, text, {
+        messageId, mode, afterTurn: cursor.turn, blockPrefix: `turn-${cursor.turns + 1}-`,
+        ...(files.length ? { files } : {}),
+      }, this.abort.signal)
     } finally {
       this.sending.delete(taskId)
     }
     cursor.turns += 1
     const at = this.now()
     onAccepted(messageId)
-    this.log.append(taskId, { case: 'userMessage', value: { taskId, messageId, text, timeMs: BigInt(at) } })
+    // D107: the message's files as chips, so a replay shows them; the host keeps the bytes.
+    const attachments = files.map(file => ({
+      kind: file.kind === 'image' ? AttachmentKind.IMAGE : AttachmentKind.FILE,
+      name: file.name, size: BigInt(file.data.length), mediaType: file.mediaType,
+    }))
+    this.log.append(taskId, { case: 'userMessage', value: { taskId, messageId, text, timeMs: BigInt(at), attachments } })
     summary.state = summary.pendingApprovals.length ? TaskState.WAITING_ON_USER : TaskState.RUNNING
     summary.message = ''
     summary.latestReply = undefined

@@ -1,24 +1,34 @@
 /**
- * Attachments (ARCHITECTURE D95): put the parts of one upload together, check its size and its
- * SHA-256, and keep the file until a CreateTask names it. One `UploadStaging` per connection, so
- * a dropped connection drops its uploads; the app sends them again.
+ * Attachments (ARCHITECTURE D95, D107): put the parts of one upload together, check its size and
+ * its SHA-256, and keep the file until a CreateTask or a SendMessage names it. One `UploadStaging`
+ * per connection, so a dropped connection drops its uploads; the app sends them again.
  */
 import { createHash } from 'node:crypto'
 
 export const ATTACHMENTS_CAPABILITY = 'attachments.v1'
 /** Data bytes in one UploadChunk: one Frame stays well under Noise's 65535-byte message. */
 export const PART_SIZE = 48 * 1024
-/** Largest file the bridge takes. DSH's own image limit is 50 MiB; the app sends a JPEG. */
+/** Largest file the bridge takes (D107). DSH's own image limit is 50 MiB; the app sends photos as JPEG. */
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024
-/** Uploads one connection can hold at a time (staged and in progress). */
-export const MAX_UPLOADS_PER_CONNECTION = 4
+/** Attachments in one message, and uploads one connection can hold at a time (staged and in progress). */
+export const MAX_UPLOADS_PER_CONNECTION = 5
 /** The image types DSH takes in a prompt (`ImageMediaType` in @deepseek-ai/dsh-attachment). */
 export const IMAGE_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const
+/** The media type of a file the app sent with no type. */
+export const UNKNOWN_MEDIA_TYPE = 'application/octet-stream'
+
+/** How a staged file enters the prompt: as an image the model sees, or as a file with a saved path (D18). */
+export type AttachmentKind = 'image' | 'file'
+
+export function attachmentKind(mediaType: string): AttachmentKind {
+  return (IMAGE_MEDIA_TYPES as readonly string[]).includes(mediaType) ? 'image' : 'file'
+}
 
 /** A complete, checked file. */
-export interface StagedImage {
+export interface StagedFile {
   name: string
   mediaType: string
+  kind: AttachmentKind
   data: Uint8Array
 }
 
@@ -41,14 +51,12 @@ export class UploadStaging {
   private readonly uploads = new Map<string, Upload>()
 
   begin(request: { uploadId: string; mediaType: string; name: string; size: bigint; sha256: Uint8Array }): number {
-    const { uploadId, mediaType } = request
+    const { uploadId } = request
+    const mediaType = request.mediaType.trim().toLowerCase() || UNKNOWN_MEDIA_TYPE
     if (!uploadId) throw new UploadError('upload/invalid', 'The upload has no id.')
     if (this.uploads.has(uploadId)) throw new UploadError('upload/invalid', 'This upload id is in use.')
     if (this.uploads.size >= MAX_UPLOADS_PER_CONNECTION) {
       throw new UploadError('upload/too-many', `Send at most ${MAX_UPLOADS_PER_CONNECTION} attachments at a time.`)
-    }
-    if (!(IMAGE_MEDIA_TYPES as readonly string[]).includes(mediaType)) {
-      throw new UploadError('upload/media-type', `The host takes ${IMAGE_MEDIA_TYPES.join(', ')}, not ${mediaType || 'no type'}.`)
     }
     if (request.size === 0n) throw new UploadError('upload/invalid', 'The file is empty.')
     if (request.size > BigInt(MAX_UPLOAD_BYTES)) {
@@ -56,7 +64,7 @@ export class UploadStaging {
     }
     if (request.sha256.length !== 32) throw new UploadError('upload/invalid', 'The SHA-256 must be 32 bytes.')
     this.uploads.set(uploadId, {
-      name: request.name || 'photo', mediaType, size: Number(request.size), sha256: request.sha256,
+      name: request.name || (attachmentKind(mediaType) === 'image' ? 'photo' : 'file'), mediaType, size: Number(request.size), sha256: request.sha256,
       parts: [], received: 0, staged: false,
     })
     return 0
@@ -97,7 +105,7 @@ export class UploadStaging {
   }
 
   /** Removes and returns the staged files, in order. Refuses all of them if one is not staged. */
-  take(uploadIds: readonly string[]): StagedImage[] {
+  take(uploadIds: readonly string[]): StagedFile[] {
     if (new Set(uploadIds).size !== uploadIds.length) throw new UploadError('upload/invalid', 'An upload is named twice.')
     for (const id of uploadIds) {
       if (!this.uploads.get(id)?.staged) throw new UploadError('upload/unknown', 'The attachment is not on the host. Send it again.')
@@ -105,7 +113,8 @@ export class UploadStaging {
     return uploadIds.map((id) => {
       const upload = this.uploads.get(id)!
       this.uploads.delete(id)
-      return { name: upload.name, mediaType: upload.mediaType, data: Buffer.concat(upload.parts) }
+      return { name: upload.name, mediaType: upload.mediaType, kind: attachmentKind(upload.mediaType),
+        data: Buffer.concat(upload.parts) }
     })
   }
 
