@@ -45,7 +45,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | T2 | done | merged `1762164` | 2026-11-08 | — (provisional D95 in §9) |
 | X1 | done | merged `9d4cb67` | 2026-11-08 | — (provisional D104 in §9) |
 | S1 | done | merged `55300a7` | 2026-11-09 | — (provisional D101, D102 in §9) |
-| S2 | doing | `claude/s2-questions-more` | 2026-11-09 | Slice owner builds (§8) |
+| S2 | done | merged `966be4b` | 2026-11-09 | — (provisional D113, D114 in §9) |
 | S3 | done | merged `33e96ff` | 2026-11-09 | — (provisional D110 in §9) |
 | S4 | done | merged `83c82ce` | 2026-11-09 | — (provisional D107, D108 in §9) |
 | S5 | doing | `claude/s5-voice` | 2026-11-09 | Slice owner builds (§8) |
@@ -639,6 +639,8 @@ Append-only, dated.
 
 - **2026-11-09 · S6 runs as a background agent.** S6 assigned (D119–D121) and started as a background agent; its brief asks for free-team signing (no App Group) and a pbxproj change limited to the new widget target. S2 was told about its stale home-s2 port pin. Running: S2, S5, S6.
 
+- **2026-11-09 · S2 merged.** Merged as `966be4b`; `scripts/check-plan` on the merge commit passed. `scripts/review S2` at `03e231e`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S2-03e231e.txt`). No open `[human]` items, so S2 is `done`. §9 rows 17, 18 (D113, D114).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -661,3 +663,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 14 | S3 | decision | ARCHITECTURE D110, *provisional*: A new message continues a task after a model failure (screens X1, X4) | `claude/s3-model-failures` | merged `33e96ff` |
 | 15 | S3 | decision | D104 amended: failure_code (field 420) on TaskEnded and TaskSummary, message without the 'error: ' prefix, capability failures.v1 | `claude/s3-model-failures` | `0c66430` |
 | 16 | S3 | decision | D107 amended: a follow-up after a failure can carry attachments | `claude/s3-model-failures` | `8822d67` |
+| 17 | S2 | decision | ARCHITECTURE D113, *provisional*: A typed answer and multi-select answers (screen P1, amends D92) | `claude/s2-questions-more` | merged `966be4b` |
+| 18 | S2 | decision | ARCHITECTURE D114, *provisional*: A waiting question needs a decision, as an approval does (STORY §4, screens P1, 03, 02; extends D25, D92) | `claude/s2-questions-more` | merged `966be4b` |
