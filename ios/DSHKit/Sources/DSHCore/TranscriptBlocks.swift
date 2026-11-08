@@ -6,6 +6,15 @@ public struct TranscriptBlocks {
         case prose(AttributedString)
         case heading(Int, AttributedString)
         case fence(language: String, text: String)
+        case table(Table)
+    }
+
+    /// S28 · a GFM pipe table (D79). Every row has one cell per header cell.
+    public struct Table: Equatable {
+        public enum Alignment: Equatable, Sendable { case leading, center, trailing }
+        public var alignments: [Alignment]
+        public var header: [AttributedString]
+        public var rows: [[AttributedString]]
     }
 
     public private(set) var completed: [Block] = []
@@ -13,6 +22,8 @@ public struct TranscriptBlocks {
     private var fragment = ""
     private var endedWithCR = false
     private var fence: (marker: Character, length: Int, language: String)?
+    /// The open table: its rows are parsed once, as their lines complete.
+    private var table: Table?
 
     public init() {}
 
@@ -29,10 +40,20 @@ public struct TranscriptBlocks {
     }
 
     /// A preview of the unfinished block. It may still be a paragraph, a fence opener, or a closer.
+    /// A table shows as soon as its delimiter row starts, and gains rows as they arrive.
     public var tail: [Block] {
         var preview = self
         preview.completed = []
-        if !fragment.isEmpty { preview.consume(fragment) }
+        if !fragment.isEmpty {
+            if preview.table == nil, preview.fence == nil, Self.startsDelimiter(fragment),
+               let last = preview.lines.last, let header = Self.cells(last, needsPipe: true) {
+                preview.lines.removeLast()
+                preview.finish()
+                preview.table = Table(alignments: header.map { _ in .leading }, header: header.map(Self.markdown), rows: [])
+            } else {
+                preview.consume(fragment)
+            }
+        }
         preview.finish()
         return preview.completed
     }
@@ -65,6 +86,15 @@ public struct TranscriptBlocks {
             completed.append(.heading(hashes.count, Self.markdown(String(trimmed.dropFirst(hashes.count + 1)))))
         } else if trimmed.isEmpty {
             finish()
+        } else if let count = table?.header.count {
+            // GFM: every line is a row until a blank line or another block; a line without a pipe too.
+            table?.rows.append(Self.row(Self.cells(line, needsPipe: false) ?? [], count: count))
+        } else if indentation <= 3, let last = lines.last, let header = Self.cells(last, needsPipe: true),
+                  let alignments = Self.delimiter(line), alignments.count == header.count {
+            // The paragraph's last line is the header row; the lines before it stay prose.
+            lines.removeLast()
+            finish()
+            table = Table(alignments: alignments, header: header.map(Self.markdown), rows: [])
         } else {
             lines.append(line)
         }
@@ -72,17 +102,75 @@ public struct TranscriptBlocks {
 
     private mutating func finish() {
         let content = lines.joined(separator: "\n")
-        if let fence {
+        if let table {
+            completed.append(.table(table))
+        } else if let fence {
             completed.append(.fence(language: fence.language, text: content))
         } else if !content.isEmpty {
             completed.append(.prose(Self.markdown(content)))
         }
         lines.removeAll(keepingCapacity: true)
         fence = nil
+        table = nil
     }
 
     public static func markdown(_ text: String) -> AttributedString {
         (try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
             ?? AttributedString(text)
+    }
+
+    // MARK: - S28 · GFM tables
+
+    /// A row's cells: outer pipes are optional, `\|` is a pipe inside a cell (also in code spans).
+    /// A header row must have a pipe; a body row may have none (one cell).
+    static func cells(_ line: String, needsPipe: Bool) -> [String]? {
+        var text = line.trimmingCharacters(in: .whitespaces)[...]
+        guard !needsPipe || text.contains("|") else { return nil }
+        if text.first == "|" { text = text.dropFirst() }
+        var cells: [String] = []
+        var cell = ""
+        var index = text.startIndex
+        while index < text.endIndex {
+            let character = text[index]
+            let next = text.index(after: index)
+            if character == "\\", next < text.endIndex {
+                let escaped = text[next]
+                cell += escaped == "|" ? "|" : "\\\(escaped)"
+                index = text.index(after: next)
+                continue
+            }
+            if character == "|" {
+                cells.append(cell)
+                cell = ""
+            } else {
+                cell.append(character)
+            }
+            index = next
+        }
+        // A trailing pipe closes the last cell; it does not open an empty one.
+        if !cell.trimmingCharacters(in: .whitespaces).isEmpty || cells.isEmpty { cells.append(cell) }
+        return cells.map { $0.trimmingCharacters(in: .whitespaces) }
+    }
+
+    /// The delimiter row (`| :--- | :-: | --: |`): its cells set each column's alignment.
+    static func delimiter(_ line: String) -> [Table.Alignment]? {
+        guard line.contains("|"), let cells = cells(line, needsPipe: true), !cells.isEmpty else { return nil }
+        var alignments: [Table.Alignment] = []
+        for cell in cells {
+            let leading = cell.hasPrefix(":"), trailing = cell.hasSuffix(":")
+            let dashes = cell.dropFirst(leading ? 1 : 0).dropLast(trailing && cell.count > 1 ? 1 : 0)
+            guard !dashes.isEmpty, dashes.allSatisfy({ $0 == "-" }) else { return nil }
+            alignments.append(leading && trailing ? .center : trailing ? .trailing : .leading)
+        }
+        return alignments
+    }
+
+    /// An unfinished line that can still become a delimiter row (`| --- | :-`).
+    static func startsDelimiter(_ fragment: String) -> Bool {
+        fragment.contains("|") && fragment.contains("-") && fragment.allSatisfy { "|:- \t".contains($0) }
+    }
+
+    static func row(_ cells: [String], count: Int) -> [AttributedString] {
+        (0..<count).map { markdown($0 < cells.count ? cells[$0] : "") }
     }
 }

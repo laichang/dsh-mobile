@@ -110,6 +110,10 @@ public final class FakeBridge: BridgeTransport {
                 milestoneDelay: delay)
             script.holdAfterReply = true
             script.interruptible = true
+            // S28: a prompt with `tablesPrompt` gets a reply with a wide GFM table.
+            script.variants = [.init(prompt: FakeBridge.tablesPrompt, script: Script(
+                reply: FakeBridge.tablesReply.split(separator: "\n", omittingEmptySubsequences: false).map { $0 + "\n" },
+                chunkDelay: .milliseconds(40)))]
             return script
         }
 
@@ -219,6 +223,20 @@ public final class FakeBridge: BridgeTransport {
         2. Open a pull request with the fix and the new test.
 
         Running the tests now.
+        """
+    /// S28: the coding scenario's prompt for a reply with a wide table (as DSH answered the user's
+    /// "demo directory" task): alignment, inline code and bold in cells, an escaped pipe, long cells.
+    public static let tablesPrompt = "Compare the test runs in a table"
+    public static let tablesReply = """
+        I ran the tests in `demo/` three ways:
+
+        | Runner | Command | Result | Time (s) | Notes |
+        |:--- | :---: | ---: | ---: | --- |
+        | pytest | `pytest -q demo` | **3 passed** | 0.41 | The default runner. It finds `test_*.py` files and prints one dot per test, then the summary line. |
+        | unittest | `python -m unittest` | 3 passed | 0.12 | Needs the `TestCase` classes; `a \\| b` is a literal pipe. |
+        | doctest | `python -m doctest add.py` | 1 failed | 0.05 | The example in the docstring expects `5`, but `add(2, 2)` returns `4`. |
+
+        Only doctest fails. Done.
         """
     public static let threeTodoItems = ["Read the project layout", "Write the summary", "Check the summary against the code"]
 

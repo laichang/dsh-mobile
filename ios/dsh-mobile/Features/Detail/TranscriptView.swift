@@ -75,6 +75,8 @@ struct TranscriptView: View {
             .background(DSHTheme.s16CodeFill, in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(DSHTheme.hairline))
             .accessibilityIdentifier("transcript.fence." + language)
+        case .table(let table):
+            TranscriptTableView(table: table) // S28
         }
     }
 
@@ -86,11 +88,11 @@ struct TranscriptView: View {
     }
 
     /// S16 · inline Markdown in the DSH style: `code` in SF Mono on the bubble color, links in blue.
-    static func dshStyled(_ text: AttributedString) -> AttributedString {
+    static func dshStyled(_ text: AttributedString, code: Font.TextStyle = .callout) -> AttributedString {
         var styled = text
         for run in text.runs {
             if run.inlinePresentationIntent?.contains(.code) == true {
-                styled[run.range].font = DSHTheme.mono(.callout)
+                styled[run.range].font = DSHTheme.mono(code)
                 styled[run.range].backgroundColor = DSHTheme.s16InlineCodeFill
             }
             if run.link != nil {

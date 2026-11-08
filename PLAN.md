@@ -1221,12 +1221,20 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: —
 
 **Done when**
-- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S28MarkdownTablesUITests/testReplyTableShowsAsTable · test:S28MarkdownTablesUITests/testWideTableScrollsInItsRow · test:S17TranscriptUITests · test:TranscriptTablesTests/unfinishedTableAtTheStreamingTail · cmd:scripts/demo/s28.sh --no-s8 · shot:evidence/S28/s28-table.png · shot:evidence/S28/s28-wide-table-scrolled.png
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
 **Log**: —
+- **2026-11-08 · Markdown tables fixed; review PASS at 9cb3739.**
+  - Cause: `TranscriptBlocks` had no table block; prose went through Foundation inline Markdown, which keeps `| a | b |` as text.
+  - Fix: a `.table` block (GFM pipe table: alignment, optional outer pipes, `\|`, inline Markdown in cells) and `TranscriptTableView` (custom Layout, columns at most 240 pt with wrapping, own horizontal scroll). Streaming keeps D10: rows parse once; an open table is the tail and shows rows as they arrive. Provisional D79 (ARCHITECTURE.md). DESIGN.md and board screen 04 updated. No new dependency.
+  - Red (unfixed renderer, 2026-11-08 00:11): `testReplyTableShowsAsTable` failed at line 59, no `transcript.table`. `testWideTableScrollsInItsRow` failed earlier, waiting for its reply on a loaded Mac; it is a new-coverage test, not the regression.
+  - Green: `scripts/demo/s28.sh --only-s28` and `--shots` (90 DSHKit tests, S28, S17 pass). Review `/tmp/dshm-review/S28-9cb3739.txt`: RESULT: PASS, no flaky part.
+  - Flaky outside S28 (not repaired, §10.1): `S16CodingTaskTests/codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt` timed out once ("the whole reply") at load average ~200 inside s8.sh; it passed in the other runs.
+  - Bug on main, for a new fix slice: `S8RichDetailUITests/testCachedRichDetailAfterRelaunch` fails at line 60 (no All Tasks row for the coding task after the offline relaunch), also on main 9621fd2 without S28. S8's other two tests pass. So the review uses `cmd:scripts/demo/s28.sh --no-s8`; plain `s28.sh` still runs S8.
+  - Not done: the `[human]` item (the user checks on the iPhone).
 
 ### S29 · Fix: Revoke this device
 
