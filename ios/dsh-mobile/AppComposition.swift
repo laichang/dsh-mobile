@@ -34,7 +34,9 @@ final class AppModel {
     @ObservationIgnored private let container: ModelContainer
     @ObservationIgnored private var presetPrompt = ""
     @ObservationIgnored private var connectDelay: Duration = .zero
-    /// S21: hosts this device lost its access to (a revoke of this device, D59).
+    /// S21: hosts this device lost its access to (a revoke of this device, D59), until they are
+    /// paired again (S30, D85). A paired host also leaves the file; this set keeps a fake host
+    /// out of the store, says each revoke once (D82), and keeps the Debug loopback away from 08.
     @ObservationIgnored private var forgottenHostKeys: Set<String> = []
     /// S29: the host that revoked this phone without a revoke from this phone's hosts sheet
     /// (another client, or the close came first). The root says so once (D82).
@@ -183,6 +185,9 @@ final class AppModel {
 
     func closePairing() {
         if case .offer(let model)? = pairingRoute, case .paired(let paired) = model.state {
+            // S30 (D85): the same Mac paired again after a revoke has the same key (the id comes
+            // from the host key). It is a new pairing: keep it, and let a later revoke forget it again.
+            forgottenHostKeys.remove("noise:\(paired.id)")
             if let store, store.hosts.contains(where: { $0.channelName == "noise" }), let config = pairedConfig(paired) {
                 store.connectPairedHost(config)
             } else {
