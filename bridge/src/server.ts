@@ -15,6 +15,7 @@ import type { ApprovalHolder } from './approvals/holder.ts'
 import type { QuestionHolder } from './questions/holder.ts'
 import { SUPPORTED_DSH, supportsDsh } from './compatibility.ts'
 import { ApprovalDecision } from './gen/approvals_pb.ts'
+import { TaskState } from './gen/s2_pb.ts'
 import { deviceId } from './pairing/store.ts'
 import { CloseCode } from './pairing/wire.ts'
 import { auditPage, deviceList } from './devices/manage.ts'
@@ -105,6 +106,16 @@ export async function startBridgeServer(options: BridgeServerOptions): Promise<B
   }
 }
 
+/**
+ * A task as an app without `questions.v1` sees it: it cannot answer, so a task that waits only
+ * on a question stays RUNNING for it, as before the question (D92).
+ */
+function withoutQuestions<T extends { state?: TaskState; pendingApprovals?: readonly unknown[]; pendingQuestions?: readonly unknown[] }>(task: T): T {
+  if (!task.pendingQuestions?.length) return task
+  const state = task.state === TaskState.WAITING_ON_USER && !task.pendingApprovals?.length ? TaskState.RUNNING : task.state
+  return { ...task, state, pendingQuestions: [] }
+}
+
 /** Seals and opens the frames of one connection. */
 interface FrameCodec {
   seal(plaintext: Uint8Array): Uint8Array
@@ -168,6 +179,11 @@ function serveConnection(
     if (!clientQueue && event.body?.case === 'queuedMessage') return
     // Apps without `questions.v1` cannot answer, so they get no card.
     if (!clientQuestions && (event.body?.case === 'questionPending' || event.body?.case === 'questionResolved')) return
+    if (!clientQuestions && event.body?.case === 'taskUpserted' && event.body.value.task?.pendingQuestions?.length) {
+      const task = withoutQuestions(event.body.value.task)
+      send({ kind: { case: 'event', value: { hostSeq: event.seq, body: { case: 'taskUpserted', value: { task } } } } })
+      return
+    }
     // Older apps cannot withdraw temporary upstream approval rows.
     if (!clientApprovals && (event.body?.case === 'approvalPending' || event.body?.case === 'approvalResolved'
       || (event.body?.case === 'taskUpserted' && event.body.value.task?.approvalOnly))) return
@@ -367,7 +383,7 @@ function serveConnection(
         if (!options.questions) return fail(id, 'request/unsupported', 'questions unavailable')
         const answer = request.body.value
         try {
-          const resolved = options.questions.answer(answer.id, answer.answers.map(a => ({ questionId: a.questionId, selected: [...a.selected] })))
+          const resolved = options.questions.answer(answer.id, answer.answers.map(a => ({ questionId: a.questionId, selected: [...a.selected], custom: a.custom })))
           log(`question ${answer.id} answered by ${device}`)
           return respond(id, { case: 'questionResolved', value: resolved })
         } catch (error) {
@@ -398,6 +414,7 @@ function serveConnection(
       case 'listTasks': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
         return respond(id, { case: 'taskList', value: { tasks: hub.list().filter(task => clientApprovals || !task.approvalOnly)
+          .map(task => clientQuestions ? task : withoutQuestions(task))
           .flatMap(task => !clientSessions && task.externalSession ? (clientApprovals && task.pendingApprovals.length
             ? [{ ...task, title: '', approvalOnly: true }] : []) : [task]), logId: hub.log.logId, hostName } })
       }

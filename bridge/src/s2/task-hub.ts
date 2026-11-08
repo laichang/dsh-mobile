@@ -43,12 +43,14 @@ interface Waiting {
   placement: QueuePlacement.QUEUED | QueuePlacement.STEERING
 }
 
-type Summary = Omit<TaskSummary, '$typeName' | '$unknown' | 'pendingApprovals' | 'modelSelection'>
-  & { pendingApprovals: Pending[]; modelSelection?: Selection }
+type Summary = Omit<TaskSummary, '$typeName' | '$unknown' | 'pendingApprovals' | 'pendingQuestions' | 'modelSelection'>
+  & { pendingApprovals: Pending[]; pendingQuestions: Questions.Pending[]; modelSelection?: Selection }
 
 export class TaskHub {
   private readonly summaries = new Map<string, Summary>()
   private readonly pending = new Map<string, Pending>()
+  /** Agent questions that wait for an answer, by request ID (D92). */
+  private readonly questions = new Map<string, Questions.Pending>()
   private readonly abort = new AbortController()
   private readonly running = new Set<Promise<void>>()
   /** Per task: the last chunk and milestone seq, and the latest DSH turn. A later turn continues them. */
@@ -85,9 +87,10 @@ export class TaskHub {
       taskId: task.taskId, title: prompt, state: TaskState.RUNNING,
       createdAtMs: at, updatedAtMs: at, message: '', approvalOnly: false, externalSession: false,
       sessionRevision: this.summaries.get(task.taskId)?.sessionRevision, pendingApprovals: this.approvalsFor(task.taskId),
+      pendingQuestions: this.questionsFor(task.taskId),
       workspace: sessionWorkspace(this.summaries.get(task.taskId)?.workspace, task.workspace ?? workspace),
     }
-    if (summary.pendingApprovals.length) summary.state = TaskState.WAITING_ON_USER
+    if (this.waitsOnUser(summary)) summary.state = TaskState.WAITING_ON_USER
     this.summaries.set(task.taskId, summary)
     onCreated(task.taskId)
     this.upserted(summary)
@@ -136,7 +139,7 @@ export class TaskHub {
     onAccepted(messageId)
     this.logged.add(messageId)
     this.log.append(taskId, { case: 'userMessage', value: { taskId, messageId, text, timeMs: BigInt(at) } })
-    summary.state = summary.pendingApprovals.length ? TaskState.WAITING_ON_USER : TaskState.RUNNING
+    summary.state = this.waitsOnUser(summary) ? TaskState.WAITING_ON_USER : TaskState.RUNNING
     this.turnStarted(summary, at)
     const pump = this.pump({ taskId, output }, summary).finally(() => this.running.delete(pump))
     this.running.add(pump)
@@ -257,7 +260,7 @@ export class TaskHub {
     if (!summary && external && !('outcome' in event)) {
       const at = BigInt(this.now())
       summary = { taskId: event.taskId, title: '', state: TaskState.WAITING_ON_USER, createdAtMs: at,
-        updatedAtMs: at, message: '', approvalOnly: true, externalSession: false, pendingApprovals: [] }
+        updatedAtMs: at, message: '', approvalOnly: true, externalSession: false, pendingApprovals: [], pendingQuestions: [] }
       this.summaries.set(event.taskId, summary)
     }
     if (!summary) return // create() snapshots requests that arrived while DSH accepted our prompt.
@@ -266,24 +269,47 @@ export class TaskHub {
       this.summaries.delete(event.taskId)
       return
     }
+    this.decisionChanged(summary)
+  }
+
+  /**
+   * Agent questions (D92), as approvals (D25): each change is logged, so a phone that resumes gets
+   * the card, and the summary lists every question the task waits on, so a phone also gets it
+   * after the log was trimmed. While a question waits, the task is WAITING_ON_USER (等我处理).
+   */
+  questionChanged(event: Questions.Pending | Questions.Resolved) {
+    if ('outcome' in event) {
+      this.questions.delete(event.id)
+      this.log.append(event.taskId, { case: 'questionResolved', value: event })
+    } else {
+      this.questions.set(event.id, event)
+      this.log.append(event.taskId, { case: 'questionPending', value: event })
+    }
+    const summary = this.summaries.get(event.taskId)
+    if (!summary) return // create() and observeSession() take the questions that wait.
+    summary.pendingQuestions = this.questionsFor(event.taskId)
+    this.decisionChanged(summary)
+  }
+
+  /** A request of the task came or went: WAITING_ON_USER while one waits, else RUNNING again. */
+  private decisionChanged(summary: Summary) {
     if (summary.state === TaskState.RUNNING || summary.state === TaskState.WAITING_ON_USER) {
-      summary.state = summary.pendingApprovals.length ? TaskState.WAITING_ON_USER : TaskState.RUNNING
+      summary.state = this.waitsOnUser(summary) ? TaskState.WAITING_ON_USER : TaskState.RUNNING
     }
     summary.updatedAtMs = BigInt(this.now())
     this.upserted(summary)
   }
 
-  /**
-   * Agent questions are logged like any other event, so a phone that resumes gets the card. The
-   * task's state stays as DSH reports it.
-   */
-  questionChanged(event: Questions.Pending | Questions.Resolved) {
-    if ('outcome' in event) this.log.append(event.taskId, { case: 'questionResolved', value: event })
-    else this.log.append(event.taskId, { case: 'questionPending', value: event })
+  private waitsOnUser(summary: Summary) {
+    return summary.pendingApprovals.length > 0 || summary.pendingQuestions.length > 0
   }
 
   private approvalsFor(taskId: string) {
     return [...this.pending.values()].filter(request => request.taskId === taskId)
+  }
+
+  private questionsFor(taskId: string) {
+    return [...this.questions.values()].filter(request => request.taskId === taskId)
   }
 
   sessionRevision(taskId: string): number | undefined {
@@ -299,7 +325,8 @@ export class TaskHub {
     if (old?.sessionRevision !== undefined && old.sessionRevision >= revision) return
     const pending = this.approvalsFor(taskId)
     const summary: Summary = old ?? { taskId, title, createdAtMs: createdAt, updatedAtMs: updatedAt,
-      state, message, externalSession: true, approvalOnly: false, pendingApprovals: pending }
+      state, message, externalSession: true, approvalOnly: false, pendingApprovals: pending, pendingQuestions: [] }
+    summary.pendingQuestions = this.questionsFor(taskId)
     if (summary.approvalOnly) summary.externalSession = true
     summary.approvalOnly = false
     if (hostTitle) summary.title = hostTitle
@@ -309,7 +336,7 @@ export class TaskHub {
     summary.sessionRevision = revision
     summary.updatedAtMs = summary.updatedAtMs > updatedAt ? summary.updatedAtMs : updatedAt
     if (turnStartedAt !== undefined) summary.turnStartedAtMs = turnStartedAt
-    summary.state = pending.length ? TaskState.WAITING_ON_USER : state
+    summary.state = pending.length || summary.pendingQuestions.length ? TaskState.WAITING_ON_USER : state
     summary.message = message
     this.summaries.set(taskId, summary)
     this.upserted(summary)

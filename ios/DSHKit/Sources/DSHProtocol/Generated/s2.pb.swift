@@ -33,7 +33,7 @@ public nonisolated enum Dshm_V1_TaskState: SwiftProtobuf.Enum, Swift.CaseIterabl
   case unspecified // = 0
   case running // = 1
 
-  /// Needs a decision from the user (approvals, S4). Nothing sets it before S4.
+  /// Needs a decision from the user: an approval or an agent question.
   case waitingOnUser // = 2
   case completed // = 3
   case failed // = 4
@@ -80,95 +80,126 @@ public nonisolated enum Dshm_V1_TaskState: SwiftProtobuf.Enum, Swift.CaseIterabl
 
 }
 
-public nonisolated struct Dshm_V1_TaskSummary: Sendable {
+public nonisolated struct Dshm_V1_TaskSummary: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var taskID: String = String()
+  public var taskID: String {
+    get {_storage._taskID}
+    set {_uniqueStorage()._taskID = newValue}
+  }
 
   /// What the user asked for (the prompt), as sent.
-  public var title: String = String()
+  public var title: String {
+    get {_storage._title}
+    set {_uniqueStorage()._title = newValue}
+  }
 
-  public var state: Dshm_V1_TaskState = .unspecified
+  public var state: Dshm_V1_TaskState {
+    get {_storage._state}
+    set {_uniqueStorage()._state = newValue}
+  }
 
-  public var createdAtMs: Int64 = 0
+  public var createdAtMs: Int64 {
+    get {_storage._createdAtMs}
+    set {_uniqueStorage()._createdAtMs = newValue}
+  }
 
-  public var updatedAtMs: Int64 = 0
+  public var updatedAtMs: Int64 {
+    get {_storage._updatedAtMs}
+    set {_uniqueStorage()._updatedAtMs = newValue}
+  }
 
   /// Why it failed, when state is FAILED.
-  public var message: String = String()
+  public var message: String {
+    get {_storage._message}
+    set {_uniqueStorage()._message = newValue}
+  }
 
   /// S4: current requests, including any older than the retained log.
-  public var pendingApprovals: [Dshm_V1_ApprovalPending] = []
+  public var pendingApprovals: [Dshm_V1_ApprovalPending] {
+    get {_storage._pendingApprovals}
+    set {_uniqueStorage()._pendingApprovals = newValue}
+  }
 
   /// A session started on another client appears only while it needs a decision.
-  public var approvalOnly: Bool = false
+  public var approvalOnly: Bool {
+    get {_storage._approvalOnly}
+    set {_uniqueStorage()._approvalOnly = newValue}
+  }
 
   /// Last selection reported by DSH, including when its event is older than the retained log.
   public var modelSelection: Dshm_V1_ModelSelection {
-    get {_modelSelection ?? Dshm_V1_ModelSelection()}
-    set {_modelSelection = newValue}
+    get {_storage._modelSelection ?? Dshm_V1_ModelSelection()}
+    set {_uniqueStorage()._modelSelection = newValue}
   }
   /// Returns true if `modelSelection` has been explicitly set.
-  public var hasModelSelection: Bool {self._modelSelection != nil}
+  public var hasModelSelection: Bool {_storage._modelSelection != nil}
   /// Clears the value of `modelSelection`. Subsequent reads from it will return its default value.
-  public mutating func clearModelSelection() {self._modelSelection = nil}
+  public mutating func clearModelSelection() {_uniqueStorage()._modelSelection = nil}
 
   /// Committed DSH journal cursor; changes invalidate a cached detail page.
   public var sessionRevision: UInt64 {
-    get {_sessionRevision ?? 0}
-    set {_sessionRevision = newValue}
+    get {_storage._sessionRevision ?? 0}
+    set {_uniqueStorage()._sessionRevision = newValue}
   }
   /// Returns true if `sessionRevision` has been explicitly set.
-  public var hasSessionRevision: Bool {self._sessionRevision != nil}
+  public var hasSessionRevision: Bool {_storage._sessionRevision != nil}
   /// Clears the value of `sessionRevision`. Subsequent reads from it will return its default value.
-  public mutating func clearSessionRevision() {self._sessionRevision = nil}
+  public mutating func clearSessionRevision() {_uniqueStorage()._sessionRevision = nil}
 
-  public var externalSession: Bool = false
+  public var externalSession: Bool {
+    get {_storage._externalSession}
+    set {_uniqueStorage()._externalSession = newValue}
+  }
 
   /// Short result for the latest turn. Empty suppresses a stale or long inline answer.
   public var latestReply: String {
-    get {_latestReply ?? String()}
-    set {_latestReply = newValue}
+    get {_storage._latestReply ?? String()}
+    set {_uniqueStorage()._latestReply = newValue}
   }
   /// Returns true if `latestReply` has been explicitly set.
-  public var hasLatestReply: Bool {self._latestReply != nil}
+  public var hasLatestReply: Bool {_storage._latestReply != nil}
   /// Clears the value of `latestReply`. Subsequent reads from it will return its default value.
-  public mutating func clearLatestReply() {self._latestReply = nil}
+  public mutating func clearLatestReply() {_uniqueStorage()._latestReply = nil}
 
   /// S14 (drawer.v1, fields 280–299): the absolute directory of the session's workspace on the
   /// host, from the DSH session (`cwd`) or the phone's CreateTask. Absent when the host does not know it.
   public var workspace: String {
-    get {_workspace ?? String()}
-    set {_workspace = newValue}
+    get {_storage._workspace ?? String()}
+    set {_uniqueStorage()._workspace = newValue}
   }
   /// Returns true if `workspace` has been explicitly set.
-  public var hasWorkspace: Bool {self._workspace != nil}
+  public var hasWorkspace: Bool {_storage._workspace != nil}
   /// Clears the value of `workspace`. Subsequent reads from it will return its default value.
-  public mutating func clearWorkspace() {self._workspace = nil}
+  public mutating func clearWorkspace() {_uniqueStorage()._workspace = nil}
 
   /// S27 (fields 540–559): when the session's latest turn started (its `turn/start`, else its user
   /// message), Unix milliseconds. The done footer's 用时 runs from here to updated_at_ms. Absent from
   /// an older bridge: the app counts from created_at_ms, as before.
   public var turnStartedAtMs: Int64 {
-    get {_turnStartedAtMs ?? 0}
-    set {_turnStartedAtMs = newValue}
+    get {_storage._turnStartedAtMs ?? 0}
+    set {_uniqueStorage()._turnStartedAtMs = newValue}
   }
   /// Returns true if `turnStartedAtMs` has been explicitly set.
-  public var hasTurnStartedAtMs: Bool {self._turnStartedAtMs != nil}
+  public var hasTurnStartedAtMs: Bool {_storage._turnStartedAtMs != nil}
   /// Clears the value of `turnStartedAtMs`. Subsequent reads from it will return its default value.
-  public mutating func clearTurnStartedAtMs() {self._turnStartedAtMs = nil}
+  public mutating func clearTurnStartedAtMs() {_uniqueStorage()._turnStartedAtMs = nil}
+
+  /// Agent questions (questions.v1, fields 380–399): every question the task waits on now, including
+  /// any older than the retained log, as for approvals. A pending question makes the task
+  /// WAITING_ON_USER.
+  public var pendingQuestions: [Dshm_V1_QuestionPending] {
+    get {_storage._pendingQuestions}
+    set {_uniqueStorage()._pendingQuestions = newValue}
+  }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _modelSelection: Dshm_V1_ModelSelection? = nil
-  fileprivate var _sessionRevision: UInt64? = nil
-  fileprivate var _latestReply: String? = nil
-  fileprivate var _workspace: String? = nil
-  fileprivate var _turnStartedAtMs: Int64? = nil
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 /// Request: every task this bridge knows, newest first.
@@ -288,98 +319,167 @@ nonisolated extension Dshm_V1_TaskState: SwiftProtobuf._ProtoNameProviding {
 
 nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TaskSummary"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0\u{4}L\u{2}session_revision\0\u{3}external_session\0\u{3}latest_reply\0\u{2}\u{12}workspace\0\u{4}D\u{4}turn_started_at_ms\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0\u{4}L\u{2}session_revision\0\u{3}external_session\0\u{3}latest_reply\0\u{2}\u{12}workspace\0\u{4}d\u{1}pending_questions\0\u{4}`\u{2}turn_started_at_ms\0")
+
+  fileprivate class _StorageClass {
+    var _taskID: String = String()
+    var _title: String = String()
+    var _state: Dshm_V1_TaskState = .unspecified
+    var _createdAtMs: Int64 = 0
+    var _updatedAtMs: Int64 = 0
+    var _message: String = String()
+    var _pendingApprovals: [Dshm_V1_ApprovalPending] = []
+    var _approvalOnly: Bool = false
+    var _modelSelection: Dshm_V1_ModelSelection? = nil
+    var _sessionRevision: UInt64? = nil
+    var _externalSession: Bool = false
+    var _latestReply: String? = nil
+    var _workspace: String? = nil
+    var _turnStartedAtMs: Int64? = nil
+    var _pendingQuestions: [Dshm_V1_QuestionPending] = []
+
+      // This property is used as the initial default value for new instances of the type.
+      // The type itself is protecting the reference to its storage via CoW semantics.
+      // This will force a copy to be made of this reference when the first mutation occurs;
+      // hence, it is safe to mark this as `nonisolated(unsafe)`.
+      static nonisolated(unsafe) let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _taskID = source._taskID
+      _title = source._title
+      _state = source._state
+      _createdAtMs = source._createdAtMs
+      _updatedAtMs = source._updatedAtMs
+      _message = source._message
+      _pendingApprovals = source._pendingApprovals
+      _approvalOnly = source._approvalOnly
+      _modelSelection = source._modelSelection
+      _sessionRevision = source._sessionRevision
+      _externalSession = source._externalSession
+      _latestReply = source._latestReply
+      _workspace = source._workspace
+      _turnStartedAtMs = source._turnStartedAtMs
+      _pendingQuestions = source._pendingQuestions
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularStringField(value: &self.taskID) }()
-      case 2: try { try decoder.decodeSingularStringField(value: &self.title) }()
-      case 3: try { try decoder.decodeSingularEnumField(value: &self.state) }()
-      case 4: try { try decoder.decodeSingularInt64Field(value: &self.createdAtMs) }()
-      case 5: try { try decoder.decodeSingularInt64Field(value: &self.updatedAtMs) }()
-      case 6: try { try decoder.decodeSingularStringField(value: &self.message) }()
-      case 80: try { try decoder.decodeRepeatedMessageField(value: &self.pendingApprovals) }()
-      case 81: try { try decoder.decodeSingularBoolField(value: &self.approvalOnly) }()
-      case 120: try { try decoder.decodeSingularMessageField(value: &self._modelSelection) }()
-      case 260: try { try decoder.decodeSingularUInt64Field(value: &self._sessionRevision) }()
-      case 261: try { try decoder.decodeSingularBoolField(value: &self.externalSession) }()
-      case 262: try { try decoder.decodeSingularStringField(value: &self._latestReply) }()
-      case 280: try { try decoder.decodeSingularStringField(value: &self._workspace) }()
-      case 540: try { try decoder.decodeSingularInt64Field(value: &self._turnStartedAtMs) }()
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularStringField(value: &_storage._taskID) }()
+        case 2: try { try decoder.decodeSingularStringField(value: &_storage._title) }()
+        case 3: try { try decoder.decodeSingularEnumField(value: &_storage._state) }()
+        case 4: try { try decoder.decodeSingularInt64Field(value: &_storage._createdAtMs) }()
+        case 5: try { try decoder.decodeSingularInt64Field(value: &_storage._updatedAtMs) }()
+        case 6: try { try decoder.decodeSingularStringField(value: &_storage._message) }()
+        case 80: try { try decoder.decodeRepeatedMessageField(value: &_storage._pendingApprovals) }()
+        case 81: try { try decoder.decodeSingularBoolField(value: &_storage._approvalOnly) }()
+        case 120: try { try decoder.decodeSingularMessageField(value: &_storage._modelSelection) }()
+        case 260: try { try decoder.decodeSingularUInt64Field(value: &_storage._sessionRevision) }()
+        case 261: try { try decoder.decodeSingularBoolField(value: &_storage._externalSession) }()
+        case 262: try { try decoder.decodeSingularStringField(value: &_storage._latestReply) }()
+        case 280: try { try decoder.decodeSingularStringField(value: &_storage._workspace) }()
+        case 380: try { try decoder.decodeRepeatedMessageField(value: &_storage._pendingQuestions) }()
+        case 540: try { try decoder.decodeSingularInt64Field(value: &_storage._turnStartedAtMs) }()
+        default: break
+        }
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    if !self.taskID.isEmpty {
-      try visitor.visitSingularStringField(value: self.taskID, fieldNumber: 1)
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
+      if !_storage._taskID.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._taskID, fieldNumber: 1)
+      }
+      if !_storage._title.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._title, fieldNumber: 2)
+      }
+      if _storage._state != .unspecified {
+        try visitor.visitSingularEnumField(value: _storage._state, fieldNumber: 3)
+      }
+      if _storage._createdAtMs != 0 {
+        try visitor.visitSingularInt64Field(value: _storage._createdAtMs, fieldNumber: 4)
+      }
+      if _storage._updatedAtMs != 0 {
+        try visitor.visitSingularInt64Field(value: _storage._updatedAtMs, fieldNumber: 5)
+      }
+      if !_storage._message.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._message, fieldNumber: 6)
+      }
+      if !_storage._pendingApprovals.isEmpty {
+        try visitor.visitRepeatedMessageField(value: _storage._pendingApprovals, fieldNumber: 80)
+      }
+      if _storage._approvalOnly != false {
+        try visitor.visitSingularBoolField(value: _storage._approvalOnly, fieldNumber: 81)
+      }
+      try { if let v = _storage._modelSelection {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 120)
+      } }()
+      try { if let v = _storage._sessionRevision {
+        try visitor.visitSingularUInt64Field(value: v, fieldNumber: 260)
+      } }()
+      if _storage._externalSession != false {
+        try visitor.visitSingularBoolField(value: _storage._externalSession, fieldNumber: 261)
+      }
+      try { if let v = _storage._latestReply {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 262)
+      } }()
+      try { if let v = _storage._workspace {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 280)
+      } }()
+      if !_storage._pendingQuestions.isEmpty {
+        try visitor.visitRepeatedMessageField(value: _storage._pendingQuestions, fieldNumber: 380)
+      }
+      try { if let v = _storage._turnStartedAtMs {
+        try visitor.visitSingularInt64Field(value: v, fieldNumber: 540)
+      } }()
     }
-    if !self.title.isEmpty {
-      try visitor.visitSingularStringField(value: self.title, fieldNumber: 2)
-    }
-    if self.state != .unspecified {
-      try visitor.visitSingularEnumField(value: self.state, fieldNumber: 3)
-    }
-    if self.createdAtMs != 0 {
-      try visitor.visitSingularInt64Field(value: self.createdAtMs, fieldNumber: 4)
-    }
-    if self.updatedAtMs != 0 {
-      try visitor.visitSingularInt64Field(value: self.updatedAtMs, fieldNumber: 5)
-    }
-    if !self.message.isEmpty {
-      try visitor.visitSingularStringField(value: self.message, fieldNumber: 6)
-    }
-    if !self.pendingApprovals.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.pendingApprovals, fieldNumber: 80)
-    }
-    if self.approvalOnly != false {
-      try visitor.visitSingularBoolField(value: self.approvalOnly, fieldNumber: 81)
-    }
-    try { if let v = self._modelSelection {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 120)
-    } }()
-    try { if let v = self._sessionRevision {
-      try visitor.visitSingularUInt64Field(value: v, fieldNumber: 260)
-    } }()
-    if self.externalSession != false {
-      try visitor.visitSingularBoolField(value: self.externalSession, fieldNumber: 261)
-    }
-    try { if let v = self._latestReply {
-      try visitor.visitSingularStringField(value: v, fieldNumber: 262)
-    } }()
-    try { if let v = self._workspace {
-      try visitor.visitSingularStringField(value: v, fieldNumber: 280)
-    } }()
-    try { if let v = self._turnStartedAtMs {
-      try visitor.visitSingularInt64Field(value: v, fieldNumber: 540)
-    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Dshm_V1_TaskSummary, rhs: Dshm_V1_TaskSummary) -> Bool {
-    if lhs.taskID != rhs.taskID {return false}
-    if lhs.title != rhs.title {return false}
-    if lhs.state != rhs.state {return false}
-    if lhs.createdAtMs != rhs.createdAtMs {return false}
-    if lhs.updatedAtMs != rhs.updatedAtMs {return false}
-    if lhs.message != rhs.message {return false}
-    if lhs.pendingApprovals != rhs.pendingApprovals {return false}
-    if lhs.approvalOnly != rhs.approvalOnly {return false}
-    if lhs._modelSelection != rhs._modelSelection {return false}
-    if lhs._sessionRevision != rhs._sessionRevision {return false}
-    if lhs.externalSession != rhs.externalSession {return false}
-    if lhs._latestReply != rhs._latestReply {return false}
-    if lhs._workspace != rhs._workspace {return false}
-    if lhs._turnStartedAtMs != rhs._turnStartedAtMs {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._taskID != rhs_storage._taskID {return false}
+        if _storage._title != rhs_storage._title {return false}
+        if _storage._state != rhs_storage._state {return false}
+        if _storage._createdAtMs != rhs_storage._createdAtMs {return false}
+        if _storage._updatedAtMs != rhs_storage._updatedAtMs {return false}
+        if _storage._message != rhs_storage._message {return false}
+        if _storage._pendingApprovals != rhs_storage._pendingApprovals {return false}
+        if _storage._approvalOnly != rhs_storage._approvalOnly {return false}
+        if _storage._modelSelection != rhs_storage._modelSelection {return false}
+        if _storage._sessionRevision != rhs_storage._sessionRevision {return false}
+        if _storage._externalSession != rhs_storage._externalSession {return false}
+        if _storage._latestReply != rhs_storage._latestReply {return false}
+        if _storage._workspace != rhs_storage._workspace {return false}
+        if _storage._turnStartedAtMs != rhs_storage._turnStartedAtMs {return false}
+        if _storage._pendingQuestions != rhs_storage._pendingQuestions {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

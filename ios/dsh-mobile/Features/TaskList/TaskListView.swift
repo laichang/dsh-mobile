@@ -6,7 +6,8 @@ import SwiftUI
 /// principle 4), in three sections: waiting on me, running, done. The list comes from the local
 /// cache, so it shows while offline. Approvals are cards with the tool, the command, the reason
 /// and the tool arguments (STORY §5); a card of a host that is not connected has grey buttons and
-/// says why. A tap on a task opens its session page. Short answers show in the row (the
+/// says why. An agent question is its card, which answers there too (P1). A tap on a task opens
+/// its session page. Short answers show in the row (the
 /// 280-character rule, ARCHITECTURE D51). S15 · DESIGN.md screen 03, ARCHITECTURE D55.
 struct AllTasksPage: View {
     let store: TaskListStore
@@ -79,12 +80,17 @@ struct TaskListView: View {
                         AllTasksApprovalCard(row: row, approval: approval, store: store)
                             .padding(.bottom, 8)
                     }
+                } else if row.state == .waitingOnUser, let question = row.blocks.pendingQuestion {
+                    // P1: an agent question needs a decision like an approval (D113).
+                    AllTasksQuestionCard(row: row, question: question, store: store)
+                        .padding(.bottom, 8)
                 } else if !row.approvalOnly {
                     Button { shell.open(.session(row.key)) } label: { TaskRowView(row: row) }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("tasklist.row")
                         .overlay(alignment: .top) {
-                            if index > 0 && rows[index - 1].approvals.isEmpty {
+                            if index > 0 && rows[index - 1].approvals.isEmpty
+                                && !(rows[index - 1].state == .waitingOnUser && rows[index - 1].blocks.pendingQuestion != nil) {
                                 Rectangle().fill(DSHTheme.hairline).frame(height: 1)
                             }
                         }

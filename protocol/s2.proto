@@ -11,12 +11,13 @@ package dshm.v1;
 
 import "approvals.proto";
 import "models.proto";
+import "questions.proto";
 
 // Where a task stands, as the unified list shows it (STORY principle 4).
 enum TaskState {
   TASK_STATE_UNSPECIFIED = 0;
   TASK_STATE_RUNNING = 1;
-  // Needs a decision from the user (approvals, S4). Nothing sets it before S4.
+  // Needs a decision from the user: an approval or an agent question.
   TASK_STATE_WAITING_ON_USER = 2;
   TASK_STATE_COMPLETED = 3;
   TASK_STATE_FAILED = 4;
@@ -50,6 +51,10 @@ message TaskSummary {
   // message), Unix milliseconds. The done footer's 用时 runs from here to updated_at_ms. Absent from
   // an older bridge: the app counts from created_at_ms, as before.
   optional int64 turn_started_at_ms = 540;
+  // Agent questions (questions.v1, fields 380–399): every question the task waits on now, including
+  // any older than the retained log, as for approvals. A pending question makes the task
+  // WAITING_ON_USER.
+  repeated QuestionPending pending_questions = 380;
 }
 
 // Request: every task this bridge knows, newest first.
