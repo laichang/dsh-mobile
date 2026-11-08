@@ -566,6 +566,8 @@ Append-only, dated.
 
 - **2026-11-08 · T2 merged.** Merged as `1762164`; `scripts/check-plan` on the merge commit passed. `scripts/review T2` at `eb877f4`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/T2-eb877f4.txt`). No open `[human]` items, so T2 is `done`. §9 rows 4 (D95).
 
+- **2026-11-08 · T2 merged.** T2 merged as 1762164 (review PASS on eb877f4, T2-eb877f4.txt, no flaky part; the earlier review on 0f0bbc8 had attachments-ui flaky, passed on run 2 of 3). Before the merge, T2 merged main with T0+T1+S7: bridge tests 83/83 and swift test 112/112 pass on that combination, so the auto-merged S7+T0 code on main builds and passes.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
