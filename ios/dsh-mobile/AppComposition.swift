@@ -90,9 +90,9 @@ final class AppModel {
     }
 
     private func pairedConfig(_ host: PairedHost) -> TaskListStore.HostConfig? {
-        guard let endpoint = host.addresses.first, let channel = try? pairing.reconnectChannel(to: host) else { return nil }
-        return .init(key: "noise:\(host.id)", connection: HostConnection(endpoint: endpoint, channel: channel,
-                     transport: pairing.transport), name: host.name.isEmpty ? endpoint.description : host.name)
+        // D98: every saved address, the one that worked last first; a new working one is saved first.
+        guard let endpoint = host.addresses.first, let connection = try? pairing.connection(to: host) else { return nil }
+        return .init(key: "noise:\(host.id)", connection: connection, name: host.name.isEmpty ? endpoint.description : host.name)
     }
 
     private func hostConfigs() -> [TaskListStore.HostConfig] {

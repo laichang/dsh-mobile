@@ -56,6 +56,10 @@ public final class TaskListStore {
         /// The connection's channel (S1): "noise", or "plaintext" on Debug's loopback dev path.
         public var channelName: String
         public var capabilities: [String]
+        /// D98: the address of the host in use while online, or the last one that worked.
+        public var address: HostEndpoint? = nil
+        /// D98: while offline, the last error of each address of the host, in the order tried.
+        public var addressFailures: [AddressFailure] = []
     }
 
     /// A task as the views show it (a value copy of `CachedTask`).
@@ -200,6 +204,8 @@ public final class TaskListStore {
         var wake: CheckedContinuation<Void, Never>?
         var capabilities: [String]?
         var reachability: Reachability = .connecting
+        var address: HostEndpoint?
+        var addressFailures: [AddressFailure] = []
         init(key: String, connection: HostConnection) {
             self.key = key
             self.connection = connection
@@ -424,6 +430,8 @@ public final class TaskListStore {
             do {
                 try await link.connection.connect()
                 try Task.checkCancellation()
+                link.address = await link.connection.currentEndpoint
+                link.addressFailures = []
                 link.capabilities = await link.connection.capabilities
                 let host = ensureHost(link.key)
                 let resumed = try await link.connection.resume(logID: host.logID, afterSeq: UInt64(host.lastSeq))
@@ -451,6 +459,11 @@ public final class TaskListStore {
                 await link.connection.disconnect()
             }
             if Task.isCancelled { break }
+            let failures = await link.connection.addressFailures
+            if link.addressFailures != failures {
+                link.addressFailures = failures
+                refresh()
+            }
             // S29 (D82): a refusal of this device (close 4003) is final, not transient.
             if await link.connection.deviceRevoked {
                 dropRevoked(link)
@@ -759,7 +772,8 @@ public final class TaskListStore {
             return HostStatus(
                 key: link.key, name: names[link.key] ?? link.key,
                 reachability: link.reachability, lastConnectedAt: record?.lastConnectedAt,
-                channelName: link.connection.channelName, capabilities: link.capabilities ?? [])
+                channelName: link.connection.channelName, capabilities: link.capabilities ?? [],
+                address: link.address, addressFailures: link.addressFailures)
         }
         let descriptor = FetchDescriptor<CachedTask>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         tasks = ((try? context.fetch(descriptor)) ?? []).compactMap { t in

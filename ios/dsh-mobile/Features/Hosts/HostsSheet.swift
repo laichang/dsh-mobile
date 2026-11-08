@@ -3,9 +3,9 @@ import DSHProtocol
 import SwiftUI
 
 /// S21 · the hosts sheet (screen H), from the "2 / 3" pill in the drawer. Every host is a row of
-/// the same shape (STORY §2): online with its channel and default model; an unsupported DSH with
-/// the installed and supported versions; offline with its last connection and what waits on it
-/// (STORY §3). A row opens the host's devices and audit records (X2, `HostDetailView`).
+/// the same shape (STORY §2): online with its channel, default model and the address in use; an
+/// unsupported DSH with the installed and supported versions; offline with its last connection,
+/// the last error of each address, and what waits on it (STORY §3, D98). A row opens the host's devices and audit records (X2, `HostDetailView`).
 ///
 /// Accessibility contract: `hosts.sheet`, `hosts.summary` (value "online/total"), `hosts.row`
 /// (label: name and state, value: `Reachability.token`), `hosts.pair`.
@@ -120,11 +120,20 @@ private struct HostRow: View {
     private var details: some View {
         switch host.reachability {
         case .online:
-            HStack(spacing: 4) {
-                HostChannelLabel(host: host)
-                if let model = defaultModel {
-                    Text(verbatim: "·").foregroundStyle(DSHTheme.textTertiary)
-                    Text("Default \(model)", tableName: "Hosts")
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    HostChannelLabel(host: host)
+                    if let model = defaultModel {
+                        Text(verbatim: "·").foregroundStyle(DSHTheme.textTertiary)
+                        Text("Default \(model)", tableName: "Hosts")
+                            .foregroundStyle(DSHTheme.textSecondary)
+                            .lineLimit(1)
+                    }
+                }
+                // D98: which of the host's addresses this phone uses (LAN, Tailscale, ...).
+                if let address = host.address {
+                    Text("Via \(address.description)", tableName: "Hosts")
+                        .font(.subheadline.monospacedDigit())
                         .foregroundStyle(DSHTheme.textSecondary)
                         .lineLimit(1)
                 }
@@ -143,6 +152,13 @@ private struct HostRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HostLastConnection(date: host.lastConnectedAt)
                     .foregroundStyle(DSHTheme.textSecondary)
+                // D98: every address was tried; the last error of each.
+                ForEach(host.addressFailures, id: \.endpoint.description) { failure in
+                    Text(verbatim: "\(failure.endpoint.description) · \(failure.reason)")
+                        .font(.footnote)
+                        .foregroundStyle(DSHTheme.textTertiary)
+                        .lineLimit(2)
+                }
                 let waiting = store.tasks.filter { $0.hostKey == host.key && $0.state == .waitingOnUser }.count
                 if waiting > 0 {
                     Text("\(waiting) waiting on you until it is back", tableName: "Hosts")
