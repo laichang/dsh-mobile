@@ -660,6 +660,8 @@ Append-only, dated.
 
 - **2026-11-09 · S8 assigned.** Branch `claude/s8-bridge-listen-errors`, simulator `dshm-S8`, DSHM_HOME `~/.dshm/home-s8`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D125–D127. `eval "$(scripts/slice-env S8)"` exports them.
 
+- **2026-11-09 · S8 runs as a background agent.** S8 assigned (D125–D127) and started as a background agent. Running: S6, S8, S12. S11 (hosts tests) waits for S8, which also changes the hosts row.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
