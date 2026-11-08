@@ -48,7 +48,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S2 | doing | `claude/s2-questions-more` | 2026-11-09 | Slice owner builds (§8) |
 | S3 | doing | `claude/s3-model-failures` | 2026-11-08 | Slice owner builds (§8) |
 | S4 | done | merged `83c82ce` | 2026-11-09 | — (provisional D107, D108 in §9) |
-| S5 | todo | — | 2026-11-08 | Assign it and start a session |
+| S5 | doing | `claude/s5-voice` | 2026-11-09 | Slice owner builds (§8) |
 | S6 | todo | — | 2026-11-08 | Assign it and start a session |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -609,6 +609,8 @@ Append-only, dated.
 - **2026-11-09 · S4 merged.** Merged as `83c82ce`; `scripts/check-plan` on the merge commit passed. `scripts/review S4` at `1fc0d40`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S4-1fc0d40.txt`). No open `[human]` items, so S4 is `done`. §9 rows 10, 11 (D107, D108).
 
 - **2026-11-09 · S4 merged.** S4 merged as 83c82ce (review PASS on 1fc0d40, S4-1fc0d40.txt, no flaky part; head eda8f01 adds only PLAN changes). D107, D108 new; D95 and D18 amended: in §9. Differs from the Cuts: the '+' is drawn on 06 (a done task), not 04 (running), because a queued message carries text only; pickers add one item per use. Flaky in development: the photo picker's first open after an install can take more than 15 s (wait now 30 s); scripts/render-design exits 2 when two worktrees render at the same time. The user's uncommitted DEVELOPMENT_TEAM line in project.pbxproj was stashed for the merge and applied back cleanly.
+
+- **2026-11-09 · S5 assigned.** Branch `claude/s5-voice`, simulator `dshm-S5`, DSHM_HOME `~/.dshm/home-s5`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D116–D118. `eval "$(scripts/slice-env S5)"` exports them.
 
 ## 9. Pending user confirmation
 
