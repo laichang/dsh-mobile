@@ -5,6 +5,10 @@ import XCTest
 extension XCTestCase {
     var env: [String: String] { ProcessInfo.processInfo.environment }
 
+    /// Launch arguments that turn off UIKit's view animations in the app (ARCHITECTURE D128).
+    /// Before each step XCUITest waits until they end; under load it could wait 60 s per step.
+    var noUIKitAnimations: [String] { ["-DSHMUIKitAnimations", "NO"] }
+
     /// Types the prompt in a new session, taps send, waits for the task to finish; returns the
     /// transcript. The first message turns the new session into the session page (T1, D51).
     func runDemo(_ app: XCUIApplication, prompt: String, timeout: TimeInterval) -> String {

@@ -27,6 +27,7 @@ final class S19OutcomesUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN",
                                "-DSHMResetPairing", "YES", "-DSHMResetStore", "YES",
                                "-DSHMFakeBridge", "YES", "-DSHMFakeScenario", "outcomes"]
+        app.launchArguments += noUIKitAnimations // D128
         app.launch()
         return app
     }

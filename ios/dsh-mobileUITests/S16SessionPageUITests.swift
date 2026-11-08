@@ -18,6 +18,7 @@ final class S16SessionPageUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-DSHMResetPairing", "YES",
                                "-DSHMResetStore", "YES", "-DSHMFakeBridge", "YES", "-DSHMFakeScenario", "coding"]
+        app.launchArguments += noUIKitAnimations // D128
         app.launch()
         return app
     }

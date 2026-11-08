@@ -46,6 +46,9 @@ public enum DebugLaunchOptions {
     /// `-DSHMFakeSpeech <phrase>` (D116): the mic key uses `FakeTranscriber`, which "hears"
     /// `<phrase>`; `-DSHMFakeSpeech denied`: the user turned speech recognition off.
     public static let fakeSpeechKey = "DSHMFakeSpeech"
+    /// `-DSHMUIKitAnimations NO` (D128): UI tests turn off UIKit's view animations
+    /// (`UIView.setAnimationsEnabled(false)`), so XCUITest never waits for one to end.
+    public static let uikitAnimationsKey = "DSHMUIKitAnimations"
 
     public struct Options: Equatable, Sendable {
         public var useFakeBridge = false
@@ -69,6 +72,8 @@ public enum DebugLaunchOptions {
         public var fakeHosts: String?
         /// D116: the phrase of `FakeTranscriber`, or `denied`.
         public var fakeSpeech: String?
+        /// D128: false turns off UIKit's view animations.
+        public var uikitAnimations = true
 
         public init(
             useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil,
@@ -122,6 +127,7 @@ public enum DebugLaunchOptions {
         options.fakeScenario = values[fakeScenarioKey]
         options.fakeAsk = values[fakeAskKey]
         options.fakeSpeech = values[fakeSpeechKey]
+        if let v = values[uikitAnimationsKey] { options.uikitAnimations = !["NO", "0", "false"].contains(v) }
         return options
     }
 }

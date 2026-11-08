@@ -20,6 +20,7 @@ final class S15AllTasksUITests: XCTestCase {
                                "-DSHMFakeBridge", scenario]
         if reset { app.launchArguments += ["-DSHMResetStore", "YES"] }
         if let hold { app.launchArguments += ["-DSHMFakeHold", hold] }
+        app.launchArguments += noUIKitAnimations // D128
         app.launch()
         return app
     }

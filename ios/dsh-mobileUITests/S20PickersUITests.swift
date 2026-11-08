@@ -25,6 +25,7 @@ final class S20PickersUITests: XCTestCase {
                                "-DSHMFakeBridge", "pickers"]
         if reset { app.launchArguments += ["-DSHMResetStore", "YES"] }
         if let hold { app.launchArguments += ["-DSHMFakeHold", hold] }
+        app.launchArguments += noUIKitAnimations // D128
         app.launch()
         return app
     }

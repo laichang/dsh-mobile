@@ -10,7 +10,7 @@
 #   focus-s3  S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge
 #   focus-s2  S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge
 #   focus-t0  T0DemoUITests/testDemoAgainstRealDSH (real DSH + bridge from scripts/dsh-up.mjs)
-# Waits for the app to idle (spinners are still under -DSHMStillSpinners, ARCHITECTURE D128):
+# Waits for the app to idle (these tests launch the app with UIKit view animations off, ARCHITECTURE D128):
 #   idle-s16  S16SessionPageUITests   idle-s15  S15AllTasksUITests
 #   idle-s19  S19OutcomesUITests      idle-s20  S20PickersUITests
 #

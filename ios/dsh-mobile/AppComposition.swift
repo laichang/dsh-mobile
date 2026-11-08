@@ -1,6 +1,7 @@
 import DSHCore
 import Foundation
 import SwiftData
+import UIKit
 #if DEBUG
 import DSHTestSupport
 #endif
@@ -52,6 +53,9 @@ final class AppModel {
         container = Self.makeContainer()
         #if DEBUG
         let options = DebugLaunchOptions.parse(ProcessInfo.processInfo.arguments)
+        // D128: XCUITest waits before each step until UIKit's view animations end; under load it
+        // could wait 60 s per step for one whose end it did not see.
+        if !options.uikitAnimations { UIView.setAnimationsEnabled(false) }
         if options.resetPairing {
             try? hosts.removeAll()
             try? keys.reset()

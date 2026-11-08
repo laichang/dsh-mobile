@@ -29,5 +29,11 @@ import Testing
         let o = DebugLaunchOptions.parse(["/app", "-DSHMFakeBridge", "YES", "-DSHMFakeHold", "Second task"])
         #expect(o == .init(useFakeBridge: true, fakeHold: "Second task"))
     }
+
+    @Test func parsesUIKitAnimationsSwitch() {
+        #expect(DebugLaunchOptions.parse(["/app"]).uikitAnimations)
+        #expect(!DebugLaunchOptions.parse(["/app", "-DSHMUIKitAnimations", "NO"]).uikitAnimations)
+        #expect(DebugLaunchOptions.parse(["/app", "-DSHMUIKitAnimations", "YES"]).uikitAnimations)
+    }
 }
 #endif
