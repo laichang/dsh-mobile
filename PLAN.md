@@ -721,6 +721,8 @@ Append-only, dated.
 
 - **2026-11-09 · S10 merged.** Merged as `f333abc`; `scripts/check-plan` on the merge commit passed. `scripts/review S10` at `676ce30`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S10-676ce30.txt`). No open `[human]` items, so S10 is `done`.
 
+- **2026-11-09 · S10 merged; Live Activity launch race in UI demos.** S10 merged as f333abc (review PASS on 676ce30, S10-676ce30.txt, no flaky part, no retry). #22 reproduced on d48c93f: the test looked for the prompt, but since D50 a row shows DSH's session title (the mock model titles it '## Patch'); the test now matches 'patch'. No app change. s8.sh renamed to rich-detail.sh; s28.sh has no --no-s8. New, cross-cutting: since S6, liveactivitiesd opens the app in the background right after a reinstall when the part before left a recent Live Activity, and XCTest attaches to that process without launch arguments (seen in S10, and on dshm-S9). S10 guards its own launches (preset prompt check, relaunch); a shared fix (a launch check in UITestSupport, or no Live Activities under UI tests unless a test asks) is passed to S9 or becomes an issue.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
