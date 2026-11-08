@@ -337,8 +337,11 @@ struct UserBubble: View {
 }
 
 /// The composer on a session page. A completed task on a host with `conversation.v1` takes a
-/// follow-up (D89): its reply streams into this page. Otherwise the field is off; the model
-/// pill changes a running task's model (S6), and the send key is the stop key while it runs (S5).
+/// follow-up (D89): its reply streams into this page. With `conversation.v2` (D101) it also takes
+/// one while the task runs: the message waits above the field (`FollowUpQueueView`) and runs as
+/// the next turn, unless the user sends it now; and one after a stop, which continues the task.
+/// Otherwise the field is off. The model pill changes a running task's model (S6). While it runs,
+/// the send key is the stop key (S5), and the send key again while the field has text.
 private struct SessionComposer: View {
     let store: TaskListStore
     let taskKey: String
@@ -353,7 +356,11 @@ private struct SessionComposer: View {
         let row = store.task(taskKey)
         let host = store.hosts.first { $0.key == row?.hostKey }
         let followUp = row.map(store.canFollowUp) ?? false
+        let typed = !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         VStack(alignment: .leading, spacing: 10) {
+            if let row, !row.queue.isEmpty {
+                FollowUpQueueView(store: store, row: row) { sendError = $0 }
+            }
             if let sendError {
                 Text(sendError)
                     .font(.footnote)
@@ -361,7 +368,8 @@ private struct SessionComposer: View {
                     .accessibilityIdentifier("session.followUpError")
             }
             if followUp {
-                TextField("Reply to your agent", text: $draft, axis: .vertical)
+                TextField(row?.state.isTerminal == false ? "Add a message for the next turn" : "Reply to your agent",
+                          text: $draft, axis: .vertical)
                     .lineLimit(1...5)
                     .focused($editing)
                     .foregroundStyle(DSHTheme.textPrimary)
@@ -390,7 +398,7 @@ private struct SessionComposer: View {
                         .buttonBorderShape(.capsule)
                 }
                 Spacer()
-                if let row, !row.state.isTerminal, let host,
+                if let row, !row.state.isTerminal, let host, !(followUp && (typed || sending)),
                    host.reachability == .online, host.capabilities.contains(DSHProtocolInfo.interruptCapability) {
                     Button {
                         requestingStop = true
@@ -410,8 +418,7 @@ private struct SessionComposer: View {
                     .accessibilityLabel("Stop")
                     .accessibilityIdentifier("task.interrupt")
                 } else if followUp, let row {
-                    SendKey(enabled: !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !sending,
-                            sending: sending) { send(row) }
+                    SendKey(enabled: typed && !sending, sending: sending) { send(row) }
                         .accessibilityLabel("Send")
                         .accessibilityIdentifier("session.send")
                 } else {
@@ -422,6 +429,12 @@ private struct SessionComposer: View {
         }
         .composerChrome()
         .onChange(of: taskKey) { draft = ""; sendError = nil }
+        // D101: follow-ups that a stop gave back come back into the field, to send again or not.
+        .task(id: "\(taskKey)/\(store.returnedDrafts[taskKey]?.count ?? 0)") {
+            let returned = store.takeReturnedDrafts(for: taskKey)
+            guard !returned.isEmpty else { return }
+            draft = ([draft] + returned).filter { !$0.isEmpty }.joined(separator: "\n")
+        }
         .alert("Couldn’t stop the task", isPresented: Binding(get: { stopError != nil }, set: { if !$0 { stopError = nil } })) {
             Button("OK") { stopError = nil }
         } message: {

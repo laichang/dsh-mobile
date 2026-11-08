@@ -3,8 +3,14 @@
 // follow-up, and then reads DSH's own session list through the Web API: one DSH session must
 // hold both messages, each with a reply after it (ARCHITECTURE D89). Exits 0 when it does.
 //
+// DSHM_FOLLOWUP_MODE=running (ARCHITECTURE D101): a slower mock reply (about 15 s), so a turn runs
+// while the phone queues follow-ups. It waits for two UI tests: `messages-queue` (a prompt, a
+// queued follow-up, and one sent now) and `messages-interrupt` (a prompt, stopped, and a message
+// that continues it). DSH must hold each conversation in one session, in the order the agent
+// took the messages: the one sent now in the first turn, the queued one as the next turn.
+//
 // Env: DSHM_RUNTIME (~/.dshm/runtime), DSHM_HOME, DSHM_WEB_PORT, DSHM_BRIDGE_PORT,
-// DSHM_FOLLOWUP_SIGNALS (a directory: this script writes `bridge-port`; the UI test writes `messages`).
+// DSHM_FOLLOWUP_SIGNALS (a directory: this script writes `bridge-port`; the UI tests write `messages*`).
 import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
@@ -32,8 +38,9 @@ assert.equal(add.status, 0, add.stderr || add.stdout)
 const MOCK_TEXT = '你好！I am a DSH agent on your Mac. This reply is streamed through the dsh-mobile bridge.'
 const { startMockLlmServer } = await import(pathToFileURL(join(runtime,
   'node_modules/@deepseek-ai/dsh-llm-mock-server/lib/index.js')))
+const running = process.env.DSHM_FOLLOWUP_MODE === 'running'
 const mock = await startMockLlmServer({
-  sequence: ['slow_success'], repeatLast: true, successText: MOCK_TEXT, chunkSize: 4, chunkDelayMs: 400,
+  sequence: ['slow_success'], repeatLast: true, successText: MOCK_TEXT, chunkSize: 4, chunkDelayMs: running ? 700 : 400,
 })
 const host = spawn(dsh, ['web', '--no-open', '--port', port], {
   env: { ...env, DEEPSEEK_API_KEY: 'mock-key', DEEPSEEK_BASE_URL: mock.baseURL + '/v1' },
@@ -97,24 +104,46 @@ try {
     return result.result.value
   }
   writeFileSync(join(signals, 'bridge-port'), String(bridgePort))
-  console.log('DSH Web on ' + port + ', bridge on ' + bridgePort)
-  await until(() => existsSync(join(signals, 'messages')), 'the phone sends a task and a follow-up', 900_000)
-  const [prompt, followUp] = readFileSync(join(signals, 'messages'), 'utf8').split('\n')
+  console.log('DSH Web on ' + port + ', bridge on ' + bridgePort + (running ? ' (follow-ups while a task runs)' : ''))
+  const files = running ? ['messages-queue', 'messages-interrupt'] : ['messages']
+  await until(() => files.every(f => existsSync(join(signals, f))), 'the phone sends its tasks and follow-ups', 900_000)
+  const sent = Object.fromEntries(files.map(f => [f, readFileSync(join(signals, f), 'utf8').split('\n')]))
 
-  // DSH's own record: one session, both messages, a reply after each.
+  // DSH's own record: one session per conversation, the messages in the order the agent took them.
   const { items } = await rpc('session/list', { _request: {} })
   const sessions = []
   for (const item of items) {
     const { records } = await rpc('session/events', { request: { address: { kind: 'session', sessionId: item.sessionId }, maxMessages: 32 } })
     sessions.push({ id: item.sessionId, messages: messages(records) })
   }
-  const session = sessions.find(s => s.messages.some(m => m.fromUser && m.text === prompt))
-  assert.ok(session, 'no DSH session has the prompt: ' + JSON.stringify(sessions))
-  assert.deepEqual(session.messages.map(m => m.fromUser ? 'user: ' + m.text : 'agent'),
-    ['user: ' + prompt, 'agent', 'user: ' + followUp, 'agent'], JSON.stringify(session.messages))
-  assert.ok(session.messages.filter(m => !m.fromUser).every(m => m.text === MOCK_TEXT))
-  console.log('DSH session ' + session.id + ': ' + session.messages.map(m => (m.fromUser ? 'user' : 'agent') + ' ' + JSON.stringify(m.text)).join(' | '))
-  console.log('followup host: the follow-up is in the same DSH session')
+  const sessionOf = (prompt) => {
+    const session = sessions.find(s => s.messages.some(m => m.fromUser && m.text === prompt))
+    assert.ok(session, 'no DSH session has the prompt: ' + JSON.stringify(sessions))
+    console.log('DSH session ' + session.id + ': ' + session.messages.map(m => (m.fromUser ? 'user' : 'agent') + ' ' + JSON.stringify(m.text)).join(' | '))
+    return session
+  }
+  const shape = (session) => session.messages.map(m => m.fromUser ? 'user: ' + m.text : 'agent')
+  if (!running) {
+    const [prompt, followUp] = sent.messages
+    const session = sessionOf(prompt)
+    assert.deepEqual(shape(session), ['user: ' + prompt, 'agent', 'user: ' + followUp, 'agent'], JSON.stringify(session.messages))
+    assert.ok(session.messages.filter(m => !m.fromUser).every(m => m.text === MOCK_TEXT))
+    console.log('followup host: the follow-up is in the same DSH session')
+  } else {
+    // D101: the one sent now went in at the next step of the first turn; the queued one ran next.
+    const [prompt, later, now] = sent['messages-queue']
+    const queue = sessionOf(prompt)
+    assert.deepEqual(shape(queue), ['user: ' + prompt, 'agent', 'user: ' + now, 'agent', 'user: ' + later, 'agent'],
+      JSON.stringify(queue.messages))
+    assert.ok(queue.messages.filter(m => !m.fromUser).every(m => m.text === MOCK_TEXT))
+    // After the stop, the new message went into the same session, and the agent answered it.
+    const [story, goOn] = sent['messages-interrupt']
+    const stopped = sessionOf(story)
+    assert.deepEqual(stopped.messages.filter(m => m.fromUser).map(m => m.text), [story, goOn], JSON.stringify(stopped.messages))
+    assert.equal(stopped.messages.at(-1).fromUser, false)
+    assert.equal(stopped.messages.at(-1).text, MOCK_TEXT)
+    console.log('followup host: queued, sent now and continued, each in its own DSH session')
+  }
 } finally {
   host.kill('SIGTERM')
   await exited
