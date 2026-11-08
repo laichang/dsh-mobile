@@ -1,0 +1,14 @@
+{
+  "name": "@dshm-spike/model-failures",
+  "version": "0.0.0",
+  "description": "Throwaway X1 (M2) spike: run a task in DSH and record every follow frame the bridge would see",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
