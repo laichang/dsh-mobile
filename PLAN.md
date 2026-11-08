@@ -669,6 +669,8 @@ Append-only, dated.
 
 - **2026-11-09 · S12 merged.** Merged as `2574d2f`; `scripts/check-plan` on the merge commit passed. No open `[human]` items, so S12 is `done`.
 
+- **2026-11-09 · S12 merged.** S12 merged as 2574d2f (only an [auto] item, so scripts/review has no UI part; test code and test support only). A new waitForStore helper waits on @Observable store changes with a 30 s deadline; every per-suite waitUntil uses it. Also fixed: the FollowUpQueue, NoiseResume, CachedMilestone, OutcomeFake and S28TablesReply flakes that slices saw under load. Runs: swift test --parallel (133 tests) passed at load 186–321 with 24 yes processes and at ~200 without. Left (in the S12 Log): two pollUntil waits on fake-host counters, short 'nothing happens' sleeps in HostsControl/RevokedHost, and a time bound in ReconnectTests that very heavy load could break. Closes #26 when the plan ends.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
