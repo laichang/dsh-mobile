@@ -121,7 +121,7 @@ const TERMINAL = ['model-not-found', 'model-not-exist-400', 'invalid-key', 'no-b
 
 describe('ModelFailuresAgainstFakeDSH', () => {
   for (const name of TERMINAL) {
-    test(`${name}EndsTheTaskAsFailedWithTheTextOfDSH`, async () => {
+    test(`eachRecordedFailureEndsTheTaskAsFailedWithTheTextOfDSH (${name})`, async () => {
       const { recorded, server, client, taskId } = await failedTask(name)
       const error = ends(recorded)[0].error!
       assert.equal(ends(recorded)[0].kind, 'error')
@@ -154,7 +154,7 @@ describe('ModelFailuresAgainstFakeDSH', () => {
   }
 
   for (const name of TERMINAL.filter((n) => fixture(n).followUp?.value.accepted)) {
-    test(`${name}ThenANewMessageContinuesTheSameSession`, async () => {
+    test(`aNewMessageAfterEachRecordedFailureContinuesTheSameSession (${name})`, async () => {
       const { recorded, dsh, client, taskId } = await failedTask(name)
       assert.equal(ends(recorded)[1].kind, 'completed')
       const accepted = await client.call({ case: 'sendMessage',
