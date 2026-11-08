@@ -40,11 +40,11 @@ This file exists only while this requirement is in progress. It serves this requ
 
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
-| T0 | doing | `claude/t0-followup` | 2026-11-08 | Slice owner builds (§8) |
+| T0 | done | merged `71577b2` | 2026-11-08 | — (provisional D89 in §9) |
 | T1 | done | merged `8f55a72` | 2026-11-08 | — (provisional D92 in §9) |
 | T2 | doing | `claude/t2-attachments` | 2026-11-08 | Slice owner builds (§8) |
 | X1 | todo | — | 2026-11-08 | Assign it and start a session |
-| S1 | todo | — | 2026-11-08 | Assign it and start a session |
+| S1 | doing | `claude/s1-followup-queue` | 2026-11-08 | Slice owner builds (§8) |
 | S2 | todo | — | 2026-11-08 | Assign it and start a session |
 | S3 | todo | — | 2026-11-08 | Assign it and start a session |
 | S4 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -122,7 +122,7 @@ A tracer is one thin round trip that one session can finish without running out 
 
 ### T0 · Tracer bullet: Follow-up in a finished session
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: Part of #1. Today the phone sends one message per task and then takes no more input (user, 2026-11-08: "现在我只能发一条消息，然后就不给发了，不是连续的agent loop"). The thinnest round trip of a continuous conversation: one more message into the same DSH session after the task is done.
 
@@ -135,13 +135,14 @@ A tracer is one thin round trip that one session can finish without running out 
 **Demo**: `scripts/demo/followup.sh` (feature name: `t0.sh` is the M1 baseline). Finish a task, send a follow-up from its page, see the second reply under the first, on the phone and in the same session on DSH web.
 
 **Done when**
-- [ ] [auto] The bridge sends a `SendMessage` for a completed task into the same DSH session, and the new turn streams under the same task ID (`FakeDSH`) — Evidence:
-- [ ] [auto] DSHKit: a follow-up on a completed task adds the user message, sets the task to running, and adds the reply after the first answer; a reconnect replays the same transcript (`FakeBridge`) — Evidence:
-- [ ] [ui] On a completed session page, send a follow-up: the reply streams into the same page, against real DSH with the mock model (`cmd:scripts/demo/followup.sh`) — Evidence:
+- [x] [auto] The bridge sends a `SendMessage` for a completed task into the same DSH session, and the new turn streams under the same task ID (`FakeDSH`) — Evidence: test:FollowUpAgainstFakeDSH/aFollowUpOnACompletedTaskStreamsTheNextTurnUnderTheSameTaskID · test:FollowUpAgainstFakeDSH/resumeReplaysTheWholeConversationInOrder · cmd:scripts/demo/followup.sh
+- [x] [auto] DSHKit: a follow-up on a completed task adds the user message, sets the task to running, and adds the reply after the first answer; a reconnect replays the same transcript (`FakeBridge`) — Evidence: test:FollowUpTests/followUpOnACompletedTaskAddsTheMessageRunsAndAppendsTheReply · test:FollowUpTests/aReconnectReplaysTheSameTranscript · test:FollowUpTests/killAndReopenDuringTheFollowUpFillsTheGapOnce · cmd:scripts/demo/followup.sh
+- [x] [ui] On a completed session page, send a follow-up: the reply streams into the same page, against real DSH with the mock model (`cmd:scripts/demo/followup.sh`) — Evidence: cmd:scripts/demo/followup.sh · test:FollowUpUITests/testFollowUpInAFinishedSessionAgainstRealDSH · shot:evidence/T0/followup-streaming.png · shot:evidence/T0/followup-done.png
 
 **Not**: Follow-ups while the task runs, or after a failure or an interrupt (S1, S3). Attachments (T2). Agent questions (T1).
 
 **Log**: —
+- **2026-11-08 · built; all [auto]/[ui] ticked, review next.** Done: conversation.v1 (protocol/conversation.proto: SendMessage, MessageAccepted, UserMessage; Event/Request/Response 360). Bridge TaskHub.sendMessage + DshTasks.followUp prompt the task's DSH session with mode steer; the turn streams under the same task ID, chunk seq goes on, a logged UserMessage puts the bubble in place and Resume replays it. App: the session composer takes text on a completed task (TaskListStore.canFollowUp/sendFollowUp); the bubble and reply go under the first answer. Demo scripts/demo/followup.sh (real DSH Web + mock LLM; followup-host.mjs checks DSH has both messages in one session). See D89 (provisional) and the D18 amendment. No new dependencies. Learned: the page drew every journal user message as a top bubble, so the follow-up showed twice once the journal loaded; fixed (only the first prompt on top when the page uses the streamed transcript). The mock model at 60 ms/chunk ends a turn in about 1.4 s, so the UI test missed RUNNING; the demo host uses 400 ms/chunk. Flaky: under load (load average 100-190 with T1/T2 running) swift test can time out in S16CodingTaskTests and TaskListStoreTests waits (5 s), also on main; they pass alone. Not done (later slices): the milestone bar keeps the first turn's last step (完成) while a follow-up turn runs, because follow-up turns add no milestones; follow-ups while running or after a failure/stop (S1, S3); follow-ups in sessions from other clients. Next: reviewer runs scripts/review T0.
 
 ### T1 · Tracer bullet: Answer an agent question
 
@@ -545,6 +546,10 @@ Append-only, dated.
 
 - **2026-11-08 · T2 review PASS, but it conflicts with main.** T2 review PASS on 0752a3d (T2-0752a3d.txt; head 3ce48d2 adds only PLAN changes). It conflicts with T1 on main in 8 files (frame.proto, generated code, FakeBridge, ARCHITECTURE.md, ...). The T2 owner merges main now and reviews again; one more small merge follows after T0 lands.
 
+- **2026-11-08 · T0 merged.** Merged as `71577b2`; `scripts/check-plan` on the merge commit passed. `scripts/review T0` at `7f6c6c1`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/T0-7f6c6c1.txt`). No open `[human]` items, so T0 is `done`. §9 rows 2 (D89).
+
+- **2026-11-08 · S1 assigned.** Branch `claude/s1-followup-queue`, simulator `dshm-S1`, DSHM_HOME `~/.dshm/home-s1`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D101–D103. `eval "$(scripts/slice-env S1)"` exports them.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -552,3 +557,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
 | 1 | T1 | decision | ARCHITECTURE D92, *provisional*: Agent questions (screen P1, extends D18) | `claude/t1-questions` | merged `8f55a72` |
+| 2 | T0 | decision | ARCHITECTURE D89, *provisional*: A follow-up message continues the task (screen 04) | `claude/t0-followup` | merged `71577b2` |

@@ -13,6 +13,8 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
         /// `durationMs` is 0 while it runs. `text` is DSH's reasoning, cut by the bridge.
         case thinking(durationMs: UInt64, text: String, truncated: Bool)
         case tool(Tool)
+        /// D89: a message the user sent into the task after its first prompt (`conversation.v1`).
+        case userMessage(text: String)
         /// An agent question, shown as a card (`questions.v1`, screen P1).
         case question(AgentQuestion)
     }
@@ -78,6 +80,16 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
                   time: Date(timeIntervalSince1970: TimeInterval(wire.timeMs) / 1000))
     }
 
+    /// D89: a follow-up message, placed like a row: after the text that streamed before it.
+    public init(_ wire: Dshm_V1_UserMessage) {
+        self.init(id: "message-\(wire.messageID)", taskID: wire.taskID, state: .done, kind: .userMessage(text: wire.text),
+                  time: Date(timeIntervalSince1970: TimeInterval(wire.timeMs) / 1000))
+    }
+
+    public var isUserMessage: Bool {
+        if case .userMessage = kind { true } else { false }
+    }
+
     /// Whole seconds of thinking, at least 1 once it ended ("已思考 8 秒").
     public var thinkingSeconds: Int? {
         guard case .thinking(let ms, _, _) = kind else { return nil }
@@ -95,6 +107,12 @@ public struct StructuredTranscript: Codable, Equatable, Sendable {
     }
 
     public var isEmpty: Bool { items.isEmpty }
+
+    /// D89: how many follow-up messages the task has (each one starts a turn).
+    public var followUpCount: Int { items.filter(\.isUserMessage).count }
+
+    /// D89: only the follow-up messages, for a host without `transcript.v1`.
+    public var userMessagesOnly: StructuredTranscript { StructuredTranscript(items: items.filter(\.isUserMessage)) }
 
     /// Adds `item` at `offset`, or updates the row with its id. Returns whether anything changed.
     @discardableResult

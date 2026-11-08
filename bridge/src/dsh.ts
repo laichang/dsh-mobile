@@ -23,6 +23,9 @@ export type FollowFrame =
   | { type: 'event'; event: { type: string; seq: number; time?: number; data: unknown } }
   | { type: 'assistant-stream'; frame: { type: 'start' | 'end' } | { type: 'chunk'; chunk: unknown; time?: number } }
 
+/** `steer`: the next step of the running turn, or a new turn on an idle session. `queue`: the next turn (D18). */
+export type PromptMode = 'steer' | 'queue'
+
 /** Subset of `ctx.sessionController` (`@deepseek-ai/dsh-api-session-controller`). */
 export interface SessionControllerLike {
   modelCatalog(): Promise<HostCatalog>
@@ -30,7 +33,7 @@ export interface SessionControllerLike {
   create(request: { workspaceId: string }): Promise<{ sessionId: string }>
   cancel(request: { sessionId: string }): { accepted: true }
   prompt(
-    request: { requestId: string; sessionId: string; mode: 'queue'; content: readonly PromptPart[] },
+    request: { requestId: string; sessionId: string; mode: PromptMode; content: readonly PromptPart[] },
     signal: AbortSignal,
   ): Promise<unknown>
   follow(
@@ -63,7 +66,19 @@ export type TaskOutput =
   | { kind: 'model'; selection: Selection }
   | { kind: 'milestone'; milestone: Milestone }
   | { kind: 'block'; block: BlockOut } // S17
+  | { kind: 'turn'; turn: number } // D89: the DSH turn number, once the turn starts
   | { kind: 'end'; status: 'completed' | 'interrupted' | 'failed'; message?: string }
+
+/** One more turn of a task's session (D89): its output, and the DSH turn it waits for. */
+export interface FollowUpOptions {
+  /** The message's ID: also DSH's `requestId`, so a repeated send is accepted once. */
+  messageId: string
+  mode: PromptMode
+  /** The latest DSH turn number the task has seen; the new turn has a larger one. */
+  afterTurn?: number
+  /** A prefix for the transcript block IDs of this turn, so they stay unique within the task. */
+  blockPrefix: string
+}
 
 export interface StartedTask {
   taskId: string
@@ -159,16 +174,44 @@ export class DshTasks {
 
     return { taskId: sessionId, output: mapFollow(first, iterator), workspace: path }
   }
+
+  /**
+   * D89: one more message into the task's DSH session. Opens a follow first, so the new turn's
+   * first frames can't be missed, then prompts. Rejects when DSH does not accept the message.
+   */
+  async followUp(taskId: string, text: string, options: FollowUpOptions, signal: AbortSignal): Promise<AsyncIterable<TaskOutput>> {
+    const follow = this.dsh.sessionController.follow(
+      { address: { kind: 'session', sessionId: taskId }, assistantStream: true, activate: true }, signal)
+    const iterator = follow[Symbol.asyncIterator]()
+    const first = await iterator.next()
+    try {
+      await this.dsh.sessionController.prompt(
+        { requestId: options.messageId, sessionId: taskId, mode: options.mode, content: [{ type: 'text', text }] }, signal)
+    } catch (error) {
+      await iterator.return?.()
+      throw error
+    }
+    return mapFollow(first, iterator, { afterTurn: options.afterTurn, blockPrefix: options.blockPrefix, milestones: false })
+  }
+}
+
+interface MapOptions {
+  /** Wait for a turn after this one (follow-ups); undefined takes the first turn that starts. */
+  afterTurn?: number
+  blockPrefix?: string
+  /** Milestones map the task's first turn only (S3). */
+  milestones?: boolean
 }
 
 async function* once(data: Uint8Array): AsyncGenerator<Uint8Array> { yield data }
 
 async function* mapFollow(
-  first: IteratorResult<FollowFrame>, iterator: AsyncIterator<FollowFrame>,
+  first: IteratorResult<FollowFrame>, iterator: AsyncIterator<FollowFrame>, options: MapOptions = {},
 ): AsyncGenerator<TaskOutput> {
   let turn: number | undefined
+  const mapsMilestones = options.milestones ?? true
   const milestones = new MilestoneMapper()
-  const blocks = new TranscriptMapper() // S17
+  const blocks = new TranscriptMapper(options.blockPrefix) // S17
   try {
     for (let next = first; !next.done; next = await iterator.next()) {
       const f = next.value
@@ -184,9 +227,13 @@ async function* mapFollow(
           const selection = f.event.data as Selection
           yield { kind: 'model', selection }
         }
-        for (const milestone of milestones.map(f.event)) yield { kind: 'milestone', milestone }
+        if (mapsMilestones) for (const milestone of milestones.map(f.event)) yield { kind: 'milestone', milestone }
         const data = f.event.data as { turn?: number; reason?: { kind?: string; error?: unknown; reason?: { kind?: string } } } | null
-        if (f.event.type === 'turn/start' && turn === undefined) turn = data?.turn
+        if (f.event.type === 'turn/start' && turn === undefined
+            && (options.afterTurn === undefined || (typeof data?.turn === 'number' && data.turn > options.afterTurn))) {
+          turn = data?.turn
+          if (typeof turn === 'number') yield { kind: 'turn', turn }
+        }
         if (f.event.type === 'turn/end' && (turn === undefined || data?.turn === turn)) {
           for (const block of blocks.finish(f.event.time)) yield { kind: 'block', block }
           const kind = data?.reason?.kind ?? 'unknown'
@@ -198,7 +245,7 @@ async function* mapFollow(
       }
     }
     const message = 'DSH closed the session stream before the turn ended'
-    for (const milestone of milestones.abandon(message, Date.now())) yield { kind: 'milestone', milestone }
+    if (mapsMilestones) for (const milestone of milestones.abandon(message, Date.now())) yield { kind: 'milestone', milestone }
     yield { kind: 'end', status: 'failed', message }
   } finally {
     await iterator.return?.()

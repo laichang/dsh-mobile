@@ -463,7 +463,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
     <div class="took" style="margin-top:12px">用时 5 分 24 秒 · DeepSeek-V41-Flash · High</div>
   </div>
   <div class="composer">
-    <div class="ph" style="display:flex;align-items:center"><span style="opacity:.55">继续：“把第 3 页改成柱状图”…</span><span class="mtag mx">M2</span></div>
+    <div class="ph" style="display:flex;align-items:center"><span style="opacity:.55">回复智能体…</span></div>
     <div class="bar"><span class="pill">V41-Flash <span class="w">· High</span></span><span class="send idle"><svg class="i s"><use href="#up"/></svg></span></div>
   </div>
 </template>
@@ -585,7 +585,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <li>顶部钉住里程碑进度（S3），点开看全部步骤。</li>
   <li>回复里的 Markdown 表格画成原生表格（S28）：表头加底色，行间细线，列按分隔行对齐；单元格太长就换行，表格比屏幕宽时只在自己那一行里横向滑动。</li>
   <li>发送键变<b>停止</b>（S5）；模型胶囊就是“Change model”，任务中可换（S6）。</li>
-  <li>输入框里补充一句、排到下一轮是 M2（追加消息）；M1 的会话页只有停止和换模型。</li>
+  <li>运行中在输入框里补充一句、排到下一轮还是 M2；运行中的会话页只有停止和换模型。任务完成后接着说见 06。</li>
 </ul></div>
 </div>
 
@@ -629,7 +629,8 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <li>未读的会话打开时停在最终回答开头，那里不画标记；已读的会话照常停在末尾。</li>
   <li>“用时”只算最后一轮：从这一轮开始到结束，不算两轮之间的空闲。</li>
   <li>M1 的结果是文字：写清楚产物在执行端的哪个路径。</li>
-  <li>虚线文件卡是 <b>M3</b>：Quick Look 预览、分享、存到文件。在同一会话里继续追问是 M2。</li>
+  <li>虚线文件卡是 <b>M3</b>：Quick Look 预览、分享、存到文件。</li>
+  <li>完成后输入框直接可以接着说：发到同一个 DSH 会话（网页上也是这一个），你的气泡和新的回复接在这个回答下面，任务回到运行中，“用时”从这一轮算起。执行端不支持时，输入框和以前一样不能输入。失败或停止后接着说还是 M2。</li>
 </ul></div>
 </div>
 

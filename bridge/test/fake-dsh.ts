@@ -17,6 +17,8 @@ type QuestionHandler = (this: unknown, req: QuestionRequest, next: () => Promise
 export interface FakeDSHOptions {
   /** Text deltas the agent "streams" for every prompt. */
   reply?: string[]
+  /** Per turn of a session (1 = the first prompt): the deltas of that turn, instead of `reply`. */
+  replies?: Record<number, string[]>
   /** End the turn with this reason instead of `completed`. */
   failWith?: { kind: string; error?: { message: string } }
   /** Make `sessionController.create` reject. */
@@ -88,6 +90,8 @@ export class FakeDSH implements DshServices {
   readonly promptParts: { sessionId: string; parts: readonly PromptPart[] }[] = []
   /** D95: images staged through `fileUploads.uploadImageStream`, by receipt. */
   readonly stagedImages: { sessionId: string; receiptId: string; mediaType: string; name?: string; data: Uint8Array }[] = []
+  /** The `mode` and `requestId` of each prompt, in the order of `prompts`. */
+  readonly promptOptions: { mode?: string; requestId?: string }[] = []
   private sessions = new Map<string, { followers: Channel<FollowFrame>[]; seq: number; turn: number; abort?: AbortController }>()
   private answerers: QuestionHandler[] = []
   /** Answers each `ask` got, in order. */
@@ -165,7 +169,7 @@ export class FakeDSH implements DshServices {
     },
 
     prompt: async (
-      request: { sessionId: string; content: readonly PromptPart[] },
+      request: { sessionId: string; mode?: string; requestId?: string; content: readonly PromptPart[] },
       _signal: AbortSignal,
     ) => {
       const s = this.session(request.sessionId)
@@ -176,6 +180,7 @@ export class FakeDSH implements DshServices {
       }
       this.prompts.push({ sessionId: request.sessionId, text: request.content.map((c) => (c.type === 'text' ? c.text : '')).join('') })
       this.promptParts.push({ sessionId: request.sessionId, parts: request.content })
+      this.promptOptions.push({ mode: request.mode, requestId: request.requestId })
       const turn = ++s.turn
       // Run the turn asynchronously, like the real agent loop: prompt() returns on admission.
       setImmediate(() => void this.runTurn(request.sessionId, turn))
@@ -212,7 +217,7 @@ export class FakeDSH implements DshServices {
   }
 
   private async runTurn(sessionId: string, turn: number) {
-    let reply = this.options.reply ?? ['Hello', ' from', ' FakeDSH.']
+    let reply = this.options.replies?.[turn] ?? this.options.reply ?? ['Hello', ' from', ' FakeDSH.']
     this.emitEvent(sessionId, 'turn/start', { turn })
     if (this.options.ask) {
       const abort = new AbortController()

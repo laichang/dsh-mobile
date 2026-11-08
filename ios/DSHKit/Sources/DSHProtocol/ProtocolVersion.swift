@@ -12,6 +12,8 @@ public enum DSHProtocolInfo {
     public static let resumeCapability = "resume.v1"
     /// S17: the bridge sends `TranscriptBlock` events (protocol/transcript.proto).
     public static let transcriptCapability = "transcript.v1"
+    /// D89: SendMessage, MessageAccepted and UserMessage (protocol/conversation.proto).
+    public static let conversationCapability = "conversation.v1"
     /// Agent questions: `QuestionPending`, `AnswerQuestion`, `QuestionResolved` (protocol/questions.proto).
     public static let questionsCapability = "questions.v1"
     /// Attachments: UploadBegin / UploadChunk / UploadEnd and `CreateTask.upload_ids` (protocol/attachments.proto).

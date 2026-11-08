@@ -100,8 +100,9 @@ public final class TaskListStore {
         }
 
         /// Chunks stream the first phone turn. Its committed journal restores text after a truncated replay.
+        /// D89: a conversation with follow-ups keeps its streamed transcript, where the messages sit.
         public func singleTurnTranscript(_ messages: [Dshm_V1_SessionMessage]) -> String {
-            guard state.isTerminal else { return transcript }
+            guard state.isTerminal, blocks.followUpCount == 0 else { return transcript }
             let reply = messages.filter { !$0.fromUser }.map(\.text).joined(separator: "\n\n")
             return reply.isEmpty || transcript.contains(reply) ? transcript : reply
         }
@@ -380,6 +381,25 @@ public final class TaskListStore {
         try await link.connection.interrupt(taskID: row.taskID)
     }
 
+    /// D89: the host can take a follow-up for this task now: it is done, and the host is online
+    /// with `conversation.v1`. Follow-ups while it runs, or after a failure or a stop, come later.
+    public func canFollowUp(_ row: TaskRow) -> Bool {
+        guard row.state == .completed, !row.externalSession, !row.approvalOnly,
+              let link = links.first(where: { $0.key == row.hostKey }), link.reachability == .online else { return false }
+        return link.capabilities?.contains(DSHProtocolInfo.conversationCapability) == true
+    }
+
+    /// D89: sends `text` into the DSH session of `row`. The user message and the new turn arrive
+    /// as host events, so the page shows them in order, and a reconnect replays them.
+    public func sendFollowUp(_ text: String, for row: TaskRow) async throws {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        guard canFollowUp(row), let link = links.first(where: { $0.key == row.hostKey }) else {
+            throw HostConnectionError.notConnected
+        }
+        try await link.connection.sendMessage(taskID: row.taskID, text: trimmed)
+    }
+
     public func answerApproval(_ approval: Approval, hostKey: String, allow: Bool) async throws {
         guard let link = links.first(where: { $0.key == hostKey }), link.reachability == .online,
               link.capabilities?.contains(DSHProtocolInfo.approvalsCapability) == true else { throw HostConnectionError.notConnected }
@@ -567,8 +587,9 @@ public final class TaskListStore {
                 timelines[task.key] = timeline
             }
             task.logID = host.logID
-        case .transcriptBlock(let item):
+        case .transcriptBlock(let item), .userMessage(let item):
             // S17: a new row sits after the text streamed so far; an update keeps its place.
+            // D89: a follow-up message sits there too, and the next turn's text streams after it.
             let task = taskRecord(hostKey: link.key, taskID: item.taskID, title: "")
             var blocks = structuredTranscript(of: task)
             if blocks.upsert(item, offset: task.transcript.utf8.count) {
@@ -779,7 +800,7 @@ public final class TaskListStore {
                 workspace: t.workspace, unread: t.state.isTerminal && (t.readThrough.map { $0 < t.updatedAt } ?? true),
                 approvalsAnswered: t.approvalsAnswered,
                 blocks: link.capabilities?.contains(DSHProtocolInfo.transcriptCapability) == false
-                    ? StructuredTranscript() : structuredTranscript(of: t),
+                    ? structuredTranscript(of: t).userMessagesOnly : structuredTranscript(of: t),
                 turnStartedAt: t.turnStartedAt, photoThumbnail: t.photoThumbnail)
         }
     }
