@@ -62,6 +62,9 @@ expect "new when a plan exists is refused" 1 scripts/plan new "Another"
 expect "lint of a new plan" 0 scripts/plan lint
 expect "add tracer" 0 scripts/plan add tracer "thin path" --why "Why." --cuts "Cuts." --done "[auto] The path works"
 line "the first tracer is T0" PLAN.md "### T0 · Tracer bullet: thin path"
+expect "a tracer with 4 Done when items is refused" 1 scripts/plan add tracer "too big" --why W --cuts C \
+  --done "[auto] a" --done "[auto] b" --done "[ui] c" --done "[human] d"
+lacks "a refused tracer adds nothing" PLAN.md "too big"
 expect "add spike" 0 scripts/plan add spike "a question" --why "Why." --cuts "Cuts." --done "[human] The conclusion is written"
 line "the first spike is X1" PLAN.md "### X1 · Spike: a question"
 expect "add slice" 0 scripts/plan add slice "Feature" --why "Why." --cuts $'- one\n- two' --done "[ui] It shows" --needs "T0, X1"
@@ -96,6 +99,13 @@ s = open("PLAN.md").read()
 open("PLAN.md", "w").write(s.replace("**Cuts**: C", "**Demo**: x\n\n**Cuts**: C", 1))
 PY
 expect "lint: a field two times is refused" 1 scripts/plan lint
+git checkout -q -- PLAN.md
+python3 - <<'PY'
+s = open("PLAN.md").read()
+i = "- [ ] [auto] The path works — Evidence:"
+open("PLAN.md", "w").write(s.replace(i, i + "".join(f"\n- [ ] [auto] Extra {n} — Evidence:" for n in range(3)), 1))
+PY
+expect "lint: a tracer with 4 Done when items is refused" 1 scripts/plan lint
 git checkout -q -- PLAN.md
 grep -v '^| S2 |' PLAN.md > "$T/p" && cat "$T/p" > PLAN.md
 expect "lint: a section with no §0 row is refused" 1 scripts/plan lint
