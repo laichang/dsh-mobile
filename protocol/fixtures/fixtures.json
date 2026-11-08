@@ -93,6 +93,20 @@
     { "name": "questions_answer_request",
       "frame": { "request": { "id": "7", "answerQuestion": { "id": "6f1c2c1e-3f5a-4d0b-9c33-1d2e3f4a5b6c", "answers": [{ "questionId": "q1", "selected": ["简洁版.pptx"] }] } } } },
     { "name": "questions_resolved_event",
-      "frame": { "event": { "hostSeq": "13", "questionResolved": { "id": "6f1c2c1e-3f5a-4d0b-9c33-1d2e3f4a5b6c", "taskId": "session-1", "outcome": "QUESTION_OUTCOME_ANSWERED_ELSEWHERE", "answers": [{ "questionId": "q1", "selected": ["公司模板.pptx"] }] } } } }
+      "frame": { "event": { "hostSeq": "13", "questionResolved": { "id": "6f1c2c1e-3f5a-4d0b-9c33-1d2e3f4a5b6c", "taskId": "session-1", "outcome": "QUESTION_OUTCOME_ANSWERED_ELSEWHERE", "answers": [{ "questionId": "q1", "selected": ["公司模板.pptx"] }] } } } },
+    { "name": "attachments_upload_begin_request",
+      "frame": { "request": { "id": "7", "uploadBegin": { "uploadId": "upload-1", "mediaType": "image/jpeg", "name": "photo.jpg", "size": "129226", "sha256": "ZVb8l7UYc+TmIUHlWWgEuHh+wuUpDKtrz5T7KVutN6Q=" } } } },
+    { "name": "attachments_upload_chunk_request",
+      "frame": { "request": { "id": "8", "uploadChunk": { "uploadId": "upload-1", "index": 1, "data": "/9j/4AAQSkZJRgABAQAASA==" } } } },
+    { "name": "attachments_upload_end_request",
+      "frame": { "request": { "id": "10", "uploadEnd": { "uploadId": "upload-1" } } } },
+    { "name": "attachments_upload_ack_response",
+      "frame": { "response": { "requestId": "8", "uploadAck": { "uploadId": "upload-1", "received": "98304" } } } },
+    { "name": "attachments_upload_staged_response",
+      "frame": { "response": { "requestId": "10", "uploadStaged": { "uploadId": "upload-1" } } } },
+    { "name": "attachments_create_task_request",
+      "frame": { "request": { "id": "11", "createTask": { "prompt": "What is in this photo?", "uploadIds": ["upload-1"] } } } },
+    { "name": "attachments_hash_mismatch_response",
+      "frame": { "response": { "requestId": "10", "error": { "code": "upload/hash-mismatch", "message": "The file does not match its SHA-256." } } } }
   ]
 }

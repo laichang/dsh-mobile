@@ -29,6 +29,7 @@ import { MessageMode } from './gen/conversation_pb.ts'
 import { HandshakeRejected, type NoiseResponder } from './pairing/handshake.ts'
 import type { LoggedEvent } from './s2/host-log.ts'
 import { TaskHub, type TaskStarter } from './s2/task-hub.ts'
+import { ATTACHMENTS_CAPABILITY, UploadError, UploadStaging, type StagedImage } from './attachments/staging.ts'
 
 export type { TaskStarter } from './s2/task-hub.ts'
 
@@ -122,6 +123,7 @@ function serveConnection(
   let clientConversation = false
   let clientQuestions = false
   let codec: FrameCodec | undefined
+  const uploads = new UploadStaging() // D95: this connection's attachments
 
   const path = new URL(url, 'ws://bridge').pathname
   if (path === PLAINTEXT_PATH) {
@@ -197,6 +199,7 @@ function serveConnection(
             ...(options.tasks.listWorkspaces ? ['workspaces.v1', DRAWER_CAPABILITY] : []),
             ...(host.authenticated.has(socket) ? ['devices.v1'] : []),
             ...(options.tasks.followUp ? [CONVERSATION_CAPABILITY] : []),
+            ...(options.tasks.attachments ? [ATTACHMENTS_CAPABILITY] : []),
           ] : [] },
         })
       }
@@ -214,15 +217,39 @@ function serveConnection(
           if (request.body.value.workspace !== undefined && !options.tasks.listWorkspaces) {
             return fail(id, 'workspace/unavailable', 'This host cannot select a workspace.')
           }
+          let images: StagedImage[] | undefined
+          if (request.body.value.uploadIds.length) {
+            if (!options.tasks.attachments) return fail(id, 'upload/unavailable', 'This host cannot take attachments.')
+            images = uploads.take(request.body.value.uploadIds)
+          }
           await hub.create(prompt, (taskId) => {
             ownTasks.add(taskId)
             respond(id, { case: 'taskCreated', value: { taskId } })
-          }, request.body.value.modelSelection, request.body.value.workspace)
+          }, request.body.value.modelSelection, request.body.value.workspace, images)
         } catch (error) {
+          if (error instanceof UploadError) return fail(id, error.code, error.message)
           log(`create task failed: ${String(error)}`)
           return fail(id, 'task/create-failed', error instanceof Error ? error.message : String(error))
         }
         return
+      }
+      case 'uploadBegin':
+      case 'uploadChunk':
+      case 'uploadEnd': {
+        if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
+        if (!options.tasks.attachments) return fail(id, 'upload/unavailable', 'This host cannot take attachments.')
+        const body = request.body
+        try {
+          if (body.case === 'uploadEnd') {
+            uploads.end(body.value.uploadId)
+            return respond(id, { case: 'uploadStaged', value: { uploadId: body.value.uploadId } })
+          }
+          const received = body.case === 'uploadBegin' ? uploads.begin(body.value) : uploads.chunk(body.value)
+          return respond(id, { case: 'uploadAck', value: { uploadId: body.value.uploadId, received: BigInt(received) } })
+        } catch (error) {
+          if (error instanceof UploadError) return fail(id, error.code, error.message)
+          throw error
+        }
       }
       case 'interrupt': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')

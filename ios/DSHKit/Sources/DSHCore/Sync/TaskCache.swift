@@ -66,6 +66,9 @@ public final class CachedTask {
     /// S27: when the session's latest turn started, from the bridge (`turn_started_at_ms`); nil
     /// from an older bridge. The done footer's 用时 counts from here.
     public var turnStartedAt: Date?
+    /// The thumbnail of the photo sent with the first message (D95), a small JPEG; nil without one.
+    /// Local to this phone: the host has the photo itself.
+    public var photoThumbnail: Data?
 
     public init(hostKey: String, taskID: String, title: String, createdAt: Date) {
         self.key = Self.key(hostKey: hostKey, taskID: taskID)

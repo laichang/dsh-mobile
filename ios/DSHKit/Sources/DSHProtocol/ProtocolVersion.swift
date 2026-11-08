@@ -16,4 +16,6 @@ public enum DSHProtocolInfo {
     public static let conversationCapability = "conversation.v1"
     /// Agent questions: `QuestionPending`, `AnswerQuestion`, `QuestionResolved` (protocol/questions.proto).
     public static let questionsCapability = "questions.v1"
+    /// Attachments: UploadBegin / UploadChunk / UploadEnd and `CreateTask.upload_ids` (protocol/attachments.proto).
+    public static let attachmentsCapability = "attachments.v1"
 }

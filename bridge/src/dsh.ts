@@ -10,6 +10,7 @@ import { homedir } from 'node:os'
 import { isAbsolute } from 'node:path'
 import { MilestoneMapper, describeFailure, isUserInterrupt, type Milestone } from './milestones/mapper.ts'
 import { TranscriptMapper, type BlockOut } from './transcript/mapper.ts'
+import type { StagedImage } from './attachments/staging.ts'
 
 /** Subset of `ctx.workspaceController` (`@deepseek-ai/dsh-api-workspace-controller`). */
 export interface WorkspaceControllerLike {
@@ -32,7 +33,7 @@ export interface SessionControllerLike {
   create(request: { workspaceId: string }): Promise<{ sessionId: string }>
   cancel(request: { sessionId: string }): { accepted: true }
   prompt(
-    request: { requestId: string; sessionId: string; mode: PromptMode; content: readonly { type: 'text'; text: string }[] },
+    request: { requestId: string; sessionId: string; mode: PromptMode; content: readonly PromptPart[] },
     signal: AbortSignal,
   ): Promise<unknown>
   follow(
@@ -41,7 +42,19 @@ export interface SessionControllerLike {
   ): AsyncIterable<FollowFrame>
 }
 
+/** A prompt part: text, or a file staged through `fileUploads` (an image receipt enters as that image). */
+export type PromptPart = { type: 'text'; text: string } | { type: 'file'; receiptId: string }
+
+/** Subset of `ctx.fileUploads` (`@deepseek-ai/dsh-client-file-upload`). */
+export interface FileUploadsLike {
+  uploadImageStream(request: {
+    sessionId: string; data: AsyncIterable<Uint8Array>; mediaType: string; name?: string; signal?: AbortSignal
+  }): Promise<{ receiptId: string }>
+}
+
 export interface DshServices {
+  /** Attachments (D95); absent on a host without the service. */
+  fileUploads?: FileUploadsLike
   sessionController: SessionControllerLike
   workspaceRegistry: { list(): readonly { path: string; title?: string; updatedAt: string }[] }
   workspaceController: WorkspaceControllerLike
@@ -123,7 +136,12 @@ export class DshTasks {
     return selected
   }
 
-  async start(prompt: string, signal: AbortSignal, selection?: Selection, path?: string): Promise<StartedTask> {
+  /** True when the host can stage images for a prompt (`attachments.v1`). */
+  get attachments(): boolean { return !!this.dsh.fileUploads }
+
+  async start(prompt: string, signal: AbortSignal, selection?: Selection, path?: string,
+              images: readonly StagedImage[] = []): Promise<StartedTask> {
+    if (images.length && !this.dsh.fileUploads) throw new Error('This host cannot take attachments.')
     path ??= this.cwd
     if (!isAbsolute(path)) throw new Error('Choose an absolute workspace path on this host.')
     const { workspace } = await this.dsh.workspaceController.create({ path })
@@ -139,8 +157,15 @@ export class DshTasks {
     this.sessions.add(sessionId)
     try {
       if (selection) await this.selectModel(sessionId, selection)
-      await this.dsh.sessionController.prompt(
-        { requestId: randomUUID(), sessionId, mode: 'queue', content: [{ type: 'text', text: prompt }] }, signal)
+      const content: PromptPart[] = [{ type: 'text', text: prompt }]
+      for (const image of images) {
+        // D95: stage the checked bytes as a prompt image; its receipt enters the message as that image.
+        const { receiptId } = await this.dsh.fileUploads!.uploadImageStream({
+          sessionId, data: once(image.data), mediaType: image.mediaType, name: image.name, signal,
+        })
+        content.push({ type: 'file', receiptId })
+      }
+      await this.dsh.sessionController.prompt({ requestId: randomUUID(), sessionId, mode: 'queue', content }, signal)
     } catch (error) {
       this.sessions.delete(sessionId)
       await iterator.return?.()
@@ -177,6 +202,8 @@ interface MapOptions {
   /** Milestones map the task's first turn only (S3). */
   milestones?: boolean
 }
+
+async function* once(data: Uint8Array): AsyncGenerator<Uint8Array> { yield data }
 
 async function* mapFollow(
   first: IteratorResult<FollowFrame>, iterator: AsyncIterator<FollowFrame>, options: MapOptions = {},

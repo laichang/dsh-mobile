@@ -327,6 +327,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <symbol id="sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></symbol>
   <symbol id="audit" viewBox="0 0 24 24"><path d="M9 5h10M9 12h10M9 19h10M4 5h.01M4 12h.01M4 19h.01"/></symbol>
   <symbol id="square" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="photo" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></symbol>
   <symbol id="wifi" viewBox="0 0 24 24"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19h.01"/></symbol>
 </svg>
 
@@ -401,6 +402,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
     <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);margin-bottom:10px"><span class="dot"></span>MacBook-Pro<span style="opacity:.4">·</span><svg class="i xs"><use href="#folder"/></svg>默认工作区<svg class="i xs"><use href="#chevd"/></svg></div>
     <div class="ph">描述任务，/ 命令，@ 文件或会话</div>
     <div class="bar">
+      <span class="pill" style="padding:6px"><svg class="i xs"><use href="#photo"/></svg></span>
       <span class="pill">DeepSeek-V41-Flash <span class="w">· High</span><svg class="i xs"><use href="#chevd"/></svg></span>
       <span class="send idle"><svg class="i s"><use href="#up"/></svg></span>
     </div>
@@ -509,6 +511,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <li>执行端和工作区用默认值，写在输入框顶上；点它换（07）。模型胶囊点开是 M。</li>
   <li>左上角抽屉按钮，琥珀角标 = 「所有任务」里有几件等你处理；历史都在抽屉里。</li>
   <li>发出第一条消息才创建会话；短问题直接在这里答完（S8 的就地回答）。</li>
+  <li>照片键（M2）：从相册选一张照片，输入框上方出现缩略图，可移除；发送时先把照片传到执行端，再建会话。用户气泡上方显示这张缩略图（D95）。执行端不支持时不显示照片键。</li>
 </ul></div>
 </div>
 

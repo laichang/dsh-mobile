@@ -382,9 +382,11 @@ public actor HostConnection {
     }
 
     /// Starts a task; its output arrives on `events`.
-    public func createTask(prompt: String, selection: ModelSelection? = nil, workspace: String? = nil) async throws -> String {
+    public func createTask(prompt: String, selection: ModelSelection? = nil, workspace: String? = nil,
+                           uploadIDs: [String] = []) async throws -> String {
         var create = Dshm_V1_CreateTask()
         create.prompt = prompt
+        create.uploadIds = uploadIDs
         if let workspace {
             guard capabilities.contains("workspaces.v1") else {
                 throw HostConnectionError.bridge(code: "workspace/unavailable", message: "This host cannot select the requested workspace.")
@@ -400,6 +402,39 @@ public actor HostConnection {
         let response = try await request(.createTask(create))
         guard case .taskCreated(let created)? = response.body else { throw HostConnectionError.unexpectedResponse }
         return created.taskID
+    }
+
+    /// Sends a photo to the host in parts (D95) and returns its upload id for `createTask`.
+    /// The host checks the size and the SHA-256; a refusal throws `HostConnectionError.bridge`.
+    public func upload(_ photo: PhotoAttachment) async throws -> String {
+        guard capabilities.contains(DSHProtocolInfo.attachmentsCapability) else {
+            throw HostConnectionError.bridge(code: "upload/unavailable", message: "This host cannot take attachments.")
+        }
+        guard photo.data.count <= Attachments.maxBytes else {
+            throw HostConnectionError.bridge(code: "upload/too-large", message: "The photo is larger than \(Attachments.maxBytes / 1024 / 1024) MiB.")
+        }
+        let uploadID = UUID().uuidString.lowercased()
+        var begin = Dshm_V1_UploadBegin()
+        begin.uploadID = uploadID
+        begin.mediaType = photo.mediaType
+        begin.name = photo.name
+        begin.size = UInt64(photo.data.count)
+        begin.sha256 = Attachments.sha256(photo.data)
+        _ = try await request(.uploadBegin(begin))
+        for (index, part) in Attachments.parts(of: photo.data).enumerated() {
+            var chunk = Dshm_V1_UploadChunk()
+            chunk.uploadID = uploadID
+            chunk.index = UInt32(index)
+            chunk.data = part
+            _ = try await request(.uploadChunk(chunk))
+        }
+        var end = Dshm_V1_UploadEnd()
+        end.uploadID = uploadID
+        let response = try await request(.uploadEnd(end))
+        guard case .uploadStaged(let staged)? = response.body, staged.uploadID == uploadID else {
+            throw HostConnectionError.unexpectedResponse
+        }
+        return uploadID
     }
 
     public func listWorkspaces() async throws -> Dshm_V1_WorkspaceList {

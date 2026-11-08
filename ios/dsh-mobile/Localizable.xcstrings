@@ -61,6 +61,16 @@
         }
       }
     },
+    "Attach a photo": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加照片"
+          }
+        }
+      }
+    },
     "Bridge setup instructions": {
       "localizations": {
         "zh-Hans": {
@@ -391,6 +401,16 @@
         }
       }
     },
+    "Photo": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "照片"
+          }
+        }
+      }
+    },
     "Point the camera at the pairing code.": {
       "localizations": {
         "zh-Hans": {
@@ -427,6 +447,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "推理内容"
+          }
+        }
+      }
+    },
+    "Remove the photo": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除照片"
           }
         }
       }
