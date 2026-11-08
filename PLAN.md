@@ -73,6 +73,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S27 | review | merged `02ec58b` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
 | S28 | review | merged `f4594e5` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
 | S29 | review | merged `3b1a903` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
+| S30 | todo | — | 2026-11-08 | Fix: Pair again after a revoke; start a fix session |
 
 ## 1. Approach
 
@@ -1270,6 +1271,24 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
   - Docs: D82 states the wording; the X2 caption on the board (`scripts/render-design`). DESIGN.md's table needs no change.
   - Verification: `scripts/demo/s29.sh --shots` passed at 12ef8c5 (swift test 83/83, S29 fakes 2/2, real bridge 2/2, S21 revoke seam, S10 demo).
   - Next: `scripts/review S29 --resume`.
+
+### S30 · Fix: Pair again after a revoke
+
+**Status** todo · **Needs** — · **Branch** —
+
+**Why**: The user reported a bug on 2026-11-08: "无法打开已配对的电脑"（之前已经revoke了，现在装包后提示要重新配对，扫码重新配对后出现）. (Coordinator: `AppModel.forgottenHostKeys` keeps `noise:<host id>` after S29 forgets a host; the id comes from the host key, so the same Mac paired again is filtered out of `makeStore`, while `hasSavedHosts` is true.)
+
+**Cuts**: Find the cause. Fix it. Add a test that fails without the fix.
+
+**Demo**: —
+
+**Done when**
+- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [ ] [human] The user no longer sees the bug — Evidence:
+
+**Not**: Other changes. Report other bugs to the coordinator as new fix slices.
+
+**Log**: —
 
 ## 6. M1 exit
 
