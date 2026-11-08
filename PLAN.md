@@ -73,7 +73,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S27 | review | merged `02ec58b` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
 | S28 | review | merged `f4594e5` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
 | S29 | review | merged `3b1a903` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
-| S30 | doing | `claude/s30-pair-again` | 2026-11-08 | Slice owner builds (§8) |
+| S30 | review | merged `4679afe` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
 
 ## 1. Approach
 
@@ -1727,6 +1727,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-08 · S30 assigned.** Branch `claude/s30-pair-again`, simulator `dshm-S30`, DSHM_HOME `~/.dshm/home-s30`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D85–D87. `eval "$(scripts/slice-env S30)"` exports them.
 
+- **2026-11-08 · S30 merged.** Merged as `4679afe`; `scripts/check-plan` on the merge commit passed. `scripts/review S30` at `a482965`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S30-a482965.txt`). 1 open `[human]` item, so S30 is `review`. §9 rows 61, 62 (D85).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
@@ -1740,3 +1742,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 58 | S28 | `[human]` | The user no longer sees the bug | `main` | `f4594e5` |
 | 59 | S29 | decision | ARCHITECTURE D82, *provisional*: A close 4003 (device unknown) is final: the app forgets the host | `claude/s29-revoke-forget` | merged `3b1a903` |
 | 60 | S29 | `[human]` | The user no longer sees the bug | `main` | `3b1a903` |
+| 61 | S30 | decision | ARCHITECTURE D85, *provisional*: Pairing a host again clears its revoke | `claude/s30-pair-again` | merged `4679afe` |
+| 62 | S30 | `[human]` | The user no longer sees the bug | `main` | `4679afe` |
