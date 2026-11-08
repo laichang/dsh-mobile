@@ -54,7 +54,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S8 | done | merged `b62405c` | 2026-11-09 | — (provisional D125 in §9) |
 | S9 | doing | `claude/s9-ui-test-waits` | 2026-11-09 | Slice owner builds (§8) |
 | S10 | doing | `claude/s10-offline-rich-detail` | 2026-11-09 | Slice owner builds (§8) |
-| S11 | todo | — | 2026-11-08 | Assign it and start a session |
+| S11 | doing | `claude/s11-hosts-tests` | 2026-11-09 | Slice owner builds (§8) |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
 | S13 | todo | — | 2026-11-08 | Assign it and start a session |
 
@@ -707,6 +707,8 @@ Append-only, dated.
 - **2026-11-09 · S8 merged.** Merged as `b62405c`; `scripts/check-plan` on the merge commit passed. `scripts/review S8` at `4cc5909`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S8-4cc5909.txt`). No open `[human]` items, so S8 is `done`. §9 rows 27 (D125).
 
 - **2026-11-09 · S8 merged.** S8 merged as b62405c (review PASS on 4cc5909, S8-4cc5909.txt, no flaky part). Earlier review on 851a84c: ui-bridge-errors-taken was flaky (passed on run 2 of 3: the host row reads 'connecting' for a moment on each retry); fixed in 4cc5909 with one wait for every part of the row. D125 in §9 (amends D98). Finding for an issue: dsh web 0.2.2-rc.1 never prints the bridge's logger lines, so 'listening on' and the startup pairing QR that bridge/README.md promises in DSH's log do not show; only the listen-error line now also goes to stderr.
+
+- **2026-11-09 · S11 assigned.** Branch `claude/s11-hosts-tests`, simulator `dshm-S11`, DSHM_HOME `~/.dshm/home-s11`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D134–D136. `eval "$(scripts/slice-env S11)"` exports them.
 
 ## 9. Pending user confirmation
 
