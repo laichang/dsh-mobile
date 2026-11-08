@@ -414,6 +414,11 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
   Flaky: one race in the approval test (the approval arrives before WAITING_ON_USER), repaired before the ticks. No other flaky part seen (demo passed 3 times).
   Not done: the [human] item (real iPhone, free team) is the user's. §0 change: none.
   Next: reviewer runs `scripts/review S6`.
+- **2026-11-09 · Merged main; review PASS.** Merged main (S2 agent questions, S5 voice input) at 2cfe69c: conflicts in the decisions table, project.pbxproj (Info.plist keys), AppComposition and check-release-clean markers, each kept both sides; board re-rendered. D119 now names D114 (a waiting question makes the task WAITING_ON_USER; the open card still decides for an older bridge).
+  Review: a reviewer that did not build the slice ran `scripts/review S6` on 2cfe69c: RESULT: PASS, no flaky part (/tmp/dshm-review/S6-2cfe69c.txt).
+  Correction to the entry before: the full lock screen UI test passed 4 times in all (2 before the merge, 1 after, 1 in the review), not 3.
+  Seen while waiting: another slice's load script (24 `yes` processes) made unrelated DSHKit timing tests fail; after it ended all 148 passed. Not a flaky part of this slice.
+  Not done: the [human] item (real iPhone, free team). §0 change: none. Ready to merge.
 
 ### S7 · Reconnect to every saved address of a host
 
