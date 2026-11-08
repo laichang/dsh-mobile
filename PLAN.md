@@ -1274,7 +1274,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S30 · Fix: Pair again after a revoke
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-08: "无法打开已配对的电脑"（之前已经revoke了，现在装包后提示要重新配对，扫码重新配对后出现）. (Coordinator: `AppModel.forgottenHostKeys` keeps `noise:<host id>` after S29 forgets a host; the id comes from the host key, so the same Mac paired again is filtered out of `makeStore`, while `hasSavedHosts` is true.)
 
