@@ -24,8 +24,7 @@ final class S7WorkspaceUITests: XCTestCase {
         open.tap()
         let path = app.textFields["workspace.path"]
         XCTAssertTrue(path.waitForExistence(timeout: 10))
-        path.tap()
-        path.typeText(repos + "/violet")
+        type(repos + "/violet", into: path)
         app.buttons["workspace.apply"].tap()
         let second = runDemo(app, prompt: prompt, timeout: 20)
         XCTAssertTrue(second.contains("Violet repository"), second)

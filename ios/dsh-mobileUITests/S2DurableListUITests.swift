@@ -25,14 +25,6 @@ final class S2DurableListUITests: XCTestCase {
         return app
     }
 
-    private func send(_ app: XCUIApplication, _ prompt: String) {
-        let field = app.textFields["composer.prompt"]
-        XCTAssertTrue(field.waitForExistence(timeout: 10))
-        field.tap()
-        field.typeText(prompt)
-        app.buttons["composer.send"].tap()
-    }
-
     /// Polls faster than XCTest's expectations (about 1 s), so a mid-stream moment isn't missed.
     @discardableResult
     private func poll(_ timeout: TimeInterval, _ what: String, _ condition: () -> Bool) -> Bool {
@@ -125,9 +117,7 @@ final class S2DurableListUITests: XCTestCase {
         let line = app.descendants(matching: .any).matching(identifier: "hosts.offlineCard.host").firstMatch
         XCTAssertTrue(line.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(line.label.contains("FakeBridge Mac"), line.label)
-        let field = app.textFields["composer.prompt"]
-        field.tap()
-        field.typeText("Will not go out")
+        type("Will not go out", into: app.textFields["composer.prompt"])
         let off = expectation(for: NSPredicate(format: "isEnabled == false"), evaluatedWith: app.buttons["composer.send"])
         wait(for: [off], timeout: 10)
         saveShot("s2-offline-fakebridge")

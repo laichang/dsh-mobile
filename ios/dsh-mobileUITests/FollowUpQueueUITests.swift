@@ -28,11 +28,8 @@ final class FollowUpQueueUITests: XCTestCase {
 
     /// Sends the first message from the new session and waits until its task runs.
     private func start(_ app: XCUIApplication, prompt: String) -> XCUIElement {
-        let field = app.textFields["composer.prompt"]
-        XCTAssertTrue(field.waitForExistence(timeout: 30), app.debugDescription)
-        field.tap()
-        field.typeText(prompt)
-        app.buttons["composer.send"].tap()
+        XCTAssertTrue(app.textFields["composer.prompt"].waitForExistence(timeout: 30), app.debugDescription)
+        send(app, prompt)
         let status = any(app, "task.status").firstMatch
         XCTAssertTrue(status.waitForExistence(timeout: 60), app.debugDescription)
         waitForValue(status, in: ["running"], timeout: 60)
@@ -41,13 +38,7 @@ final class FollowUpQueueUITests: XCTestCase {
 
     /// Types `text` in the session composer and sends it.
     private func reply(_ app: XCUIApplication, _ text: String) {
-        let field = app.textFields["session.followUp"]
-        XCTAssertTrue(field.waitForExistence(timeout: 15), app.debugDescription)
-        field.tap()
-        field.typeText(text)
-        let send = app.buttons["session.send"]
-        XCTAssertTrue(send.waitForExistence(timeout: 5) && send.isEnabled, app.debugDescription)
-        send.tap()
+        send(app, text, field: "session.followUp", send: "session.send")
         dismissKeyboardTip(app)
     }
 

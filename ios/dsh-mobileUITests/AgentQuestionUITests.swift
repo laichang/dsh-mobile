@@ -51,8 +51,7 @@ final class AgentQuestionUITests: XCTestCase {
         let field = app.textFields["session.followUp"]
         XCTAssertTrue(field.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertEqual(field.placeholderValue, "回答 Agent…")
-        field.tap()
-        field.typeText("用去年的模板")
+        type("用去年的模板", into: field)
         saveShot("questions-typed")
         app.buttons["session.send"].tap()
 

@@ -24,11 +24,8 @@ final class ModelFailuresUITests: XCTestCase {
         // 1. A task on a provider with no balance.
         let tag = UUID().uuidString.prefix(6)
         let prompt = "Compress yesterday's footage. #\(tag)"
-        let field = app.textFields["composer.prompt"]
-        XCTAssertTrue(field.waitForExistence(timeout: 30), app.debugDescription)
-        field.tap()
-        field.typeText(prompt)
-        app.buttons["composer.send"].tap()
+        XCTAssertTrue(app.textFields["composer.prompt"].waitForExistence(timeout: 30), app.debugDescription)
+        send(app, prompt)
 
         // 2. It fails at once (DSH does not retry QUOTA), with the red X1 card and the reason.
         let status = any(app, "task.status").firstMatch
@@ -54,14 +51,8 @@ final class ModelFailuresUITests: XCTestCase {
         let deadline = Date().addingTimeInterval(60)
         while !FileManager.default.fileExists(atPath: toppedUp.path) && Date() < deadline { usleep(100_000) }
         XCTAssertTrue(FileManager.default.fileExists(atPath: toppedUp.path), "the host did not top up")
-        let reply = app.textFields["session.followUp"]
-        XCTAssertTrue(reply.waitForExistence(timeout: 10), app.debugDescription)
-        reply.tap()
         let followUp = "I topped up. Please go on. #\(tag)"
-        reply.typeText(followUp)
-        let send = app.buttons["session.send"]
-        XCTAssertTrue(send.isEnabled)
-        send.tap()
+        send(app, followUp, field: "session.followUp", send: "session.send")
 
         // 4. The same task runs again and completes; the failure card gives way to the done footer.
         let bubbles = any(app, "session.message.user")

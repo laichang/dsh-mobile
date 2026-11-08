@@ -55,10 +55,7 @@ final class S15AllTasksUITests: XCTestCase {
         XCTAssertTrue(picker.waitForExistence(timeout: 10))
         picker.tap()
         app.buttons["Office Mac"].tap()
-        let field = app.textFields["composer.prompt"]
-        field.tap()
-        field.typeText("Compress yesterday's media")
-        app.buttons["composer.send"].tap()
+        send(app, "Compress yesterday's media")
         let status = app.descendants(matching: .any)["task.status"]
         XCTAssertTrue(status.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertEqual(status.value as? String, "running")

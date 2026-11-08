@@ -100,12 +100,7 @@ final class S18ApprovalSheetUITests: XCTestCase {
 
         // 2. A new approval arrives while the session is open: the sheet comes up again.
         newSession(app)
-        let field = app.textFields["composer.prompt"]
-        field.tap()
-        waitFor("hasKeyboardFocus == true", on: field)
-        field.typeText(Self.askingPrompt)
-        waitFor("isEnabled == true", on: app.buttons["composer.send"])
-        app.buttons["composer.send"].tap()
+        send(app, Self.askingPrompt)
         XCTAssertTrue(sheet.waitForExistence(timeout: 30), app.debugDescription)
         waitFor("value ENDSWITH '-approval' AND NOT (value BEGINSWITH 'fake-seed')", on: sheet)
         checkContents(app, sheet, task: Self.askingPrompt)

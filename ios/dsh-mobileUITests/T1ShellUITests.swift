@@ -19,14 +19,6 @@ final class T1ShellUITests: XCTestCase {
         return app
     }
 
-    private func send(_ app: XCUIApplication, _ prompt: String) {
-        let field = app.textFields["composer.prompt"]
-        XCTAssertTrue(field.waitForExistence(timeout: 10), app.debugDescription)
-        field.tap()
-        field.typeText(prompt)
-        app.buttons["composer.send"].tap()
-    }
-
     private func status(_ app: XCUIApplication) -> XCUIElement { app.descendants(matching: .any)["task.status"] }
 
     private func assertNewSession(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {

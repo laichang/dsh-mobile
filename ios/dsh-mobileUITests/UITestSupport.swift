@@ -12,12 +12,7 @@ extension XCTestCase {
         let elsewhere = app.otherElements["drawer"].exists || app.descendants(matching: .any)["task.status"].exists ||
             app.descendants(matching: .any)["tasklist"].exists
         if elsewhere { newSession(app) }
-        XCTAssertTrue(field.waitForExistence(timeout: 10))
-        field.tap()
-        field.typeText(prompt)
-        let send = app.buttons["composer.send"]
-        XCTAssertTrue(send.isEnabled)
-        send.tap()
+        send(app, prompt)
 
         let status = app.descendants(matching: .any)["task.status"]
         XCTAssertTrue(status.waitForExistence(timeout: timeout), app.debugDescription)
@@ -31,6 +26,50 @@ extension XCTestCase {
         wait(for: [done], timeout: timeout)
         XCTAssertEqual(status.value as? String, "completed", "status label: \(status.label)")
         return transcript.value as? String ?? ""
+    }
+
+    // MARK: - Typing: wait for keyboard focus first
+
+    /// Sends `prompt` from a composer: types it into the `field` text field (`type(_:into:)`),
+    /// waits until the `send` button is enabled, and taps it.
+    func send(_ app: XCUIApplication, _ prompt: String, field: String = "composer.prompt", send: String = "composer.send",
+              file: StaticString = #filePath, line: UInt = #line) {
+        let input = app.textFields[field]
+        XCTAssertTrue(input.waitForExistence(timeout: 15), app.debugDescription, file: file, line: line)
+        type(prompt, into: input, file: file, line: line)
+        let button = app.buttons[send]
+        XCTAssertTrue(waitUntil(button, "isEnabled == true", timeout: 15), "\(send) is not enabled: \(app.debugDescription)",
+                      file: file, line: line)
+        button.tap()
+    }
+
+    /// Taps `field`, waits until it has keyboard focus, types `text`, and waits until the field
+    /// holds it. Under load, a tap can return before the field takes focus: then the keys go
+    /// nowhere, or the last key is lost. If the field ends with only part of `text`, this types
+    /// the rest.
+    func type(_ text: String, into field: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        field.tap()
+        if !waitUntil(field, "hasKeyboardFocus == true", timeout: 10) {
+            XCTContext.runActivity(named: "Recover: no keyboard focus after the tap; tap again") { _ in }
+            field.tap()
+            XCTAssertTrue(waitUntil(field, "hasKeyboardFocus == true", timeout: 10), "no keyboard focus: \(field)",
+                          file: file, line: line)
+        }
+        field.typeText(text)
+        if waitUntil(field, "value CONTAINS %@", text, timeout: 5) { return }
+        // Keys were lost: type what the field does not end with yet.
+        let now = field.value as? String ?? ""
+        let typed = (0...min(now.count, text.count)).last { now.hasSuffix(text.prefix($0)) } ?? 0
+        XCTContext.runActivity(named: "Recover: keys were lost (the field holds \"\(now)\"); type the rest") { _ in }
+        field.typeText(String(text.dropFirst(typed)))
+        XCTAssertTrue(waitUntil(field, "value CONTAINS %@", text, timeout: 10),
+                      "the field does not hold \"\(text)\": \(field.value ?? "")", file: file, line: line)
+    }
+
+    /// Waits until the predicate `format` (with `arguments`) holds for `element`; false on timeout.
+    func waitUntil(_ element: XCUIElement, _ format: String, _ arguments: Any..., timeout: TimeInterval) -> Bool {
+        let predicate = NSPredicate(format: format, argumentArray: arguments)
+        return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: element)], timeout: timeout) == .completed
     }
 
     // MARK: - T1 shell: the drawer replaces the navigation stack

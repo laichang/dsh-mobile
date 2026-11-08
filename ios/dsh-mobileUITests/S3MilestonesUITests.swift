@@ -25,14 +25,6 @@ final class S3MilestonesUITests: XCTestCase {
         return app
     }
 
-    private func send(_ app: XCUIApplication, prompt: String) {
-        let field = app.textFields["composer.prompt"]
-        XCTAssertTrue(field.waitForExistence(timeout: 10))
-        field.tap()
-        field.typeText(prompt)
-        app.buttons["composer.send"].tap()
-    }
-
     /// One sample of the main screen while the task runs.
     private struct Sample: Equatable {
         var progress: String
@@ -111,7 +103,7 @@ final class S3MilestonesUITests: XCTestCase {
 
     func testTodosTickOffOnCardWithFakeBridge() {
         let app = launch(["-DSHMFakeBridge", "YES", "-DSHMFakeMilestones", "YES"])
-        send(app, prompt: "Summarize this project in three steps.")
+        send(app, "Summarize this project in three steps.")
         let samples = watchCard(app, timeout: 20, shotAt: "2/3", shotName: "s3-fakebridge-card-ticking")
         assertTicksOff(samples)
         waitForEnd(app, timeout: 10)
@@ -120,7 +112,7 @@ final class S3MilestonesUITests: XCTestCase {
 
     func testTimelineWithFakeBridge() {
         let app = launch(["-DSHMFakeBridge", "YES", "-DSHMFakeMilestones", "YES"])
-        send(app, prompt: "Summarize this project in three steps.")
+        send(app, "Summarize this project in three steps.")
         waitForEnd(app, timeout: 30)
         assertTimeline(app, kinds: Self.fakeKinds, shot: "s3-fakebridge-timeline")
     }
@@ -128,7 +120,7 @@ final class S3MilestonesUITests: XCTestCase {
     /// A bridge that sends no milestones (T0's FakeBridge script) gets T0's screen, no card.
     func testNoMilestonesNoCard() {
         let app = launch(["-DSHMFakeBridge", "YES"])
-        send(app, prompt: "Introduce yourself in one sentence.")
+        send(app, "Introduce yourself in one sentence.")
         waitForEnd(app, timeout: 15)
         XCTAssertFalse(app.descendants(matching: .any)["milestone.card"].exists)
     }
@@ -136,7 +128,7 @@ final class S3MilestonesUITests: XCTestCase {
     func testMilestonesAgainstRealDSH() throws {
         try XCTSkipUnless(env["DSHM_REAL_DSH"] == "1", "needs scripts/demo/s3-host.mjs; run scripts/demo/s3.sh")
         let app = launch(["-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47812"])
-        send(app, prompt: "分三步总结这个项目。Summarize this project in three steps.")
+        send(app, "分三步总结这个项目。Summarize this project in three steps.")
         let samples = watchCard(app, timeout: 120, shotAt: "2/3", shotName: "s3-real-dsh-card-ticking")
         assertTicksOff(samples)
         waitForEnd(app, timeout: 60)

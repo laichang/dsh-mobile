@@ -26,11 +26,7 @@ final class S16SessionPageUITests: XCTestCase {
 
     /// Sends the coding task and waits until it shows "3 / 5" with its whole reply, still running.
     private func startCodingTask(_ app: XCUIApplication) {
-        let field = app.textFields["composer.prompt"]
-        XCTAssertTrue(field.waitForExistence(timeout: 10), app.debugDescription)
-        field.tap()
-        field.typeText(Self.prompt)
-        app.buttons["composer.send"].tap()
+        send(app, Self.prompt)
         let bar = any(app, "milestone.card")
         XCTAssertTrue(bar.waitForExistence(timeout: 10), app.debugDescription)
         waitForValue(bar, in: ["3/5"], timeout: 15)

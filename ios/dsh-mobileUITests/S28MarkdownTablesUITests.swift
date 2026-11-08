@@ -23,11 +23,7 @@ final class S28MarkdownTablesUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-DSHMResetPairing", "YES",
                                "-DSHMResetStore", "YES", "-DSHMFakeBridge", "YES", "-DSHMFakeScenario", "coding"]
         app.launch()
-        let field = app.textFields["composer.prompt"]
-        XCTAssertTrue(field.waitForExistence(timeout: 10), app.debugDescription)
-        field.tap()
-        field.typeText(prompt)
-        app.buttons["composer.send"].tap()
+        send(app, prompt)
         let transcript = any(app, "transcript.text")
         XCTAssertTrue(transcript.waitForExistence(timeout: 10), app.debugDescription)
         let replied = expectation(for: NSPredicate(format: "value CONTAINS %@", end), evaluatedWith: transcript)

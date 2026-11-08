@@ -44,12 +44,8 @@ final class S26TitleCenterUITests: XCTestCase {
     }
 
     /// Sends a prompt from the new session; the app shows its session page.
-    private func send(_ app: XCUIApplication, _ prompt: String) {
-        let field = app.textFields["composer.prompt"]
-        XCTAssertTrue(field.waitForExistence(timeout: 15), app.debugDescription)
-        field.tap()
-        field.typeText(prompt)
-        app.buttons["composer.send"].tap()
+    private func startTask(_ app: XCUIApplication, _ prompt: String) {
+        send(app, prompt)
         XCTAssertTrue(app.descendants(matching: .any)["task.status"].waitForExistence(timeout: 10), app.debugDescription)
     }
 
@@ -67,7 +63,7 @@ final class S26TitleCenterUITests: XCTestCase {
     /// A session page: the title and the host subtitle are centered; 所有任务 too.
     func testSessionAndAllTasksTitlesAreCentered() {
         let app = launch()
-        send(app, "Hi")
+        startTask(app, "Hi")
         expectCentered(title(app), in: app, "the session title")
         let subtitle = app.staticTexts["page.subtitle"]
         if subtitle.waitForExistence(timeout: 3) {
@@ -84,7 +80,7 @@ final class S26TitleCenterUITests: XCTestCase {
     /// A title longer than the bar truncates: it stays centered and clear of the drawer button.
     func testLongTitleTruncatesWithoutOverlap() {
         let app = launch()
-        send(app, "Read the whole repository, find every failing test, fix each one, and then open one pull request")
+        startTask(app, "Read the whole repository, find every failing test, fix each one, and then open one pull request")
         expectCentered(title(app), in: app, "the long title")
         expectClearOfButton(app)
         saveShot("s26-long-title")

@@ -136,8 +136,7 @@ final class AttachmentsUITests: XCTestCase {
         attachFile(app, "notes.txt", key: "session.attach")
         let field = app.textFields["session.followUp"]
         XCTAssertTrue(field.waitForExistence(timeout: 5), app.debugDescription)
-        field.tap()
-        field.typeText("What is in this file?")
+        type("What is in this file?", into: field)
         saveShot("attachments-followup-composer")
         app.buttons["session.send"].tap()
 

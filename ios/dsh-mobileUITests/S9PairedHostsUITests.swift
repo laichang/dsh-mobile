@@ -41,10 +41,7 @@ final class S9PairedHostsUITests: XCTestCase {
             }
             XCTAssertTrue(picker.label.contains(hostName), picker.debugDescription)
             let prompt = "Say hello on \(index)"
-            let input = app.textFields["composer.prompt"]
-            input.tap()
-            input.typeText(prompt)
-            app.buttons["composer.send"].tap()
+            send(app, prompt)
             // T1 (D51): the reply shows on the session page; the short answer shows inline in 所有任务.
             waitForValue(app.descendants(matching: .any)["task.status"], in: ["completed"], timeout: 15)
             XCTAssertEqual(app.staticTexts["page.subtitle"].label, hostName)

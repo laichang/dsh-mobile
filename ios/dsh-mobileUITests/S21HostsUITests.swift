@@ -83,9 +83,7 @@ final class S21HostsUITests: XCTestCase {
         XCTAssertTrue(hk.exists)
         XCTAssertTrue(hk.label.contains("需要更新 DSH"), hk.label)
 
-        let field = app.textFields["composer.prompt"]
-        field.tap()
-        field.typeText("整理 Q3 报表")
+        type("整理 Q3 报表", into: app.textFields["composer.prompt"])
         let send = app.buttons["composer.send"]
         waitFor("isEnabled == false", send)
         saveShot("s21-all-offline")
