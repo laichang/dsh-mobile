@@ -89,6 +89,8 @@ public final class TaskListStore {
         public var blocks = StructuredTranscript()
         /// S27: when the latest turn started, if the host said (D76).
         public var turnStartedAt: Date? = nil
+        /// The thumbnail of the photo sent with the first message (D95), if any.
+        public var photoThumbnail: Data? = nil
 
         /// S27: where the done footer's 用时 starts: the latest turn's start, else the task's
         /// creation (a single turn, or an older bridge). Never before `createdAt` or after `updatedAt`.
@@ -164,6 +166,8 @@ public final class TaskListStore {
     }
 
     public var prompt: String
+    /// The photo on the composer (D95): sent to the host before the task, then dropped.
+    public private(set) var composerPhoto: PhotoAttachment?
     public private(set) var hosts: [HostStatus] = []
     public private(set) var tasks: [TaskRow] = []
     public private(set) var isSending = false
@@ -265,6 +269,17 @@ public final class TaskListStore {
     /// Hosts that can't be reached right now, by name.
     public var offlineHosts: [HostStatus] { hosts.filter { $0.reachability == .offline } }
 
+    /// Whether the composer's host can take a photo (`attachments.v1`).
+    public var canAttachPhoto: Bool {
+        hosts.contains { $0.key == composerHostKey && $0.reachability == .online
+            && $0.capabilities.contains(DSHProtocolInfo.attachmentsCapability) }
+    }
+
+    public func attachPhoto(_ photo: PhotoAttachment?) {
+        composerPhoto = photo
+        sendError = nil
+    }
+
     public var canSend: Bool {
         // S21: with every host offline, the send key is off (X3).
         !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSending && !allHostsOffline
@@ -317,6 +332,7 @@ public final class TaskListStore {
         let text = prompt
         let selection = composerSelections[link.key]
         let workspace = composerWorkspaces[link.key]
+        let photo = composerPhoto
         isSending = true
         sendError = nil
         defer { isSending = false }
@@ -330,10 +346,16 @@ public final class TaskListStore {
             return nil
         }
         do {
-            let taskID = try await link.connection.createTask(prompt: text, selection: selection, workspace: workspace)
+            // D95: the photo goes to the host first; the task names its upload id.
+            var uploadIDs: [String] = []
+            if let photo { uploadIDs.append(try await link.connection.upload(photo)) }
+            let taskID = try await link.connection.createTask(prompt: text, selection: selection, workspace: workspace,
+                                                              uploadIDs: uploadIDs)
             let task = taskRecord(hostKey: link.key, taskID: taskID, title: text)
             if task.title.isEmpty { task.title = text }
+            if let photo { task.photoThumbnail = photo.thumbnail }
             prompt = ""
+            composerPhoto = nil
             composerWorkspaces[link.key] = nil // S20: a workspace choice is for this one new session.
             onHostChoice(link.key)
             saveNow()
@@ -729,7 +751,7 @@ public final class TaskListStore {
                 approvalsAnswered: t.approvalsAnswered,
                 blocks: link.capabilities?.contains(DSHProtocolInfo.transcriptCapability) == false
                     ? StructuredTranscript() : structuredTranscript(of: t),
-                turnStartedAt: t.turnStartedAt)
+                turnStartedAt: t.turnStartedAt, photoThumbnail: t.photoThumbnail)
         }
     }
 

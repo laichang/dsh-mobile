@@ -12,4 +12,6 @@ public enum DSHProtocolInfo {
     public static let resumeCapability = "resume.v1"
     /// S17: the bridge sends `TranscriptBlock` events (protocol/transcript.proto).
     public static let transcriptCapability = "transcript.v1"
+    /// Attachments: UploadBegin / UploadChunk / UploadEnd and `CreateTask.upload_ids` (protocol/attachments.proto).
+    public static let attachmentsCapability = "attachments.v1"
 }
