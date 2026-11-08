@@ -19,11 +19,20 @@ Coordinator (on main):
         then `plan assign` and start a session for it. The coordinator does not fix code.
   plan assign <ID> --branch B [--worktree P] [--from C] [--decisions N] [--note T]
         give the slice its resources (scripts/slice-env), set §0 to doing, add the §8 entry
-  plan merged <ID> <merge-commit> [--note T]
+  plan merged <ID> <merge-commit> [--note T] [--keep]
         after a merge: check PLAN.md of the merge commit against its first parent (§10, condition
         3); set §0 to review (open [human] items) or done; add §9 rows for the open [human]
         items and for the provisional D entries that the merge added; add the §8 entry with the
-        review result from /tmp/dshm-review
+        review result from /tmp/dshm-review. Then the cleanup below; --keep skips it
+  plan cleanup <ID>
+        remove what a merged slice left on the Mac, and print each thing: the simulator dshm-<ID>;
+        /tmp/dshm-<id> and /tmp/dshm-<id>-*; each worktree and branch of the slice whose HEAD is
+        an ancestor of the merge commit (`cleanup`: of main) and that has no uncommitted or
+        untracked file (`git worktree remove`, `git branch -d`, never forced); its DSHM_HOME if it
+        is inside ~/.dshm/. A simulator that a running demo owns (/tmp/dshm-guard) and a /tmp path
+        that a running process names stay. It prints what it leaves, and why. Only for a slice
+        that is review or done. With DSHM_CLEANUP_DRY=1 or --dry-run it prints what it would
+        remove and removes nothing
 
 Slice owner (on the slice branch):
   plan tick <ID> "<part of the item>" --evidence "test:… · cmd:…"   tick one [auto]/[ui] item
@@ -38,6 +47,7 @@ import difflib
 import glob
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -125,9 +135,14 @@ class Plan:
             if cells and cells[0].isdigit():
                 last = i
                 numbers.append(int(cells[0]))
-        if last is None:
-            raise PlanError("§9 has no table rows to add to")
-        n = max(numbers) + 1
+        if last is None:   # an empty table: the first row goes under the |---| line
+            last = next((i for i in range(s, e) if self.lines[i].startswith("|---")), None)
+            if last is None:
+                raise PlanError("§9 has no table to add to")
+            # Keep the numbers unique: §8 entries name the rows that left ("§9 rows 63, 64").
+            for m in re.finditer(r"§9 rows? (\d+(?:(?:, | and |–|-)\d+)*)", self.text()):
+                numbers += [int(x) for x in re.findall(r"\d+", m.group(1))]
+        n = max(numbers, default=0) + 1
         self.lines.insert(last + 1, dshm.format_row([str(n), sid, kind, item.replace("|", "\\|"), branch, ref]))
         return n
 
@@ -345,7 +360,147 @@ def cmd_merged(p, a):
     if a.note:
         parts.append(a.note.strip())
     p.add_log(f"{a.id} merged", " ".join(parts))
-    return p.save(a, f"PLAN: {a.id} {status}" + (f"; {ds} to §9" if ds else ""))
+    rc = p.save(a, f"PLAN: {a.id} {status}" + (f"; {ds} to §9" if ds else ""))
+    if rc == 0 and not a.keep:
+        cleanup(root, a.id, full, cleanup_dry(a))
+    return rc
+
+
+# ------------------------------------------------------------------------------- cleanup
+# After a merge, remove what the slice left on the Mac (WORKFLOW.md §10). Each destructive call
+# goes through destroy(): with DSHM_CLEANUP_DRY=1 (or --dry-run) it prints and deletes nothing.
+
+def cleanup_dry(a):
+    return bool(getattr(a, "dry_run", False)) or os.environ.get("DSHM_CLEANUP_DRY") == "1"
+
+
+def destroy(dry, what, *steps):
+    """Run steps (argv lists, or ("rm", path)) to remove <what>. Returns True when removed."""
+    if dry:
+        print(f"plan: cleanup: would remove {what}")
+        return True
+    for step in steps:
+        try:
+            if step[0] == "rm":
+                path = Path(step[1])
+                if path.is_symlink() or path.is_file():
+                    path.unlink()
+                elif path.is_dir():
+                    shutil.rmtree(path)
+                continue
+            check = step[0] != "-"          # "-" prefix: a failure does not matter (shutdown)
+            argv = step[1:] if not check else step
+            r = subprocess.run(argv, capture_output=True, text=True)
+            if check and r.returncode != 0:
+                print(f"plan: cleanup: left {what}: {' '.join(argv)} failed: {(r.stderr or r.stdout).strip()}")
+                return False
+        except OSError as e:
+            print(f"plan: cleanup: left {what}: {e}")
+            return False
+    print(f"plan: cleanup: removed {what}")
+    return True
+
+
+def cleanup(root, sid, target, dry):
+    """Remove the simulator, /tmp dirs, worktrees, branches and DSHM_HOME of slice <sid>.
+    A worktree or branch goes only when its HEAD is an ancestor of <target> and it is clean."""
+    reg = [r for r in dshm.parse_registry((root / dshm.REGISTRY).read_text()) if r["id"] == sid] \
+        if (root / dshm.REGISTRY).exists() else []
+    row = reg[-1] if reg else {}
+    left = 0
+
+    # 1. Simulator dshm-<ID> (each device with that name, by UDID).
+    sim = row.get("sim") or f"dshm-{sid}"
+    owner = Path(os.environ.get("DSHM_OWNERS", "/tmp/dshm-guard")) / sim   # the guard's record
+    pid = owner.read_text().split()[0] if owner.is_file() and owner.read_text().split() else ""
+    if pid.isdigit() and subprocess.run(["kill", "-0", pid], capture_output=True).returncode == 0:
+        print(f"plan: cleanup: left simulator {sim}: a demo or review (pid {pid}) owns it")
+        left += 1
+    elif sim.startswith("dshm-"):
+        for d in dshm.simulators():
+            if d["name"] == sim:
+                destroy(dry, f"simulator {sim} ({d['udid']})",
+                        ["-", "xcrun", "simctl", "shutdown", d["udid"]],
+                        ["xcrun", "simctl", "delete", d["udid"]])
+
+    # 2. /tmp/dshm-<id> and /tmp/dshm-<id>-*. Not while a process uses them: the review of
+    #    another slice can run this slice's demo (scripts/demo/<id>.sh) as a regression.
+    key = sid.lower()
+    ps = [l.strip() for l in subprocess.run(["ps", "-axo", "command="], capture_output=True, text=True).stdout.split("\n")
+          if l.strip() and "scripts/plan" not in l]
+    for path in dshm.slice_tmp_paths(sid):
+        users = [l for l in ps if re.search(rf"{re.escape(path.name)}(?![\w.-])|scripts/demo/{key}\.sh", l)]
+        if users:
+            print(f"plan: cleanup: left {path}: a process uses it ({users[0][:80]})")
+            left += 1
+        else:
+            destroy(dry, str(path), ("rm", str(path)))
+
+    # 3. Worktrees and branches of the slice, only when merged into <target> and clean.
+    here = {str(root), str(dshm.main_checkout())}
+    wts = dshm.worktree_entries(cwd=root)
+    branches = dshm.slice_branches(sid, cwd=root)
+    reg_branch = row.get("branch")
+    if reg_branch and reg_branch not in branches and \
+            dshm.git("rev-parse", "--verify", "-q", f"refs/heads/{reg_branch}", cwd=root, check=False):
+        branches.append(reg_branch)
+
+    def merged(commit):
+        return subprocess.run(["git", "merge-base", "--is-ancestor", commit, target], cwd=root).returncode == 0
+
+    for br in branches:
+        tip = dshm.git("rev-parse", br, cwd=root)
+        holders = [w for w in wts if w["branch"] == br and w["path"] not in here]
+        if any(w["branch"] == br and w["path"] in here for w in wts):
+            print(f"plan: cleanup: left branch {br}: it is checked out here")
+            left += 1
+            continue
+        if not merged(tip):
+            where = f" and worktree {holders[0]['path']}" if holders else ""
+            print(f"plan: cleanup: left branch {br}{where}: {tip[:7]} is not merged into {target[:7]}")
+            left += 1
+            continue
+        ok = True
+        for w in holders:
+            dirty = subprocess.run(["git", "--no-optional-locks", "-C", w["path"], "status", "--porcelain"],
+                                   capture_output=True, text=True)
+            if dirty.returncode != 0:
+                print(f"plan: cleanup: left worktree {w['path']}: git status failed")
+                ok = False
+            elif dirty.stdout.strip():
+                n = len(dirty.stdout.strip().split("\n"))
+                print(f"plan: cleanup: left worktree {w['path']} ({br}): {n} uncommitted or untracked file(s)")
+                ok = False
+            elif not destroy(dry, f"worktree {w['path']} ({br})", ["git", "-C", str(root), "worktree", "remove", w["path"]]):
+                ok = False
+        if not ok:
+            left += 1
+            continue
+        if not destroy(dry, f"branch {br}", ["git", "-C", str(root), "branch", "-d", br]):
+            left += 1
+
+    # 4. DSHM_HOME, only inside ~/.dshm/.
+    home = row.get("home")
+    if home:
+        safe = dshm.safe_slice_home(home)
+        if safe is None:
+            print(f"plan: cleanup: left DSHM_HOME {home}: it is not inside ~/.dshm/")
+            left += 1
+        elif os.path.lexists(safe):
+            destroy(dry, f"DSHM_HOME {safe}", ("rm", safe))
+
+    if left:
+        print(f"plan: cleanup: {left} thing(s) left; remove them by hand when they are not needed")
+    return 0
+
+
+def cmd_cleanup(p, a):
+    need_main()
+    _, r = p.row(a.id)
+    if r["status"] not in ("review", "done"):
+        raise PlanError(f"{a.id} is {r['status']} in §0; cleanup is only for a merged slice (review or done)")
+    target = dshm.git("rev-parse", "--verify", "main^{commit}", cwd=p.root)
+    return cleanup(p.root, a.id, target, cleanup_dry(a))
 
 
 def cmd_tick(p, a):
@@ -409,6 +564,8 @@ def main():
     sp.add_argument("--worktree"); sp.add_argument("--from", dest="from_commit")
     sp.add_argument("--decisions", type=int, default=dshm.DECISION_BLOCK); sp.add_argument("--note")
     sp = add("merged", cmd_merged); sp.add_argument("id"); sp.add_argument("merge_commit", metavar="merge-commit"); sp.add_argument("--note")
+    sp.add_argument("--keep", action="store_true", help="skip the cleanup")
+    sp = add("cleanup", cmd_cleanup); sp.add_argument("id")
     sp = add("tick", cmd_tick); sp.add_argument("id"); sp.add_argument("match")
     sp.add_argument("--evidence", required=True)
     sp = add("slice-log", cmd_slice_log); sp.add_argument("id"); sp.add_argument("title"); sp.add_argument("--body")
