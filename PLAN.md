@@ -41,7 +41,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
 | T0 | doing | `claude/t0-followup` | 2026-11-08 | Slice owner builds (§8) |
-| T1 | doing | `claude/t1-questions` | 2026-11-08 | Slice owner builds (§8) |
+| T1 | done | merged `8f55a72` | 2026-11-08 | — (provisional D92 in §9) |
 | T2 | doing | `claude/t2-attachments` | 2026-11-08 | Slice owner builds (§8) |
 | X1 | todo | — | 2026-11-08 | Assign it and start a session |
 | S1 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -528,9 +528,12 @@ Append-only, dated.
 
 - **2026-11-08 · T2 assigned.** Branch `claude/t2-attachments`, simulator `dshm-T2`, DSHM_HOME `~/.dshm/home-t2`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D95–D97. `eval "$(scripts/slice-env T2)"` exports them.
 
+- **2026-11-08 · T1 merged.** Merged as `8f55a72`; `scripts/check-plan` on the merge commit passed. `scripts/review T1` at `5012584`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/T1-5012584.txt`). No open `[human]` items, so T1 is `done`. §9 rows 1 (D92).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
+| 1 | T1 | decision | ARCHITECTURE D92, *provisional*: Agent questions (screen P1, extends D18) | `claude/t1-questions` | merged `8f55a72` |
