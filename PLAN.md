@@ -612,6 +612,8 @@ Append-only, dated.
 
 - **2026-11-09 · S5 assigned.** Branch `claude/s5-voice`, simulator `dshm-S5`, DSHM_HOME `~/.dshm/home-s5`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D116–D118. `eval "$(scripts/slice-env S5)"` exports them.
 
+- **2026-11-09 · S5 runs as a background agent.** S5 assigned (D116–D118) and started as a background agent. S3 was told that S4 landed and to merge main before its handover if it conflicts. Running: S2, S3, S5.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
