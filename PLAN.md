@@ -583,6 +583,8 @@ Append-only, dated.
 
 - **2026-11-08 · S3 assigned.** Branch `claude/s3-model-failures`, simulator `dshm-S3`, DSHM_HOME `~/.dshm/home-s3`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D110–D112. `eval "$(scripts/slice-env S3)"` exports them.
 
+- **2026-11-08 · X1 merged; S3 runs as a background agent.** X1 merged as 9d4cb67 (no [ui] items, so scripts/review X1 has nothing to run). Findings in spikes/model-failures/README.md: DSH never pauses on a model failure; every failure ends the turn with turn/end reason error {message, code, status} (rate limit after 5 retries in ~16 s); a new prompt after a failed turn continues the same session. D104 in §9. Not covered by the spike: real DeepSeek wording, failures mid-task, ACCOUNT_QUOTA. S3 assigned (D110–D112) and started as a background agent with the X1 findings in its brief.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
