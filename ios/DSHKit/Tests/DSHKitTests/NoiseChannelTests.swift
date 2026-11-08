@@ -334,6 +334,20 @@ final class Clock: @unchecked Sendable {
         #expect(paired.addresses.first == HostEndpoint(host: "192.0.2.2", port: 2))
     }
 
+    /// S31: the failure names why each address failed; the bare "couldn't reach" hid an ATS refusal.
+    @Test func unreachableNamesTheReasonForEachAddress() async throws {
+        let host = FakeNoiseHost(now: { [clock] in clock.now })
+        let offer = await host.makeOffer(addresses: [HostEndpoint(host: "100.79.171.34", port: 47801), HostEndpoint(host: "192.0.2.2", port: 2)])
+        let failing = pairing({ url in
+            if url.host() == "100.79.171.34" { throw URLError(.appTransportSecurityRequiresSecureConnection) }
+            throw URLError(.cannotConnectToHost)
+        })
+        await #expect(throws: PairingError.unreachable([
+            "100.79.171.34:47801 (URL error -1022, App Transport Security)",
+            "192.0.2.2:2 (URL error -1004, connection refused)",
+        ])) { try await failing.pair(offer) }
+    }
+
     @Test func pairingModelReportsStates() async throws {
         let host = FakeNoiseHost(now: { [clock] in clock.now })
         let model = PairingModel(offer: await host.makeOffer(), pairing: pairing(host.factory()))

@@ -1299,7 +1299,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S31 · Fix: Pair over Tailscale
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-08: 配对失败：couldn't reach the host at 30.34.227.222:47801, 100.79.171.34:47801（应该是我手机的wifi和我电脑的wifi不是同一个，怎么连？）. (Coordinator: the phone and Mac are on one tailnet; tcpdump on the Mac's utun6 shows Safari on the phone opening `http://100.79.171.34:47801` (SYN, handshake, HTTP), but 0 packets from the app's pairing attempt. Lead: App Transport Security blocks plain `ws://` to non-local IP addresses (the app has no ATS keys; LAN 192.168.x worked); verify it.)
 
@@ -1308,12 +1308,20 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: —
 
 **Done when**
-- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S31PairTailscaleUITests/testPairAndConnectThroughANonLocalAddress · cmd:scripts/demo/s31.sh · shot:evidence/S31/s31-pair-review.png · shot:evidence/S31/s31-paired.png · shot:evidence/S31/s31-online.png
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
 **Log**: —
+- **2026-11-08 · Cause found (ATS), fixed, regression test.**
+  - Cause: App Transport Security. The app had no ATS keys, so `URLSession` refused cleartext `ws://` to IPs outside the local ranges (Tailscale 100.x, the Mac's public 30.x Wi-Fi) with -1022, before any packet. 192.168.x passed, which is why LAN pairing worked.
+  - Repro: `S31PairTailscaleUITests` on a real bridge bound to 0.0.0.0, QR rewritten to list only the Mac's non-local IPv4s (scripts/demo/s31.sh). The Simulator enforces ATS like the phone. Before the fix: "couldn't reach the host at 30.34.227.222:47810 (URL error -1022, App Transport Security), 100.79.171.34:47810 (…-1022…)" (`evidence/S31/before-fix-ui.txt`). After: paired, host online over Noise.
+  - Fix (`bd6d2fb`): `NSAllowsArbitraryLoads` in Debug-Info.plist and a new Release-Info.plist (same key; `scripts/check-release-clean` fails when they differ, and passes). D88, provisional (ARCHITECTURE.md), alternatives recorded (Network.framework WebSocket is the fallback if App Review objects).
+  - Also: `PairingError.unreachable` names the reason for each address (`PairingError.reason(for:)`); swift test `unreachableNamesTheReasonForEachAddress`.
+  - The demo needs a non-local IPv4 on the Mac (Tailscale or public LAN); without one it fails with a message instead of passing falsely.
+  - Created simulator `dshm-S31` (iPhone 17 Pro, iOS 26.4); it did not exist.
+  - Provisional for §9: D88. Next: `scripts/review S31`; `[human]` stays with the user (pair over Tailscale on the iPhone; needs a rebuilt app).
 
 ## 6. M1 exit
 

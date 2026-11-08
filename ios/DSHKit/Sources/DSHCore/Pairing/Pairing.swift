@@ -3,6 +3,8 @@ import Observation
 
 public enum PairingError: Error, Equatable, CustomStringConvertible {
     case expired
+    /// Each address tried, with why it failed (`reason(for:)`), e.g. `100.79.171.34:47801
+    /// (URL error -1022, App Transport Security)`. S31: the bare "couldn't reach" hid an ATS refusal.
     case unreachable([String])
 
     public var description: String {
@@ -10,6 +12,22 @@ public enum PairingError: Error, Equatable, CustomStringConvertible {
         case .expired: "this pairing code has expired; show a new one on the host"
         case .unreachable(let tried): "couldn't reach the host at \(tried.joined(separator: ", "))"
         }
+    }
+
+    /// A short reason for a failed connection, for the failure detail.
+    public static func reason(for error: any Error) -> String {
+        let ns = error as NSError
+        guard ns.domain == NSURLErrorDomain else { return String(describing: error) }
+        let name: String? = switch ns.code {
+        case NSURLErrorAppTransportSecurityRequiresSecureConnection: "App Transport Security"
+        case NSURLErrorCannotConnectToHost: "connection refused"
+        case NSURLErrorTimedOut: "timed out"
+        case NSURLErrorNotConnectedToInternet: "no network"
+        case NSURLErrorNetworkConnectionLost: "connection lost"
+        case NSURLErrorCannotFindHost: "host not found"
+        default: nil
+        }
+        return name.map { "URL error \(ns.code), \($0)" } ?? "URL error \(ns.code)"
     }
 }
 
@@ -43,7 +61,7 @@ public struct Pairing: Sendable {
                 // The bridge answered and said no: another address won't change that.
                 throw error
             } catch {
-                tried.append(endpoint.description)
+                tried.append("\(endpoint.description) (\(PairingError.reason(for: error)))")
                 continue
             }
             await connection.disconnect()
