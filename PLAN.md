@@ -706,6 +706,8 @@ Append-only, dated.
 
 - **2026-11-09 · S8 merged.** Merged as `b62405c`; `scripts/check-plan` on the merge commit passed. `scripts/review S8` at `4cc5909`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S8-4cc5909.txt`). No open `[human]` items, so S8 is `done`. §9 rows 27 (D125).
 
+- **2026-11-09 · S8 merged.** S8 merged as b62405c (review PASS on 4cc5909, S8-4cc5909.txt, no flaky part). Earlier review on 851a84c: ui-bridge-errors-taken was flaky (passed on run 2 of 3: the host row reads 'connecting' for a moment on each retry); fixed in 4cc5909 with one wait for every part of the row. D125 in §9 (amends D98). Finding for an issue: dsh web 0.2.2-rc.1 never prints the bridge's logger lines, so 'listening on' and the startup pairing QR that bridge/README.md promises in DSH's log do not show; only the listen-error line now also goes to stderr.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
