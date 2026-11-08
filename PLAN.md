@@ -514,6 +514,8 @@ Append-only, dated.
 
 - **2026-11-08 · Follow-ups while a task runs: queue first, send now to steer.** The user, 2026-11-08: "参考codex、claude，用户发送后，先排队，但给定"立即发送"/steer的标识，用户点击后直接发送". S1 and exit item 2 were rewritten before the first commit of this file. S1 amends D18 (default queue, with send-now to steer) and DESIGN 04.
 
+- **2026-11-08 · Run started; heartbeat e8ffa347.** The user sent /run-plan. Keep-awake is on. Heartbeat: durable cron job e8ffa347 (7,27,47 * * * *, prompt "Heartbeat (WORKFLOW.md §5.5)."). First batch: T0, T1, T2 (the tracers unblock S1–S5). The working tree on main has local user changes (DEVELOPMENT_TEAM in project.pbxproj, Xcode reformat of 6 xcstrings files); the coordinator leaves them alone.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
