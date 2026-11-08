@@ -488,7 +488,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S10 · Fix: rich detail after an offline relaunch
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: Closes #22. The user, 2026-11-08, for #22–#28: "这些看看还能不能复现，能的话就修复了". If a bug does not reproduce, the Log names the runs that show it, and the coordinator closes the issue with them.
 
@@ -497,11 +497,18 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/rich-detail.sh`.
 
 **Done when**
-- [ ] [ui] `S8RichDetailUITests/testCachedRichDetailAfterRelaunch` finds the 所有任务 row after an offline relaunch and passes in the review run with no retry, and `scripts/demo/s28.sh` has no `--no-s8` (`cmd:scripts/demo/rich-detail.sh`) — Evidence:
+- [x] [ui] `S8RichDetailUITests/testCachedRichDetailAfterRelaunch` finds the 所有任务 row after an offline relaunch and passes in the review run with no retry, and `scripts/demo/s28.sh` has no `--no-s8` (`cmd:scripts/demo/rich-detail.sh`) — Evidence: test:S8RichDetailUITests/testCachedRichDetailAfterRelaunch · test:S8RichDetailUITests/testCodingReplyStreamsFences · test:S8RichDetailUITests/testTranslationCompletesInline · cmd:scripts/demo/rich-detail.sh
 
 **Not**: —
 
 **Log**: —
+- **2026-11-09 · 2026-11-09 · #22 reproduced; the test was wrong, fixed; a second cause found (Live Activity launch race).**
+  - #22 reproduced on d48c93f: scripts/demo/rich-detail.sh (then s8.sh code, test unchanged), 2026-11-09 05:36, and its --offline-only run at 05:47. testCachedRichDetailAfterRelaunch fails at the row wait (line 60). The cache is there: 所有任务 shows 4 rows, the coding one as '## Patch、完成、LAICHANGdeMacBook-Pro.local'.
+  - Cause: the test, not the app. Since D50 (04a3d0e, 2026-11-07, before 9621fd2) a row shows DSH's session title, which DSH's mock model makes from the reply (first line '## Patch'), not the prompt the test looked for. The app does what D50 says, so no Dxx. Fix (2312307): find the row by 'patch' (case-insensitive), which the prompt and the title both have.
+  - Second cause, new in M2 (S6 Live Activities): each part of the demo is its own xcodebuild run, which installs the app again. With a fresh Live Activity of the part before, liveactivitiesd opens the app in the background right then (simulator log: 'trusted open application request … from liveactivitiesd', 'Bootstrapping … with intent background'), and XCTest's launch takes that process, with no launch arguments: port 47801, no prompt, no reset. It failed testCodingReplyStreamsFences (2 of 3 runs) and the offline test. Fix (80a031a): the suite launches with a preset prompt each time; when the composer does not show it, it terminates the app and launches it again, and prints so in the part's log. In-test, not a part retry.
+  - scripts/demo/s8.sh is now scripts/demo/rich-detail.sh: build once, test-without-building per part, S10 resources as defaults, own log dir (/tmp/dshm-rich-detail-<sim>), --offline-only. scripts/demo/s28.sh calls it and has no --no-s8.
+  - Runs at 80a031a: rich-detail.sh 3 of 3 passed, no part failed (the launch guard acted in 4 of 9 launches: coding once, offline three times). t0.sh baseline passed on d48c93f.
+  - For an issue: other demos with more than one xcodebuild run after a task (s28.sh's S28 → S17 parts, others) can meet the same race; the dshm-S9 simulator also showed app processes without arguments during these runs. A general fix (a shared launch check in UITestSupport, or no Live Activities under UI tests unless asked) is outside S10.
 
 ### S11 · Fix: hosts tests for the all-offline card and the default model row
 
