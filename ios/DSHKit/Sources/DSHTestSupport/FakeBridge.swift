@@ -563,6 +563,12 @@ public final class FakeHost: Sendable {
         }
     }
 
+    /// Logs `event` for `taskID` and sends it to the connections, as the bridge does with an event
+    /// that no script makes (for example a `QuestionPending` from DSH).
+    public func emit(_ event: Dshm_V1_Event, taskID: String) {
+        state.withLock { s in Self.append(event, taskID: taskID, in: &s) }
+    }
+
     // MARK: - Internals
 
     /// Opens one connection (a `FakeBridge`) to this host; throws while it's unreachable.

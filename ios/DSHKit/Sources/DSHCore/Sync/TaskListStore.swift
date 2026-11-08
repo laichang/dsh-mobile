@@ -192,6 +192,11 @@ public final class TaskListStore {
     /// forgets the pairing (D59) and tells the user.
     @ObservationIgnored public var onHostRevoked: (HostStatus) -> Void = { _ in }
 
+    /// The Live Activity of each running task (D119): brought in line after each change of the list.
+    @ObservationIgnored public var liveActivities: LiveActivities? {
+        didSet { syncLiveActivities() }
+    }
+
     /// How long `send()` waits for a host that is still connecting.
     public var sendWaitsFor: Duration = .seconds(10)
     /// Reconnect backoff: first delay, doubled per failure, capped.
@@ -992,6 +997,11 @@ public final class TaskListStore {
                 queue: t.queueData.isEmpty ? [] : t.followUpQueue.messages, attachments: t.sentAttachments,
                 failureCode: t.failureCode)
         }
+        syncLiveActivities()
+    }
+
+    private func syncLiveActivities() {
+        liveActivities?.sync(tasks, onlineHosts: Set(hosts.filter { $0.reachability == .online }.map(\.key)))
     }
 
     private func structuredTranscript(of task: CachedTask) -> StructuredTranscript {

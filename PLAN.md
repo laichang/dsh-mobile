@@ -49,11 +49,11 @@ This file exists only while this requirement is in progress. It serves this requ
 | S3 | done | merged `33e96ff` | 2026-11-09 | — (provisional D110 in §9) |
 | S4 | done | merged `83c82ce` | 2026-11-09 | — (provisional D107, D108 in §9) |
 | S5 | done | merged `5362e43` | 2026-11-09 | — (provisional D116, D117 in §9) |
-| S6 | doing | `claude/s6-live-activity` | 2026-11-09 | Slice owner builds (§8) |
+| S6 | review | merged `b4d0a65` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | doing | `claude/s8-bridge-listen-errors` | 2026-11-09 | Slice owner builds (§8) |
 | S9 | doing | `claude/s9-ui-test-waits` | 2026-11-09 | Slice owner builds (§8) |
-| S10 | todo | — | 2026-11-08 | Assign it and start a session |
+| S10 | doing | `claude/s10-offline-rich-detail` | 2026-11-09 | Slice owner builds (§8) |
 | S11 | todo | — | 2026-11-08 | Assign it and start a session |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
 | S13 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -387,7 +387,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S6 · Live Activity: show on the lock screen that a task runs
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: Closes #7. User, 2026-11-08: "dsh-mobile也做这个，这样我也能看到它在动". This moves the Live Activity of screen L from M4 to M2: DESIGN L and ARCHITECTURE §4 (Background) and §7 change with it.
 
@@ -400,13 +400,25 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/live-activity.sh`.
 
 **Done when**
-- [ ] [auto] The activity follows the task: it starts when the task runs, shows the latest step on each milestone, and ends with done, failed or waiting; one activity for each task, also after a relaunch (`FakeBridge`, a fake activity client) — Evidence:
-- [ ] [ui] A running task shows its Live Activity on the Simulator lock screen with the title, the host, a ticking time and the latest step, and it ends as done (`cmd:scripts/demo/live-activity.sh`) — Evidence:
+- [x] [auto] The activity follows the task: it starts when the task runs, shows the latest step on each milestone, and ends with done, failed or waiting; one activity for each task, also after a relaunch (`FakeBridge`, a fake activity client) — Evidence: test:LiveActivityTests/followsTheTaskFromStartThroughEachMilestoneToDone · test:LiveActivityTests/endsAsFailedWhenTheTaskFails · test:LiveActivityTests/endsWhileTheTaskWaitsOnAnApprovalAndStartsAgainAfterTheAnswer · test:LiveActivityTests/endsWhileAnAgentQuestionWaits · test:LiveActivityTests/oneActivityForEachTaskAlsoAfterARelaunch · test:LiveActivityTests/aTaskThatLeftTheListLeavesNoActivity · cmd:scripts/demo/live-activity.sh
+- [x] [ui] A running task shows its Live Activity on the Simulator lock screen with the title, the host, a ticking time and the latest step, and it ends as done (`cmd:scripts/demo/live-activity.sh`) — Evidence: cmd:scripts/demo/live-activity.sh · test:LiveActivityUITests/testRunningTaskShowsItsLiveActivityOnTheLockScreen · shot:evidence/S6/live-activity-running.png · shot:evidence/S6/live-activity-done.png
 - [ ] [human] On a real iPhone signed with the free team, the app starts a Live Activity for a running task — Evidence:
 
 **Not**: Push updates of the activity (no APNs).
 
 **Log**: —
+- **2026-11-09 · Built; review next.** Done: widget extension `LiveActivity` (lock screen view, minimal Dynamic Island views), `LiveActivities` in DSHCore (one local activity per running task: start, update on each milestone with a 15 min stale date, end on done / failed / stopped / approval / open question; taken over after a relaunch; removed when its task leaves the list), `ActivityKitClient` in the app, `DSHActivity` library shared with the extension. DESIGN L (tag M2), ARCHITECTURE D119–D121, §4 Background, §7, README roadmap, board re-rendered.
+  Provisional: D119 (local activity only, no APNs; ends on waiting), D120 (data through the ActivityKit content state, no App Group; extension signed like the app, no entitlements), D121 (testability: `-DSHMLiveActivityProbe`, `-DSHMFakeScenario live-activity`, `FakeHost.emit`, lock via XCTest's private `pressLockButton`). No new dependency.
+  Lock screen check: automated. The UI test locks the Simulator, wakes it, taps 允许 on the first "allow Live Activities" prompt, and reads the activity in SpringBoard's tree (`activity-content-view`): title, `host · step`, a time that changes; after unlock the task ends and the lock screen shows 已完成 with a stopped time.
+  Seen: in the background the app closes the socket, so the lock screen keeps the last step while the time ticks (expected without APNs; staleDate marks it later). In the demo the done activity can show a shorter time than the running one read earlier: the task ended while the screen was locked.
+  Flaky: one race in the approval test (the approval arrives before WAITING_ON_USER), repaired before the ticks. No other flaky part seen (demo passed 3 times).
+  Not done: the [human] item (real iPhone, free team) is the user's. §0 change: none.
+  Next: reviewer runs `scripts/review S6`.
+- **2026-11-09 · Merged main; review PASS.** Merged main (S2 agent questions, S5 voice input) at 2cfe69c: conflicts in the decisions table, project.pbxproj (Info.plist keys), AppComposition and check-release-clean markers, each kept both sides; board re-rendered. D119 now names D114 (a waiting question makes the task WAITING_ON_USER; the open card still decides for an older bridge).
+  Review: a reviewer that did not build the slice ran `scripts/review S6` on 2cfe69c: RESULT: PASS, no flaky part (/tmp/dshm-review/S6-2cfe69c.txt).
+  Correction to the entry before: the full lock screen UI test passed 4 times in all (2 before the merge, 1 after, 1 in the review), not 3.
+  Seen while waiting: another slice's load script (24 `yes` processes) made unrelated DSHKit timing tests fail; after it ended all 148 passed. Not a flaky part of this slice.
+  Not done: the [human] item (real iPhone, free team). §0 change: none. Ready to merge.
 
 ### S7 · Reconnect to every saved address of a host
 
@@ -673,6 +685,16 @@ Append-only, dated.
 
 - **2026-11-09 · S9 assigned.** Branch `claude/s9-ui-test-waits`, simulator `dshm-S9`, DSHM_HOME `~/.dshm/home-s9`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D128–D130. `eval "$(scripts/slice-env S9)"` exports them.
 
+- **2026-11-09 · S9 runs as a background agent.** S9 assigned (D128–D130) and started as a background agent. Running: S6, S8, S9.
+
+- **2026-11-09 · S6 merged.** Merged as `b4d0a65`; `scripts/check-plan` on the merge commit passed. `scripts/review S6` at `2cfe69c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S6-2cfe69c.txt`). 1 open `[human]` item, so S6 is `review`. §9 rows 23, 24, 25, 26 (D119, D120, D121).
+
+- **2026-11-09 · S6 merged; its [human] item waits.** S6 merged as b4d0a65 (review PASS on 2cfe69c, S6-2cfe69c.txt, no flaky part; head cefa4f9 adds only PLAN changes). D119 (local Live Activity, no APNs), D120 (content state, no App Group, free-team signing), D121 (testability) in §9, and its open [human] item (a real iPhone with the free team). For that check: the new LiveActivity target's DEVELOPMENT_TEAM is the committed R9JF9M64R9 (pbxproj lines ~553, ~581); the user's local edit only changes the app's Debug config to WRY6N9DPBK, so the widget target may need the same team on the user's Mac. The user's local pbxproj edit was stashed for the merge and applied back cleanly. Known limit: in the background the lock screen keeps the last step (time still ticks; '未更新' after 15 min).
+
+- **2026-11-09 · S10 assigned.** Branch `claude/s10-offline-rich-detail`, simulator `dshm-S10`, DSHM_HOME `~/.dshm/home-s10`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D131–D133. `eval "$(scripts/slice-env S10)"` exports them.
+
+- **2026-11-09 · S10 runs as a background agent.** S10 assigned (D131–D133) and started as a background agent. Running: S8, S9, S10. Left: S11 (after S8), S13.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -701,3 +723,7 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 20 | S5 | decision | ARCHITECTURE D116, *provisional*: Voice input: on-device speech to text with iOS 26's `SpeechAnalyzer` | `claude/s5-voice` | merged `5362e43` |
 | 21 | S5 | decision | ARCHITECTURE D117, *provisional*: The mic key and where the words go (screens 01, 06, V1, V2) | `claude/s5-voice` | merged `5362e43` |
 | 22 | S5 | tooling | scripts/render-design renders the board 9700 px tall (was 7500): board.png was cut off at the M2 row | `claude/s5-voice` | `7846a92` |
+| 23 | S6 | decision | ARCHITECTURE D119, *provisional*: The Live Activity of a running task, local only (screen L) | `claude/s6-live-activity` | merged `b4d0a65` |
+| 24 | S6 | decision | ARCHITECTURE D120, *provisional*: The data path and the signing of the widget extension | `claude/s6-live-activity` | merged `b4d0a65` |
+| 25 | S6 | decision | ARCHITECTURE D121, *provisional*: Testability of the Live Activity (extends D16) | `claude/s6-live-activity` | merged `b4d0a65` |
+| 26 | S6 | `[human]` | On a real iPhone signed with the free team, the app starts a Live Activity for a running task | `main` | `b4d0a65` |

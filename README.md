@@ -160,9 +160,9 @@ Full install, configuration and state-file details: [bridge/README.md](bridge/RE
 | | Scope | Status |
 |---|---|---|
 | **M1** | QR pairing + E2E, unified task list, composer (host, workspace, model, effort), milestones, streaming detail, interrupt, mid-task model switch, in-app approvals, multi-host, devices and audit, cross-client sessions | 🚧 Most slices built; UI polish in progress ([PLAN.md](PLAN.md)) |
-| **M2** | Push notifications (APNs, straight from the bridge), risk tiers, Face ID for the top tier, plan alignment and pre-authorization, follow-up messages and agent questions mid-task | Planned |
+| **M2** | Live Activity of each running task on the lock screen (local, no push), push notifications (APNs, straight from the bridge), risk tiers, Face ID for the top tier, plan alignment and pre-authorization, follow-up messages and agent questions mid-task | Planned |
 | **M3** | Artifacts: Quick Look preview, share sheet in and out, photos as context | Planned |
-| **M4** | Live Activities / Dynamic Island, voice input, relay transport for hosts you can't reach directly | Planned |
+| **M4** | Push updates of Live Activities, voice input, relay transport for hosts you can't reach directly | Planned |
 
 **Out of scope:** installing or hosting DSH for you, on-device models (they would plug in later as a "this phone" host), and calling model APIs from the phone.
 
