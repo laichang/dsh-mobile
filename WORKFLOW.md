@@ -100,7 +100,7 @@ Before each write, `scripts/plan` draws §2 Map again from the **Needs** fields 
 | Who | Command | What it does |
 |---|---|---|
 | Coordinator | `scripts/plan new "<title>" --commit` | Writes the plan file of a requirement that the user sets, from `scripts/lib/plan-template.md`. It stops if a plan file exists |
-| Coordinator | `scripts/plan add tracer\|spike\|slice "<name>" --why <text> --cuts <text> --done "[auto] <item>" --commit` | Adds one section in the plan format: the next ID, a §0 row, and the fields in their order. A slice needs the first tracer, unless `--needs` gives other IDs. A tracer has a maximum of 3 Done when items |
+| Coordinator | `scripts/plan add tracer\|spike\|slice "<name>" --why <text> --cuts <text> --done "[auto] <item>" --commit` | Adds one section in the plan format: the next ID, a §0 row, and the fields in their order. A slice needs the first tracer, unless `--needs` gives other IDs. A tracer has a maximum of 3 Done when items, a slice 5 |
 | Coordinator | `scripts/plan add exit "<item>" --commit` | Adds one `[human]` item to §6 Exit |
 | Coordinator | `scripts/plan assign <ID> --branch <branch> --commit` | Gives the resources (§6), sets §0 to `doing`, and adds the §8 entry |
 | Coordinator | `scripts/plan merged <ID> <merge commit> --commit` | Checks the merge commit (§10, condition 3), sets §0, adds the §9 rows and the §8 entry |
@@ -122,10 +122,10 @@ Before each write, `scripts/plan` draws §2 Map again from the **Needs** fields 
 
 To start a requirement:
 
-1. The user sets the requirement in the chat.
+1. The user sets the requirement as a GitHub milestone with its issues. The user sends `/start-requirement <milestone>` to a new session on `main`. This skill tells the coordinator to do steps 2 and 3, and then to stop.
 2. The coordinator updates `main` and reads the open issues that the requirement includes.
-3. The coordinator writes the plan file: `scripts/plan new "<Mx · name>" --commit`, then `scripts/plan add` for each tracer, spike, slice, and exit item. In the Why field of each slice, write the issues that it closes ("Closes #12"). Make each tracer small: one session must finish it. A tracer has a maximum of 3 Done when items, and `scripts/plan` stops more. Use `[auto]` and `[ui]` items. Use a `[human]` item only for a check that only a real device can do.
-4. The user approves the plan file before the first slice starts.
+3. The coordinator writes the plan file: `scripts/plan new "<Mx · name>"`, then `scripts/plan add` for each tracer, spike, slice, and exit item. Do not commit the plan file yet. Until the user approves it, you can write it again from the start. In the Why field of each slice, write the issues that it closes ("Closes #12"). Make each tracer small: one session must finish it. A tracer has a maximum of 3 Done when items. A slice has a maximum of 5. `scripts/plan` stops more. Use `[auto]` and `[ui]` items. Use a `[human]` item only for a check that only a real device can do.
+4. The user approves the plan file before the first slice starts. The coordinator then commits it. The user sends `/run-plan` in the same session (§5.1).
 
 To end a requirement, after the exit (§6 of the plan file) passes:
 
@@ -160,7 +160,7 @@ The user starts the coordinator one time. After that, the coordinator moves the 
 
 ### 5.1 Kickoff message
 
-The user sends this message (or a message with the same meaning) to the coordinator:
+The user sends `/run-plan`, or this message, to the coordinator:
 
 > You are the coordinator. Follow WORKFLOW.md. Run the plan to the end without my help. Start each slice in its own session. If you cannot start a session, run the slices as a workflow or as background agents.
 
@@ -456,3 +456,4 @@ If a tool has no function for a capability, use the fallback in this table. Then
 - **2026-11-08**: Free space and cleanup (§5.4, §6, §6.1, §10). The guard stops a demo or review when the data volume has less than 30 GB free. `scripts/plan merged` removes the simulator, the `/tmp/dshm-*` paths, the merged worktrees and branches, and the `DSHM_HOME` of the slice. `scripts/plan cleanup <ID>` does the same for a slice in `review` or `done`. `scripts/status` shows the free space and the leftovers. Reason: on 2026-11-08 the data volume had 8.3 GB free. The run left 23 `dshm-*` simulators, 30 merged worktrees, and about 230 `/tmp/dshm-*` directories. No script removed them.
 - **2026-11-08**: The plan file and issues (§1, §3.1, §3.2, §5.2, §11, §12). The plan file exists only while a requirement is in progress. `scripts/plan new` writes it from a template, and `scripts/plan add` adds each section in the format. Each write draws §2 Map again and checks the format. Each item that the plan does not do is a GitHub issue. Living documents and the code do not refer to the content of a plan. At the end of a requirement, the user deletes the plan file. There is no archive. Reason: at the M1 exit, the plan file had 1800 lines. Its §7 and the slice logs held follow-ups that no one tracked. Living documents referred to the plan file in 14 places, and these references stop being true when the plan ends. The M1 format was good, but each section was written by hand.
 - **2026-11-08**: Small tracers, and no issue references in living documents (§3.1, §3.2). A tracer has a maximum of 3 Done when items (`scripts/plan add` and `scripts/plan lint` stop more). Living documents tell what is true now and do not refer to issues; an issue refers to the `Dxx` entries that it changes. Reason: a large tracer fills the context of the session that builds it. ARCHITECTURE.md had notes about future work that belong in issues.
+- **2026-11-08**: Skills for the coordinator, and a cap for slices (§3.1, §3.2, §5.1). `/start-requirement <milestone>` writes the plan file from a GitHub milestone and stops for the user's review. `/run-plan` is the kickoff message. The skills are in `.agents/skills/` (Codex reads them there); `.claude/skills/<name>` links to each one. The coordinator commits the plan file only after the user approves it. A slice has a maximum of 5 Done when items. Reason: the user copied two long messages into each new coordinator session. The M2 planning session found that an uncommitted plan file is easier to change before approval.
