@@ -1,0 +1,66 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Agent is asking you": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent 在问你"
+          }
+        }
+      }
+    },
+    "Answered on another client.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已在其他客户端回答。"
+          }
+        }
+      }
+    },
+    "Could not send the answer. Try again.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回答没有发出，请再试一次。"
+          }
+        }
+      }
+    },
+    "Not answered. The turn ended.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未回答，这一轮已结束。"
+          }
+        }
+      }
+    },
+    "The task is waiting for you and will not choose by itself.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "任务在等你，不会自己选。"
+          }
+        }
+      }
+    },
+    "You answered. The task continues.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已回答，任务继续。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

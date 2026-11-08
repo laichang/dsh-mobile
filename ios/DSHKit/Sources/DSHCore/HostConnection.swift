@@ -17,6 +17,9 @@ public enum TaskEvent: Sendable, Equatable {
     case logReset(logID: String)
     /// S17: a thinking or tool-call row was added or changed (`transcript.v1`).
     case transcriptBlock(TranscriptItem)
+    /// An agent question waits for an answer (`questions.v1`): its card as a transcript row.
+    case questionPending(TranscriptItem)
+    case questionResolved(Dshm_V1_QuestionResolved)
 }
 
 public enum TaskEndStatus: Sendable, Equatable {
@@ -245,7 +248,8 @@ public actor HostConnection {
         do {
             var hello = Dshm_V1_Hello()
             hello.protocolVersion = DSHProtocolInfo.version
-            hello.capabilities = [DSHProtocolInfo.approvalsCapability, "sessions.v1", DSHProtocolInfo.transcriptCapability]
+            hello.capabilities = [DSHProtocolInfo.approvalsCapability, "sessions.v1", DSHProtocolInfo.transcriptCapability,
+                                  DSHProtocolInfo.questionsCapability]
             let response = try await request(.hello(hello))
             guard case .hello(let theirs)? = response.body else { throw HostConnectionError.unexpectedResponse }
             if theirs.requiresBridgeUpdate {
@@ -378,6 +382,20 @@ public actor HostConnection {
         let response = try await request(.answerApproval(answer))
         guard case .approvalResolved(let result)? = response.body, result.id == id,
               result.outcome == (allow ? .allowed : .denied) else { throw HostConnectionError.unexpectedResponse }
+    }
+
+    /// Answers a held agent question with one chosen label per question.
+    public func answerQuestion(id: String, answers: [String: [String]]) async throws {
+        var answer = Dshm_V1_AnswerQuestion()
+        answer.id = id
+        answer.answers = answers.sorted { $0.key < $1.key }.map { questionID, selected in
+            var a = Dshm_V1_QuestionAnswer()
+            a.questionID = questionID
+            a.selected = selected
+            return a
+        }
+        let response = try await request(.answerQuestion(answer))
+        guard case .questionResolved(let result)? = response.body, result.id == id else { throw HostConnectionError.unexpectedResponse }
     }
 
     /// Read backwards at one DSH event cut so a concurrent Web turn cannot shift page boundaries.
@@ -524,6 +542,10 @@ public actor HostConnection {
             return Milestone(m).map { .milestone($0) }
         case .transcriptBlock(let b)?:
             return TranscriptItem(b).map { .transcriptBlock($0) }
+        case .questionPending(let q)?:
+            return .questionPending(AgentQuestion.pendingRow(q))
+        case .questionResolved(let r)?:
+            return .questionResolved(r)
         case nil:
             return nil
         }

@@ -10,6 +10,9 @@
  */
 import type { Selection } from '../src/models/catalog.ts'
 import type { DshServices, FollowFrame, PromptPart } from '../src/dsh.ts'
+import type { AskAnswer, AskItem, QuestionRequest } from '../src/questions/holder.ts'
+
+type QuestionHandler = (this: unknown, req: QuestionRequest, next: () => Promise<AskAnswer>) => Promise<AskAnswer>
 
 export interface FakeDSHOptions {
   /** Text deltas the agent "streams" for every prompt. */
@@ -27,6 +30,12 @@ export interface FakeDSHOptions {
   reasoningStepMs?: number
   /** S17: tool calls after the reply, each a durable `tool/call` then its `tool/result`. */
   tools?: FakeToolCall[]
+  /**
+   * Agent questions: the turn calls `ask_user_question` with these items first, through the
+   * `user-questions/request` waterfall (`on` / `waterfall` below), and waits for the answer. The
+   * reply then names the chosen labels: "Using <label>." (or "No answer." when the ask failed).
+   */
+  ask?: AskItem[]
 }
 
 /** S17: one tool call and its result, as dsh-tool-fs and dsh-tool-bash record them. */
@@ -79,7 +88,22 @@ export class FakeDSH implements DshServices {
   readonly promptParts: { sessionId: string; parts: readonly PromptPart[] }[] = []
   /** D95: images staged through `fileUploads.uploadImageStream`, by receipt. */
   readonly stagedImages: { sessionId: string; receiptId: string; mediaType: string; name?: string; data: Uint8Array }[] = []
-  private sessions = new Map<string, { followers: Channel<FollowFrame>[]; seq: number; turn: number }>()
+  private sessions = new Map<string, { followers: Channel<FollowFrame>[]; seq: number; turn: number; abort?: AbortController }>()
+  private answerers: QuestionHandler[] = []
+  /** Answers each `ask` got, in order. */
+  readonly answers: AskAnswer[] = []
+
+  /** The Cordis seam of `user-questions/request`: `prepend` registers ahead of the others. */
+  on(name: 'user-questions/request', handler: QuestionHandler, options?: { prepend?: boolean }): () => void {
+    if (options?.prepend) this.answerers.unshift(handler); else this.answerers.push(handler)
+    return () => { this.answerers = this.answerers.filter(h => h !== handler) }
+  }
+
+  waterfall(_scope: unknown, _name: 'user-questions/request', req: QuestionRequest, last: () => Promise<AskAnswer>): Promise<AskAnswer> {
+    const chain = [...this.answerers]
+    const at = (i: number): Promise<AskAnswer> => i < chain.length ? chain[i].call(this, req, () => at(i + 1)) : last()
+    return at(0)
+  }
   private nextId = 1
 
   constructor(private readonly options: FakeDSHOptions = {}) {}
@@ -135,6 +159,7 @@ export class FakeDSH implements DshServices {
     cancel: (request: { sessionId: string }) => {
       const session = this.session(request.sessionId)
       this.interrupts.push(request.sessionId)
+      session.abort?.abort()
       this.emitEvent(request.sessionId, 'turn/end', { turn: session.turn, reason: { kind: 'aborted', reason: { kind: 'user' } } })
       return { accepted: true as const }
     },
@@ -187,8 +212,26 @@ export class FakeDSH implements DshServices {
   }
 
   private async runTurn(sessionId: string, turn: number) {
-    const reply = this.options.reply ?? ['Hello', ' from', ' FakeDSH.']
+    let reply = this.options.reply ?? ['Hello', ' from', ' FakeDSH.']
     this.emitEvent(sessionId, 'turn/start', { turn })
+    if (this.options.ask) {
+      const abort = new AbortController()
+      this.session(sessionId).abort = abort
+      const callId = `call_ask_${turn}`
+      this.emitEvent(sessionId, 'tool/call', { turn, step: 0, callId, name: 'ask_user_question',
+        arguments: JSON.stringify({ questions: this.options.ask }) })
+      try {
+        const answer = await this.waterfall(undefined, 'user-questions/request',
+          { questions: this.options.ask, agent: { session: { id: sessionId } }, signal: abort.signal },
+          () => Promise.reject(new Error('no user-questions answerer accepted the request')))
+        this.answers.push(answer)
+        reply = this.options.reply ?? ['Using ', answer.answers.flatMap(a => a.selected).join(', '), '.']
+      } catch {
+        if (this.interrupts.includes(sessionId)) return
+        reply = this.options.reply ?? ['No answer.']
+      }
+      this.emitEvent(sessionId, 'tool/result', { turn, step: 0, message: { role: 'tool', toolCallId: callId, content: [] } })
+    }
     for (const e of this.options.events ?? []) this.emitEvent(sessionId, e.type, { turn, ...e.data })
     const delay = this.options.chunkDelayMs ?? 0
     this.emit(sessionId, { type: 'assistant-stream', frame: { type: 'start' } })

@@ -1,0 +1,61 @@
+// Agent questions (ARCHITECTURE D18, D92): DSH's `ask_user_question` tool, held by the bridge
+// like an approval. Capability `questions.v1`. Frame fields 380–399.
+syntax = "proto3";
+package dshm.v1;
+
+message QuestionOption {
+  // The answer value DSH expects back: the option's label, verbatim.
+  string label = 1;
+  string description = 2;
+}
+
+message Question {
+  // DSH's question id, echoed in the answer.
+  string id = 1;
+  string text = 2;
+  // Short heading, may be empty.
+  string header = 3;
+  // Supporting detail, may be empty.
+  string detail = 4;
+  repeated QuestionOption options = 5;
+  bool multi_select = 6;
+}
+
+// Event: a task waits for the answer to one or more questions.
+message QuestionPending {
+  // A fresh id per held request; an old card can never answer a later request.
+  string id = 1;
+  string task_id = 2;
+  repeated Question questions = 3;
+}
+
+message QuestionAnswer {
+  string question_id = 1;
+  // Labels of the chosen options.
+  repeated string selected = 2;
+}
+
+// Request: answer every question of a pending request.
+message AnswerQuestion {
+  string id = 1;
+  repeated QuestionAnswer answers = 2;
+}
+
+enum QuestionOutcome {
+  QUESTION_OUTCOME_UNSPECIFIED = 0;
+  // Answered on this or another paired phone.
+  QUESTION_OUTCOME_ANSWERED = 1;
+  // Answered on DSH Web or desktop.
+  QUESTION_OUTCOME_ANSWERED_ELSEWHERE = 2;
+  // The turn ended or was interrupted before an answer.
+  QUESTION_OUTCOME_CANCELLED = 3;
+}
+
+// Response to AnswerQuestion, and the event that withdraws the card on every phone.
+message QuestionResolved {
+  string id = 1;
+  string task_id = 2;
+  QuestionOutcome outcome = 3;
+  // What was answered; empty when cancelled.
+  repeated QuestionAnswer answers = 4;
+}
