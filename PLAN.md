@@ -70,11 +70,11 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S24 | done | merged `28a6409` | 2026-11-07 | — |
 | S25 | done | merged `2a189da` | 2026-11-07 | — |
 | S26 | done | merged `bfd1c39` | 2026-11-07 | — |
-| S27 | review | merged `02ec58b` | 2026-11-08 | User confirms D76 (§9) |
-| S28 | review | merged `f4594e5` | 2026-11-08 | User confirms D79 (§9) |
-| S29 | review | merged `3b1a903` | 2026-11-08 | User confirms D82 (§9) |
-| S30 | review | merged `4679afe` | 2026-11-08 | User confirms D85 (§9) |
-| S31 | review | merged `a5e48c0` | 2026-11-08 | User confirms D88 (§9) |
+| S27 | done | merged `02ec58b` | 2026-11-08 | — |
+| S28 | done | merged `f4594e5` | 2026-11-08 | — |
+| S29 | done | merged `3b1a903` | 2026-11-08 | — |
+| S30 | done | merged `4679afe` | 2026-11-08 | — |
+| S31 | done | merged `a5e48c0` | 2026-11-08 | — |
 
 ## 1. Approach
 
@@ -1762,14 +1762,11 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-08 · S21, S27-S31: user accepted the fixes on iPhone.** User commit acfc385. S21 is done; S27-S31 wait only on the user's D76, D79, D82, D85, D88. §9 rows 54, 56, 58, 60, 62, 64 removed.
 
+- **2026-11-08 · User confirmed D76, D79, D82, D85, D88.** S27, S28, S29, S30 and S31 are done; §9 rows 55, 57, 59, 61, 63 removed. §9 is empty.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
-| 55 | S27 | decision | ARCHITECTURE D76, *provisional*: Outcome footer: the latest turn's time, and no answer-start marker (amends D60) | `claude/s27-outcome-footer` | merged `02ec58b` |
-| 57 | S28 | decision | ARCHITECTURE D79, *provisional*: Markdown tables (screen 04) | `claude/s28-markdown-tables` | merged `f4594e5` |
-| 59 | S29 | decision | ARCHITECTURE D82, *provisional*: A close 4003 (device unknown) is final: the app forgets the host | `claude/s29-revoke-forget` | merged `3b1a903` |
-| 61 | S30 | decision | ARCHITECTURE D85, *provisional*: Pairing a host again clears its revoke | `claude/s30-pair-again` | merged `4679afe` |
-| 63 | S31 | decision | ARCHITECTURE D88, *provisional*: App Transport Security allows cleartext loads (`NSAllowsArbitraryLoads`), the same in Debug and Release | `claude/s31-pair-tailscale` | merged `a5e48c0` |
