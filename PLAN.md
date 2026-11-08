@@ -46,7 +46,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | X1 | done | merged `9d4cb67` | 2026-11-08 | — (provisional D104 in §9) |
 | S1 | done | merged `55300a7` | 2026-11-09 | — (provisional D101, D102 in §9) |
 | S2 | doing | `claude/s2-questions-more` | 2026-11-09 | Slice owner builds (§8) |
-| S3 | doing | `claude/s3-model-failures` | 2026-11-08 | Slice owner builds (§8) |
+| S3 | done | merged `33e96ff` | 2026-11-09 | — (provisional D110 in §9) |
 | S4 | done | merged `83c82ce` | 2026-11-09 | — (provisional D107, D108 in §9) |
 | S5 | doing | `claude/s5-voice` | 2026-11-09 | Slice owner builds (§8) |
 | S6 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -623,6 +623,8 @@ Append-only, dated.
 
 - **2026-11-09 · S5 runs as a background agent.** S5 assigned (D116–D118) and started as a background agent. S3 was told that S4 landed and to merge main before its handover if it conflicts. Running: S2, S3, S5.
 
+- **2026-11-09 · S3 merged.** Merged as `33e96ff`; `scripts/check-plan` on the merge commit passed. `scripts/review S3` at `9f079fa`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S3-9f079fa.txt`). No open `[human]` items, so S3 is `done`. §9 rows 14 (D110).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -642,3 +644,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 11 | S4 | decision | ARCHITECTURE D108, *provisional*: The "+" menu and the attachment chips (screens 01, 06) | `claude/s4-attach-files` | merged `83c82ce` |
 | 12 | S4 | decision | D95 amended: attachments of any type (not only photos) | `claude/s4-attach-files` | `da00e84` |
 | 13 | S4 | decision | D18 amended: file parts reach DSH by name; attachments only once a task is done, not in a queued message | `claude/s4-attach-files` | `d2904bb` |
+| 14 | S3 | decision | ARCHITECTURE D110, *provisional*: A new message continues a task after a model failure (screens X1, X4) | `claude/s3-model-failures` | merged `33e96ff` |
