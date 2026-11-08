@@ -605,3 +605,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 5 | X1 | decision | ARCHITECTURE D104, *provisional*: A model failure ends the task as failed; the phone shows text chosen by the failure code | `claude/x1-model-failures` | merged `9d4cb67` |
 | 6 | S1 | decision | ARCHITECTURE D101, *provisional*: Follow-ups while a task runs, and after a stop (screens 04, X1; amends D18, D89) | `claude/s1-followup-queue` | merged `55300a7` |
 | 7 | S1 | decision | ARCHITECTURE D102, *provisional*: One follow across turns (bridge, extends D89) | `claude/s1-followup-queue` | merged `55300a7` |
+| 8 | S1 | decision | D18 amended: default QUEUE for a follow-up while a task runs, 立即发送 steers (D18 itself was user-confirmed) | `claude/s1-followup-queue` | `7c1a8cd` |
