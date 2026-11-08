@@ -283,6 +283,14 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Not**: Push for questions. Plan alignment and pre-authorization (#9).
 
 **Log**: —
+- **2026-11-09 · Built; review next.**
+  - Done: typed answer from the composer ("回答 Agent…", AnswerQuestion with `custom`, never a follow-up); multi-select chips with 回答; `TaskSummary.pending_questions` (field 380) and WAITING_ON_USER, so 等我处理, the drawer badge and the amber drawer mark count a question; the card under 等我处理 in 所有任务 answers there too; 等你回答 in the milestone bar; a summary restores a card the log lost, and an ended task closes a stale one; an answer from another client withdraws the card (FakeBridge test). Bridge tests, DSHKit tests (QuestionAnswersTests), golden fixtures `questions_typed_answer_request`, `questions_waiting_task_upserted_event`, `scripts/demo/questions.sh --all` (3 UI tests on real DSH) all pass.
+  - Timeout: kept D92's no-timeout and amended D92 (provisional) with the reasons: a question has no safe default (a made-up answer reaches the model as the user's choice); DSH's own opt-in timed mode returns *pending* at its deadline and never refuses; DSH Web waits too. The Cut's "times out to a refusal" is not done, by this decision.
+  - New provisional decisions: D113 (typed and multi-select answers, composer rule), D114 (pending questions in the summary, 等我处理, bar). No new dependency.
+  - Setup found: `~/.dshm/home-s2` was a stale M1 profile whose cordis.patch.yml pinned the bridge to 47811, so the T0 baseline failed ("bridge did not come up"). Moved it to /tmp/dshm-s2-stale-home; T0 then passed. Swift tests and SwiftPM fetches need the sandbox off (network).
+  - Flaky (not this slice's tests, under load avg 75+): DSHKit FollowUpQueueTests/sendNowMovesAQueuedMessageIntoTheTurnAndRemoveTakesOneOut and S16CodingTaskTests/codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt failed in a full `swift test` and passed alone; they can fail `questions.sh` before the UI part.
+  - Merged main twice (S4, S3): resolved SessionPage (attachments hide while answering), task-hub, ARCHITECTURE; regenerated code and board.
+  - Next: the reviewer runs `scripts/review S2`.
 
 ### S3 · Model failures: a red failure, then continue with a new message
 
