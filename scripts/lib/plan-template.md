@@ -76,6 +76,8 @@ flowchart LR
 
 ## 3. Tracer bullets
 
+A tracer is one thin round trip that one session can finish without running out of context: at most 3 Done when items (`scripts/plan` stops more). Prefer `[auto]` and `[ui]` items; use `[human]` only for what only a real device can show. If a tracer needs more, split it into more tracers.
+
 ## 4. Spikes
 
 Each spike ends in a short written conclusion, plus throwaway code if needed. None of them blocks the tracer.
