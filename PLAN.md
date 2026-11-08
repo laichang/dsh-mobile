@@ -625,6 +625,8 @@ Append-only, dated.
 
 - **2026-11-09 · S3 merged.** Merged as `33e96ff`; `scripts/check-plan` on the merge commit passed. `scripts/review S3` at `9f079fa`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S3-9f079fa.txt`). No open `[human]` items, so S3 is `done`. §9 rows 14 (D110).
 
+- **2026-11-09 · S3 merged; stale DSH homes from M1.** S3 merged as 33e96ff (review PASS on 9f079fa after the merge of main with S4, S3-9f079fa.txt; head 1612732 adds only PLAN changes). D110 new; D104 and D107 amended: in §9. spikes/model-failures/ stays (no code points at it); the user decides at the end. The user's uncommitted Outcomes.xcstrings (Xcode reformat) did not apply after the merge; it stays as a stash for the user. Environment findings (for issues at the end): ~/.dshm/home-<id> profiles from M1 survive with stale port pins (home-s2/cordis.patch.yml pins 47811, the port of another slice; home-s3 was pinned to 47812 and was moved aside to home-s3.stale-m1-2026-11-09); slice IDs repeat across plans, so scripts/slice-env --assign should start from an empty DSHM_HOME. No GitHub access for SwiftPM in the sandbox (package caches filled from local copies). The global pnpm points at a half-downloaded corepack pnpm 12.16.1; the pinned 11.28.5 works. Older swift timing tests (S16CodingTaskTests, NoiseResumeTests, FollowUpQueueTests, CachedMilestone) fail at load ~190 and pass at normal load (S12).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
