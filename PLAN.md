@@ -42,7 +42,7 @@ This file exists only while this requirement is in progress. It serves this requ
 |---|---|---|---|---|
 | T0 | done | merged `71577b2` | 2026-11-08 | — (provisional D89 in §9) |
 | T1 | done | merged `8f55a72` | 2026-11-08 | — (provisional D92 in §9) |
-| T2 | doing | `claude/t2-attachments` | 2026-11-08 | Slice owner builds (§8) |
+| T2 | done | merged `1762164` | 2026-11-08 | — (provisional D95 in §9) |
 | X1 | doing | `claude/x1-model-failures` | 2026-11-08 | Slice owner builds (§8) |
 | S1 | doing | `claude/s1-followup-queue` | 2026-11-08 | Slice owner builds (§8) |
 | S2 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -564,6 +564,8 @@ Append-only, dated.
 
 - **2026-11-08 · T2 review PASS; one more merge of main after S7.** T2 review PASS on 0f0bbc8 (T2-0f0bbc8.txt), flaky: attachments-ui (the photo picker's first open) passed on run 2 of 3. S7 merged meanwhile, so T2 conflicts in ARCHITECTURE.md and the design renders. The S7 merge auto-merged HostConnection.swift and TaskListStore.swift with T0, untested on main; the T2 owner merges main, runs the bridge tests and swift test (which checks that combination), and reviews again. Next merges go one at a time: before a merge, the next slice takes main first.
 
+- **2026-11-08 · T2 merged.** Merged as `1762164`; `scripts/check-plan` on the merge commit passed. `scripts/review T2` at `eb877f4`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/T2-eb877f4.txt`). No open `[human]` items, so T2 is `done`. §9 rows 4 (D95).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -573,3 +575,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 1 | T1 | decision | ARCHITECTURE D92, *provisional*: Agent questions (screen P1, extends D18) | `claude/t1-questions` | merged `8f55a72` |
 | 2 | T0 | decision | ARCHITECTURE D89, *provisional*: A follow-up message continues the task (screen 04) | `claude/t0-followup` | merged `71577b2` |
 | 3 | S7 | decision | ARCHITECTURE D98, *provisional*: A reconnect tries every saved address of the host, one at a time, the last working one first (amends D21 e) | `claude/s7-reconnect` | merged `1978046` |
+| 4 | T2 | decision | ARCHITECTURE D95, *provisional*: Attachments: one photo in a new task, sent in parts | `claude/t2-attachments` | merged `1762164` |
