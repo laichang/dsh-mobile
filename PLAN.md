@@ -310,7 +310,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/attachments.sh --all`.
 
 **Done when**
-- [ ] [auto] Text, PDF and an unknown file type are staged and reach DSH as file parts with their names; more than one attachment keeps its order; a file over the limit is refused before the upload (`FakeDSH`, `FakeBridge`) — Evidence:
+- [x] [auto] Text, PDF and an unknown file type are staged and reach DSH as file parts with their names; more than one attachment keeps its order; a file over the limit is refused before the upload (`FakeDSH`, `FakeBridge`) — Evidence: test:Attachments/textPdfAndUnknownFilesReachDshAsFilePartsWithTheirNamesInOrder · test:Attachments/aFileOverTheLimitIsRefusedBeforeAnyPartAndNothingIsStaged · test:Attachments/stagingRefusesTooLargeAndTooMany · test:Attachments/aFollowUpTakesFilesIntoTheSameSessionAndItsUserMessageNamesThem · test:AttachmentsTests/filesOfAnyTypeGoUpInOrderAndOneRemovedStaysHome · test:AttachmentsTests/aFileOverTheLimitIsRefusedBeforeTheUpload · test:AttachmentsTests/aFollowUpCarriesFilesIntoTheSameTask · cmd:scripts/demo/attachments.sh
 - [ ] [ui] Attach a photo, a .txt and a .pdf on 01, remove one, and send: the bubble shows the other two and the DSH session has them (`cmd:scripts/demo/attachments.sh`) — Evidence:
 - [ ] [ui] Attach a file to a follow-up in a completed session: it reaches the same DSH session (`cmd:scripts/demo/attachments.sh`) — Evidence:
 
