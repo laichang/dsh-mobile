@@ -307,7 +307,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S4 · Attach files: photos, text, PDF, other files
 
-**Status** doing · **Needs** T0, T2 · **Branch** —
+**Status** review · **Needs** T0, T2 · **Branch** —
 
 **Why**: Closes #2. User, 2026-11-08: "这个要支持，不仅是照片，也可以是txt、pdf或其他文件，你参考claude、codex的交互".
 
@@ -327,6 +327,16 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Not**: The Share Extension (#18). Artifacts back to the phone (#17).
 
 **Log**: —
+- **2026-11-09 · Built; review PASS at 1fc0d40.** Done: all three items ticked. Review: /tmp/dshm-review/S4-1fc0d40.txt (PASS, no flaky part).
+  - Protocol: `AttachmentKind`, `AttachmentRef` (attachments.proto); `SendMessage.upload_ids` = 400, `UserMessage.attachments` = 400, `SessionMessage.attachments` = 400 (attachments block). `upload/media-type` gone; `upload/too-many` added. Two golden fixtures.
+  - Bridge: any media type; images go through `uploadImageStream`, other files through `uploadStream` with their names; prompt order = add order; max 5 per message; follow-ups take `uploadIds`; the hub refuses files for a running task (a queued message carries text only); the journal's image/file blocks become `AttachmentRef`.
+  - App: "+" menu (Photo Library, Camera, Files) on 01 and on the follow-up composer once the task is done; chips with remove, upload progress, amber error; a file over 20 MiB is refused before the upload; the user bubble shows thumbnails and file cards, also after a replay (`CachedTask.sentAttachments`, an old `photoThumbnail` reads as one image).
+  - Demo: `scripts/demo/attachments.sh --all` seeds notes.txt and report.pdf into Files > On My iPhone, runs the two new UI tests, and checks the DSH sessions (`attachments-files-check.mjs`, shared reader `dsh-journal.mjs`).
+  - Design: board 01 (menu and chips) and 06 (attachment in the bubble, "+" on the follow-up composer); STORY §7, DESIGN map row. Drawn on 06, not 04: the code attaches on a follow-up once the task is done (06); 04 is the running page, where S1's queue carries text only.
+  - Merged main (S1) into the branch: start/followUp take both `continues` and `files`; codegen rerun; board re-rendered.
+  - Decisions (provisional, pending user confirmation): D107 (files of any type, 5 per message, follow-ups once done, replay, upload at send), D108 (the "+" menu and chips; one item per menu use). D109 not used. Dependencies: none added.
+  - Flaky notes: the system photo picker's first open after an install can take more than 15 s (wait raised to 30 s). The document picker opens on Recents, the Browse root, or the last folder; the test handles all three (the location cell is `DOC.sidebar.item.<name>`, label 我的iPhone without a space). `scripts/render-design` exits 2 when another worktree renders at the same time (headless Chrome); run it again when no other render runs.
+  - Not done: multi-select in the pickers; attachments in a queued message while a task runs.
 
 ### S5 · Voice input
 
