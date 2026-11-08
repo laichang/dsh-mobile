@@ -43,14 +43,14 @@ This file exists only while this requirement is in progress. It serves this requ
 | T0 | done | merged `71577b2` | 2026-11-08 | — (provisional D89 in §9) |
 | T1 | done | merged `8f55a72` | 2026-11-08 | — (provisional D92 in §9) |
 | T2 | doing | `claude/t2-attachments` | 2026-11-08 | Slice owner builds (§8) |
-| X1 | todo | — | 2026-11-08 | Assign it and start a session |
+| X1 | doing | `claude/x1-model-failures` | 2026-11-08 | Slice owner builds (§8) |
 | S1 | doing | `claude/s1-followup-queue` | 2026-11-08 | Slice owner builds (§8) |
 | S2 | todo | — | 2026-11-08 | Assign it and start a session |
 | S3 | todo | — | 2026-11-08 | Assign it and start a session |
 | S4 | todo | — | 2026-11-08 | Assign it and start a session |
 | S5 | todo | — | 2026-11-08 | Assign it and start a session |
 | S6 | todo | — | 2026-11-08 | Assign it and start a session |
-| S7 | doing | `claude/s7-reconnect` | 2026-11-08 | Slice owner builds (§8) |
+| S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | todo | — | 2026-11-08 | Assign it and start a session |
 | S9 | todo | — | 2026-11-08 | Assign it and start a session |
 | S10 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -366,7 +366,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S7 · Reconnect to every saved address of a host
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: Closes #12. The user asked for this first after M1. A reconnect tries only the first saved address (`AppComposition` uses `host.addresses.first`), so a phone off the LAN does not try Tailscale. Changes D21 (e).
 
@@ -378,12 +378,13 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/reconnect.sh`: a host saved with a dead first address and a live second address.
 
 **Done when**
-- [ ] [auto] With the first address dead and the second live, a reconnect uses the second and saves it first; with all addresses dead, the host is offline with the error of each address (DSHKit, two fake hosts) — Evidence:
-- [ ] [ui] A host paired with a dead first address shows online and takes a task (`cmd:scripts/demo/reconnect.sh`) — Evidence:
+- [x] [auto] With the first address dead and the second live, a reconnect uses the second and saves it first; with all addresses dead, the host is offline with the error of each address (DSHKit, two fake hosts) — Evidence: test:ReconnectTests/deadFirstAddressFallsThroughToTheSecondAndIsSavedFirst · test:ReconnectTests/allAddressesDeadShowTheHostOfflineWithTheErrorOfEach · cmd:scripts/demo/reconnect.sh
+- [x] [ui] A host paired with a dead first address shows online and takes a task (`cmd:scripts/demo/reconnect.sh`) — Evidence: cmd:scripts/demo/reconnect.sh · test:ReconnectUITests/testDeadFirstAddressFallsThroughToTheSecond · shot:evidence/S7/reconnect-online-via-second.png · shot:evidence/S7/reconnect-all-dead.png
 
 **Not**: Finding new addresses (Bonjour). A relay.
 
 **Log**: —
+- **2026-11-08 · built; review next.** Done: HostConnection tries every saved address, the last working one first, 5 s for each; a new working address is saved first (PairedHostStore.update keeps the host's place). All dead: HostConnectionError.unreachable with the error of each address. Hosts sheet (H) shows the address in use, and offline the error of each address; board H updated. Pairing uses the same loop. See D98 (provisional, in order and not raced); D21 (e) amended. No new dependencies. Demo scripts/demo/reconnect.sh: pairs through a proxy that dies after one connection, then the app reconnects through the bridge and runs a task; then DSH stops and H shows both errors. Both UI parts and DSHKit passed on the first run (no flaky parts). After that run I fixed the demo's EXIT trap (it returned 1 after 'reconnect demo passed'); the review run checks it. Learned: the dshm-S7 simulator did not exist (created it by hand); the first T0 run failed on a GitHub fetch of swift-protobuf (network reset), the second passed. Next: a reviewer runs scripts/review S7.
 
 ### S8 · Bridge cannot listen: tell the phone why
 
@@ -553,6 +554,16 @@ Append-only, dated.
 
 - **2026-11-08 · S1 assigned.** Branch `claude/s1-followup-queue`, simulator `dshm-S1`, DSHM_HOME `~/.dshm/home-s1`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D101–D103. `eval "$(scripts/slice-env S1)"` exports them.
 
+- **2026-11-08 · T0 merged; S1 runs as a background agent.** T0 merged as 71577b2 (review PASS on 7f6c6c1 after the merge of main, T0-7f6c6c1.txt). D89 is in §9. To merge, the coordinator stashed the user's uncommitted Localizable.xcstrings (Xcode reformat); it did not apply cleanly after the merge, so it stays as stash@{0} for the user and the file on main is the merged version. T2 asked to merge main again. S1 assigned; the app refused start_session in this event turn, so S1 runs as a background agent in its own worktree (§5.3 step 3).
+
+- **2026-11-08 · S7 merged.** Merged as `1978046`; `scripts/check-plan` on the merge commit passed. `scripts/review S7` at `90b3822`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S7-90b3822.txt`). No open `[human]` items, so S7 is `done`. §9 rows 3 (D98).
+
+- **2026-11-08 · X1 assigned.** Branch `claude/x1-model-failures`, simulator `dshm-X1`, DSHM_HOME `~/.dshm/home-x1`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D104–D106. `eval "$(scripts/slice-env X1)"` exports them.
+
+- **2026-11-08 · S7 merged; X1 runs as a background agent.** S7 merged as 1978046 (review PASS on 90b3822, S7-90b3822.txt, no flaky part). design/board.png conflicted (binary render); the coordinator rendered it again from the merged board.html with scripts/render-design in the merge commit (only board.png and screens/H.png changed). D98 in §9. The user's uncommitted Hosts.xcstrings (Xcode reformat) did not apply after the merge; it stays as a stash for the user. S7 findings for the tooling: no script creates dshm-<ID> (created by hand again); a reviewer that runs scripts/review in the background and waits on a monitor dies with the run (nohup + foreground wait works); the sandbox refuses eval "$(scripts/slice-env <ID>)". X1 assigned and runs as a background agent (§5.3 step 3).
+
+- **2026-11-08 · T2 review PASS; one more merge of main after S7.** T2 review PASS on 0f0bbc8 (T2-0f0bbc8.txt), flaky: attachments-ui (the photo picker's first open) passed on run 2 of 3. S7 merged meanwhile, so T2 conflicts in ARCHITECTURE.md and the design renders. The S7 merge auto-merged HostConnection.swift and TaskListStore.swift with T0, untested on main; the T2 owner merges main, runs the bridge tests and swift test (which checks that combination), and reviews again. Next merges go one at a time: before a merge, the next slice takes main first.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -561,3 +572,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 |---|---|---|---|---|---|
 | 1 | T1 | decision | ARCHITECTURE D92, *provisional*: Agent questions (screen P1, extends D18) | `claude/t1-questions` | merged `8f55a72` |
 | 2 | T0 | decision | ARCHITECTURE D89, *provisional*: A follow-up message continues the task (screen 04) | `claude/t0-followup` | merged `71577b2` |
+| 3 | S7 | decision | ARCHITECTURE D98, *provisional*: A reconnect tries every saved address of the host, one at a time, the last working one first (amends D21 e) | `claude/s7-reconnect` | merged `1978046` |
