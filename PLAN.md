@@ -43,7 +43,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | T0 | done | merged `71577b2` | 2026-11-08 | — (provisional D89 in §9) |
 | T1 | done | merged `8f55a72` | 2026-11-08 | — (provisional D92 in §9) |
 | T2 | done | merged `1762164` | 2026-11-08 | — (provisional D95 in §9) |
-| X1 | doing | `claude/x1-model-failures` | 2026-11-08 | Slice owner builds (§8) |
+| X1 | done | merged `9d4cb67` | 2026-11-08 | — (provisional D104 in §9) |
 | S1 | doing | `claude/s1-followup-queue` | 2026-11-08 | Slice owner builds (§8) |
 | S2 | todo | — | 2026-11-08 | Assign it and start a session |
 | S3 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -579,6 +579,8 @@ Append-only, dated.
 
 - **2026-11-08 · S4 runs as a background agent.** S4 assigned (D107–D109) and started as a background agent in its own worktree (§5.3 step 3). Running: S1, X1, S4.
 
+- **2026-11-08 · X1 merged.** Merged as `9d4cb67`; `scripts/check-plan` on the merge commit passed. No open `[human]` items, so X1 is `done`. §9 rows 5 (D104).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -589,3 +591,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 2 | T0 | decision | ARCHITECTURE D89, *provisional*: A follow-up message continues the task (screen 04) | `claude/t0-followup` | merged `71577b2` |
 | 3 | S7 | decision | ARCHITECTURE D98, *provisional*: A reconnect tries every saved address of the host, one at a time, the last working one first (amends D21 e) | `claude/s7-reconnect` | merged `1978046` |
 | 4 | T2 | decision | ARCHITECTURE D95, *provisional*: Attachments: one photo in a new task, sent in parts | `claude/t2-attachments` | merged `1762164` |
+| 5 | X1 | decision | ARCHITECTURE D104, *provisional*: A model failure ends the task as failed; the phone shows text chosen by the failure code | `claude/x1-model-failures` | merged `9d4cb67` |
