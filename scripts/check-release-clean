@@ -2,6 +2,7 @@
 # Proves a Release build carries none of the debug-only testability entry points
 # (ARCHITECTURE D16): FakeBridge, the -DSHM* launch arguments, and the dshm://pair deep link;
 # and, since S1, no PlaintextChannel: Release talks to a bridge only over Noise.
+# And both builds carry the same ATS keys (D88).
 # Also checks the Debug build *does* carry them, so a passing result means something.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -26,8 +27,15 @@ scan() { # app → prints markers found in any Mach-O inside, and URL schemes
   echo "${found[*]:-}"
 }
 
-release=$(scan "$(build Release)")
-debug=$(scan "$(build Debug)")
+# D88 (S31): ATS behaves the same in both: the phone reaches the bridge at any IP in the QR.
+ats() { plutil -extract NSAppTransportSecurity xml1 -o - "$1/Info.plist" 2>/dev/null || echo none; }
+release_app=$(build Release)
+debug_app=$(build Debug)
+release=$(scan "$release_app")
+debug=$(scan "$debug_app")
+[ "$(ats "$release_app")" = "$(ats "$debug_app")" ] || { echo "check-release-clean: FAIL, NSAppTransportSecurity differs between Debug and Release (D88)" >&2; exit 1; }
+[ "$(plutil -extract NSAppTransportSecurity.NSAllowsArbitraryLoads raw -o - "$release_app/Info.plist" 2>/dev/null)" = true ] \
+  || { echo "check-release-clean: FAIL, Release lacks NSAllowsArbitraryLoads (D88)" >&2; exit 1; }
 echo "Debug carries:   ${debug:-<none>}"
 echo "Release carries: ${release:-<none>}"
 [ -n "$debug" ] || { echo "check-release-clean: Debug has no markers; the check is broken" >&2; exit 1; }
