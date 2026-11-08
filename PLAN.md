@@ -432,7 +432,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S8 · Bridge cannot listen: tell the phone why
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: Closes #15. When the bridge port is taken, `bridge/src/index.ts` only logs "failed to start", and the phone shows the host offline with no reason.
 

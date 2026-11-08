@@ -48,6 +48,8 @@ final class AppModel {
         let keys = KeychainDeviceKeyStore()
         let hosts = FilePairedHostStore()
         var transport: BridgeTransportFactory = WebSocketTransport.factory
+        // D125: after a timeout, a TCP connect tells another program on the port from no computer.
+        var probe: PortProbe? = TCPPortProbe.probe
         var transcriber = SpeechFrameworkTranscriber.factory
         container = Self.makeContainer()
         #if DEBUG
@@ -60,13 +62,13 @@ final class AppModel {
             try? TaskCache.erase(container)
             UserDefaults.standard.removeObject(forKey: Self.preferredHostKey)
         }
-        if options.useFakeBridge { transport = FakeBridge.factory() }
+        if options.useFakeBridge { transport = FakeBridge.factory(); probe = nil }
         presetPrompt = options.presetPrompt ?? ""
         if let seconds = options.connectDelay { connectDelay = .milliseconds(Int(seconds * 1000)) }
         if let speech = options.fakeSpeech { transcriber = FakeTranscriber.factory(speech) }
         #endif
         self.transcriber = transcriber
-        pairing = Pairing(keys: keys, hosts: hosts, transport: transport)
+        pairing = Pairing(keys: keys, hosts: hosts, transport: transport, probe: probe)
         store = makeStore()
     }
 

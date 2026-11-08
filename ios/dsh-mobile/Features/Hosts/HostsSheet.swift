@@ -152,12 +152,24 @@ private struct HostRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HostLastConnection(date: host.lastConnectedAt)
                     .foregroundStyle(DSHTheme.textSecondary)
-                // D98: every address was tried; the last error of each.
+                // D98: every address was tried; the last error of each. D125: in words when it
+                // says why the bridge does not answer, with the error after it.
                 ForEach(host.addressFailures, id: \.endpoint.description) { failure in
-                    Text(verbatim: "\(failure.endpoint.description) · \(failure.reason)")
-                        .font(.footnote)
-                        .foregroundStyle(DSHTheme.textTertiary)
-                        .lineLimit(2)
+                    if let kind = failure.kind {
+                        (Text(verbatim: "\(failure.endpoint.description) · ") + kind.sentence
+                            + Text(verbatim: " (\(failure.reason))"))
+                            .font(.footnote)
+                            .foregroundStyle(DSHTheme.textTertiary)
+                            .lineLimit(3)
+                    } else {
+                        Text(verbatim: "\(failure.endpoint.description) · \(failure.reason)")
+                            .font(.footnote)
+                            .foregroundStyle(DSHTheme.textTertiary)
+                            .lineLimit(2)
+                    }
+                }
+                if let fix = host.offlineReason?.kind?.fix {
+                    fix.foregroundStyle(DSHTheme.amber)
                 }
                 let waiting = store.tasks.filter { $0.hostKey == host.key && $0.state == .waitingOnUser }.count
                 if waiting > 0 {

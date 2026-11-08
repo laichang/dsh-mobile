@@ -191,6 +191,9 @@ private final class OpenedTransport: Sendable {
 public actor HostConnection {
     /// How long one address may take to open and finish the handshake (D98).
     public static let defaultAttemptTimeout: Duration = .seconds(5)
+    /// D125: how long the TCP probe after a timeout may take. A computer that is reachable
+    /// answers a TCP connect within one round trip.
+    public static let probeTimeout: Duration = .seconds(1)
 
     /// The first address as configured: stable, for names (two hosts with one name) and logs.
     public nonisolated let endpoint: HostEndpoint
@@ -199,6 +202,8 @@ public actor HostConnection {
     public nonisolated let channelName: String
     public nonisolated let attemptTimeout: Duration
     private let channel: any SecureChannel
+    /// D125: asked after an address gave no answer in `attemptTimeout`; nil: no probe.
+    private let probe: PortProbe?
     private let makeTransport: BridgeTransportFactory
     private let onAddressesChange: (@Sendable ([HostEndpoint]) -> Void)?
 
@@ -246,16 +251,20 @@ public actor HostConnection {
 
     /// - Parameters:
     ///   - endpoints: every address of the host, the one to try first first. Not empty.
+    ///   - probe: D125: a plain TCP connect after an address gave no answer, to tell another
+    ///     program that holds the port from a computer that is not reachable (`TCPPortProbe.probe`).
     ///   - onAddressesChange: called with the new order when a different address than the first
     ///     worked, so the caller can save it (`Pairing.connection(to:)`).
     public init(endpoints: [HostEndpoint], channel: any SecureChannel, transport: @escaping BridgeTransportFactory,
                 attemptTimeout: Duration = HostConnection.defaultAttemptTimeout,
+                probe: PortProbe? = nil,
                 onAddressesChange: (@Sendable ([HostEndpoint]) -> Void)? = nil) {
         precondition(!endpoints.isEmpty, "a host connection needs at least one address")
         self.endpoint = endpoints[0]
         self.endpoints = endpoints
         self.addresses = endpoints
         self.attemptTimeout = attemptTimeout
+        self.probe = probe
         self.onAddressesChange = onAddressesChange
         self.channel = channel
         self.channelName = channel.name
@@ -319,7 +328,7 @@ public actor HostConnection {
 
     /// Opens the transport and runs the handshake, within `attemptTimeout`.
     private func handshake(_ endpoint: HostEndpoint) async throws -> (any BridgeTransport, any FrameCipher) {
-        let channel = self.channel, makeTransport = self.makeTransport, timeout = attemptTimeout
+        let channel = self.channel, makeTransport = self.makeTransport, timeout = attemptTimeout, probe = self.probe
         let url = endpoint.webSocketURL(path: channel.path)
         let opened = OpenedTransport()
         return try await withThrowingTaskGroup(of: (any BridgeTransport, any FrameCipher)?.self) { group in
@@ -342,7 +351,8 @@ public actor HostConnection {
             if let established = first { return established }
             // No answer in time: closing the transport ends the handshake's wait for a reply.
             await opened.close()
-            throw AddressTimeout(after: timeout)
+            // D125: does anything take TCP connections there? Another program, or no computer.
+            throw AddressTimeout(after: timeout, port: await probe?(endpoint, Self.probeTimeout))
         }
     }
 

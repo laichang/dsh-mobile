@@ -8,12 +8,16 @@ public enum NoiseChannelError: Error, Equatable, CustomStringConvertible {
     case deviceUnknown
     /// The handshake failed: wrong host key, tampering, or a protocol mismatch.
     case handshakeFailed(String)
+    /// D125: the peer took the WebSocket but is no DSH bridge: it closed with a code that no
+    /// bridge sends, sent text, or replied with something that is not Noise message 2.
+    case notABridge(String)
 
     public var description: String {
         switch self {
         case .pairingRejected(let why): "the host refused the pairing code (\(why.isEmpty ? "rejected" : why))"
         case .deviceUnknown: "this host doesn't know this phone; pair again"
         case .handshakeFailed(let why): "secure handshake failed (\(why))"
+        case .notABridge(let why): "the program on this port is not a DSH bridge (\(why))"
         }
     }
 }
@@ -77,12 +81,14 @@ public struct NoiseChannel: SecureChannel {
     static func finish(_ state: NoiseHandshakeState, reply: [UInt8]) throws -> NoiseFrameCipher {
         var hs = state
         let payload: [UInt8]
+        // D125: a bridge with another key refuses message 1 with a close 4002; a reply that does not
+        // read as message 2 comes from a peer that is not a bridge (an echo, another protocol).
         do {
             payload = try hs.readMessage(reply)
         } catch {
-            throw NoiseChannelError.handshakeFailed("bad reply")
+            throw NoiseChannelError.notABridge("bad reply")
         }
-        guard payload.isEmpty, let transport = hs.transport else { throw NoiseChannelError.handshakeFailed("bad reply") }
+        guard payload.isEmpty, let transport = hs.transport else { throw NoiseChannelError.notABridge("bad reply") }
         return NoiseFrameCipher(transport, handshakeHash: hs.handshakeHash)
     }
 
@@ -94,15 +100,22 @@ public struct NoiseChannel: SecureChannel {
             reply = try await transport.receive()
         } catch BridgeTransportError.closed(let code, let reason) {
             throw Self.refusal(code: code, reason: reason)
+        } catch BridgeTransportError.unexpectedTextMessage {
+            throw NoiseChannelError.notABridge("text message")
         }
         return try Self.finish(state, reply: Array(reply))
     }
 
+    /// The bridge's refusals are its close codes (D21 b). D125: any other code, except "going
+    /// away" (1001, a bridge that shuts down) and "abnormal" (1006, no close frame), comes from a
+    /// WebSocket server that is not a bridge.
     static func refusal(code: Int, reason: String) -> NoiseChannelError {
-        switch PairingWire.CloseCode(rawValue: code) {
+        let why = reason.isEmpty ? "closed \(code)" : reason
+        return switch PairingWire.CloseCode(rawValue: code) {
         case .pairingRejected?: .pairingRejected(reason)
         case .deviceUnknown?: .deviceUnknown
-        case .handshakeFailed?, .badHello?, nil: .handshakeFailed(reason.isEmpty ? "closed \(code)" : reason)
+        case .handshakeFailed?, .badHello?: .handshakeFailed(why)
+        case nil: code == 1001 || code == 1006 ? .handshakeFailed(why) : .notABridge(why)
         }
     }
 }

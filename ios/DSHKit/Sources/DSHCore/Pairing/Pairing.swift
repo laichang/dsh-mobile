@@ -25,13 +25,17 @@ public struct Pairing: Sendable {
     public let keys: any DeviceKeyStore
     public let hosts: any PairedHostStore
     public let transport: BridgeTransportFactory
+    /// D125: the TCP probe after an address gave no answer (`TCPPortProbe.probe` in the app);
+    /// nil in tests and with Debug's fake bridge, whose addresses are not real.
+    public let probe: PortProbe?
     public let now: @Sendable () -> Date
 
     public init(keys: any DeviceKeyStore, hosts: any PairedHostStore, transport: @escaping BridgeTransportFactory,
-                now: @escaping @Sendable () -> Date = { .now }) {
+                probe: PortProbe? = nil, now: @escaping @Sendable () -> Date = { .now }) {
         self.keys = keys
         self.hosts = hosts
         self.transport = transport
+        self.probe = probe
         self.now = now
     }
 
@@ -42,7 +46,7 @@ public struct Pairing: Sendable {
         // D98: the same loop over the addresses as a reconnect, each with its own timeout. A
         // refused pairing code (the bridge answered and said no) ends it: another address won't
         // change that.
-        let connection = HostConnection(endpoints: offer.addresses, channel: channel, transport: transport)
+        let connection = HostConnection(endpoints: offer.addresses, channel: channel, transport: transport, probe: probe)
         do {
             try await connection.connect()
         } catch HostConnectionError.unreachable(let failures) {
@@ -67,7 +71,7 @@ public struct Pairing: Sendable {
     public func connection(to host: PairedHost, attemptTimeout: Duration = HostConnection.defaultAttemptTimeout) throws -> HostConnection {
         let store = hosts, id = host.id
         return HostConnection(endpoints: host.addresses, channel: try reconnectChannel(to: host), transport: transport,
-                              attemptTimeout: attemptTimeout) { addresses in
+                              attemptTimeout: attemptTimeout, probe: probe) { addresses in
             guard var saved = store.load().first(where: { $0.id == id }), saved.addresses != addresses else { return }
             saved.addresses = addresses
             try? store.update(saved)

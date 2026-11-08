@@ -904,7 +904,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
       <svg class="i s" style="color:var(--t3);margin-top:12px"><use href="#chev"/></svg></div>
     <div class="hostcard" style="border:0"><div class="ic" style="opacity:.6"><svg class="i"><use href="#monitor"/></svg></div><div style="flex:1">
       <div class="nm" style="color:var(--t2)">公司-PC<span class="dot off"></span></div>
-      <div class="ds">离线 · 最后连接 2 小时前<br><span style="font-size:11.5px;color:var(--t3)">192.168.1.8:47801 · no answer in 5 s<br>100.88.2.9:47801 · URL error -1004, connection refused</span><br><span style="color:var(--amber)">1 条审批在等它回来</span></div></div>
+      <div class="ds">离线 · 最后连接 2 小时前<br><span style="font-size:11.5px;color:var(--t3)">192.168.1.8:47801 · 连不上这台电脑 (no answer in 5 s)<br>100.88.2.9:47801 · 另一个程序占用了这个端口，不是 DSH 桥接 (URL error -1011, bad server response)</span><br><span style="color:var(--amber)">在电脑上停掉那个程序，或在 DSH 里给桥接换个端口，再重新配对。</span><br><span style="color:var(--amber)">1 条审批在等它回来</span></div></div>
       <svg class="i s" style="color:var(--t3);margin-top:12px"><use href="#chev"/></svg></div>
     <div class="btn tall" style="margin-top:12px"><svg class="i"><use href="#qr"/></svg>配对新执行端</div>
   </div>
@@ -914,6 +914,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <li>在线、加密、默认模型（S1/S6）；DSH 版本不受支持时写明装的和支持的版本（S12）。</li>
   <li>在线写明正在用的地址；重连时逐个试保存的地址，上次通的先试（D98）。</li>
   <li>离线写清最后连接时间、每个地址最后的错误和在等它的事（§3）。</li>
+  <li>错误前写原因（D125）：没有程序在监听、另一个程序占用端口、连不上；电脑连得上时写该在电脑上做什么。手机不替用户换端口。</li>
   <li>点进一台：设备列表、吊销、审计记录（S10）。</li>
 </ul></div>
 </div>
@@ -1046,9 +1047,9 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
       <div style="margin-top:230px" class="card">
         <div style="display:flex;gap:8px;align-items:center;font-size:15px;font-weight:600"><svg class="i s" style="color:var(--amber)"><use href="#wifi"/></svg>执行端都离线，暂时不能下任务</div>
         <div class="list" style="margin-top:6px">
-          <div class="li" style="padding:10px 2px"><span class="dot off" style="margin-top:6px"></span><div style="flex:1;font-size:14px">MacBook-Pro</div><span style="font-size:12.5px;color:var(--t3)">10 分钟前</span></div>
-          <div class="li" style="padding:10px 2px"><span class="dot off" style="margin-top:6px"></span><div style="flex:1;font-size:14px">hk-1</div><span style="font-size:12.5px;color:var(--t3)">1 小时前</span></div>
-          <div class="li" style="padding:10px 2px"><span class="dot off" style="margin-top:6px"></span><div style="flex:1;font-size:14px">公司-PC</div><span style="font-size:12.5px;color:var(--t3)">2 小时前</span></div>
+          <div class="li" style="padding:10px 2px"><span class="dot off" style="margin-top:6px"></span><div style="flex:1;font-size:14px">MacBook-Pro<div style="font-size:12px;color:var(--amber)">另一个程序占用了端口 47801</div></div><span style="font-size:12.5px;color:var(--t3)">10 分钟前</span></div>
+          <div class="li" style="padding:10px 2px"><span class="dot off" style="margin-top:6px"></span><div style="flex:1;font-size:14px">hk-1<div style="font-size:12px;color:var(--t3)">连不上这台电脑</div></div><span style="font-size:12.5px;color:var(--t3)">1 小时前</span></div>
+          <div class="li" style="padding:10px 2px"><span class="dot off" style="margin-top:6px"></span><div style="flex:1;font-size:14px">公司-PC<div style="font-size:12px;color:var(--amber)">端口 47801 上没有程序在监听</div></div><span style="font-size:12.5px;color:var(--t3)">2 小时前</span></div>
         </div>
         <div style="font-size:12.5px;color:var(--t2);line-height:1.55;margin-top:4px">回到和电脑同一个 Wi-Fi，或打开 Tailscale。连上后自动恢复，历史会话离线也能看。</div>
       </div>
@@ -1063,6 +1064,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
 </div>
 <div class="cap"><h3><i>X3</i>所有执行端都离线<span class="mtag m1">M1 · 补状态</span></h3><ul>
   <li>§3：逐台写出哪台离线、最后连接时间，不只说“连不上”。</li>
+  <li>每台写出原因（D125）：另一个程序占用端口、端口上没有程序在监听、连不上。每台电脑都连得上、只是桥接没应答时，提示改成去电脑上看看 DSH。</li>
   <li>给出能做的事（同一 Wi-Fi / Tailscale）；发送键置灰，抽屉里的历史照常能看（S2 缓存）。</li>
   <li>只有部分离线时不出这张卡，只在输入框顶上的执行端那行显示状态。</li>
 </ul></div>

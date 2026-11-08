@@ -60,6 +60,12 @@ public final class TaskListStore {
         public var address: HostEndpoint? = nil
         /// D98: while offline, the last error of each address of the host, in the order tried.
         public var addressFailures: [AddressFailure] = []
+
+        /// D125: while not online, the failure that says most about the host
+        /// (`AddressFailure.mostTelling`). It stays during the next try, so X3 does not flash.
+        public var offlineReason: AddressFailure? {
+            reachability == .online ? nil : AddressFailure.mostTelling(addressFailures)
+        }
     }
 
     /// A task as the views show it (a value copy of `CachedTask`).

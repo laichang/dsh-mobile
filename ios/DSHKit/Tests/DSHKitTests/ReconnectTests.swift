@@ -125,8 +125,8 @@ import Testing
         try await waitUntil("offline") { store.hosts.first?.reachability == .offline }
         try await waitUntil("each error") { store.hosts.first?.addressFailures.count == 2 }
         #expect(store.hosts.first?.addressFailures == [
-            AddressFailure(endpoint: Self.lan, reason: "URL error -1004, connection refused"),
-            AddressFailure(endpoint: Self.tailscale, reason: "no answer in 0.3 s"),
+            AddressFailure(endpoint: Self.lan, reason: "URL error -1004, connection refused", kind: .nothingListens),
+            AddressFailure(endpoint: Self.tailscale, reason: "no answer in 0.3 s", kind: .notReachable),
         ])
         #expect(store.allHostsOffline)
         #expect(hosts.load().first?.addresses == [Self.lan, Self.tailscale])
