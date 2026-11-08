@@ -264,7 +264,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S2 · Agent questions: typed answers, 等我处理, and replay
 
-**Status** todo · **Needs** T1 · **Branch** —
+**Status** doing · **Needs** T1 · **Branch** —
 
 **Why**: Closes #1 (with T0, T1 and S1). Screen P1: the user can also answer in the composer, and a question counts as "需要决策" in 等我处理, the drawer badge and the session marks, like an approval.
 
