@@ -18,6 +18,27 @@ public struct TaskOutcome: Equatable, Sendable {
     public var stoppedAtStep: Int?
     /// The failure message, as the host gave it; empty when there is none.
     public var error: String
+    /// D104: DSH's failure class when the task failed on its model (`QUOTA`, `AUTH`, …); empty otherwise.
+    public var code: String
+
+    /// D104: the failures whose provider text the app does not show; it says them in its own
+    /// words, as DSH Web does. Every other failure shows `error` as it is.
+    public enum OwnCopy: Sendable, Equatable {
+        /// `AUTH`: the API key is not valid (DeepSeek's text names the masked key).
+        case invalidKey
+        /// `QUOTA` / `ACCOUNT_QUOTA`: no balance, or the quota is used up.
+        case quotaExhausted
+    }
+
+    /// The app's own words for this failure, or nil to show `error`.
+    public var ownCopy: OwnCopy? {
+        guard kind == .failed else { return nil }
+        switch code {
+        case "AUTH": return .invalidKey
+        case "QUOTA", "ACCOUNT_QUOTA": return .quotaExhausted
+        default: return nil
+        }
+    }
 
     public init?(_ row: TaskListStore.TaskRow) {
         switch row.state {
@@ -41,5 +62,6 @@ public struct TaskOutcome: Equatable, Sendable {
             error = current.text
         }
         self.error = error
+        code = kind == .failed ? row.failureCode : ""
     }
 }

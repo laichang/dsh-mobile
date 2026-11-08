@@ -107,6 +107,10 @@
     { "name": "attachments_create_task_request",
       "frame": { "request": { "id": "11", "createTask": { "prompt": "What is in this photo?", "uploadIds": ["upload-1"] } } } },
     { "name": "attachments_hash_mismatch_response",
-      "frame": { "response": { "requestId": "10", "error": { "code": "upload/hash-mismatch", "message": "The file does not match its SHA-256." } } } }
+      "frame": { "response": { "requestId": "10", "error": { "code": "upload/hash-mismatch", "message": "The file does not match its SHA-256." } } } },
+    { "name": "model_failures_task_ended_quota_event",
+      "frame": { "event": { "hostSeq": "18", "taskEnded": { "taskId": "session-6f1c2a", "status": "TASK_STATUS_FAILED", "message": "Insufficient Balance", "failureCode": "QUOTA" } } } },
+    { "name": "model_failures_task_upserted_auth_event",
+      "frame": { "event": { "hostSeq": "17", "taskUpserted": { "task": { "taskId": "session-6f1c2a", "title": "压缩昨天的素材", "state": "TASK_STATE_FAILED", "createdAtMs": "1793000000000", "updatedAtMs": "1793000000300", "message": "Authentication Fails, Your api key: ****-key is invalid", "failureCode": "AUTH" } } } } }
   ]
 }

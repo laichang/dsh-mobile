@@ -34,6 +34,8 @@ public final class CachedTask {
     public var title: String
     public var stateRaw: String
     public var message: String
+    /// D104: DSH's failure class when the task failed on its model; empty otherwise.
+    public var failureCode: String = ""
     public var createdAt: Date
     public var updatedAt: Date
     public var transcript: String

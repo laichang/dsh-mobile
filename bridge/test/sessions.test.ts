@@ -31,7 +31,7 @@ test('webSessionsBeforeAndAfterPairingAndPhoneTaskHaveOneHostRowEach', async () 
   turn('web-before', 'first')
   await directory.reconcile()
   assert.deepEqual(hub.list().map(row => row.title), ['first'])
-  hub.observeSession('web-after', 0n, 'web-after', TaskState.RUNNING, '', 0n, 0n) // turn/start precedes human text
+  hub.observeSession('web-after', 0n, 'web-after', TaskState.RUNNING, { message: '', code: '' }, 0n, 0n) // turn/start precedes human text
   turn('web-after', 'after')
   directory.changed('web-after', journals.get('web-after')!.at(-1)!)
   turn('phone', 'phone prompt')

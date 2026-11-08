@@ -7,6 +7,8 @@
  * turn, between `turn/start` and the reply, each with its own `seq` and `time`.
  * S17: `reasoning` streams timed `reasoning-delta` chunks before the reply, and `tools` adds a
  * durable `tool/call` and `tool/result` pair for each call after it.
+ * Model failures (D104): `recorded` replays the follow frames that real DSH emitted for a turn,
+ * unchanged (`test/fixtures/model-failures/`), instead of the scripted turn.
  */
 import type { Selection } from '../src/models/catalog.ts'
 import type { DshServices, FollowFrame, PromptPart } from '../src/dsh.ts'
@@ -20,7 +22,9 @@ export interface FakeDSHOptions {
   /** Per turn of a session (1 = the first prompt): the deltas of that turn, instead of `reply`. */
   replies?: Record<number, string[]>
   /** End the turn with this reason instead of `completed`. */
-  failWith?: { kind: string; error?: { message: string } }
+  failWith?: { kind: string; error?: { message: string; code?: string } }
+  /** Per turn of a session (1 = the first prompt): follow frames recorded from real DSH, replayed as they are. */
+  recorded?: Record<number, FollowFrame[]>
   /** Make `sessionController.create` reject. */
   createError?: string
   /** Durable events the agent appends during the turn, in order (S3). `turn` is added to `data`. */
@@ -217,6 +221,11 @@ export class FakeDSH implements DshServices {
   }
 
   private async runTurn(sessionId: string, turn: number) {
+    const recorded = this.options.recorded?.[turn]
+    if (recorded) {
+      for (const frame of recorded) this.emit(sessionId, frame)
+      return
+    }
     let reply = this.options.replies?.[turn] ?? this.options.reply ?? ['Hello', ' from', ' FakeDSH.']
     this.emitEvent(sessionId, 'turn/start', { turn })
     if (this.options.ask) {

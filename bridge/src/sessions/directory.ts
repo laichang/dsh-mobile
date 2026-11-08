@@ -1,5 +1,5 @@
 import { TaskState } from '../gen/s2_pb.ts'
-import { describeFailure, isUserInterrupt } from '../milestones/mapper.ts'
+import { failureOf, isUserInterrupt } from '../milestones/mapper.ts'
 import type { TaskHub } from '../s2/task-hub.ts'
 
 interface Row {
@@ -96,7 +96,7 @@ export class SessionDirectory {
           const turnStart = page.records.findLast(({event}) => event.type === 'turn/start')?.event.time ??
             page.records.findLast(({event}) => message(event)?.fromUser)?.event.time
           this.hub.observeSession(row.sessionId, BigInt(page.cursor), title ?? row.sessionId,
-            state, state === TaskState.FAILED ? describeFailure(reason?.kind ?? 'unknown', reason?.error) : '',
+            state, state === TaskState.FAILED ? failureOf(reason?.kind ?? 'unknown', reason?.error) : { message: '', code: '' },
             BigInt(at), BigInt(page.records[0]?.event.time ?? row.updatedAt), reply, hostTitle, row.cwd,
             turnStart === undefined ? undefined : BigInt(turnStart))
         } catch (error) {

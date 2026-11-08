@@ -261,7 +261,7 @@ describe('BridgeAgainstFakeDSH', () => {
     const last = client.frames.at(-1)!
     assert.ok(last.kind.case === 'event' && last.kind.value.body.case === 'taskEnded')
     assert.equal(last.kind.value.body.value.status, TaskStatus.FAILED)
-    assert.equal(last.kind.value.body.value.message, 'error: rate limited')
+    assert.equal(last.kind.value.body.value.message, 'rate limited')
   })
 
   test('createTaskBeforeHelloIsRefused', async () => {

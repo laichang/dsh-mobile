@@ -30,6 +30,8 @@ public final class FakeBridge: BridgeTransport {
         /// Lets a test inspect the streamed prefix before the remaining chunks are delivered.
         public var afterFirstChunk: (@Sendable () async -> Void)?
         public var failWith: String?
+        /// D104: with `failWith`, DSH's failure class that `TaskEnded` and the summary carry (`QUOTA`, …).
+        public var failureCode = ""
         /// S3: milestones sent before the reply, `milestoneDelay` apart. When there are any, a
         /// closing FINISHED (or FAILED, with `failWith`) follows the reply, as the real bridge does.
         public var milestones: [Step]
@@ -70,6 +72,7 @@ public final class FakeBridge: BridgeTransport {
         /// D89: with a value, the host advertises `conversation.v1`. A follow-up on a completed task
         /// is accepted like the real bridge does it: `MessageAccepted`, a logged `UserMessage`, the
         /// task RUNNING again, this reply (its chunk seqs go on), and `TaskEnded(COMPLETED)`.
+        /// D110: a failed task takes one too, and its turn completes (the user topped up).
         public var followUpReply: [String]?
 
         public init(
@@ -700,7 +703,8 @@ public final class FakeHost: Sendable {
                 event.taskEnded = ended
                 Self.append(event, taskID: interrupt.taskID, in: &s)
             case .sendMessage(let message)? where script.followUpReply != nil:
-                guard let at = s.tasks.firstIndex(where: { $0.taskID == message.taskID }), s.tasks[at].state == .completed,
+                guard let at = s.tasks.firstIndex(where: { $0.taskID == message.taskID }),
+                      s.tasks[at].state == .completed || s.tasks[at].state == .failed,
                       !message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                     var error = Dshm_V1_Error()
                     error.code = "message/refused"
@@ -725,12 +729,16 @@ public final class FakeHost: Sendable {
                 event.userMessage = user
                 Self.append(event, taskID: message.taskID, in: &s)
                 s.tasks[at].state = .running
+                s.tasks[at].message = ""
+                s.tasks[at].failureCode = ""
                 s.tasks[at].updatedAtMs = Self.nowMs()
                 s.tasks[at].turnStartedAtMs = s.tasks[at].updatedAtMs
                 Self.upserted(s.tasks[at], in: &s)
                 let incarnation = s.incarnation
                 var turn = script
                 turn.reply = script.followUpReply ?? []
+                turn.failWith = nil
+                turn.failureCode = ""
                 turn.milestones = []
                 turn.blocks = []
                 turn.variants = []
@@ -939,12 +947,14 @@ public final class FakeHost: Sendable {
                   let at = s.tasks.firstIndex(where: { $0.taskID == taskID }) else { return }
             s.tasks[at].state = script.failWith == nil ? .completed : .failed
             s.tasks[at].message = script.failWith ?? ""
+            s.tasks[at].failureCode = script.failWith == nil ? "" : script.failureCode
             s.tasks[at].updatedAtMs = Self.nowMs()
             Self.upserted(s.tasks[at], in: &s)
             var ended = Dshm_V1_TaskEnded()
             ended.taskID = taskID
             ended.status = script.failWith == nil ? .completed : .failed
             ended.message = script.failWith ?? ""
+            ended.failureCode = script.failWith == nil ? "" : script.failureCode
             var event = Dshm_V1_Event()
             event.taskEnded = ended
             Self.append(event, taskID: taskID, in: &s)

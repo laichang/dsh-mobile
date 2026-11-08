@@ -93,7 +93,7 @@ public final class TaskStore {
             currentTaskID = taskID
             if case .connecting = status { status = .running(taskID: taskID) }
             transcript += text
-        case .ended(let taskID, let endStatus, let message):
+        case .ended(let taskID, let endStatus, let message, _):
             guard currentTaskID == nil || currentTaskID == taskID else { return }
             currentTaskID = taskID
             status = switch endStatus {
