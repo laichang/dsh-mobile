@@ -710,6 +710,8 @@ Append-only, dated.
 
 - **2026-11-09 · S11 assigned.** Branch `claude/s11-hosts-tests`, simulator `dshm-S11`, DSHM_HOME `~/.dshm/home-s11`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D134–D136. `eval "$(scripts/slice-env S11)"` exports them.
 
+- **2026-11-09 · S11 runs as a background agent.** S11 assigned (D134–D136) and started as a background agent, after S8 (hosts row and offline card) merged. Running: S9, S10, S11. Left: S13.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
