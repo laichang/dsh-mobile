@@ -11,13 +11,10 @@ import Testing
     let storeURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("dshm-s27-\(UUID().uuidString).store")
 
-    func waitUntil(_ what: String, timeout: Duration = .seconds(5), _ condition: () -> Bool) async throws {
-        let clock = ContinuousClock()
-        let deadline = clock.now + timeout
-        while !condition() {
-            if clock.now > deadline { Issue.record("timed out: \(what)"); return }
-            try await Task.sleep(for: .milliseconds(10))
-        }
+    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
+    func waitUntil(_ what: String, timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
+        await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)
     }
 
     static func fixture(_ name: String) throws -> Dshm_V1_TaskSummary {

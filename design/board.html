@@ -930,7 +930,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
         <div style="display:flex;align-items:center;gap:10px">
           <div class="appic" style="width:30px;height:30px;font-size:9.5px">DSH</div>
           <div style="flex:1"><div style="font-size:14.5px;font-weight:600">修复 CI 挂掉的测试</div><div style="font-size:12.5px;color:rgba(255,255,255,.6)">MacBook-Pro · 运行测试</div></div>
-          <div style="font:600 15px var(--mono)">3/5</div>
+          <div style="text-align:right"><div style="font:600 15px var(--mono)">12:04</div><div style="font:400 12px var(--mono);color:rgba(255,255,255,.6)">3/5</div></div>
         </div>
         <div class="prog" style="height:5px;margin-top:11px;background:rgba(255,255,255,.12)"><i style="width:58%"></i></div>
       </div>
@@ -951,9 +951,10 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   </div>
   <div class="homebar"></div>
 </div>
-<div class="cap"><h3><i>L</i>锁屏<span class="mtag mx">M2 推送 · M4 实时活动</span></h3><ul>
-  <li>M1 只在前台连接，没有推送；这一屏是以后的方向。</li>
-  <li>M2：只在需要决策、失败或卡住、完成时推送；高风险不能在锁屏批准。M4：实时活动显示进度。</li>
+<div class="cap"><h3><i>L</i>锁屏<span class="mtag mx">M2 · 实时活动已有 · 推送未做</span></h3><ul>
+  <li>实时活动（§4，D119）：每个运行中的任务一个，在锁屏和灵动岛上：标题、执行端 · 最新一步、计时（App 挂起时也在走）、n/m 进度。</li>
+  <li>完成、失败、停止，或等你批准、回答时结束，留在锁屏上；再运行时换成新的一个。只在本机更新（App 在前台时），不经 APNs；久未更新时标“未更新”。</li>
+  <li>推送（M2，要付费账号）：只在需要决策、失败或卡住、完成时推送；高风险不能在锁屏批准。</li>
 </ul></div>
 </div>
 

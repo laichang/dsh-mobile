@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		D5A100000000000000000003 /* DSHKit in Frameworks */ = {isa = PBXBuildFile; productRef = D5A100000000000000000002 /* DSHKit */; };
+		D5A100000000000000000101 /* DSHActivity in Frameworks */ = {isa = PBXBuildFile; productRef = D5A10000000000000000010F /* DSHActivity */; };
+		D5A100000000000000000102 /* LiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D5A100000000000000000104 /* LiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -18,10 +20,32 @@
 			remoteGlobalIDString = 29CD3FE0309A450F00EBCEA1;
 			remoteInfo = "dsh-mobile";
 		};
+		D5A100000000000000000103 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 29CD3FD9309A450F00EBCEA1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D5A100000000000000000108;
+			remoteInfo = LiveActivity;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D5A100000000000000000107 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D5A100000000000000000102 /* LiveActivity.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		29CD3FE1309A450F00EBCEA1 /* dsh-mobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "dsh-mobile.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D5A100000000000000000104 /* LiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D5A100000000000000000005 /* dsh-mobileUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "dsh-mobileUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D5A1000000000000000000F1 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Signing.xcconfig; path = Config/Signing.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -30,6 +54,11 @@
 		29CD3FE3309A450F00EBCEA1 /* dsh-mobile */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "dsh-mobile";
+			sourceTree = "<group>";
+		};
+		D5A100000000000000000105 /* LiveActivity */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = LiveActivity;
 			sourceTree = "<group>";
 		};
 		D5A100000000000000000006 /* dsh-mobileUITests */ = {
@@ -55,6 +84,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D5A100000000000000000106 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D5A100000000000000000101 /* DSHActivity in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -63,6 +100,7 @@
 			children = (
 				D5A1000000000000000000F1 /* Signing.xcconfig */,
 				29CD3FE3309A450F00EBCEA1 /* dsh-mobile */,
+				D5A100000000000000000105 /* LiveActivity */,
 				D5A100000000000000000006 /* dsh-mobileUITests */,
 				29CD3FE2309A450F00EBCEA1 /* Products */,
 			);
@@ -73,6 +111,7 @@
 			children = (
 				29CD3FE1309A450F00EBCEA1 /* dsh-mobile.app */,
 				D5A100000000000000000005 /* dsh-mobileUITests.xctest */,
+				D5A100000000000000000104 /* LiveActivity.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -87,10 +126,12 @@
 				29CD3FDD309A450F00EBCEA1 /* Sources */,
 				29CD3FDE309A450F00EBCEA1 /* Frameworks */,
 				29CD3FDF309A450F00EBCEA1 /* Resources */,
+				D5A100000000000000000107 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				D5A10000000000000000010B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				29CD3FE3309A450F00EBCEA1 /* dsh-mobile */,
@@ -126,6 +167,29 @@
 			productReference = D5A100000000000000000005 /* dsh-mobileUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		D5A100000000000000000108 /* LiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D5A10000000000000000010E /* Build configuration list for PBXNativeTarget "LiveActivity" */;
+			buildPhases = (
+				D5A100000000000000000109 /* Sources */,
+				D5A100000000000000000106 /* Frameworks */,
+				D5A10000000000000000010A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D5A100000000000000000105 /* LiveActivity */,
+			);
+			name = LiveActivity;
+			packageProductDependencies = (
+				D5A10000000000000000010F /* DSHActivity */,
+			);
+			productName = LiveActivity;
+			productReference = D5A100000000000000000104 /* LiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -142,6 +206,9 @@
 					D5A100000000000000000004 = {
 						CreatedOnToolsVersion = 26.4.1;
 						TestTargetID = 29CD3FE0309A450F00EBCEA1;
+					};
+					D5A100000000000000000108 = {
+						CreatedOnToolsVersion = 26.4.1;
 					};
 				};
 			};
@@ -165,6 +232,7 @@
 			targets = (
 				29CD3FE0309A450F00EBCEA1 /* dsh-mobile */,
 				D5A100000000000000000004 /* dsh-mobileUITests */,
+				D5A100000000000000000108 /* LiveActivity */,
 			);
 		};
 /* End PBXProject section */
@@ -178,6 +246,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		D5A100000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D5A10000000000000000010A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -201,6 +276,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D5A100000000000000000109 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -208,6 +290,11 @@
 			isa = PBXTargetDependency;
 			target = 29CD3FE0309A450F00EBCEA1 /* dsh-mobile */;
 			targetProxy = D5A10000000000000000000E /* PBXContainerItemProxy */;
+		};
+		D5A10000000000000000010B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D5A100000000000000000108 /* LiveActivity */;
+			targetProxy = D5A100000000000000000103 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -343,6 +430,7 @@
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "dsh-mobile connects to DSH on your Mac over your local network.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "dsh-mobile listens when you tap the mic key, to write what you say into the message field.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "dsh-mobile turns what you say into text on this iPhone. You read and edit it before you send it.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -388,6 +476,7 @@
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "dsh-mobile connects to DSH on your Mac over your local network.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "dsh-mobile listens when you tap the mic key, to write what you say into the message field.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "dsh-mobile turns what you say into text on this iPhone. You read and edit it before you send it.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -456,6 +545,62 @@
 			};
 			name = Release;
 		};
+		D5A10000000000000000010C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R9JF9M64R9;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/LiveActivity-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "dsh-mobile";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(DSHM_BUNDLE_ID_PREFIX).dsh-mobile.LiveActivity";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D5A10000000000000000010D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R9JF9M64R9;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/LiveActivity-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "dsh-mobile";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(DSHM_BUNDLE_ID_PREFIX).dsh-mobile.LiveActivity";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -486,6 +631,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		D5A10000000000000000010E /* Build configuration list for PBXNativeTarget "LiveActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D5A10000000000000000010C /* Debug */,
+				D5A10000000000000000010D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -499,6 +653,10 @@
 		D5A100000000000000000002 /* DSHKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = DSHKit;
+		};
+		D5A10000000000000000010F /* DSHActivity */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DSHActivity;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

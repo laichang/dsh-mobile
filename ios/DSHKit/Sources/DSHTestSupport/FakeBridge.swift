@@ -426,6 +426,8 @@ public final class FakeHost: Sendable {
         var questionAnswers: [Dshm_V1_AnswerQuestion] = []
         /// S16: each task's latest milestone seq and todos, for the INTERRUPTED milestone.
         var lastMilestones: [String: (seq: UInt64, todos: [Todo])] = [:]
+        /// S12: tests that wait in `ended(_:count:)`.
+        var endWaiters: [(taskID: String, count: Int, waiter: CheckedContinuation<Void, Never>)] = []
     }
 
     private let state = Mutex(State())
@@ -559,6 +561,12 @@ public final class FakeHost: Sendable {
             s.tasks = []
             s.incarnation += 1
         }
+    }
+
+    /// Logs `event` for `taskID` and sends it to the connections, as the bridge does with an event
+    /// that no script makes (for example a `QuestionPending` from DSH).
+    public func emit(_ event: Dshm_V1_Event, taskID: String) {
+        state.withLock { s in Self.append(event, taskID: taskID, in: &s) }
     }
 
     // MARK: - Internals
@@ -1291,6 +1299,31 @@ public final class FakeHost: Sendable {
         s.log.append(logged)
         for conn in s.connections.values where conn.resumed || conn.ownTasks.contains(taskID) {
             conn.bridge.deliver(frame(logged))
+        }
+        if case .taskEnded(let ended)? = logged.body {
+            let ends = Self.ends(of: ended.taskID, in: s)
+            s.endWaiters.removeAll { w in
+                guard w.taskID == ended.taskID, ends >= w.count else { return false }
+                w.waiter.resume()
+                return true
+            }
+        }
+    }
+
+    private static func ends(of taskID: String, in s: State) -> Int {
+        s.log.count { if case .taskEnded(let e)? = $0.body { e.taskID == taskID } else { false } }
+    }
+
+    /// S12 (tests): returns once this host has logged `count` ends of `taskID` (each turn ends
+    /// once), so a test waits for the host while the app is away instead of sleeping.
+    public func ended(_ taskID: String, count: Int = 1) async {
+        await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+            let already = state.withLock { s in
+                if Self.ends(of: taskID, in: s) >= count { return true }
+                s.endWaiters.append((taskID, count, c))
+                return false
+            }
+            if already { c.resume() }
         }
     }
 
