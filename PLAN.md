@@ -693,6 +693,8 @@ Append-only, dated.
 
 - **2026-11-09 · S10 assigned.** Branch `claude/s10-offline-rich-detail`, simulator `dshm-S10`, DSHM_HOME `~/.dshm/home-s10`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D131–D133. `eval "$(scripts/slice-env S10)"` exports them.
 
+- **2026-11-09 · S10 runs as a background agent.** S10 assigned (D131–D133) and started as a background agent. Running: S8, S9, S10. Left: S11 (after S8), S13.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
