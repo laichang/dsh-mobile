@@ -181,7 +181,7 @@ A notification that a background job is `stopped` or `killed` is an interruption
 
 Do these steps at the start of each turn that follows an interruption:
 
-1. Do not trust the state that you remember. Run `scripts/status`. It shows the real state of each slice that is `doing`: the head commit of the slice branch, the uncommitted changes in its worktree, the test and build processes that run for it, and its latest review result. Its "attention" list shows the slices that look stuck. Then examine the status of each slice session (`list_sessions`). A script cannot see the sessions.
+1. Do not trust the state that you remember. Run `scripts/status`. It shows the real state of each slice that is `doing`: the head commit of the slice branch, the uncommitted changes in its worktree, the test and build processes that run for it, and its latest review result. Its "attention" list shows the slices that look stuck. It also shows the free space on the data volume, the `dshm-*` simulators, the worktrees, and the `/tmp/dshm-*` paths. If the "attention" list shows leftovers of a slice in `review` or `done`, run `scripts/plan cleanup <ID>` on `main`. Then examine the status of each slice session (`list_sessions`). A script cannot see the sessions.
 2. If a slice owner is idle and no process runs for its slice, send it a brief to continue. The brief tells it what stopped and what to run again.
 3. Start the slices whose **Needs** are met (§5.2).
 4. Record the interruption and the recovery in §8 of the plan file.
@@ -236,15 +236,17 @@ Slices run tests at the same time. Each slice therefore gets its own resources:
 - The slice owner runs `eval "$(scripts/slice-env <ID>)"` in each shell before a demo. This also works in a worktree that was cut before the assignment.
 - Use only the decision numbers of your block (`DSHM_DECISIONS`). Then parallel slices do not use the same number. Do not use the unused numbers of a block for a different slice.
 - A slice uses only its own resources. All slices use the DSH install in `~/.dshm/runtime` read-only.
+- When a slice is merged, `scripts/plan merged` removes its resources (§10). Do not keep them for later use.
 - Port 47800 is for demos on `main`. Port 47801 is for `scripts/demo/t0.sh`.
 - The slice demo script reads the resources from `DSHM_BRIDGE_PORT`, `DSHM_WEB_PORT`, `DSHM_SECOND_BRIDGE_PORT`, `DSHM_SECOND_WEB_PORT`, `DSHM_HOME`, and `DSHM_SIM`.
 
-### 6.1 Simulator limit
+### 6.1 Simulator limit and free space
 
 Many booted simulators make the Mac slow. A slow Mac makes UI tests fail at random.
 
 The guard in `scripts/demo/lib.sh` applies these rules. Each demo script and `scripts/review` loads it.
 
+- The guard stops the script when the data volume has less than 30 GB free (`DSHM_MIN_FREE_GB`). It does not wait. It examines the volume that holds `$HOME`. It does this check before it boots a simulator or builds.
 - The guard waits while the CPU is less than 15% idle. It waits while 3 other `dshm-*` simulators are booted. After 30 minutes, it stops the script with an error. The guard does not use the load average. On macOS, the load average also counts threads that only wait.
 - The guard boots a `dshm-*` simulator and stops the iOS background services that no test needs (`DSHM_SIM_NOISE`). These services can use 5 CPUs or more.
 - When the script ends, the guard shuts down the simulator of the script. This also occurs when a tool kills the script. It does not shut down a simulator of the user.
@@ -254,6 +256,7 @@ Rules for all agents:
 
 - Run UI tests only through a demo script or `scripts/review`. Do not run `xcodebuild test` directly.
 - Do not change `DSHM_SIM_LIMIT`, `DSHM_GUARD_WAIT`, or `DSHM_MIN_IDLE`.
+- Do not change `DSHM_MIN_FREE_GB`. If the guard stops you for free space, run `scripts/status`. Remove the leftovers that it shows with `scripts/plan cleanup <ID>`. Then run the script again.
 - If the guard stops you, shut down the `dshm-*` simulators that no running slice uses. Then run the script again.
 - The coordinator does not start a new slice or reviewer while 3 `dshm-*` simulators are booted.
 
@@ -327,6 +330,8 @@ The merge does not wait for `[human]` items. After the merge, run `scripts/plan 
 - If the user finds a problem during acceptance, repair it on `main`. Do not revert the merge.
 - Tell the user in one or two sentences what you merged and where the evidence is.
 - Bookkeeping commits on `main` (§0, §8, §9) do not need permission.
+- Then `scripts/plan merged` removes what the slice left on the Mac: the simulator `dshm-<ID>`, the paths `/tmp/dshm-<id>` and `/tmp/dshm-<id>-*`, and the `DSHM_HOME` of the slice in `~/.dshm/`. It removes each worktree and branch of the slice only when its head is in the merge commit and it has no uncommitted or untracked file. It does not force a removal. It keeps a simulator or a path that a running process uses. It prints each thing that it removes, and each thing that it keeps, with the reason.
+- Use `--keep` only when a later step needs these resources. Then run `scripts/plan cleanup <ID>` when that step is complete.
 
 If a condition is false, do not merge. Tell the user what is missing.
 
@@ -416,3 +421,4 @@ If a tool has no function for a capability, use the fallback in this table. Then
 - **2026-11-07**: Added the bookkeeping commands (§3.1, `scripts/plan`), the run status (`scripts/status`, in §5.4 and §5.5), and the resource registry with blocks of decision numbers (§6, `scripts/slice-env`, `scripts/resources.tsv`). The code key of the parts (§10.1) is now the content of the worktree, not the commit. Reason: a review of all sessions to 2026-11-07. About one quarter of all commits were hand edits of §0, §8, and §9. The user asked for the progress more than 15 times, and each answer was a set of hand-made commands. Parallel slices took the same `Dxx` number, and agents renumbered decisions 10 times. A commit with no code change made the review run the passed parts again.
 - **2026-11-07**: Guards (§10, §12). git-guard parses the command. A command that only mentions a blocked word passes. plan-guard also checks shell commands (writes to the plan file and to guard files) and the paths in each worktree. `scripts/check-plan` with no arguments runs as `--staged`. It also stops build output and large files. The new `pre-merge-commit` hook checks each merge commit. `.claude/hooks/guard-test` tests the guards. Reason: git-guard stopped read-only commands. Agents edited the plan file through shell commands, and plan-guard did not see these edits. A session in `main` edited files in a worktree with no check. A 28 MB build directory went into a commit. Merge commits had no automatic check.
 - **2026-11-07**: Bug fixes (§3, §3.1, §5.2, §12). The coordinator does not change code. A bug that the user reports becomes a fix slice (`scripts/plan fix`), with its own branch, session, and merge (§10). On `main`, the pre-commit hook stops a commit that changes code and is not a merge. Reason: after the run ended, the user reported bugs from a real iPhone to the coordinator. The coordinator fixed them on `main` (`505aa7d`, `2c650d1`), with no slice branch and no review run. No rule said who fixes a bug after a merge, and no hook stopped code commits on `main`.
+- **2026-11-08**: Free space and cleanup (§5.4, §6, §6.1, §10). The guard stops a demo or review when the data volume has less than 30 GB free. `scripts/plan merged` removes the simulator, the `/tmp/dshm-*` paths, the merged worktrees and branches, and the `DSHM_HOME` of the slice. `scripts/plan cleanup <ID>` does the same for a slice in `review` or `done`. `scripts/status` shows the free space and the leftovers. Reason: on 2026-11-08 the data volume had 8.3 GB free. The run left 23 `dshm-*` simulators, 30 merged worktrees, and about 230 `/tmp/dshm-*` directories. No script removed them.
