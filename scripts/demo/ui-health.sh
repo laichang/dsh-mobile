@@ -70,7 +70,7 @@ ui_waits() {
       name = $0; sub(/^Test Case .-\[[A-Za-z_]+\./, "", name); sub(/\].*/, "", name); sub(/ /, "/", name)
       d = $0; sub(/.*\(/, "", d); sub(/ seconds.*/, "", d); d += 0
       close_wait(d)
-      verdict = ""
+      verdict = ($0 ~ / failed \(/) ? "; the test failed" : ""
       if (longest >= idle) verdict = verdict sprintf("; a step waited %.0f s for the app to idle (limit %d s)", longest, idle)
       if (stuck) verdict = verdict sprintf("; %d \"animations complete notification not received\"", stuck)
       if ((name in lim) && d >= lim[name]) verdict = verdict sprintf("; took %.0f s (limit %d s)", d, lim[name])
@@ -85,6 +85,10 @@ ui_test() { # part name, then Suite or Suite/test selectors
   local args=() t log="$LOGS/ui-$name.log"
   for t in "$@"; do args+=("-only-testing:dsh-mobileUITests/$t"); done
   step "UI: $name ($*) (log: $log)"
+  # A new install of the app over the old one can race with a launch by liveactivitiesd (a Live
+  # Activity left by an earlier run): the first test then got an app without its launch arguments
+  # (seen 2026-11-09). Remove the app first; xcodebuild installs it again.
+  xcrun simctl uninstall "$SIM" chang.dsh-mobile >/dev/null 2>&1 || true
   if ! xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
       -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" > "$log" 2>&1; then
     grep -E "error:|Test Case.*(passed|failed)" "$log" || tail -30 "$log"
