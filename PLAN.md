@@ -180,7 +180,7 @@ A tracer is one thin round trip that one session can finish without running out 
 **Demo**: `scripts/demo/attachments.sh`: attach a photo, send a task; the DSH session has the image.
 
 **Done when**
-- [ ] [auto] A file of several Noise messages arrives byte-identical, is staged through `fileUploads`, and goes into the first prompt as an image part; a wrong hash or a missing part is refused (`FakeDSH`, a golden fixture that the Swift and TS tests both read) — Evidence:
+- [x] [auto] A file of several Noise messages arrives byte-identical, is staged through `fileUploads`, and goes into the first prompt as an image part; a wrong hash or a missing part is refused (`FakeDSH`, a golden fixture that the Swift and TS tests both read) — Evidence: test:Attachments/photoOfSeveralNoiseMessagesArrivesByteIdenticalAndEntersTheFirstPromptAsAnImage · test:Attachments/wrongHashIsRefusedAndNothingIsStaged · test:Attachments/missingPartIsRefused · test:Attachments/goldenPhotoSplitsIntoTheFixtureParts · test:AttachmentsTests/goldenPhotoSplitsIntoTheFixtureParts · test:AttachmentsTests/photoGoesUpInPartsBeforeTheTaskAndTheRowKeepsItsThumbnail · test:AttachmentsTests/wrongHashAndMissingPartAreRefused
 - [ ] [ui] Attach one photo on 01 and send: the user bubble shows its thumbnail and the DSH session has the image, against real DSH with the mock model (`cmd:scripts/demo/attachments.sh`) — Evidence:
 
 **Not**: Files that are not photos, more than one attachment, attachments in follow-ups (S4).
