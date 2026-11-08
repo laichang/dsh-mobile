@@ -6,7 +6,7 @@ import SwiftUI
 /// (`canSend`), and history still opens from the drawer. When one host is back, the card goes.
 ///
 /// Accessibility contract: `hosts.offlineCard`, and one `hosts.offlineCard.host` per host
-/// (label: "name, last connection"; value: `Reachability.token`).
+/// (label: "name, reason, last connection"; value: `Reachability.token`).
 struct AllHostsOfflineCard: View {
     let store: TaskListStore
 
@@ -24,8 +24,7 @@ struct AllHostsOfflineCard: View {
                 if host.id != store.hosts.first?.id { Divider().overlay(DSHTheme.hairline) }
                 OfflineHostLine(host: host)
             }
-            Text("Join the same Wi-Fi as your computer, or turn on Tailscale. The app reconnects by itself, and past sessions open while offline.",
-                 tableName: "Hosts")
+            hint
                 .font(.subheadline)
                 .foregroundStyle(DSHTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -38,18 +37,37 @@ struct AllHostsOfflineCard: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hosts.offlineCard")
     }
+
+    /// D125: when every computer answered but its bridge did not, the network is fine: say so.
+    private var hint: Text {
+        let computersAnswer = !store.hosts.isEmpty && store.hosts.allSatisfy { $0.offlineReason?.kind?.computerAnswers == true }
+        return computersAnswer
+            ? Text("Your computer answers, but its DSH bridge does not. Check DSH there. The app reconnects by itself, and past sessions open while offline.",
+                   tableName: "Hosts")
+            : Text("Join the same Wi-Fi as your computer, or turn on Tailscale. The app reconnects by itself, and past sessions open while offline.",
+                   tableName: "Hosts")
+    }
 }
 
-/// "○ MacBook-Pro            10 minutes ago".
+/// "○ MacBook-Pro            10 minutes ago", and under the name why its bridge does not
+/// answer (D125): "Another program uses port 47801".
 private struct OfflineHostLine: View {
     let host: TaskListStore.HostStatus
 
     var body: some View {
         HStack(spacing: 12) {
             HostDot(reachability: host.reachability)
-            Text(verbatim: host.name)
-                .foregroundStyle(DSHTheme.textPrimary)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: host.name)
+                    .foregroundStyle(DSHTheme.textPrimary)
+                    .lineLimit(1)
+                if let reason = host.offlineReason, let kind = reason.kind {
+                    kind.sentence(port: reason.endpoint.port)
+                        .font(.footnote)
+                        .foregroundStyle(kind.computerAnswers ? DSHTheme.amber : DSHTheme.textTertiary)
+                        .lineLimit(2)
+                }
+            }
             Spacer(minLength: 8)
             when
                 .font(.subheadline)

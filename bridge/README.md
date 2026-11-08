@@ -73,6 +73,8 @@ Defaults: `host: 0.0.0.0`, `port: 47801`, `cwd`: DSH's own default Workspace (`<
 
 The environment variables `DSHM_BRIDGE_HOST`, `DSHM_BRIDGE_PORT`, `DSHM_BRIDGE_STATE_DIR` and `DSHM_BRIDGE_DEV_PLAINTEXT=1` fill in whatever `cordis.yml` leaves out (`scripts/dsh-up.mjs` uses them).
 
+**When the bridge cannot listen** (another program holds the port, no permission for it, or `host` is not an address of this computer), the terminal where DSH runs shows one line (on stderr, also sent to DSH's logger) that names the address, the cause and the fix, for example `dsh-mobile-bridge cannot listen on 0.0.0.0:47801: another program uses port 47801 (EADDRINUSE). … Fix: stop that program (lsof -nP -iTCP:47801 -sTCP:LISTEN shows it), or change port … to a free port, restart DSH and pair the phone again.` DSH keeps running without the bridge. The phone shows the host offline with the reason: another program uses the port, or nothing listens on it. The bridge does not move to another port by itself: the phone saved the port when it paired, so after a port change, pair it again.
+
 **Pairing state** lives in `stateDir` (mode 0700, files 0600): `host-key.json` (the host's Noise private key; keep it private, deleting it unpairs every phone), `offers.json`, `devices.json` (the paired keys and pairing/revocation history), `approvals.jsonl` (approval decisions), and `listener.json` (the addresses `pair.js` puts in the QR).
 
 On a paired phone, open **Devices and audit** under the host. The list marks the current phone and shows each device’s key fingerprint and connection dates. Revoking access disconnects that device and rejects its reconnect attempts until it pairs again. **Audit history** shows which device paired, revoked access, or answered an approval.

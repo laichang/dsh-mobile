@@ -10,6 +10,7 @@ import { TaskHub } from './s2/task-hub.ts'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { PlaintextChannel } from './channel.ts'
+import { describeListenError, type ListenSetting } from './listen-error.ts'
 import { DshTasks, type DshServices } from './dsh.ts'
 import { listenerInfo, makeOffer, renderOffer } from './pairing/announce.ts'
 import { NoiseResponder } from './pairing/handshake.ts'
@@ -46,9 +47,12 @@ export const DEFAULT_PORT = 47801
  */
 export function resolveConfig(config: Config = {}, env: NodeJS.ProcessEnv = process.env) {
   const dshHome = env.DSH_HOME ?? join(homedir(), '.dsh')
+  const portFrom: ListenSetting['portFrom'] = config.port !== undefined ? 'config' : env.DSHM_BRIDGE_PORT ? 'env' : 'default'
   return {
     host: config.host ?? env.DSHM_BRIDGE_HOST ?? '0.0.0.0',
     port: config.port ?? (env.DSHM_BRIDGE_PORT ? Number(env.DSHM_BRIDGE_PORT) : DEFAULT_PORT),
+    /** Where `port` came from, so a listen failure names the setting to change (D125). */
+    portFrom,
     cwd: config.cwd,
     stateDir: config.stateDir ?? env.DSHM_BRIDGE_STATE_DIR ?? join(dshHome, 'dsh-mobile-bridge'),
     approvalTimeoutMs: config.approvalTimeoutMs,
@@ -60,7 +64,7 @@ type PluginContext = DshServices & ApprovalContext & QuestionContext & {
   sessionController: SessionReader
   on(name: 'session/event', callback: (session: { id: string }, event: Parameters<SessionDirectory['changed']>[1]) => void): () => void
   effect(setup: () => () => void): void
-  logger?(name: string): { info(...args: unknown[]): void; warn(...args: unknown[]): void }
+  logger?(name: string): { info(...args: unknown[]): void; warn(...args: unknown[]): void; error?(...args: unknown[]): void }
 }
 
 export function apply(ctx: PluginContext, config: Config = {}) {
@@ -99,8 +103,14 @@ export function apply(ctx: PluginContext, config: Config = {}) {
         stopSessions?.(); sessions?.close()
         unregister?.(); unregisterQuestions?.()
         approvals.close(); questions.close()
-        if (logger) logger.warn(`failed to start: ${String(error)}`)
-        else console.error(error)
+        // D125: the phone cannot learn why, so this one line names the address, the cause and the
+        // setting to change. DSH keeps running without the listener. The terminal gets it on
+        // stderr: `dsh web` (0.2.2-rc.1) gives the Cordis logger no console exporter, so a
+        // logger line alone reaches only DSH's own exporters (startup diagnostics, inspectors).
+        const line = describeListenError(error, c)
+        console.error(`[${name}] ${line}`)
+        if (logger?.error) logger.error(line)
+        else logger?.warn(line)
       },
     )
     return () => { disposed = true; stopSessions?.(); sessions?.close(); unregister?.(); unregisterQuestions?.(); approvals.close(); questions.close(); void server?.close() }

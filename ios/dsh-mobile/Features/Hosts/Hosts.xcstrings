@@ -42,6 +42,26 @@
         }
       }
     },
+    "Another program uses port %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "另一个程序占用了端口 %@"
+          }
+        }
+      }
+    },
+    "Another program uses this port, not the DSH bridge": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "另一个程序占用了这个端口，不是 DSH 桥接"
+          }
+        }
+      }
+    },
     "Approval allowed": {
       "localizations": {
         "zh-Hans": {
@@ -242,6 +262,36 @@
         }
       }
     },
+    "Not reachable": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连不上这台电脑"
+          }
+        }
+      }
+    },
+    "Nothing listens on port %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端口 %@ 上没有程序在监听"
+          }
+        }
+      }
+    },
+    "Nothing listens on this port": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有程序在这个端口上监听"
+          }
+        }
+      }
+    },
     "OK": {
       "localizations": {
         "zh-Hans": {
@@ -342,6 +392,26 @@
         }
       }
     },
+    "Start DSH on the computer, with the dsh-mobile bridge on.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在电脑上启动 DSH，并开着 dsh-mobile 桥接。"
+          }
+        }
+      }
+    },
+    "Stop that program on the computer, or give the bridge another port in DSH and pair again.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在电脑上停掉那个程序，或在 DSH 里给桥接换个端口，再重新配对。"
+          }
+        }
+      }
+    },
     "This device": {
       "localizations": {
         "zh-Hans": {
@@ -368,6 +438,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "经 %@"
+          }
+        }
+      }
+    },
+    "Your computer answers, but its DSH bridge does not. Check DSH there. The app reconnects by itself, and past sessions open while offline.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "电脑连得上，但它的 DSH 桥接没有应答。去电脑上看看 DSH；连上后自动恢复，历史会话离线也能看。"
           }
         }
       }
