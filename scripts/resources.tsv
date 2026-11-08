@@ -4,3 +4,4 @@
 # ends, the registry goes back to this header (slice IDs start again at S1 in the next plan).
 id	branch	slot	bridge	web	bridge2	web2	sim	home	decisions	assigned
 T0	claude/t0-followup	0	47810	3283	47840	3313	dshm-T0	~/.dshm/home-t0	D89-D91	2026-11-08
+T1	claude/t1-questions	1	47811	3284	47841	3314	dshm-T1	~/.dshm/home-t1	D92-D94	2026-11-08
