@@ -66,6 +66,9 @@ public final class CachedTask {
     /// S27: when the session's latest turn started, from the bridge (`turn_started_at_ms`); nil
     /// from an older bridge. The done footer's 用时 counts from here.
     public var turnStartedAt: Date?
+    /// D101: the follow-ups that wait while the task runs, a JSON-encoded `FollowUpQueue`; empty
+    /// when none waits. From the host's `QueuedMessage` events, so a replay rebuilds it.
+    public var queueData: Data = Data()
     /// The thumbnail of the photo sent with the first message (D95), a small JPEG; nil without one.
     /// Local to this phone: the host has the photo itself.
     public var photoThumbnail: Data?
@@ -111,6 +114,14 @@ public final class CachedTask {
             return (try? JSONDecoder().decode(StructuredTranscript.self, from: transcriptBlocksData)) ?? StructuredTranscript()
         }
         set { transcriptBlocksData = newValue.isEmpty ? Data() : (try? JSONEncoder().encode(newValue)) ?? Data() }
+    }
+
+    public var followUpQueue: FollowUpQueue {
+        get {
+            guard !queueData.isEmpty else { return FollowUpQueue() }
+            return (try? JSONDecoder().decode(FollowUpQueue.self, from: queueData)) ?? FollowUpQueue()
+        }
+        set { queueData = newValue.isEmpty ? Data() : (try? JSONEncoder().encode(newValue)) ?? Data() }
     }
 }
 

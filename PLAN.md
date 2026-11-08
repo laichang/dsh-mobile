@@ -237,7 +237,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S1 · Follow-ups while a task runs and after an interrupt
 
-**Status** todo · **Needs** T0 · **Branch** —
+**Status** review · **Needs** T0 · **Branch** —
 
 **Why**: Part of #1. STORY §7: "任务进行中也能补充：追加一句话…纠正方向，不必打断重来". The user, 2026-11-08: "参考codex、claude，用户发送后，先排队，但给定"立即发送"/steer的标识，用户点击后直接发送". This changes the default of D18 from steer to queue.
 
@@ -251,13 +251,16 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/followup.sh --running`: while a task runs, send a follow-up; it waits as queued; tap 立即发送 on a second one; the next step answers it. Interrupt, then continue.
 
 **Done when**
-- [ ] [auto] A follow-up on a running session is queued and runs as the next turn; send-now moves a queued message into the current turn at its next step; remove takes it out; the queue and the order stay the same after a reconnect (`FakeDSH`, `FakeBridge`) — Evidence:
-- [ ] [ui] While a task runs, send a follow-up: it shows as queued above the composer and runs after the turn; tap 立即发送 on another one: the next step of the agent answers it, and the stop key stays (`cmd:scripts/demo/followup.sh`) — Evidence:
-- [ ] [ui] After an interrupt, send a new message in the same session: the task runs again and the interrupted card goes (`cmd:scripts/demo/followup.sh`) — Evidence:
+- [x] [auto] A follow-up on a running session is queued and runs as the next turn; send-now moves a queued message into the current turn at its next step; remove takes it out; the queue and the order stay the same after a reconnect (`FakeDSH`, `FakeBridge`) — Evidence: test:FollowUpQueueAgainstFakeDSH/aFollowUpWhileTheTaskRunsIsQueuedAndRunsAsTheNextTurn · test:FollowUpQueueAgainstFakeDSH/sendNowMovesAQueuedMessageIntoTheCurrentTurnAtItsNextStep · test:FollowUpQueueAgainstFakeDSH/removeTakesAQueuedMessageOut · test:FollowUpQueueAgainstFakeDSH/theQueueAndItsOrderStayTheSameAfterAReconnect · test:FollowUpQueueTests/aFollowUpWhileTheTaskRunsWaitsAndRunsAsTheNextTurn · test:FollowUpQueueTests/sendNowMovesAQueuedMessageIntoTheTurnAndRemoveTakesOneOut · test:FollowUpQueueTests/theQueueAndItsOrderStayTheSameAfterAReconnect
+- [x] [ui] While a task runs, send a follow-up: it shows as queued above the composer and runs after the turn; tap 立即发送 on another one: the next step of the agent answers it, and the stop key stays (`cmd:scripts/demo/followup.sh`) — Evidence: cmd:scripts/demo/followup.sh --running · test:FollowUpQueueUITests/testFollowUpsWhileATaskRunsAgainstRealDSH · shot:evidence/S1/followup-queued.png · shot:evidence/S1/followup-steered.png · shot:evidence/S1/followup-queue-done.png
+- [x] [ui] After an interrupt, send a new message in the same session: the task runs again and the interrupted card goes (`cmd:scripts/demo/followup.sh`) — Evidence: cmd:scripts/demo/followup.sh --running · test:FollowUpQueueUITests/testContinueAfterAnInterruptAgainstRealDSH · shot:evidence/S1/followup-interrupted.png · shot:evidence/S1/followup-continued.png
 
 **Not**: Attachments in follow-ups (S4). A failed task (S3). Editing the text of a queued message.
 
 **Log**: —
+- **2026-11-09 · Built; review PASS at ff68333.** Done: all three items ticked. Protocol: conversation.v2 in protocol/conversation.proto (QueuedMessage event, EditQueue request, QueueEdited response). Field 361 is in the existing conversation block 360–379, not a new block of 20: one registration on each existing conversation line of frame.proto. Bridge: a follow-up while the task runs is a sessionController.prompt with mode queue. 立即发送 is updateQueue steer, and remove is updateQueue remove. One follow continues across queued turns (D102). A stop gives waiting messages back as RETURNED and removes them from DSH's queue. After a stop, a new message starts a new turn in the same DSH session. App: FollowUpQueueView above the composer. While the field has text, the send key replaces the stop key. Returned messages go back into the composer. After a continued stop or finish, the milestone bar says the current state (it said Interrupted before). Demo: scripts/demo/followup.sh --running, with a slow mock reply (1.5 s per chunk) so that a turn runs while the test types. The DSH host check reads each session and confirms the order: the message sent now is in turn 1, then the queued one runs as turn 2. Merged main once (T2, S7, X1); the conflicts were additive (start() takes images, then continues; capabilities list conversation.v2 and then attachments.v1); codegen ran, all tests pass. Learned: DSH 0.2.2-rc.1 keeps its queue after cancel; steer on an idle session gives session/steer-unavailable; DSH renames the session from the mock reply, so the page title changes after the first turn (DSH behaviour, not changed here). Flaky: one full swift test run timed out in S16CodingTaskTests under machine load; it passed 3 runs out of 3 by itself and in every later full run. The review had no FLAKY parts.
+  Review: /tmp/dshm-review/S1-ff68333.txt RESULT: PASS (full run).
+  Provisional: D101 (the queue protocol and UX; amends D18 to default QUEUE with send-now, amends D89), D102 (one follow across turns). No new dependencies. D103 is not used.
 
 ### S2 · Agent questions: typed answers, 等我处理, and replay
 

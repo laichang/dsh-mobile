@@ -8,9 +8,10 @@ import type { Selection } from '../models/catalog.ts'
 import type { Pending, Resolved } from '../approvals/holder.ts'
 import type * as Questions from '../questions/holder.ts'
 import { TaskStatus } from '../gen/frame_pb.ts'
+import { QueuePlacement } from '../gen/conversation_pb.ts'
 import { TaskState, type TaskSummary } from '../gen/s2_pb.ts'
 import { randomUUID } from 'node:crypto'
-import type { DshTasks, PromptMode, StartedTask, TaskOutput } from '../dsh.ts'
+import type { Continues, DshTasks, PromptMode, StartedTask, TaskOutput } from '../dsh.ts'
 import { HostLog } from './host-log.ts'
 import type { StagedImage } from '../attachments/staging.ts'
 import { milestoneAdded } from '../milestones/wire.ts'
@@ -22,11 +23,24 @@ export interface TaskStarter {
   listWorkspaces?: DshTasks['listWorkspaces']
   /** D89: more messages into a task's DSH session (`conversation.v1`). */
   followUp?: DshTasks['followUp']
+  /** D101: the queue while a task runs (`conversation.v2`). */
+  prompt?: DshTasks['prompt']
+  editQueue?: DshTasks['editQueue']
+  inbox?: DshTasks['inbox']
   modelCatalog?: DshTasks['modelCatalog']
   selectModel?: DshTasks['selectModel']
-  start(prompt: string, signal: AbortSignal, selection?: Selection, workspace?: string, images?: readonly StagedImage[]): Promise<StartedTask>
+  start(prompt: string, signal: AbortSignal, selection?: Selection, workspace?: string, images?: readonly StagedImage[],
+        continues?: Continues): Promise<StartedTask>
   /** Attachments (D95): the starter takes `images`. */
   readonly attachments?: boolean
+}
+
+/** D101: a message sent while its task runs, until DSH takes it into a turn. */
+interface Waiting {
+  taskId: string
+  text: string
+  timeMs: bigint
+  placement: QueuePlacement.QUEUED | QueuePlacement.STEERING
 }
 
 type Summary = Omit<TaskSummary, '$typeName' | '$unknown' | 'pendingApprovals' | 'modelSelection'>
@@ -38,9 +52,17 @@ export class TaskHub {
   private readonly abort = new AbortController()
   private readonly running = new Set<Promise<void>>()
   /** Per task: the last chunk and milestone seq, and the latest DSH turn. A later turn continues them. */
-  private readonly cursors = new Map<string, { chunk: bigint; milestone: bigint; turn?: number; turns: number }>()
+  private readonly cursors = new Map<string, { chunk: bigint; milestone: bigint; turn?: number }>()
   /** D89: tasks whose follow-up DSH has not accepted yet; a second send waits for the first. */
   private readonly sending = new Set<string>()
+  /** D101: by message ID, the messages that wait in a running task's DSH inbox. */
+  private readonly waiting = new Map<string, Waiting>()
+  /** D101: per task, a message to the running turn that DSH has not accepted yet. */
+  private readonly inflight = new Map<string, Promise<unknown>>()
+  /** D101: tasks whose DSH session the hub follows now (a pump runs). */
+  private readonly following = new Set<string>()
+  /** D89: messages whose UserMessage is logged already (a follow-up to an idle task, on acceptance). */
+  private readonly logged = new Set<string>()
 
   constructor(
     private readonly starter: TaskStarter,
@@ -54,9 +76,10 @@ export class TaskHub {
    */
   async create(prompt: string, onCreated: (taskId: string) => void = () => {}, selection?: Selection, workspace?: string,
                 images?: readonly StagedImage[]): Promise<string> {
-    const task = images?.length
-      ? await this.starter.start(prompt, this.abort.signal, selection, workspace, images)
-      : await this.starter.start(prompt, this.abort.signal, selection, workspace)
+    let taskId: string | undefined
+    const task = await this.starter.start(prompt, this.abort.signal, selection, workspace, images?.length ? images : undefined,
+      () => taskId === undefined ? Promise.resolve(false) : this.continues(taskId))
+    taskId = task.taskId
     const at = BigInt(this.now())
     const summary: Summary = {
       taskId: task.taskId, title: prompt, state: TaskState.RUNNING,
@@ -81,17 +104,22 @@ export class TaskHub {
   }
 
   /**
-   * D89: sends one more message into the DSH session of a finished task. The new turn streams
-   * under the same task ID: the chunk seq goes on, the task is RUNNING again, and TaskEnded ends
-   * the turn. `onAccepted` runs once DSH accepted the message, before the task's new events.
+   * Sends one more message into the DSH session of a task. `onAccepted` runs once DSH accepted
+   * the message, before the task's new events.
+   *
+   * - D89: a task that is done (completed, or stopped by the user) runs again: the new turn streams
+   *   under the same task ID, the chunk seq goes on, the task is RUNNING again, and TaskEnded ends it.
+   * - D101: while the task runs, the message waits in DSH's inbox: `queue` for the next turn, `steer`
+   *   for the next step of this one. A QueuedMessage says so; the UserMessage follows where DSH takes it.
    */
   async sendMessage(taskId: string, text: string, mode: PromptMode,
     onAccepted: (messageId: string) => void = () => {}): Promise<string> {
     const summary = this.summaries.get(taskId)
     if (!this.starter.followUp) throw new Error('This host cannot take follow-up messages.')
     if (!summary || summary.approvalOnly || summary.externalSession) throw new Error('Unknown bridge task')
-    // T0 of the conversation: a follow-up after the task completed. Not while it runs or after a failure.
-    if (summary.state !== TaskState.COMPLETED || this.sending.has(taskId)) {
+    if (this.following.has(taskId) && this.isActive(taskId)) return this.sendWhileRunning(taskId, text, mode, onAccepted)
+    // Not after a failure (the failed task's own card), and not while an earlier send waits.
+    if ((summary.state !== TaskState.COMPLETED && summary.state !== TaskState.INTERRUPTED) || this.sending.has(taskId)) {
       throw new Error('Send a follow-up when the task is done.')
     }
     const cursor = this.cursor(taskId)
@@ -100,28 +128,114 @@ export class TaskHub {
     let output: AsyncIterable<TaskOutput>
     try {
       output = await this.starter.followUp(taskId, text,
-        { messageId, mode, afterTurn: cursor.turn, blockPrefix: `turn-${cursor.turns + 1}-` }, this.abort.signal)
+        { messageId, mode, afterTurn: cursor.turn, continues: () => this.continues(taskId) }, this.abort.signal)
     } finally {
       this.sending.delete(taskId)
     }
-    cursor.turns += 1
     const at = this.now()
     onAccepted(messageId)
+    this.logged.add(messageId)
     this.log.append(taskId, { case: 'userMessage', value: { taskId, messageId, text, timeMs: BigInt(at) } })
     summary.state = summary.pendingApprovals.length ? TaskState.WAITING_ON_USER : TaskState.RUNNING
-    summary.message = ''
-    summary.latestReply = undefined
-    summary.updatedAtMs = BigInt(at)
-    summary.turnStartedAtMs = BigInt(at) // S27: 用时 counts the latest turn only.
-    this.upserted(summary)
+    this.turnStarted(summary, at)
     const pump = this.pump({ taskId, output }, summary).finally(() => this.running.delete(pump))
     this.running.add(pump)
     return messageId
   }
 
+  /** D101: the message waits in DSH's inbox of the running task until DSH takes it. */
+  private async sendWhileRunning(taskId: string, text: string, mode: PromptMode,
+    onAccepted: (messageId: string) => void): Promise<string> {
+    if (!this.starter.prompt) throw new Error('This host takes follow-ups only when the task is done.')
+    const messageId = randomUUID()
+    const accepted = this.starter.prompt(taskId, text, { messageId, mode }, this.abort.signal)
+    // A turn that ends meanwhile waits for this answer before it decides whether the task goes on.
+    const flight = accepted.catch(() => {})
+    this.inflight.set(taskId, flight)
+    try {
+      await accepted
+    } finally {
+      if (this.inflight.get(taskId) === flight) this.inflight.delete(taskId)
+    }
+    const placement = mode === 'queue' ? QueuePlacement.QUEUED : QueuePlacement.STEERING
+    const waiting: Waiting = { taskId, text, timeMs: BigInt(this.now()), placement }
+    this.waiting.set(messageId, waiting)
+    onAccepted(messageId)
+    this.queued(messageId, waiting, placement)
+    return messageId
+  }
+
+  /**
+   * D101: moves a waiting message into the running turn (`steer`), or takes it out (`remove`).
+   * Returns its place afterwards: STEERING, REMOVED, or QUEUED when DSH could no longer steer
+   * into the ending turn (the message then runs as the next turn).
+   */
+  async editQueue(taskId: string, messageId: string, action: 'steer' | 'remove'): Promise<QueuePlacement> {
+    if (!this.starter.editQueue) throw new Error('This host cannot change the queue.')
+    const waiting = this.waiting.get(messageId)
+    if (!waiting || waiting.taskId !== taskId) throw new Error('This message is no longer waiting.')
+    if (action === 'steer' && waiting.placement === QueuePlacement.STEERING) return QueuePlacement.STEERING
+    const done = await this.starter.editQueue(taskId, messageId, action)
+    // DSH can take the message while the edit runs; then its UserMessage is logged already.
+    if (this.waiting.get(messageId) !== waiting) throw new Error('This message is no longer waiting.')
+    if (!done) return waiting.placement
+    if (action === 'remove') {
+      this.waiting.delete(messageId)
+      this.queued(messageId, waiting, QueuePlacement.REMOVED)
+      return QueuePlacement.REMOVED
+    }
+    waiting.placement = QueuePlacement.STEERING
+    this.queued(messageId, waiting, QueuePlacement.STEERING)
+    return QueuePlacement.STEERING
+  }
+
+  /**
+   * D101: asked when a turn of the task completes. True when a message of this phone still waits
+   * in DSH's inbox: DSH runs it as the next turn, and the hub follows that turn too. A message
+   * that no longer waits there (another client removed it) is logged as removed.
+   */
+  private async continues(taskId: string): Promise<boolean> {
+    for (;;) {
+      const flight = this.inflight.get(taskId)
+      if (flight) { await flight; continue }
+      const mine = [...this.waiting].filter(([, w]) => w.taskId === taskId)
+      if (!mine.length) return false
+      if (!this.starter.inbox) return true
+      let inbox: { running: boolean; waiting: string[] }
+      try {
+        inbox = await this.starter.inbox(taskId)
+      } catch {
+        return true
+      }
+      if (this.inflight.has(taskId)) continue
+      // A running agent has taken (or is about to take) the next message: its turn follows.
+      if (inbox.running) return true
+      for (const [messageId, waiting] of mine) {
+        if (inbox.waiting.includes(messageId) || this.waiting.get(messageId) !== waiting) continue
+        this.waiting.delete(messageId)
+        this.queued(messageId, waiting, QueuePlacement.REMOVED)
+      }
+      return [...this.waiting.values()].some(w => w.taskId === taskId)
+    }
+  }
+
+  private queued(messageId: string, waiting: Waiting, placement: QueuePlacement) {
+    const { taskId, text, timeMs } = waiting
+    this.log.append(taskId, { case: 'queuedMessage', value: { taskId, messageId, text, timeMs, placement } })
+  }
+
+  /** A new turn of the task: RUNNING, with its own start (S27: 用时 counts the latest turn only). */
+  private turnStarted(summary: Summary, at: number) {
+    summary.message = ''
+    summary.latestReply = undefined
+    summary.updatedAtMs = BigInt(at)
+    summary.turnStartedAtMs = BigInt(at)
+    this.upserted(summary)
+  }
+
   private cursor(taskId: string) {
     let cursor = this.cursors.get(taskId)
-    if (!cursor) this.cursors.set(taskId, cursor = { chunk: 0n, milestone: 0n, turns: 0 })
+    if (!cursor) this.cursors.set(taskId, cursor = { chunk: 0n, milestone: 0n })
     return cursor
   }
 
@@ -215,10 +329,16 @@ export class TaskHub {
   private async pump(task: Pick<StartedTask, 'taskId' | 'output'>, summary: Summary): Promise<void> {
     const cursor = this.cursor(task.taskId)
     let ended = false
+    let turns = 0
+    this.following.add(task.taskId)
     try {
       for await (const out of task.output) {
         if (out.kind === 'turn') {
           cursor.turn = out.turn
+          // D101: a queued message's turn, in the same follow: the task stays RUNNING, with a new 用时.
+          if (turns++ > 0) this.turnStarted(summary, this.now())
+        } else if (out.kind === 'user') {
+          this.userMessage(task.taskId, out)
         } else if (out.kind === 'text') {
           this.log.append(task.taskId, { case: 'assistantChunk', value: { taskId: task.taskId, seq: ++cursor.chunk, text: out.text } })
         } else if (out.kind === 'model') {
@@ -241,7 +361,23 @@ export class TaskHub {
         ended = true
         this.end(summary, { kind: 'end', status: 'failed', message: error instanceof Error ? error.message : String(error) })
       }
+    } finally {
+      this.following.delete(task.taskId)
     }
+  }
+
+  /**
+   * D101: DSH took a user message into the task's turn. A message that waited ends its wait and
+   * sits here in the transcript. A follow-up logged on acceptance (D89) is not logged again; a
+   * message from another client into this task is logged too.
+   */
+  private userMessage(taskId: string, out: Extract<TaskOutput, { kind: 'user' }>) {
+    if (this.logged.has(out.messageId)) return
+    const waiting = this.waiting.get(out.messageId)
+    this.waiting.delete(out.messageId)
+    this.logged.add(out.messageId)
+    this.log.append(taskId, { case: 'userMessage', value: {
+      taskId, messageId: out.messageId, text: waiting?.text ?? out.text, timeMs: BigInt(this.now()) } })
   }
 
   private end(summary: Summary, end: Extract<TaskOutput, { kind: 'end' }>) {
@@ -251,6 +387,12 @@ export class TaskHub {
       interrupted: [TaskState.INTERRUPTED, TaskStatus.INTERRUPTED],
     } as const
     const [state, status] = states[end.status]
+    // D101: messages that still wait do not run after a stop: out of DSH's inbox, back to the composer.
+    for (const [messageId, waiting] of [...this.waiting].filter(([, w]) => w.taskId === summary.taskId)) {
+      this.waiting.delete(messageId)
+      this.queued(messageId, waiting, QueuePlacement.RETURNED)
+      void this.starter.editQueue?.(summary.taskId, messageId, 'remove').catch(() => {})
+    }
     summary.state = state
     summary.message = end.message ?? ''
     summary.updatedAtMs = BigInt(this.now())

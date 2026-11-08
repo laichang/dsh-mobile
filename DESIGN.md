@@ -65,7 +65,7 @@ A phone in front sends work up to a terminal window: the user's own computer (ST
 | §4 Async first; milestones; 所有任务; sessions from other clients; failed or stuck; agent questions | 02, 03, 04, P1, F1–F4, X1, L |
 | §5 Approvals show impact; never allowed by default; risk tiers; plan and pre-authorization; re-confirm | 03, 05, P3, P2, P4, L |
 | §6 Usable by anyone; first run | 08 |
-| §7 Results come to the phone; phone as context; add to a running task | 06 (M3 card; follow-up after it is done, D89), 04 (M2 composer while it runs), 01 (M2 photo key), P1 · share sheet, voice: not drawn (M3/M4) |
+| §7 Results come to the phone; phone as context; add to a running task | 06 (M3 card; follow-up after it is done, D89), 04 (follow-ups queued while it runs, send now, D101), X1 (continue after a stop), 01 (M2 photo key), P1 · share sheet, voice: not drawn (M3/M4) |
 | §8 User picks the model; never swapped silently | M, X4, 04 |
 | §9 Control: devices, revocation, audit | H, X2 |
 

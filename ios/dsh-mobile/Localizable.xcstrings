@@ -31,6 +31,16 @@
         }
       }
     },
+    "Add a message for the next turn": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "补充一句，下一轮送达…"
+          }
+        }
+      }
+    },
     "Addresses": {
       "localizations": {
         "zh-Hans": {
@@ -217,6 +227,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "要获取新的配对码，请在电脑的 dsh-mobile 项目目录里运行以下命令。"
+          }
+        }
+      }
+    },
+    "Goes in at the next step": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步发送"
           }
         }
       }
@@ -431,6 +451,16 @@
         }
       }
     },
+    "Queued for the next turn": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排队中，下一轮发送"
+          }
+        }
+      }
+    },
     "Ready to pair": {
       "localizations": {
         "zh-Hans": {
@@ -447,6 +477,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "推理内容"
+          }
+        }
+      }
+    },
+    "Remove": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除"
           }
         }
       }
@@ -497,6 +537,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "发送"
+          }
+        }
+      }
+    },
+    "Send now": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即发送"
           }
         }
       }
@@ -597,6 +647,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "消息没有发出：%@"
+          }
+        }
+      }
+    },
+    "The queue was not changed: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "队列没有改动：%@"
           }
         }
       }
