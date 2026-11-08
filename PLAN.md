@@ -52,7 +52,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S6 | doing | `claude/s6-live-activity` | 2026-11-09 | Slice owner builds (§8) |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | doing | `claude/s8-bridge-listen-errors` | 2026-11-09 | Slice owner builds (§8) |
-| S9 | todo | — | 2026-11-08 | Assign it and start a session |
+| S9 | doing | `claude/s9-ui-test-waits` | 2026-11-09 | Slice owner builds (§8) |
 | S10 | todo | — | 2026-11-08 | Assign it and start a session |
 | S11 | todo | — | 2026-11-08 | Assign it and start a session |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
@@ -670,6 +670,8 @@ Append-only, dated.
 - **2026-11-09 · S12 merged.** Merged as `2574d2f`; `scripts/check-plan` on the merge commit passed. No open `[human]` items, so S12 is `done`.
 
 - **2026-11-09 · S12 merged.** S12 merged as 2574d2f (only an [auto] item, so scripts/review has no UI part; test code and test support only). A new waitForStore helper waits on @Observable store changes with a 30 s deadline; every per-suite waitUntil uses it. Also fixed: the FollowUpQueue, NoiseResume, CachedMilestone, OutcomeFake and S28TablesReply flakes that slices saw under load. Runs: swift test --parallel (133 tests) passed at load 186–321 with 24 yes processes and at ~200 without. Left (in the S12 Log): two pollUntil waits on fake-host counters, short 'nothing happens' sleeps in HostsControl/RevokedHost, and a time bound in ReconnectTests that very heavy load could break. Closes #26 when the plan ends.
+
+- **2026-11-09 · S9 assigned.** Branch `claude/s9-ui-test-waits`, simulator `dshm-S9`, DSHM_HOME `~/.dshm/home-s9`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D128–D130. `eval "$(scripts/slice-env S9)"` exports them.
 
 ## 9. Pending user confirmation
 

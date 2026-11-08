@@ -16,3 +16,4 @@ S5	claude/s5-voice	2	47812	3285	47842	3315	dshm-S5	~/.dshm/home-s5	D116-D118	202
 S6	claude/s6-live-activity	1	47811	3284	47841	3314	dshm-S6	~/.dshm/home-s6	D119-D121	2026-11-09
 S12	claude/s12-store-test-waits	0	47810	3283	47840	3313	dshm-S12	~/.dshm/home-s12	D122-D124	2026-11-09
 S8	claude/s8-bridge-listen-errors	2	47812	3285	47842	3315	dshm-S8	~/.dshm/home-s8	D125-D127	2026-11-09
+S9	claude/s9-ui-test-waits	0	47810	3283	47840	3313	dshm-S9	~/.dshm/home-s9	D128-D130	2026-11-09
