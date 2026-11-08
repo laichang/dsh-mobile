@@ -12,16 +12,16 @@ import Testing
     static let first = ["First ", "answer", " in", " a", " few", " parts", "."]
     static let second = ["Second ", "answer."]
 
-    func host(chunkDelay: Duration = .milliseconds(120)) -> FakeHost {
+    /// - Parameter pause: with one, the first turn stops after its first chunk until the stream
+    ///   finishes, so the follow-ups reach the host before that turn ends, however busy the
+    ///   machine (S12: under load the turn ended first).
+    func host(chunkDelay: Duration = .milliseconds(120), pause: AsyncStream<Void>? = nil) -> FakeHost {
         var script = FakeBridge.Script(reply: Self.first, chunkDelay: chunkDelay)
+        if let pause { script.afterFirstChunk = { for await _ in pause {} } }
         script.followUpReply = Self.second
         script.queuesFollowUps = true
         script.interruptible = true
         return FakeHost(script: script)
-    }
-
-    func waitUntil(_ what: String = "", timeout: Duration = .seconds(10), _ condition: () -> Bool) async throws {
-        try await FollowUpTests().waitUntil(what, timeout: timeout, condition)
     }
 
     func launch(_ host: FakeHost) throws -> TaskListStore {
@@ -33,45 +33,51 @@ import Testing
     }
 
     @Test func aFollowUpWhileTheTaskRunsWaitsAndRunsAsTheNextTurn() async throws {
-        let host = host()
+        let (pause, release) = AsyncStream<Void>.makeStream()
+        defer { release.finish() }
+        let host = host(pause: pause)
         let store = try launch(host)
         store.foreground()
         defer { store.background() }
         let key = try #require(await store.send())
-        try await waitUntil("running") { store.task(key)?.state == .running }
+        await waitForStore("running") { store.task(key)?.state == .running }
         let running = try #require(store.task(key))
         #expect(store.canFollowUp(running))
 
         try await store.sendFollowUp("Then this.", for: running)
-        try await waitUntil("queued") { Self.queue(store.task(key)) == ["Then this. (queued)"] }
+        await waitForStore("queued") { Self.queue(store.task(key)) == ["Then this. (queued)"] }
         // It waits above the composer; the transcript does not have it yet.
         #expect(try #require(store.task(key)).blocks.followUpCount == 0)
         #expect(store.task(key)?.state == .running)
 
-        try await waitUntil("done", timeout: .seconds(15)) { store.task(key)?.state == .completed }
+        release.finish()
+        await waitForStore("done") { store.task(key)?.state == .completed }
         let row = try #require(store.task(key))
         #expect(FollowUpTests.page(row) == ["agent: First answer in a few parts.", "user: Then this.", "agent: Second answer."])
         #expect(row.queue.isEmpty)
     }
 
     @Test func sendNowMovesAQueuedMessageIntoTheTurnAndRemoveTakesOneOut() async throws {
-        let host = host()
+        let (pause, release) = AsyncStream<Void>.makeStream()
+        defer { release.finish() }
+        let host = host(pause: pause)
         let store = try launch(host)
         store.foreground()
         defer { store.background() }
         let key = try #require(await store.send())
-        try await waitUntil("running") { store.task(key)?.state == .running }
+        await waitForStore("running") { store.task(key)?.state == .running }
         try await store.sendFollowUp("Not this.", for: try #require(store.task(key)))
         try await store.sendFollowUp("Now this.", for: try #require(store.task(key)))
-        try await waitUntil("both queued") { Self.queue(store.task(key)) == ["Not this. (queued)", "Now this. (queued)"] }
+        await waitForStore("both queued") { Self.queue(store.task(key)) == ["Not this. (queued)", "Now this. (queued)"] }
 
         let row = try #require(store.task(key))
         try await store.sendNow(row.queue[1], for: row)
         try await store.removeQueued(row.queue[0], for: row)
-        try await waitUntil("edited") { Self.queue(store.task(key)) == ["Now this. (steering)"] }
+        await waitForStore("edited") { Self.queue(store.task(key)) == ["Now this. (steering)"] }
         #expect(host.queueEdits == ["steer Now this.", "remove Not this."])
 
-        try await waitUntil("done", timeout: .seconds(15)) { store.task(key)?.state == .completed }
+        release.finish()
+        await waitForStore("done") { store.task(key)?.state == .completed }
         let done = try #require(store.task(key))
         #expect(FollowUpTests.page(done) == ["agent: First answer in a few parts.", "user: Now this.", "agent: Second answer."])
         #expect(done.queue.isEmpty)
@@ -82,21 +88,21 @@ import Testing
         let store = try launch(host)
         store.foreground()
         let key = try #require(await store.send())
-        try await waitUntil("running") { store.task(key)?.state == .running }
+        await waitForStore("running") { store.task(key)?.state == .running }
         for text in ["One.", "Two.", "Three."] { try await store.sendFollowUp(text, for: try #require(store.task(key))) }
-        try await waitUntil("queued") { store.task(key)?.queue.count == 3 }
+        await waitForStore("queued") { store.task(key)?.queue.count == 3 }
         let middle = try #require(store.task(key)?.queue[1])
         try await store.removeQueued(middle, for: try #require(store.task(key)))
-        try await waitUntil("removed") { Self.queue(store.task(key)) == ["One. (queued)", "Three. (queued)"] }
+        await waitForStore("removed") { Self.queue(store.task(key)) == ["One. (queued)", "Three. (queued)"] }
         store.background()
 
         // Another phone, or this one with its cache gone: the log replays the same queue, in order.
         let fresh = try launch(host)
         fresh.foreground()
         defer { fresh.background() }
-        try await waitUntil("replayed") { Self.queue(fresh.task(key)) == ["One. (queued)", "Three. (queued)"] }
+        await waitForStore("replayed") { Self.queue(fresh.task(key)) == ["One. (queued)", "Three. (queued)"] }
         #expect(fresh.task(key)?.state == .running)
-        try await waitUntil("done", timeout: .seconds(20)) { fresh.task(key)?.state == .completed }
+        await waitForStore("done") { fresh.task(key)?.state == .completed }
         #expect(FollowUpTests.page(try #require(fresh.task(key))) == [
             "agent: First answer in a few parts.", "user: One.", "agent: Second answer.", "user: Three.", "agent: Second answer.",
         ])
@@ -108,12 +114,12 @@ import Testing
         store.foreground()
         defer { store.background() }
         let key = try #require(await store.send())
-        try await waitUntil("running") { store.task(key)?.state == .running }
+        await waitForStore("running") { store.task(key)?.state == .running }
         try await store.sendFollowUp("Waiting.", for: try #require(store.task(key)))
-        try await waitUntil("queued") { store.task(key)?.queue.count == 1 }
+        await waitForStore("queued") { store.task(key)?.queue.count == 1 }
 
         try await store.interrupt(try #require(store.task(key)))
-        try await waitUntil("stopped") { store.task(key)?.state == .interrupted }
+        await waitForStore("stopped") { store.task(key)?.state == .interrupted }
         #expect(store.task(key)?.queue.isEmpty == true)
         #expect(store.takeReturnedDrafts(for: key) == ["Waiting."])
         #expect(store.takeReturnedDrafts(for: key).isEmpty, "taken once")
@@ -121,8 +127,8 @@ import Testing
         let stopped = try #require(store.task(key))
         #expect(store.canFollowUp(stopped))
         try await store.sendFollowUp("Go on.", for: stopped)
-        try await waitUntil("running again") { store.task(key)?.state == .running }
-        try await waitUntil("done", timeout: .seconds(15)) { store.task(key)?.state == .completed }
+        await waitForStore("running again") { store.task(key)?.state == .running }
+        await waitForStore("done") { store.task(key)?.state == .completed }
         let page = FollowUpTests.page(try #require(store.task(key)))
         #expect(page.suffix(2) == ["user: Go on.", "agent: Second answer."], "\(page)")
     }
@@ -136,7 +142,7 @@ import Testing
         store.foreground()
         defer { store.background() }
         let key = try #require(await store.send())
-        try await waitUntil("failed") { store.task(key)?.state == .failed }
+        await waitForStore("failed") { store.task(key)?.state == .failed }
         #expect(!store.canFollowUp(try #require(store.task(key))))
     }
 }

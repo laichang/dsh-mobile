@@ -7,18 +7,9 @@ import Testing
 /// S2 × S3 seam (S2 landed second, PLAN.md §5 S2): a task's milestones are cached with it, so the
 /// card survives kill/reopen, and the gap is replayed by Resume exactly once.
 @MainActor
-@Suite(.serialized) struct CachedMilestoneTests {
+@Suite(.serialized, .timeLimit(.minutes(2))) struct CachedMilestoneTests {
     let storeURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("dshm-s2s3-\(UUID().uuidString).store")
-
-    func waitUntil(_ what: String = "", timeout: Duration = .seconds(5), _ condition: () -> Bool) async throws {
-        let clock = ContinuousClock()
-        let deadline = clock.now + timeout
-        while !condition() {
-            if clock.now > deadline { Issue.record("timed out: \(what)"); return }
-            try await Task.sleep(for: .milliseconds(10))
-        }
-    }
 
     func launch(_ host: FakeHost) throws -> TaskListStore {
         let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
@@ -27,8 +18,9 @@ import Testing
             hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Three steps.")
         store.backoff = (.milliseconds(20), .milliseconds(100))
         // send() returns as soon as the host is online; under load the first connect can take
-        // longer than 500 ms, and then send() gave nil (S20 review, 2026-11-07).
-        store.sendWaitsFor = .seconds(5)
+        // longer than 500 ms, and then send() gave nil (S20 review, 2026-11-07). The 30 s
+        // are only a deadline for a busy machine (S12).
+        store.sendWaitsFor = .seconds(30)
         return store
     }
 
@@ -40,10 +32,11 @@ import Testing
         var store: TaskListStore? = try launch(host)
         store?.foreground()
         let key = try #require(await store?.send())
-        try await waitUntil("a few milestones") { (store?.task(key)?.milestones.milestones.count ?? 0) >= 3 }
+        await waitForStore("a few milestones") { (store?.task(key)?.milestones.milestones.count ?? 0) >= 3 }
+        let taskID = try #require(store?.task(key)?.taskID)
         store?.background()
         store = nil
-        try await Task.sleep(for: .milliseconds(900)) // the task finishes on the host meanwhile
+        await host.ended(taskID) // the task finishes on the host meanwhile
 
         // Before any connection: the card's milestones come from the cache.
         let reopened = try launch(host)
@@ -54,8 +47,8 @@ import Testing
 
         // After Resume: the gap is filled, each milestone exactly once, in order.
         reopened.foreground()
-        try await waitUntil("completed") { reopened.task(key)?.state == .completed }
-        try await waitUntil("finished milestone") { reopened.task(key)?.milestones.current?.kind == .finished }
+        await waitForStore("completed") { reopened.task(key)?.state == .completed }
+        await waitForStore("finished milestone") { reopened.task(key)?.milestones.current?.kind == .finished }
         let timeline = try #require(reopened.task(key)?.milestones)
         #expect(timeline.milestones.map(\.kind) == Self.kinds)
         #expect(timeline.milestones.map(\.seq) == Array(1...UInt64(Self.kinds.count)))
@@ -72,7 +65,7 @@ import Testing
         let store = try launch(host)
         store.foreground()
         let key = try #require(await store.send())
-        try await waitUntil("completed") { store.task(key)?.state == .completed }
+        await waitForStore("completed") { store.task(key)?.state == .completed }
         #expect(store.task(key)?.milestones.isEmpty == true)
     }
 }

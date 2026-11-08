@@ -513,7 +513,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S12 · Fix: DSHKit store tests time out under load
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: Closes #26. The user, 2026-11-08, for #22–#28: "这些看看还能不能复现，能的话就修复了". If a bug does not reproduce, the Log names the runs that show it, and the coordinator closes the issue with them.
 
@@ -522,11 +522,16 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `swift test` in `ios/DSHKit`.
 
 **Done when**
-- [ ] [auto] `todosTickOffOnTheTimelineAgainstFakeBridge` and `codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt` wait on store changes with no polling or fixed sleep, and pass while the other DSHKit tests run in parallel — Evidence:
+- [x] [auto] `todosTickOffOnTheTimelineAgainstFakeBridge` and `codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt` wait on store changes with no polling or fixed sleep, and pass while the other DSHKit tests run in parallel — Evidence: test:MilestoneStoreTests/todosTickOffOnTheTimelineAgainstFakeBridge · test:S16CodingTaskTests/codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt · commit:850c9ad · commit:523b593
 
 **Not**: —
 
 **Log**: —
+- **2026-11-09 · Store waits, no sleep loops.** Done: `waitForStore` (Tests/DSHKitTests/StoreWait.swift) waits with `withObservationTracking` on the stores and a 30 s deadline; no polling, no fixed sleep. The two named tests use it: `MilestoneStoreTests/todosTickOffOnTheTimelineAgainstFakeBridge` checks the progress steps on the timeline (the test's own looks can miss a step under load); `S16CodingTaskTests/codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt` drops its 200 ms sleep and checks that it ends interrupted with no closing milestone. Under load it took 15 s, so the old 5 s timeout failed it.
+  Also fixed (same cause, test code only): every per-suite `waitUntil` now calls `waitForStore`; `FollowUpQueueTests/sendNowMovesAQueuedMessageIntoTheTurnAndRemoveTakesOneOut` and `FollowUpQueueTests/aFollowUpWhileTheTaskRunsWaitsAndRunsAsTheNextTurn` pause the first turn (`afterFirstChunk`) until the queue edits are in; `NoiseResumeTests/killAndReopenReconnectsOverNoiseAndResumesFromTheCursor`, `CachedMilestoneTests/milestonesSurviveKillAndReopenAndTheGapIsReplayed`, `TaskListStoreTests/killAndReopenKeepsTheListAndFillsTheGapFromTheBridge` and `FollowUpTests/killAndReopenDuringTheFollowUpFillsTheGapOnce` wait on the new `FakeHost.ended(_:count:)` and not a sleep; `NoiseResumeTests/droppedNoiseConnectionReconnectsAndReplaysOnlyTheGap` pauses the task until the drop (it failed twice in this run); `OutcomeFakeTests/aDoneTaskCountsItsStepsAndTheApprovalAnsweredOnTheWeb` (timed out at 10 s) and `S28TablesReplyTests/tablesPromptRepliesWithAWideTable` (inline 5 s loop) got the store wait too.
+  Test seam (provisional, test support only): `FakeHost.ended(_:count:)` in DSHTestSupport returns when the host logged that many ends of a task. No product code changed.
+  Remaining: two waits on fake-host state, which is not observable, still poll (`pollUntil`, 30 s): `TaskListStoreTests/reconnectsAfterTheConnectionDropsAndReplaysOnlyTheGap`, `RevokedHostTests` "an offline host is retried". Negative checks still use short sleeps ("nothing happens for a while") in `HostsControlTests` and `RevokedHostTests`; they cannot go red from load. `ReconnectTests` has a time bound (`< defaultAttemptTimeout + 2 s`) that heavy load could break. `sendWaitsFor` stays 2–5 s in suites that expect `send() == nil`.
+  Runs (`swift test --parallel`, 133 tests): before the last two fixes at load 54–98, 1 of 3 passed (the NoiseResume drop race, OutcomeFake). After 850c9ad: 3 of 3 passed at load 9–12; with 24 `yes` processes plus a second concurrent `swift test` (load 64–593), 2 of 3 passed and the failure was `S28TablesReplyTests` (fixed in 523b593); the 2 concurrent second runs passed. On 523b593: one run with 24 `yes` processes (load 186–321) passed, the load was stopped right after; one more run at load ~200 (other slices) passed.
 
 ### S13 · Fix: the keyboard stays up when the host menu opens
 

@@ -6,13 +6,9 @@ import Testing
 
 @MainActor
 @Suite struct MilestoneStoreTests {
-    func waitUntil(_ condition: () -> Bool, timeout: Duration = .seconds(5)) async throws {
-        let clock = ContinuousClock()
-        let deadline = clock.now + timeout
-        while !condition() {
-            if clock.now > deadline { Issue.record("timed out"); return }
-            try await Task.sleep(for: .milliseconds(5))
-        }
+    /// The card's progress, "done/all".
+    static func progress(_ timeline: MilestoneTimeline) -> String {
+        "\(timeline.completedCount)/\(timeline.todos.count)"
     }
 
     func makeStore(_ script: FakeBridge.Script) -> TaskStore {
@@ -23,16 +19,30 @@ import Testing
 
     @Test func todosTickOffOnTheTimelineAgainstFakeBridge() async throws {
         let store = makeStore(.threeTodos(delay: .milliseconds(20)))
-        var progress: [String] = []
+        var seen: [String] = []
         let send = Task { await store.send() }
-        try await waitUntil {
-            let p = "\(store.milestones.completedCount)/\(store.milestones.todos.count)"
-            if progress.last != p { progress.append(p) }
+        await waitForStore("completed") {
+            let p = Self.progress(store.milestones)
+            if seen.last != p { seen.append(p) }
             return store.status == .completed
         }
         await send.value
-        // The card's progress went up one todo at a time, not in one jump.
-        #expect(progress.filter { $0.hasSuffix("/3") } == ["0/3", "1/3", "2/3", "3/3"])
+        // The card's progress went up one todo at a time, not in one jump: it is the timeline's
+        // progress after each milestone. The test's own looks can miss a step under load (two
+        // milestones land between two looks), so they only have to be some of these steps.
+        let all = store.milestones.milestones
+        var steps: [String] = []
+        for n in 1...all.count {
+            var timeline = MilestoneTimeline()
+            all.prefix(n).forEach { timeline.add($0) }
+            let p = Self.progress(timeline)
+            if steps.last != p { steps.append(p) }
+        }
+        #expect(steps.filter { $0.hasSuffix("/3") } == ["0/3", "1/3", "2/3", "3/3"])
+        #expect(steps.first == "0/0") // started: no todos yet
+        #expect(Set(seen).isSubset(of: steps), "\(seen)")
+        #expect(seen.filter { $0.hasSuffix("/3") } == seen.filter { $0.hasSuffix("/3") }.sorted(), "\(seen)")
+        #expect(seen.last == "3/3")
         let kinds = store.milestones.milestones.map(\.kind)
         #expect(kinds == [.started, .planned, .todoStarted, .todoDone, .todoStarted, .todoDone, .todoStarted, .todoDone, .finished])
         #expect(store.milestones.milestones.map(\.seq) == Array(1...9))
@@ -47,7 +57,7 @@ import Testing
         script.failWith = "error: rate limited"
         let store = makeStore(script)
         await store.send()
-        try await waitUntil { store.status.token == "failed" }
+        await waitForStore("failed") { store.status.token == "failed" }
         let current = try #require(store.milestones.current)
         #expect(current.kind == .failed)
         #expect(current.text == "error: rate limited")
@@ -57,7 +67,7 @@ import Testing
     @Test func newTaskStartsAnEmptyTimelineAndPlainTasksHaveNone() async throws {
         let store = makeStore(.init(reply: ["hi"], chunkDelay: .milliseconds(1)))
         await store.send()
-        try await waitUntil { store.status == .completed }
+        await waitForStore("completed") { store.status == .completed }
         #expect(store.milestones.isEmpty)
     }
 
