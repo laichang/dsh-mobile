@@ -251,7 +251,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/followup.sh --running`: while a task runs, send a follow-up; it waits as queued; tap 立即发送 on a second one; the next step answers it. Interrupt, then continue.
 
 **Done when**
-- [ ] [auto] A follow-up on a running session is queued and runs as the next turn; send-now moves a queued message into the current turn at its next step; remove takes it out; the queue and the order stay the same after a reconnect (`FakeDSH`, `FakeBridge`) — Evidence:
+- [x] [auto] A follow-up on a running session is queued and runs as the next turn; send-now moves a queued message into the current turn at its next step; remove takes it out; the queue and the order stay the same after a reconnect (`FakeDSH`, `FakeBridge`) — Evidence: test:FollowUpQueueAgainstFakeDSH/aFollowUpWhileTheTaskRunsIsQueuedAndRunsAsTheNextTurn · test:FollowUpQueueAgainstFakeDSH/sendNowMovesAQueuedMessageIntoTheCurrentTurnAtItsNextStep · test:FollowUpQueueAgainstFakeDSH/removeTakesAQueuedMessageOut · test:FollowUpQueueAgainstFakeDSH/theQueueAndItsOrderStayTheSameAfterAReconnect · test:FollowUpQueueTests/aFollowUpWhileTheTaskRunsWaitsAndRunsAsTheNextTurn · test:FollowUpQueueTests/sendNowMovesAQueuedMessageIntoTheTurnAndRemoveTakesOneOut · test:FollowUpQueueTests/theQueueAndItsOrderStayTheSameAfterAReconnect
 - [ ] [ui] While a task runs, send a follow-up: it shows as queued above the composer and runs after the turn; tap 立即发送 on another one: the next step of the agent answers it, and the stop key stays (`cmd:scripts/demo/followup.sh`) — Evidence:
 - [ ] [ui] After an interrupt, send a new message in the same session: the task runs again and the interrupted card goes (`cmd:scripts/demo/followup.sh`) — Evidence:
 
