@@ -552,6 +552,8 @@ Append-only, dated.
 
 - **2026-11-08 · X1 assigned.** Branch `claude/x1-model-failures`, simulator `dshm-X1`, DSHM_HOME `~/.dshm/home-x1`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D104–D106. `eval "$(scripts/slice-env X1)"` exports them.
 
+- **2026-11-08 · S7 merged; X1 runs as a background agent.** S7 merged as 1978046 (review PASS on 90b3822, S7-90b3822.txt, no flaky part). design/board.png conflicted (binary render); the coordinator rendered it again from the merged board.html with scripts/render-design in the merge commit (only board.png and screens/H.png changed). D98 in §9. The user's uncommitted Hosts.xcstrings (Xcode reformat) did not apply after the merge; it stays as a stash for the user. S7 findings for the tooling: no script creates dshm-<ID> (created by hand again); a reviewer that runs scripts/review in the background and waits on a monitor dies with the run (nohup + foreground wait works); the sandbox refuses eval "$(scripts/slice-env <ID>)". X1 assigned and runs as a background agent (§5.3 step 3).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
