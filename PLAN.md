@@ -277,7 +277,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 **Done when**
 - [x] [auto] A pending question is in the S2 summary and the replay and counts in 等我处理; a typed and a multi-select answer reach DSH as given (`FakeDSH`, `FakeBridge`) — Evidence: test:Questions/pendingQuestionIsInTheSummaryAndTheReplayAndWaitsOnUser · test:Questions/typedAndMultiSelectAnswersReachDshAsGiven · test:QuestionAnswersTests/aQuestionOnlyInTheSummaryComesBackAndStaysAfterARelaunch · test:QuestionAnswersTests/aPendingQuestionWaitsOnMeAndATypedAnswerReachesDshAsGiven · test:QuestionAnswersTests/aMultiSelectAnswerReachesDshAsGiven · test:QuestionAnswersTests/anAnswerFromAnotherClientWithdrawsTheCard · cmd:scripts/demo/questions.sh
-- [ ] [ui] Answer a question by typing in the composer: the card shows the answer and the task continues (`cmd:scripts/demo/questions.sh`) — Evidence:
+- [x] [ui] Answer a question by typing in the composer: the card shows the answer and the task continues (`cmd:scripts/demo/questions.sh`) — Evidence: cmd:scripts/demo/questions.sh --all · test:AgentQuestionUITests/testTypeAnAnswerInTheComposer · shot:evidence/S2/questions-typed.png · shot:evidence/S2/questions-typed-answered.png
 - [ ] [ui] A pending question shows under 等我处理 in 所有任务 and in the drawer badge, and is still there after a relaunch (`cmd:scripts/demo/questions.sh`) — Evidence:
 
 **Not**: Push for questions. Plan alignment and pre-authorization (#9).
