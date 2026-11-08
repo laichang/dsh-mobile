@@ -57,11 +57,18 @@ struct HostDetailView: View {
             Button(role: .cancel) {} label: { Text("Cancel", tableName: "Hosts") }
         } message: { device in
             if device.id == list?.currentDeviceID {
-                Text("This phone will lose access to \(host?.name ?? ""). To use it again, pair again.", tableName: "Hosts")
+                // S29: say what happens; the host leaves the drawer and is not retried (D82).
+                Text(Self.revokeThisDeviceMessage(host?.name ?? ""))
             } else {
                 Text("Device \(device.id) will lose access to \(host?.name ?? ""). It must pair again to reconnect.", tableName: "Hosts")
             }
         }
+    }
+
+    /// S29: the message of the alert before a revoke of this device (X2 and the drawer's
+    /// "Devices and audit").
+    static func revokeThisDeviceMessage(_ host: String) -> String {
+        String(localized: "This phone will be removed from \(host). \(host) will leave the drawer, with nothing left to tap, and the phone will not reconnect to it. To use it again, pair again.", table: "Hosts")
     }
 
     private var confirmTitle: Text {
@@ -169,6 +176,10 @@ struct HostDetailView: View {
                 } else {
                     await load()
                 }
+            } catch where isCurrent && HostConnection.isDeviceRefusal(error) {
+                // S29: the close 4003 came before the response; the revoke took effect.
+                shell.sheet = nil
+                actions.forget(hostKey)
             } catch { self.error = String(describing: error) }
         }
     }

@@ -168,6 +168,12 @@ public final class TaskListStore {
     public private(set) var tasks: [TaskRow] = []
     public private(set) var isSending = false
     public private(set) var sendError: String?
+    /// S29 (D82): hosts that refused this device with close 4003 (it was revoked), as they
+    /// were last shown. The store dropped them: no row, no task, no retry.
+    public private(set) var revokedHosts: [HostStatus] = []
+    /// S29: called once per host that revoked this device, after the store dropped it. The app
+    /// forgets the pairing (D59) and tells the user.
+    @ObservationIgnored public var onHostRevoked: (HostStatus) -> Void = { _ in }
 
     /// How long `send()` waits for a host that is still connecting.
     public var sendWaitsFor: Duration = .seconds(10)
@@ -418,10 +424,34 @@ public final class TaskListStore {
                 await link.connection.disconnect()
             }
             if Task.isCancelled { break }
+            // S29 (D82): a refusal of this device (close 4003) is final, not transient.
+            if await link.connection.deviceRevoked {
+                dropRevoked(link)
+                break
+            }
             setReachability(failure, link)
             await sleep(delay, link)
             delay = min(delay * 2, backoff.max)
         }
+    }
+
+    /// S29: the host revoked this device. Drop it like a host that was never configured (its
+    /// rows go too; the cache stays on disk until the app forgets the host), and say so once.
+    private func dropRevoked(_ link: Link) {
+        guard let index = links.firstIndex(where: { $0 === link }) else { return }
+        let status = hosts.first { $0.key == link.key }
+        link.loop = nil
+        link.events?.cancel()
+        link.events = nil
+        links.remove(at: index)
+        modelHosts.remove(link.key)
+        catalogs[link.key] = nil
+        if composerHostKey == link.key { composerHostKey = links.last?.key }
+        updateAllHostsOffline()
+        refresh()
+        guard let status else { return }
+        revokedHosts.append(status)
+        onHostRevoked(status)
     }
 
     /// Waits out a backoff delay, or until `foreground()` wakes the loop.

@@ -1247,12 +1247,29 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: —
 
 **Done when**
-- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S29RevokeUITests/testRevokeThisDeviceInDrawerDevicesOnTheRealBridgeOpens08AndStays · test:S29RevokeUITests/testRevokedHostLeavesTheDrawerAndIsNotRetried · test:S29RevokeUITests/testRevokedLastHostOpens08 · test:RevokedHostTests/aHostThatClosesWith4003IsRevokedAndNotRetriedButAnOfflineHostIs · cmd:scripts/demo/s29.sh · shot:evidence/S29/s29-drawer-without-revoked-host.png · shot:evidence/S29/s29-revoked-notice.png · shot:evidence/S29/s29-real-bridge-drawer-08.png
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
 **Log**: —
+- **2026-11-08 · built, to review.** Branch `claude/s29-revoke-forget`; simulator `dshm-S29` (created, iPhone 17 Pro, iOS 26.4); ports 47812/3285 (real host), 47842/3315 (S10 seam); `DSHM_HOME=~/.dshm/home-s29`.
+  - Root cause: the app treated WebSocket close 4003 (device unknown, D21) like a dropped connection. `TaskListStore` retried with backoff forever, so the revoked host stayed in the drawer and showed "connecting" every few seconds. D59's forget ran only after the revoke response in X2. The drawer's "Devices and audit" under each host (S10's `DeviceManagementView`) can also revoke this device, and it only closed the view; a revoke from the web UI or another client had no app path at all. On a real bridge, the X2 path worked before the fix (the response arrives before the close); the drawer path reproduced the user's bug.
+  - Fix: `HostConnection.deviceRevoked` (a live close 4003, a refused Noise handshake, or a refused transport). `TaskListStore` stops that host's loop, drops it and its rows, adds it to `revokedHosts`, and calls `onHostRevoked` once. `AppModel` forgets the host (D59) and shows "访问已被吊销 / <host> 已吊销这台手机的访问" once. X2 also forgets when the close comes before the response. An offline host retries as before. Bridge unchanged.
+  - Fakes: `FakeBridge.drop(code:)`; `FakeHost` closes this device's sockets with 4003 after the revoke response and refuses reconnects with 4003 (was "unreachable"); `revokeThisDevice()` revokes from another client (Darwin `hosts-revoke`, `FakeHostsSwitch`); `connectAttempts`. `HostsControlTests` now expects the dropped host.
+  - Red (unfixed code): `RevokedHostTests` 3/3 failed (the refused host was retried ~100 times in 5 s; log /tmp/dshm-s29/red-swift-test.kept.log). `S29RevokeUITests` on fakes 2/2 failed ("the revoked host is still in the drawer … MacBook-Pro is offline"). Real bridge: `testRevokeThisDeviceInDrawerDevicesOnTheRealBridgeOpens08AndStays` failed (host "… is offline" in the drawer), the X2 variant passed. The red UI runs skipped the swift part with a marker, because the new tests do not compile without the new API.
+  - Green: `scripts/demo/s29.sh --shots` passed: swift test 83/83, S29 fakes 2/2, S29 real bridge 2/2, S21 revoke seam, `scripts/demo/s10.sh` (bridge tests, S10DevicesUITests, peer refused with 4003).
+  - Provisional: **D82** (4003 is final: forget the host, say so once) and a dated amendment to D59. Board X2 caption updated (`scripts/render-design`; `board.png` changed). STORY.md needs no change.
+  - Not run in the demo: S21's `testAllOfflineCardNamesEachHostAndGoesWhenOneIsBack` and `testHostsSheetShowsEachHostsState`. They fail on `main` e94a04e too (checked in a clean checkout): the card shows, but the `hosts.offlineCard` id is not in the tree under `newSession.body` (04a3d0e). For the coordinator: a new fix slice.
+  - Environment: the disk was full (187 MB free, an xcresult write failed). I deleted stale DerivedData of merged slices in /tmp (`dshm-{int,rev,review,readme,release-check,s1–s4,s14–s23,t1,t1r}*-dd`, about 18 GB); kept t0, S24–S29.
+  - Not done: `[human]` item.
+  - Next: `scripts/review S29`.
+- **2026-11-08 · scope addition: the revoke alert says what happens.** The user (relayed by the coordinator, 2026-11-08): 这里有个小点：revoke的时候，出二确弹窗，明确告知会将该设备移除，侧边栏也不会出现这个对应的设备，让用户无处点击.
+  - Done: the alert before a revoke of this device now says "这台手机会从 <host> 移除。之后侧边栏里不再有 <host>，没有可点的入口，手机也不会再去连它。要再用，需要重新配对。" (en: "This phone will be removed from <host>. <host> will leave the drawer, with nothing left to tap, and the phone will not reconnect to it. To use it again, pair again."), in `Hosts.xcstrings`. The same words in X2 (`HostDetailView`) and in the drawer's "Devices and audit" (`DeviceManagementView`). A revoke of another device keeps its own message. The destructive button stays "吊销" (the brief said 撤销; the app and the board use 吊销).
+  - Tests: both real-bridge tests in `S29RevokeUITests` check the alert's message (`expectRevokeThisDeviceMessage`). Shot: evidence/S29/s29-revoke-confirm.png.
+  - Docs: D82 states the wording; the X2 caption on the board (`scripts/render-design`). DESIGN.md's table needs no change.
+  - Verification: `scripts/demo/s29.sh --shots` passed at 12ef8c5 (swift test 83/83, S29 fakes 2/2, real bridge 2/2, S21 revoke seam, S10 demo).
+  - Next: `scripts/review S29 --resume`.
 
 ## 6. M1 exit
 

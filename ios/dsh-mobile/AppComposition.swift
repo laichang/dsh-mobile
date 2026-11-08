@@ -36,6 +36,9 @@ final class AppModel {
     @ObservationIgnored private var connectDelay: Duration = .zero
     /// S21: hosts this device lost its access to (a revoke of this device, D59).
     @ObservationIgnored private var forgottenHostKeys: Set<String> = []
+    /// S29: the host that revoked this phone without a revoke from this phone's hosts sheet
+    /// (another client, or the close came first). The root says so once (D82).
+    var revokedNotice: String?
 
     init() {
         let keys = KeychainDeviceKeyStore()
@@ -63,10 +66,20 @@ final class AppModel {
     private func makeStore() -> TaskListStore? {
         let hosts = hostConfigs().filter { !forgottenHostKeys.contains($0.key) }
         guard !hosts.isEmpty else { return nil }
-        return TaskListStore(container: container, hosts: hosts, prompt: presetPrompt, firstConnectDelay: connectDelay,
-                             preferredHostKey: UserDefaults.standard.string(forKey: Self.preferredHostKey)) { key in
+        let store = TaskListStore(container: container, hosts: hosts, prompt: presetPrompt, firstConnectDelay: connectDelay,
+                                  preferredHostKey: UserDefaults.standard.string(forKey: Self.preferredHostKey)) { key in
             UserDefaults.standard.set(key, forKey: Self.preferredHostKey)
         }
+        store.onHostRevoked = { [weak self] host in self?.hostRevoked(host) }
+        return store
+    }
+
+    /// S29 (D82): a host refused this device with close 4003, so it was revoked. Forget it as
+    /// after a revoke from the hosts sheet (D59), and say so once.
+    private func hostRevoked(_ host: TaskListStore.HostStatus) {
+        guard !forgottenHostKeys.contains(host.key) else { return }
+        revokedNotice = host.name
+        forgetHost(host.key)
     }
 
     func retrySavedHosts() {
@@ -132,7 +145,8 @@ final class AppModel {
     /// S21 · this device lost its access to the host (it revoked itself, D59): forget the pairing
     /// and rebuild the store without it. With no host left, the root shows 08 (`WelcomeView`).
     func forgetHost(_ key: String) {
-        forgottenHostKeys.insert(key)
+        // S29: once per host; the revoke response and the close 4003 can both report it.
+        guard forgottenHostKeys.insert(key).inserted else { return }
         if key.hasPrefix("noise:") {
             let id = String(key.dropFirst("noise:".count))
             let kept = pairing.hosts.load().filter { $0.id != id }

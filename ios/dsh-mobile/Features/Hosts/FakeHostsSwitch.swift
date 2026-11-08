@@ -7,7 +7,8 @@ import Synchronization
 ///
 /// A UI test posts the Darwin notification `FakeHosts.hostsDown` (every host that can be
 /// reached becomes unreachable, as when the phone leaves the Wi-Fi) or `FakeHosts.hostsUp`
-/// (MacBook-Pro is back). After `hostsUp` the app retries at once (`wake`), as it does on
+/// (MacBook-Pro is back), or `FakeHosts.hostsRevoke` (S29: another client revokes this phone
+/// on MacBook-Pro). After `hostsUp` the app retries at once (`wake`), as it does on
 /// foreground, instead of after its backoff.
 enum FakeHostsSwitch {
     private static let hosts = Mutex<[FakeHost]>([])
@@ -28,6 +29,10 @@ enum FakeHostsSwitch {
                 FakeHostsSwitch.set(up: name?.rawValue as String? == FakeHosts.hostsUp)
             }, name as CFString, nil, .deliverImmediately)
         }
+        // S29: MacBook-Pro closes this phone's sockets with 4003 and refuses it from now on.
+        CFNotificationCenterAddObserver(center, nil, { _, _, _, _, _ in
+            FakeHostsSwitch.hosts.withLock { $0 }.first?.revokeThisDevice()
+        }, FakeHosts.hostsRevoke as CFString, nil, .deliverImmediately)
     }
 
     private static func set(up: Bool) {

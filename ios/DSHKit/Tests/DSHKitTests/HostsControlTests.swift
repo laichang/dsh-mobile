@@ -76,12 +76,15 @@ import Testing
 
         let afterSelf = try await connection.revokeDevice(FakeHosts.thisDevice)
         #expect(afterSelf.devices.isEmpty)
-        try await waitUntil("refused") { store.hosts.first?.reachability == .offline }
+        // S29: the host closes with 4003 and refuses this device; the store drops it for good.
+        try await waitUntil("refused and dropped") { store.hosts.isEmpty }
+        #expect(store.revokedHosts.map(\.name) == [FakeHosts.macName])
         // A revoked device cannot connect again, even when the host is reachable.
+        let attempts = switchable[0].connectAttempts
         switchable[0].setReachable(true)
         store.foreground()
         try await Task.sleep(for: .milliseconds(200))
-        #expect(store.hosts.first?.reachability != .online)
-        #expect(store.allHostsOffline)
+        #expect(store.hosts.isEmpty)
+        #expect(switchable[0].connectAttempts == attempts)
     }
 }

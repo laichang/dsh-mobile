@@ -13,6 +13,13 @@ struct dsh_mobileApp: App {
                 // DESIGN.md "Visual language": the app always uses dark mode (T1).
                 .preferredColorScheme(.dark)
                 .environment(\.hostActions, HostActions(pair: { app.startPairing() }, forget: { app.forgetHost($0) }))
+                // S29 (D82): a host revoked this phone; the app forgot it. Said once.
+                .alert(Text("Access removed", tableName: "Hosts"), isPresented: Binding(
+                    get: { app.revokedNotice != nil }, set: { if !$0 { app.revokedNotice = nil } })) {
+                    Button(role: .cancel) {} label: { Text("OK", tableName: "Hosts") }
+                } message: {
+                    Text("\(app.revokedNotice ?? "") revoked this phone's access. To use it again, pair it again.", tableName: "Hosts")
+                }
                 .sheet(isPresented: $app.showingScanner) {
                     ScannerView(mode: app.scannerMode, found: { app.openPairingCode($0) }, cancel: { app.showingScanner = false })
                 }
