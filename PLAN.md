@@ -1274,7 +1274,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 
 ### S30 · Fix: Pair again after a revoke
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-08: "无法打开已配对的电脑"（之前已经revoke了，现在装包后提示要重新配对，扫码重新配对后出现）. (Coordinator: `AppModel.forgottenHostKeys` keeps `noise:<host id>` after S29 forgets a host; the id comes from the host key, so the same Mac paired again is filtered out of `makeStore`, while `hasSavedHosts` is true.)
 
@@ -1283,12 +1283,18 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: —
 
 **Done when**
-- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S30PairAgainUITests/testPairTheSameHostAgainAfterARevokeOpensTheDrawer · test:S29RevokeUITests · test:S21HostsUITests/testRevokeThisDeviceAsksThenOpens08 · cmd:scripts/demo/s30.sh · shot:evidence/S30/s30-revoked-08.png · shot:evidence/S30/s30-paired-again.png · shot:evidence/S30/s30-paired-again-drawer.png
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
 **Log**: —
+- **2026-11-08 · Fix: pairing again clears the forgotten key.**
+  - Cause (coordinator's diagnosis confirmed): after D59/D82 forget a host, `AppModel.forgottenHostKeys` keeps `noise:<host id>`; the id comes from the host key, so the same Mac paired again was filtered out of `makeStore` while `hasSavedHosts` was true → "Couldn't open your paired computers". A relaunch hid it (the set is in memory).
+  - Fix (`49d789e`): `closePairing` removes the paired host's key from the set (D85, provisional, ARCHITECTURE.md). The set stays: fake hosts, the once-only notice (D82) and the Debug loopback need it.
+  - Test: `S30PairAgainUITests` on a real bridge (three fresh links): pair, revoke in X2, 08, pair again, drawer 1/1, revoke again, pair a third time. Red without the fix: the root showed 无法打开已配对的电脑 (重试 / 配对电脑). Note: `openDeepLink` (`XCUIApplication.open`) relaunches the app and hid the bug; the test opens later links with `XCUIDevice.shared.system.open` in the running app.
+  - `scripts/demo/s30.sh --shots` green: S30, S29RevokeUITests (fakes and real bridge), S21 revoke seam, swift test. Created simulator `dshm-S30` (it did not exist).
+  - Provisional for §9: D85. Next: `scripts/review S30`; `[human]` stays with the user.
 
 ## 6. M1 exit
 
