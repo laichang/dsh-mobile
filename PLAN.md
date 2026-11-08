@@ -46,10 +46,10 @@ This file exists only while this requirement is in progress. It serves this requ
 | X1 | done | merged `9d4cb67` | 2026-11-08 | — (provisional D104 in §9) |
 | S1 | done | merged `55300a7` | 2026-11-09 | — (provisional D101, D102 in §9) |
 | S2 | doing | `claude/s2-questions-more` | 2026-11-09 | Slice owner builds (§8) |
-| S3 | doing | `claude/s3-model-failures` | 2026-11-08 | Slice owner builds (§8) |
+| S3 | done | merged `33e96ff` | 2026-11-09 | — (provisional D110 in §9) |
 | S4 | done | merged `83c82ce` | 2026-11-09 | — (provisional D107, D108 in §9) |
 | S5 | doing | `claude/s5-voice` | 2026-11-09 | Slice owner builds (§8) |
-| S6 | todo | — | 2026-11-08 | Assign it and start a session |
+| S6 | doing | `claude/s6-live-activity` | 2026-11-09 | Slice owner builds (§8) |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | todo | — | 2026-11-08 | Assign it and start a session |
 | S9 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -286,7 +286,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S3 · Model failures: a red failure, then continue with a new message
 
-**Status** todo · **Needs** T0, X1 · **Branch** —
+**Status** review · **Needs** T0, X1 · **Branch** —
 
 **Why**: Closes #4. User, 2026-11-08: "模型失效，或者没token了，直接展示红色的失败文案，用户如果要继续做，他会去充值token，然后重新发消息触发任务继续执行". This replaces the pause into 等我处理 on screen X4: DESIGN X4 and STORY §8 change in the same commit.
 
@@ -298,12 +298,21 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/model-failures.sh`: a task on a provider with no balance fails in red with the reason; after the fake top-up, a new message in the same session continues it.
 
 **Done when**
-- [ ] [auto] Each failure that X1 recorded ends the task as failed with the text of DSH, and no retry keeps it running (`FakeDSH` with the X1 fixtures) — Evidence:
-- [ ] [ui] A task whose provider has no balance shows the red failure card with the reason; after the top-up, a new message in the same session continues it (`cmd:scripts/demo/model-failures.sh`) — Evidence:
+- [x] [auto] Each failure that X1 recorded ends the task as failed with the text of DSH, and no retry keeps it running (`FakeDSH` with the X1 fixtures) — Evidence: test:ModelFailuresAgainstFakeDSH/eachRecordedFailureEndsTheTaskAsFailedWithTheTextOfDSH · test:ModelFailuresAgainstFakeDSH/aNewMessageAfterEachRecordedFailureContinuesTheSameSession · test:ModelFailuresAgainstFakeDSH/aRateLimitThatClearsCompletesTheTask · test:ModelFailuresAgainstFakeDSH/aModelTheHostDoesNotListIsRefusedWithTheTextOfDSHAndNothingIsSwapped · test:ModelFailureTests/aNewMessageAfterTheFailureContinuesTheSameSession · cmd:scripts/demo/model-failures.sh
+- [x] [ui] A task whose provider has no balance shows the red failure card with the reason; after the top-up, a new message in the same session continues it (`cmd:scripts/demo/model-failures.sh`) — Evidence: cmd:scripts/demo/model-failures.sh · test:ModelFailuresUITests/testNoBalanceFailsInRedThenANewMessageContinuesAgainstRealDSH · shot:evidence/S3/model-failure-red.png · shot:evidence/S3/model-failure-continued.png
 
 **Not**: A top-up link. A model switch inside the failure card.
 
 **Log**: —
+- **2026-11-09 · Built: red failure, then continue with a new message.**
+  - Done: the bridge forwards DSH's failure class (`failure_code`, field 420 on TaskEnded and TaskSummary) and DSH's message as it is; a failed phone task takes a follow-up, and that turn adds milestones. The app shows its own words for AUTH and QUOTA/ACCOUNT_QUOTA, DSH's text for other codes, the code as a tag, and a hint that a message continues the session. STORY §4 §8, DESIGN X1 X4 (X4 tag M2 · 已有), D89, D104 (amended), D110.
+  - Evidence: `ModelFailuresAgainstFakeDSH` replays all ten X1 recordings (copied to `bridge/test/fixtures/model-failures/`); `ModelFailureTests` (DSHKit); `scripts/demo/model-failures.sh` passed twice against real DSH with a fake DeepSeek (`scripts/demo/fake-deepseek.mjs`), 402 until the top-up. No flaky part seen.
+  - Provisional: D110 (new), D104 amendment (wire). No new dependencies.
+  - Machine notes: GitHub was unreachable from this Mac (connection reset), so `swift build` could not clone swift-protobuf; I seeded `ios/DSHKit/.build` from the main checkout and `/tmp/dshm-s3-dd/SourcePackages` from `/tmp/dshm-T0-dd`. `~/.dshm/home-s3` held an M1 S3 profile that pinned the bridge to port 47812, so T0 could not start; I moved it to `~/.dshm/home-s3.stale-m1-2026-11-09`.
+  - Not done: the spike folder `spikes/model-failures/` stays (its README says to delete it after this slice; the coordinator decides).
+  - Next: the reviewer runs `scripts/review S3` on the head commit.
+- **2026-11-09 · Merged main (follow-up queue); demo passes again.** Merged main with the follow-up queue. The bridge files of main were the base and the model-failure edits went on top. A follow-up after a failure now needs the new capability failures.v1, because a bridge from before this change refuses it. The tests of the queue that expected a refusal after a failure now expect a continue, or set a bridge without failures.v1. The replay in FakeDSH gives the live rpc id to the user message, so the queue logs no extra user message. Bridge tests: 105 of 105 pass. Swift tests: 122 pass. Under heavy machine load, some older timing tests failed (S16CodingTaskTests, NoiseResumeTests, FollowUpQueueTests, CachedMilestone). They pass alone and in a full run at normal load. The demo passed after the merge. The screenshots stay from the run before the merge, because the new continue shot has the iOS keyboard tip on top of the screen. Note for the coordinator: the profile ~/.dshm/home-s2 has port 47811 in cordis.patch.yml (a stale M1 setting), so the S2 DSH can take the bridge port of this slice. The stale profile ~/.dshm/home-s3 (port 47812) went to ~/.dshm/home-s3.stale-m1-2026-11-09.
+- **2026-11-09 · Merged main (attachments).** Merged main with the attachments of the composer. Conflicts were in dsh.ts, task-hub.ts, TaskListStore.swift, fixtures.json, ARCHITECTURE.md, DESIGN.md and board.png; both sides are kept. A follow-up after a failure can carry attachments, as after a completed or stopped task (D107 amended), because canAttach follows canFollowUp. Regenerated the code and the fixtures (no change), and rendered the design again. Bridge tests: 109 of 109 pass. Swift tests: 125 pass. The review of d2ca8c2 passed before this merge (/tmp/dshm-review/S3-d2ca8c2.txt); a full review runs on the new head.
 
 ### S4 · Attach files: photos, text, PDF, other files
 
@@ -612,6 +621,16 @@ Append-only, dated.
 
 - **2026-11-09 · S5 assigned.** Branch `claude/s5-voice`, simulator `dshm-S5`, DSHM_HOME `~/.dshm/home-s5`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D116–D118. `eval "$(scripts/slice-env S5)"` exports them.
 
+- **2026-11-09 · S5 runs as a background agent.** S5 assigned (D116–D118) and started as a background agent. S3 was told that S4 landed and to merge main before its handover if it conflicts. Running: S2, S3, S5.
+
+- **2026-11-09 · S3 merged.** Merged as `33e96ff`; `scripts/check-plan` on the merge commit passed. `scripts/review S3` at `9f079fa`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S3-9f079fa.txt`). No open `[human]` items, so S3 is `done`. §9 rows 14 (D110).
+
+- **2026-11-09 · S3 merged; stale DSH homes from M1.** S3 merged as 33e96ff (review PASS on 9f079fa after the merge of main with S4, S3-9f079fa.txt; head 1612732 adds only PLAN changes). D110 new; D104 and D107 amended: in §9. spikes/model-failures/ stays (no code points at it); the user decides at the end. The user's uncommitted Outcomes.xcstrings (Xcode reformat) did not apply after the merge; it stays as a stash for the user. Environment findings (for issues at the end): ~/.dshm/home-<id> profiles from M1 survive with stale port pins (home-s2/cordis.patch.yml pins 47811, the port of another slice; home-s3 was pinned to 47812 and was moved aside to home-s3.stale-m1-2026-11-09); slice IDs repeat across plans, so scripts/slice-env --assign should start from an empty DSHM_HOME. No GitHub access for SwiftPM in the sandbox (package caches filled from local copies). The global pnpm points at a half-downloaded corepack pnpm 12.16.1; the pinned 11.28.5 works. Older swift timing tests (S16CodingTaskTests, NoiseResumeTests, FollowUpQueueTests, CachedMilestone) fail at load ~190 and pass at normal load (S12).
+
+- **2026-11-09 · S6 assigned.** Branch `claude/s6-live-activity`, simulator `dshm-S6`, DSHM_HOME `~/.dshm/home-s6`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D119–D121. `eval "$(scripts/slice-env S6)"` exports them.
+
+- **2026-11-09 · S6 runs as a background agent.** S6 assigned (D119–D121) and started as a background agent; its brief asks for free-team signing (no App Group) and a pbxproj change limited to the new widget target. S2 was told about its stale home-s2 port pin. Running: S2, S5, S6.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -631,3 +650,6 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 11 | S4 | decision | ARCHITECTURE D108, *provisional*: The "+" menu and the attachment chips (screens 01, 06) | `claude/s4-attach-files` | merged `83c82ce` |
 | 12 | S4 | decision | D95 amended: attachments of any type (not only photos) | `claude/s4-attach-files` | `da00e84` |
 | 13 | S4 | decision | D18 amended: file parts reach DSH by name; attachments only once a task is done, not in a queued message | `claude/s4-attach-files` | `d2904bb` |
+| 14 | S3 | decision | ARCHITECTURE D110, *provisional*: A new message continues a task after a model failure (screens X1, X4) | `claude/s3-model-failures` | merged `33e96ff` |
+| 15 | S3 | decision | D104 amended: failure_code (field 420) on TaskEnded and TaskSummary, message without the 'error: ' prefix, capability failures.v1 | `claude/s3-model-failures` | `0c66430` |
+| 16 | S3 | decision | D107 amended: a follow-up after a failure can carry attachments | `claude/s3-model-failures` | `8822d67` |

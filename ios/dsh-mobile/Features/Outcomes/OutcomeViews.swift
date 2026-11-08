@@ -147,8 +147,8 @@ private struct OutcomeFooter: View {
     }
 }
 
-/// X1 · "任务失败" with the failure message as the host gave it, or "任务已停止"; then
-/// "复制错误" and "新会话里再试".
+/// X1 · "任务失败" with the failure message as the host gave it (model failures: ModelFailureViews),
+/// or "任务已停止"; then "复制错误" and "新会话里再试".
 private struct OutcomeCard: View {
     let store: TaskListStore
     let row: TaskListStore.TaskRow
@@ -171,16 +171,21 @@ private struct OutcomeCard: View {
             .accessibilityLabel(failed ? Text("Task failed", tableName: "Outcomes") : Text("Task stopped", tableName: "Outcomes"))
             .accessibilityIdentifier("outcome.title")
             if failed {
-                Text(verbatim: outcome.error.isEmpty ? String(localized: "The host gave no error message.", table: "Outcomes") : outcome.error)
-                    .font(DSHTheme.mono(.footnote))
-                    .foregroundStyle(DSHTheme.textPrimary)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(DSHTheme.s19ErrorFill, in: .rect(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(DSHTheme.hairline))
-                    .accessibilityIdentifier("outcome.error")
+                // D104: the app's own words for some model failures, DSH's text for the others.
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(verbatim: outcome.shownError)
+                        .font(DSHTheme.mono(.footnote))
+                        .foregroundStyle(DSHTheme.textPrimary)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("outcome.error")
+                    FailureCodeTag(code: outcome.code)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(DSHTheme.s19ErrorFill, in: .rect(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(DSHTheme.hairline))
+                FailureContinueHint(store: store, row: row) // D110
             } else {
                 Group {
                     if let step = outcome.stoppedAtStep {
@@ -226,7 +231,7 @@ private struct OutcomeCard: View {
     }
 
     private func copy() {
-        UIPasteboard.general.string = outcome.error
+        UIPasteboard.general.string = outcome.copiedError
         copied = true
     }
 

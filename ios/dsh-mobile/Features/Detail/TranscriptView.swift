@@ -3,12 +3,14 @@ import SwiftUI
 
 struct TranscriptView: View {
     let source: String
+    /// Says "Waiting for the agent…" while there is no text yet; off once the task has ended.
+    var waiting = true
     @State private var blocks = TranscriptBlocks()
     @State private var previous = ""
 
     var body: some View {
         LazyVStack(alignment: .leading, spacing: 12) {
-            if source.isEmpty {
+            if source.isEmpty && waiting {
                 Text("Waiting for the agent…").foregroundStyle(DSHTheme.textSecondary)
             }
             ForEach(blocks.completed.indices, id: \.self) { index in

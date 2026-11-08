@@ -7,7 +7,8 @@ import Synchronization
 /// `conversation.v1` a `.userMessage` can start another turn after it.
 public enum TaskEvent: Sendable, Equatable {
     case chunk(taskID: String, seq: UInt64, text: String)
-    case ended(taskID: String, status: TaskEndStatus, message: String)
+    /// `code`: DSH's failure class for a model failure (`QUOTA`, `AUTH`, …, D104); empty otherwise.
+    case ended(taskID: String, status: TaskEndStatus, message: String, code: String = "")
     /// S3: the next step on the task's milestone timeline. Arrives before `.ended`.
     case milestone(Milestone)
     case modelSelected(taskID: String, selection: ModelSelection)
@@ -80,6 +81,8 @@ public struct TaskSnapshot: Sendable, Equatable {
     public var createdAt: Date
     public var updatedAt: Date
     public var message: String
+    /// D104: DSH's failure class when the task failed on its model (`QUOTA`, `AUTH`, …); empty otherwise.
+    public var failureCode = ""
     public var approvals: [Approval] = []
     public var approvalOnly = false
     public var modelSelection: ModelSelection?
@@ -113,6 +116,7 @@ public struct TaskSnapshot: Sendable, Equatable {
             createdAt: Date(timeIntervalSince1970: Double(s.createdAtMs) / 1000),
             updatedAt: Date(timeIntervalSince1970: Double(s.updatedAtMs) / 1000),
             message: s.message)
+        failureCode = s.failureCode
         sessionRevision = s.hasSessionRevision ? s.sessionRevision : nil
         externalSession = s.externalSession
         latestReply = s.hasLatestReply ? s.latestReply : nil
@@ -679,7 +683,7 @@ public actor HostConnection {
         case .assistantChunk(let c)?:
             return .chunk(taskID: c.taskID, seq: c.seq, text: c.text)
         case .taskEnded(let e)?:
-            return .ended(taskID: e.taskID, status: TaskEndStatus(wire: e.status), message: e.message)
+            return .ended(taskID: e.taskID, status: TaskEndStatus(wire: e.status), message: e.message, code: e.failureCode)
         case .taskUpserted(let u)?:
             return .upserted(TaskSnapshot(u.task))
         case .approvalPending(let approval)?:
