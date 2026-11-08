@@ -683,3 +683,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 19 | S2 | decision | D92 amended: a question keeps no timeout (the Cut asked for a timeout to a refusal, as D25); DSH timed mode closes the card as not answered | `claude/s2-questions-more` | `b3f148d` |
 | 20 | S5 | decision | ARCHITECTURE D116, *provisional*: Voice input: on-device speech to text with iOS 26's `SpeechAnalyzer` | `claude/s5-voice` | merged `5362e43` |
 | 21 | S5 | decision | ARCHITECTURE D117, *provisional*: The mic key and where the words go (screens 01, 06, V1, V2) | `claude/s5-voice` | merged `5362e43` |
+| 22 | S5 | tooling | scripts/render-design renders the board 9700 px tall (was 7500): board.png was cut off at the M2 row | `claude/s5-voice` | `7846a92` |
