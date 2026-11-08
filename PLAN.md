@@ -383,6 +383,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
   Merged main (S3 model failures) at 48e4889: conflicts in ARCHITECTURE (D110 next to D116/D117), DESIGN (§7/§8 rows), board.png (re-rendered). A failed task now takes follow-ups, so X1 has the mic too.
   Notes: the permission-denied case uses the fake (`-DSHMFakeSpeech denied`), not `simctl privacy revoke`. The real Speech path is only compiled, not run: the simulator tests use the fake; a real-device check of dictation (Chinese and English) is for the user. No flaky part seen in 4 voice.sh runs. `scripts/render-design` exited 2 three times while another worktree rendered; the 4th try passed.
   Next: reviewer runs `scripts/review S5`.
+- **2026-11-09 · Merged main again (S2 agent questions).** Review of 8d443b5 passed (`/tmp/dshm-review/S5-8d443b5.txt`, no flaky part). Then main moved (S2 merged). Merged main at 47d0c45: conflicts in `SessionPage.swift` (the session composer now also answers an agent question; the mic shows for a follow-up or an answer, and an answer stops dictation first), ARCHITECTURE (D113/D114 next to D116/D117), board.png (re-rendered; mic also on P1's composer). The app builds. Next: review again on the new head.
 
 ### S6 · Live Activity: show on the lock screen that a task runs
 
