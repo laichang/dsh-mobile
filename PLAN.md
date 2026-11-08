@@ -283,7 +283,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S3 · Model failures: a red failure, then continue with a new message
 
-**Status** todo · **Needs** T0, X1 · **Branch** —
+**Status** doing · **Needs** T0, X1 · **Branch** —
 
 **Why**: Closes #4. User, 2026-11-08: "模型失效，或者没token了，直接展示红色的失败文案，用户如果要继续做，他会去充值token，然后重新发消息触发任务继续执行". This replaces the pause into 等我处理 on screen X4: DESIGN X4 and STORY §8 change in the same commit.
 
@@ -295,8 +295,8 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/model-failures.sh`: a task on a provider with no balance fails in red with the reason; after the fake top-up, a new message in the same session continues it.
 
 **Done when**
-- [ ] [auto] Each failure that X1 recorded ends the task as failed with the text of DSH, and no retry keeps it running (`FakeDSH` with the X1 fixtures) — Evidence:
-- [ ] [ui] A task whose provider has no balance shows the red failure card with the reason; after the top-up, a new message in the same session continues it (`cmd:scripts/demo/model-failures.sh`) — Evidence:
+- [x] [auto] Each failure that X1 recorded ends the task as failed with the text of DSH, and no retry keeps it running (`FakeDSH` with the X1 fixtures) — Evidence: test:ModelFailuresAgainstFakeDSH/eachRecordedFailureEndsTheTaskAsFailedWithTheTextOfDSH · test:ModelFailuresAgainstFakeDSH/aNewMessageAfterEachRecordedFailureContinuesTheSameSession · test:ModelFailuresAgainstFakeDSH/aRateLimitThatClearsCompletesTheTask · test:ModelFailuresAgainstFakeDSH/aModelTheHostDoesNotListIsRefusedWithTheTextOfDSHAndNothingIsSwapped · test:ModelFailureTests/aNewMessageAfterTheFailureContinuesTheSameSession · cmd:scripts/demo/model-failures.sh
+- [x] [ui] A task whose provider has no balance shows the red failure card with the reason; after the top-up, a new message in the same session continues it (`cmd:scripts/demo/model-failures.sh`) — Evidence: cmd:scripts/demo/model-failures.sh · test:ModelFailuresUITests/testNoBalanceFailsInRedThenANewMessageContinuesAgainstRealDSH · shot:evidence/S3/model-failure-red.png · shot:evidence/S3/model-failure-continued.png
 
 **Not**: A top-up link. A model switch inside the failure card.
 
