@@ -1289,6 +1289,12 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
 **Log**: —
+- **2026-11-08 · Fix: pairing again clears the forgotten key.**
+  - Cause (coordinator's diagnosis confirmed): after D59/D82 forget a host, `AppModel.forgottenHostKeys` keeps `noise:<host id>`; the id comes from the host key, so the same Mac paired again was filtered out of `makeStore` while `hasSavedHosts` was true → "Couldn't open your paired computers". A relaunch hid it (the set is in memory).
+  - Fix (`49d789e`): `closePairing` removes the paired host's key from the set (D85, provisional, ARCHITECTURE.md). The set stays: fake hosts, the once-only notice (D82) and the Debug loopback need it.
+  - Test: `S30PairAgainUITests` on a real bridge (three fresh links): pair, revoke in X2, 08, pair again, drawer 1/1, revoke again, pair a third time. Red without the fix: the root showed 无法打开已配对的电脑 (重试 / 配对电脑). Note: `openDeepLink` (`XCUIApplication.open`) relaunches the app and hid the bug; the test opens later links with `XCUIDevice.shared.system.open` in the running app.
+  - `scripts/demo/s30.sh --shots` green: S30, S29RevokeUITests (fakes and real bridge), S21 revoke seam, swift test. Created simulator `dshm-S30` (it did not exist).
+  - Provisional for §9: D85. Next: `scripts/review S30`; `[human]` stays with the user.
 
 ## 6. M1 exit
 
