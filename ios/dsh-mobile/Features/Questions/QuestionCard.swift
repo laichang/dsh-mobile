@@ -21,6 +21,10 @@ struct QuestionCard: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(DSHTheme.amber.opacity(0.14), in: RoundedRectangle(cornerRadius: 6))
+                // The card's handle for tests and VoiceOver: a SwiftUI stack is not an element of its own.
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("question.card")
+                .accessibilityValue(question.outcome?.rawValue ?? "pending")
             ForEach(question.items) { item in
                 VStack(alignment: .leading, spacing: 9) {
                     Text(verbatim: item.text)
@@ -44,9 +48,6 @@ struct QuestionCard: View {
         .background(question.outcome == nil ? DSHTheme.amber.opacity(0.06) : Color.clear, in: RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16)
             .strokeBorder(question.outcome == nil ? DSHTheme.amber.opacity(0.4) : DSHTheme.hairline))
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("question.card")
-        .accessibilityValue(question.outcome?.rawValue ?? "pending")
     }
 
     private func chips(_ item: AgentQuestion.Item) -> some View {
