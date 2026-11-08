@@ -24,6 +24,7 @@ import "interrupt.proto";
 import "models.proto";
 import "workspaces.proto";
 import "transcript.proto";
+import "attachments.proto";
 
 // One WebSocket binary message carries exactly one Frame (inside the
 // SecureChannel; plaintext only on loopback in T0).
@@ -56,6 +57,7 @@ message Request {
     RevokeDevice revoke_device = 201;
     ListAudit list_audit = 202;
     ReadSession read_session = 260;
+    UploadBegin upload_begin = 400; UploadChunk upload_chunk = 401; UploadEnd upload_end = 402; // attachments.proto
   }
 }
 
@@ -79,6 +81,7 @@ message Response {
     DeviceList device_list = 200;
     AuditPage audit_page = 202;
     SessionPage session_page = 260;
+    UploadAck upload_ack = 400; UploadStaged upload_staged = 401; // attachments.proto
   }
 }
 
@@ -126,6 +129,7 @@ message CreateTask {
   string prompt = 1;
   ModelSelection model_selection = 120;
   optional string workspace = 140; // Absolute directory on the host; absent uses its configured default.
+  repeated string upload_ids = 400; // Staged uploads (attachments.proto), in prompt order.
 }
 
 message TaskCreated {

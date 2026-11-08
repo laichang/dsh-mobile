@@ -202,7 +202,7 @@ describe('BridgeAgainstFakeDSH', () => {
     const [hello, created, ...events] = client.frames
     assert.equal(hello.kind.case, 'response')
     assert.equal(hello.kind.value?.body.case, 'hello')
-    assert.deepEqual(hello.kind.case === 'response' && hello.kind.value.body.case === 'hello' && hello.kind.value.body.value.capabilities, ['tasks.v1', 'milestones.v1', 'resume.v1', 'interrupt.v1', 'transcript.v1', 'models.v1', 'workspaces.v1', 'drawer.v1'])
+    assert.deepEqual(hello.kind.case === 'response' && hello.kind.value.body.case === 'hello' && hello.kind.value.body.value.capabilities, ['tasks.v1', 'milestones.v1', 'resume.v1', 'interrupt.v1', 'transcript.v1', 'models.v1', 'workspaces.v1', 'drawer.v1', 'attachments.v1'])
 
     assert.ok(created.kind.case === 'response' && created.kind.value.body.case === 'taskCreated')
     assert.equal(created.kind.value.requestId, 2n)

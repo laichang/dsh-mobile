@@ -81,6 +81,20 @@
     { "name": "s17_tool_block_event",
       "frame": { "event": { "hostSeq": "9", "transcriptBlock": { "taskId": "session-1", "blockId": "call_edit_1", "state": "TRANSCRIPT_BLOCK_STATE_DONE", "tool": { "tool": "edit", "target": "ios/DSHKit/Sources/DSHCore/Sync/TaskListStore.swift", "linesAdded": 12, "linesRemoved": 3, "arguments": "{\"file_path\":\"ios/DSHKit/Sources/DSHCore/Sync/TaskListStore.swift\"}" }, "timeMs": "1793000009000" } } } },
     { "name": "s17_failed_tool_block_event",
-      "frame": { "event": { "hostSeq": "11", "transcriptBlock": { "taskId": "session-1", "blockId": "call_bash_1", "state": "TRANSCRIPT_BLOCK_STATE_FAILED", "tool": { "tool": "bash", "target": "swift test", "arguments": "{\"command\":\"swift test\"}", "argumentsTruncated": true, "error": "exit code 1" }, "timeMs": "1793000011000" } } } }
+      "frame": { "event": { "hostSeq": "11", "transcriptBlock": { "taskId": "session-1", "blockId": "call_bash_1", "state": "TRANSCRIPT_BLOCK_STATE_FAILED", "tool": { "tool": "bash", "target": "swift test", "arguments": "{\"command\":\"swift test\"}", "argumentsTruncated": true, "error": "exit code 1" }, "timeMs": "1793000011000" } } } },
+    { "name": "attachments_upload_begin_request",
+      "frame": { "request": { "id": "7", "uploadBegin": { "uploadId": "upload-1", "mediaType": "image/jpeg", "name": "photo.jpg", "size": "129226", "sha256": "ZVb8l7UYc+TmIUHlWWgEuHh+wuUpDKtrz5T7KVutN6Q=" } } } },
+    { "name": "attachments_upload_chunk_request",
+      "frame": { "request": { "id": "8", "uploadChunk": { "uploadId": "upload-1", "index": 1, "data": "/9j/4AAQSkZJRgABAQAASA==" } } } },
+    { "name": "attachments_upload_end_request",
+      "frame": { "request": { "id": "10", "uploadEnd": { "uploadId": "upload-1" } } } },
+    { "name": "attachments_upload_ack_response",
+      "frame": { "response": { "requestId": "8", "uploadAck": { "uploadId": "upload-1", "received": "98304" } } } },
+    { "name": "attachments_upload_staged_response",
+      "frame": { "response": { "requestId": "10", "uploadStaged": { "uploadId": "upload-1" } } } },
+    { "name": "attachments_create_task_request",
+      "frame": { "request": { "id": "11", "createTask": { "prompt": "What is in this photo?", "uploadIds": ["upload-1"] } } } },
+    { "name": "attachments_hash_mismatch_response",
+      "frame": { "response": { "requestId": "10", "error": { "code": "upload/hash-mismatch", "message": "The file does not match its SHA-256." } } } }
   ]
 }

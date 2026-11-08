@@ -10,6 +10,7 @@ import { TaskStatus } from '../gen/frame_pb.ts'
 import { TaskState, type TaskSummary } from '../gen/s2_pb.ts'
 import type { DshTasks, StartedTask, TaskOutput } from '../dsh.ts'
 import { HostLog } from './host-log.ts'
+import type { StagedImage } from '../attachments/staging.ts'
 import { milestoneAdded } from '../milestones/wire.ts'
 import { sessionWorkspace } from '../drawer/workspace.ts'
 import { transcriptBlock } from '../transcript/wire.ts'
@@ -19,7 +20,9 @@ export interface TaskStarter {
   listWorkspaces?: DshTasks['listWorkspaces']
   modelCatalog?: DshTasks['modelCatalog']
   selectModel?: DshTasks['selectModel']
-  start(prompt: string, signal: AbortSignal, selection?: Selection, workspace?: string): Promise<StartedTask>
+  start(prompt: string, signal: AbortSignal, selection?: Selection, workspace?: string, images?: readonly StagedImage[]): Promise<StartedTask>
+  /** Attachments (D95): the starter takes `images`. */
+  readonly attachments?: boolean
 }
 
 type Summary = Omit<TaskSummary, '$typeName' | '$unknown' | 'pendingApprovals' | 'modelSelection'>
@@ -41,8 +44,11 @@ export class TaskHub {
    * Starts a task. `onCreated` runs synchronously once the task id is known and before any of
    * the task's events are logged, so the caller can answer `CreateTask` first.
    */
-  async create(prompt: string, onCreated: (taskId: string) => void = () => {}, selection?: Selection, workspace?: string): Promise<string> {
-    const task = await this.starter.start(prompt, this.abort.signal, selection, workspace)
+  async create(prompt: string, onCreated: (taskId: string) => void = () => {}, selection?: Selection, workspace?: string,
+                images?: readonly StagedImage[]): Promise<string> {
+    const task = images?.length
+      ? await this.starter.start(prompt, this.abort.signal, selection, workspace, images)
+      : await this.starter.start(prompt, this.abort.signal, selection, workspace)
     const at = BigInt(this.now())
     const summary: Summary = {
       taskId: task.taskId, title: prompt, state: TaskState.RUNNING,

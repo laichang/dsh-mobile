@@ -1,0 +1,46 @@
+// Attachments: a file larger than one Noise message (65535 bytes, ARCHITECTURE D21) goes to the
+// host in parts before the CreateTask that uses it (ARCHITECTURE D95). Capability "attachments.v1".
+//
+//   UploadBegin  → UploadAck      the bridge checks the declared size and media type
+//   UploadChunk  → UploadAck      one part each, in order, from index 0
+//   UploadEnd    → UploadStaged   the bridge checks the size and the SHA-256
+//   CreateTask { upload_ids }     the staged file goes into the first prompt
+//
+// A refusal is an Error response: upload/too-large, upload/media-type, upload/missing-part,
+// upload/hash-mismatch, upload/unknown. A refused upload is dropped; send it again from the start.
+syntax = "proto3";
+package dshm.v1;
+
+message UploadBegin {
+  // Chosen by the app, unique per connection.
+  string upload_id = 1;
+  // image/jpeg, image/png, image/webp or image/gif.
+  string media_type = 2;
+  // A display name for the host, e.g. "photo.jpg".
+  string name = 3;
+  uint64 size = 4;
+  // SHA-256 of all the bytes, 32 bytes.
+  bytes sha256 = 5;
+}
+
+message UploadChunk {
+  string upload_id = 1;
+  // 0, 1, 2, … with no gaps.
+  uint32 index = 2;
+  bytes data = 3;
+}
+
+message UploadEnd {
+  string upload_id = 1;
+}
+
+message UploadAck {
+  string upload_id = 1;
+  // Bytes received so far.
+  uint64 received = 2;
+}
+
+// The file is complete and checked; CreateTask can name it until the connection closes.
+message UploadStaged {
+  string upload_id = 1;
+}
