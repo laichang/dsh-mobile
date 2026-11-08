@@ -112,6 +112,16 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
 .send{width:34px;height:34px;border-radius:17px;background:var(--blue);display:grid;place-items:center;margin-left:auto;color:#fff;flex:none}
 .send.stop{background:var(--t1);color:#111}
 .send.idle{background:rgba(255,255,255,.14);color:var(--t2)}
+/* voice: the mic key left of send, the line above the field (D117) */
+.mic{width:34px;height:34px;border-radius:17px;background:rgba(255,255,255,.08);display:grid;place-items:center;margin-left:auto;color:var(--t2);flex:none}
+.mic + .send{margin-left:0}
+.mic.on{background:var(--blue);color:#fff}
+.vline{display:flex;align-items:flex-start;gap:7px;font-size:12px;line-height:1.5;color:var(--t2);margin:0 0 9px}
+.vline .vd{width:7px;height:7px;border-radius:4px;background:var(--blue);flex:none;margin-top:5px}
+.vline.warn{color:var(--amber)}
+.vline .lnk{color:var(--blue);font-weight:600;display:block;margin-top:3px}
+.vline .vx{margin-left:auto;color:var(--t3);flex:none}
+.caret{display:inline-block;width:2px;height:17px;background:var(--blue);vertical-align:-3px;margin-left:1px}
 .fade{position:absolute;left:0;right:0;bottom:0;height:200px;background:linear-gradient(180deg,rgba(21,21,23,0),var(--canvas) 55%);pointer-events:none;z-index:4}
 
 /* transcript (desktop style) */
@@ -329,6 +339,8 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <symbol id="square" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/></symbol>
   <symbol id="photo" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></symbol>
   <symbol id="camera" viewBox="0 0 24 24"><path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></symbol>
+  <symbol id="wave" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 10.5v3"/></symbol>
+  <symbol id="micoff" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M4 4l16 16"/></symbol>
   <symbol id="x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></symbol>
   <symbol id="wifi" viewBox="0 0 24 24"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19h.01"/></symbol>
 </svg>
@@ -427,6 +439,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
     <div class="bar">
       <span class="pill" style="padding:6px"><svg class="i xs"><use href="#plus"/></svg></span>
       <span class="pill">DeepSeek-V41-Flash <span class="w">· High</span><svg class="i xs"><use href="#chevd"/></svg></span>
+      <span class="mic"><svg class="i s"><use href="#mic"/></svg></span>
       <span class="send idle"><svg class="i s"><use href="#up"/></svg></span>
     </div>
   </div>
@@ -457,6 +470,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
     <div class="bar">
       <span class="pill" style="padding:6px;background:rgba(255,255,255,.16)"><svg class="i xs"><use href="#plus"/></svg></span>
       <span class="pill">DeepSeek-V41-Flash <span class="w">· High</span><svg class="i xs"><use href="#chevd"/></svg></span>
+      <span class="mic"><svg class="i s"><use href="#mic"/></svg></span>
       <span class="send idle"><svg class="i s"><use href="#up"/></svg></span>
     </div>
   </div>
@@ -497,6 +511,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
     <div class="ph">补充一句，下一轮送达…</div>
     <div class="bar">
       <span class="pill">V41-Flash <span class="w">· High</span><svg class="i xs"><use href="#chevd"/></svg></span>
+      <span class="mic"><svg class="i s"><use href="#mic"/></svg></span>
       <span class="send stop"><svg class="i s"><use href="#square"/></svg></span>
     </div>
   </div>
@@ -523,7 +538,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   </div>
   <div class="composer">
     <div class="ph" style="display:flex;align-items:center"><span style="opacity:.55">回复智能体…</span></div>
-    <div class="bar"><span class="pill" style="padding:6px"><svg class="i xs"><use href="#plus"/></svg></span><span class="pill">V41-Flash <span class="w">· High</span></span><span class="send idle"><svg class="i s"><use href="#up"/></svg></span></div>
+    <div class="bar"><span class="pill" style="padding:6px"><svg class="i xs"><use href="#plus"/></svg></span><span class="pill">V41-Flash <span class="w">· High</span></span><span class="mic"><svg class="i s"><use href="#mic"/></svg></span><span class="send idle"><svg class="i s"><use href="#up"/></svg></span></div>
   </div>
 </template>
 
@@ -573,6 +588,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <li>附件（M2 · 已有）：输入框左下的 <b>+</b> 打开菜单：照片图库、相机、文件。照片和任何类型的文件（txt、pdf、表格、压缩包……）都可以加，一条消息最多 5 个，按加入的顺序发出（D107）。</li>
   <li>每个附件是输入框上方的一块：照片是缩略图，文件是类型、文件名和大小；右上角 × 移除。发送时依次上传，块底有进度条；超过 20 MB 的文件在上传前就标成琥珀色并写明原因，移除后才能发送。</li>
   <li>照片作为图片交给模型；其他文件存到执行端，模型拿到文件名和保存路径。用户气泡上方显示这些附件，重放会话后也在（D95，D107）。执行端不支持时不显示 +。</li>
+  <li>语音（M2 · 已有）：发送键左边的麦克风，说的话在手机上转成文字写进输入框，看过再发；见 V1、V2（D116，D117）。</li>
 </ul></div>
 </div>
 
@@ -971,7 +987,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
     </div>
     <div class="composer">
       <div class="ph" style="display:flex;align-items:center"><span style="opacity:.55">回复智能体…</span></div>
-      <div class="bar"><span class="pill">V41-Flash <span class="w">· High</span></span><span class="send idle"><svg class="i s"><use href="#up"/></svg></span></div>
+      <div class="bar"><span class="pill">V41-Flash <span class="w">· High</span></span><span class="mic"><svg class="i s"><use href="#mic"/></svg></span><span class="send idle"><svg class="i s"><use href="#up"/></svg></span></div>
     </div>
   </div>
   <div class="homebar"></div>
@@ -1040,7 +1056,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
     <div class="composer">
       <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--amber);margin-bottom:10px"><span class="dot off"></span>没有在线的执行端</div>
       <div class="ph">描述任务，/ 命令，@ 文件或会话</div>
-      <div class="bar"><span class="pill" style="opacity:.5">DeepSeek-V41-Flash <span class="w">· High</span></span><span class="send idle" style="opacity:.4"><svg class="i s"><use href="#up"/></svg></span></div>
+      <div class="bar"><span class="pill" style="opacity:.5">DeepSeek-V41-Flash <span class="w">· High</span></span><span class="mic"><svg class="i s"><use href="#mic"/></svg></span><span class="send idle" style="opacity:.4"><svg class="i s"><use href="#up"/></svg></span></div>
     </div>
   </div>
   <div class="homebar"></div>
@@ -1107,7 +1123,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
     </div>
     <div class="composer">
       <div class="ph" style="color:var(--t1)">回答 Agent…<span style="display:inline-block;width:2px;height:17px;background:var(--blue);vertical-align:-3px;margin-left:2px"></span></div>
-      <div class="bar"><span class="pill">V41-Flash <span class="w">· High</span></span><span class="send"><svg class="i s"><use href="#up"/></svg></span></div>
+      <div class="bar"><span class="pill">V41-Flash <span class="w">· High</span></span><span class="mic"><svg class="i s"><use href="#mic"/></svg></span><span class="send"><svg class="i s"><use href="#up"/></svg></span></div>
     </div>
   </div>
   <div class="homebar"></div>
@@ -1211,6 +1227,76 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <li>§5：联系不到你就一直暂停；太久自动取消并通知你。</li>
   <li>恢复时重新确认：把“当时”和“现在”并排给出，变化高亮（这里多了你新放进去的文件）。</li>
   <li>批准的是“现在”的影响，不是 6 小时前的那份。</li>
+</ul></div>
+</div>
+
+</div><!-- grid -->
+
+<div class="rowtitle">M2 · 语音下任务 <small>STORY §7：手机上打字慢，说出来；在手机上转成文字，看过、改过再发</small></div>
+<div class="grid">
+
+<!-- V1 voice: listening on a new session -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" style="left:0;box-shadow:none">
+    <div class="nav">
+      <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+      <div class="navtitle"><b>新会话</b></div>
+      <div class="iconbtn ghost"></div>
+    </div>
+    <div class="scroll"></div>
+    <div class="watermark">deepseek</div>
+    <div class="composer">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);margin-bottom:10px"><span class="dot"></span>MacBook-Pro<span style="opacity:.4">·</span><svg class="i xs"><use href="#folder"/></svg>默认工作区<svg class="i xs"><use href="#chevd"/></svg></div>
+      <div class="vline"><span class="vd"></span><span>正在听……说完再点一下麦克风。点发送之前不会发出。</span></div>
+      <div class="ph typed">先看一下 CI 为什么挂了，然后把桌面上的截图整理到<span class="caret"></span></div>
+      <div class="bar">
+        <span class="pill" style="padding:6px"><svg class="i xs"><use href="#plus"/></svg></span>
+        <span class="pill">DeepSeek-V41-Flash <span class="w">· High</span><svg class="i xs"><use href="#chevd"/></svg></span>
+        <span class="mic on"><svg class="i s"><use href="#wave"/></svg></span>
+        <span class="send"><svg class="i s"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>V1</i>语音下任务 · 正在听<span class="mtag m1">M2 · 已有</span></h3><ul>
+  <li>输入框右下、发送键左边是麦克风键（01、04、06 的输入框都有）。点一下开始听：键变蓝、波形在动，输入框上方一行写着正在听、点发送之前不会发出；再点一下停止（D117）。</li>
+  <li>说的话边听边写进输入框，接在已经输入的文字后面（这里“先看一下 CI 为什么挂了，”是打的字）。识别结果更新时只替换听写的那一段，前面打的字和说话时打的字都保留；中文之间不加空格。</li>
+  <li>不会自己发出：看一遍、改一改，点发送才发。听的时候点发送，就停止听写，发出输入框里现在的文字；改了正在听写的字，就以你改的为准并停止听写。</li>
+  <li>在手机上识别（iOS 26 的 SpeechAnalyzer，D116），音频不离开手机，离线也能用；第一次用某种语言时可能要下载系统的语音模型。</li>
+</ul></div>
+</div>
+
+<!-- V2 voice: permission denied, on a finished session -->
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" style="left:0;box-shadow:none">
+    <div class="nav">
+      <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+      <div class="navtitle"><b>Q3 summary slides</b><small>MacBook-Pro · Q3</small></div>
+      <div class="iconbtn ghost"><svg class="i"><use href="#share"/></svg></div>
+    </div>
+    <div class="scroll" style="display:flex;flex-direction:column">
+      <div class="ubub" style="opacity:.5">把 Q3 的数据做成 12 页汇报</div>
+      <div class="thought" style="margin:0 0 6px"><svg class="i xs" style="color:var(--green)"><use href="#check"/></svg>已工作 · 23 步 · 1 次审批<svg class="i xs"><use href="#chev"/></svg></div>
+      <div class="para">做好了：12 页，存在 <code>~/Desktop/Q3/Q3 summary.pptx</code>。</div>
+      <div class="took" style="margin-top:4px">用时 5 分 24 秒 · DeepSeek-V41-Flash · High</div>
+    </div>
+    <div class="composer">
+      <div class="vline warn"><svg class="i xs" style="flex:none;margin-top:2px"><use href="#micoff"/></svg><span>语音输入已关闭。要打开，前往 设置 › dsh-mobile，打开「麦克风」和「语音识别」。<span class="lnk">打开设置</span></span><svg class="i xs vx"><use href="#x"/></svg></div>
+      <div class="ph typed">再导出一份 PDF</div>
+      <div class="bar"><span class="pill" style="padding:6px"><svg class="i xs"><use href="#plus"/></svg></span><span class="pill">V41-Flash <span class="w">· High</span></span><span class="mic"><svg class="i s"><use href="#mic"/></svg></span><span class="send"><svg class="i s"><use href="#up"/></svg></span></div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>V2</i>语音下任务 · 没有权限<span class="mtag m1">M2 · 已有</span></h3><ul>
+  <li>没有麦克风或语音识别权限时，点麦克风不会开始听，输入框里的字不变；上方一行琥珀色说明怎么打开，「打开设置」直接到本 App 的设置页（D117）。</li>
+  <li>设备不允许（屏幕使用时间、设备管理），或这台 iPhone 没有这种语言的语音模型时，各有一句说明。</li>
+  <li>× 收起这一行；打开权限后再点麦克风就能用。完成后接着说（06）、运行中排队（04）、失败后接着说（X1）和回答 Agent 的提问（P1）用的是同一个输入框，所以有同样的麦克风键。</li>
 </ul></div>
 </div>
 

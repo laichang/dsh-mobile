@@ -368,6 +368,7 @@ private struct SessionComposer: View {
     @State private var draft = ""
     @State private var sending = false
     @State private var sendError: String?
+    @State private var dictation = Dictation() // D117
     @FocusState private var editing: Bool
 
     var body: some View {
@@ -391,6 +392,7 @@ private struct SessionComposer: View {
                 if question == nil { // D107: an answer to a question takes no attachment
                     AttachmentChips(store: store, target: .followUp(taskKey: taskKey), disabled: sending)
                 }
+                DictationNotice(dictation: dictation) // D117
                 TextField(question != nil ? "Answer the agent…"
                             : row?.state.isTerminal == false ? "Add a message for the next turn" : "Reply to your agent",
                           text: $draft, axis: .vertical)
@@ -425,6 +427,10 @@ private struct SessionComposer: View {
                         .buttonBorderShape(.capsule)
                 }
                 Spacer()
+                if followUp || question != nil {
+                    MicKey(dictation: dictation, identifier: "session.mic", disabled: sending,
+                           read: { draft }, write: { draft = $0 }) // D117
+                }
                 if let row, !row.state.isTerminal, let host, !((followUp || question != nil) && (typed || sending)),
                    host.reachability == .online, host.capabilities.contains(DSHProtocolInfo.interruptCapability) {
                     Button {
@@ -459,7 +465,8 @@ private struct SessionComposer: View {
             }
         }
         .composerChrome()
-        .onChange(of: taskKey) { draft = ""; sendError = nil }
+        .onChange(of: taskKey) { dictation.cancel(); draft = ""; sendError = nil }
+        .onDisappear { dictation.cancel() }
         // D101: follow-ups that a stop gave back come back into the field, to send again or not.
         .task(id: "\(taskKey)/\(store.returnedDrafts[taskKey]?.count ?? 0)") {
             let returned = store.takeReturnedDrafts(for: taskKey)
@@ -477,6 +484,7 @@ private struct SessionComposer: View {
 extension SessionComposer {
     /// D89: the message goes to the host; the page shows it when the host logs it.
     private func send(_ row: TaskListStore.TaskRow) {
+        dictation.cancel() // D117: the field as it is now is what goes
         let text = draft
         sending = true
         sendError = nil
@@ -495,6 +503,7 @@ extension SessionComposer {
     /// P1 (D113): the typed text answers the waiting question; the card shows it when the host
     /// resolves the question, and the task continues.
     private func answer(_ question: AgentQuestion, for row: TaskListStore.TaskRow) {
+        dictation.cancel() // D117
         let text = draft
         sending = true
         sendError = nil
@@ -516,6 +525,7 @@ extension SessionComposer {
 struct ComposerView: View {
     @Bindable var store: TaskListStore
     let opened: (String) -> Void
+    @State private var dictation = Dictation() // D117
     @FocusState private var editingPrompt: Bool
 
     var body: some View {
@@ -530,6 +540,7 @@ struct ComposerView: View {
                     .accessibilityIdentifier("composer.error")
             }
             AttachmentChips(store: store, target: .composer, disabled: store.isSending) // D107
+            DictationNotice(dictation: dictation) // D117
             TextField("One sentence for your agent", text: $store.prompt, axis: .vertical)
                 .lineLimit(1...5)
                 .focused($editingPrompt)
@@ -544,12 +555,15 @@ struct ComposerView: View {
                     modelControl(key)
                 }
                 Spacer()
+                MicKey(dictation: dictation, identifier: "composer.mic", disabled: store.isSending,
+                       read: { store.prompt }, write: { store.prompt = $0 }) // D117
                 SendKey(enabled: store.canSend, sending: store.isSending, action: send)
                     .accessibilityLabel("Send")
                     .accessibilityIdentifier("composer.send")
             }
         }
         .composerChrome()
+        .onDisappear { dictation.cancel() }
     }
 
     /// "host · workspace", above the prompt.
@@ -610,6 +624,7 @@ struct ComposerView: View {
     }
 
     private func send() {
+        dictation.cancel() // D117: the field as it is now is what goes
         Task {
             if let key = await store.send() {
                 editingPrompt = false

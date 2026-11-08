@@ -357,7 +357,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S5 · Voice input
 
-**Status** todo · **Needs** T0 · **Branch** —
+**Status** doing · **Needs** T0 · **Branch** —
 
 **Why**: Closes #3. STORY §7: "语音下任务". Typing a task on a phone is slow.
 
@@ -370,13 +370,20 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/voice.sh`.
 
 **Done when**
-- [ ] [auto] Partial and final results replace the dictated range in the field and keep the typed text (fake transcriber) — Evidence:
-- [ ] [ui] Tap the mic, the fake transcriber says a task, the field fills, tap send: the task starts with that text (`cmd:scripts/demo/voice.sh`) — Evidence:
-- [ ] [ui] With speech permission denied, the mic tells how to turn it on and the field does not change (`cmd:scripts/demo/voice.sh`) — Evidence:
+- [x] [auto] Partial and final results replace the dictated range in the field and keep the typed text (fake transcriber) — Evidence: test:DictationTests/partialAndFinalResultsReplaceTheDictatedRangeAndKeepTheTypedText · test:DictationTests/revisedPartialsReplaceOnlyTheDictatedWordsInChinese · test:DictationTests/textTypedWhileSpeakingStaysAfterTheDictatedWords · test:DictationTests/editingTheDictatedWordsStopsDictationAndKeepsTheEdit · cmd:scripts/demo/voice.sh
+- [x] [ui] Tap the mic, the fake transcriber says a task, the field fills, tap send: the task starts with that text (`cmd:scripts/demo/voice.sh`) — Evidence: cmd:scripts/demo/voice.sh · test:VoiceUITests/testDictateATaskThenAFollowUpAndSend · shot:evidence/S5/voice-listening.png · shot:evidence/S5/voice-composer.png · shot:evidence/S5/voice-followup.png · shot:evidence/S5/voice-followup-sent.png
+- [x] [ui] With speech permission denied, the mic tells how to turn it on and the field does not change (`cmd:scripts/demo/voice.sh`) — Evidence: cmd:scripts/demo/voice.sh · test:VoiceUITests/testDeniedSpeechSaysHowToTurnItOnAndKeepsTheField · test:DictationTests/deniedPermissionLeavesTheFieldAsItWas · shot:evidence/S5/voice-denied.png
 
 **Not**: Spoken replies. Sending without a tap. Transcription on the host.
 
 **Log**: —
+- **2026-11-09 · Built; all auto and ui items ticked; review next.** Done: mic key on composer 01 and on the session page's follow-up composer (`ios/dsh-mobile/Features/Voice/`, small hooks in `ComposerView` and `SessionComposer`). On-device speech to text with iOS 26 `SpeechAnalyzer` (`SpeechTranscriber`, else `DictationTranscriber`); `Transcriber` protocol, `Dictation` model and `DictationSplice` in DSHCore; `FakeTranscriber` in DSHTestSupport, chosen by `-DSHMFakeSpeech <phrase>|denied`. `-DSHMFakeScenario conversation` gives the FakeBridge session page its composer. Info.plist keys `NSMicrophoneUsageDescription` and `NSSpeechRecognitionUsageDescription` (only those lines in project.pbxproj). `scripts/check-release-clean` also checks `DSHMFakeSpeech` and `FakeTranscriber`: OK. Full DSHKit suite passes (129 tests).
+  Decisions (provisional, pending user confirmation): D116 (speech API: SpeechAnalyzer; alternatives SFSpeechRecognizer on-device, server recognition, keyboard dictation only, host transcription), D117 (mic UX: tap toggle left of send, words replace the dictated range at the end of the field, send while listening sends the field as it is, denied line with Open Settings). D118 not used. No new dependency.
+  Design: mic key drawn on 01, 04, 06, X1, X3; new screens V1 (listening) and V2 (permission off); DESIGN §7 row and known gaps updated. `scripts/render-design` default height 7500 → 9700, because the board was cut at the M2 row.
+  Merged main (S3 model failures) at 48e4889: conflicts in ARCHITECTURE (D110 next to D116/D117), DESIGN (§7/§8 rows), board.png (re-rendered). A failed task now takes follow-ups, so X1 has the mic too.
+  Notes: the permission-denied case uses the fake (`-DSHMFakeSpeech denied`), not `simctl privacy revoke`. The real Speech path is only compiled, not run: the simulator tests use the fake; a real-device check of dictation (Chinese and English) is for the user. No flaky part seen in 4 voice.sh runs. `scripts/render-design` exited 2 three times while another worktree rendered; the 4th try passed.
+  Next: reviewer runs `scripts/review S5`.
+- **2026-11-09 · Merged main again (S2 agent questions).** Review of 8d443b5 passed (`/tmp/dshm-review/S5-8d443b5.txt`, no flaky part). Then main moved (S2 merged). Merged main at 47d0c45: conflicts in `SessionPage.swift` (the session composer now also answers an agent question; the mic shows for a follow-up or an answer, and an answer stops dictation first), ARCHITECTURE (D113/D114 next to D116/D117), board.png (re-rendered; mic also on P1's composer). The app builds. Next: review again on the new head.
 
 ### S6 · Live Activity: show on the lock screen that a task runs
 
