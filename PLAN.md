@@ -594,6 +594,8 @@ Append-only, dated.
 
 - **2026-11-09 · S2 assigned.** Branch `claude/s2-questions-more`, simulator `dshm-S2`, DSHM_HOME `~/.dshm/home-s2`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D113–D115. `eval "$(scripts/slice-env S2)"` exports them.
 
+- **2026-11-09 · S2 runs as a background agent.** S2 assigned (D113–D115) and started as a background agent. Its brief names the conflict between the Cuts (a held question times out, as D25) and D92 (no timeout): the owner decides and records it in D92. Running: S2, S3, S4.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
