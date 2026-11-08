@@ -53,7 +53,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | done | merged `b62405c` | 2026-11-09 | — (provisional D125 in §9) |
 | S9 | doing | `claude/s9-ui-test-waits` | 2026-11-09 | Slice owner builds (§8) |
-| S10 | doing | `claude/s10-offline-rich-detail` | 2026-11-09 | Slice owner builds (§8) |
+| S10 | done | merged `f333abc` | 2026-11-09 | — |
 | S11 | doing | `claude/s11-hosts-tests` | 2026-11-09 | Slice owner builds (§8) |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
 | S13 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -718,6 +718,8 @@ Append-only, dated.
 - **2026-11-09 · S11 assigned.** Branch `claude/s11-hosts-tests`, simulator `dshm-S11`, DSHM_HOME `~/.dshm/home-s11`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D134–D136. `eval "$(scripts/slice-env S11)"` exports them.
 
 - **2026-11-09 · S11 runs as a background agent.** S11 assigned (D134–D136) and started as a background agent, after S8 (hosts row and offline card) merged. Running: S9, S10, S11. Left: S13.
+
+- **2026-11-09 · S10 merged.** Merged as `f333abc`; `scripts/check-plan` on the merge commit passed. `scripts/review S10` at `676ce30`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S10-676ce30.txt`). No open `[human]` items, so S10 is `done`.
 
 ## 9. Pending user confirmation
 
