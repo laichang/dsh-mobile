@@ -78,6 +78,9 @@ line "map: a needs edge" PLAN.md "    T0 --> S1"
 expect "a slice with no Done when item is refused" 1 scripts/plan add slice "Bad" --why W --cuts C
 expect "a Done when item with no tier is refused" 1 scripts/plan add slice "Bad" --why W --cuts C --done "no tier"
 expect "Needs an ID the plan does not have is refused" 1 scripts/plan add slice "Bad" --why W --cuts C --done "[auto] x" --needs S9
+expect "a slice with 6 Done when items is refused" 1 scripts/plan add slice "Too big" --why W --cuts C \
+  --done "[auto] a" --done "[auto] b" --done "[auto] c" --done "[ui] d" --done "[ui] e" --done "[human] f"
+lacks "a refused slice adds nothing" PLAN.md "Too big"
 expect "add a slice with the default Needs" 0 scripts/plan add slice "Second" --why W --cuts C --done "[auto] It works"
 line "a slice needs the first tracer by default" PLAN.md "**Status** todo · **Needs** T0 · **Branch** —"
 expect "fix slice" 0 scripts/plan fix "Keyboard" --bug "it covers the button"

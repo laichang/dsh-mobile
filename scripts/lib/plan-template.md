@@ -86,6 +86,8 @@ Each spike ends in a short written conclusion, plus throwaway code if needed. No
 
 Each slice needs only the tracer, unless "Needs" says otherwise.
 
+A slice is built by one session too: at most 5 Done when items (`scripts/plan` stops more). If a slice needs more, split it.
+
 ## 6. Exit
 
 From a real device. All items are human-only.

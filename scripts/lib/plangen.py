@@ -24,6 +24,7 @@ KINDS = {
 }
 SECTION_OF = {prefix: heading for prefix, heading, _, _ in KINDS.values()}
 MAX_TRACER_ITEMS = 3   # a tracer is one thin round trip that one session can finish
+MAX_SLICE_ITEMS = 5    # a slice is also built by one session
 FIELDS = ["**Status** ", "**Why**", "**Cuts**", "**Demo**", "**Done when**", "**Not**", "**Log**"]
 HEAD_RE = re.compile(r"^### (?P<id>[TXS]\d+) · (?P<title>.+?)\s*$")
 NEEDS_RE = re.compile(r"\*\*Needs\*\* (?P<needs>.*?) · \*\*Branch\*\*")
@@ -158,16 +159,23 @@ def add(lines, kind, name, needs=None, why="", cuts="", demo="", done=(), not_="
     missing = [n for n in needs if n not in known]
     if missing:
         raise dshm.PlanError(f"Needs names IDs that this plan does not have: {', '.join(missing)}")
-    if kind == "tracer" and len(done) > MAX_TRACER_ITEMS:
+    if len(done) > item_limit(sid):
         raise dshm.PlanError(tracer_limit(sid, len(done)))
     insert_section(lines, heading, section_lines(sid, name, needs, why, cuts, demo, list(done), not_))
     insert_row(lines, sid, nxt)
     return sid
 
 
+def item_limit(sid):
+    """The most Done when items a section may have; spikes have no limit."""
+    return {"T": MAX_TRACER_ITEMS, "S": MAX_SLICE_ITEMS}.get(sid[0], 10 ** 6)
+
+
 def tracer_limit(sid, n):
-    return (f"{sid}: a tracer has at most {MAX_TRACER_ITEMS} Done when items ({n} given), so that one "
-            "session can finish it. Split it into more tracers or move the rest to slices")
+    kind = "tracer" if sid.startswith("T") else "slice"
+    split = "more tracers or move the rest to slices" if kind == "tracer" else "more slices"
+    return (f"{sid}: a {kind} has at most {item_limit(sid)} Done when items ({n} given), so that one "
+            f"session can finish it. Split it into {split}")
 
 
 def add_exit(lines, text):
@@ -277,7 +285,7 @@ def lint(lines):
                 done = [l for l in body[idx[4] + 1:idx[5]] if dshm.ITEM_RE.match(l)]
                 if not done:
                     errs.append(f"{sid}: Done when has no item")
-                if sid.startswith("T") and len(done) > MAX_TRACER_ITEMS:
+                if len(done) > item_limit(sid):
                     errs.append(tracer_limit(sid, len(done)))
     known = set(seen)
     for s, e, sid, _ in secs:
