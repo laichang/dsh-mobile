@@ -32,6 +32,8 @@ message TaskSummary {
   int64 updated_at_ms = 5;
   // Why it failed, when state is FAILED.
   string message = 6;
+  // When state is FAILED: DSH's failure class, as TaskEnded.failure_code (D104).
+  string failure_code = 420;
   // S4: current requests, including any older than the retained log.
   repeated ApprovalPending pending_approvals = 80;
   // A session started on another client appears only while it needs a decision.

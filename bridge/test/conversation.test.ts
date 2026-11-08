@@ -142,7 +142,7 @@ describe('FollowUpAgainstFakeDSH', () => {
     again.close()
   })
 
-  test('aFollowUpIsRefusedWhenItIsEmptyForAnUnknownTaskAndAfterAFailure', async () => {
+  test('aFollowUpIsRefusedWhenItIsEmptyOrForAnUnknownTaskAndTakenAfterAFailure', async () => {
     const { server } = await bridgeWith({ reply: ['a', 'b', 'c'], chunkDelayMs: 50, failWith: { kind: 'error', error: { message: 'boom' } } })
     const { client } = await connect(server.port, caps)
     const created = await client.call({ case: 'createTask', value: { prompt: 'Slow' } })
@@ -153,8 +153,10 @@ describe('FollowUpAgainstFakeDSH', () => {
     const unknown = await client.call({ case: 'sendMessage', value: { taskId: 'nope', text: 'Hi' } })
     assert.ok(unknown.body.case === 'error' && unknown.body.value.code === 'message/refused')
     await client.until((fs) => ended(fs) === 1)
+    // D110: a failed task takes a new message into the same session (the user fixed the cause).
     const failed = await client.call({ case: 'sendMessage', value: { taskId, text: 'Again?' } })
-    assert.ok(failed.body.case === 'error' && failed.body.value.code === 'message/refused')
+    assert.equal(failed.body.case, 'messageAccepted')
+    await client.until((fs) => ended(fs) === 2)
     client.close()
   })
 

@@ -960,15 +960,16 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
     <div class="scroll" style="display:flex;flex-direction:column">
       <div class="ubub">把昨天下载的素材压缩一下传到网盘</div>
       <div class="thought" style="margin-bottom:8px">已工作 · 9 步<svg class="i xs"><use href="#chev"/></svg></div>
-      <div class="para">214 个文件已压缩成 <code>media-1104.zip</code>（3.1 GB）。上传时出错了。</div>
+      <div class="para">214 个文件已压缩成 <code>media-1104.zip</code>（3.1 GB），接下来上传到网盘。</div>
       <div class="card" style="border-color:rgba(248,81,73,.4);background:rgba(248,81,73,.06)">
         <div style="display:flex;gap:8px;align-items:center;font-size:14.5px;font-weight:600;color:#FF7B72"><svg class="i s"><use href="#alert"/></svg>任务失败</div>
-        <div class="cmd" style="margin-top:9px">upload: 403 Forbidden (token expired)</div>
+        <div class="cmd" style="margin-top:9px;display:flex;align-items:center">当前请求的额度已用尽<span style="margin-left:auto;font:11px var(--mono);color:var(--t3)">QUOTA</span></div>
+        <div style="font-size:12.5px;color:var(--t2);margin-top:8px">在下面发条消息，就在这个会话里接着做。</div>
         <div class="btnrow"><div class="btn" style="height:36px">复制错误</div><div class="btn primary" style="height:36px">新会话里再试</div></div>
       </div>
     </div>
     <div class="composer">
-      <div class="ph" style="display:flex;align-items:center"><span style="opacity:.55">告诉它怎么处理…</span><span class="mtag mx">M2</span></div>
+      <div class="ph" style="display:flex;align-items:center"><span style="opacity:.55">回复智能体…</span></div>
       <div class="bar"><span class="pill">V41-Flash <span class="w">· High</span></span><span class="send idle"><svg class="i s"><use href="#up"/></svg></span></div>
     </div>
   </div>
@@ -977,7 +978,8 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
 <div class="cap"><h3><i>X1</i>失败<span class="mtag m1">M1 · 补状态</span></h3><ul>
   <li>§4 叫回用户的三种时刻之一。顶部进度条变红，写明停在第几步。</li>
   <li>错误原文照给（任务的 failure message），可以“复制错误”。已经做了什么、东西在哪，由 Agent 自己在卡片上方的回答里说；App 不另写摘要。</li>
-  <li>“新会话里再试”把原话预填进 01 的输入框；在原会话里接着说是 M2。</li>
+  <li>§8 模型失效（模型不存在、密钥无效、没有余额、限流重试后仍失败）也落在这里，不停下等人：DSH 给的原文照给，右边小字是 DSH 的失败类别；只有密钥无效、额度用尽用 App 自己的话（“API 密钥无效”“当前请求的额度已用尽”），和 DSH Web 一样（D104）。</li>
+  <li>“新会话里再试”把原话预填进 01 的输入框。也可以在原会话里接着说：充值或修好后，在输入框发一条消息，任务在同一个会话里继续，卡片换成新一轮的结果（D110）。不放充值链接，也不在卡片里换模型。</li>
   <li>“卡住”（很久没有新进展）要靠推送提醒，放 M2。被停止的任务同样标在这里：同一张卡，写“任务已停止”，不变红，只有“新会话里再试”。停止后可以在原会话里接着说：新消息发到同一个 DSH 会话，任务回到运行中，“任务已停止”的卡片消失，顶部进度条也改写当前状态。</li>
 </ul></div>
 </div>
@@ -1067,10 +1069,10 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   </div>
   <div class="homebar"></div>
 </div>
-<div class="cap"><h3><i>X4</i>模型不可用<span class="mtag m1">M1 · 补状态</span></h3><ul>
+<div class="cap"><h3><i>X4</i>模型不可用<span class="mtag m1">M2 · 已有</span></h3><ul>
   <li>§8：明确说哪个模型不可用、在哪台执行端；<b>不偷偷替换</b>，必须重选才能“应用”。</li>
   <li>某个提供方拉列表失败时单独一行说明，可重试（S6 的 catalog 失败项）。</li>
-  <li>运行中的任务遇到这种情况会停下等你选，状态同“等我处理”。</li>
+  <li>运行中的任务遇到模型失效，不停下等你：直接以红色失败结束，写明原因（X1）；充值或修好后，在原会话里发一条消息接着做。选了执行端不再列出的模型，任务不开跑，直接告诉你，不替你换（D110）。</li>
 </ul></div>
 </div>
 

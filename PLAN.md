@@ -286,7 +286,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S3 · Model failures: a red failure, then continue with a new message
 
-**Status** todo · **Needs** T0, X1 · **Branch** —
+**Status** review · **Needs** T0, X1 · **Branch** —
 
 **Why**: Closes #4. User, 2026-11-08: "模型失效，或者没token了，直接展示红色的失败文案，用户如果要继续做，他会去充值token，然后重新发消息触发任务继续执行". This replaces the pause into 等我处理 on screen X4: DESIGN X4 and STORY §8 change in the same commit.
 
@@ -298,12 +298,21 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/model-failures.sh`: a task on a provider with no balance fails in red with the reason; after the fake top-up, a new message in the same session continues it.
 
 **Done when**
-- [ ] [auto] Each failure that X1 recorded ends the task as failed with the text of DSH, and no retry keeps it running (`FakeDSH` with the X1 fixtures) — Evidence:
-- [ ] [ui] A task whose provider has no balance shows the red failure card with the reason; after the top-up, a new message in the same session continues it (`cmd:scripts/demo/model-failures.sh`) — Evidence:
+- [x] [auto] Each failure that X1 recorded ends the task as failed with the text of DSH, and no retry keeps it running (`FakeDSH` with the X1 fixtures) — Evidence: test:ModelFailuresAgainstFakeDSH/eachRecordedFailureEndsTheTaskAsFailedWithTheTextOfDSH · test:ModelFailuresAgainstFakeDSH/aNewMessageAfterEachRecordedFailureContinuesTheSameSession · test:ModelFailuresAgainstFakeDSH/aRateLimitThatClearsCompletesTheTask · test:ModelFailuresAgainstFakeDSH/aModelTheHostDoesNotListIsRefusedWithTheTextOfDSHAndNothingIsSwapped · test:ModelFailureTests/aNewMessageAfterTheFailureContinuesTheSameSession · cmd:scripts/demo/model-failures.sh
+- [x] [ui] A task whose provider has no balance shows the red failure card with the reason; after the top-up, a new message in the same session continues it (`cmd:scripts/demo/model-failures.sh`) — Evidence: cmd:scripts/demo/model-failures.sh · test:ModelFailuresUITests/testNoBalanceFailsInRedThenANewMessageContinuesAgainstRealDSH · shot:evidence/S3/model-failure-red.png · shot:evidence/S3/model-failure-continued.png
 
 **Not**: A top-up link. A model switch inside the failure card.
 
 **Log**: —
+- **2026-11-09 · Built: red failure, then continue with a new message.**
+  - Done: the bridge forwards DSH's failure class (`failure_code`, field 420 on TaskEnded and TaskSummary) and DSH's message as it is; a failed phone task takes a follow-up, and that turn adds milestones. The app shows its own words for AUTH and QUOTA/ACCOUNT_QUOTA, DSH's text for other codes, the code as a tag, and a hint that a message continues the session. STORY §4 §8, DESIGN X1 X4 (X4 tag M2 · 已有), D89, D104 (amended), D110.
+  - Evidence: `ModelFailuresAgainstFakeDSH` replays all ten X1 recordings (copied to `bridge/test/fixtures/model-failures/`); `ModelFailureTests` (DSHKit); `scripts/demo/model-failures.sh` passed twice against real DSH with a fake DeepSeek (`scripts/demo/fake-deepseek.mjs`), 402 until the top-up. No flaky part seen.
+  - Provisional: D110 (new), D104 amendment (wire). No new dependencies.
+  - Machine notes: GitHub was unreachable from this Mac (connection reset), so `swift build` could not clone swift-protobuf; I seeded `ios/DSHKit/.build` from the main checkout and `/tmp/dshm-s3-dd/SourcePackages` from `/tmp/dshm-T0-dd`. `~/.dshm/home-s3` held an M1 S3 profile that pinned the bridge to port 47812, so T0 could not start; I moved it to `~/.dshm/home-s3.stale-m1-2026-11-09`.
+  - Not done: the spike folder `spikes/model-failures/` stays (its README says to delete it after this slice; the coordinator decides).
+  - Next: the reviewer runs `scripts/review S3` on the head commit.
+- **2026-11-09 · Merged main (follow-up queue); demo passes again.** Merged main with the follow-up queue. The bridge files of main were the base and the model-failure edits went on top. A follow-up after a failure now needs the new capability failures.v1, because a bridge from before this change refuses it. The tests of the queue that expected a refusal after a failure now expect a continue, or set a bridge without failures.v1. The replay in FakeDSH gives the live rpc id to the user message, so the queue logs no extra user message. Bridge tests: 105 of 105 pass. Swift tests: 122 pass. Under heavy machine load, some older timing tests failed (S16CodingTaskTests, NoiseResumeTests, FollowUpQueueTests, CachedMilestone). They pass alone and in a full run at normal load. The demo passed after the merge. The screenshots stay from the run before the merge, because the new continue shot has the iOS keyboard tip on top of the screen. Note for the coordinator: the profile ~/.dshm/home-s2 has port 47811 in cordis.patch.yml (a stale M1 setting), so the S2 DSH can take the bridge port of this slice. The stale profile ~/.dshm/home-s3 (port 47812) went to ~/.dshm/home-s3.stale-m1-2026-11-09.
+- **2026-11-09 · Merged main (attachments).** Merged main with the attachments of the composer. Conflicts were in dsh.ts, task-hub.ts, TaskListStore.swift, fixtures.json, ARCHITECTURE.md, DESIGN.md and board.png; both sides are kept. A follow-up after a failure can carry attachments, as after a completed or stopped task (D107 amended), because canAttach follows canFollowUp. Regenerated the code and the fixtures (no change), and rendered the design again. Bridge tests: 109 of 109 pass. Swift tests: 125 pass. The review of d2ca8c2 passed before this merge (/tmp/dshm-review/S3-d2ca8c2.txt); a full review runs on the new head.
 
 ### S4 · Attach files: photos, text, PDF, other files
 

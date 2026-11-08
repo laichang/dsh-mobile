@@ -268,7 +268,7 @@ struct TaskRowView: View {
         case .interrupted:
             return String(localized: "Interrupted")
         case .failed:
-            return row.message.isEmpty ? (headline ?? String(localized: "Failed")) : row.message
+            return row.failureText.isEmpty ? (headline ?? String(localized: "Failed")) : row.failureText
         case .completed:
             return row.showsInlineAnswer ? nil : headline
         }
