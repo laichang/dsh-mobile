@@ -51,12 +51,12 @@ This file exists only while this requirement is in progress. It serves this requ
 | S5 | done | merged `5362e43` | 2026-11-09 | — (provisional D116, D117 in §9) |
 | S6 | review | merged `b4d0a65` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
-| S8 | doing | `claude/s8-bridge-listen-errors` | 2026-11-09 | Slice owner builds (§8) |
+| S8 | done | merged `b62405c` | 2026-11-09 | — (provisional D125 in §9) |
 | S9 | doing | `claude/s9-ui-test-waits` | 2026-11-09 | Slice owner builds (§8) |
-| S10 | doing | `claude/s10-offline-rich-detail` | 2026-11-09 | Slice owner builds (§8) |
-| S11 | todo | — | 2026-11-08 | Assign it and start a session |
+| S10 | done | merged `f333abc` | 2026-11-09 | — |
+| S11 | doing | `claude/s11-hosts-tests` | 2026-11-09 | Slice owner builds (§8) |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
-| S13 | todo | — | 2026-11-08 | Assign it and start a session |
+| S13 | doing | `claude/s13-keyboard-host-menu` | 2026-11-09 | Slice owner builds (§8) |
 
 ## 1. Approach
 
@@ -444,7 +444,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S8 · Bridge cannot listen: tell the phone why
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: Closes #15. When the bridge port is taken, `bridge/src/index.ts` only logs "failed to start", and the phone shows the host offline with no reason.
 
@@ -457,13 +457,22 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/bridge-errors.sh`: another program holds the bridge port.
 
 **Done when**
-- [ ] [auto] With the port taken, the bridge logs one line that names the port, the cause and the fix, and DSH keeps running (bridge test) — Evidence:
-- [ ] [auto] DSHKit sorts a refused connection, another service on the port, and a timeout into three reasons (fake sockets) — Evidence:
-- [ ] [ui] With another program on the bridge port, the hosts sheet says that another program uses the port, not only "offline" (`cmd:scripts/demo/bridge-errors.sh`) — Evidence:
+- [x] [auto] With the port taken, the bridge logs one line that names the port, the cause and the fix, and DSH keeps running (bridge test) — Evidence: test:ListenErrors/portTakenLogsOneLineWithPortCauseAndFixAndDshKeepsRunning · test:ListenErrors/eachCauseNamesItsFix · test:ListenErrors/anAddressThatIsNotOnThisComputerIsNamed · cmd:scripts/demo/bridge-errors.sh
+- [x] [auto] DSHKit sorts a refused connection, another service on the port, and a timeout into three reasons (fake sockets) — Evidence: test:OfflineReasonsTests/refusedOtherProgramAndTimeoutAreThreeReasons · test:OfflineReasonsTests/aWebSocketThatIsNoBridgeIsAnotherProgram · test:OfflineReasonsTests/aTimeoutWithoutAnAcceptedProbeIsNotAnotherProgram · test:OfflineReasonsTests/realSocketsGiveTheThreeReasons · test:ReconnectTests/allAddressesDeadShowTheHostOfflineWithTheErrorOfEach
+- [x] [ui] With another program on the bridge port, the hosts sheet says that another program uses the port, not only "offline" (`cmd:scripts/demo/bridge-errors.sh`) — Evidence: cmd:scripts/demo/bridge-errors.sh · test:OfflineReasonsUITests/testAnotherProgramOnTheBridgePort · test:OfflineReasonsUITests/testNothingListensOnTheBridgePort · shot:evidence/S8/bridge-errors-hosts-taken.png · shot:evidence/S8/bridge-errors-offline-card-taken.png · shot:evidence/S8/bridge-errors-hosts-nothing.png
 
 **Not**: Moving to another port without the user.
 
 **Log**: —
+- **2026-11-09 · All items ticked; reviewer next.**
+  - Done: bridge `describeListenError` (bridge/src/listen-error.ts): one line with address, cause (EADDRINUSE / EACCES / EADDRNOTAVAIL / other) and the setting to change, on stderr (tagged `[dsh-mobile-bridge]`) and to the Cordis logger; DSH keeps running. App: `AddressFailure.kind` (nothing listens / another program / not reachable), `TCPPortProbe` (Network.framework) after a timeout, `NoiseChannelError.notABridge`; H shows "address · reason (error)" plus a fix line, X3 the reason under each host and a "check DSH on the computer" hint when every computer answered. Demo scripts/demo/bridge-errors.sh (HTTP server holds the port; then the port is freed) passes; full bridge (115) and DSHKit (154) suites pass after merging main (S6, S12).
+  - Provisional: D125 (ARCHITECTURE.md). No new dependency. No protocol change (field block 440–459 unused).
+  - Finding for an issue: `dsh web` 0.2.2-rc.1 attaches no console exporter to the Cordis logger, so every bridge `logger.info` line is invisible, including "listening on" and the startup pairing QR that bridge/README.md says DSH's log prints. This slice sends only the listen error line to stderr too.
+  - Flaky: none seen. One demo fix: the X3 card's own identifier `hosts.offlineCard` did not show in the accessibility tree; the UI test waits on `hosts.offlineCard.host` instead.
+  - Next: reviewer runs `scripts/review S8` on the head commit.
+- **2026-11-09 · Review 851a84c PASS with one flaky part; repaired.**
+  - Review of 851a84c: RESULT: PASS (/tmp/dshm-review/S8-851a84c.txt). Flaky: `ui-bridge-errors-taken` passed on run 2 of 3.
+  - Cause: the test read the row label a second time after its wait; the store retries in the background, and the row reads "connecting" for a moment on each try, so the second read missed the address. Repair (round 1 of 3): each UI check waits on one predicate with every part (value, reason, address, fix). A new review runs on the new head.
 
 ### S9 · Fix: UI tests wait for keyboard focus and for animations
 
@@ -488,7 +497,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S10 · Fix: rich detail after an offline relaunch
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: Closes #22. The user, 2026-11-08, for #22–#28: "这些看看还能不能复现，能的话就修复了". If a bug does not reproduce, the Log names the runs that show it, and the coordinator closes the issue with them.
 
@@ -497,11 +506,18 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/rich-detail.sh`.
 
 **Done when**
-- [ ] [ui] `S8RichDetailUITests/testCachedRichDetailAfterRelaunch` finds the 所有任务 row after an offline relaunch and passes in the review run with no retry, and `scripts/demo/s28.sh` has no `--no-s8` (`cmd:scripts/demo/rich-detail.sh`) — Evidence:
+- [x] [ui] `S8RichDetailUITests/testCachedRichDetailAfterRelaunch` finds the 所有任务 row after an offline relaunch and passes in the review run with no retry, and `scripts/demo/s28.sh` has no `--no-s8` (`cmd:scripts/demo/rich-detail.sh`) — Evidence: test:S8RichDetailUITests/testCachedRichDetailAfterRelaunch · test:S8RichDetailUITests/testCodingReplyStreamsFences · test:S8RichDetailUITests/testTranslationCompletesInline · cmd:scripts/demo/rich-detail.sh
 
 **Not**: —
 
 **Log**: —
+- **2026-11-09 · 2026-11-09 · #22 reproduced; the test was wrong, fixed; a second cause found (Live Activity launch race).**
+  - #22 reproduced on d48c93f: scripts/demo/rich-detail.sh (then s8.sh code, test unchanged), 2026-11-09 05:36, and its --offline-only run at 05:47. testCachedRichDetailAfterRelaunch fails at the row wait (line 60). The cache is there: 所有任务 shows 4 rows, the coding one as '## Patch、完成、LAICHANGdeMacBook-Pro.local'.
+  - Cause: the test, not the app. Since D50 (04a3d0e, 2026-11-07, before 9621fd2) a row shows DSH's session title, which DSH's mock model makes from the reply (first line '## Patch'), not the prompt the test looked for. The app does what D50 says, so no Dxx. Fix (2312307): find the row by 'patch' (case-insensitive), which the prompt and the title both have.
+  - Second cause, new in M2 (S6 Live Activities): each part of the demo is its own xcodebuild run, which installs the app again. With a fresh Live Activity of the part before, liveactivitiesd opens the app in the background right then (simulator log: 'trusted open application request … from liveactivitiesd', 'Bootstrapping … with intent background'), and XCTest's launch takes that process, with no launch arguments: port 47801, no prompt, no reset. It failed testCodingReplyStreamsFences (2 of 3 runs) and the offline test. Fix (80a031a): the suite launches with a preset prompt each time; when the composer does not show it, it terminates the app and launches it again, and prints so in the part's log. In-test, not a part retry.
+  - scripts/demo/s8.sh is now scripts/demo/rich-detail.sh: build once, test-without-building per part, S10 resources as defaults, own log dir (/tmp/dshm-rich-detail-<sim>), --offline-only. scripts/demo/s28.sh calls it and has no --no-s8.
+  - Runs at 80a031a: rich-detail.sh 3 of 3 passed, no part failed (the launch guard acted in 4 of 9 launches: coding once, offline three times). t0.sh baseline passed on d48c93f.
+  - For an issue: other demos with more than one xcodebuild run after a task (s28.sh's S28 → S17 parts, others) can meet the same race; the dshm-S9 simulator also showed app processes without arguments during these runs. A general fix (a shared launch check in UITestSupport, or no Live Activities under UI tests unless asked) is outside S10.
 
 ### S11 · Fix: hosts tests for the all-offline card and the default model row
 
@@ -695,6 +711,22 @@ Append-only, dated.
 
 - **2026-11-09 · S10 runs as a background agent.** S10 assigned (D131–D133) and started as a background agent. Running: S8, S9, S10. Left: S11 (after S8), S13.
 
+- **2026-11-09 · S8 merged.** Merged as `b62405c`; `scripts/check-plan` on the merge commit passed. `scripts/review S8` at `4cc5909`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S8-4cc5909.txt`). No open `[human]` items, so S8 is `done`. §9 rows 27 (D125).
+
+- **2026-11-09 · S8 merged.** S8 merged as b62405c (review PASS on 4cc5909, S8-4cc5909.txt, no flaky part). Earlier review on 851a84c: ui-bridge-errors-taken was flaky (passed on run 2 of 3: the host row reads 'connecting' for a moment on each retry); fixed in 4cc5909 with one wait for every part of the row. D125 in §9 (amends D98). Finding for an issue: dsh web 0.2.2-rc.1 never prints the bridge's logger lines, so 'listening on' and the startup pairing QR that bridge/README.md promises in DSH's log do not show; only the listen-error line now also goes to stderr.
+
+- **2026-11-09 · S11 assigned.** Branch `claude/s11-hosts-tests`, simulator `dshm-S11`, DSHM_HOME `~/.dshm/home-s11`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D134–D136. `eval "$(scripts/slice-env S11)"` exports them.
+
+- **2026-11-09 · S11 runs as a background agent.** S11 assigned (D134–D136) and started as a background agent, after S8 (hosts row and offline card) merged. Running: S9, S10, S11. Left: S13.
+
+- **2026-11-09 · S10 merged.** Merged as `f333abc`; `scripts/check-plan` on the merge commit passed. `scripts/review S10` at `676ce30`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S10-676ce30.txt`). No open `[human]` items, so S10 is `done`.
+
+- **2026-11-09 · S10 merged; Live Activity launch race in UI demos.** S10 merged as f333abc (review PASS on 676ce30, S10-676ce30.txt, no flaky part, no retry). #22 reproduced on d48c93f: the test looked for the prompt, but since D50 a row shows DSH's session title (the mock model titles it '## Patch'); the test now matches 'patch'. No app change. s8.sh renamed to rich-detail.sh; s28.sh has no --no-s8. New, cross-cutting: since S6, liveactivitiesd opens the app in the background right after a reinstall when the part before left a recent Live Activity, and XCTest attaches to that process without launch arguments (seen in S10, and on dshm-S9). S10 guards its own launches (preset prompt check, relaunch); a shared fix (a launch check in UITestSupport, or no Live Activities under UI tests unless a test asks) is passed to S9 or becomes an issue.
+
+- **2026-11-09 · S13 assigned.** Branch `claude/s13-keyboard-host-menu`, simulator `dshm-S13`, DSHM_HOME `~/.dshm/home-s13`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D137–D139. `eval "$(scripts/slice-env S13)"` exports them.
+
+- **2026-11-09 · S13 runs as a background agent; all slices started.** S13 assigned (D137–D139) and started as a background agent. Every slice of the plan is now started or merged. Running: S9, S11, S13.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -727,3 +759,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 24 | S6 | decision | ARCHITECTURE D120, *provisional*: The data path and the signing of the widget extension | `claude/s6-live-activity` | merged `b4d0a65` |
 | 25 | S6 | decision | ARCHITECTURE D121, *provisional*: Testability of the Live Activity (extends D16) | `claude/s6-live-activity` | merged `b4d0a65` |
 | 26 | S6 | `[human]` | On a real iPhone signed with the free team, the app starts a Live Activity for a running task | `main` | `b4d0a65` |
+| 27 | S8 | decision | ARCHITECTURE D125, *provisional*: A bridge that cannot listen: the reason comes from both sides (screens H, X3; amends D98) | `claude/s8-bridge-listen-errors` | merged `b62405c` |
+| 28 | S8 | decision | D98 amended by D125: a TCP check after a timeout raises the most a dead address can cost from 5 s to 6 s | `claude/s8-bridge-listen-errors` | `ffb2589` |

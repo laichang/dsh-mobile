@@ -18,3 +18,5 @@ S12	claude/s12-store-test-waits	0	47810	3283	47840	3313	dshm-S12	~/.dshm/home-s1
 S8	claude/s8-bridge-listen-errors	2	47812	3285	47842	3315	dshm-S8	~/.dshm/home-s8	D125-D127	2026-11-09
 S9	claude/s9-ui-test-waits	0	47810	3283	47840	3313	dshm-S9	~/.dshm/home-s9	D128-D130	2026-11-09
 S10	claude/s10-offline-rich-detail	1	47811	3284	47841	3314	dshm-S10	~/.dshm/home-s10	D131-D133	2026-11-09
+S11	claude/s11-hosts-tests	2	47812	3285	47842	3315	dshm-S11	~/.dshm/home-s11	D134-D136	2026-11-09
+S13	claude/s13-keyboard-host-menu	1	47811	3284	47841	3314	dshm-S13	~/.dshm/home-s13	D137-D139	2026-11-09
