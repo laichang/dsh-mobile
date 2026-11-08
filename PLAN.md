@@ -646,3 +646,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 13 | S4 | decision | D18 amended: file parts reach DSH by name; attachments only once a task is done, not in a queued message | `claude/s4-attach-files` | `d2904bb` |
 | 14 | S3 | decision | ARCHITECTURE D110, *provisional*: A new message continues a task after a model failure (screens X1, X4) | `claude/s3-model-failures` | merged `33e96ff` |
 | 15 | S3 | decision | D104 amended: failure_code (field 420) on TaskEnded and TaskSummary, message without the 'error: ' prefix, capability failures.v1 | `claude/s3-model-failures` | `0c66430` |
+| 16 | S3 | decision | D107 amended: a follow-up after a failure can carry attachments | `claude/s3-model-failures` | `8822d67` |
