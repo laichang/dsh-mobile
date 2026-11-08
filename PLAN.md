@@ -1764,6 +1764,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 
 - **2026-11-08 · User confirmed D76, D79, D82, D85, D88.** S27, S28, S29, S30 and S31 are done; §9 rows 55, 57, 59, 61, 63 removed. §9 is empty.
 
+- **2026-11-08 · M1 exit passed; M1 complete.** User commit 23df5d7: the six §6 exit items pass on a real iPhone over Tailscale. Every slice is done, §9 is empty, no Done when item is open. Next: archive this file (.archive/20261108/) and plan M2 (user commit).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, and downloads (see [WORKFLOW.md §9](WORKFLOW.md#9-default-choices)), rule commits the user hasn't seen, and open `[human]` items of merged slices with the device or setup each needs (see [WORKFLOW.md §10](WORKFLOW.md#10-merge-a-slice)). The user reviews and accepts them all at once. A row leaves this table, with a Plan log line, when the user confirms or changes it.
