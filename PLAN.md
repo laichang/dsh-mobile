@@ -51,7 +51,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S5 | done | merged `5362e43` | 2026-11-09 | — (provisional D116, D117 in §9) |
 | S6 | doing | `claude/s6-live-activity` | 2026-11-09 | Slice owner builds (§8) |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
-| S8 | todo | — | 2026-11-08 | Assign it and start a session |
+| S8 | doing | `claude/s8-bridge-listen-errors` | 2026-11-09 | Slice owner builds (§8) |
 | S9 | todo | — | 2026-11-08 | Assign it and start a session |
 | S10 | todo | — | 2026-11-08 | Assign it and start a session |
 | S11 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -657,6 +657,8 @@ Append-only, dated.
 - **2026-11-09 · S5 merged.** Merged as `5362e43`; `scripts/check-plan` on the merge commit passed. `scripts/review S5` at `bad4780`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S5-bad4780.txt`). No open `[human]` items, so S5 is `done`. §9 rows 20, 21 (D116, D117).
 
 - **2026-11-09 · S5 merged.** S5 merged as 5362e43 (review PASS on bad4780, S5-bad4780.txt, no flaky part in 4 demo runs and 2 reviews). D116 (SpeechAnalyzer), D117 (mic UX) in §9, and the render-design height change. Not verified by any test: the real Speech framework path (all simulator tests use the fake transcriber); the exit item for Chinese dictation on a real iPhone covers it. The user's DEVELOPMENT_TEAM line in project.pbxproj was stashed for the merge and applied back cleanly. render-design exits 2 while another worktree renders (3 retries).
+
+- **2026-11-09 · S8 assigned.** Branch `claude/s8-bridge-listen-errors`, simulator `dshm-S8`, DSHM_HOME `~/.dshm/home-s8`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D125–D127. `eval "$(scripts/slice-env S8)"` exports them.
 
 ## 9. Pending user confirmation
 
