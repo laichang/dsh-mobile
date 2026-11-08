@@ -570,6 +570,8 @@ Append-only, dated.
 
 - **2026-11-08 · S4 assigned.** Branch `claude/s4-attach-files`, simulator `dshm-S4`, DSHM_HOME `~/.dshm/home-s4`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D107–D109. `eval "$(scripts/slice-env S4)"` exports them.
 
+- **2026-11-08 · S4 runs as a background agent.** S4 assigned (D107–D109) and started as a background agent in its own worktree (§5.3 step 3). Running: S1, X1, S4.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
