@@ -74,7 +74,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S28 | review | merged `f4594e5` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
 | S29 | review | merged `3b1a903` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
 | S30 | review | merged `4679afe` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
-| S31 | todo | — | 2026-11-08 | Fix: Pair over Tailscale; start a fix session |
+| S31 | doing | `claude/s31-pair-tailscale` | 2026-11-08 | Slice owner builds (§8) |
 
 ## 1. Approach
 
@@ -1747,6 +1747,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-08 · S30 assigned.** Branch `claude/s30-pair-again`, simulator `dshm-S30`, DSHM_HOME `~/.dshm/home-s30`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D85–D87. `eval "$(scripts/slice-env S30)"` exports them.
 
 - **2026-11-08 · S30 merged.** Merged as `4679afe`; `scripts/check-plan` on the merge commit passed. `scripts/review S30` at `a482965`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S30-a482965.txt`). 1 open `[human]` item, so S30 is `review`. §9 rows 61, 62 (D85).
+
+- **2026-11-08 · S31 assigned.** Branch `claude/s31-pair-tailscale`, simulator `dshm-S31`, DSHM_HOME `~/.dshm/home-s31`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D88–D90. `eval "$(scripts/slice-env S31)"` exports them.
 
 ## 9. Pending user confirmation
 
