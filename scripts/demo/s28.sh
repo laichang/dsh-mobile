@@ -4,12 +4,9 @@
 #
 #   scripts/demo/s28.sh          DSHKit tests (swift test: TranscriptBlocks tables), S28MarkdownTablesUITests
 #                                (FakeBridge `coding` scenario), S17TranscriptUITests (FakeBridge), and
-#                                S8RichDetailUITests (scripts/demo/s8.sh: a real DSH with a mock model)
+#                                S8RichDetailUITests (scripts/demo/rich-detail.sh: a real DSH with a mock model)
 #   scripts/demo/s28.sh --shots  also refresh the screenshots in evidence/S28/ (1/3 size)
 #   scripts/demo/s28.sh --only-s28  only the S28 UI tests (the red run on the unfixed code)
-#   scripts/demo/s28.sh --no-s8      all but the S8 part. The review uses it: on main (9621fd2),
-#                                S8RichDetailUITests/testCachedRichDetailAfterRelaunch fails without
-#                                S28 (no All Tasks row after the offline relaunch); see S28's Log.
 #   DSHM_RESUME=1               skip the parts that passed for the same code (lib.sh demo_part)
 #
 # Resources (WORKFLOW.md §6), read from the environment (eval "$(scripts/slice-env S28)"):
@@ -19,8 +16,8 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
-SHOTS=0 ONLY=0 S8=1
-for a in "$@"; do case "$a" in --shots) SHOTS=1 ;; --only-s28) ONLY=1 ;; --no-s8) S8=0 ;; *) echo "unknown arg $a" >&2; exit 2 ;; esac; done
+SHOTS=0 ONLY=0
+for a in "$@"; do case "$a" in --shots) SHOTS=1 ;; --only-s28) ONLY=1 ;; *) echo "unknown arg $a" >&2; exit 2 ;; esac; done
 export DSHM_SIM="${DSHM_SIM:-dshm-S28}" DSHM_DD="${DSHM_DD:-/tmp/dshm-s28-dd}"
 export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47811}" DSHM_WEB_PORT="${DSHM_WEB_PORT:-3284}"
 export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-s28}"
@@ -79,10 +76,9 @@ copy_shots
 [ $ONLY = 1 ] && { step "S28 UI tests passed"; exit 0; }
 # The same transcript view, with S17's structured rows cut into it.
 ui_part s17 S17TranscriptUITests
-[ $S8 = 0 ] && { step "S28 demo passed (S8 part not run: --no-s8)"; exit 0; }
 # S8's rich detail (fences, diffs, console, the cached reply offline) against a real DSH.
-step "S8 rich detail (scripts/demo/s8.sh, log: $LOGS/s8.log)"
-demo_part s8 scripts/demo/s8.sh > "$LOGS/s8.log" 2>&1 || { tail -30 "$LOGS/s8.log"; echo "S8 demo failed" >&2; exit 1; }
-grep -E "Test Case.*passed|S8 demo passed" "$LOGS/s8.log" || true
+step "S8 rich detail (scripts/demo/rich-detail.sh, log: $LOGS/s8.log)"
+demo_part s8 scripts/demo/rich-detail.sh > "$LOGS/s8.log" 2>&1 || { tail -30 "$LOGS/s8.log"; echo "S8 rich detail failed" >&2; exit 1; }
+grep -E "Test Case.*passed|rich-detail demo passed" "$LOGS/s8.log" || true
 
 step "S28 demo passed"

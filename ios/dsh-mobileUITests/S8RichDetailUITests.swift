@@ -17,7 +17,7 @@ final class S8RichDetailUITests: XCTestCase {
     }
 
     func testTranslationCompletesInline() throws {
-        try XCTSkipUnless(env["DSHM_S8_REPLY"] == "translation", "run scripts/demo/s8.sh")
+        try XCTSkipUnless(env["DSHM_S8_REPLY"] == "translation", "run scripts/demo/rich-detail.sh")
         let app = launch(prompt: translation)
         app.buttons["composer.send"].tap()
         // T1 (D51): the first message turns the new session into the session page, with the reply.
@@ -35,7 +35,7 @@ final class S8RichDetailUITests: XCTestCase {
     }
 
     func testCodingReplyStreamsFences() throws {
-        try XCTSkipUnless(env["DSHM_S8_REPLY"] == "coding", "run scripts/demo/s8.sh")
+        try XCTSkipUnless(env["DSHM_S8_REPLY"] == "coding", "run scripts/demo/rich-detail.sh")
         let app = launch(prompt: coding)
         app.buttons["composer.send"].tap()
         let transcript = app.descendants(matching: .any)["transcript.text"]
@@ -51,13 +51,17 @@ final class S8RichDetailUITests: XCTestCase {
     }
 
     func testCachedRichDetailAfterRelaunch() throws {
-        try XCTSkipUnless(env["DSHM_S8_REPLY"] == "offline", "run scripts/demo/s8.sh")
+        try XCTSkipUnless(env["DSHM_S8_REPLY"] == "offline", "run scripts/demo/rich-detail.sh")
         let app = launch()
         openDrawer(app)
         waitForValue(app.descendants(matching: .any)["host.status"], in: ["offline"], timeout: 20)
         app.buttons["drawer.allTasks"].tap()
-        let row = app.buttons.matching(identifier: "tasklist.row").matching(NSPredicate(format: "label CONTAINS %@", coding)).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        // #22: the row shows the task's title, not its prompt (D50): DSH's session title once it
+        // has one, which DSH's mock model makes from the reply ("## Patch"), else the prompt. Both
+        // have "patch"; the other tasks of the demo's DSH home do not. A coding task of an earlier
+        // run has the same reply, so any match will do.
+        let row = app.buttons.matching(identifier: "tasklist.row").matching(NSPredicate(format: "label CONTAINS[c] 'patch'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5), app.debugDescription)
         row.tap()
         XCTAssertTrue(app.descendants(matching: .any)["transcript.fence.diff"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["transcript.fence.console"].exists)
