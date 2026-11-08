@@ -28,7 +28,7 @@ struct StructuredTranscriptView: View {
                         TranscriptBlockRow(taskKey: row.key, item: item)
                     case .question(let item):
                         if let question = item.question {
-                            QuestionCard(store: store, row: row, question: question).id(item.id)
+                            QuestionCard(store: store, row: row, question: question, answersBelow: true).id(item.id)
                         }
                     case .tools(let items):
                         // Screen 04: consecutive tool calls sit together under a hairline on the left.

@@ -45,7 +45,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | T2 | done | merged `1762164` | 2026-11-08 | — (provisional D95 in §9) |
 | X1 | done | merged `9d4cb67` | 2026-11-08 | — (provisional D104 in §9) |
 | S1 | done | merged `55300a7` | 2026-11-09 | — (provisional D101, D102 in §9) |
-| S2 | doing | `claude/s2-questions-more` | 2026-11-09 | Slice owner builds (§8) |
+| S2 | done | merged `966be4b` | 2026-11-09 | — (provisional D113, D114 in §9) |
 | S3 | done | merged `33e96ff` | 2026-11-09 | — (provisional D110 in §9) |
 | S4 | done | merged `83c82ce` | 2026-11-09 | — (provisional D107, D108 in §9) |
 | S5 | doing | `claude/s5-voice` | 2026-11-09 | Slice owner builds (§8) |
@@ -55,7 +55,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S9 | todo | — | 2026-11-08 | Assign it and start a session |
 | S10 | todo | — | 2026-11-08 | Assign it and start a session |
 | S11 | todo | — | 2026-11-08 | Assign it and start a session |
-| S12 | todo | — | 2026-11-08 | Assign it and start a session |
+| S12 | doing | `claude/s12-store-test-waits` | 2026-11-09 | Slice owner builds (§8) |
 | S13 | todo | — | 2026-11-08 | Assign it and start a session |
 
 ## 1. Approach
@@ -264,7 +264,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S2 · Agent questions: typed answers, 等我处理, and replay
 
-**Status** todo · **Needs** T1 · **Branch** —
+**Status** doing · **Needs** T1 · **Branch** —
 
 **Why**: Closes #1 (with T0, T1 and S1). Screen P1: the user can also answer in the composer, and a question counts as "需要决策" in 等我处理, the drawer badge and the session marks, like an approval.
 
@@ -276,13 +276,21 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/questions.sh --all`.
 
 **Done when**
-- [ ] [auto] A pending question is in the S2 summary and the replay and counts in 等我处理; a typed and a multi-select answer reach DSH as given (`FakeDSH`, `FakeBridge`) — Evidence:
-- [ ] [ui] Answer a question by typing in the composer: the card shows the answer and the task continues (`cmd:scripts/demo/questions.sh`) — Evidence:
-- [ ] [ui] A pending question shows under 等我处理 in 所有任务 and in the drawer badge, and is still there after a relaunch (`cmd:scripts/demo/questions.sh`) — Evidence:
+- [x] [auto] A pending question is in the S2 summary and the replay and counts in 等我处理; a typed and a multi-select answer reach DSH as given (`FakeDSH`, `FakeBridge`) — Evidence: test:Questions/pendingQuestionIsInTheSummaryAndTheReplayAndWaitsOnUser · test:Questions/typedAndMultiSelectAnswersReachDshAsGiven · test:QuestionAnswersTests/aQuestionOnlyInTheSummaryComesBackAndStaysAfterARelaunch · test:QuestionAnswersTests/aPendingQuestionWaitsOnMeAndATypedAnswerReachesDshAsGiven · test:QuestionAnswersTests/aMultiSelectAnswerReachesDshAsGiven · test:QuestionAnswersTests/anAnswerFromAnotherClientWithdrawsTheCard · cmd:scripts/demo/questions.sh
+- [x] [ui] Answer a question by typing in the composer: the card shows the answer and the task continues (`cmd:scripts/demo/questions.sh`) — Evidence: cmd:scripts/demo/questions.sh --all · test:AgentQuestionUITests/testTypeAnAnswerInTheComposer · shot:evidence/S2/questions-typed.png · shot:evidence/S2/questions-typed-answered.png
+- [x] [ui] A pending question shows under 等我处理 in 所有任务 and in the drawer badge, and is still there after a relaunch (`cmd:scripts/demo/questions.sh`) — Evidence: cmd:scripts/demo/questions.sh --all · test:AgentQuestionUITests/testAWaitingQuestionIsUnderWaitingOnMeAcrossARelaunch · shot:evidence/S2/questions-waiting.png · shot:evidence/S2/questions-waiting-relaunched.png · shot:evidence/S2/questions-multi-answered.png
 
 **Not**: Push for questions. Plan alignment and pre-authorization (#9).
 
 **Log**: —
+- **2026-11-09 · Built; review next.**
+  - Done: typed answer from the composer ("回答 Agent…", AnswerQuestion with `custom`, never a follow-up); multi-select chips with 回答; `TaskSummary.pending_questions` (field 380) and WAITING_ON_USER, so 等我处理, the drawer badge and the amber drawer mark count a question; the card under 等我处理 in 所有任务 answers there too; 等你回答 in the milestone bar; a summary restores a card the log lost, and an ended task closes a stale one; an answer from another client withdraws the card (FakeBridge test). Bridge tests, DSHKit tests (QuestionAnswersTests), golden fixtures `questions_typed_answer_request`, `questions_waiting_task_upserted_event`, `scripts/demo/questions.sh --all` (3 UI tests on real DSH) all pass.
+  - Timeout: kept D92's no-timeout and amended D92 (provisional) with the reasons: a question has no safe default (a made-up answer reaches the model as the user's choice); DSH's own opt-in timed mode returns *pending* at its deadline and never refuses; DSH Web waits too. The Cut's "times out to a refusal" is not done, by this decision.
+  - New provisional decisions: D113 (typed and multi-select answers, composer rule), D114 (pending questions in the summary, 等我处理, bar). No new dependency.
+  - Setup found: `~/.dshm/home-s2` was a stale M1 profile whose cordis.patch.yml pinned the bridge to 47811, so the T0 baseline failed ("bridge did not come up"). Moved it to /tmp/dshm-s2-stale-home; T0 then passed. Swift tests and SwiftPM fetches need the sandbox off (network).
+  - Flaky (not this slice's tests, under load avg 75+): DSHKit FollowUpQueueTests/sendNowMovesAQueuedMessageIntoTheTurnAndRemoveTakesOneOut and S16CodingTaskTests/codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt failed in a full `swift test` and passed alone; they can fail `questions.sh` before the UI part.
+  - Merged main twice (S4, S3): resolved SessionPage (attachments hide while answering), task-hub, ARCHITECTURE; regenerated code and board.
+  - Next: the reviewer runs `scripts/review S2`.
 
 ### S3 · Model failures: a red failure, then continue with a new message
 
@@ -637,6 +645,14 @@ Append-only, dated.
 
 - **2026-11-09 · S6 runs as a background agent.** S6 assigned (D119–D121) and started as a background agent; its brief asks for free-team signing (no App Group) and a pbxproj change limited to the new widget target. S2 was told about its stale home-s2 port pin. Running: S2, S5, S6.
 
+- **2026-11-09 · S2 merged.** Merged as `966be4b`; `scripts/check-plan` on the merge commit passed. `scripts/review S2` at `03e231e`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S2-03e231e.txt`). No open `[human]` items, so S2 is `done`. §9 rows 17, 18 (D113, D114).
+
+- **2026-11-09 · S2 merged; the question timeout stays out.** S2 merged as 966be4b (review PASS on 03e231e, S2-03e231e.txt, no flaky part). D113, D114 new; D92 amended: in §9. Not done by decision: the Cut 'a held question times out to a refusal' (D92 keeps no timeout: a question has no safe default, DSH's own timed mode returns pending and never refuses, DSH Web waits) — the user confirms or changes this with D92. Flaky outside the review, at load 75+: FollowUpQueueTests/sendNowMovesAQueuedMessageIntoTheTurnAndRemoveTakesOneOut and S16CodingTaskTests/codingTaskHoldsAtThreeOfFiveAndStopsOnInterrupt (S12). The stale M1 home-s2 was moved to /tmp/dshm-s2-stale-home.
+
+- **2026-11-09 · S12 assigned.** Branch `claude/s12-store-test-waits`, simulator `dshm-S12`, DSHM_HOME `~/.dshm/home-s12`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D122–D124. `eval "$(scripts/slice-env S12)"` exports them.
+
+- **2026-11-09 · S12 runs as a background agent.** S12 assigned (D122–D124) and started as a background agent, with the flaky DSHKit tests that this run saw under load. Running: S5, S6, S12.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -659,3 +675,6 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 14 | S3 | decision | ARCHITECTURE D110, *provisional*: A new message continues a task after a model failure (screens X1, X4) | `claude/s3-model-failures` | merged `33e96ff` |
 | 15 | S3 | decision | D104 amended: failure_code (field 420) on TaskEnded and TaskSummary, message without the 'error: ' prefix, capability failures.v1 | `claude/s3-model-failures` | `0c66430` |
 | 16 | S3 | decision | D107 amended: a follow-up after a failure can carry attachments | `claude/s3-model-failures` | `8822d67` |
+| 17 | S2 | decision | ARCHITECTURE D113, *provisional*: A typed answer and multi-select answers (screen P1, amends D92) | `claude/s2-questions-more` | merged `966be4b` |
+| 18 | S2 | decision | ARCHITECTURE D114, *provisional*: A waiting question needs a decision, as an approval does (STORY §4, screens P1, 03, 02; extends D25, D92) | `claude/s2-questions-more` | merged `966be4b` |
+| 19 | S2 | decision | D92 amended: a question keeps no timeout (the Cut asked for a timeout to a refusal, as D25); DSH timed mode closes the card as not answered | `claude/s2-questions-more` | `b3f148d` |

@@ -4,14 +4,20 @@
 # question; the app shows the card; a tap on an option answers; the task continues with that answer.
 #
 #   scripts/demo/questions.sh           bridge + DSHKit tests, then the UI test on real DSH
-#   scripts/demo/questions.sh --shots   also refresh the screenshots in evidence/T1/
+#   scripts/demo/questions.sh --all     also the UI tests of the composer answer ("回答 Agent…": a
+#                                       typed answer goes to the question, the task continues), and
+#                                       of a multi-select question under 等我处理 and in the drawer
+#                                       badge, still there after a relaunch, answered in 所有任务
+#   --shots                             also refresh the screenshots in evidence/ (1/3 size)
 #
 # Resources (scripts/slice-env): DSHM_BRIDGE_PORT, DSHM_WEB_PORT, DSHM_HOME, DSHM_SIM, DSHM_DD.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
-SHOTS=0
-for a in "$@"; do case "$a" in --shots) SHOTS=1 ;; *) echo "unknown arg $a" >&2; exit 2 ;; esac; done
+SHOTS=0; ALL=0
+for a in "$@"; do case "$a" in --shots) SHOTS=1 ;; --all) ALL=1 ;; *) echo "unknown arg $a" >&2; exit 2 ;; esac; done
+ONLY=dsh-mobileUITests/AgentQuestionUITests/testTapAnOptionAnswersAndTheTaskContinues
+[ $ALL = 1 ] && ONLY=dsh-mobileUITests/AgentQuestionUITests
 export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47800}" DSHM_WEB_PORT="${DSHM_WEB_PORT:-3283}"
 export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home}"
 SIM="${DSHM_SIM:-iPhone 17 Pro}"
@@ -49,12 +55,16 @@ if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; 
 export TEST_RUNNER_DSHM_QUESTIONS_HOST=1 TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT" TEST_RUNNER_DSHM_SHOT_DIR="$SHOTDIR"
 xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "${DSHM_DD:-/tmp/dshm-questions-dd}" -parallel-testing-enabled NO -jobs 4 \
-  -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates -only-testing:dsh-mobileUITests/AgentQuestionUITests \
+  -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates -only-testing:"$ONLY" \
   > "$LOGS/uitest.log" 2>&1 || { grep -E 'error:|Test Case|XCTAssert' "$LOGS/uitest.log" | tail -24; exit 1; }
 grep -E 'Test Case.*(passed|failed|skipped)' "$LOGS/uitest.log"
 demo_no_skipped_ui "$LOGS/uitest.log"
 if [ $SHOTS = 1 ]; then
-  mkdir -p evidence/T1
-  for f in "$SHOTDIR"/*.png; do sips --resampleWidth 402 "$f" --out "evidence/T1/$(basename "$f")" >/dev/null; done
+  for f in "$SHOTDIR"/*.png; do
+    case "$(basename "$f")" in questions-pending.png|questions-answered.png) dir=evidence/T1 ;; *) dir=evidence/S2 ;; esac
+    mkdir -p "$dir"
+    sips --resampleWidth 402 "$f" --out "$dir/$(basename "$f")" >/dev/null
+    echo "$dir/$(basename "$f")"
+  done
 fi
 echo 'questions demo passed'
