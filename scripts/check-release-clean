@@ -7,7 +7,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DD="${DSHM_RELEASE_DD:-/tmp/dshm-release-check-dd}" # per worktree, so parallel slices don't share a build DB
-MARKERS=(FakeBridge FakeHost FakeNoiseHost DSHMFakeBridge DSHMPresetPrompt DSHMBridgePort DSHMFakeMilestones DSHMResetStore DSHMConnectDelay DSHMResetPairing DSHMFakeHold DSHMFakeScenario DSHMFakeAsk DebugDeepLink DebugLaunchOptions PlaintextChannel /plaintext)
+MARKERS=(FakeBridge FakeHost FakeNoiseHost DSHMFakeBridge DSHMPresetPrompt DSHMBridgePort DSHMFakeMilestones DSHMResetStore DSHMConnectDelay DSHMResetPairing DSHMFakeHold DSHMFakeScenario DSHMFakeAsk DebugDeepLink DebugLaunchOptions DSHMLiveActivityProbe PlaintextChannel /plaintext)
 
 build() {
   xcodebuild build -project "$ROOT/ios/dsh-mobile.xcodeproj" -scheme dsh-mobile -configuration "$1" \

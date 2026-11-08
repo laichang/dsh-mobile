@@ -24,6 +24,14 @@ struct dsh_mobileApp: App {
                     ScannerView(mode: app.scannerMode, found: { app.openPairingCode($0) }, cancel: { app.showingScanner = false })
                 }
                 #if DEBUG
+                // D121: the Live Activities as ActivityKit has them, for UI tests.
+                .overlay(alignment: .topLeading) {
+                    if ProcessInfo.processInfo.arguments.contains("-DSHMLiveActivityProbe") {
+                        Text(verbatim: "·").font(.system(size: 2)).opacity(0.02).allowsHitTesting(false)
+                            .accessibilityIdentifier("liveactivity.probe")
+                            .accessibilityValue(app.activityClient.summary)
+                    }
+                }
                 // dshm:// is registered only in the Debug Info.plist (ARCHITECTURE D16).
                 .onOpenURL { url in
                     if DebugDeepLink.route(url) != nil { app.openPairingCode(url.absoluteString) }
