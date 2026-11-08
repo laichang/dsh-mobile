@@ -70,8 +70,22 @@ public final class CachedTask {
     /// when none waits. From the host's `QueuedMessage` events, so a replay rebuilds it.
     public var queueData: Data = Data()
     /// The thumbnail of the photo sent with the first message (D95), a small JPEG; nil without one.
-    /// Local to this phone: the host has the photo itself.
+    /// Local to this phone: the host has the photo itself. Read through `sentAttachments`.
     public var photoThumbnail: Data?
+    /// D107: the files sent with the first message from this phone, a JSON-encoded
+    /// `[MessageAttachment]` with the thumbnails of images; empty without any.
+    public var sentAttachmentsData: Data = Data()
+
+    /// The first message's attachments as this phone sent them; a cache from before D107 has only
+    /// `photoThumbnail`.
+    public var sentAttachments: [MessageAttachment] {
+        get {
+            if !sentAttachmentsData.isEmpty,
+               let list = try? JSONDecoder().decode([MessageAttachment].self, from: sentAttachmentsData) { return list }
+            return photoThumbnail.map { [MessageAttachment(kind: .image, name: "photo.jpg", size: 0, mediaType: "image/jpeg", thumbnail: $0)] } ?? []
+        }
+        set { sentAttachmentsData = newValue.isEmpty ? Data() : (try? JSONEncoder().encode(newValue)) ?? Data() }
+    }
 
     public init(hostKey: String, taskID: String, title: String, createdAt: Date) {
         self.key = Self.key(hostKey: hostKey, taskID: taskID)

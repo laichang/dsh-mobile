@@ -1,12 +1,16 @@
 // Attachments: a file larger than one Noise message (65535 bytes, ARCHITECTURE D21) goes to the
-// host in parts before the CreateTask that uses it (ARCHITECTURE D95). Capability "attachments.v1".
+// host in parts before the CreateTask or SendMessage that uses it (ARCHITECTURE D95, D107).
+// Capability "attachments.v1".
 //
-//   UploadBegin  → UploadAck      the bridge checks the declared size and media type
+//   UploadBegin  → UploadAck      the bridge checks the declared size
 //   UploadChunk  → UploadAck      one part each, in order, from index 0
 //   UploadEnd    → UploadStaged   the bridge checks the size and the SHA-256
-//   CreateTask { upload_ids }     the staged file goes into the first prompt
+//   CreateTask { upload_ids }     the staged files go into the first prompt, in order
+//   SendMessage { upload_ids }    the staged files go into a follow-up (conversation.proto)
 //
-// A refusal is an Error response: upload/too-large, upload/media-type, upload/missing-part,
+// An image of a type DSH takes in a prompt (jpeg, png, webp, gif) enters as an image; any other
+// file enters as a file, and the model gets its name and a saved path on the host (D18).
+// A refusal is an Error response: upload/too-large, upload/too-many, upload/missing-part,
 // upload/hash-mismatch, upload/unknown. A refused upload is dropped; send it again from the start.
 syntax = "proto3";
 package dshm.v1;
@@ -14,9 +18,10 @@ package dshm.v1;
 message UploadBegin {
   // Chosen by the app, unique per connection.
   string upload_id = 1;
-  // image/jpeg, image/png, image/webp or image/gif.
+  // Any media type, e.g. image/jpeg, text/plain, application/pdf; empty is
+  // application/octet-stream. image/jpeg, image/png, image/webp and image/gif enter as images.
   string media_type = 2;
-  // A display name for the host, e.g. "photo.jpg".
+  // A display name for the host, e.g. "photo.jpg" or "notes.txt".
   string name = 3;
   uint64 size = 4;
   // SHA-256 of all the bytes, 32 bytes.
@@ -43,4 +48,23 @@ message UploadAck {
 // The file is complete and checked; CreateTask can name it until the connection closes.
 message UploadStaged {
   string upload_id = 1;
+}
+
+// How a staged file entered the prompt.
+enum AttachmentKind {
+  ATTACHMENT_KIND_UNSPECIFIED = 0;
+  // An image part: the model sees the image.
+  ATTACHMENT_KIND_IMAGE = 1;
+  // A file part: the model gets its name and a saved path on the host.
+  ATTACHMENT_KIND_FILE = 2;
+}
+
+// One attachment of a user message, as the transcript shows it (a chip with the name). The host
+// keeps the bytes; the phone keeps only what it shows.
+message AttachmentRef {
+  AttachmentKind kind = 1;
+  string name = 2;
+  uint64 size = 3;
+  // The media type the app declared; empty when the host does not know it (a file from the journal).
+  string media_type = 4;
 }

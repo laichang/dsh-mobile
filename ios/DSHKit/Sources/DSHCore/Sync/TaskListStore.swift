@@ -95,8 +95,8 @@ public final class TaskListStore {
         public var turnStartedAt: Date? = nil
         /// D101: follow-ups that wait while the task runs, in the order they were sent.
         public var queue: [QueuedMessage] = []
-        /// The thumbnail of the photo sent with the first message (D95), if any.
-        public var photoThumbnail: Data? = nil
+        /// The files this phone sent with the first message (D95, D107), with image thumbnails.
+        public var attachments: [MessageAttachment] = []
 
         /// S27: where the done footer's 用时 starts: the latest turn's start, else the task's
         /// creation (a single turn, or an older bridge). Never before `createdAt` or after `updatedAt`.
@@ -173,8 +173,12 @@ public final class TaskListStore {
     }
 
     public var prompt: String
-    /// The photo on the composer (D95): sent to the host before the task, then dropped.
-    public private(set) var composerPhoto: PhotoAttachment?
+    /// The files on composer 01, in order (D95, D107): sent to the host before the task, then dropped.
+    public private(set) var composerAttachments: [ComposerAttachment] = []
+    /// D107: the files on each session page's composer, by task key, for its next follow-up.
+    public private(set) var followUpAttachments: [String: [ComposerAttachment]] = [:]
+    /// D107: thumbnails of a follow-up's images until its `UserMessage` arrives, by row id.
+    @ObservationIgnored private var pendingThumbnails: [String: [MessageAttachment]] = [:]
     public private(set) var hosts: [HostStatus] = []
     public private(set) var tasks: [TaskRow] = []
     public private(set) var isSending = false
@@ -278,20 +282,84 @@ public final class TaskListStore {
     /// Hosts that can't be reached right now, by name.
     public var offlineHosts: [HostStatus] { hosts.filter { $0.reachability == .offline } }
 
-    /// Whether the composer's host can take a photo (`attachments.v1`).
-    public var canAttachPhoto: Bool {
+    /// Whether the composer's host can take attachments (`attachments.v1`).
+    public var canAttach: Bool {
         hosts.contains { $0.key == composerHostKey && $0.reachability == .online
             && $0.capabilities.contains(DSHProtocolInfo.attachmentsCapability) }
     }
 
-    public func attachPhoto(_ photo: PhotoAttachment?) {
-        composerPhoto = photo
-        sendError = nil
+    /// D107: whether a follow-up to `row` can take attachments: once the task is done (completed or
+    /// stopped), not while it runs (a queued message carries text only, D101).
+    public func canAttach(to row: TaskRow) -> Bool {
+        row.state.isTerminal && canFollowUp(row) && links.first { $0.key == row.hostKey }?.capabilities?.contains(DSHProtocolInfo.attachmentsCapability) == true
+    }
+
+    public func attachments(on target: AttachTarget) -> [ComposerAttachment] {
+        switch target {
+        case .composer: composerAttachments
+        case .followUp(let key): followUpAttachments[key] ?? []
+        }
+    }
+
+    private func setAttachments(_ list: [ComposerAttachment], on target: AttachTarget) {
+        switch target {
+        case .composer: composerAttachments = list
+        case .followUp(let key): followUpAttachments[key] = list.isEmpty ? nil : list
+        }
+    }
+
+    /// D107: adds a file at the end of a composer. A file over the limit stays, with the error on
+    /// its chip, and the send waits until it is removed. Returns false when the composer already
+    /// has `Attachments.maxCount` files.
+    @discardableResult
+    public func attach(_ attachment: FileAttachment, to target: AttachTarget = .composer) -> Bool {
+        var list = attachments(on: target)
+        guard list.count < Attachments.maxCount else { return false }
+        list.append(ComposerAttachment(attachment))
+        setAttachments(list, on: target)
+        if target == .composer { sendError = nil }
+        return true
+    }
+
+    public func removeAttachment(_ id: UUID, from target: AttachTarget = .composer) {
+        setAttachments(attachments(on: target).filter { $0.id != id }, on: target)
+        if target == .composer { sendError = nil }
+    }
+
+    private func setStatus(_ status: ComposerAttachment.Status, of id: UUID, on target: AttachTarget) {
+        var list = attachments(on: target)
+        guard let at = list.firstIndex(where: { $0.id == id }) else { return }
+        list[at].status = status
+        setAttachments(list, on: target)
+    }
+
+    /// D107: uploads the files of a composer in order, each chip showing its progress. On a refusal
+    /// the chip shows the error and the send stops; the files stay on the composer.
+    private func uploadAttachments(on target: AttachTarget, via connection: HostConnection) async throws -> [String] {
+        var uploadIDs: [String] = []
+        for item in attachments(on: target) {
+            setStatus(.uploading(0), of: item.id, on: target)
+            do {
+                uploadIDs.append(try await connection.upload(item.attachment) { [weak self] fraction in
+                    self?.setStatus(.uploading(fraction), of: item.id, on: target)
+                })
+            } catch {
+                setStatus(.failed(String(describing: error)), of: item.id, on: target)
+                throw error
+            }
+        }
+        return uploadIDs
+    }
+
+    /// Whether a composer's files can go: none is over the limit.
+    private func attachmentsCanSend(on target: AttachTarget) -> Bool {
+        !attachments(on: target).contains { $0.status == .tooLarge }
     }
 
     public var canSend: Bool {
         // S21: with every host offline, the send key is off (X3).
         !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSending && !allHostsOffline
+            && attachmentsCanSend(on: .composer)
     }
 
     // MARK: - Lifecycle
@@ -341,7 +409,6 @@ public final class TaskListStore {
         let text = prompt
         let selection = composerSelections[link.key]
         let workspace = composerWorkspaces[link.key]
-        let photo = composerPhoto
         isSending = true
         sendError = nil
         defer { isSending = false }
@@ -355,16 +422,16 @@ public final class TaskListStore {
             return nil
         }
         do {
-            // D95: the photo goes to the host first; the task names its upload id.
-            var uploadIDs: [String] = []
-            if let photo { uploadIDs.append(try await link.connection.upload(photo)) }
+            // D95, D107: the files go to the host first, in order; the task names their upload ids.
+            let sent = composerAttachments.map(\.attachment.sent)
+            let uploadIDs = try await uploadAttachments(on: .composer, via: link.connection)
             let taskID = try await link.connection.createTask(prompt: text, selection: selection, workspace: workspace,
                                                               uploadIDs: uploadIDs)
             let task = taskRecord(hostKey: link.key, taskID: taskID, title: text)
             if task.title.isEmpty { task.title = text }
-            if let photo { task.photoThumbnail = photo.thumbnail }
+            if !sent.isEmpty { task.sentAttachments = sent }
             prompt = ""
-            composerPhoto = nil
+            composerAttachments = []
             composerWorkspaces[link.key] = nil // S20: a workspace choice is for this one new session.
             onHostChoice(link.key)
             saveNow()
@@ -406,14 +473,43 @@ public final class TaskListStore {
     /// Sends `text` into the DSH session of `row`. The user message and the new turn arrive as host
     /// events, so the page shows them in order, and a reconnect replays them. D101: while the task
     /// runs, the message waits in its queue (`QUEUE`): the next turn, unless the user sends it now.
+    /// D107: once the task is done, the files on the page's composer go up first and with the
+    /// message; then they leave it.
     public func sendFollowUp(_ text: String, for row: TaskRow) async throws {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         guard canFollowUp(row), let link = links.first(where: { $0.key == row.hostKey }) else {
             throw HostConnectionError.notConnected
         }
+        let target = AttachTarget.followUp(taskKey: row.key)
+        guard attachmentsCanSend(on: target) else {
+            throw HostConnectionError.bridge(code: "upload/too-large",
+                                             message: "Remove the files larger than \(Attachments.sizeText(Attachments.maxBytes)).")
+        }
+        let sent = attachments(on: target).map(\.attachment.sent)
         let mode: Dshm_V1_MessageMode = row.state.isTerminal ? .steer : .queue
-        try await link.connection.sendMessage(taskID: row.taskID, text: trimmed, mode: mode)
+        let uploadIDs = sent.isEmpty ? [] : try await uploadAttachments(on: target, via: link.connection)
+        let messageID = try await link.connection.sendMessage(taskID: row.taskID, text: trimmed, mode: mode, uploadIDs: uploadIDs)
+        setAttachments([], on: target)
+        if sent.contains(where: { $0.thumbnail != nil }) { keepThumbnails(sent, messageID: messageID, taskKey: row.key) }
+    }
+
+    /// D107: the follow-up's row gets the thumbnails of its images, now or when its `UserMessage` arrives.
+    private func keepThumbnails(_ sent: [MessageAttachment], messageID: String, taskKey: String) {
+        let rowID = TranscriptItem.userMessageID(messageID)
+        guard let task = try? context.fetch(FetchDescriptor<CachedTask>(predicate: #Predicate { $0.key == taskKey })).first else { return }
+        var blocks = structuredTranscript(of: task)
+        guard var item = blocks.items.first(where: { $0.id == rowID }) else {
+            pendingThumbnails[taskKey + "\n" + rowID] = sent
+            return
+        }
+        item.attachments = (item.attachments ?? []).keepingThumbnails(of: sent)
+        if blocks.upsert(item, offset: item.offset) {
+            task.structuredTranscript = blocks
+            structuredTranscripts[task.key] = blocks
+            scheduleSave()
+            refresh()
+        }
     }
 
     /// D101 · "立即发送": the waiting message goes in at the next step of the running turn.
@@ -635,11 +731,17 @@ public final class TaskListStore {
                 timelines[task.key] = timeline
             }
             task.logID = host.logID
-        case .transcriptBlock(let item), .userMessage(let item):
+        case .transcriptBlock(var item), .userMessage(var item):
             // S17: a new row sits after the text streamed so far; an update keeps its place.
             // D89: a follow-up message sits there too, and the next turn's text streams after it.
             let task = taskRecord(hostKey: link.key, taskID: item.taskID, title: "")
             var blocks = structuredTranscript(of: task)
+            if let attachments = item.attachments {
+                // D107: a replay keeps the thumbnails this phone already has.
+                let local = blocks.items.first { $0.id == item.id }?.attachments
+                    ?? pendingThumbnails.removeValue(forKey: task.key + "\n" + item.id)
+                item.attachments = attachments.keepingThumbnails(of: local)
+            }
             if blocks.upsert(item, offset: task.transcript.utf8.count) {
                 task.structuredTranscript = blocks
                 structuredTranscripts[task.key] = blocks
@@ -864,7 +966,7 @@ public final class TaskListStore {
                 blocks: link.capabilities?.contains(DSHProtocolInfo.transcriptCapability) == false
                     ? structuredTranscript(of: t).userMessagesOnly : structuredTranscript(of: t),
                 turnStartedAt: t.turnStartedAt,
-                queue: t.queueData.isEmpty ? [] : t.followUpQueue.messages, photoThumbnail: t.photoThumbnail)
+                queue: t.queueData.isEmpty ? [] : t.followUpQueue.messages, attachments: t.sentAttachments)
         }
     }
 

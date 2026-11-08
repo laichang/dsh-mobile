@@ -1,15 +1,21 @@
 #!/bin/bash
-# Attachments demo and checks (ARCHITECTURE D95): attach one photo on composer 01, send a task,
-# and the DSH session has the image.
+# Attachments demo and checks (ARCHITECTURE D95, D107): attach one photo on composer 01, send a
+# task, and the DSH session has the image. With --all, also files: a photo, a .txt and a .pdf on 01
+# with one removed, and a file on a follow-up, and the DSH sessions have them.
 #
-#   scripts/demo/attachments.sh          bridge tests + DSHKit tests (golden photo), then
-#                                        AttachmentsUITests on a real DSH + bridge with the mock
-#                                        model, then a check of the DSH session log for the image
+#   scripts/demo/attachments.sh          bridge tests + DSHKit tests (golden photo, files), then
+#                                        AttachmentsUITests/testAttachOnePhotoAndSend on a real DSH
+#                                        + bridge with the mock model, then a check of the DSH
+#                                        session log for the image
+#   scripts/demo/attachments.sh --all    also testAttachPhotoTextAndPDFRemoveOneAndSend and
+#                                        testAttachFileToFollowUp, then a check of the DSH session
+#                                        logs for the files (attachments-files-check.mjs)
 #   scripts/demo/attachments.sh --shots DIR  also write the screenshots (1/3 size) into DIR
 #   DSHM_RESUME=1                        skip the parts that passed for the same code (lib.sh demo_part)
 #
 # The golden photo (protocol/fixtures/attachments/photo.jpg) is added to the simulator's photo
-# library first, so the picker shows it as the newest photo.
+# library first, so the picker shows it as the newest photo. With --all, the files of
+# scripts/demo/attachments-files/ are put in Files > On My iPhone (the Files app's local storage).
 #
 # Resources (WORKFLOW.md §6), read from the environment (scripts/slice-env):
 #   DSHM_SIM, DSHM_DD (DerivedData, default /tmp/dshm-attachments-dd), DSHM_BRIDGE_PORT,
@@ -18,7 +24,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 SHOTS=""
-while [ $# -gt 0 ]; do case "$1" in --shots) SHOTS="${2:?--shots needs a directory}"; shift 2 ;; *) echo "unknown arg $1" >&2; exit 2 ;; esac; done
+ALL=0
+while [ $# -gt 0 ]; do case "$1" in
+  --shots) SHOTS="${2:?--shots needs a directory}"; shift 2 ;;
+  --all) ALL=1; shift ;;
+  *) echo "unknown arg $1" >&2; exit 2 ;;
+esac; done
+FILES="$ROOT/scripts/demo/attachments-files"
 : "${DSHM_SIM:?run eval \"\$(scripts/slice-env <ID>)\" first}"
 : "${DSHM_BRIDGE_PORT:?}" "${DSHM_WEB_PORT:?}" "${DSHM_HOME:?}"
 export DSHM_DD="${DSHM_DD:-/tmp/dshm-attachments-dd}"
@@ -46,6 +58,16 @@ xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobil
 
 step "the golden photo into the simulator's library"
 xcrun simctl addmedia "$SIM" protocol/fixtures/attachments/photo.jpg
+if [ $ALL = 1 ]; then
+  step "the demo files into Files > On My iPhone"
+  # The Files app's local storage is an app group of com.apple.DocumentsApp.
+  LOCAL="$(xcrun simctl get_app_container "$SIM" com.apple.DocumentsApp groups \
+    | awk -F'\t' '$1 == "group.com.apple.FileProvider.LocalStorage" { print $2 }')"
+  [ -d "$LOCAL" ] || { echo "no Files local storage on $SIM" >&2; exit 1; }
+  mkdir -p "$LOCAL/File Provider Storage"
+  cp "$FILES"/notes.txt "$FILES"/report.pdf "$LOCAL/File Provider Storage/"
+  ls -l "$LOCAL/File Provider Storage/"
+fi
 
 DSH_PID=""
 trap '[ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true' EXIT
@@ -76,6 +98,26 @@ step "the DSH session has the image"
 grep -q "Test Case.*passed" "$LOGS/ui.log" || SINCE=0
 # The prompt of AttachmentsUITests, and the size of the golden photo (the app keeps it under 2048 px).
 node scripts/demo/attachments-check.mjs "$DSHM_HOME" "$SINCE" "What is in this photo?" 480x360
+
+if [ $ALL = 1 ]; then
+  SINCE="$(date +%s)"
+  step "UI: a photo, a .txt and a .pdf on 01, one removed; a file on a follow-up (log: $LOGS/ui-files.log)"
+  if demo_part attachments-ui-files xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+      -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO \
+      -only-testing:dsh-mobileUITests/AttachmentsUITests/testAttachPhotoTextAndPDFRemoveOneAndSend \
+      -only-testing:dsh-mobileUITests/AttachmentsUITests/testAttachFileToFollowUp > "$LOGS/ui-files.log" 2>&1; then
+    grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui-files.log" || true
+  else
+    grep -E "error:|Test Case.*(passed|failed)" "$LOGS/ui-files.log" || tail -30 "$LOGS/ui-files.log"
+    echo "UI test failed" >&2; exit 1
+  fi
+  demo_no_skipped_ui "$LOGS/ui-files.log"
+
+  step "the DSH sessions have the files"
+  # A UI part skipped for the same code (DSHM_RESUME) made its sessions in an earlier run.
+  grep -q "Test Case.*passed" "$LOGS/ui-files.log" || SINCE=0
+  node scripts/demo/attachments-files-check.mjs "$DSHM_HOME" "$SINCE" "$FILES"
+fi
 kill "$DSH_PID" 2>/dev/null || true; wait "$DSH_PID" 2>/dev/null || true; DSH_PID=""
 
 if [ -n "$SHOTS" ]; then

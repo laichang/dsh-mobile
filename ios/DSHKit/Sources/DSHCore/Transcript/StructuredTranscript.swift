@@ -49,8 +49,12 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
     public var time: Date
     /// Where the row sits: after this many UTF-8 bytes of the task's streamed transcript.
     public var offset: Int
+    /// D107: the files sent with a user message, in order; nil for other rows (and older caches).
+    public var attachments: [MessageAttachment]?
 
-    public init(id: String, taskID: String, state: State, kind: Kind, time: Date, offset: Int = 0) {
+    public init(id: String, taskID: String, state: State, kind: Kind, time: Date, offset: Int = 0,
+                attachments: [MessageAttachment]? = nil) {
+        self.attachments = attachments
         self.id = id
         self.taskID = taskID
         self.state = state
@@ -80,10 +84,14 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
                   time: Date(timeIntervalSince1970: TimeInterval(wire.timeMs) / 1000))
     }
 
+    /// The row id of the follow-up message with the bridge's `message_id`.
+    public static func userMessageID(_ messageID: String) -> String { messagePrefix + messageID }
+
     /// D89: a follow-up message, placed like a row: after the text that streamed before it.
     public init(_ wire: Dshm_V1_UserMessage) {
-        self.init(id: Self.messagePrefix + wire.messageID, taskID: wire.taskID, state: .done, kind: .userMessage(text: wire.text),
-                  time: Date(timeIntervalSince1970: TimeInterval(wire.timeMs) / 1000))
+        self.init(id: Self.userMessageID(wire.messageID), taskID: wire.taskID, state: .done, kind: .userMessage(text: wire.text),
+                  time: Date(timeIntervalSince1970: TimeInterval(wire.timeMs) / 1000),
+                  attachments: wire.attachments.isEmpty ? nil : wire.attachments.map(MessageAttachment.init))
     }
 
     /// The row ID of a follow-up message is this prefix and the bridge's message ID.
