@@ -237,7 +237,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S1 · Follow-ups while a task runs and after an interrupt
 
-**Status** todo · **Needs** T0 · **Branch** —
+**Status** review · **Needs** T0 · **Branch** —
 
 **Why**: Part of #1. STORY §7: "任务进行中也能补充：追加一句话…纠正方向，不必打断重来". The user, 2026-11-08: "参考codex、claude，用户发送后，先排队，但给定"立即发送"/steer的标识，用户点击后直接发送". This changes the default of D18 from steer to queue.
 
