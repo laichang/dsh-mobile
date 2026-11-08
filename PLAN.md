@@ -301,6 +301,13 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Not**: A top-up link. A model switch inside the failure card.
 
 **Log**: —
+- **2026-11-09 · Built: red failure, then continue with a new message.**
+  - Done: the bridge forwards DSH's failure class (`failure_code`, field 420 on TaskEnded and TaskSummary) and DSH's message as it is; a failed phone task takes a follow-up, and that turn adds milestones. The app shows its own words for AUTH and QUOTA/ACCOUNT_QUOTA, DSH's text for other codes, the code as a tag, and a hint that a message continues the session. STORY §4 §8, DESIGN X1 X4 (X4 tag M2 · 已有), D89, D104 (amended), D110.
+  - Evidence: `ModelFailuresAgainstFakeDSH` replays all ten X1 recordings (copied to `bridge/test/fixtures/model-failures/`); `ModelFailureTests` (DSHKit); `scripts/demo/model-failures.sh` passed twice against real DSH with a fake DeepSeek (`scripts/demo/fake-deepseek.mjs`), 402 until the top-up. No flaky part seen.
+  - Provisional: D110 (new), D104 amendment (wire). No new dependencies.
+  - Machine notes: GitHub was unreachable from this Mac (connection reset), so `swift build` could not clone swift-protobuf; I seeded `ios/DSHKit/.build` from the main checkout and `/tmp/dshm-s3-dd/SourcePackages` from `/tmp/dshm-T0-dd`. `~/.dshm/home-s3` held an M1 S3 profile that pinned the bridge to port 47812, so T0 could not start; I moved it to `~/.dshm/home-s3.stale-m1-2026-11-09`.
+  - Not done: the spike folder `spikes/model-failures/` stays (its README says to delete it after this slice; the coordinator decides).
+  - Next: the reviewer runs `scripts/review S3` on the head commit.
 
 ### S4 · Attach files: photos, text, PDF, other files
 
