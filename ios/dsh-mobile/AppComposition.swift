@@ -37,6 +37,8 @@ final class AppModel {
     @ObservationIgnored private lazy var liveActivities = LiveActivities(client: activityClient) { row in
         MilestoneBar.line(row.milestones, state: row.state, alert: nil)
     }
+    /// D129: false for a Debug test launch that does not ask for Live Activities.
+    @ObservationIgnored private var liveActivitiesOn = true
     /// D116: the mic key's speech to text: the Speech framework, or in Debug `-DSHMFakeSpeech`.
     let transcriber: TranscriberFactory
     @ObservationIgnored private let container: ModelContainer
@@ -63,6 +65,8 @@ final class AppModel {
         // D128: XCUITest waits before each step until UIKit's view animations end; under load it
         // could wait 60 s per step for one whose end it did not see.
         if !options.uikitAnimations { UIView.setAnimationsEnabled(false) }
+        // D129: a test launch starts no Live Activities unless it asks, and ends the ones left.
+        liveActivitiesOn = DebugLaunchOptions.liveActivitiesOn(ProcessInfo.processInfo.arguments)
         if options.resetPairing {
             try? hosts.removeAll()
             try? keys.reset()
@@ -78,6 +82,7 @@ final class AppModel {
         #endif
         self.transcriber = transcriber
         pairing = Pairing(keys: keys, hosts: hosts, transport: transport, probe: probe)
+        if !liveActivitiesOn { activityClient.dismissAll() }
         store = makeStore()
     }
 
@@ -89,7 +94,7 @@ final class AppModel {
             UserDefaults.standard.set(key, forKey: Self.preferredHostKey)
         }
         store.onHostRevoked = { [weak self] host in self?.hostRevoked(host) }
-        store.liveActivities = liveActivities
+        if liveActivitiesOn { store.liveActivities = liveActivities }
         return store
     }
 

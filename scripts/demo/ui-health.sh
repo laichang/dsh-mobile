@@ -87,7 +87,7 @@ ui_test() { # part name, then Suite or Suite/test selectors
   step "UI: $name ($*) (log: $log)"
   # A new install of the app over the old one can race with a launch by liveactivitiesd (a Live
   # Activity left by an earlier run): the first test then got an app without its launch arguments
-  # (seen 2026-11-09). Remove the app first; xcodebuild installs it again.
+  # (ARCHITECTURE D129). Remove the app first; xcodebuild installs it again.
   xcrun simctl uninstall "$SIM" chang.dsh-mobile >/dev/null 2>&1 || true
   if ! xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
       -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" > "$log" 2>&1; then

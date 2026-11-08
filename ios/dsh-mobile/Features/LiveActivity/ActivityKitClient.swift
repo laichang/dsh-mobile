@@ -66,6 +66,11 @@ final class ActivityKitClient: LiveActivityClient {
         refreshSummary()
     }
 
+    /// Debug test launches that do not ask for Live Activities end the ones left (D129).
+    func dismissAll() {
+        for key in Array(activities.keys) { dismiss(key: key) }
+    }
+
     private enum Operation: Sendable {
         case update(TaskActivityState, Date)
         case end(TaskActivityState)

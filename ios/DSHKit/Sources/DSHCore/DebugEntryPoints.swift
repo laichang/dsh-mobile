@@ -49,6 +49,18 @@ public enum DebugLaunchOptions {
     /// `-DSHMUIKitAnimations NO` (D128): UI tests turn off UIKit's view animations
     /// (`UIView.setAnimationsEnabled(false)`), so XCUITest never waits for one to end.
     public static let uikitAnimationsKey = "DSHMUIKitAnimations"
+    /// `-DSHMLiveActivityProbe YES` (D119): the app shows what ActivityKit has (`liveactivity.probe`).
+    public static let liveActivityProbeKey = "DSHMLiveActivityProbe"
+
+    /// D129: whether the app starts Live Activities. A launch with any `-DSHM…` argument is a test
+    /// launch (D16); it starts them only when it asks with `-DSHMLiveActivityProbe YES`. A Live
+    /// Activity left by one test run made liveactivitiesd open the app after the next install, and
+    /// XCUITest then drove that process, which had none of the test's launch arguments.
+    public static func liveActivitiesOn(_ arguments: [String]) -> Bool {
+        guard let i = arguments.firstIndex(of: "-" + liveActivityProbeKey), arguments.index(after: i) < arguments.endIndex
+        else { return !arguments.contains { $0.hasPrefix("-DSHM") } }
+        return ["YES", "1", "true"].contains(arguments[arguments.index(after: i)])
+    }
 
     public struct Options: Equatable, Sendable {
         public var useFakeBridge = false
