@@ -40,27 +40,34 @@ final class AttachmentsUITests: XCTestCase {
     func attachPhoto(_ app: XCUIApplication, key: String = "composer.attach") {
         openAttachMenu(app, key: key, item: "attach.photos", labels: ["照片图库", "Photo Library"])
         // The system picker runs out of process; its grid lists the newest photo (the demo's) first.
-        // Its cells' identifier does not depend on the simulator's language.
+        // Its cells' identifier does not depend on the simulator's language. Its first open after
+        // an install can take more than 15 s.
         let photo = app.images.matching(identifier: "PXGGridLayout-Info").firstMatch
-        XCTAssertTrue(photo.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(photo.waitForExistence(timeout: 30), app.debugDescription)
         // The picker's cells report "not hittable" to XCUITest; a tap at the cell's centre works.
         photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         XCTAssertTrue(chip(app, "photo.jpg").waitForExistence(timeout: 10), app.debugDescription)
     }
 
     /// Picks `name` (e.g. "notes.txt") in the system document picker. The demo puts the files in
-    /// On My iPhone, the only place under Browse; the picker opens on Recents the first time.
+    /// On My iPhone. The picker opens on Recents, on the Browse root (a list of locations), or in
+    /// the last folder, depending on what it showed before.
     func attachFile(_ app: XCUIApplication, _ name: String, key: String = "composer.attach") {
         openAttachMenu(app, key: key, item: "attach.files", labels: ["文件", "Files"])
         let base = (name as NSString).deletingPathExtension
-        let file = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label BEGINSWITH %@ AND NOT (identifier BEGINSWITH 'attachment.')", base)).firstMatch
+        let file = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", base)).firstMatch
         if !file.waitForExistence(timeout: 6) {
-            let browse = app.buttons.matching(NSPredicate(format: "label IN %@", ["浏览", "Browse"])).firstMatch
-            XCTAssertTrue(browse.waitForExistence(timeout: 5), app.debugDescription)
-            browse.tap()
-            let here = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["我的 iPhone", "On My iPhone"])).firstMatch
-            if !file.waitForExistence(timeout: 4), here.exists { here.tap() }
+            // The location cell's identifier is "DOC.sidebar.item.<name>" in any language.
+            let here = app.cells.matching(NSPredicate(format: "identifier BEGINSWITH 'DOC.sidebar.item' AND label CONTAINS 'iPhone'")).firstMatch
+            if !here.waitForExistence(timeout: 2) {
+                let browse = app.buttons.matching(NSPredicate(format: "label IN %@", ["浏览", "Browse"])).firstMatch
+                XCTAssertTrue(browse.waitForExistence(timeout: 5), app.debugDescription)
+                browse.tap()
+            }
+            if !file.waitForExistence(timeout: 3) {
+                XCTAssertTrue(here.waitForExistence(timeout: 5), app.debugDescription)
+                here.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
         }
         XCTAssertTrue(file.waitForExistence(timeout: 10), app.debugDescription)
         file.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()

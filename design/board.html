@@ -328,6 +328,8 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <symbol id="audit" viewBox="0 0 24 24"><path d="M9 5h10M9 12h10M9 19h10M4 5h.01M4 12h.01M4 19h.01"/></symbol>
   <symbol id="square" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/></symbol>
   <symbol id="photo" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></symbol>
+  <symbol id="camera" viewBox="0 0 24 24"><path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></symbol>
+  <symbol id="x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></symbol>
   <symbol id="wifi" viewBox="0 0 24 24"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19h.01"/></symbol>
 </svg>
 
@@ -359,6 +361,27 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
 .lst .it .ck{margin-left:auto;color:#8EA2FF}
 .field{flex:1;font-family:var(--mono);font-size:13px;color:var(--t3);background:#0E0E10;border:1px solid var(--hair);border-radius:9px;padding:9px 10px}
 .trail-l{position:absolute;height:3px;border-radius:2px;z-index:69}
+/* attachments: chips on the composer, the "+" menu, cards in the user bubble */
+.atts{display:flex;gap:8px;margin:0 0 11px;overflow:hidden}
+.att{position:relative;flex:none;height:54px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid var(--hair)}
+.att.th{width:54px;background:linear-gradient(135deg,#6E8FB5,#C9A36A 60%,#4F6B3A);overflow:hidden}
+.att.fc{display:flex;align-items:center;gap:8px;padding:0 26px 0 9px;max-width:136px}
+.att .nm{font-size:12.5px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.att .dt{font-size:11px;color:var(--t3);margin-top:2px;white-space:nowrap}
+.att .x{position:absolute;top:4px;right:4px;width:17px;height:17px;border-radius:9px;background:rgba(0,0,0,.55);display:grid;place-items:center;color:#fff}
+.att .x svg{width:10px;height:10px;stroke-width:2.4}
+.att .up{position:absolute;left:9px;right:9px;bottom:6px;height:2px;border-radius:1px;background:var(--hair-2);overflow:hidden}
+.att .up i{display:block;height:100%;background:var(--blue)}
+.att.err{border-color:var(--amber)}
+.att.err .dt{color:var(--amber)}
+.amenu{position:absolute;left:2px;bottom:calc(100% + 8px);width:196px;background:#3A3A3E;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.55);overflow:hidden;z-index:8}
+.amenu div{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;font-size:15px;color:var(--t1);border-bottom:1px solid var(--hair)}
+.amenu div:last-child{border-bottom:0}
+.amenu svg{color:var(--t1)}
+.ubatt{align-self:flex-end;display:flex;gap:6px;margin:6px 0 0 auto}
+.ubatt .att{height:46px}
+.ubatt .att.th{width:46px}
+.ubatt .att.fc{padding-right:11px;max-width:220px}
 </style>
 
 <!-- ===== Templates ===== -->
@@ -402,7 +425,37 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
     <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);margin-bottom:10px"><span class="dot"></span>MacBook-Pro<span style="opacity:.4">·</span><svg class="i xs"><use href="#folder"/></svg>默认工作区<svg class="i xs"><use href="#chevd"/></svg></div>
     <div class="ph">描述任务，/ 命令，@ 文件或会话</div>
     <div class="bar">
-      <span class="pill" style="padding:6px"><svg class="i xs"><use href="#photo"/></svg></span>
+      <span class="pill" style="padding:6px"><svg class="i xs"><use href="#plus"/></svg></span>
+      <span class="pill">DeepSeek-V41-Flash <span class="w">· High</span><svg class="i xs"><use href="#chevd"/></svg></span>
+      <span class="send idle"><svg class="i s"><use href="#up"/></svg></span>
+    </div>
+  </div>
+</template>
+
+<!-- Launch screen with attachments: two chips on the composer, the "+" menu open -->
+<template id="wshome-att">
+  <div class="nav">
+    <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+    <div class="navtitle"><b>新会话</b></div>
+    <div class="iconbtn ghost"></div>
+  </div>
+  <div class="scroll"></div>
+  <div class="watermark">deepseek</div>
+  <div class="composer">
+    <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);margin-bottom:10px"><span class="dot"></span>MacBook-Pro<span style="opacity:.4">·</span><svg class="i xs"><use href="#folder"/></svg>默认工作区<svg class="i xs"><use href="#chevd"/></svg></div>
+    <div class="atts">
+      <div class="att th"><span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+      <div class="att fc"><span class="fi pdf">PDF</span><div style="min-width:0"><div class="nm">report.pdf</div><div class="dt">PDF · 86 KB</div></div><span class="x"><svg class="i"><use href="#x"/></svg></span><span class="up"><i style="width:60%"></i></span></div>
+      <div class="att fc err"><span class="fi" style="background:#5A5F66">MOV</span><div style="min-width:0"><div class="nm">demo.mov</div><div class="dt">超过 20 MB</div></div><span class="x"><svg class="i"><use href="#x"/></svg></span></div>
+    </div>
+    <div class="ph typed">看看这张照片和这份报告</div>
+    <div class="amenu">
+      <div>照片图库<svg class="i s"><use href="#photo"/></svg></div>
+      <div>相机<svg class="i s"><use href="#camera"/></svg></div>
+      <div>文件<svg class="i s"><use href="#folder"/></svg></div>
+    </div>
+    <div class="bar">
+      <span class="pill" style="padding:6px;background:rgba(255,255,255,.16)"><svg class="i xs"><use href="#plus"/></svg></span>
       <span class="pill">DeepSeek-V41-Flash <span class="w">· High</span><svg class="i xs"><use href="#chevd"/></svg></span>
       <span class="send idle"><svg class="i s"><use href="#up"/></svg></span>
     </div>
@@ -452,7 +505,8 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
     <div class="iconbtn ghost"><svg class="i"><use href="#share"/></svg></div>
   </div>
   <div class="scroll" style="display:flex;flex-direction:column">
-    <div class="ubub" style="opacity:.5;margin-top:0">把 Q3 的数据做成 12 页汇报</div>
+    <div class="ubatt" style="opacity:.5;margin-top:0"><div class="att fc"><span class="fi" style="background:#5A5F66">TXT</span><div style="min-width:0"><div class="nm">Q3 口径说明.txt</div><div class="dt">TXT · 2 KB</div></div></div></div>
+    <div class="ubub" style="opacity:.5">把 Q3 的数据做成 12 页汇报</div>
     <div class="thought" style="margin:0 0 6px"><svg class="i xs" style="color:var(--green)"><use href="#check"/></svg>已工作 · 23 步 · 1 次审批<svg class="i xs"><use href="#chev"/></svg></div>
     <div class="para">做好了：12 页，存在 <code>~/Desktop/Q3/Q3 summary.pptx</code>。数据来自 <code>Q3.xlsx</code> 的 4 个工作表；第 5 页的华东数据口径和上季度不同，加了脚注。</div>
     <div style="border:1px dashed var(--hair-2);border-radius:14px;padding:11px 12px;display:flex;align-items:center;gap:10px">
@@ -464,7 +518,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   </div>
   <div class="composer">
     <div class="ph" style="display:flex;align-items:center"><span style="opacity:.55">回复智能体…</span></div>
-    <div class="bar"><span class="pill">V41-Flash <span class="w">· High</span></span><span class="send idle"><svg class="i s"><use href="#up"/></svg></span></div>
+    <div class="bar"><span class="pill" style="padding:6px"><svg class="i xs"><use href="#plus"/></svg></span><span class="pill">V41-Flash <span class="w">· High</span></span><span class="send idle"><svg class="i s"><use href="#up"/></svg></span></div>
   </div>
 </template>
 
@@ -503,7 +557,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
 <div class="cell">
 <div class="phone">
   <div class="island"></div><div class="status" data-t="sbar"></div>
-  <div class="mp" data-t="wshome" style="left:0;box-shadow:none"></div>
+  <div class="mp" data-t="wshome-att" style="left:0;box-shadow:none"></div>
   <div class="homebar"></div>
 </div>
 <div class="cap"><h3><i>01</i>打开 App · 空白新会话<span class="mtag m1">M1 · 改导航</span></h3><ul>
@@ -511,7 +565,9 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <li>执行端和工作区用默认值，写在输入框顶上；点它换（07）。模型胶囊点开是 M。</li>
   <li>左上角抽屉按钮，琥珀角标 = 「所有任务」里有几件等你处理；历史都在抽屉里。</li>
   <li>发出第一条消息才创建会话；短问题直接在这里答完（S8 的就地回答）。</li>
-  <li>照片键（M2）：从相册选一张照片，输入框上方出现缩略图，可移除；发送时先把照片传到执行端，再建会话。用户气泡上方显示这张缩略图（D95）。执行端不支持时不显示照片键。</li>
+  <li>附件（M2 · 已有）：输入框左下的 <b>+</b> 打开菜单：照片图库、相机、文件。照片和任何类型的文件（txt、pdf、表格、压缩包……）都可以加，一条消息最多 5 个，按加入的顺序发出（D107）。</li>
+  <li>每个附件是输入框上方的一块：照片是缩略图，文件是类型、文件名和大小；右上角 × 移除。发送时依次上传，块底有进度条；超过 20 MB 的文件在上传前就标成琥珀色并写明原因，移除后才能发送。</li>
+  <li>照片作为图片交给模型；其他文件存到执行端，模型拿到文件名和保存路径。用户气泡上方显示这些附件，重放会话后也在（D95，D107）。执行端不支持时不显示 +。</li>
 </ul></div>
 </div>
 
@@ -631,6 +687,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <li>M1 的结果是文字：写清楚产物在执行端的哪个路径。</li>
   <li>虚线文件卡是 <b>M3</b>：Quick Look 预览、分享、存到文件。</li>
   <li>完成后输入框直接可以接着说：发到同一个 DSH 会话（网页上也是这一个），你的气泡和新的回复接在这个回答下面，任务回到运行中，“用时”从这一轮算起。执行端不支持时，输入框和以前一样不能输入。失败或停止后接着说还是 M2。</li>
+  <li>接着说也能带附件：输入框里的 <b>+</b> 和 01 一样（照片图库、相机、文件），附件进同一个 DSH 会话，显示在你新气泡的上方（D107）。</li>
 </ul></div>
 </div>
 
