@@ -3,6 +3,33 @@ import test from 'node:test'
 import { SessionDirectory, type SessionReader } from '../src/sessions/directory.ts'
 import { TaskHub } from '../src/s2/task-hub.ts'
 import { TaskState } from '../src/gen/s2_pb.ts'
+import { AttachmentKind } from '../src/gen/attachments_pb.ts'
+
+// D107: the journal's image and file blocks become the message's attachments, so a replay shows the chips.
+test('journalUserMessageCarriesItsImagesAndFilesAsAttachments', async () => {
+  const hub = new TaskHub({ interrupt() {}, async start() { return { taskId: 'phone', output: (async function* () {})() } } })
+  const events = [
+    { type: 'user/message', seq: 0, time: 1, data: { source: { kind: 'user' }, content: [
+      { type: 'text', text: 'Read these.' },
+      { type: 'file', attachment: { attachmentId: 'sha256:a', name: 'notes.txt', bytes: 12 } },
+      { type: 'image', attachment: { attachmentId: 'sha256:b', name: 'photo.jpg', bytes: 3400, mediaType: 'image/jpeg', width: 4, height: 3 } },
+    ] } },
+    { type: 'assistant/message', seq: 1, time: 2, data: { message: { content: [{ type: 'text', text: 'Done.' }] } } },
+  ]
+  const reader: SessionReader = {
+    async list() { return { items: [{ sessionId: 's', blank: false, running: false, updatedAt: 1 }] } },
+    async events() { return { cursor: 1, hasMore: false, records: events.map(event => ({ event })) } },
+  }
+  const directory = new SessionDirectory(reader, hub, assert.fail)
+  await directory.reconcile()
+  const page = await directory.read('s')
+  assert.deepEqual(page.messages.map(m => [m.text, m.attachments.map(a => [a.kind, a.name, Number(a.size), a.mediaType])]), [
+    ['Read these.', [[AttachmentKind.FILE, 'notes.txt', 12, ''], [AttachmentKind.IMAGE, 'photo.jpg', 3400, 'image/jpeg']]],
+    ['Done.', []],
+  ])
+  directory.close()
+  await hub.close()
+})
 
 test('webSessionsBeforeAndAfterPairingAndPhoneTaskHaveOneHostRowEach', async () => {
   const hub = new TaskHub({ interrupt() {}, async start() { return { taskId: 'phone', output: (async function* () {})() } } })

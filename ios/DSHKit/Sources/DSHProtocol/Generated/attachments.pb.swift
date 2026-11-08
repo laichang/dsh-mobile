@@ -9,14 +9,18 @@
 //   https://github.com/apple/swift-protobuf/
 
 /// Attachments: a file larger than one Noise message (65535 bytes, ARCHITECTURE D21) goes to the
-/// host in parts before the CreateTask that uses it (ARCHITECTURE D95). Capability "attachments.v1".
+/// host in parts before the CreateTask or SendMessage that uses it (ARCHITECTURE D95, D107).
+/// Capability "attachments.v1".
 ///
-///   UploadBegin  → UploadAck      the bridge checks the declared size and media type
+///   UploadBegin  → UploadAck      the bridge checks the declared size
 ///   UploadChunk  → UploadAck      one part each, in order, from index 0
 ///   UploadEnd    → UploadStaged   the bridge checks the size and the SHA-256
-///   CreateTask { upload_ids }     the staged file goes into the first prompt
+///   CreateTask { upload_ids }     the staged files go into the first prompt, in order
+///   SendMessage { upload_ids }    the staged files go into a follow-up (conversation.proto)
 ///
-/// A refusal is an Error response: upload/too-large, upload/media-type, upload/missing-part,
+/// An image of a type DSH takes in a prompt (jpeg, png, webp, gif) enters as an image; any other
+/// file enters as a file, and the model gets its name and a saved path on the host (D18).
+/// A refusal is an Error response: upload/too-large, upload/too-many, upload/missing-part,
 /// upload/hash-mismatch, upload/unknown. A refused upload is dropped; send it again from the start.
 
 #if canImport(FoundationEssentials)
@@ -36,6 +40,49 @@ fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobu
   typealias Version = _2
 }
 
+/// How a staged file entered the prompt.
+public nonisolated enum Dshm_V1_AttachmentKind: SwiftProtobuf.Enum, Swift.CaseIterable {
+  public typealias RawValue = Int
+  case unspecified // = 0
+
+  /// An image part: the model sees the image.
+  case image // = 1
+
+  /// A file part: the model gets its name and a saved path on the host.
+  case file // = 2
+  case UNRECOGNIZED(Int)
+
+  public init() {
+    self = .unspecified
+  }
+
+  public init?(rawValue: Int) {
+    switch rawValue {
+    case 0: self = .unspecified
+    case 1: self = .image
+    case 2: self = .file
+    default: self = .UNRECOGNIZED(rawValue)
+    }
+  }
+
+  public var rawValue: Int {
+    switch self {
+    case .unspecified: return 0
+    case .image: return 1
+    case .file: return 2
+    case .UNRECOGNIZED(let i): return i
+    }
+  }
+
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static let allCases: [Dshm_V1_AttachmentKind] = [
+    .unspecified,
+    .image,
+    .file,
+  ]
+
+}
+
 public nonisolated struct Dshm_V1_UploadBegin: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -44,10 +91,11 @@ public nonisolated struct Dshm_V1_UploadBegin: Sendable {
   /// Chosen by the app, unique per connection.
   public var uploadID: String = String()
 
-  /// image/jpeg, image/png, image/webp or image/gif.
+  /// Any media type, e.g. image/jpeg, text/plain, application/pdf; empty is
+  /// application/octet-stream. image/jpeg, image/png, image/webp and image/gif enter as images.
   public var mediaType: String = String()
 
-  /// A display name for the host, e.g. "photo.jpg".
+  /// A display name for the host, e.g. "photo.jpg" or "notes.txt".
   public var name: String = String()
 
   public var size: UInt64 = 0
@@ -117,9 +165,34 @@ public nonisolated struct Dshm_V1_UploadStaged: Sendable {
   public init() {}
 }
 
+/// One attachment of a user message, as the transcript shows it (a chip with the name). The host
+/// keeps the bytes; the phone keeps only what it shows.
+public nonisolated struct Dshm_V1_AttachmentRef: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var kind: Dshm_V1_AttachmentKind = .unspecified
+
+  public var name: String = String()
+
+  public var size: UInt64 = 0
+
+  /// The media type the app declared; empty when the host does not know it (a file from the journal).
+  public var mediaType: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
+
+nonisolated extension Dshm_V1_AttachmentKind: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0ATTACHMENT_KIND_UNSPECIFIED\0\u{1}ATTACHMENT_KIND_IMAGE\0\u{1}ATTACHMENT_KIND_FILE\0")
+}
 
 nonisolated extension Dshm_V1_UploadBegin: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".UploadBegin"
@@ -301,6 +374,51 @@ nonisolated extension Dshm_V1_UploadStaged: SwiftProtobuf.Message, SwiftProtobuf
 
   public static func ==(lhs: Dshm_V1_UploadStaged, rhs: Dshm_V1_UploadStaged) -> Bool {
     if lhs.uploadID != rhs.uploadID {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Dshm_V1_AttachmentRef: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".AttachmentRef"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}kind\0\u{1}name\0\u{1}size\0\u{3}media_type\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularEnumField(value: &self.kind) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.name) }()
+      case 3: try { try decoder.decodeSingularUInt64Field(value: &self.size) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.mediaType) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.kind != .unspecified {
+      try visitor.visitSingularEnumField(value: self.kind, fieldNumber: 1)
+    }
+    if !self.name.isEmpty {
+      try visitor.visitSingularStringField(value: self.name, fieldNumber: 2)
+    }
+    if self.size != 0 {
+      try visitor.visitSingularUInt64Field(value: self.size, fieldNumber: 3)
+    }
+    if !self.mediaType.isEmpty {
+      try visitor.visitSingularStringField(value: self.mediaType, fieldNumber: 4)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Dshm_V1_AttachmentRef, rhs: Dshm_V1_AttachmentRef) -> Bool {
+    if lhs.kind != rhs.kind {return false}
+    if lhs.name != rhs.name {return false}
+    if lhs.size != rhs.size {return false}
+    if lhs.mediaType != rhs.mediaType {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

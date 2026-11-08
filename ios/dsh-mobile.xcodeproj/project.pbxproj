@@ -339,7 +339,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Config/Debug-Info.plist";
-				INFOPLIST_KEY_NSCameraUsageDescription = "dsh-mobile scans the pairing QR code your DSH host shows.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "dsh-mobile scans the pairing QR code your DSH host shows, and takes the photos you attach to a task.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "dsh-mobile connects to DSH on your Mac over your local network.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -382,7 +382,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Config/Release-Info.plist";
-				INFOPLIST_KEY_NSCameraUsageDescription = "dsh-mobile scans the pairing QR code your DSH host shows.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "dsh-mobile scans the pairing QR code your DSH host shows, and takes the photos you attach to a task.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "dsh-mobile connects to DSH on your Mac over your local network.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

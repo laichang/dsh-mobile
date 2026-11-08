@@ -183,6 +183,9 @@ public nonisolated struct Dshm_V1_SendMessage: Sendable {
 
   public var text: String = String()
 
+  /// Staged uploads (attachments.proto), in prompt order, after the text (D107).
+  public var uploadIds: [String] = []
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -219,6 +222,9 @@ public nonisolated struct Dshm_V1_UserMessage: Sendable {
 
   /// When the bridge accepted it, Unix milliseconds.
   public var timeMs: Int64 = 0
+
+  /// The files sent with it, in order (D107).
+  public var attachments: [Dshm_V1_AttachmentRef] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -298,7 +304,7 @@ nonisolated extension Dshm_V1_QueueAction: SwiftProtobuf._ProtoNameProviding {
 
 nonisolated extension Dshm_V1_SendMessage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SendMessage"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}mode\0\u{1}text\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}mode\0\u{1}text\0\u{4}M\u{6}upload_ids\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -309,6 +315,7 @@ nonisolated extension Dshm_V1_SendMessage: SwiftProtobuf.Message, SwiftProtobuf.
       case 1: try { try decoder.decodeSingularStringField(value: &self.taskID) }()
       case 2: try { try decoder.decodeSingularEnumField(value: &self.mode) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.text) }()
+      case 400: try { try decoder.decodeRepeatedStringField(value: &self.uploadIds) }()
       default: break
       }
     }
@@ -324,6 +331,9 @@ nonisolated extension Dshm_V1_SendMessage: SwiftProtobuf.Message, SwiftProtobuf.
     if !self.text.isEmpty {
       try visitor.visitSingularStringField(value: self.text, fieldNumber: 3)
     }
+    if !self.uploadIds.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.uploadIds, fieldNumber: 400)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -331,6 +341,7 @@ nonisolated extension Dshm_V1_SendMessage: SwiftProtobuf.Message, SwiftProtobuf.
     if lhs.taskID != rhs.taskID {return false}
     if lhs.mode != rhs.mode {return false}
     if lhs.text != rhs.text {return false}
+    if lhs.uploadIds != rhs.uploadIds {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -373,7 +384,7 @@ nonisolated extension Dshm_V1_MessageAccepted: SwiftProtobuf.Message, SwiftProto
 
 nonisolated extension Dshm_V1_UserMessage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".UserMessage"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{3}message_id\0\u{1}text\0\u{3}time_ms\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{3}message_id\0\u{1}text\0\u{3}time_ms\0\u{2}L\u{6}attachments\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -385,6 +396,7 @@ nonisolated extension Dshm_V1_UserMessage: SwiftProtobuf.Message, SwiftProtobuf.
       case 2: try { try decoder.decodeSingularStringField(value: &self.messageID) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.text) }()
       case 4: try { try decoder.decodeSingularInt64Field(value: &self.timeMs) }()
+      case 400: try { try decoder.decodeRepeatedMessageField(value: &self.attachments) }()
       default: break
       }
     }
@@ -403,6 +415,9 @@ nonisolated extension Dshm_V1_UserMessage: SwiftProtobuf.Message, SwiftProtobuf.
     if self.timeMs != 0 {
       try visitor.visitSingularInt64Field(value: self.timeMs, fieldNumber: 4)
     }
+    if !self.attachments.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.attachments, fieldNumber: 400)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -411,6 +426,7 @@ nonisolated extension Dshm_V1_UserMessage: SwiftProtobuf.Message, SwiftProtobuf.
     if lhs.messageID != rhs.messageID {return false}
     if lhs.text != rhs.text {return false}
     if lhs.timeMs != rhs.timeMs {return false}
+    if lhs.attachments != rhs.attachments {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

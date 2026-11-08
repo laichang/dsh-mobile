@@ -13,7 +13,8 @@ import { TaskState, type TaskSummary } from '../gen/s2_pb.ts'
 import { randomUUID } from 'node:crypto'
 import type { Continues, DshTasks, PromptMode, StartedTask, TaskOutput } from '../dsh.ts'
 import { HostLog } from './host-log.ts'
-import type { StagedImage } from '../attachments/staging.ts'
+import type { StagedFile } from '../attachments/staging.ts'
+import { AttachmentKind } from '../gen/attachments_pb.ts'
 import { milestoneAdded } from '../milestones/wire.ts'
 import { sessionWorkspace } from '../drawer/workspace.ts'
 import { transcriptBlock } from '../transcript/wire.ts'
@@ -29,9 +30,9 @@ export interface TaskStarter {
   inbox?: DshTasks['inbox']
   modelCatalog?: DshTasks['modelCatalog']
   selectModel?: DshTasks['selectModel']
-  start(prompt: string, signal: AbortSignal, selection?: Selection, workspace?: string, images?: readonly StagedImage[],
+  start(prompt: string, signal: AbortSignal, selection?: Selection, workspace?: string, files?: readonly StagedFile[],
         continues?: Continues): Promise<StartedTask>
-  /** Attachments (D95): the starter takes `images`. */
+  /** Attachments (D95, D107): the starter takes `files`, and `followUp` takes `options.files`. */
   readonly attachments?: boolean
 }
 
@@ -77,9 +78,9 @@ export class TaskHub {
    * the task's events are logged, so the caller can answer `CreateTask` first.
    */
   async create(prompt: string, onCreated: (taskId: string) => void = () => {}, selection?: Selection, workspace?: string,
-                images?: readonly StagedImage[]): Promise<string> {
+                files?: readonly StagedFile[]): Promise<string> {
     let taskId: string | undefined
-    const task = await this.starter.start(prompt, this.abort.signal, selection, workspace, images?.length ? images : undefined,
+    const task = await this.starter.start(prompt, this.abort.signal, selection, workspace, files?.length ? files : undefined,
       () => taskId === undefined ? Promise.resolve(false) : this.continues(taskId))
     taskId = task.taskId
     const at = BigInt(this.now())
@@ -116,11 +117,15 @@ export class TaskHub {
    *   for the next step of this one. A QueuedMessage says so; the UserMessage follows where DSH takes it.
    */
   async sendMessage(taskId: string, text: string, mode: PromptMode,
-    onAccepted: (messageId: string) => void = () => {}): Promise<string> {
+    onAccepted: (messageId: string) => void = () => {}, files: readonly StagedFile[] = []): Promise<string> {
     const summary = this.summaries.get(taskId)
     if (!this.starter.followUp) throw new Error('This host cannot take follow-up messages.')
     if (!summary || summary.approvalOnly || summary.externalSession) throw new Error('Unknown bridge task')
-    if (this.following.has(taskId) && this.isActive(taskId)) return this.sendWhileRunning(taskId, text, mode, onAccepted)
+    if (this.following.has(taskId) && this.isActive(taskId)) {
+      // D107: attachments go with a follow-up once the task is done, not into its queue.
+      if (files.length) throw new Error('Attach files when the task is done.')
+      return this.sendWhileRunning(taskId, text, mode, onAccepted)
+    }
     // Not after a failure (the failed task's own card), and not while an earlier send waits.
     if ((summary.state !== TaskState.COMPLETED && summary.state !== TaskState.INTERRUPTED) || this.sending.has(taskId)) {
       throw new Error('Send a follow-up when the task is done.')
@@ -130,15 +135,22 @@ export class TaskHub {
     this.sending.add(taskId)
     let output: AsyncIterable<TaskOutput>
     try {
-      output = await this.starter.followUp(taskId, text,
-        { messageId, mode, afterTurn: cursor.turn, continues: () => this.continues(taskId) }, this.abort.signal)
+      output = await this.starter.followUp(taskId, text, {
+        messageId, mode, afterTurn: cursor.turn, continues: () => this.continues(taskId),
+        ...(files.length ? { files } : {}),
+      }, this.abort.signal)
     } finally {
       this.sending.delete(taskId)
     }
     const at = this.now()
     onAccepted(messageId)
     this.logged.add(messageId)
-    this.log.append(taskId, { case: 'userMessage', value: { taskId, messageId, text, timeMs: BigInt(at) } })
+    // D107: the message's files as chips, so a replay shows them; the host keeps the bytes.
+    const attachments = files.map(file => ({
+      kind: file.kind === 'image' ? AttachmentKind.IMAGE : AttachmentKind.FILE,
+      name: file.name, size: BigInt(file.data.length), mediaType: file.mediaType,
+    }))
+    this.log.append(taskId, { case: 'userMessage', value: { taskId, messageId, text, timeMs: BigInt(at), attachments } })
     summary.state = this.waitsOnUser(summary) ? TaskState.WAITING_ON_USER : TaskState.RUNNING
     this.turnStarted(summary, at)
     const pump = this.pump({ taskId, output }, summary).finally(() => this.running.delete(pump))

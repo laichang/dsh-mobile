@@ -65,6 +65,9 @@ public nonisolated struct Dshm_V1_SessionMessage: Sendable {
 
   public var text: String = String()
 
+  /// A user message's images and files, from the DSH journal, in order (D107).
+  public var attachments: [Dshm_V1_AttachmentRef] = []
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -145,7 +148,7 @@ nonisolated extension Dshm_V1_ReadSession: SwiftProtobuf.Message, SwiftProtobuf.
 
 nonisolated extension Dshm_V1_SessionMessage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SessionMessage"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}seq\0\u{3}from_user\0\u{1}text\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}seq\0\u{3}from_user\0\u{1}text\0\u{2}M\u{6}attachments\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -156,6 +159,7 @@ nonisolated extension Dshm_V1_SessionMessage: SwiftProtobuf.Message, SwiftProtob
       case 1: try { try decoder.decodeSingularUInt64Field(value: &self.seq) }()
       case 2: try { try decoder.decodeSingularBoolField(value: &self.fromUser) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.text) }()
+      case 400: try { try decoder.decodeRepeatedMessageField(value: &self.attachments) }()
       default: break
       }
     }
@@ -171,6 +175,9 @@ nonisolated extension Dshm_V1_SessionMessage: SwiftProtobuf.Message, SwiftProtob
     if !self.text.isEmpty {
       try visitor.visitSingularStringField(value: self.text, fieldNumber: 3)
     }
+    if !self.attachments.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.attachments, fieldNumber: 400)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -178,6 +185,7 @@ nonisolated extension Dshm_V1_SessionMessage: SwiftProtobuf.Message, SwiftProtob
     if lhs.seq != rhs.seq {return false}
     if lhs.fromUser != rhs.fromUser {return false}
     if lhs.text != rhs.text {return false}
+    if lhs.attachments != rhs.attachments {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
