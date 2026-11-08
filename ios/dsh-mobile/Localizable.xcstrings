@@ -451,6 +451,16 @@
         }
       }
     },
+    "Reply to your agent": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回复智能体"
+          }
+        }
+      }
+    },
     "Send": {
       "localizations": {
         "zh-Hans": {
@@ -547,6 +557,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "停止"
+          }
+        }
+      }
+    },
+    "The message was not sent: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "消息没有发出：%@"
           }
         }
       }

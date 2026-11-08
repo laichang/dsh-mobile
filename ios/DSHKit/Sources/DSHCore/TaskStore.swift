@@ -107,7 +107,7 @@ public final class TaskStore {
             if case .connecting = status { status = .running(taskID: milestone.taskID) }
             milestones.add(milestone)
         case .upserted, .logReset, .modelSelected, .approvalPending, .approvalResolved, .transcriptBlock,
-             .questionPending, .questionResolved:
+             .questionPending, .questionResolved, .userMessage:
             break
         }
     }

@@ -174,13 +174,19 @@ private struct SessionTranscript: View {
                     VStack(alignment: .leading, spacing: 12) {
                         PendingApprovalBar(store: store, row: row)
                         let messages = history?.messages ?? []
-                        let showJournal = row.externalSession || messages.filter(\.fromUser).count > 1
+                        // D89: follow-ups sent from this phone sit in the streamed transcript; the
+                        // journal takes over only for messages that another client sent.
+                        let showJournal = row.externalSession
+                            || messages.filter(\.fromUser).count > 1 + row.blocks.followUpCount
                         // S19: the final answer of a finished session with a journal.
                         let finalSeq = showJournal && outcome != nil ? messages.last(where: { !$0.fromUser })?.seq : nil
                         if !messages.contains(where: \.fromUser) && !row.title.isEmpty {
                             UserBubble(text: row.title)
                         }
-                        ForEach(messages.filter { showJournal || $0.fromUser }, id: \.seq) { message in
+                        // Without the journal: only the first prompt on top; the streamed transcript
+                        // below holds the answers and this phone's follow-ups (D89).
+                        let shown = showJournal ? messages : Array(messages.filter(\.fromUser).prefix(1))
+                        ForEach(shown, id: \.seq) { message in
                             if message.fromUser {
                                 UserBubble(text: message.text)
                             } else {
@@ -312,7 +318,7 @@ private struct SessionTranscript: View {
 }
 
 /// The user's message: a bubble on the right (DESIGN.md: bubble token).
-private struct UserBubble: View {
+struct UserBubble: View {
     let text: String
 
     var body: some View {
@@ -330,31 +336,52 @@ private struct UserBubble: View {
     }
 }
 
-/// The composer on a session page. Follow-up messages are M2, so the field is off; the model
+/// The composer on a session page. A completed task on a host with `conversation.v1` takes a
+/// follow-up (D89): its reply streams into this page. Otherwise the field is off; the model
 /// pill changes a running task's model (S6), and the send key is the stop key while it runs (S5).
 private struct SessionComposer: View {
     let store: TaskListStore
     let taskKey: String
     @State private var requestingStop = false
     @State private var stopError: String?
+    @State private var draft = ""
+    @State private var sending = false
+    @State private var sendError: String?
+    @FocusState private var editing: Bool
 
     var body: some View {
         let row = store.task(taskKey)
         let host = store.hosts.first { $0.key == row?.hostKey }
+        let followUp = row.map(store.canFollowUp) ?? false
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Text("Follow-ups come in a later version")
-                    .foregroundStyle(DSHTheme.textTertiary)
+            if let sendError {
+                Text(sendError)
+                    .font(.footnote)
+                    .foregroundStyle(DSHTheme.amber)
+                    .accessibilityIdentifier("session.followUpError")
+            }
+            if followUp {
+                TextField("Reply to your agent", text: $draft, axis: .vertical)
+                    .lineLimit(1...5)
+                    .focused($editing)
+                    .foregroundStyle(DSHTheme.textPrimary)
+                    .disabled(sending)
                     .accessibilityIdentifier("session.followUp")
-                Spacer(minLength: 0)
-                // Screen 04 tags the follow-up field with its milestone.
-                Text(verbatim: "M2")
-                    .font(DSHTheme.mono(.caption2).weight(.semibold))
-                    .foregroundStyle(DSHTheme.textSecondary)
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(Color.white.opacity(0.08), in: .rect(cornerRadius: 6))
-                    .accessibilityHidden(true)
+            } else {
+                HStack(spacing: 8) {
+                    Text("Follow-ups come in a later version")
+                        .foregroundStyle(DSHTheme.textTertiary)
+                        .accessibilityIdentifier("session.followUp")
+                    Spacer(minLength: 0)
+                    // Screen 04 tags the follow-up field with its milestone.
+                    Text(verbatim: "M2")
+                        .font(DSHTheme.mono(.caption2).weight(.semibold))
+                        .foregroundStyle(DSHTheme.textSecondary)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color.white.opacity(0.08), in: .rect(cornerRadius: 6))
+                        .accessibilityHidden(true)
+                }
             }
             HStack(spacing: 8) {
                 if let row, !row.state.isTerminal, store.modelHosts.contains(row.hostKey) {
@@ -382,6 +409,11 @@ private struct SessionComposer: View {
                     .disabled(requestingStop)
                     .accessibilityLabel("Stop")
                     .accessibilityIdentifier("task.interrupt")
+                } else if followUp, let row {
+                    SendKey(enabled: !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !sending,
+                            sending: sending) { send(row) }
+                        .accessibilityLabel("Send")
+                        .accessibilityIdentifier("session.send")
                 } else {
                     SendKey(enabled: false, sending: false) {}
                         .accessibilityIdentifier("session.send")
@@ -389,10 +421,30 @@ private struct SessionComposer: View {
             }
         }
         .composerChrome()
+        .onChange(of: taskKey) { draft = ""; sendError = nil }
         .alert("Couldn’t stop the task", isPresented: Binding(get: { stopError != nil }, set: { if !$0 { stopError = nil } })) {
             Button("OK") { stopError = nil }
         } message: {
             Text(stopError ?? "")
+        }
+    }
+}
+
+extension SessionComposer {
+    /// D89: the message goes to the host; the page shows it when the host logs it.
+    private func send(_ row: TaskListStore.TaskRow) {
+        let text = draft
+        sending = true
+        sendError = nil
+        Task {
+            defer { sending = false }
+            do {
+                try await store.sendFollowUp(text, for: row)
+                draft = ""
+                editing = false
+            } catch {
+                sendError = String(localized: "The message was not sent: \(String(describing: error))")
+            }
         }
     }
 }

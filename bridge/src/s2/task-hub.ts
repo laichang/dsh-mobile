@@ -9,7 +9,8 @@ import type { Pending, Resolved } from '../approvals/holder.ts'
 import type * as Questions from '../questions/holder.ts'
 import { TaskStatus } from '../gen/frame_pb.ts'
 import { TaskState, type TaskSummary } from '../gen/s2_pb.ts'
-import type { DshTasks, StartedTask, TaskOutput } from '../dsh.ts'
+import { randomUUID } from 'node:crypto'
+import type { DshTasks, PromptMode, StartedTask, TaskOutput } from '../dsh.ts'
 import { HostLog } from './host-log.ts'
 import { milestoneAdded } from '../milestones/wire.ts'
 import { sessionWorkspace } from '../drawer/workspace.ts'
@@ -18,6 +19,8 @@ import { transcriptBlock } from '../transcript/wire.ts'
 export interface TaskStarter {
   interrupt(taskId: string): void
   listWorkspaces?: DshTasks['listWorkspaces']
+  /** D89: more messages into a task's DSH session (`conversation.v1`). */
+  followUp?: DshTasks['followUp']
   modelCatalog?: DshTasks['modelCatalog']
   selectModel?: DshTasks['selectModel']
   start(prompt: string, signal: AbortSignal, selection?: Selection, workspace?: string): Promise<StartedTask>
@@ -31,6 +34,10 @@ export class TaskHub {
   private readonly pending = new Map<string, Pending>()
   private readonly abort = new AbortController()
   private readonly running = new Set<Promise<void>>()
+  /** Per task: the last chunk and milestone seq, and the latest DSH turn. A later turn continues them. */
+  private readonly cursors = new Map<string, { chunk: bigint; milestone: bigint; turn?: number; turns: number }>()
+  /** D89: tasks whose follow-up DSH has not accepted yet; a second send waits for the first. */
+  private readonly sending = new Set<string>()
 
   constructor(
     private readonly starter: TaskStarter,
@@ -65,6 +72,51 @@ export class TaskHub {
     if (!task || task.approvalOnly) throw new Error('Unknown bridge task')
     // The terminal event can race a tap or a retry. Keep the outcome DSH already reported.
     if (task.state === TaskState.RUNNING || task.state === TaskState.WAITING_ON_USER) this.starter.interrupt(taskId)
+  }
+
+  /**
+   * D89: sends one more message into the DSH session of a finished task. The new turn streams
+   * under the same task ID: the chunk seq goes on, the task is RUNNING again, and TaskEnded ends
+   * the turn. `onAccepted` runs once DSH accepted the message, before the task's new events.
+   */
+  async sendMessage(taskId: string, text: string, mode: PromptMode,
+    onAccepted: (messageId: string) => void = () => {}): Promise<string> {
+    const summary = this.summaries.get(taskId)
+    if (!this.starter.followUp) throw new Error('This host cannot take follow-up messages.')
+    if (!summary || summary.approvalOnly || summary.externalSession) throw new Error('Unknown bridge task')
+    // T0 of the conversation: a follow-up after the task completed. Not while it runs or after a failure.
+    if (summary.state !== TaskState.COMPLETED || this.sending.has(taskId)) {
+      throw new Error('Send a follow-up when the task is done.')
+    }
+    const cursor = this.cursor(taskId)
+    const messageId = randomUUID()
+    this.sending.add(taskId)
+    let output: AsyncIterable<TaskOutput>
+    try {
+      output = await this.starter.followUp(taskId, text,
+        { messageId, mode, afterTurn: cursor.turn, blockPrefix: `turn-${cursor.turns + 1}-` }, this.abort.signal)
+    } finally {
+      this.sending.delete(taskId)
+    }
+    cursor.turns += 1
+    const at = this.now()
+    onAccepted(messageId)
+    this.log.append(taskId, { case: 'userMessage', value: { taskId, messageId, text, timeMs: BigInt(at) } })
+    summary.state = summary.pendingApprovals.length ? TaskState.WAITING_ON_USER : TaskState.RUNNING
+    summary.message = ''
+    summary.latestReply = undefined
+    summary.updatedAtMs = BigInt(at)
+    summary.turnStartedAtMs = BigInt(at) // S27: 用时 counts the latest turn only.
+    this.upserted(summary)
+    const pump = this.pump({ taskId, output }, summary).finally(() => this.running.delete(pump))
+    this.running.add(pump)
+    return messageId
+  }
+
+  private cursor(taskId: string) {
+    let cursor = this.cursors.get(taskId)
+    if (!cursor) this.cursors.set(taskId, cursor = { chunk: 0n, milestone: 0n, turns: 0 })
+    return cursor
   }
 
   /** Includes tasks paused for user input. */
@@ -154,21 +206,22 @@ export class TaskHub {
     await Promise.allSettled([...this.running])
   }
 
-  private async pump(task: StartedTask, summary: Summary): Promise<void> {
-    let seq = 0n
-    let milestoneSeq = 0n
+  private async pump(task: Pick<StartedTask, 'taskId' | 'output'>, summary: Summary): Promise<void> {
+    const cursor = this.cursor(task.taskId)
     let ended = false
     try {
       for await (const out of task.output) {
-        if (out.kind === 'text') {
-          this.log.append(task.taskId, { case: 'assistantChunk', value: { taskId: task.taskId, seq: ++seq, text: out.text } })
+        if (out.kind === 'turn') {
+          cursor.turn = out.turn
+        } else if (out.kind === 'text') {
+          this.log.append(task.taskId, { case: 'assistantChunk', value: { taskId: task.taskId, seq: ++cursor.chunk, text: out.text } })
         } else if (out.kind === 'model') {
           summary.modelSelection = out.selection
           summary.updatedAtMs = BigInt(this.now())
           this.log.append(task.taskId, { case: 'modelSelected', value: { taskId: task.taskId, selection: out.selection } })
         } else if (out.kind === 'milestone') {
           // S3: milestones are logged like any other event, so Resume replays them (S2 × S3 seam).
-          this.log.append(task.taskId, { case: 'milestoneAdded', value: milestoneAdded(task.taskId, ++milestoneSeq, out.milestone) })
+          this.log.append(task.taskId, { case: 'milestoneAdded', value: milestoneAdded(task.taskId, ++cursor.milestone, out.milestone) })
         } else if (out.kind === 'block') {
           // S17: blocks are logged too, so Resume replays them in their place among the chunks.
           this.log.append(task.taskId, { case: 'transcriptBlock', value: transcriptBlock(task.taskId, out.block) })

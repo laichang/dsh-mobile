@@ -25,6 +25,7 @@ import type { SessionDirectory } from './sessions/directory.ts'
 import { MILESTONES_CAPABILITY } from './milestones/wire.ts'
 import { DRAWER_CAPABILITY } from './drawer/workspace.ts'
 import { TRANSCRIPT_CAPABILITY } from './transcript/wire.ts'
+import { MessageMode } from './gen/conversation_pb.ts'
 import { HandshakeRejected, type NoiseResponder } from './pairing/handshake.ts'
 import type { LoggedEvent } from './s2/host-log.ts'
 import { TaskHub, type TaskStarter } from './s2/task-hub.ts'
@@ -38,6 +39,8 @@ export const PROTOCOL_VERSION = 1
 /** Agent questions (protocol/questions.proto, D92). */
 export const QUESTIONS_CAPABILITY = 'questions.v1'
 export const CAPABILITIES = ['tasks.v1', MILESTONES_CAPABILITY, 'resume.v1', 'interrupt.v1', TRANSCRIPT_CAPABILITY] as const
+/** D89: SendMessage, MessageAccepted and UserMessage (protocol/conversation.proto). */
+export const CONVERSATION_CAPABILITY = 'conversation.v1'
 /** Where the dev-only plaintext channel is served. */
 export const PLAINTEXT_PATH = '/plaintext'
 
@@ -116,6 +119,7 @@ function serveConnection(
   let clientSessions = false
   let clientApprovals = false
   let clientTranscript = false
+  let clientConversation = false
   let clientQuestions = false
   let codec: FrameCodec | undefined
 
@@ -151,6 +155,8 @@ function serveConnection(
     }
     // S17: only apps that read transcript blocks get them.
     if (!clientTranscript && event.body?.case === 'transcriptBlock') return
+    // D89: only apps that send follow-ups read them back.
+    if (!clientConversation && event.body?.case === 'userMessage') return
     // Apps without `questions.v1` cannot answer, so they get no card.
     if (!clientQuestions && (event.body?.case === 'questionPending' || event.body?.case === 'questionResolved')) return
     // Older apps cannot withdraw temporary upstream approval rows.
@@ -177,6 +183,7 @@ function serveConnection(
         clientSessions = !!options.sessions && request.body.value.capabilities.includes('sessions.v1')
         clientApprovals = request.body.value.capabilities.includes('approvals.v1')
         clientTranscript = request.body.value.capabilities.includes(TRANSCRIPT_CAPABILITY)
+        clientConversation = request.body.value.capabilities.includes(CONVERSATION_CAPABILITY)
         clientQuestions = !!options.questions && request.body.value.capabilities.includes(QUESTIONS_CAPABILITY)
         return respond(id, {
           case: 'hello',
@@ -189,6 +196,7 @@ function serveConnection(
             ...(options.questions ? [QUESTIONS_CAPABILITY] : []),
             ...(options.tasks.listWorkspaces ? ['workspaces.v1', DRAWER_CAPABILITY] : []),
             ...(host.authenticated.has(socket) ? ['devices.v1'] : []),
+            ...(options.tasks.followUp ? [CONVERSATION_CAPABILITY] : []),
           ] : [] },
         })
       }
@@ -227,6 +235,22 @@ function serveConnection(
         } catch (error) {
           return fail(id, 'task/interrupt-failed', error instanceof Error ? error.message : String(error))
         }
+      }
+      case 'sendMessage': {
+        if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
+        if (!options.tasks.followUp) return fail(id, 'request/unsupported', 'This host cannot take follow-up messages.')
+        const { taskId, text, mode } = request.body.value
+        if (!text.trim()) return fail(id, 'message/empty', 'the message is empty')
+        if (!resumed) { ownTasks.add(taskId); subscribeOwnTasks() }
+        try {
+          // Answer first, as for CreateTask: then the UserMessage and the turn's events follow.
+          await hub.sendMessage(taskId, text, mode === MessageMode.QUEUE ? 'queue' : 'steer',
+            (messageId) => respond(id, { case: 'messageAccepted', value: { taskId, messageId } }))
+        } catch (error) {
+          log(`follow-up failed: ${String(error)}`)
+          return fail(id, 'message/refused', error instanceof Error ? error.message : String(error))
+        }
+        return
       }
       case 'listWorkspaces': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')

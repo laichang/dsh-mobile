@@ -67,6 +67,10 @@ public final class FakeBridge: BridgeTransport {
         /// S17: transcript blocks, each sent just before reply chunk `beforeChunk` (0-based;
         /// `reply.count` or more: after the reply). The host sends them whatever its capabilities.
         public var blocks: [(beforeChunk: Int, block: Dshm_V1_TranscriptBlock)] = []
+        /// D89: with a value, the host advertises `conversation.v1`. A follow-up on a completed task
+        /// is accepted like the real bridge does it: `MessageAccepted`, a logged `UserMessage`, the
+        /// task RUNNING again, this reply (its chunk seqs go on), and `TaskEnded(COMPLETED)`.
+        public var followUpReply: [String]?
 
         public init(
             reply: [String] = ["Hello", " from", " FakeBridge", ". ", "No DSH", " was", " involved."],
@@ -371,6 +375,10 @@ public final class FakeHost: Sendable {
         var connectAttempts = 0
         /// S16: interrupted tasks; their stream stops.
         var stopped: Set<String> = []
+        /// D89: each task's last chunk seq, so a follow-up turn goes on from it.
+        var chunkSeqs: [String: UInt64] = [:]
+        /// D89: every follow-up message, in order.
+        var followUps: [String] = []
         /// S16: each task's latest milestone seq and todos, for the INTERRUPTED milestone.
         var lastMilestones: [String: (seq: UInt64, todos: [Todo])] = [:]
     }
@@ -436,6 +444,8 @@ public final class FakeHost: Sendable {
     }
 
     public var prompts: [String] { state.withLock { $0.prompts } }
+    /// D89: the follow-up messages this host accepted, in order.
+    public var followUps: [String] { state.withLock { $0.followUps } }
     public var logID: String { state.withLock { $0.logID } }
     public var head: UInt64 { state.withLock { UInt64($0.log.count) } }
     public var connectionCount: Int { state.withLock { $0.connections.count } }
@@ -533,6 +543,7 @@ public final class FakeHost: Sendable {
                     if pickers != nil { hello.capabilities += ["models.v1", "workspaces.v1"] }
                     if s.devices != nil { hello.capabilities.append(FakeDevices.capability) }
                     if !journals.isEmpty { hello.capabilities.append("sessions.v1") }
+                    if script.followUpReply != nil { hello.capabilities.append(DSHProtocolInfo.conversationCapability) }
                 }
                 bridge.deliver(Self.response(id, .hello(hello)))
             case .createTask(let create)?:
@@ -615,6 +626,42 @@ public final class FakeHost: Sendable {
                 var event = Dshm_V1_Event()
                 event.taskEnded = ended
                 Self.append(event, taskID: interrupt.taskID, in: &s)
+            case .sendMessage(let message)? where script.followUpReply != nil:
+                guard let at = s.tasks.firstIndex(where: { $0.taskID == message.taskID }), s.tasks[at].state == .completed,
+                      !message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    var error = Dshm_V1_Error()
+                    error.code = "message/refused"
+                    error.message = "Send a follow-up when the task is done."
+                    bridge.deliver(Self.response(id, .error(error)))
+                    return
+                }
+                s.followUps.append(message.text)
+                let messageID = "message-\(s.followUps.count)"
+                var accepted = Dshm_V1_MessageAccepted()
+                accepted.taskID = message.taskID
+                accepted.messageID = messageID
+                if !conn.resumed { conn.ownTasks.insert(message.taskID) }
+                s.connections[bridge.id] = conn
+                bridge.deliver(Self.response(id, .messageAccepted(accepted)))
+                var user = Dshm_V1_UserMessage()
+                user.taskID = message.taskID
+                user.messageID = messageID
+                user.text = message.text
+                user.timeMs = Self.nowMs()
+                var event = Dshm_V1_Event()
+                event.userMessage = user
+                Self.append(event, taskID: message.taskID, in: &s)
+                s.tasks[at].state = .running
+                s.tasks[at].updatedAtMs = Self.nowMs()
+                s.tasks[at].turnStartedAtMs = s.tasks[at].updatedAtMs
+                Self.upserted(s.tasks[at], in: &s)
+                let incarnation = s.incarnation
+                var turn = script
+                turn.reply = script.followUpReply ?? []
+                turn.milestones = []
+                turn.blocks = []
+                turn.variants = []
+                Task { await self.stream(taskID: message.taskID, incarnation: incarnation, using: turn) }
             case .answerApproval(let answer)? where answersApprovals:
                 answerApproval(answer, requestID: id, bridge: bridge, in: &s)
             case .getModelCatalog? where pickers != nil:
@@ -634,7 +681,7 @@ public final class FakeHost: Sendable {
                     s.revoked = true
                     for conn in s.connections.values { conn.bridge.drop(code: PairingWire.CloseCode.deviceUnknown.rawValue) }
                 }
-            case .answerApproval?, .answerQuestion?, .interrupt?, .getModelCatalog?, .selectModel?, .listWorkspaces?, .listDevices?, .listAudit?, .revokeDevice?, .readSession?:
+            case .answerApproval?, .answerQuestion?, .interrupt?, .sendMessage?, .getModelCatalog?, .selectModel?, .listWorkspaces?, .listDevices?, .listAudit?, .revokeDevice?, .readSession?:
                 var error = Dshm_V1_Error()
                 error.code = "request/unsupported"
                 error.message = "This test host does not advertise this capability."
@@ -785,10 +832,12 @@ public final class FakeHost: Sendable {
             if !blocks(before: i) { return }
             var chunk = Dshm_V1_AssistantChunk()
             chunk.taskID = taskID
-            chunk.seq = UInt64(i + 1)
             chunk.text = text
             let alive = state.withLock { s -> Bool in
                 guard s.incarnation == incarnation, !s.stopped.contains(taskID) else { return false }
+                // D89: the chunk seq goes on across the turns of a task, as the bridge's TaskHub does.
+                chunk.seq = (s.chunkSeqs[taskID] ?? 0) + 1
+                s.chunkSeqs[taskID] = chunk.seq
                 var event = Dshm_V1_Event()
                 event.assistantChunk = chunk
                 Self.append(event, taskID: taskID, in: &s)
