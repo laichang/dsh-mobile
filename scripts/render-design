@@ -8,7 +8,7 @@ CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
 [ -x "$CHROME" ] || { echo "render-design: set CHROME to a Chrome or Chromium binary" >&2; exit 1; }
 BOARD="$ROOT/design/board.html"
 OUT="$ROOT/design/screens"
-HEIGHT="${BOARD_HEIGHT:-7500}"
+HEIGHT="${BOARD_HEIGHT:-9700}"
 
 shot() { "$CHROME" --headless=new --disable-gpu --hide-scrollbars "$@" 2>/dev/null; }
 
