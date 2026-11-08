@@ -73,7 +73,7 @@ How we get from the Xcode template to M1, tracer-bullet style. Product intent: [
 | S27 | review | merged `02ec58b` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
 | S28 | review | merged `f4594e5` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
 | S29 | review | merged `3b1a903` | 2026-11-08 | User accepts 1 `[human]` item (§9) |
-| S30 | todo | — | 2026-11-08 | Fix: Pair again after a revoke; start a fix session |
+| S30 | doing | `claude/s30-pair-again` | 2026-11-08 | Slice owner builds (§8) |
 
 ## 1. Approach
 
@@ -1718,6 +1718,8 @@ Append-only, dated. Changes to this file's format and to the checks that guard i
 - **2026-11-08 · S28 merged.** Merged as `f4594e5`; `scripts/check-plan` on the merge commit passed. `scripts/review S28` at `9cb3739`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S28-9cb3739.txt`). 1 open `[human]` item, so S28 is `review`. §9 rows 57, 58 (D79).
 
 - **2026-11-08 · S29 merged.** Merged as `3b1a903`; `scripts/check-plan` on the merge commit passed. `scripts/review S29` at `ad8a0c3`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S29-ad8a0c3.txt`). 1 open `[human]` item, so S29 is `review`. §9 rows 59, 60 (D82).
+
+- **2026-11-08 · S30 assigned.** Branch `claude/s30-pair-again`, simulator `dshm-S30`, DSHM_HOME `~/.dshm/home-s30`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D85–D87. `eval "$(scripts/slice-env S30)"` exports them.
 
 ## 9. Pending user confirmation
 
