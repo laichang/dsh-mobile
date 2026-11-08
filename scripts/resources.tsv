@@ -13,3 +13,4 @@ S4	claude/s4-attach-files	2	47812	3285	47842	3315	dshm-S4	~/.dshm/home-s4	D107-D
 S3	claude/s3-model-failures	1	47811	3284	47841	3314	dshm-S3	~/.dshm/home-s3	D110-D112	2026-11-08
 S2	claude/s2-questions-more	0	47810	3283	47840	3313	dshm-S2	~/.dshm/home-s2	D113-D115	2026-11-09
 S5	claude/s5-voice	2	47812	3285	47842	3315	dshm-S5	~/.dshm/home-s5	D116-D118	2026-11-09
+S6	claude/s6-live-activity	1	47811	3284	47841	3314	dshm-S6	~/.dshm/home-s6	D119-D121	2026-11-09
