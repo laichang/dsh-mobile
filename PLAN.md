@@ -1283,7 +1283,7 @@ After T1, these slices touch different files and can run in parallel: S14, S15, 
 **Demo**: —
 
 **Done when**
-- [ ] [ui] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [ui] A test reproduces the reported bug and passes with the fix — Evidence: test:S30PairAgainUITests/testPairTheSameHostAgainAfterARevokeOpensTheDrawer · test:S29RevokeUITests · test:S21HostsUITests/testRevokeThisDeviceAsksThenOpens08 · cmd:scripts/demo/s30.sh · shot:evidence/S30/s30-revoked-08.png · shot:evidence/S30/s30-paired-again.png · shot:evidence/S30/s30-paired-again-drawer.png
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
