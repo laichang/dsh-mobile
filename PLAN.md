@@ -186,6 +186,11 @@ A tracer is one thin round trip that one session can finish without running out 
 **Not**: Files that are not photos, more than one attachment, attachments in follow-ups (S4).
 
 **Log**: —
+- **2026-11-08 · Built; review PASS at 0752a3d.** Done: both items ticked. Protocol `protocol/attachments.proto` (UploadBegin/Chunk/End → UploadAck/UploadStaged, `CreateTask.upload_ids`; field block 400–402, one registration line per oneof in frame.proto: expect a one-line conflict with T0/T1 at merge). Bridge `bridge/src/attachments/staging.ts`: parts in order, size + SHA-256 checked, per-connection staging; `DshTasks.start` stages each photo with `fileUploads.uploadImageStream` and prompts `[text, {type:'file', receiptId}]`; `fileUploads` added to the plugin's `inject`. App: photo key (PhotosPicker) on 01, one chip, upload before CreateTask, thumbnail in the user bubble (`CachedTask.photoThumbnail`). Golden photo `protocol/fixtures/attachments/` (generated, 3 parts) read by TS and Swift tests; 7 golden frames added. Design board 01 + DESIGN.md updated.
+  Review: `scripts/review T2` by a separate reviewer → RESULT: PASS, /tmp/dshm-review/T2-0752a3d.txt, no flaky parts.
+  Provisional: D95 (part size 48 KiB, 20 MiB limit, SHA-256, JPEG ≤2048 px, per-connection staging). No new dependencies.
+  Notes: the slice simulator dshm-T2 did not exist; I created it (iPhone 17 Pro, iOS 26.4). The first T0 baseline failed only because it raced with my proto edit; re-run passed. The picker's photo cells report "not hittable" to XCUITest; the test taps the cell centre and finds it by the locale-free id `PXGGridLayout-Info`. DSH session logs are multi-frame zstd; node's zstdDecompressSync reads one frame, so the check splits frames.
+  Not done (out of scope): files that are not photos, more than one attachment, attachments in follow-ups. No §0 change needed.
 
 ## 4. Spikes
 
