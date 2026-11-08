@@ -53,7 +53,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | doing | `claude/s8-bridge-listen-errors` | 2026-11-09 | Slice owner builds (§8) |
 | S9 | doing | `claude/s9-ui-test-waits` | 2026-11-09 | Slice owner builds (§8) |
-| S10 | todo | — | 2026-11-08 | Assign it and start a session |
+| S10 | doing | `claude/s10-offline-rich-detail` | 2026-11-09 | Slice owner builds (§8) |
 | S11 | todo | — | 2026-11-08 | Assign it and start a session |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
 | S13 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -690,6 +690,8 @@ Append-only, dated.
 - **2026-11-09 · S6 merged.** Merged as `b4d0a65`; `scripts/check-plan` on the merge commit passed. `scripts/review S6` at `2cfe69c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S6-2cfe69c.txt`). 1 open `[human]` item, so S6 is `review`. §9 rows 23, 24, 25, 26 (D119, D120, D121).
 
 - **2026-11-09 · S6 merged; its [human] item waits.** S6 merged as b4d0a65 (review PASS on 2cfe69c, S6-2cfe69c.txt, no flaky part; head cefa4f9 adds only PLAN changes). D119 (local Live Activity, no APNs), D120 (content state, no App Group, free-team signing), D121 (testability) in §9, and its open [human] item (a real iPhone with the free team). For that check: the new LiveActivity target's DEVELOPMENT_TEAM is the committed R9JF9M64R9 (pbxproj lines ~553, ~581); the user's local edit only changes the app's Debug config to WRY6N9DPBK, so the widget target may need the same team on the user's Mac. The user's local pbxproj edit was stashed for the merge and applied back cleanly. Known limit: in the background the lock screen keeps the last step (time still ticks; '未更新' after 15 min).
+
+- **2026-11-09 · S10 assigned.** Branch `claude/s10-offline-rich-detail`, simulator `dshm-S10`, DSHM_HOME `~/.dshm/home-s10`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D131–D133. `eval "$(scripts/slice-env S10)"` exports them.
 
 ## 9. Pending user confirmation
 
