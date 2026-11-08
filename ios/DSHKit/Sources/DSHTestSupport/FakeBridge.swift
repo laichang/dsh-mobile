@@ -71,6 +71,12 @@ public final class FakeBridge: BridgeTransport {
         /// is accepted like the real bridge does it: `MessageAccepted`, a logged `UserMessage`, the
         /// task RUNNING again, this reply (its chunk seqs go on), and `TaskEnded(COMPLETED)`.
         public var followUpReply: [String]?
+        /// D101: with `followUpReply`, the host also advertises `conversation.v2`, as the real bridge:
+        /// a follow-up while the task runs waits (`QueuedMessage`); `EditQueue` steers or removes it.
+        /// When the reply has streamed, steered messages go in (each a `UserMessage` and this reply),
+        /// then each queued one runs as its own turn; the task ends after the last. A stop returns them.
+        /// A follow-up after a stop continues the task.
+        public var queuesFollowUps = false
 
         public init(
             reply: [String] = ["Hello", " from", " FakeBridge", ". ", "No DSH", " was", " involved."],
@@ -375,10 +381,16 @@ public final class FakeHost: Sendable {
         var connectAttempts = 0
         /// S16: interrupted tasks; their stream stops.
         var stopped: Set<String> = []
+        /// D101: per task, how many turns a follow-up after a stop started; an older turn's stream stops.
+        var turns: [String: Int] = [:]
         /// D89: each task's last chunk seq, so a follow-up turn goes on from it.
         var chunkSeqs: [String: UInt64] = [:]
         /// D89: every follow-up message, in order.
         var followUps: [String] = []
+        /// D101: per task, the follow-ups that wait, in order.
+        var queued: [String: [Dshm_V1_QueuedMessage]] = [:]
+        /// D101: every queue edit, as "steer <text>" or "remove <text>".
+        var queueEdits: [String] = []
         /// S16: each task's latest milestone seq and todos, for the INTERRUPTED milestone.
         var lastMilestones: [String: (seq: UInt64, todos: [Todo])] = [:]
     }
@@ -446,6 +458,8 @@ public final class FakeHost: Sendable {
     public var prompts: [String] { state.withLock { $0.prompts } }
     /// D89: the follow-up messages this host accepted, in order.
     public var followUps: [String] { state.withLock { $0.followUps } }
+    /// D101: the queue edits this host made, in order ("steer <text>", "remove <text>").
+    public var queueEdits: [String] { state.withLock { $0.queueEdits } }
     public var logID: String { state.withLock { $0.logID } }
     public var head: UInt64 { state.withLock { UInt64($0.log.count) } }
     public var connectionCount: Int { state.withLock { $0.connections.count } }
@@ -544,6 +558,7 @@ public final class FakeHost: Sendable {
                     if s.devices != nil { hello.capabilities.append(FakeDevices.capability) }
                     if !journals.isEmpty { hello.capabilities.append("sessions.v1") }
                     if script.followUpReply != nil { hello.capabilities.append(DSHProtocolInfo.conversationCapability) }
+                    if script.followUpReply != nil && script.queuesFollowUps { hello.capabilities.append(DSHProtocolInfo.queueCapability) }
                 }
                 bridge.deliver(Self.response(id, .hello(hello)))
             case .createTask(let create)?:
@@ -617,6 +632,13 @@ public final class FakeHost: Sendable {
                                                      FakeBridge.Step(.interrupted, todos: last.todos))
                     Self.append(event, taskID: interrupt.taskID, in: &s)
                 }
+                // D101: what still waits does not run after a stop; its text goes back to the composer.
+                for var message in s.queued.removeValue(forKey: interrupt.taskID) ?? [] {
+                    message.placement = .returned
+                    var event = Dshm_V1_Event()
+                    event.queuedMessage = message
+                    Self.append(event, taskID: interrupt.taskID, in: &s)
+                }
                 s.tasks[at].state = .interrupted
                 s.tasks[at].updatedAtMs = Self.nowMs()
                 Self.upserted(s.tasks[at], in: &s)
@@ -627,8 +649,12 @@ public final class FakeHost: Sendable {
                 event.taskEnded = ended
                 Self.append(event, taskID: interrupt.taskID, in: &s)
             case .sendMessage(let message)? where script.followUpReply != nil:
-                guard let at = s.tasks.firstIndex(where: { $0.taskID == message.taskID }), s.tasks[at].state == .completed,
-                      !message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                let at = s.tasks.firstIndex { $0.taskID == message.taskID }
+                let state = at.map { s.tasks[$0].state }
+                // D101: while the task runs the message waits; after a stop it continues the task.
+                let running = script.queuesFollowUps && (state == .running || state == .waitingOnUser)
+                let idle = state == .completed || (script.queuesFollowUps && state == .interrupted)
+                guard let at, running || idle, !message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                     var error = Dshm_V1_Error()
                     error.code = "message/refused"
                     error.message = "Send a follow-up when the task is done."
@@ -643,6 +669,21 @@ public final class FakeHost: Sendable {
                 if !conn.resumed { conn.ownTasks.insert(message.taskID) }
                 s.connections[bridge.id] = conn
                 bridge.deliver(Self.response(id, .messageAccepted(accepted)))
+                if running {
+                    var queued = Dshm_V1_QueuedMessage()
+                    queued.taskID = message.taskID
+                    queued.messageID = messageID
+                    queued.text = message.text
+                    queued.timeMs = Self.nowMs()
+                    queued.placement = message.mode == .queue ? .queued : .steering
+                    s.queued[message.taskID, default: []].append(queued)
+                    var event = Dshm_V1_Event()
+                    event.queuedMessage = queued
+                    Self.append(event, taskID: message.taskID, in: &s)
+                    return
+                }
+                s.stopped.remove(message.taskID)
+                s.turns[message.taskID, default: 0] += 1 // the stream of the stopped turn stays stopped
                 var user = Dshm_V1_UserMessage()
                 user.taskID = message.taskID
                 user.messageID = messageID
@@ -662,6 +703,34 @@ public final class FakeHost: Sendable {
                 turn.blocks = []
                 turn.variants = []
                 Task { await self.stream(taskID: message.taskID, incarnation: incarnation, using: turn) }
+            case .editQueue(let edit)? where script.followUpReply != nil && script.queuesFollowUps:
+                guard var list = s.queued[edit.taskID], let i = list.firstIndex(where: { $0.messageID == edit.messageID }),
+                      edit.action == .steer || edit.action == .remove else {
+                    var error = Dshm_V1_Error()
+                    error.code = "queue/refused"
+                    error.message = "This message is no longer waiting."
+                    bridge.deliver(Self.response(id, .error(error)))
+                    return
+                }
+                var message = list[i]
+                if edit.action == .remove {
+                    list.remove(at: i)
+                    message.placement = .removed
+                    s.queueEdits.append("remove \(message.text)")
+                } else {
+                    message.placement = .steering
+                    list[i] = message
+                    s.queueEdits.append("steer \(message.text)")
+                }
+                s.queued[edit.taskID] = list.isEmpty ? nil : list
+                var edited = Dshm_V1_QueueEdited()
+                edited.taskID = edit.taskID
+                edited.messageID = edit.messageID
+                edited.placement = message.placement
+                bridge.deliver(Self.response(id, .queueEdited(edited)))
+                var event = Dshm_V1_Event()
+                event.queuedMessage = message
+                Self.append(event, taskID: edit.taskID, in: &s)
             case .answerApproval(let answer)? where answersApprovals:
                 answerApproval(answer, requestID: id, bridge: bridge, in: &s)
             case .getModelCatalog? where pickers != nil:
@@ -681,7 +750,7 @@ public final class FakeHost: Sendable {
                     s.revoked = true
                     for conn in s.connections.values { conn.bridge.drop(code: PairingWire.CloseCode.deviceUnknown.rawValue) }
                 }
-            case .answerApproval?, .answerQuestion?, .interrupt?, .sendMessage?, .getModelCatalog?, .selectModel?, .listWorkspaces?, .listDevices?, .listAudit?, .revokeDevice?, .readSession?:
+            case .answerApproval?, .answerQuestion?, .interrupt?, .sendMessage?, .editQueue?, .getModelCatalog?, .selectModel?, .listWorkspaces?, .listDevices?, .listAudit?, .revokeDevice?, .readSession?:
                 var error = Dshm_V1_Error()
                 error.code = "request/unsupported"
                 error.message = "This test host does not advertise this capability."
@@ -766,6 +835,7 @@ public final class FakeHost: Sendable {
     private func stream(taskID: String, incarnation: Int, hold: Bool = false,
                         ask: FakeBridge.PendingApproval? = nil, using variant: FakeBridge.Script? = nil) async {
         let script = variant ?? self.script // S19: the task's own script, if its prompt picks one
+        let turn = state.withLock { $0.turns[taskID, default: 0] } // D101: a stop ends this turn's stream
         // S3: milestones are logged like any other event, so Resume replays them.
         var milestoneSeq: UInt64 = 0
         var lastTodos: [Todo] = []
@@ -774,7 +844,7 @@ public final class FakeHost: Sendable {
             lastTodos = step.todos
             let wire = Self.wire(taskID: taskID, seq: milestoneSeq, step)
             return state.withLock { s -> Bool in
-                guard s.incarnation == incarnation, !s.stopped.contains(taskID) else { return false }
+                guard s.incarnation == incarnation, !s.stopped.contains(taskID), s.turns[taskID, default: 0] == turn else { return false }
                 s.lastMilestones[taskID] = (milestoneSeq, step.todos)
                 var event = Dshm_V1_Event()
                 event.milestoneAdded = wire
@@ -817,7 +887,7 @@ public final class FakeHost: Sendable {
                 var block = entry.block
                 block.taskID = taskID
                 let alive = state.withLock { s -> Bool in
-                    guard s.incarnation == incarnation, !s.stopped.contains(taskID) else { return false }
+                    guard s.incarnation == incarnation, !s.stopped.contains(taskID), s.turns[taskID, default: 0] == turn else { return false }
                     var event = Dshm_V1_Event()
                     event.transcriptBlock = block
                     Self.append(event, taskID: taskID, in: &s)
@@ -834,7 +904,7 @@ public final class FakeHost: Sendable {
             chunk.taskID = taskID
             chunk.text = text
             let alive = state.withLock { s -> Bool in
-                guard s.incarnation == incarnation, !s.stopped.contains(taskID) else { return false }
+                guard s.incarnation == incarnation, !s.stopped.contains(taskID), s.turns[taskID, default: 0] == turn else { return false }
                 // D89: the chunk seq goes on across the turns of a task, as the bridge's TaskHub does.
                 chunk.seq = (s.chunkSeqs[taskID] ?? 0) + 1
                 s.chunkSeqs[taskID] = chunk.seq
@@ -854,6 +924,49 @@ public final class FakeHost: Sendable {
             try? await Task.sleep(for: script.milestoneDelay)
             if !milestone(step) { return }
         }
+        // D101: steered messages go in at the next step, then each queued one runs as its own turn.
+        while true {
+            let taken = state.withLock { s -> Bool in
+                guard s.incarnation == incarnation, !s.stopped.contains(taskID), s.turns[taskID, default: 0] == turn, var list = s.queued[taskID], !list.isEmpty else { return false }
+                let steered = list.filter { $0.placement == .steering }
+                let messages = steered.isEmpty ? [list[0]] : steered
+                list.removeAll { m in messages.contains { $0.messageID == m.messageID } }
+                s.queued[taskID] = list.isEmpty ? nil : list
+                for message in messages {
+                    var user = Dshm_V1_UserMessage()
+                    user.taskID = taskID
+                    user.messageID = message.messageID
+                    user.text = message.text
+                    user.timeMs = Self.nowMs()
+                    var event = Dshm_V1_Event()
+                    event.userMessage = user
+                    Self.append(event, taskID: taskID, in: &s)
+                }
+                if steered.isEmpty, let at = s.tasks.firstIndex(where: { $0.taskID == taskID }) {
+                    s.tasks[at].updatedAtMs = Self.nowMs()
+                    s.tasks[at].turnStartedAtMs = s.tasks[at].updatedAtMs
+                    Self.upserted(s.tasks[at], in: &s)
+                }
+                return true
+            }
+            guard taken else { break }
+            for text in self.script.followUpReply ?? [] {
+                try? await Task.sleep(for: script.chunkDelay)
+                var chunk = Dshm_V1_AssistantChunk()
+                chunk.taskID = taskID
+                chunk.text = text
+                let alive = state.withLock { s -> Bool in
+                    guard s.incarnation == incarnation, !s.stopped.contains(taskID), s.turns[taskID, default: 0] == turn else { return false }
+                    chunk.seq = (s.chunkSeqs[taskID] ?? 0) + 1
+                    s.chunkSeqs[taskID] = chunk.seq
+                    var event = Dshm_V1_Event()
+                    event.assistantChunk = chunk
+                    Self.append(event, taskID: taskID, in: &s)
+                    return true
+                }
+                if !alive { return }
+            }
+        }
         if script.holdAfterReply { return }
         if !script.milestones.isEmpty {
             let closing = script.failWith.map { FakeBridge.Step(.failed, $0, todos: lastTodos) }
@@ -861,7 +974,7 @@ public final class FakeHost: Sendable {
             if !milestone(closing) { return }
         }
         state.withLock { s in
-            guard s.incarnation == incarnation, !s.stopped.contains(taskID),
+            guard s.incarnation == incarnation, !s.stopped.contains(taskID), s.turns[taskID, default: 0] == turn,
                   let at = s.tasks.firstIndex(where: { $0.taskID == taskID }) else { return }
             s.tasks[at].state = script.failWith == nil ? .completed : .failed
             s.tasks[at].message = script.failWith ?? ""
