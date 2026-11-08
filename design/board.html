@@ -433,9 +433,14 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
     </div>
   </div>
   <div class="composer">
-    <div class="ph" style="display:flex;align-items:center"><span style="opacity:.55">补充一句，下一轮送达…</span><span class="mtag mx">M2</span></div>
+    <div style="display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.05);border-radius:14px;padding:7px 8px 7px 10px;margin:-3px -4px 11px -8px">
+      <svg class="i xs" style="color:var(--t2);flex:none"><use href="#clock"/></svg>
+      <div style="flex:1;min-width:0"><div style="font-size:13.5px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">修好之后顺手更新一下 CHANGELOG</div><div style="font-size:11.5px;color:var(--t3)">排队中，下一轮发送</div></div>
+      <span style="font-size:12.5px;font-weight:600;color:var(--blue);flex:none">立即发送</span>
+      <span style="font-size:15px;color:var(--t2);width:20px;text-align:center;flex:none">×</span>
+    </div>
+    <div class="ph">补充一句，下一轮送达…</div>
     <div class="bar">
-      
       <span class="pill">V41-Flash <span class="w">· High</span><svg class="i xs"><use href="#chevd"/></svg></span>
       <span class="send stop"><svg class="i s"><use href="#square"/></svg></span>
     </div>
@@ -582,7 +587,8 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <li>顶部钉住里程碑进度（S3），点开看全部步骤。</li>
   <li>回复里的 Markdown 表格画成原生表格（S28）：表头加底色，行间细线，列按分隔行对齐；单元格太长就换行，表格比屏幕宽时只在自己那一行里横向滑动。</li>
   <li>发送键变<b>停止</b>（S5）；模型胶囊就是“Change model”，任务中可换（S6）。</li>
-  <li>运行中在输入框里补充一句、排到下一轮还是 M2；运行中的会话页只有停止和换模型。任务完成后接着说见 06。</li>
+  <li>运行中也能在输入框里补充一句：默认<b>排队</b>，显示在输入框上方，这一轮做完后作为下一轮发给 Agent，多条按顺序各跑一轮。“立即发送”把它插进当前这一轮，Agent 下一步就读到；× 移除。Agent 收下后它离开队列，变成转录里的用户气泡，位置就是 Agent 收到它的地方。打字时发送键代替停止，发出后停止键回来。</li>
+  <li>停止任务时，还在排队的话放回输入框，不会偷偷发出。断线重连后队列和顺序不变。任务完成后接着说见 06，停止后接着说见 X1。</li>
 </ul></div>
 </div>
 
@@ -627,7 +633,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <li>“用时”只算最后一轮：从这一轮开始到结束，不算两轮之间的空闲。</li>
   <li>M1 的结果是文字：写清楚产物在执行端的哪个路径。</li>
   <li>虚线文件卡是 <b>M3</b>：Quick Look 预览、分享、存到文件。</li>
-  <li>完成后输入框直接可以接着说：发到同一个 DSH 会话（网页上也是这一个），你的气泡和新的回复接在这个回答下面，任务回到运行中，“用时”从这一轮算起。执行端不支持时，输入框和以前一样不能输入。失败或停止后接着说还是 M2。</li>
+  <li>完成后输入框直接可以接着说：发到同一个 DSH 会话（网页上也是这一个），你的气泡和新的回复接在这个回答下面，任务回到运行中，“用时”从这一轮算起。执行端不支持时，输入框和以前一样不能输入。停止后接着说见 X1；失败后接着说还是 M2。</li>
 </ul></div>
 </div>
 
@@ -911,7 +917,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
   <li>§4 叫回用户的三种时刻之一。顶部进度条变红，写明停在第几步。</li>
   <li>错误原文照给（任务的 failure message），可以“复制错误”。已经做了什么、东西在哪，由 Agent 自己在卡片上方的回答里说；App 不另写摘要。</li>
   <li>“新会话里再试”把原话预填进 01 的输入框；在原会话里接着说是 M2。</li>
-  <li>“卡住”（很久没有新进展）要靠推送提醒，放 M2。被停止的任务同样标在这里：同一张卡，写“任务已停止”，不变红，只有“新会话里再试”。</li>
+  <li>“卡住”（很久没有新进展）要靠推送提醒，放 M2。被停止的任务同样标在这里：同一张卡，写“任务已停止”，不变红，只有“新会话里再试”。停止后可以在原会话里接着说：新消息发到同一个 DSH 会话，任务回到运行中，“任务已停止”的卡片消失，顶部进度条也改写当前状态。</li>
 </ul></div>
 </div>
 
