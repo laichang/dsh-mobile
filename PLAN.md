@@ -48,7 +48,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S2 | done | merged `966be4b` | 2026-11-09 | — (provisional D113, D114 in §9) |
 | S3 | done | merged `33e96ff` | 2026-11-09 | — (provisional D110 in §9) |
 | S4 | done | merged `83c82ce` | 2026-11-09 | — (provisional D107, D108 in §9) |
-| S5 | doing | `claude/s5-voice` | 2026-11-09 | Slice owner builds (§8) |
+| S5 | done | merged `5362e43` | 2026-11-09 | — (provisional D116, D117 in §9) |
 | S6 | doing | `claude/s6-live-activity` | 2026-11-09 | Slice owner builds (§8) |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | todo | — | 2026-11-08 | Assign it and start a session |
@@ -654,6 +654,8 @@ Append-only, dated.
 
 - **2026-11-09 · S12 runs as a background agent.** S12 assigned (D122–D124) and started as a background agent, with the flaky DSHKit tests that this run saw under load. Running: S5, S6, S12.
 
+- **2026-11-09 · S5 merged.** Merged as `5362e43`; `scripts/check-plan` on the merge commit passed. `scripts/review S5` at `bad4780`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S5-bad4780.txt`). No open `[human]` items, so S5 is `done`. §9 rows 20, 21 (D116, D117).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -679,3 +681,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 17 | S2 | decision | ARCHITECTURE D113, *provisional*: A typed answer and multi-select answers (screen P1, amends D92) | `claude/s2-questions-more` | merged `966be4b` |
 | 18 | S2 | decision | ARCHITECTURE D114, *provisional*: A waiting question needs a decision, as an approval does (STORY §4, screens P1, 03, 02; extends D25, D92) | `claude/s2-questions-more` | merged `966be4b` |
 | 19 | S2 | decision | D92 amended: a question keeps no timeout (the Cut asked for a timeout to a refusal, as D25); DSH timed mode closes the card as not answered | `claude/s2-questions-more` | `b3f148d` |
+| 20 | S5 | decision | ARCHITECTURE D116, *provisional*: Voice input: on-device speech to text with iOS 26's `SpeechAnalyzer` | `claude/s5-voice` | merged `5362e43` |
+| 21 | S5 | decision | ARCHITECTURE D117, *provisional*: The mic key and where the words go (screens 01, 06, V1, V2) | `claude/s5-voice` | merged `5362e43` |
