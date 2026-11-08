@@ -182,14 +182,14 @@ private struct SessionTranscript: View {
                         let finalSeq = showJournal && outcome != nil ? messages.last(where: { !$0.fromUser })?.seq : nil
                         let firstUserSeq = messages.first(where: \.fromUser)?.seq
                         if firstUserSeq == nil && !row.title.isEmpty {
-                            UserBubble(text: row.title, photo: row.photoThumbnail)
+                            UserBubble(text: row.title, attachments: row.attachments)
                         }
                         // Without the journal: only the first prompt on top; the streamed transcript
                         // below holds the answers and this phone's follow-ups (D89).
                         let shown = showJournal ? messages : Array(messages.filter(\.fromUser).prefix(1))
                         ForEach(shown, id: \.seq) { message in
                             if message.fromUser {
-                                UserBubble(text: message.text, photo: message.seq == firstUserSeq ? row.photoThumbnail : nil)
+                                UserBubble(text: message.text, attachments: Self.attachments(of: message, first: message.seq == firstUserSeq, row: row))
                             } else {
                                 if message.seq == finalSeq {
                                     lead(row, outcome)
@@ -276,6 +276,13 @@ private struct SessionTranscript: View {
         }
     }
 
+    /// D107: a journal message's files; the first message also gets this phone's thumbnails.
+    static func attachments(of message: Dshm_V1_SessionMessage, first: Bool, row: TaskListStore.TaskRow) -> [MessageAttachment] {
+        let host = message.attachments.map(MessageAttachment.init)
+        guard first else { return host }
+        return host.isEmpty ? row.attachments : host.keepingThumbnails(of: row.attachments)
+    }
+
     /// S19's rows before the final answer, in one stack so that S23 can measure them.
     @ViewBuilder
     private func lead(_ row: TaskListStore.TaskRow, _ outcome: TaskOutcome?) -> some View {
@@ -319,18 +326,15 @@ private struct SessionTranscript: View {
 }
 
 /// The user's message: a bubble on the right (DESIGN.md: bubble token).
-/// A photo sent with the message (D95) shows as a thumbnail above it.
+/// The files sent with it (D95, D107) show above it.
 struct UserBubble: View {
     let text: String
-    var photo: Data? = nil
+    var attachments: [MessageAttachment] = []
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 6) {
-            if let photo {
-                PhotoThumbnail(data: photo, size: 140)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("Photo")
-                    .accessibilityIdentifier("session.message.user.photo")
+            if !attachments.isEmpty {
+                MessageAttachmentsView(attachments: attachments)
             }
             HStack {
                 Spacer(minLength: 48)
@@ -373,6 +377,7 @@ private struct SessionComposer: View {
                     .accessibilityIdentifier("session.followUpError")
             }
             if followUp {
+                AttachmentChips(store: store, target: .followUp(taskKey: taskKey), disabled: sending) // D107
                 TextField("Reply to your agent", text: $draft, axis: .vertical)
                     .lineLimit(1...5)
                     .focused($editing)
@@ -396,6 +401,9 @@ private struct SessionComposer: View {
                 }
             }
             HStack(spacing: 8) {
+                if followUp, let row, store.canAttach(to: row) {
+                    AttachMenu(store: store, target: .followUp(taskKey: row.key), disabled: sending) // D107
+                }
                 if let row, !row.state.isTerminal, store.modelHosts.contains(row.hostKey) {
                     ModelControl(store: store, hostKey: row.hostKey, task: row)
                         .buttonStyle(.bordered)
@@ -479,9 +487,7 @@ struct ComposerView: View {
                     .foregroundStyle(DSHTheme.amber)
                     .accessibilityIdentifier("composer.error")
             }
-            if let photo = store.composerPhoto {
-                PhotoChip(store: store, photo: photo)
-            }
+            AttachmentChips(store: store, target: .composer, disabled: store.isSending) // D107
             TextField("One sentence for your agent", text: $store.prompt, axis: .vertical)
                 .lineLimit(1...5)
                 .focused($editingPrompt)
@@ -489,8 +495,8 @@ struct ComposerView: View {
                 .accessibilityIdentifier("composer.prompt")
                 .onSubmit(send)
             HStack(spacing: 8) {
-                if store.canAttachPhoto {
-                    PhotoKey(store: store)
+                if store.canAttach {
+                    AttachMenu(store: store, target: .composer, disabled: store.isSending)
                 }
                 if let key = store.composerHostKey {
                     modelControl(key)

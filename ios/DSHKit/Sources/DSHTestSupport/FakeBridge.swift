@@ -391,6 +391,10 @@ public final class FakeHost: Sendable {
         var chunkSeqs: [String: UInt64] = [:]
         /// D89: every follow-up message, in order.
         var followUps: [String] = []
+        /// D107: the files each follow-up named, in order (one entry per follow-up).
+        var followUpAttachments: [[(begin: Dshm_V1_UploadBegin, data: Data)]] = []
+        /// D107: how many UploadBegin requests arrived (a refusal before the upload sends none).
+        var uploadBegins = 0
         /// S16: each task's latest milestone seq and todos, for the INTERRUPTED milestone.
         var lastMilestones: [String: (seq: UInt64, todos: [Todo])] = [:]
     }
@@ -462,6 +466,12 @@ public final class FakeHost: Sendable {
     public var attachments: [[(mediaType: String, name: String, data: Data)]] {
         state.withLock { $0.attachments.map { $0.map { (mediaType: $0.begin.mediaType, name: $0.begin.name, data: $0.data) } } }
     }
+    /// D107: per follow-up, the staged files it named: (media type, name, bytes).
+    public var followUpAttachments: [[(mediaType: String, name: String, data: Data)]] {
+        state.withLock { $0.followUpAttachments.map { $0.map { (mediaType: $0.begin.mediaType, name: $0.begin.name, data: $0.data) } } }
+    }
+    /// D107: how many uploads began on this host.
+    public var uploadBegins: Int { state.withLock { $0.uploadBegins } }
     /// D95: the encoded size of every UploadChunk request frame received, in order.
     public var uploadFrameSizes: [Int] { state.withLock { $0.uploadFrameSizes } }
     private var takesAttachments: Bool { extraCapabilities.contains(DSHProtocolInfo.attachmentsCapability) }
@@ -604,11 +614,12 @@ public final class FakeHost: Sendable {
                 let variant = script.variant(for: create.prompt) // S19
                 Task { await self.stream(taskID: taskID, incarnation: incarnation, hold: hold, ask: ask, using: variant) }
             case .uploadBegin(let begin)? where takesAttachments:
-                let types = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+                // D107: any media type; the four image types enter as images, the rest as files.
+                s.uploadBegins += 1
                 if conn.uploads[begin.uploadID] != nil || begin.uploadID.isEmpty || begin.sha256.count != 32 || begin.size == 0 {
                     bridge.deliver(Self.uploadError(id, "upload/invalid", "Bad upload."))
-                } else if !types.contains(begin.mediaType) {
-                    bridge.deliver(Self.uploadError(id, "upload/media-type", "The host takes \(types.joined(separator: ", ")), not \(begin.mediaType)."))
+                } else if conn.uploads.count >= Attachments.maxCount {
+                    bridge.deliver(Self.uploadError(id, "upload/too-many", "Send at most \(Attachments.maxCount) attachments at a time."))
                 } else if begin.size > UInt64(Attachments.maxBytes) {
                     bridge.deliver(Self.uploadError(id, "upload/too-large", "The file is too large."))
                 } else {
@@ -708,6 +719,17 @@ public final class FakeHost: Sendable {
                     bridge.deliver(Self.response(id, .error(error)))
                     return
                 }
+                // D107: files with a follow-up, used up by it, like CreateTask's.
+                if !message.uploadIds.isEmpty && (!takesAttachments || Set(message.uploadIds).count != message.uploadIds.count
+                    || !message.uploadIds.allSatisfy({ conn.uploads[$0]?.staged == true })) {
+                    bridge.deliver(Self.uploadError(id, "upload/unknown", "The attachment is not on the host. Send it again."))
+                    return
+                }
+                let files = message.uploadIds.map { uploadID in
+                    let upload = conn.uploads.removeValue(forKey: uploadID)!
+                    return (begin: upload.begin, data: upload.data)
+                }
+                s.followUpAttachments.append(files)
                 s.followUps.append(message.text)
                 let messageID = "message-\(s.followUps.count)"
                 var accepted = Dshm_V1_MessageAccepted()
@@ -721,6 +743,14 @@ public final class FakeHost: Sendable {
                 user.messageID = messageID
                 user.text = message.text
                 user.timeMs = Self.nowMs()
+                user.attachments = files.map { file in
+                    .with {
+                        $0.kind = Attachments.isImage(file.begin.mediaType) ? .image : .file
+                        $0.name = file.begin.name
+                        $0.size = UInt64(file.data.count)
+                        $0.mediaType = file.begin.mediaType
+                    }
+                }
                 var event = Dshm_V1_Event()
                 event.userMessage = user
                 Self.append(event, taskID: message.taskID, in: &s)
