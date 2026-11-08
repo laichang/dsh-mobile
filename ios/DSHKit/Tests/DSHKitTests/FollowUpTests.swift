@@ -8,25 +8,16 @@ import Testing
 /// D89 · a follow-up in a finished session, against `FakeHost` (`conversation.v1`): the user
 /// message and the next turn go under the first answer, and a reconnect replays the same page.
 @MainActor
-@Suite(.serialized) struct FollowUpTests {
+@Suite(.serialized, .timeLimit(.minutes(2))) struct FollowUpTests {
     static let first = ["First ", "answer."]
     static let second = ["Second ", "answer."]
-
-    func waitUntil(_ what: String = "", timeout: Duration = .seconds(10), _ condition: () -> Bool) async throws {
-        let clock = ContinuousClock()
-        let deadline = clock.now + timeout
-        while !condition() {
-            if clock.now > deadline { Issue.record("timed out: \(what)"); return }
-            try await Task.sleep(for: .milliseconds(10))
-        }
-    }
 
     func launch(_ host: FakeHost, url: URL) throws -> TaskListStore {
         let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
         let store = TaskListStore(container: try TaskCache.container(url: url),
                                   hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Say hello.")
         store.backoff = (.milliseconds(20), .milliseconds(100))
-        store.sendWaitsFor = .seconds(10)
+        store.sendWaitsFor = .seconds(30) // a deadline: send() returns once the host is online (S12)
         return store
     }
 
@@ -57,17 +48,17 @@ import Testing
         store.foreground()
         defer { store.background() }
         let key = try #require(await store.send())
-        try await waitUntil("first turn done") { store.task(key)?.state == .completed }
+        await waitForStore("first turn done") { store.task(key)?.state == .completed }
         let done = try #require(store.task(key))
         #expect(store.canFollowUp(done))
 
         try await store.sendFollowUp("  And once more?  ", for: done)
         #expect(host.followUps == ["And once more?"])
-        try await waitUntil("running again") { store.task(key)?.state == .running }
+        await waitForStore("running again") { store.task(key)?.state == .running }
         #expect(Self.page(try #require(store.task(key))).prefix(2) == ["agent: First answer.", "user: And once more?"])
         #expect(!store.canFollowUp(try #require(store.task(key))))
 
-        try await waitUntil("second turn done") { store.task(key)?.state == .completed }
+        await waitForStore("second turn done") { store.task(key)?.state == .completed }
         let row = try #require(store.task(key))
         #expect(Self.page(row) == ["agent: First answer.", "user: And once more?", "agent: Second answer."])
         #expect(row.transcript == "First answer.Second answer.")
@@ -84,9 +75,9 @@ import Testing
         let store = try launch(host, url: Self.cacheURL())
         store.foreground()
         let key = try #require(await store.send())
-        try await waitUntil("first turn done") { store.task(key)?.state == .completed }
+        await waitForStore("first turn done") { store.task(key)?.state == .completed }
         try await store.sendFollowUp("Again?", for: try #require(store.task(key)))
-        try await waitUntil("second turn done") {
+        await waitForStore("second turn done") {
             store.task(key)?.state == .completed && store.task(key)?.transcript == "First answer.Second answer."
         }
         let live = Self.page(try #require(store.task(key)))
@@ -96,8 +87,8 @@ import Testing
         let fresh = try launch(host, url: Self.cacheURL())
         fresh.foreground()
         defer { fresh.background() }
-        try await waitUntil("replayed") { fresh.task(key)?.state == .completed && fresh.task(key)?.blocks.followUpCount == 1 }
-        try await waitUntil("replayed text") { fresh.task(key)?.transcript == "First answer.Second answer." }
+        await waitForStore("replayed") { fresh.task(key)?.state == .completed && fresh.task(key)?.blocks.followUpCount == 1 }
+        await waitForStore("replayed text") { fresh.task(key)?.transcript == "First answer.Second answer." }
         let replayed = Self.page(try #require(fresh.task(key)))
         #expect(replayed == live, "replayed \(replayed), live \(live)")
     }
@@ -108,17 +99,18 @@ import Testing
         var store: TaskListStore? = try launch(host, url: url)
         store?.foreground()
         let key = try #require(await store?.send())
-        try await waitUntil("first turn done") { store?.task(key)?.state == .completed }
+        await waitForStore("first turn done") { store?.task(key)?.state == .completed }
         try await store?.sendFollowUp("Again?", for: try #require(store?.task(key)))
-        try await waitUntil("follow-up seen") { store?.task(key)?.blocks.followUpCount == 1 }
+        await waitForStore("follow-up seen") { store?.task(key)?.blocks.followUpCount == 1 }
+        let taskID = try #require(store?.task(key)?.taskID)
         store?.background()
         store = nil
-        try await Task.sleep(for: .milliseconds(400)) // the turn finishes on the host meanwhile
+        await host.ended(taskID, count: 2) // the turn finishes on the host meanwhile
 
         let reopened = try launch(host, url: url)
         reopened.foreground()
         defer { reopened.background() }
-        try await waitUntil("gap filled") { reopened.task(key)?.state == .completed && reopened.task(key)?.transcript == "First answer.Second answer." }
+        await waitForStore("gap filled") { reopened.task(key)?.state == .completed && reopened.task(key)?.transcript == "First answer.Second answer." }
         #expect(Self.page(try #require(reopened.task(key))) == ["agent: First answer.", "user: Again?", "agent: Second answer."])
     }
 
@@ -128,7 +120,7 @@ import Testing
         store.foreground()
         defer { store.background() }
         let key = try #require(await store.send())
-        try await waitUntil("done") { store.task(key)?.state == .completed }
+        await waitForStore("done") { store.task(key)?.state == .completed }
         let row = try #require(store.task(key))
         #expect(!store.canFollowUp(row))
         await #expect(throws: HostConnectionError.self) { try await store.sendFollowUp("Again?", for: row) }

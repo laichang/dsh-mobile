@@ -10,7 +10,14 @@ import Testing
     let storeURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("dshm-s2-\(UUID().uuidString).store")
 
-    func waitUntil(_ what: String = "", timeout: Duration = .seconds(5), _ condition: () -> Bool) async throws {
+    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
+    func waitUntil(_ what: String = "", timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
+        await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)
+    }
+
+    /// Polls a fake host's own state, which is not observable. Store state uses `waitUntil`.
+    func pollUntil(_ what: String = "", timeout: Duration = .seconds(30), _ condition: () -> Bool) async throws {
         let clock = ContinuousClock()
         let deadline = clock.now + timeout
         while !condition() {
@@ -58,9 +65,10 @@ import Testing
         let key = try #require(await store?.send())
         try await waitUntil("some text") { !(store?.task(key)?.transcript.isEmpty ?? true) }
         // The user swipes the app away: iOS backgrounds it, then it's gone.
+        let taskID = try #require(store?.task(key)?.taskID)
         store?.background()
         store = nil
-        try await Task.sleep(for: .milliseconds(500)) // the task finishes on the host meanwhile
+        await host.ended(taskID) // the task finishes on the host meanwhile
 
         let reopened = try launch(host)
         // Before any connection: the list and the transcript so far come from the cache.
@@ -84,7 +92,7 @@ import Testing
         let key = try #require(await store.send())
         try await waitUntil("some text") { !(store.task(key)?.transcript.isEmpty ?? true) }
         host.dropConnections()
-        try await waitUntil("reconnected") { store.hosts.first?.reachability == .online && host.connectionCount == 1 }
+        try await pollUntil("reconnected") { store.hosts.first?.reachability == .online && host.connectionCount == 1 }
         try await waitUntil("completed") { store.task(key)?.state == .completed }
         #expect(store.task(key)?.transcript == Self.fullReply)
     }

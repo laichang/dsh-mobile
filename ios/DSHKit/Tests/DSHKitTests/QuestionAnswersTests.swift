@@ -30,14 +30,10 @@ import Testing
         return store
     }
 
-    func waitUntil(_ what: String = "", timeout: Duration = .seconds(10), _ condition: () -> Bool) async throws {
-        try await FollowUpTests().waitUntil(what, timeout: timeout, condition)
-    }
-
     /// Starts the task and waits until it waits on its question.
     func asked(_ store: TaskListStore) async throws -> (key: String, question: AgentQuestion) {
         let key = try #require(await store.send())
-        try await waitUntil("asked") { store.task(key)?.blocks.pendingQuestion != nil }
+        await waitForStore("asked") { store.task(key)?.blocks.pendingQuestion != nil }
         return (key, try #require(store.task(key)?.blocks.pendingQuestion))
     }
 
@@ -77,7 +73,7 @@ import Testing
         store.foreground()
         defer { store.background() }
         let (key, question) = try await asked(store)
-        try await waitUntil("waiting on me") { store.task(key)?.state == .waitingOnUser }
+        await waitForStore("waiting on me") { store.task(key)?.state == .waitingOnUser }
         #expect(store.sections.waitingOnMe.map(\.key) == [key])
         #expect(store.task(key)?.drawerMark == .waiting)
         #expect(store.canAnswerQuestions(hostKey: try #require(store.task(key)).hostKey))
@@ -87,11 +83,11 @@ import Testing
         #expect(given.answers.map(\.questionID) == ["q1"])
         #expect(given.answers.map(\.custom) == ["用去年的模板"])
         #expect(given.answers.map(\.selected) == [[]])
-        try await waitUntil("answered") { store.task(key)?.blocks.items.compactMap(\.question).first?.outcome == .answered }
+        await waitForStore("answered") { store.task(key)?.blocks.items.compactMap(\.question).first?.outcome == .answered }
         let card = try #require(store.task(key)?.blocks.items.compactMap(\.question).first)
         #expect(card.answers == ["q1": ["用去年的模板"]])
         #expect(store.task(key)?.blocks.pendingQuestion == nil)
-        try await waitUntil("done") { store.task(key)?.state == .completed }
+        await waitForStore("done") { store.task(key)?.state == .completed }
         #expect(store.sections.waitingOnMe.isEmpty)
     }
 
@@ -114,7 +110,7 @@ import Testing
         let given = try #require(host.questionAnswers.last)
         #expect(given.answers.map(\.questionID) == ["q1", "q2"])
         #expect(given.answers.map(\.selected) == [["简洁版.pptx"], ["进展", "下周计划"]])
-        try await waitUntil("answered") { store.task(key)?.blocks.pendingQuestion == nil }
+        await waitForStore("answered") { store.task(key)?.blocks.pendingQuestion == nil }
         let card = try #require(store.task(key)?.blocks.items.compactMap(\.question).first)
         #expect(card.answers == ["q1": ["简洁版.pptx"], "q2": ["进展", "下周计划"]])
     }
@@ -141,7 +137,7 @@ import Testing
         let store = try launch(host, url: url)
         store.foreground()
         let key = CachedTask.key(hostKey: "fake:127.0.0.1:47801", taskID: summary.taskID)
-        try await waitUntil("restored") { store.task(key)?.blocks.pendingQuestion != nil }
+        await waitForStore("restored") { store.task(key)?.blocks.pendingQuestion != nil }
         #expect(store.task(key)?.blocks.pendingQuestion?.requestID == pending.id)
         #expect(store.sections.waitingOnMe.map(\.key) == [key])
         store.background()
@@ -161,11 +157,11 @@ import Testing
         defer { store.background() }
         let (key, _) = try await asked(store)
         host.answerQuestionFromElsewhere(["q1": ["公司模板.pptx"]])
-        try await waitUntil("withdrawn") { store.task(key)?.blocks.pendingQuestion == nil }
+        await waitForStore("withdrawn") { store.task(key)?.blocks.pendingQuestion == nil }
         let card = try #require(store.task(key)?.blocks.items.compactMap(\.question).first)
         #expect(card.outcome == .answeredElsewhere)
         #expect(card.answers == ["q1": ["公司模板.pptx"]])
-        try await waitUntil("done") { store.task(key)?.state == .completed }
+        await waitForStore("done") { store.task(key)?.state == .completed }
         #expect(store.sections.waitingOnMe.isEmpty)
     }
 

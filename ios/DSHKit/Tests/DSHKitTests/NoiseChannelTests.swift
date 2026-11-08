@@ -237,13 +237,10 @@ final class Clock: @unchecked Sendable {
 
 @MainActor
 @Suite struct PairingTests {
-    func waitUntil(_ condition: () -> Bool, timeout: Duration = .seconds(5)) async throws {
-        let clock = ContinuousClock()
-        let deadline = clock.now + timeout
-        while !condition() {
-            if clock.now > deadline { Issue.record("timed out"); return }
-            try await Task.sleep(for: .milliseconds(10))
-        }
+    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
+    func waitUntil(_ condition: () -> Bool, timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation) async throws {
+        await waitForStore("", timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)
     }
 
     let clock = Clock()
