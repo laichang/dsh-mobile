@@ -69,6 +69,8 @@ run_ui() { # DSHM_S8_REPLY, test name
       grep -E 'error:|Test Case' "$log"; echo "UI test failed: $2" >&2; exit 1;
     }
   grep -E "Test Case.*$2.*passed" "$log"
+  # The test's own guard against an app that liveactivitiesd opened without the launch arguments.
+  grep -m1 -E "^rich-detail: .*launching it again" "$log" || true
   demo_no_skipped_ui "$log"
 }
 
