@@ -608,6 +608,8 @@ Append-only, dated.
 
 - **2026-11-09 · S4 merged.** Merged as `83c82ce`; `scripts/check-plan` on the merge commit passed. `scripts/review S4` at `1fc0d40`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S4-1fc0d40.txt`). No open `[human]` items, so S4 is `done`. §9 rows 10, 11 (D107, D108).
 
+- **2026-11-09 · S4 merged.** S4 merged as 83c82ce (review PASS on 1fc0d40, S4-1fc0d40.txt, no flaky part; head eda8f01 adds only PLAN changes). D107, D108 new; D95 and D18 amended: in §9. Differs from the Cuts: the '+' is drawn on 06 (a done task), not 04 (running), because a queued message carries text only; pickers add one item per use. Flaky in development: the photo picker's first open after an install can take more than 15 s (wait now 30 s); scripts/render-design exits 2 when two worktrees render at the same time. The user's uncommitted DEVELOPMENT_TEAM line in project.pbxproj was stashed for the merge and applied back cleanly.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
