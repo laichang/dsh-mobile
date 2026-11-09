@@ -635,7 +635,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [auto] A test reproduces the reported bug and passes with the fix — Evidence: test:FollowUpQueueTests/sendNowDuringALongStepShowsTheMessageInTheTranscriptAtOnce · test:FollowUpQueueTests/aStopBeforeDSHTookAMessageSentNowGivesItBack · test:FollowUpQueueAgainstFakeDSH/sendNowDuringALongToolStepIsSteeringUntilTheStepEndsThenTaken · test:FollowUpQueueUITests/testSendNowDuringALongStepAgainstRealDSH · cmd:scripts/demo/followup.sh --steer · shot:evidence/S15/steer-before-fix.png · shot:evidence/S15/steer-sent-now.png · shot:evidence/S15/steer-taken.png
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
