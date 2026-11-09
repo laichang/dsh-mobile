@@ -96,6 +96,8 @@ ui_test() { # part name, then Suite or Suite/test selectors
     echo "UI tests failed: $name" >&2
     return 1
   fi
+  # The pass lines go to stdout too: scripts/review looks for its test: pointers there.
+  grep -E "Test Case.*(passed|failed|skipped)" "$log"
   demo_no_skipped_ui "$log"
   step "durations and idle waits: $name"
   ui_waits "$log" "$S16_SCROLL=$S16_LIMIT" || { echo "UI tests too slow or not idle: $name" >&2; return 1; }
