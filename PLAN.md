@@ -646,7 +646,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S16 · Fix: Mic key crashes on a real iPhone
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-09: User, 2026-11-09, real iPhone 17 Pro (free team, Debug build from Xcode): "点击麦克风出现crash" (tapping the mic key crashes the app). No crash log yet.
 
