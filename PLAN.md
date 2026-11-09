@@ -651,6 +651,10 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
   - Resources: the stale M1 home ~/.dshm/home-s15 moved to ~/.dshm/home-s15.stale-m1-2026-11-09 (not deleted); simulator dshm-S15 created (iOS 26.4). scripts/demo/s15.sh is the old M1 S15 (所有任务) demo; the demo of this slice is `followup.sh --steer`.
   - Not checked: the real iPhone (the [human] item). Note: text that the agent streams between the tap and its next step now shows under the bubble (D143 alternative 1 keeps the old place).
   - Next: a separate reviewer runs the fix-slice review (rule of the coordinator: each test: pointer, full swift test, bridge pnpm test, build-for-testing on dshm-S15, and followup.sh --steer).
+- **2026-11-09 · Review PASS at 02717aa.**
+  - Review: a separate reviewer ran the fix-slice review (rule of the coordinator for a fix slice with no [ui] item) on 02717aa: bridge tests 116/116, swift test 158/158, build-for-testing on dshm-S15, `scripts/demo/followup.sh --steer` (testSendNowDuringALongStepAgainstRealDSH passed, 57 s). `RESULT: PASS`, no retry, no flaky part. Result: /tmp/dshm-review/S15-02717aa.txt (part logs S15-02717aa-part1..4.log).
+  - Merge note for the coordinator: `git merge-tree --write-tree main HEAD` conflicts in ARCHITECTURE.md only (main's D140 row and this slice's D143 row both go after D134). Keep both rows, in number order. Not merged here.
+  - Provisional for §9: D143 (a message sent now shows in the transcript at once; amends D101). No new dependencies. New demo mode `scripts/demo/followup.sh --steer` with `scripts/demo/steer-host.mjs`.
 
 ## 6. Exit
 
