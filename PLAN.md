@@ -802,3 +802,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 31 | S9 | decision | ARCHITECTURE D128, *provisional*: UI tests turn off UIKit view animations | `claude/s9-ui-test-waits` | merged `4a4dbf9` |
 | 32 | S9 | decision | ARCHITECTURE D129, *provisional*: Debug test launches start no Live Activities unless they ask | `claude/s9-ui-test-waits` | merged `4a4dbf9` |
 | 33 | S9 | decision | D128 | `main` | — |
+| 34 | S9 | decision | D129 | `main` | — |
