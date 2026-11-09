@@ -42,7 +42,7 @@ This file exists only while this requirement is in progress. It serves this requ
 |---|---|---|---|---|
 | T0 | doing | `claude/t0-plan-graph` | 2026-11-10 | Slice owner builds (§8) |
 | T1 | todo | — | 2026-11-10 | Assign it and start a session |
-| S1 | todo | — | 2026-11-10 | Assign it and start a session |
+| S1 | doing | `claude/s1-output-wrappers` | 2026-11-10 | Slice owner builds (§8) |
 | S2 | todo | — | 2026-11-10 | Assign it and start a session |
 | S3 | todo | — | 2026-11-10 | Assign it and start a session |
 | S4 | todo | — | 2026-11-10 | Assign it and start a session |
@@ -340,6 +340,8 @@ Append-only, dated.
 - **2026-11-10 · Run started: heartbeat and first batch.** Heartbeat: CronCreate job 1b7fe4cd (7,27,47 * * * *, durable). Keep-awake requested. First batch: T0, S1, S6.
 
 - **2026-11-10 · T0 assigned.** Branch `claude/t0-plan-graph`, simulator `dshm-T0`, DSHM_HOME `~/.dshm/home-t0`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D147–D149. `eval "$(scripts/slice-env T0)"` exports them.
+
+- **2026-11-10 · S1 assigned.** Branch `claude/s1-output-wrappers`, simulator `dshm-S1`, DSHM_HOME `~/.dshm/home-s1`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D150–D152. `eval "$(scripts/slice-env S1)"` exports them.
 
 ## 9. Pending user confirmation
 
