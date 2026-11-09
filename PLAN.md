@@ -801,3 +801,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 30 | S13 | decision | D67 amended: .dismissesKeyboardBeforeMenu() hooks UIKit's menuActionTriggered behind the host Picker(.menu) and the attach menu (relies on SwiftUI internals; KeyboardMenusUITests catches a regression) | `claude/s13-keyboard-host-menu` | `0298cc2` |
 | 31 | S9 | decision | ARCHITECTURE D128, *provisional*: UI tests turn off UIKit view animations | `claude/s9-ui-test-waits` | merged `4a4dbf9` |
 | 32 | S9 | decision | ARCHITECTURE D129, *provisional*: Debug test launches start no Live Activities unless they ask | `claude/s9-ui-test-waits` | merged `4a4dbf9` |
+| 33 | S9 | decision | D128 | `main` | — |
