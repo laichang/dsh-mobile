@@ -109,6 +109,43 @@ final class FollowUpQueueUITests: XCTestCase {
         try "\(prompt)\n\(later)\n\(now)".write(to: try signals().appendingPathComponent("messages-queue"), atomically: true, encoding: .utf8)
     }
 
+    /// The reported bug: 立即发送 while the agent is in a long step (a tool call that waits). The
+    /// message must leave the queue and show in the transcript, and must not float after the turn.
+    /// Needs scripts/demo/steer-host.mjs (`scripts/demo/followup.sh --steer`).
+    func testSendNowDuringALongStepAgainstRealDSH() throws {
+        let app = try launch()
+        let tag = UUID().uuidString.prefix(6)
+        let prompt = "Summarize every file. #\(tag)"
+        let stopNow = "不用了 #\(tag)"
+        let status = start(app, prompt: prompt)
+        reply(app, stopNow)
+        let queued = any(app, "followup.queued")
+        waitForCount(queued, 1, timeout: 15, in: app)
+        app.buttons.matching(identifier: "followup.sendNow").element(boundBy: 0).tap()
+
+        // D143: at once (the tool step runs 30 s more), the message is a bubble in the transcript,
+        // marked until DSH gives it to the agent; nothing floats above the field.
+        let bubbles = any(app, "session.message.user")
+        waitForCount(bubbles, 2, timeout: 10, in: app)
+        XCTAssertEqual(bubbles.element(boundBy: 1).label, stopNow)
+        XCTAssertEqual(bubbles.element(boundBy: 1).value as? String, "steering")
+        waitForCount(queued, 0, timeout: 5, in: app)
+        XCTAssertTrue(any(app, "session.message.user.pending").firstMatch.exists, app.debugDescription)
+        XCTAssertEqual(status.value as? String, "running")
+        shot(app, "steer-sent-now")
+
+        // The step ends, DSH gives it to the agent: the mark goes, the bubble stays where it was.
+        let pending = any(app, "session.message.user.pending").firstMatch
+        XCTAssertTrue(pending.waitForNonExistence(timeout: 90), "taken when the step ends")
+        XCTAssertEqual(bubbles.count, 2)
+        XCTAssertEqual(bubbles.element(boundBy: 1).label, stopNow)
+        waitForValue(status, in: ["completed", "failed"], timeout: 120)
+        XCTAssertEqual(status.value as? String, "completed", status.label)
+        XCTAssertEqual(queued.count, 0, "nothing floats above the field after the turn")
+        shot(app, "steer-taken")
+        try "\(prompt)\n\(stopNow)".write(to: try signals().appendingPathComponent("steer-done"), atomically: true, encoding: .utf8)
+    }
+
     func testContinueAfterAnInterruptAgainstRealDSH() throws {
         let app = try launch()
         let tag = UUID().uuidString.prefix(6)

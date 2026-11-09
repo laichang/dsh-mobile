@@ -23,7 +23,10 @@ struct StructuredTranscriptView: View {
                         TranscriptView(source: piece)
                     case .user(let item):
                         // D89: a follow-up, under the answer before it; D107: with its files.
-                        if case .userMessage(let text) = item.kind { UserBubble(text: text, attachments: item.attachments ?? []) }
+                        if case .userMessage(let text) = item.kind {
+                            // D143: a message sent now is RUNNING until DSH gives it to the agent.
+                            UserBubble(text: text, attachments: item.attachments ?? [], pending: item.state == .running)
+                        }
                     case .thinking(let item):
                         TranscriptBlockRow(taskKey: row.key, item: item)
                     case .question(let item):
@@ -130,7 +133,7 @@ struct TranscriptBlockRow: View {
                 .padding(.vertical, 6)
                 .contentShape(Rectangle())
             case .userMessage(let text):
-                UserBubble(text: text) // D89: groups() draws it as a bubble, not as a row
+                UserBubble(text: text, pending: item.state == .running) // D89: groups() draws it as a bubble, not as a row
             }
         }
         .buttonStyle(.plain)

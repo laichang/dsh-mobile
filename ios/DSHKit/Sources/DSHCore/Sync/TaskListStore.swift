@@ -747,6 +747,9 @@ public final class TaskListStore {
             task.state = status.state
             task.message = message
             task.failureCode = code
+            // D143: the bridge settles each waiting message before TaskEnded (taken, removed or
+            // returned); one that is still here is stale and must not float above the field.
+            if !task.queueData.isEmpty { task.followUpQueue = FollowUpQueue() }
             task.logID = host.logID
         case .milestone(let milestone):
             let task = taskRecord(hostKey: link.key, taskID: milestone.taskID, title: "")
@@ -781,8 +784,28 @@ public final class TaskListStore {
         case .queuedMessage(let message):
             let task = taskRecord(hostKey: link.key, taskID: message.taskID, title: "")
             var queue = task.followUpQueue
-            let waited = queue.messages.contains { $0.id == message.id }
-            if queue.apply(message) { task.followUpQueue = queue }
+            var blocks = structuredTranscript(of: task)
+            let rowID = TranscriptItem.userMessageID(message.id)
+            let sentNow = blocks.items.contains { $0.id == rowID && $0.state == .running }
+            let waited = queue.messages.contains { $0.id == message.id } || sentNow
+            if message.placement == .steering {
+                // D143: sent now, it is the user's message in this turn: a bubble in the transcript at
+                // once (not above the field), marked until DSH takes it at the agent's next step.
+                if queue.taken(message.id) { task.followUpQueue = queue }
+                let row = TranscriptItem(id: rowID, taskID: message.taskID, state: .running,
+                                         kind: .userMessage(text: message.text), time: message.time)
+                if !blocks.items.contains(where: { $0.id == rowID }), blocks.upsert(row, offset: task.transcript.utf8.count) {
+                    task.structuredTranscript = blocks
+                    structuredTranscripts[task.key] = blocks
+                }
+            } else {
+                if queue.apply(message) { task.followUpQueue = queue }
+                if !message.placement.isWaiting, sentNow, blocks.remove(id: rowID) {
+                    // D143: a message sent now that DSH did not take (stopped, or removed elsewhere) leaves the transcript.
+                    task.structuredTranscript = blocks
+                    structuredTranscripts[task.key] = blocks
+                }
+            }
             // The task stopped before it ran: its text goes back to this phone's composer.
             if message.placement == .returned, waited { returnedDrafts[task.key, default: []].append(message.text) }
             task.logID = host.logID

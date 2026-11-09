@@ -251,6 +251,30 @@ describe('FollowUpQueueAgainstFakeDSH', () => {
     client.close()
   })
 
+  test('sendNowDuringALongToolStepIsSteeringUntilTheStepEndsThenTaken', async () => {
+    // S15: real DSH gives a steered message to the agent only when the step ends (a tool call that
+    // waits, as for subagents). Until then the app has only the STEERING event to draw (D143).
+    const { server } = await bridgeWith({ toolStepMs: 400, reply: ['Stopped', ' here.'], chunkDelayMs: 20 })
+    const { client } = await connect(server.port, queueCaps)
+    const created = await client.call({ case: 'createTask', value: { prompt: 'Summarize every file' } })
+    assert.equal(created.body.case, 'taskCreated')
+    const taskId = created.body.value.taskId
+    const id = await send(client, taskId, '不用了')
+    const edited = await client.call({ case: 'editQueue', value: { taskId, messageId: id, action: QueueAction.STEER } })
+    assert.ok(edited.body.case === 'queueEdited' && edited.body.value.placement === QueuePlacement.STEERING)
+    assert.deepEqual(queue(client.events(), taskId), ['不用了 (steering)'])
+    assert.deepEqual(conversation(client.events(), taskId), [], 'DSH has not given it to the agent yet')
+
+    await client.until((fs) => ended(fs) === 1, 5000)
+    const events = client.events()
+    // Taken where the next step starts, before that step's reply; nothing waits after the turn.
+    assert.deepEqual(conversation(events, taskId), ['user: 不用了', 'agent: Stopped here.'])
+    assert.deepEqual(queue(events, taskId), [])
+    const taken = events.findIndex((e) => e.body.case === 'userMessage')
+    assert.ok(taken < events.findIndex((e) => e.body.case === 'taskEnded'))
+    client.close()
+  })
+
   test('removeTakesAQueuedMessageOut', async () => {
     const { dsh, server } = await bridgeWith({ reply: ['One', ' a', ' b'], chunkDelayMs: 60 })
     const { client } = await connect(server.port, queueCaps)

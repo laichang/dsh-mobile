@@ -241,6 +241,16 @@
         }
       }
     },
+    "The agent reads it at its next step": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent 下一步读到"
+          }
+        }
+      }
+    },
     "Goes in at the next step": {
       "localizations": {
         "zh-Hans": {

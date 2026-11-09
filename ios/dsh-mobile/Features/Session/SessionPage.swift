@@ -344,10 +344,12 @@ private struct SessionTranscript: View {
 }
 
 /// The user's message: a bubble on the right (DESIGN.md: bubble token).
-/// The files sent with it (D95, D107) show above it.
+/// The files sent with it (D95, D107) show above it. D143: a message sent now ("立即发送") shows
+/// at once, `pending` until DSH gives it to the agent at its next step.
 struct UserBubble: View {
     let text: String
     var attachments: [MessageAttachment] = []
+    var pending = false
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 6) {
@@ -364,7 +366,14 @@ struct UserBubble: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(text)
+            .accessibilityValue(pending ? "steering" : "")
             .accessibilityIdentifier("session.message.user")
+            if pending {
+                Label("The agent reads it at its next step", systemImage: "arrow.turn.down.right")
+                    .font(.caption)
+                    .foregroundStyle(DSHTheme.textTertiary)
+                    .accessibilityIdentifier("session.message.user.pending")
+            }
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
     }

@@ -8,6 +8,10 @@
 #                                      queue two follow-ups, send one now (the agent takes it at its
 #                                      next step, the stop key stays), the other runs as the next
 #                                      turn; then stop a task and continue it with a new message
+#   scripts/demo/followup.sh --steer   the same tests, and the real-DSH UI demo of 立即发送 while the
+#                                      agent is in a long tool step (scripts/demo/steer-host.mjs):
+#                                      the message goes into the transcript when the step ends, and
+#                                      nothing floats above the field after the turn
 #   --shots                            also refresh the screenshots in evidence/ (1/3 size)
 #   DSHM_RESUME=1                      skip the parts that passed for the same code (lib.sh demo_part)
 #
@@ -18,13 +22,14 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
-SHOTS=0; PART=""; RUNNING=0
+SHOTS=0; PART=""; RUNNING=0; STEER=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --shots) SHOTS=1 ;;
     --running) RUNNING=1 ;;
+    --steer) STEER=1 ;;
     --part) PART="$2"; shift ;;
-    *) echo "usage: $0 [--running] [--shots]" >&2; exit 2 ;;
+    *) echo "usage: $0 [--running] [--steer] [--shots]" >&2; exit 2 ;;
   esac
   shift
 done
@@ -53,7 +58,7 @@ ui_against_real_dsh() {
   export DSHM_HOME="$(mktemp -d "$DSHM_HOME/run.XXXXXX")"
   export DSHM_FOLLOWUP_SIGNALS="$(mktemp -d)"
   export TEST_RUNNER_DSHM_FOLLOWUP_SIGNALS="$DSHM_FOLLOWUP_SIGNALS"
-  node scripts/demo/followup-host.mjs > "$LOGS/host.log" 2>&1 &
+  node "${DSHM_FOLLOWUP_HOST:-scripts/demo/followup-host.mjs}" > "$LOGS/host.log" 2>&1 &
   host_pid=$!
   cleanup() { kill "$host_pid" 2>/dev/null || true; wait "$host_pid" 2>/dev/null || true; rm -rf "$DSHM_HOME" "$DSHM_FOLLOWUP_SIGNALS"; }
   trap cleanup EXIT
@@ -84,6 +89,11 @@ case "$PART" in
       -only-testing:"$QUEUE/testFollowUpsWhileATaskRunsAgainstRealDSH" \
       -only-testing:"$QUEUE/testContinueAfterAnInterruptAgainstRealDSH"
     exit 0 ;;
+  ui-steer)
+    step "UI: 立即发送 while the agent is in a long tool step (real DSH Web + bridge, scripted mock LLM)"
+    export DSHM_FOLLOWUP_HOST=scripts/demo/steer-host.mjs
+    ui_against_real_dsh "$LOGS/ui-steer.log" -only-testing:"$QUEUE/testSendNowDuringALongStepAgainstRealDSH"
+    exit 0 ;;
   "") ;;
   *) echo "unknown part $PART" >&2; exit 2 ;;
 esac
@@ -100,7 +110,10 @@ xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobil
   > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 rm -f "$DSHM_FOLLOWUP_SHOTS"/*.png
-if [ $RUNNING = 1 ]; then
+if [ $STEER = 1 ]; then
+  demo_part followup-ui-steer "$0" --part ui-steer
+  EVIDENCE=evidence/S15
+elif [ $RUNNING = 1 ]; then
   demo_part followup-ui-running "$0" --part ui-running
   EVIDENCE=evidence/S1
 else
@@ -111,7 +124,7 @@ fi
 if [ $SHOTS = 1 ]; then
   step "screenshots → $EVIDENCE (1/3 size)"
   mkdir -p "$EVIDENCE"
-  for f in "$DSHM_FOLLOWUP_SHOTS"/followup-*.png; do
+  for f in "$DSHM_FOLLOWUP_SHOTS"/followup-*.png "$DSHM_FOLLOWUP_SHOTS"/steer-*.png; do
     [ -e "$f" ] || continue
     out="$EVIDENCE/$(basename "$f")"
     sips --resampleWidth 402 "$f" --out "$out" >/dev/null
