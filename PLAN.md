@@ -57,7 +57,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S11 | done | merged `87cd8da` | 2026-11-09 | — (provisional D134 in §9) |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
 | S13 | done | merged `adedb03` | 2026-11-09 | — |
-| S14 | doing | `claude/s14-bold-replies` | 2026-11-09 | Slice owner builds (§8) |
+| S14 | review | merged `aac51a9` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 | S15 | doing | `claude/s15-steered-message` | 2026-11-09 | Slice owner builds (§8) |
 | S16 | doing | `claude/s16-mic-crash` | 2026-11-09 | Slice owner builds (§8) |
 
@@ -845,6 +845,8 @@ Append-only, dated.
 
 - **2026-11-09 · User rule: a fix slice with no [ui] item passes review by a test run.** The user decided (2026-11-09, in chat: "reviewer跑测试"): for a fix slice made by scripts/plan fix (no [ui] item), WORKFLOW §10 condition 2 is met when a separate reviewer runs on the head commit (clean worktree): each test: pointer of the slice, the full DSHKit swift test, the bridge tests, and an app build for the Simulator (xcodebuild build-for-testing), and all pass. The reviewer writes /tmp/dshm-review/<ID>-<commit>.txt with one PASS/FAIL line per part and RESULT: PASS or FAIL. Only PLAN/md commits may follow. Applies to S14, S15, S16. Issue to open at plan end: scripts/review and scripts/plan fix do this, and WORKFLOW §10 says it.
 
+- **2026-11-09 · S14 merged.** Merged as `aac51a9`; `scripts/check-plan` on the merge commit passed. `scripts/review S14` at `0502516`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S14-0502516.txt`). 1 open `[human]` item, so S14 is `review`. §9 rows 35, 36 (D140). Review by the user's fix-slice rule (§8 2026-11-09): /tmp/dshm-review/S14-0502516.txt RESULT: PASS (test pointers, DSHKit 160, bridge 115, app build). D140 provisional.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -885,3 +887,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 32 | S9 | decision | ARCHITECTURE D129, *provisional*: Debug test launches start no Live Activities unless they ask | `claude/s9-ui-test-waits` | merged `4a4dbf9` |
 | 33 | S9 | decision | D128 | `main` | — |
 | 34 | S9 | decision | D129 | `main` | — |
+| 35 | S14 | decision | ARCHITECTURE D140, *provisional*: Emphasis next to CJK text, as DSH Web shows it | `claude/s14-bold-replies` | merged `aac51a9` |
+| 36 | S14 | `[human]` | The user no longer sees the bug | `main` | `aac51a9` |
