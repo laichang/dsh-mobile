@@ -52,7 +52,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S6 | review | merged `b4d0a65` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | done | merged `b62405c` | 2026-11-09 | — (provisional D125 in §9) |
-| S9 | doing | `claude/s9-ui-test-waits` | 2026-11-09 | Slice owner builds (§8) |
+| S9 | done | merged `4a4dbf9` | 2026-11-09 | — (provisional D128, D129 in §9) |
 | S10 | done | merged `f333abc` | 2026-11-09 | — |
 | S11 | done | merged `87cd8da` | 2026-11-09 | — (provisional D134 in §9) |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
@@ -761,6 +761,8 @@ Append-only, dated.
 
 - **2026-11-09 · Interruption: app restart stopped S9; resumed.** About 09:30 the Claude app restarted. It stopped the S9 background agent and its shells (no completion record). scripts/status at 10:17: S9 clean at 4db6f66 (7 commits, no ticks, no review), nothing running, no simulator booted. The coordinator resumed the S9 agent with a recovery brief: merge main if needed, run ui-health.sh again, tick, full review by a separate reviewer. Heartbeat e8ffa347 survived the restart. From now on the coordinator follows the user's rule in issue #37: a slice owner ends at built; a later fix or merge of main goes to a new agent.
 
+- **2026-11-09 · S9 merged.** Merged as `4a4dbf9`; `scripts/check-plan` on the merge commit passed. `scripts/review S9` at `c853d15`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S9-c853d15.txt`). No open `[human]` items, so S9 is `done`. §9 rows 31, 32 (D128, D129). Review PASS at c853d15 (independent reviewer). #24 and #25 did not reproduce; the fixes address the causes found (shared focus helper, D128, D129). Not run to the end on the branch (app restart): questions.sh --all, attachments.sh --all, s7.sh, live-activity.sh.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -797,3 +799,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 28 | S8 | decision | D98 amended by D125: a TCP check after a timeout raises the most a dead address can cost from 5 s to 6 s | `claude/s8-bridge-listen-errors` | `ffb2589` |
 | 29 | S11 | decision | ARCHITECTURE D134, *provisional*: The all-offline card keeps its own accessibility container (screen X3; amends D59) | `claude/s11-hosts-tests` | merged `87cd8da` |
 | 30 | S13 | decision | D67 amended: .dismissesKeyboardBeforeMenu() hooks UIKit's menuActionTriggered behind the host Picker(.menu) and the attach menu (relies on SwiftUI internals; KeyboardMenusUITests catches a regression) | `claude/s13-keyboard-host-menu` | `0298cc2` |
+| 31 | S9 | decision | ARCHITECTURE D128, *provisional*: UI tests turn off UIKit view animations | `claude/s9-ui-test-waits` | merged `4a4dbf9` |
+| 32 | S9 | decision | ARCHITECTURE D129, *provisional*: Debug test launches start no Live Activities unless they ask | `claude/s9-ui-test-waits` | merged `4a4dbf9` |
