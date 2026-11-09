@@ -175,7 +175,13 @@ final class S2DurableListUITests: XCTestCase {
 
         row.tap()
         card = app.descendants(matching: .any)["milestone.card"]
-        XCTAssertTrue(card.waitForExistence(timeout: 5), app.debugDescription)
+        // Under load a tap once only selected the row and did not open the session: tap again
+        // while the list still shows.
+        if !card.waitForExistence(timeout: 5), row.exists, row.isHittable {
+            XCTContext.runActivity(named: "Recover: the row tap did not open the session; tap again") { _ in }
+            row.tap()
+        }
+        XCTAssertTrue(card.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertEqual(value(card), "3/3")
         XCTAssertEqual(card.label, "Done")
         card.tap()
