@@ -835,6 +835,8 @@ Append-only, dated.
 
 - **2026-11-09 · S16 fix slice: mic crash on a real iPhone.** The user reported that a tap on the mic key crashes the app on the real iPhone. Fix slice S16 (D146–D148) runs as a background agent; 3 slices run (S14, S15, S16). The coordinator asked the user for the crash log. The user also saw no '+' on the follow-up composer while a task ran: that is the provisional D18 amendment (§9 row 13: attachments only once a task is done), not a bug; the coordinator pointed the user at it as a §9 choice.
 
+- **2026-11-09 · S14 built; merge blocked: a fix slice has no [ui] item to review.** S14 (bold next to CJK punctuation, D140) is built at 0502516; TranscriptEmphasisTests pass (the coordinator ran them on the head: 4/4). scripts/review S14 stops with 'S14 has no [ui] items': scripts/plan fix makes only an [auto] and a [human] item, so no fix slice can meet WORKFLOW §10 condition 2. The coordinator does not merge (§10: if a condition is false, do not merge) and asks the user. S15 and S16 have the same shape. The owner's cause: the exact reported line is valid CommonMark and renders bold on the Simulator; DSH Web uses remark-cjk-friendly, so ** next to CJK punctuation (for example **星期一（Monday）**是) is bold there and not on the phone. Not proven which case the user saw.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
