@@ -408,7 +408,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Done when**
 - [x] [auto] The activity follows the task: it starts when the task runs, shows the latest step on each milestone, and ends with done, failed or waiting; one activity for each task, also after a relaunch (`FakeBridge`, a fake activity client) — Evidence: test:LiveActivityTests/followsTheTaskFromStartThroughEachMilestoneToDone · test:LiveActivityTests/endsAsFailedWhenTheTaskFails · test:LiveActivityTests/endsWhileTheTaskWaitsOnAnApprovalAndStartsAgainAfterTheAnswer · test:LiveActivityTests/endsWhileAnAgentQuestionWaits · test:LiveActivityTests/oneActivityForEachTaskAlsoAfterARelaunch · test:LiveActivityTests/aTaskThatLeftTheListLeavesNoActivity · cmd:scripts/demo/live-activity.sh
 - [x] [ui] A running task shows its Live Activity on the Simulator lock screen with the title, the host, a ticking time and the latest step, and it ends as done (`cmd:scripts/demo/live-activity.sh`) — Evidence: cmd:scripts/demo/live-activity.sh · test:LiveActivityUITests/testRunningTaskShowsItsLiveActivityOnTheLockScreen · shot:evidence/S6/live-activity-running.png · shot:evidence/S6/live-activity-done.png
-- [ ] [human] On a real iPhone signed with the free team, the app starts a Live Activity for a running task — Evidence:
+- [x] [human] On a real iPhone signed with the free team, the app starts a Live Activity for a running task — Evidence: human:2026-11-09 iPhone 17 Pro, free team
 
 **Not**: Push updates of the activity (no APNs).
 
@@ -906,3 +906,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 36 | S14 | `[human]` | The user no longer sees the bug | `main` | `aac51a9` |
 | 37 | S16 | decision | ARCHITECTURE D146, *provisional*: System callbacks that run on the system's queue go through `SystemCallback.value` (amends D116) | `claude/s16-mic-crash` | merged `5a9f691` |
 | 38 | S16 | `[human]` | The user no longer sees the bug | `main` | `5a9f691` |
+| 39 | S16 | decision | Test-only target SystemCallbackDoubles (Objective-C, in no product) in ios/DSHKit/Package.swift, provisional | `main` | — |
