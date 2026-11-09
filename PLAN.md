@@ -1,0 +1,345 @@
+# PLAN · M2.5 · Process as code
+
+M2.5 · Process as code. Product intent: [STORY.md](STORY.md). Technical design: [ARCHITECTURE.md](ARCHITECTURE.md). Process: [WORKFLOW.md](WORKFLOW.md).
+
+This file exists only while this requirement is in progress. It serves this requirement only: ideas and work it does not do are GitHub issues (§7). When the exit (§6) passes, the user deletes this file and `evidence/`, and tags the commit; git keeps the history. `scripts/plan new` wrote this file; change it with `scripts/plan` (WORKFLOW.md §3.1).
+
+## How to use this file
+
+**Process rules** live in [WORKFLOW.md](WORKFLOW.md): set up a Mac, roles and ownership (who writes §0, §8, §9, and each slice section), start and stop a work session, the long-horizon run, resources for each slice, status titles, session settings, default choices, merging a slice, and what stays with the user. Read it before you pick up work. This section keeps only the format of this file and the rules for Done when items.
+
+**Slice fields**, always in this order. Write "—" for an empty field; never drop one.
+`Status · Needs · Branch` on one line, then **Why**, **Cuts**, **Demo**, **Done when**, **Not**, **Log**.
+- **Status** is one of `todo` / `doing` / `blocked` / `review` / `done`. The slice owner sets it on the branch; the coordinating session brings §0 in line.
+- **Log** is append-only and dated: done, not done, next step, and anything learned along the way. Technical decisions go into ARCHITECTURE.md as a `Dxx` entry; the Log just says "see Dxx".
+
+**Done when items** are checkboxes: `- [ ] [tier] description — Evidence: …`
+- **Tiers**
+  - `[auto]`: unit or integration test against `FakeBridge`, `FakeDSH`, or golden fixtures. Evidence: `test:` pointers, green in CI or a script.
+  - `[ui]`: verified in the Simulator, preferably by XCUITest (`test:`), otherwise by an agent driving it through `scripts/demo/<slice>.sh` (`cmd:`). Add a `shot:` as a snapshot for people. Before the slice is marked `done`, a review subagent that didn't take part in development reruns every `[ui]` item.
+  - `[human]`: real device, camera, packet capture, subjective experience, or a decision only the user can judge. **Only the user ticks these.** An agent never does.
+- **Edit rules**: you may only tick `[ ]` → `[x]` or add new items. Never delete, reword, re-tier, untick, or move an item. Agents add items unticked and tick them in a later edit. If an item truly has to change, explain the original text, the new text, and the reason to the user in the conversation first, and let the user make the edit.
+- **Evidence** on a ticked item is one or more typed pointers separated by ` · `. Each one must resolve, otherwise check-plan fails; unknown types fail too.
+
+  | Pointer | Resolves when |
+  |---|---|
+  | `test:<Name>` | the name appears in Swift/TS test sources (`Suite/name` = both parts in one file) |
+  | `cmd:<path> [args]` | the repo-relative path exists and is executable, e.g. `cmd:scripts/demo/t0.sh` |
+  | `commit:<hash>` | `git cat-file -e <hash>^{commit}` succeeds |
+  | `shot:<path>` | the file exists under `evidence/<slice ID>/` |
+  | `human:<YYYY-MM-DD> <device or note>` | `[human]` items only, e.g. `human:2026-11-20 iPhone 16, PR link …` |
+
+  The real evidence is something re-runnable: a test or `scripts/demo/<slice>.sh`. Screenshots are only snapshots for people:
+  - Scale them to about 1/3 size and save as compressed PNG, a few hundred KB each.
+  - Commit them under `evidence/<slice ID>/`.
+  - Recordings stay out of git. If one is really needed, the user attaches it to the PR and the item cites it as `human:` plus the PR link.
+  - When the plan ends, `evidence/` is deleted with this file; git keeps both.
+- **Enforcement**: `scripts/check-plan` runs from the git pre-commit hook (`.githooks/`) and from a Claude Code PreToolUse hook (`.claude/settings.json`). Edits to the guard files themselves (`scripts/check-plan`, `.githooks/`, `.claude/hooks/`, `.claude/settings.json`) ask the user first, and only the user commits them. Never use `git commit --no-verify` or any other way around them.
+
+## 0. Status
+
+| ID | Status | Branch/PR | Updated | Next action |
+|---|---|---|---|---|
+| T0 | todo | — | 2026-11-10 | Assign it and start a session |
+| T1 | todo | — | 2026-11-10 | Assign it and start a session |
+| S1 | todo | — | 2026-11-10 | Assign it and start a session |
+| S2 | todo | — | 2026-11-10 | Assign it and start a session |
+| S3 | todo | — | 2026-11-10 | Assign it and start a session |
+| S4 | todo | — | 2026-11-10 | Assign it and start a session |
+| S5 | todo | — | 2026-11-10 | Assign it and start a session |
+| S6 | todo | — | 2026-11-10 | Assign it and start a session |
+| S7 | todo | — | 2026-11-10 | Assign it and start a session |
+
+## 1. Approach
+
+**Tracer bullet first.** Before any feature is built properly, fire one thin round trip through *every* layer that the requirement touches. It is thin, but it is production code, not a throwaway prototype. Everything after it thickens that path.
+
+**Then slices that are almost independent and stand alone.** Each slice after the tracer:
+
+- is **vertical**: it touches protocol + bridge + app + tests, and has a demo you can do on its own;
+- **depends on the tracer and nothing else**, unless a dependency is named explicitly (at most one, where possible);
+- can be built, reviewed, merged, and dropped **in any order** relative to its siblings.
+
+### How slices stay independent
+
+| Rule | Mechanism |
+|---|---|
+| Own files | Each slice gets its own feature files (`protocol/<feature>.proto`, `ios/…/Features/<Feature>/`, `bridge/src/<feature>/`), named after the feature, never after the slice ID: code outlives this plan. Shared files (`frame.proto`, app root, plugin entry) only get a one-line registration. |
+| No field-number collisions | Each slice reserves a block of 20 field numbers in the `Request` / `Event` oneofs: the next free block after the highest number in `frame.proto`. Write the block in the slice's Cuts. |
+| Ship in any order | Each slice advertises a **capability string** in `Hello.capabilities` (e.g. `approvals.v1`). The app hides UI for capabilities the bridge lacks. |
+| Test alone | Fakes at every boundary: **`FakeBridge`** (Swift, in-process) for app tests and previews; **`FakeDSH`** (TS) for bridge tests. No slice needs a neighbor slice or a real DSH to pass CI. |
+| Cross-language truth | `protocol/fixtures/` holds golden encoded frames. Swift and TS tests both decode/encode them, so the two sides can't drift. |
+| Seams | When two slices meet, **the slice that lands second owns the seam** and adds it to its Done when. |
+
+**Done** for any slice = every Done when item ticked with evidence, merged to `main`, ARCHITECTURE.md updated if a decision changed (AGENTS.md: code is truth).
+
+Requirement-specific notes: —
+
+## 2. Map
+
+`scripts/plan` writes this map from the **Needs** of each tracer, spike and slice. Do not edit it.
+
+```mermaid
+flowchart LR
+    T0(["T0 · Tracer bullet: plan/ graph, and passed only from the verifier"])
+    T1(["T1 · Tracer bullet: One fake node from brief to merge through the Workflow"])
+    S1["S1 · Output wrappers: JSON summaries for build and test output"]
+    S2["S2 · Slice brief: scripts/brief <ID> replaces reading the docs"]
+    S3["S3 · One run-plan Workflow for all plans, with the rework loop"]
+    S4["S4 · Design as data: screens.json and one HTML file per screen"]
+    S5["S5 · Remove Dxx and slice IDs from code"]
+    S6["S6 · ARCHITECTURE and STORY as the current state"]
+    S7["S7 · Remove WORKFLOW.md and use only the new plan format"]
+
+    T0 --> T1
+    T1 --> S2
+    T1 --> S3
+    S2 --> S4
+    S4 --> S5
+    S1 --> S7
+    S2 --> S7
+    S3 --> S7
+    S4 --> S7
+    S5 --> S7
+    S6 --> S7
+```
+
+## 3. Tracer bullets
+
+A tracer is one thin round trip that one session can finish without running out of context: at most 3 Done when items (`scripts/plan` stops more). Prefer `[auto]` and `[ui]` items; use `[human]` only for what only a real device can show. If a tracer needs more, split it into more tracers.
+
+### T0 · Tracer bullet: plan/ graph, and passed only from the verifier
+
+**Status** todo · **Needs** — · **Branch** —
+
+**Why**: Part of #57. The data half of the new path: the graph and the items move to JSON, and no agent can set passed by hand. The current run still uses PLAN.md; plan/ lives next to it.
+
+**Cuts**
+- `plan/plan.json` (nodes: id, kind, title, needs, branch) and `plan/<ID>.json` (items: tier, text, files, screens; `"passed": false` at the start). The schema is in `scripts/lib/`.
+- `scripts/plan dag --json`: writes the graph from `plan/plan.json`.
+- Verifier results are stored per slice and per commit; `passed` is derived from the results for the head commit of the slice branch. A new commit makes old results stale. Where the results live: decide in the slice and write it in ARCHITECTURE.md.
+- `scripts/check-plan` also checks `plan/`. Fixtures in `scripts/plan-test`.
+
+**Demo**: scripts/plan-test
+
+**Done when**
+- [ ] [auto] `scripts/plan dag --json` writes the graph of `plan/plan.json`; a cycle or an unknown need makes it fail — Evidence:
+- [ ] [auto] A hand edit that sets `passed` to true makes `scripts/check-plan` fail; `passed` follows only the verifier results for the head commit, and a new commit makes them stale — Evidence:
+
+**Not**: The Workflow and the brief (T1). Replacing PLAN.md (S7).
+
+**Log**: —
+
+### T1 · Tracer bullet: One fake node from brief to merge through the Workflow
+
+**Status** todo · **Needs** T0 · **Branch** —
+
+**Why**: Part of #57 (with T0 closes it). The process half of the thin round trip: `scripts/brief <ID>` → one Workflow node starts a fresh agent → `scripts/review` in a different context writes the verifier results → the merge step runs the verifier again on the commit that it merges. It never reads the report of the implementing agent.
+
+**Cuts**
+- `scripts/brief <ID>`: a stub that writes the items of the slice only (S2 completes it).
+- One Workflow script (`.claude/workflows/run-plan.js`): one node, prompt = slice ID + round + brief path. Scheduling and merge logic go in a module that a test can load with a fake `agent()`.
+- `scripts/review` writes the verifier results of T0 for the head commit.
+- A fake plan in `plan/` fixtures with one node whose `[auto]` item a script can make pass.
+
+**Demo**: The coordinator runs the Workflow tool once on the fake plan; the fake node merges into a throwaway branch.
+
+**Done when**
+- [ ] [auto] With a fake agent, a test takes one node from brief to merge; the merge step runs the verifier again on the merge commit and ignores the agent's report — Evidence:
+- [ ] [auto] One real Workflow run takes the fake node to a merge on a throwaway branch (Evidence: the run ID and the merge commit) — Evidence:
+
+**Not**: More than one node, the rework loop, and fixes (S3). The full brief (S2).
+
+**Log**: —
+
+## 4. Spikes
+
+Each spike ends in a short written conclusion, plus throwaway code if needed. None of them blocks the tracer.
+
+## 5. Slices
+
+Each slice needs only the tracer, unless "Needs" says otherwise.
+
+A slice is built by one session too: at most 5 Done when items (`scripts/plan` stops more). If a slice needs more, split it.
+
+### S1 · Output wrappers: JSON summaries for build and test output
+
+**Status** todo · **Needs** — · **Branch** —
+
+**Why**: Closes #58. Agents run xcodebuild without a wrapper, so the full log goes into their context.
+
+**Cuts**
+- `scripts/xc build|test`, and wrappers for `swift test` and `pnpm test`: a JSON summary (counts, the first N errors as `file:line`); the full log goes to `/tmp/dshm-*`.
+- `scripts/demo/*.sh` and `scripts/review` call the wrappers.
+
+**Demo**: —
+
+**Done when**
+- [ ] [auto] A failing test shows as one `file:line` line, and the full log is in `/tmp/dshm-*` — Evidence:
+- [ ] [auto] A passing run of each wrapper (`scripts/xc build`, `scripts/xc test`, `swift test`, `pnpm test`) writes 20 lines or fewer — Evidence:
+- [ ] [auto] A check fails when a demo script or `scripts/review` calls `xcodebuild`, `swift test` or `pnpm test` without a wrapper — Evidence:
+
+**Not**: Changes to what the tests check.
+
+**Log**: —
+
+### S2 · Slice brief: scripts/brief <ID> replaces reading the docs
+
+**Status** todo · **Needs** T1 · **Branch** —
+
+**Why**: Closes #59. Today a slice agent reads AGENTS, WORKFLOW, ARCHITECTURE, STORY and DESIGN before it starts: about 53k tokens. The brief is the one packet that it reads instead.
+
+**Cuts**
+- `scripts/brief <ID>`: the items, the files, the commands (with the S1 wrappers when they are merged) and the rules of the slice, from `plan/<ID>.json`. Screens come in S4.
+- The `/run-plan` prompt and the slice agent read the brief, not the docs.
+
+**Demo**: —
+
+**Done when**
+- [ ] [auto] A test makes sure that the brief of each node in the `plan/` fixtures is 3k tokens or fewer — Evidence:
+- [ ] [auto] Each file and command that a brief names exists (test) — Evidence:
+
+**Not**: Screens in the brief (S4).
+
+**Log**: —
+
+### S3 · One run-plan Workflow for all plans, with the rework loop
+
+**Status** todo · **Needs** T1 · **Branch** —
+
+**Why**: Closes #60. One fixed Workflow script runs every plan; the graph comes in as args from `scripts/plan dag --json`.
+
+**Cuts**
+- Scheduling: when a node ends, start each node whose needs are met; 3 at the same time or fewer.
+- Prompt = slice ID + round + brief path; never `needs`, so a graph change keeps the resume cache. A graph change = stop, then resume with `resumeFromRunId` and the new args.
+- Rework: a node runs again in a fresh context until all items pass. `blocked` and tell the user after 3 rounds, after 2 rounds in sequence with the same evidence, or when the agent reports the problem is outside its slice.
+- Fixes add a `passed: false` item; they block only nodes that have not started and share files or screens.
+- Return schema about 300 tokens. `/run-plan` calls this Workflow.
+
+**Demo**: —
+
+**Done when**
+- [ ] [auto] With a fake agent: a node starts when its needs are met, and 3 nodes or fewer run at the same time — Evidence:
+- [ ] [auto] The prompt of a node has only its ID, round and brief path; the same node in a changed graph has the same prompt — Evidence:
+- [ ] [auto] A node becomes blocked after 3 rounds, after 2 rounds with the same evidence, and after an out-of-scope report — Evidence:
+- [ ] [auto] A fix adds a `passed: false` item and blocks only the nodes that have not started and share files or screens with it — Evidence:
+- [ ] [auto] The return of the Workflow fits the schema and is about 300 tokens or fewer; `/run-plan` calls the Workflow — Evidence:
+
+**Not**: Replacing PLAN.md (S7).
+
+**Log**: —
+
+### S4 · Design as data: screens.json and one HTML file per screen
+
+**Status** todo · **Needs** S2 · **Branch** —
+
+**Why**: Closes #61. DESIGN.md and the one large board move to a screen graph and one file per screen, so that a brief carries only the screens of its slice.
+
+**Cuts**
+- `design/screens.json`: nodes of type `component` or `screen` with `needs`, `nav`, `story` (STORY section) and `rules` (each with an XCUITest name).
+- `design/screens/<id>.html` + png per screen; `scripts/render-design` renders them.
+- Tokens stay in DSHTheme: `Theme+S14.swift` and the other files with slice IDs, and the `s19*` names, get feature names.
+- `scripts/check-design`; `scripts/brief` adds the screens of the slice.
+- Remove DESIGN.md and `design/board.*`; each known gap becomes an issue; AGENTS.md points to `design/screens.json`.
+
+**Demo**: —
+
+**Done when**
+- [ ] [auto] `scripts/check-design` passes on main, and fixtures make it fail for a STORY section without a screen, a cycle, and a rule whose XCUITest does not exist — Evidence:
+- [ ] [auto] A check fails when a DSHTheme file or token name contains a slice ID (`S14`, `s19`, …) — Evidence:
+- [ ] [auto] `scripts/brief <ID>` includes the screens of the slice from `design/screens.json`, and the 3k token test still passes — Evidence:
+- [ ] [ui] `scripts/render-design` renders each `design/screens/<id>.html` to its png — Evidence:
+
+**Not**: New screens or UI changes.
+
+**Log**: —
+
+### S5 · Remove Dxx and slice IDs from code
+
+**Status** todo · **Needs** S4 · **Branch** —
+
+**Why**: Closes #31; with S6 closes #62. Code, tests, scripts and protocol names still carry `Dxx` and slice IDs (about 643 references in all). After S4, because S4 renames the theme files.
+
+**Cuts**
+- Remove each `Dxx` reference in `ios/`, `bridge/`, `protocol/`, `scripts/`, tests; keep a still-useful reason as a comment without an ID.
+- Rename slice IDs out of type, test, file and protocol names. Field numbers do not change.
+- A check (run by the pre-commit hook) fails on `\bD[0-9]+\b` or a slice ID in code.
+
+**Demo**: —
+
+**Done when**
+- [ ] [auto] The check fails on a fixture with `D18` or `S14` in code, and passes on the slice branch — Evidence:
+- [ ] [auto] The golden fixtures in `protocol/fixtures/` are the same bytes as before — Evidence:
+- [ ] [auto] `swift test`, `pnpm test` and the XCUITest build pass after the renames — Evidence:
+
+**Not**: Docs (S6). WORKFLOW.md (S7 removes it).
+
+**Log**: —
+
+### S6 · ARCHITECTURE and STORY as the current state
+
+**Status** todo · **Needs** — · **Branch** —
+
+**Why**: Closes #35; with S5 closes #62. ARCHITECTURE.md is about 37k tokens of decisions and their history. It must tell only what dsh-mobile is now.
+
+**Cuts**
+- Write ARCHITECTURE.md again: the current state only. Remove each `Dxx` entry and the §7 milestones.
+- Remove `Dxx` references in STORY.md, AGENTS.md, README files and `bridge/README.md`.
+- STORY.md: the 2026-11-08 decisions (no APNs, no relay, no host guess; X4 → red failure).
+
+**Demo**: —
+
+**Done when**
+- [ ] [auto] A test fails when ARCHITECTURE.md, STORY.md, AGENTS.md or a README contains `\bD[0-9]+\b` or a milestones section — Evidence:
+- [ ] [auto] ARCHITECTURE.md is 10k tokens or fewer (test) — Evidence:
+
+**Not**: Code (S5). WORKFLOW.md and DESIGN.md (S7, S4 remove them).
+
+**Log**: —
+
+### S7 · Remove WORKFLOW.md and use only the new plan format
+
+**Status** todo · **Needs** S1, S2, S3, S4, S5, S6 · **Branch** —
+
+**Why**: Closes #63. The last slice: plan/ replaces PLAN.md, and scripts replace WORKFLOW.md.
+
+**Cuts**
+- `scripts/plan` and `scripts/check-plan` read only `plan/`. A one-time import moves this run's PLAN.md into `plan/`, so the coordinator can record the merge of this slice.
+- A short process section in AGENTS.md: the decisions that stay with the user, never go around the hooks, the entry commands. AGENTS.md in ASD-STE100.
+- Each refusal of a script or hook tells the next step.
+- Remove WORKFLOW.md and `scripts/lib/plan-template.md`; update the `/start-requirement` and `/run-plan` skills.
+
+**Demo**: —
+
+**Done when**
+- [ ] [auto] `scripts/plan` and `scripts/check-plan` read only `plan/`; the import of this run's PLAN.md passes `scripts/check-plan` — Evidence:
+- [ ] [auto] A test runs each refusal of `scripts/plan`, `scripts/check-plan`, `scripts/review` and the hooks, and each message names a next step — Evidence:
+- [ ] [auto] No living doc, skill or script refers to WORKFLOW.md or `plan-template.md` — Evidence:
+
+**Not**: —
+
+**Log**: —
+
+## 6. Exit
+
+From a real device. All items are human-only.
+
+- [ ] [human] The user reads the context use of one slice session in this run that started from `scripts/brief`, and it is under about 40% of the window — Evidence:
+- [ ] [human] The user reads ARCHITECTURE.md, STORY.md and the AGENTS.md process section, and accepts them as the current state — Evidence:
+
+## 7. Not in this plan
+
+Ideas, follow-ups, and anything this plan does not do are GitHub issues: <https://github.com/laichang/dsh-mobile/issues>. Do not list them here.
+
+## 8. Plan log
+
+Append-only, dated.
+
+- **2026-11-10 · Plan started.** M2.5 · Process as code.
+
+## 9. Pending user confirmation
+
+Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
+
+| # | Slice | Kind | Item | Branch | Commit |
+|---|---|---|---|---|---|
