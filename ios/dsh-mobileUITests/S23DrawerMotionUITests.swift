@@ -78,14 +78,8 @@ final class S23DrawerMotionUITests: XCTestCase {
         start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.5)
     }
 
-    private func send(_ app: XCUIApplication, _ prompt: String) {
-        let field = app.textFields["composer.prompt"]
-        XCTAssertTrue(field.waitForExistence(timeout: 15), app.debugDescription)
-        field.tap()
-        waitFor("hasKeyboardFocus == true", on: field)
-        field.typeText(prompt)
-        waitFor("isEnabled == true", on: app.buttons["composer.send"])
-        app.buttons["composer.send"].tap()
+    private func startTask(_ app: XCUIApplication, _ prompt: String) {
+        send(app, prompt)
         XCTAssertTrue(any(app, "task.status").waitForExistence(timeout: 20), app.debugDescription)
     }
 
@@ -109,7 +103,7 @@ final class S23DrawerMotionUITests: XCTestCase {
     /// only after the page fills the screen.
     func testDoneUnreadLandsAtTheAnswerAndReadReturnsToTheLastPosition() {
         let app = launch("outcomes")
-        send(app, Self.donePrompt)
+        startTask(app, Self.donePrompt)
 
         // The task asks to run `git push`: leave the sheet down and go to a new session.
         let sheet = app.descendants(matching: .any).matching(identifier: "approval.sheet").firstMatch
@@ -178,7 +172,7 @@ final class S23DrawerMotionUITests: XCTestCase {
     /// count while the task runs: the page lands at the bottom again.
     func testRunningSessionLandsAtTheBottom() {
         let app = launch("coding")
-        send(app, Self.codingPrompt)
+        startTask(app, Self.codingPrompt)
         let transcript = any(app, "transcript.text")
         waitFor("value CONTAINS %@", [Self.codingReplyEnd], on: transcript, timeout: 30)
         waitFor("value == 'running'", on: any(app, "task.status"))

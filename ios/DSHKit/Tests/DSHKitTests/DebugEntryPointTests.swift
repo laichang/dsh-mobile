@@ -29,5 +29,19 @@ import Testing
         let o = DebugLaunchOptions.parse(["/app", "-DSHMFakeBridge", "YES", "-DSHMFakeHold", "Second task"])
         #expect(o == .init(useFakeBridge: true, fakeHold: "Second task"))
     }
+
+    @Test func liveActivitiesOnlyWhenATestLaunchAsks() {
+        #expect(DebugLaunchOptions.liveActivitiesOn(["/app"]))
+        #expect(DebugLaunchOptions.liveActivitiesOn(["/app", "-AppleLanguages", "(en)"]))
+        #expect(!DebugLaunchOptions.liveActivitiesOn(["/app", "-DSHMFakeBridge", "YES"]))
+        #expect(DebugLaunchOptions.liveActivitiesOn(["/app", "-DSHMFakeBridge", "YES", "-DSHMLiveActivityProbe", "YES"]))
+        #expect(!DebugLaunchOptions.liveActivitiesOn(["/app", "-DSHMLiveActivityProbe", "NO"]))
+    }
+
+    @Test func parsesUIKitAnimationsSwitch() {
+        #expect(DebugLaunchOptions.parse(["/app"]).uikitAnimations)
+        #expect(!DebugLaunchOptions.parse(["/app", "-DSHMUIKitAnimations", "NO"]).uikitAnimations)
+        #expect(DebugLaunchOptions.parse(["/app", "-DSHMUIKitAnimations", "YES"]).uikitAnimations)
+    }
 }
 #endif

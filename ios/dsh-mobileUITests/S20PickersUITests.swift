@@ -25,6 +25,7 @@ final class S20PickersUITests: XCTestCase {
                                "-DSHMFakeBridge", "pickers"]
         if reset { app.launchArguments += ["-DSHMResetStore", "YES"] }
         if let hold { app.launchArguments += ["-DSHMFakeHold", hold] }
+        app.launchArguments += noUIKitAnimations // D128
         app.launch()
         return app
     }
@@ -48,13 +49,7 @@ final class S20PickersUITests: XCTestCase {
     }
 
     private func sendPrompt(_ app: XCUIApplication, _ text: String) {
-        let field = app.textFields["composer.prompt"]
-        XCTAssertTrue(field.waitForExistence(timeout: 10))
-        field.tap()
-        field.typeText(text)
-        let send = app.buttons["composer.send"]
-        expect(send, "enabled == true")
-        send.tap()
+        send(app, text)
         XCTAssertTrue(app.descendants(matching: .any)["task.status"].waitForExistence(timeout: 20), app.debugDescription)
     }
 

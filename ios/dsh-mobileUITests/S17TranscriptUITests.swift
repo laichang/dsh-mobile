@@ -26,11 +26,7 @@ final class S17TranscriptUITests: XCTestCase {
     private func any(_ app: XCUIApplication, _ id: String) -> XCUIElement { app.descendants(matching: .any)[id] }
 
     private func send(_ app: XCUIApplication) {
-        let field = app.textFields["composer.prompt"]
-        XCTAssertTrue(field.waitForExistence(timeout: 10), app.debugDescription)
-        field.tap()
-        field.typeText(Self.prompt)
-        app.buttons["composer.send"].tap()
+        send(app, Self.prompt)
     }
 
     private func waitFor(_ format: String, _ args: [Any], on element: XCUIElement, timeout: TimeInterval = 20) {

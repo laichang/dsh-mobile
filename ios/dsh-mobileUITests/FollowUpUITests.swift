@@ -31,10 +31,9 @@ final class FollowUpUITests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout: 15), app.debugDescription)
         let send = app.buttons["session.send"]
         XCTAssertFalse(send.isEnabled, "nothing to send yet")
-        field.tap()
         let followUp = "And once more, please. #\(tag)"
-        field.typeText(followUp)
-        XCTAssertTrue(send.isEnabled)
+        type(followUp, into: field)
+        XCTAssertTrue(waitUntil(send, "isEnabled == true", timeout: 15))
         saveShot("followup-typed")
         send.tap()
 

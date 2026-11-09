@@ -27,6 +27,7 @@ final class S19OutcomesUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN",
                                "-DSHMResetPairing", "YES", "-DSHMResetStore", "YES",
                                "-DSHMFakeBridge", "YES", "-DSHMFakeScenario", "outcomes"]
+        app.launchArguments += noUIKitAnimations // D128
         app.launch()
         return app
     }
@@ -50,14 +51,8 @@ final class S19OutcomesUITests: XCTestCase {
         }
     }
 
-    private func send(_ app: XCUIApplication, _ prompt: String) {
-        let field = app.textFields["composer.prompt"]
-        XCTAssertTrue(field.waitForExistence(timeout: 15), app.debugDescription)
-        field.tap()
-        waitFor("hasKeyboardFocus == true", on: field)
-        field.typeText(prompt)
-        waitFor("isEnabled == true", on: app.buttons["composer.send"])
-        app.buttons["composer.send"].tap()
+    private func startTask(_ app: XCUIApplication, _ prompt: String) {
+        send(app, prompt)
         XCTAssertTrue(any(app, "task.status").waitForExistence(timeout: 20), app.debugDescription)
     }
 
@@ -69,7 +64,7 @@ final class S19OutcomesUITests: XCTestCase {
     /// under the process row, with no marker (S27, D76). Once read, it opens at the end, as before.
     func testDoneSessionNotReadOpensAtTheStartOfTheFinalAnswer() {
         let app = launch()
-        send(app, Self.donePrompt)
+        startTask(app, Self.donePrompt)
 
         // The task asks to run `git push` (S18's sheet). Leave it, and go to a new session.
         let sheet = app.descendants(matching: .any).matching(identifier: "approval.sheet").firstMatch
@@ -133,7 +128,7 @@ final class S19OutcomesUITests: XCTestCase {
     /// the original prompt, which the user can edit and send.
     func testFailedTaskRetriesInANewSessionWithTheOriginalPrompt() {
         let app = launch()
-        send(app, Self.failPrompt)
+        startTask(app, Self.failPrompt)
         let status = any(app, "task.status")
         waitFor("value == 'failed'", on: status, timeout: 60)
 
@@ -178,7 +173,7 @@ final class S19OutcomesUITests: XCTestCase {
     /// A task the user stopped shows the same card: 任务已停止, and 新会话里再试.
     func testStoppedTaskShowsTheSameCard() {
         let app = launch()
-        send(app, Self.holdPrompt)
+        startTask(app, Self.holdPrompt)
         let stop = app.buttons["task.interrupt"]
         XCTAssertTrue(stop.waitForExistence(timeout: 20), app.debugDescription)
         waitFor("isEnabled == true", on: stop)
