@@ -105,4 +105,48 @@ final class VoiceUITests: XCTestCase {
         XCTAssertFalse(any(app, "task.status").exists, "nothing is sent")
         saveShot("voice-denied")
     }
+
+    /// The real Speech framework path (no `-DSHMFakeSpeech`): a tap on the mic asks the system for
+    /// speech recognition and the microphone. The system answers on a queue of its own; a
+    /// main-actor callback crashed the app there on a real iPhone (ARCHITECTURE D146). The test
+    /// allows speech recognition and turns off the microphone, so the engine never starts (no
+    /// microphone prompt on the Mac), and the app must stay up and say voice input is off.
+    func testRealPermissionPromptsDoNotCrashTheApp() throws {
+        let app = XCUIApplication()
+        app.resetAuthorizationStatus(for: .microphone)
+        app.launchArguments = ["-DSHMFakeBridge", "YES", "-DSHMResetStore", "YES", "-DSHMResetPairing", "YES",
+                               "-DSHMFakeScenario", "conversation"]
+        app.launch()
+        let mic = app.buttons["composer.mic"]
+        XCTAssertTrue(mic.waitForExistence(timeout: 15), app.debugDescription)
+        mic.tap()
+
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let notice = any(app, "voice.notice")
+        var answered: [String] = []
+        let deadline = Date().addingTimeInterval(30)
+        while Date() < deadline {
+            XCTAssertEqual(app.state, .runningForeground, "the app crashed after the permission answers \(answered)")
+            if notice.exists, let value = notice.value as? String, value != "listening" { break }
+            let alert = springboard.alerts.firstMatch
+            if alert.exists {
+                let label = alert.label
+                let microphone = label.localizedCaseInsensitiveContains("microphone")
+                let choice = microphone
+                    ? alert.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Don'")).firstMatch
+                    : alert.buttons.matching(NSPredicate(format: "NOT (label BEGINSWITH 'Don')")).firstMatch // "OK" or "Allow"
+                if choice.exists {
+                    choice.tap()
+                    answered.append(microphone ? "microphone: no" : "speech: yes")
+                }
+            }
+            usleep(250_000)
+        }
+        sleep(2)
+        XCTAssertEqual(app.state, .runningForeground, "the app crashed after the permission answers \(answered)")
+        XCTAssertTrue(notice.waitForExistence(timeout: 5), "answers \(answered)\n\(app.debugDescription)")
+        XCTAssertEqual(notice.value as? String, "denied", "the microphone is off, so voice input says how to turn it on")
+        XCTAssertEqual(mic.value as? String, "idle")
+        saveShot("voice-real-permission")
+    }
 }

@@ -652,7 +652,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S16 · Fix: Mic key crashes on a real iPhone
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-09: User, 2026-11-09, real iPhone 17 Pro (free team, Debug build from Xcode): "点击麦克风出现crash" (tapping the mic key crashes the app). No crash log yet.
 
@@ -661,12 +661,19 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [auto] A test reproduces the reported bug and passes with the fix — Evidence: test:VoiceUITests/testRealPermissionPromptsDoNotCrashTheApp · test:SystemCallbackTests/anAnswerOnTheSystemsQueueReachesAMainActorCaller · test:SystemCallbackTests/manyAnswersInARow · cmd:scripts/demo/voice.sh
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
 **Log**: —
+- **2026-11-09 · built; [auto] ticked, review next.** Cause (sure: the Simulator crash report shows it): SpeechFrameworkTranscriber.permission() passed a closure to SFSpeechRecognizer.requestAuthorization. The app target is main-actor by default (SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor, Swift 6), so that closure was main-actor isolated; TCC calls the handler on its XPC reply queue, Swift 6 checks the executor, and the app stops: EXC_BAD_INSTRUCTION/SIGILL in _dispatch_assert_queue_fail <- swift_task_checkIsolated <- "closure #1 in closure #1 in SpeechFrameworkTranscriber.permission()" <- __TCCAccessRequest_block_invoke (~/Library/Logs/DiagnosticReports/dsh-mobile-2026-11-09-134126.ips, Simulator, unfixed build). It crashes on every mic tap, also on the Simulator; S5 never saw it because its tests use FakeTranscriber (-DSHMFakeSpeech), so the real permission path never ran. The user's device crash log has not arrived; I did not see it. The audio parts (installTap with the input node's own format, AVAudioConverter to bestAvailableAudioFormat, .record session activated first, a nonisolated tap block) look right, but no test runs them and they are NOT checked on a device: if the device still crashes after this fix, look there next.
+  Change: DSHCore SystemCallback.value (runs in the caller's isolation; its handler is @Sendable and belongs to no actor), and permission() uses it (D146, provisional, amends D116). No other app change.
+  Tests: VoiceUITests/testRealPermissionPromptsDoNotCrashTheApp (real Speech framework, no fake; answers the system alerts: allows speech, turns off the microphone, so the engine never starts and the Mac gets no microphone prompt; expects voice.notice denied and the app up). Red without the fix (app notRunning right after the tap, crash report above), green with it; added to scripts/demo/voice.sh. Note: on dshm-S16 speech recognition was already decided after the first runs, so the green run saw no alert; the alert-answer branch is not exercised there. DSHKit SystemCallbackTests call DSHBackgroundAuthorizer, a test-only Objective-C target (SystemCallbackDoubles: handler not NS_SWIFT_SENDABLE, called on a global queue, in no product); the old closure shape against it stops swift test with signal 4 (checked, then removed), the helper passes.
+  Runs: scripts/demo/voice.sh green on dshm-S16 (DictationTests + SystemCallbackTests, the two old voice UI tests, the new one). Full swift test, bridge tests and the review: by the reviewer.
+  Provisional: D146. Dependencies: none new. Not checked on a real iPhone: the user does that ([human] item).
+- **2026-11-09 · review PASS.** Reviewer (subagent) ran the fix-slice review the user set (scripts/review refuses a slice with no [ui] item) on a7ce2b8 (code commit 7d17280; only PLAN commits after it): scripts/demo/voice.sh (DictationTests + SystemCallbackTests, the 3 voice UI tests), full DSHKit swift test (158 tests, 39 suites), bridge corepack pnpm test (115 pass), xcodebuild build-for-testing on dshm-S16. All PASS on the first run, nothing flaky. Result: /tmp/dshm-review/S16-a7ce2b8.txt, RESULT: PASS. Open: the [human] item (real iPhone); the alert-answer branch of the new UI test did not run on dshm-S16 (permission already stored).
+- **2026-11-09 · merge of main; review PASS.** Fix agent (issue #37) merged main (S14: D140, CJKEmphasis.swift, TranscriptBlocks.swift) into the slice as 7b62238. One conflict: ARCHITECTURE.md, where S14 added D140 and S16 added D146 at the same place in the decision table. Kept both rows whole, D140 then D146; S14's edit to D10 kept. No conflict markers remain. PLAN.md merged by itself. A separate reviewer (subagent) ran the fix-slice review on 7b62238: scripts/demo/voice.sh (11 swift tests, 3/3 voice UI tests), the 3 test: pointers, full DSHKit swift test (162 tests, 40 suites), bridge corepack pnpm test (115), xcodebuild build-for-testing on dshm-S16. All PASS on the first run, nothing flaky. Result: /tmp/dshm-review/S16-7b62238.txt, RESULT: PASS. Not checked: the real permission alerts did not appear on dshm-S16 (the app went straight to denied), so testRealPermissionPromptsDoNotCrashTheApp proved no crash on the denied path only; the alert-answer path needs a fresh dshm-S16 (simctl erase) or the [human] item on a real iPhone.
 
 ## 6. Exit
 
