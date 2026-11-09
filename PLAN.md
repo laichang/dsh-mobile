@@ -57,7 +57,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S11 | done | merged `87cd8da` | 2026-11-09 | — (provisional D134 in §9) |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
 | S13 | done | merged `adedb03` | 2026-11-09 | — |
-| S14 | doing | `claude/s14-bold-replies` | 2026-11-09 | Slice owner builds (§8) |
+| S14 | review | merged `aac51a9` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 | S15 | doing | `claude/s15-steered-message` | 2026-11-09 | Slice owner builds (§8) |
 | S16 | doing | `claude/s16-mic-crash` | 2026-11-09 | Slice owner builds (§8) |
 
@@ -610,7 +610,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S14 · Fix: Bold text in phone replies
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-09: User, 2026-11-09, real iPhone, reply to 今天周几: "手机端的回复，markdown渲染出错，字体没有加粗，web端展示正常。" The DSH reply text was: 今天是 **2026 年 11 月 9 日，星期一**。 (deepseek-flash, session 1e7315f3).
 
@@ -619,12 +619,18 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [auto] A test reproduces the reported bug and passes with the fix — Evidence: test:TranscriptEmphasisTests/boldNextToCJKPunctuation · test:TranscriptEmphasisTests/streamedListReplyIsBold
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
 **Log**: —
+- **2026-11-09 · Built; the [auto] item ticked, review next.** Investigation: Foundation's parser (TranscriptBlocks.markdown) bolds the exact reported text `今天是 **2026 年 11 月 9 日，星期一**。` (CommonMark takes it). Reproduced the reported flow on dshm-S14 (iOS 26.4) against real DSH 0.2.2-rc.1 + the bridge, DSH's mock LLM with reasoning (reasoning_success) replying that text: first turn (streamed, StructuredTranscriptView with a thinking row), a follow-up turn (D89) and the relaunch all showed the span bold (probe screenshots, not kept). Fonts: no custom font or weight override in the transcript or the inline answer (D51); nothing turns the AttributedString into plain text. So the exact string renders bold on the simulator; the case where the phone and DSH Web differ is the CJK flanking one: `**星期一（Monday）**是`, `**粗体。**后面`, `今天是**「星期一」**。` keep their stars on the phone (CommonMark: a `**` between punctuation and a letter is not a delimiter), and DSH Web shows them bold because its Markdown has remark-cjk-friendly (`cjkFriendlyAttention` in dsh-web-frontend's bundle). A bold list item like the follow-up's list reply hits this case.
+  Change: ios/DSHKit/Sources/DSHCore/CJKEmphasis.swift. TranscriptBlocks.markdown (prose, headings, table cells, inline answer) marks the `*`/`**` pairs that CommonMark does not take and a CJK neighbour allows with private-use marks, Foundation parses, then the marks become emphasis. Pairs CommonMark takes, code spans, escapes and ASCII text do not change. Provisional D140 (ARCHITECTURE.md); DESIGN.md Markdown line. No new dependencies.
+  Test: TranscriptEmphasisTests (Swift Testing, DSHKit): boldNextToCJKPunctuation and streamedListReplyIsBold fail without the fix (red run 13 issues, the call site reverted), pass with it; reportedReplyIsBold guards the exact text; otherStarsStayAsTheyAre. Full `swift test`: 160 tests pass. Simulator check against real DSH with a reply of the reported line plus `- **星期一（Monday）**是…` and `- **注意：**明天放假`: all three bold, no stars.
+  Not checked: the user's own session data (~/.dsh, the iPhone cache) was not read, so it is not proven that the user's screen showed this case; if the user still sees unbolded `今天是 **…**。` after this, the next step is the bridge log of that session. Found (not fixed, for an issue): the mock LLM also writes DSH's session title, so the session title shows the raw reply with `**` (test setup only).
+  Next: reviewer runs scripts/review S14.
+- **2026-11-09 · Review: no verdict, S14 has no [ui] items.** A separate reviewer ran `scripts/review S14` at 4595fbc. The script stopped at once with "review: S14 has no [ui] items" (scripts/review line 40, exit 2) and wrote no /tmp/dshm-review/S14-*.txt. A fix slice from `scripts/plan fix` has only an [auto] and a [human] item, so WORKFLOW.md §10 condition 2 (RESULT: PASS) cannot be met as written. Not changed here (the slice's Not: other changes); the coordinator decides: add a [ui] item, or treat the [auto] evidence (`swift test`, TranscriptEmphasisTests) as the review for fix slices with no UI part. The worktree is clean; the simulator dshm-S14 is shut down; ports 47810 and 3283 are free; the old ~/.dshm/home-s14 was moved to ~/.dshm/home-s14.stale-m1-2026-11-09 (not deleted).
 
 ### S15 · Fix: Steered message stays above the field
 
@@ -839,6 +845,16 @@ Append-only, dated.
 
 - **2026-11-09 · S16 assigned.** Branch `claude/s16-mic-crash`, simulator `dshm-S16`, DSHM_HOME `~/.dshm/home-s16`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D146–D148. `eval "$(scripts/slice-env S16)"` exports them.
 
+- **2026-11-09 · S16 fix slice: mic crash on a real iPhone.** The user reported that a tap on the mic key crashes the app on the real iPhone. Fix slice S16 (D146–D148) runs as a background agent; 3 slices run (S14, S15, S16). The coordinator asked the user for the crash log. The user also saw no '+' on the follow-up composer while a task ran: that is the provisional D18 amendment (§9 row 13: attachments only once a task is done), not a bug; the coordinator pointed the user at it as a §9 choice.
+
+- **2026-11-09 · S14 built; merge blocked: a fix slice has no [ui] item to review.** S14 (bold next to CJK punctuation, D140) is built at 0502516; TranscriptEmphasisTests pass (the coordinator ran them on the head: 4/4). scripts/review S14 stops with 'S14 has no [ui] items': scripts/plan fix makes only an [auto] and a [human] item, so no fix slice can meet WORKFLOW §10 condition 2. The coordinator does not merge (§10: if a condition is false, do not merge) and asks the user. S15 and S16 have the same shape. The owner's cause: the exact reported line is valid CommonMark and renders bold on the Simulator; DSH Web uses remark-cjk-friendly, so ** next to CJK punctuation (for example **星期一（Monday）**是) is bold there and not on the phone. Not proven which case the user saw.
+
+- **2026-11-09 · User rule: a fix slice with no [ui] item passes review by a test run.** The user decided (2026-11-09, in chat: "reviewer跑测试"): for a fix slice made by scripts/plan fix (no [ui] item), WORKFLOW §10 condition 2 is met when a separate reviewer runs on the head commit (clean worktree): each test: pointer of the slice, the full DSHKit swift test, the bridge tests, and an app build for the Simulator (xcodebuild build-for-testing), and all pass. The reviewer writes /tmp/dshm-review/<ID>-<commit>.txt with one PASS/FAIL line per part and RESULT: PASS or FAIL. Only PLAN/md commits may follow. Applies to S14, S15, S16. Issue to open at plan end: scripts/review and scripts/plan fix do this, and WORKFLOW §10 says it.
+
+- **2026-11-09 · S14 merged.** Merged as `aac51a9`; `scripts/check-plan` on the merge commit passed. `scripts/review S14` at `0502516`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S14-0502516.txt`). 1 open `[human]` item, so S14 is `review`. §9 rows 35, 36 (D140). Review by the user's fix-slice rule (§8 2026-11-09): /tmp/dshm-review/S14-0502516.txt RESULT: PASS (test pointers, DSHKit 160, bridge 115, app build). D140 provisional.
+
+- **2026-11-09 · S16 built, review PASS; merge of main goes to a fix agent.** S16 (mic crash: a main-actor closure handed to SFSpeechRecognizer.requestAuthorization ran on the system's XPC queue, and Swift 6's run-time isolation check stopped the app; D146, SystemCallback) is built at f0c36ee; fix-slice test review PASS at a7ce2b8 (/tmp/dshm-review/S16-a7ce2b8.txt: voice.sh, DSHKit 158, bridge 115, app build). It crashed on the Simulator too; S5's tests used FakeTranscriber. git merge-tree with main (after S14) conflicts in ARCHITECTURE.md (D140 vs D146), so by the issue #37 rule a new fix agent merges main and a reviewer runs the test review again. For the user, the coordinator built main (S14) for the Simulator iPhone 17 Pro and paired it with the user's DSH.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -879,3 +895,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 32 | S9 | decision | ARCHITECTURE D129, *provisional*: Debug test launches start no Live Activities unless they ask | `claude/s9-ui-test-waits` | merged `4a4dbf9` |
 | 33 | S9 | decision | D128 | `main` | — |
 | 34 | S9 | decision | D129 | `main` | — |
+| 35 | S14 | decision | ARCHITECTURE D140, *provisional*: Emphasis next to CJK text, as DSH Web shows it | `claude/s14-bold-replies` | merged `aac51a9` |
+| 36 | S14 | `[human]` | The user no longer sees the bug | `main` | `aac51a9` |
