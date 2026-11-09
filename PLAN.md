@@ -54,7 +54,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S8 | done | merged `b62405c` | 2026-11-09 | — (provisional D125 in §9) |
 | S9 | doing | `claude/s9-ui-test-waits` | 2026-11-09 | Slice owner builds (§8) |
 | S10 | done | merged `f333abc` | 2026-11-09 | — |
-| S11 | doing | `claude/s11-hosts-tests` | 2026-11-09 | Slice owner builds (§8) |
+| S11 | done | merged `87cd8da` | 2026-11-09 | — (provisional D134 in §9) |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
 | S13 | doing | `claude/s13-keyboard-host-menu` | 2026-11-09 | Slice owner builds (§8) |
 
@@ -734,6 +734,8 @@ Append-only, dated.
 
 - **2026-11-09 · S13 runs as a background agent; all slices started.** S13 assigned (D137–D139) and started as a background agent. Every slice of the plan is now started or merged. Running: S9, S11, S13.
 
+- **2026-11-09 · S11 merged.** Merged as `87cd8da`; `scripts/check-plan` on the merge commit passed. `scripts/review S11` at `12ffe5c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S11-12ffe5c.txt`). No open `[human]` items, so S11 is `done`. §9 rows 29 (D134).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -768,3 +770,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 26 | S6 | `[human]` | On a real iPhone signed with the free team, the app starts a Live Activity for a running task | `main` | `b4d0a65` |
 | 27 | S8 | decision | ARCHITECTURE D125, *provisional*: A bridge that cannot listen: the reason comes from both sides (screens H, X3; amends D98) | `claude/s8-bridge-listen-errors` | merged `b62405c` |
 | 28 | S8 | decision | D98 amended by D125: a TCP check after a timeout raises the most a dead address can cost from 5 s to 6 s | `claude/s8-bridge-listen-errors` | `ffb2589` |
+| 29 | S11 | decision | ARCHITECTURE D134, *provisional*: The all-offline card keeps its own accessibility container (screen X3; amends D59) | `claude/s11-hosts-tests` | merged `87cd8da` |
