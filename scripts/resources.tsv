@@ -3,23 +3,3 @@
 # the slice is todo, doing or blocked in PLAN.md §0. Rows live as long as the plan: when the plan
 # ends, the registry goes back to this header (slice IDs start again at S1 in the next plan).
 id	branch	slot	bridge	web	bridge2	web2	sim	home	decisions	assigned
-T0	claude/t0-followup	0	47810	3283	47840	3313	dshm-T0	~/.dshm/home-t0	D89-D91	2026-11-08
-T1	claude/t1-questions	1	47811	3284	47841	3314	dshm-T1	~/.dshm/home-t1	D92-D94	2026-11-08
-T2	claude/t2-attachments	2	47812	3285	47842	3315	dshm-T2	~/.dshm/home-t2	D95-D97	2026-11-08
-S7	claude/s7-reconnect	1	47811	3284	47841	3314	dshm-S7	~/.dshm/home-s7	D98-D100	2026-11-08
-S1	claude/s1-followup-queue	0	47810	3283	47840	3313	dshm-S1	~/.dshm/home-s1	D101-D103	2026-11-08
-X1	claude/x1-model-failures	1	47811	3284	47841	3314	dshm-X1	~/.dshm/home-x1	D104-D106	2026-11-08
-S4	claude/s4-attach-files	2	47812	3285	47842	3315	dshm-S4	~/.dshm/home-s4	D107-D109	2026-11-08
-S3	claude/s3-model-failures	1	47811	3284	47841	3314	dshm-S3	~/.dshm/home-s3	D110-D112	2026-11-08
-S2	claude/s2-questions-more	0	47810	3283	47840	3313	dshm-S2	~/.dshm/home-s2	D113-D115	2026-11-09
-S5	claude/s5-voice	2	47812	3285	47842	3315	dshm-S5	~/.dshm/home-s5	D116-D118	2026-11-09
-S6	claude/s6-live-activity	1	47811	3284	47841	3314	dshm-S6	~/.dshm/home-s6	D119-D121	2026-11-09
-S12	claude/s12-store-test-waits	0	47810	3283	47840	3313	dshm-S12	~/.dshm/home-s12	D122-D124	2026-11-09
-S8	claude/s8-bridge-listen-errors	2	47812	3285	47842	3315	dshm-S8	~/.dshm/home-s8	D125-D127	2026-11-09
-S9	claude/s9-ui-test-waits	0	47810	3283	47840	3313	dshm-S9	~/.dshm/home-s9	D128-D130	2026-11-09
-S10	claude/s10-offline-rich-detail	1	47811	3284	47841	3314	dshm-S10	~/.dshm/home-s10	D131-D133	2026-11-09
-S11	claude/s11-hosts-tests	2	47812	3285	47842	3315	dshm-S11	~/.dshm/home-s11	D134-D136	2026-11-09
-S13	claude/s13-keyboard-host-menu	1	47811	3284	47841	3314	dshm-S13	~/.dshm/home-s13	D137-D139	2026-11-09
-S14	claude/s14-bold-replies	0	47810	3283	47840	3313	dshm-S14	~/.dshm/home-s14	D140-D142	2026-11-09
-S15	claude/s15-steered-message	1	47811	3284	47841	3314	dshm-S15	~/.dshm/home-s15	D143-D145	2026-11-09
-S16	claude/s16-mic-crash	2	47812	3285	47842	3315	dshm-S16	~/.dshm/home-s16	D146-D148	2026-11-09
