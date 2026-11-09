@@ -744,6 +744,8 @@ Append-only, dated.
 
 - **2026-11-09 · S13 merged.** S13 merged as adedb03 (review PASS on 427d9a6, S13-427d9a6.txt, no flaky part; head 8b7e3c2 adds only PLAN changes). #28 reproduced on iOS 26.4 with two fake hosts, for the host menu and the '+' attach menu. D67 amendment in §9. Seen, not fixed (for an issue): with two hosts the host name in the composer's 'host · workspace' line wraps onto two lines next to 'Default workspace'.
 
+- **2026-11-09 · Interruption: app restart stopped S9; resumed.** About 09:30 the Claude app restarted. It stopped the S9 background agent and its shells (no completion record). scripts/status at 10:17: S9 clean at 4db6f66 (7 commits, no ticks, no review), nothing running, no simulator booted. The coordinator resumed the S9 agent with a recovery brief: merge main if needed, run ui-health.sh again, tick, full review by a separate reviewer. Heartbeat e8ffa347 survived the restart. From now on the coordinator follows the user's rule in issue #37: a slice owner ends at built; a later fix or merge of main goes to a new agent.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
