@@ -337,6 +337,8 @@ Append-only, dated.
 
 - **2026-11-10 · Plan started.** M2.5 · Process as code.
 
+- **2026-11-10 · Run started: heartbeat and first batch.** Heartbeat: CronCreate job 1b7fe4cd (7,27,47 * * * *, durable). Keep-awake requested. First batch: T0, S1, S6.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
