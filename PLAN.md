@@ -644,7 +644,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 **Done when**
 - [x] [auto] A test reproduces the reported bug and passes with the fix — Evidence: test:FollowUpQueueTests/sendNowDuringALongStepShowsTheMessageInTheTranscriptAtOnce · test:FollowUpQueueTests/aStopBeforeDSHTookAMessageSentNowGivesItBack · test:FollowUpQueueAgainstFakeDSH/sendNowDuringALongToolStepIsSteeringUntilTheStepEndsThenTaken · test:FollowUpQueueUITests/testSendNowDuringALongStepAgainstRealDSH · cmd:scripts/demo/followup.sh --steer · shot:evidence/S15/steer-before-fix.png · shot:evidence/S15/steer-sent-now.png · shot:evidence/S15/steer-taken.png
-- [ ] [human] The user no longer sees the bug — Evidence:
+- [x] [human] The user no longer sees the bug — Evidence: human:2026-11-09 iPhone 17 Pro, 立即发送 shows the message in the transcript at once
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
@@ -677,7 +677,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 **Done when**
 - [x] [auto] A test reproduces the reported bug and passes with the fix — Evidence: test:VoiceUITests/testRealPermissionPromptsDoNotCrashTheApp · test:SystemCallbackTests/anAnswerOnTheSystemsQueueReachesAMainActorCaller · test:SystemCallbackTests/manyAnswersInARow · cmd:scripts/demo/voice.sh
-- [ ] [human] The user no longer sees the bug — Evidence:
+- [x] [human] The user no longer sees the bug — Evidence: human:2026-11-09 iPhone 17 Pro, mic permission prompts and Chinese dictation work
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
@@ -698,7 +698,7 @@ From a real device. All items are human-only.
 - [ ] [human] While a task runs on a real model, send a follow-up: it waits as queued and runs after the turn; tap 立即发送 on another one, and the agent takes it at its next step (S1) — Evidence:
 - [ ] [human] A task on a real model asks a question; answer it once with an option and once by typing, and the task continues (T1, S2) — Evidence:
 - [ ] [human] Take a photo with the camera and attach it together with a PDF from Files; the real model reads both (T2, S4) — Evidence:
-- [ ] [human] Dictate a task in Chinese, correct it, and send it (S5) — Evidence:
+- [x] [human] Dictate a task in Chinese, correct it, and send it (S5) — Evidence: human:2026-11-09 iPhone 17 Pro
 - [ ] [human] Lock the phone while a task runs: the Live Activity shows the title, the host, a ticking time and the latest step, and it ends as done (S6) — Evidence:
 - [ ] [human] Turn off Wi-Fi: the phone reconnects to the host over Tailscale with no new pairing (S7) — Evidence:
 - [ ] [human] With a model key that has no balance, a task fails with a red reason; after a top-up, a new message in the same session continues it (S3) — Evidence:
