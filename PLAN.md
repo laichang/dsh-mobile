@@ -476,7 +476,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S9 · Fix: UI tests wait for keyboard focus and for animations
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: Closes #24 and #25. The user, 2026-11-08, for #22–#28: "这些看看还能不能复现，能的话就修复了". If a bug does not reproduce, the Log names the runs that show it, and the coordinator closes the issue with them.
 
@@ -488,12 +488,23 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/ui-health.sh`.
 
 **Done when**
-- [ ] [ui] `S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge`, `S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge` and `T0DemoUITests/testDemoAgainstRealDSH` pass in the review run with no retry (`cmd:scripts/demo/ui-health.sh`) — Evidence:
-- [ ] [ui] `S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls` takes less than 120 s, and no step of the tests that #25 names waits 60 s for the app to idle (`cmd:scripts/demo/ui-health.sh`) — Evidence:
+- [x] [ui] `S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge`, `S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge` and `T0DemoUITests/testDemoAgainstRealDSH` pass in the review run with no retry (`cmd:scripts/demo/ui-health.sh`) — Evidence: cmd:scripts/demo/ui-health.sh · test:S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge · test:S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge · test:T0DemoUITests/testDemoAgainstRealDSH
+- [x] [ui] `S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls` takes less than 120 s, and no step of the tests that #25 names waits 60 s for the app to idle (`cmd:scripts/demo/ui-health.sh`) — Evidence: cmd:scripts/demo/ui-health.sh · test:S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls · test:S15AllTasksUITests · test:S19OutcomesUITests · test:S20PickersUITests
 
 **Not**: Flaky tests that #24 and #25 do not name: record them in the Log.
 
 **Log**: —
+- **2026-11-09 · Built; ui-health passes; review pending.**
+  - Changed (tests): one shared helper in `UITestSupport.swift`: `send(app, prompt, field:, send:)` and `type(_:into:)`. It taps, waits for `hasKeyboardFocus` (taps again once if needed), types, waits until the field holds the text, types again the keys that did not arrive, and waits until the send key is enabled. The S2, S3 and T0 tests (`runDemo`) use it, and also S7, S9 paired hosts, S15, S16, S17, S18, S19, S20, S21, S23, S26, S28, FollowUp, FollowUpQueue, ModelFailures, AgentQuestion and Attachments. The private copies in S18, S19 and S23 are gone. A recovery writes an activity "Recover: …" to the log.
+  - Changed (app, Debug only): **D128** `-DSHMUIKitAnimations NO` calls `UIView.setAnimationsEnabled(false)`; S15, S16, S19 and S20 pass it (`noUIKitAnimations`). **D129** a Debug launch with any `-DSHM…` argument starts no Live Activities unless it passes `-DSHMLiveActivityProbe YES`, and ends the ones left at launch. Both provisional.
+  - New demo `scripts/demo/ui-health.sh`: one part per #24 test and per #25 class; it removes the app before each part, prints the duration and the longest "Wait for … to idle" step of each test, and fails on a failed test, an idle wait of 60 s or more, "animations complete notification not received", or S16's scroll test at 120 s or more.
+  - #25 cause: XCTAutomationSupport counts only UIKit view animations (`UIViewAnimationState` start/stop); a count that does not close makes every later step wait 60 s ("animations complete"). Spinners are not UIKit view animations (the fast runs have the same spinners). D128 takes UIKit view animations away under these tests. Not reproduced here: before the fix (old tests, `be18b2e`, run "before-1", log /tmp/dshm-s9-health-before-1.log) S16's scroll test took 69 s, the longest idle wait of all 12 tests was 5.2 s. After: S16 scroll test 57–60 s under load (runs 1–4), 35.6 s at run 5; longest idle wait ≤ 9.1 s in all runs.
+  - #24: not reproduced. Before the fix the three tests passed (run before-1: 45 s, 83 s, 21 s). With the helper, 5 runs of `ui-health.sh` (1–5) passed all three, and no run logged a "Recover:" step. Run 5 on `9e20209` (main merged): all parts passed, log /tmp/dshm-s9-health-5.log.
+  - Live Activity launch race (from S6 on main, also reported by S10): after a reinstall, liveactivitiesd opened the app in the background for a Live Activity left by an earlier run, and XCUITest drove that process without its launch arguments (loopback 127.0.0.1:47801, no FakeBridge). It failed the first test of a run 3 times (run 2: S15 and S20; s23.sh: S19). Fixed by D129 and the uninstall in `ui-health.sh`; not seen in runs 3–5 or s23.sh after.
+  - S2 cached-milestones test: in run 3 a tap on the list row selected it but did not open the session (once). The test now taps again when the list still shows. Not seen again (runs 4–5).
+  - Also passed on this branch: `scripts/demo/t0.sh`, `s23.sh` (S23, S19, S16, S14, T1, S18, S15), `s26.sh`, `s28.sh --no-s8`, `followup.sh`, `followup.sh --running`, `model-failures.sh`.
+  - Not: flaky or failing tests that #24/#25 do not name (not repaired; for the coordinator): (1) `S20PickersUITests/testUnavailableModelKeepsApplyOffAndSelectsNothing` failed once by the Live Activity race (run 2), passed in 2 runs right after. (2) `S21HostsUITests` both tests failed in `s21.sh` before main's S11 fix (no `hosts.offlineCard` element; before any typed step) — S11 changed these tests since. (3) `S9PairedHostsUITests/testPairedDevicesAndInlineAnswersStayWithTheirHost` failed in `s9.sh`: the 所有任务 rows have the reply as title ("Hello from host 0."), not the prompt; the typed prompt was in the field and the task completed. (4) `S7WorkspaceUITests` failed at its first step in `s7.sh` (first test of the run, before D129: the launch race pattern). (5) `LiveActivityUITests` failed once in `live-activity.sh` on dshm-S9: the activity showed in the Dynamic Island, the lock screen did not show (the lock did not take). Not re-run (the app restart stopped questions.sh, attachments.sh, s7.sh, live-activity.sh).
+  - Next: a reviewer runs `scripts/review S9` on the head commit; the three #24 parts must not be flaky.
 
 ### S10 · Fix: rich detail after an offline relaunch
 
