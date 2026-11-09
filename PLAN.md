@@ -56,7 +56,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S10 | done | merged `f333abc` | 2026-11-09 | — |
 | S11 | done | merged `87cd8da` | 2026-11-09 | — (provisional D134 in §9) |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
-| S13 | doing | `claude/s13-keyboard-host-menu` | 2026-11-09 | Slice owner builds (§8) |
+| S13 | done | merged `adedb03` | 2026-11-09 | — |
 
 ## 1. Approach
 
@@ -739,6 +739,8 @@ Append-only, dated.
 - **2026-11-09 · S11 merged.** Merged as `87cd8da`; `scripts/check-plan` on the merge commit passed. `scripts/review S11` at `12ffe5c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S11-12ffe5c.txt`). No open `[human]` items, so S11 is `done`. §9 rows 29 (D134).
 
 - **2026-11-09 · S11 merged.** S11 merged as 87cd8da (review PASS on 12ffe5c, S11-12ffe5c.txt, no flaky part). #23 reproduced on e09651c: since 04a3d0e the newSession.body container swallowed the card's own container on iOS 26; while the card shows, the card is now the container (D134, amends D59, in §9). #27: FakeHosts' MacBook-Pro now sends the FakePickers catalog; a UI test checks the default model row. Note for the user: with the debug channel label the model name is cut off on screen ('默认 DeepSeek-V…'); the accessibility label is full.
+
+- **2026-11-09 · S13 merged.** Merged as `adedb03`; `scripts/check-plan` on the merge commit passed. `scripts/review S13` at `427d9a6`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S13-427d9a6.txt`). No open `[human]` items, so S13 is `done`.
 
 ## 9. Pending user confirmation
 
