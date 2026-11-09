@@ -742,6 +742,8 @@ Append-only, dated.
 
 - **2026-11-09 · S13 merged.** Merged as `adedb03`; `scripts/check-plan` on the merge commit passed. `scripts/review S13` at `427d9a6`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S13-427d9a6.txt`). No open `[human]` items, so S13 is `done`.
 
+- **2026-11-09 · S13 merged.** S13 merged as adedb03 (review PASS on 427d9a6, S13-427d9a6.txt, no flaky part; head 8b7e3c2 adds only PLAN changes). #28 reproduced on iOS 26.4 with two fake hosts, for the host menu and the '+' attach menu. D67 amendment in §9. Seen, not fixed (for an issue): with two hosts the host name in the composer's 'host · workspace' line wraps onto two lines next to 'Default workspace'.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
