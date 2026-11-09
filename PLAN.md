@@ -891,6 +891,8 @@ Append-only, dated.
 
 - **2026-11-09 · User: D134 stays.** The user, 2026-11-09: "那就不要删了，保持原样" (the UI tests find the all-offline card through its accessibility container). D134 is confirmed; #43 is closed as not planned.
 
+- **2026-11-09 · Issues opened for the plan's findings.** The user approved the list (2026-11-09, "Open all"). Opened: #45 fix-slice review in scripts/review, #46 scripts/plan commits others' edits and duplicate §9 rows, #47 scripts/review --resume / pointers / reviewer waits, #48 demo resources, #49 sandbox and toolchain, #50 clean up ~/.dshm homes, #51 Xcode rewrites string catalogs and project file, #52 flaky and failing UI tests, #53 spikes/model-failures and the X3 benchmark, #54 pairing QR without the Tailscale address, #55 dsh web hides the bridge's log lines, #56 composer host name wraps and model name truncated. Comments on #37 (fix-agent rule worked in M2) and #30 (simulator creation still missing). Earlier today: #38–#42, #44.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
