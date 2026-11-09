@@ -141,6 +141,14 @@ public struct StructuredTranscript: Codable, Equatable, Sendable {
         return true
     }
 
+    /// Takes the row with `id` out. Returns whether there was one.
+    @discardableResult
+    public mutating func remove(id: String) -> Bool {
+        guard let at = items.firstIndex(where: { $0.id == id }) else { return false }
+        items.remove(at: at)
+        return true
+    }
+
     /// One piece of the session page: streamed text, or one collapsed row.
     public enum Segment: Equatable, Sendable {
         case text(String)

@@ -634,7 +634,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S15 · Fix: Steered message stays above the field
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-09: User, 2026-11-09, real iPhone: while 总结 dsh-mobile 所有文件 ran, the user sent 不用了 and tapped 立即发送: "不用了 没有出现在对话流，而是继续出现在对话框悬浮着". DSH did deliver it: the agent's reply starts 好的，停在汇总这里 (session 5eea5b1c). D101 says the app takes the message out of the queue and draws the bubble when DSH writes it into the session.
 
@@ -643,12 +643,27 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [auto] A test reproduces the reported bug and passes with the fix — Evidence: test:FollowUpQueueTests/sendNowDuringALongStepShowsTheMessageInTheTranscriptAtOnce · test:FollowUpQueueTests/aStopBeforeDSHTookAMessageSentNowGivesItBack · test:FollowUpQueueAgainstFakeDSH/sendNowDuringALongToolStepIsSteeringUntilTheStepEndsThenTaken · test:FollowUpQueueUITests/testSendNowDuringALongStepAgainstRealDSH · cmd:scripts/demo/followup.sh --steer · shot:evidence/S15/steer-before-fix.png · shot:evidence/S15/steer-sent-now.png · shot:evidence/S15/steer-taken.png
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
 **Log**: —
+- **2026-11-09 · Cause found and reproduced against real DSH; fixed in the app (D143); review next.**
+  - Cause (evidence: the DSH journal of session 5eea5b1c in ~/.dsh, read only): the chain works, but late. DSH 0.2.2-rc.1 gives a steered message to the agent only when the current step ends. 12:45:01 `agent/inbox/spliced` next-turn (QUEUE), 12:45:04 next-turn canceled + next-step (立即发送 = `updateQueue` steer), then nothing until the step's tool call ended: the agent ran `sleep 90` to wait for its subagents; 12:46:00 `step/end`, `step/start` (step 39), `user/message` with `source.rpcId` = the message ID (the shape D101 expects; no `turn` field), reply, `turn/end` (one turn). For those 56 s D101 kept 不用了 above the field ("下一步发送"); that is what the user saw. Nothing was lost: the user's bridge (main checkout bridge/lib, same code as main) logs `UserMessage` at that `user/message`.
+  - Reproduced: (1) the bridge against real DSH with a scripted mock (a 12 s and a 25 s `bash` step, also with a real subagent): `QueuedMessage` STEERING at the tap, `UserMessage` only after `step/end`, then `TaskEnded`; nothing left waiting. (2) In the Simulator before the fix, the new UI test passed (the bubble came after the step), and its shot shows the reported screen: evidence/S15/steer-before-fix.png. So no bridge bug and no lost event; after the turn nothing floats (the message is taken before `turn/end`; a stop before that returns it to the composer).
+  - Fix (app, D143 provisional; D101 amended; DESIGN.md and design/board.html screen 04 text, board.png rendered again): a STEERING `QueuedMessage` moves the message out of `FollowUpQueue` into the `StructuredTranscript` as a `.userMessage` row (`message-<id>`, state RUNNING) at the current end of the text; `UserBubble.pending` shows "Agent 下一步读到" (`session.message.user.pending`, accessibility value `steering`). The later `UserMessage` updates the row (DONE) and keeps its place. REMOVED/RETURNED take a pending row out (RETURNED puts the text back in the composer). `TaskEnded` empties a stale queue (defensive; the bridge settles each waiting message before it). New `StructuredTranscript.remove(id:)`. No protocol or bridge change.
+  - FakeDSH now matches real DSH here: `toolStepMs` (the turn starts with a slow `bash` step; steered messages enter after `step/end`, `agent/inbox/spliced`, `step/start`), and `user/message` has no `turn` field.
+  - Tests: DSHKit `FollowUpQueueTests/sendNowDuringALongStepShowsTheMessageInTheTranscriptAtOnce` and `aStopBeforeDSHTookAMessageSentNowGivesItBack` fail without the TaskListStore change (queue still `不用了 (steering)`, no bubble) and pass with it; `sendNowMovesAQueuedMessageIntoTheTurnAndRemoveTakesOneOut` updated (sent now leaves the queue at once). Bridge `FollowUpQueueAgainstFakeDSH/sendNowDuringALongToolStepIsSteeringUntilTheStepEndsThenTaken`. UI against real DSH: `FollowUpQueueUITests/testSendNowDuringALongStepAgainstRealDSH` (the bubble within 10 s while a 30 s tool step runs, the mark goes when DSH takes it, completed, empty queue) through `scripts/demo/followup.sh --steer` (new host `scripts/demo/steer-host.mjs`; it uses spikes/x1-approval/lib/host.mjs, as questions-host does).
+  - Runs on the code of 67b2733: `followup.sh --steer --shots` passed (bridge 116/116, swift test 158/158, UI test 51.6 s); `followup.sh --running` passed (both FollowUpQueueUITests, 130.7 s and 69.8 s). No new dependencies.
+  - Resources: the stale M1 home ~/.dshm/home-s15 moved to ~/.dshm/home-s15.stale-m1-2026-11-09 (not deleted); simulator dshm-S15 created (iOS 26.4). scripts/demo/s15.sh is the old M1 S15 (所有任务) demo; the demo of this slice is `followup.sh --steer`.
+  - Not checked: the real iPhone (the [human] item). Note: text that the agent streams between the tap and its next step now shows under the bubble (D143 alternative 1 keeps the old place).
+  - Next: a separate reviewer runs the fix-slice review (rule of the coordinator: each test: pointer, full swift test, bridge pnpm test, build-for-testing on dshm-S15, and followup.sh --steer).
+- **2026-11-09 · Review PASS at 02717aa.**
+  - Review: a separate reviewer ran the fix-slice review (rule of the coordinator for a fix slice with no [ui] item) on 02717aa: bridge tests 116/116, swift test 158/158, build-for-testing on dshm-S15, `scripts/demo/followup.sh --steer` (testSendNowDuringALongStepAgainstRealDSH passed, 57 s). `RESULT: PASS`, no retry, no flaky part. Result: /tmp/dshm-review/S15-02717aa.txt (part logs S15-02717aa-part1..4.log).
+  - Merge note for the coordinator: `git merge-tree --write-tree main HEAD` conflicts in ARCHITECTURE.md only (main's D140 row and this slice's D143 row both go after D134). Keep both rows, in number order. Not merged here.
+  - Provisional for §9: D143 (a message sent now shows in the transcript at once; amends D101). No new dependencies. New demo mode `scripts/demo/followup.sh --steer` with `scripts/demo/steer-host.mjs`.
+- **2026-11-09 · Merge of main; review PASS at cfd2a8c.** A fix agent merged main (S14 D140, S16 D146) into the branch at cfd2a8c. One conflict: ARCHITECTURE.md, decision table after D134 (main added D140 and D146, S15 added D143). Resolved by keeping every row whole in number order (D140, D143, D146); S15's D101 amendment and main's other entries kept as they are. No conflict markers left; design/board.html changed on main only, so no re-render. DESIGN.md and PLAN.md merged by themselves. A separate reviewer ran the fix-slice review on cfd2a8c: bridge tests 116/116 (incl. FollowUpQueueAgainstFakeDSH), swift test 164/164 (both DSHKit test: pointers), build-for-testing on dshm-S15, scripts/demo/followup.sh --steer (testSendNowDuringALongStepAgainstRealDSH passed, 52 s). RESULT: PASS, no retry, no flaky part. Result: /tmp/dshm-review/S15-cfd2a8c.txt.
 
 ### S16 · Fix: Mic key crashes on a real iPhone
 

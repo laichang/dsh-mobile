@@ -13,9 +13,13 @@
  * D101: the session's inbox, as real DSH keeps it (measured against DSH 0.2.2-rc.1): a prompt to an
  * idle session starts a turn; while a turn runs, `queue` waits for the next turn (one turn per
  * message, in order) and `steer` for the next step of this turn (after the reply streams). Each
- * message enters the turn as a `user/message` with its `requestId` as `source.rpcId`. `state()`
- * lists what waits; `updateQueue` steers or removes an item. A cancel keeps the inbox, and nothing
- * then runs by itself.
+ * message enters the turn as a `user/message` with its `requestId` as `source.rpcId` (and no
+ * `turn` field, as in real DSH). `state()` lists what waits; `updateQueue` steers or removes an
+ * item. A cancel keeps the inbox, and nothing then runs by itself.
+ * S15: `toolStepMs` starts the turn with one slow tool step (a `bash` call that takes that long), as
+ * a real agent that waits for its subagents. Real DSH gives a steered message to the agent only when
+ * a step ends: `step/end`, `agent/inbox/spliced` (the inbox empties), `step/start`, then the
+ * `user/message` (measured against DSH 0.2.2-rc.1; in the reported session 56 s after the steer).
  */
 import type { Selection } from '../src/models/catalog.ts'
 import type { DshServices, FollowFrame, PromptPart } from '../src/dsh.ts'
@@ -30,6 +34,8 @@ export interface FakeDSHOptions {
   replies?: Record<number, string[]>
   /** D101: the deltas of a step that steered messages start (default: the turn's reply). */
   stepReply?: string[]
+  /** S15: the turn's first step is a tool call that takes this long; a steer waits for its end. */
+  toolStepMs?: number
   /** End the turn with this reason instead of `completed`. */
   failWith?: { kind: string; error?: { message: string; code?: string } }
   /** Per turn of a session (1 = the first prompt): follow frames recorded from real DSH, replayed as they are. */
@@ -308,8 +314,9 @@ export class FakeDSH implements DshServices {
     setImmediate(() => void this.runTurn(sessionId, turn, item))
   }
 
-  private userMessage(sessionId: string, turn: number, item: InboxItem) {
-    this.emitEvent(sessionId, 'user/message', { turn, role: 'user', id: item.id, content: [{ type: 'text', text: item.text }],
+  /** Real DSH's `user/message` has no `turn`: its place in the stream puts it in the turn. */
+  private userMessage(sessionId: string, item: InboxItem) {
+    this.emitEvent(sessionId, 'user/message', { role: 'user', id: item.id, content: [{ type: 'text', text: item.text }],
       source: { kind: 'user', ...(item.rpcId === undefined ? {} : { rpcId: item.rpcId }) } })
   }
 
@@ -337,7 +344,7 @@ export class FakeDSH implements DshServices {
     if (recorded) return this.replay(sessionId, recorded, item)
     let reply = this.options.replies?.[turn] ?? this.options.reply ?? ['Hello', ' from', ' FakeDSH.']
     this.emitEvent(sessionId, 'turn/start', { turn })
-    this.userMessage(sessionId, turn, item)
+    this.userMessage(sessionId, item)
     if (this.options.ask) {
       const abort = new AbortController()
       this.session(sessionId).abort = abort
@@ -355,6 +362,20 @@ export class FakeDSH implements DshServices {
         reply = this.options.reply ?? ['No answer.']
       }
       this.emitEvent(sessionId, 'tool/result', { turn, step: 0, message: { role: 'tool', toolCallId: callId, content: [] } })
+    }
+    if (this.options.toolStepMs !== undefined) {
+      // S15: one slow tool step; DSH gives what was steered meanwhile to the agent only after it.
+      const callId = `call_wait_${turn}`
+      this.emitEvent(sessionId, 'step/start', { turn, step: 1 })
+      this.emitEvent(sessionId, 'tool/call', { turn, step: 1, callId, name: 'bash', arguments: JSON.stringify({ command: 'sleep 90' }) })
+      await new Promise((r) => setTimeout(r, this.options.toolStepMs))
+      if (s.stopped.has(turn)) return
+      this.emitEvent(sessionId, 'tool/result', { turn, step: 1, message: { role: 'tool', toolCallId: callId, content: [] } })
+      this.emitEvent(sessionId, 'step/end', { turn, step: 1 })
+      const steered = s.nextStep.splice(0)
+      if (steered.length) this.emitEvent(sessionId, 'agent/inbox/spliced', { target: 'next-step', start: 0, removedCount: steered.length, inserted: [] })
+      this.emitEvent(sessionId, 'step/start', { turn, step: 2 })
+      for (const message of steered) this.userMessage(sessionId, message)
     }
     for (const e of this.options.events ?? []) this.emitEvent(sessionId, e.type, { turn, ...e.data })
     const delay = this.options.chunkDelayMs ?? 0
@@ -379,7 +400,7 @@ export class FakeDSH implements DshServices {
     }))
     // D101: steered messages go in at the next step of this turn, and the agent answers them there.
     for (let next = 1; s.nextStep.length; next++) {
-      for (const steered of s.nextStep.splice(0)) this.userMessage(sessionId, turn, steered)
+      for (const steered of s.nextStep.splice(0)) this.userMessage(sessionId, steered)
       if (!await this.stream(sessionId, turn, next, this.options.stepReply ?? reply)) return
     }
     for (const call of this.options.tools ?? []) {
