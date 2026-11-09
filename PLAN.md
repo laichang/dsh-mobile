@@ -887,6 +887,8 @@ Append-only, dated.
 
 - **2026-11-09 · User: all §6 exit checks pass on the real iPhone.** The user wrote in chat (2026-11-09): "都验证通过了" for the open §6 exit items (follow-up after done, queue and 立即发送, agent questions, photo + PDF, lock screen Live Activity, Wi-Fi off reconnect over Tailscale, failure without balance then continue). Note: the photo + PDF item names the camera, and the user reported earlier that the camera crashes when the user takes the photo (#39). The user ticks the items.
 
+- **2026-11-09 · User: §9 decisions confirmed, two changed; 3 issues.** The user answered the §9 list on 2026-11-09. Confirmed: D89, D92, D95, D98, D101, D102, D104, D107, D108, D110, D113, D114, D116, D117, D119–D121, D125, D128, D129, D140, D143 ("我们参考claude、codex的交互"), D146, the amendments of D18, D67, D89, D92, D95, D98, D104, D107, the render-design height and the SystemCallbackDoubles test target. Changed: attachments only once a task is done (row 13) — "这个和运行中能否继续发消息是一样的，需要" → #42; D134 — "这个不需要" → #43. New bug: the keyboard stays up after send → #44. ARCHITECTURE.md markers updated in aeb6781. Rows 33 and 34 are duplicates of 31 and 32.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
