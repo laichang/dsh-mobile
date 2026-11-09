@@ -1,11 +1,12 @@
 import XCTest
 
 /// S21 · hosts and control (PLAN.md §5 S21, screens H, X2, X3). FakeBridge only:
-/// `-DSHMFakeBridge hosts` has MacBook-Pro (online, with devices and audit records), hk-1 (its
-/// DSH is too old) and 公司-PC (a session waits on the user); `hosts-one` has only MacBook-Pro.
+/// `-DSHMFakeBridge hosts` has MacBook-Pro (online, with a model catalog, devices and audit
+/// records), hk-1 (its DSH is too old) and 公司-PC (a session waits on the user); `hosts-one` has
+/// only MacBook-Pro.
 /// The test stops and starts the hosts with Darwin notifications (`FakeHostsSwitch`): "down"
 /// takes MacBook-Pro and 公司-PC offline, "up" brings MacBook-Pro back.
-/// The app runs in Chinese, like the design board. scripts/demo/s21.sh runs these;
+/// The app runs in Chinese, like the design board. scripts/demo/hosts.sh runs these;
 /// TEST_RUNNER_DSHM_SHOT_DIR keeps the screenshots.
 @MainActor
 final class S21HostsUITests: XCTestCase {
@@ -14,6 +15,8 @@ final class S21HostsUITests: XCTestCase {
     static let office = "公司-PC"
     static let thisDevice = "dshm-a3f9c21e"
     static let otherDevice = "dshm-77b0e4d2"
+    /// MacBook-Pro's default model (`FakeHosts.defaultModelName`).
+    static let defaultModel = "DeepSeek-V41-Flash"
 
     override func setUp() {
         continueAfterFailure = false
@@ -122,6 +125,20 @@ final class S21HostsUITests: XCTestCase {
         waitFor("value == 'offline' AND label CONTAINS '最后连接' AND label CONTAINS '1 项在等它回来'", office)
         XCTAssertTrue(any(app, "hosts.pair").firstMatch.exists)
         saveShot("s21-hosts-sheet")
+    }
+
+    /// H (D59): an online host names its default model, as the host's catalog names it
+    /// ("默认 DeepSeek-V41-Flash"). A host that sent no catalog shows no model.
+    func testHostsSheetShowsTheDefaultModelOfTheCatalog() {
+        let app = launch("hosts")
+        waitForHostsOnline(app, "2/3")
+        _ = openHostsSheet(app)
+        let mac = element(app, "hosts.row", containing: Self.mac)
+        waitFor("value == 'online' AND label CONTAINS '默认 \(Self.defaultModel)'", mac)
+        let hk = element(app, "hosts.row", containing: Self.hk)
+        XCTAssertTrue(hk.exists, app.debugDescription)
+        XCTAssertFalse(hk.label.contains("默认"), hk.label)
+        saveShot("s21-hosts-default-model")
     }
 
     /// X2: one host's devices (this device is marked) and audit records with "load older".

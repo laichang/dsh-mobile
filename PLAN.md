@@ -54,9 +54,9 @@ This file exists only while this requirement is in progress. It serves this requ
 | S8 | done | merged `b62405c` | 2026-11-09 | — (provisional D125 in §9) |
 | S9 | doing | `claude/s9-ui-test-waits` | 2026-11-09 | Slice owner builds (§8) |
 | S10 | done | merged `f333abc` | 2026-11-09 | — |
-| S11 | doing | `claude/s11-hosts-tests` | 2026-11-09 | Slice owner builds (§8) |
+| S11 | done | merged `87cd8da` | 2026-11-09 | — (provisional D134 in §9) |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
-| S13 | doing | `claude/s13-keyboard-host-menu` | 2026-11-09 | Slice owner builds (§8) |
+| S13 | done | merged `adedb03` | 2026-11-09 | — |
 
 ## 1. Approach
 
@@ -521,7 +521,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S11 · Fix: hosts tests for the all-offline card and the default model row
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: Closes #23 and #27. The user, 2026-11-08, for #22–#28: "这些看看还能不能复现，能的话就修复了". If a bug does not reproduce, the Log names the runs that show it, and the coordinator closes the issue with them.
 
@@ -532,12 +532,19 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/hosts.sh`.
 
 **Done when**
-- [ ] [ui] `testAllOfflineCardNamesEachHostAndGoesWhenOneIsBack` and `testHostsSheetShowsEachHostsState` find `hosts.offlineCard` and pass in the review run with no retry (`cmd:scripts/demo/hosts.sh`) — Evidence:
-- [ ] [ui] The hosts sheet shows the default model of the catalog that `FakeHost` sends, and a UI test checks it (`cmd:scripts/demo/hosts.sh`) — Evidence:
+- [x] [ui] `testAllOfflineCardNamesEachHostAndGoesWhenOneIsBack` and `testHostsSheetShowsEachHostsState` find `hosts.offlineCard` and pass in the review run with no retry (`cmd:scripts/demo/hosts.sh`) — Evidence: cmd:scripts/demo/hosts.sh · test:S21HostsUITests/testAllOfflineCardNamesEachHostAndGoesWhenOneIsBack · test:S21HostsUITests/testHostsSheetShowsEachHostsState · test:OfflineReasonsUITests/testAnotherProgramOnTheBridgePort · shot:evidence/S11/s21-all-offline.png · shot:evidence/S11/s21-hosts-sheet.png
+- [x] [ui] The hosts sheet shows the default model of the catalog that `FakeHost` sends, and a UI test checks it (`cmd:scripts/demo/hosts.sh`) — Evidence: cmd:scripts/demo/hosts.sh · test:S21HostsUITests/testHostsSheetShowsTheDefaultModelOfTheCatalog · test:HostsControlTests/allHostsOfflineOnlyWhenNoHostCanTakeATaskAndNotWhileOneComesBack · shot:evidence/S11/s21-hosts-default-model.png
 
 **Not**: —
 
 **Log**: —
+- **2026-11-09 · #23 reproduced and fixed; #27 done; 3 clean demo runs.**
+  - #23 reproduced on main e09651c (scripts/demo/hosts.sh, before the fix): both card tests failed at the card wait (S21HostsUITests.swift:75 and :111). The tree showed the card's lines and text directly under newSession.body, with no hosts.offlineCard. Cause: since 04a3d0e the card is the only accessible child of the newSession.body container, and SwiftUI drops the card's own container. Fix (D134, provisional): while the card shows, NewSessionBody is no accessibility container; the card is. The gestures stay. OfflineReasonsUITests waits on the card again.
+  - The two #23 tests needed no text change: the card and row text of S7 and S8 still match their predicates.
+  - #27: FakeHosts' MacBook-Pro sends FakePickers' catalog (models.v1, workspaces.v1). HostsControlTests checks the catalog; S21HostsUITests/testHostsSheetShowsTheDefaultModelOfTheCatalog checks the row label '默认 DeepSeek-V41-Flash'. The row truncates the name on the debug channel ('未加密（调试）' is longer than '端到端加密'); the label has it in full.
+  - New demo scripts/demo/hosts.sh: HostsControlTests, S21HostsUITests, seams (S29 FakeHosts revoke tests, S2 offline card, T1 keyboard test on newSession.body, scripts/demo/bridge-errors.sh for S8).
+  - Runs after the fix: hosts.sh 3 times, all parts passed with no retry, no flaky part.
+  - Next: reviewer runs scripts/review S11.
 
 ### S12 · Fix: DSHKit store tests time out under load
 
@@ -563,7 +570,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S13 · Fix: the keyboard stays up when the host menu opens
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: Closes #28. D67: the keyboard goes first before any action that is not typing. D67 puts the keyboard away on page changes, sheets and the drawer, but not for the host `Picker(.menu)` on the composer (`SessionPage.swift`, shown with 2 or more hosts).
 
@@ -572,11 +579,13 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/keyboard.sh`.
 
 **Done when**
-- [ ] [ui] With the keyboard up on 01, open the host menu: the keyboard goes first, then the menu shows (`cmd:scripts/demo/keyboard.sh`) — Evidence:
+- [x] [ui] With the keyboard up on 01, open the host menu: the keyboard goes first, then the menu shows (`cmd:scripts/demo/keyboard.sh`) — Evidence: cmd:scripts/demo/keyboard.sh · test:KeyboardMenusUITests/testHostMenuPutsKeyboardAwayFirst · test:KeyboardMenusUITests/testAttachMenuPutsKeyboardAwayFirst · shot:evidence/S13/keyboard-host-menu.png · shot:evidence/S13/keyboard-attach-menu.png
 
 **Not**: —
 
 **Log**: —
+- **2026-11-09 · Built; the item ticked, review next.** Done: #28 reproduced in the Simulator (iOS 26.4, two FakeBridge hosts): with the on-screen keyboard up on 01, the host menu and the "+" menu opened and the keyboard stayed (KeyboardMenusUITests failed on app.keyboards while the menu showed). Fix: .dismissesKeyboardBeforeMenu() (ios/dsh-mobile/Shell/KeyboardMenus.swift) adds a .menuActionTriggered action to the UIControl that SwiftUI draws for the menu; UIKit sends it just before the menu shows, so the keyboard goes first and the menu opens at the composer's place. It covers the composer's host menu and the "+" attach menu (on 01 and on the session page). The model and workspace keys open sheets (D67 covered them already); the mic key and the queued-message actions open no menu. Tried and dropped: a simultaneous TapGesture and onAppear in the menu items (never run), dismiss on touch down (the composer moves with the keyboard, the touch ends outside the key, the menu does not open). Test: -DSHMFakeScenario attachments gives the two multi fake hosts attachments.v1. Demo scripts/demo/keyboard.sh (KeyboardMenusUITests, then S24KeyboardDismissUITests as the seam) passed 3 times in a row. Provisional: the D67 amendment (mechanism and alternatives); DESIGN.md Navigation names the composer menus. No new dependencies. Seen, not fixed: with two hosts the host name in the composer's context line wraps to two lines ("Home / Mac") next to "Default workspace"; it was so before this change. Next: reviewer runs scripts/review S13.
+- **2026-11-09 · Review PASS at 427d9a6.** Review: /tmp/dshm-review/S13-427d9a6.txt RESULT: PASS (full run, separate reviewer, no retry). No flaky parts. Provisional: D67 amendment (composer menus, .menuActionTriggered), commit 0298cc2. Next: the coordinator merges.
 
 ## 6. Exit
 
@@ -727,6 +736,16 @@ Append-only, dated.
 
 - **2026-11-09 · S13 runs as a background agent; all slices started.** S13 assigned (D137–D139) and started as a background agent. Every slice of the plan is now started or merged. Running: S9, S11, S13.
 
+- **2026-11-09 · S11 merged.** Merged as `87cd8da`; `scripts/check-plan` on the merge commit passed. `scripts/review S11` at `12ffe5c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S11-12ffe5c.txt`). No open `[human]` items, so S11 is `done`. §9 rows 29 (D134).
+
+- **2026-11-09 · S11 merged.** S11 merged as 87cd8da (review PASS on 12ffe5c, S11-12ffe5c.txt, no flaky part). #23 reproduced on e09651c: since 04a3d0e the newSession.body container swallowed the card's own container on iOS 26; while the card shows, the card is now the container (D134, amends D59, in §9). #27: FakeHosts' MacBook-Pro now sends the FakePickers catalog; a UI test checks the default model row. Note for the user: with the debug channel label the model name is cut off on screen ('默认 DeepSeek-V…'); the accessibility label is full.
+
+- **2026-11-09 · S13 merged.** Merged as `adedb03`; `scripts/check-plan` on the merge commit passed. `scripts/review S13` at `427d9a6`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S13-427d9a6.txt`). No open `[human]` items, so S13 is `done`.
+
+- **2026-11-09 · S13 merged.** S13 merged as adedb03 (review PASS on 427d9a6, S13-427d9a6.txt, no flaky part; head 8b7e3c2 adds only PLAN changes). #28 reproduced on iOS 26.4 with two fake hosts, for the host menu and the '+' attach menu. D67 amendment in §9. Seen, not fixed (for an issue): with two hosts the host name in the composer's 'host · workspace' line wraps onto two lines next to 'Default workspace'.
+
+- **2026-11-09 · Interruption: app restart stopped S9; resumed.** About 09:30 the Claude app restarted. It stopped the S9 background agent and its shells (no completion record). scripts/status at 10:17: S9 clean at 4db6f66 (7 commits, no ticks, no review), nothing running, no simulator booted. The coordinator resumed the S9 agent with a recovery brief: merge main if needed, run ui-health.sh again, tick, full review by a separate reviewer. Heartbeat e8ffa347 survived the restart. From now on the coordinator follows the user's rule in issue #37: a slice owner ends at built; a later fix or merge of main goes to a new agent.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -761,3 +780,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 26 | S6 | `[human]` | On a real iPhone signed with the free team, the app starts a Live Activity for a running task | `main` | `b4d0a65` |
 | 27 | S8 | decision | ARCHITECTURE D125, *provisional*: A bridge that cannot listen: the reason comes from both sides (screens H, X3; amends D98) | `claude/s8-bridge-listen-errors` | merged `b62405c` |
 | 28 | S8 | decision | D98 amended by D125: a TCP check after a timeout raises the most a dead address can cost from 5 s to 6 s | `claude/s8-bridge-listen-errors` | `ffb2589` |
+| 29 | S11 | decision | ARCHITECTURE D134, *provisional*: The all-offline card keeps its own accessibility container (screen X3; amends D59) | `claude/s11-hosts-tests` | merged `87cd8da` |
+| 30 | S13 | decision | D67 amended: .dismissesKeyboardBeforeMenu() hooks UIKit's menuActionTriggered behind the host Picker(.menu) and the attach menu (relies on SwiftUI internals; KeyboardMenusUITests catches a regression) | `claude/s13-keyboard-host-menu` | `0298cc2` |

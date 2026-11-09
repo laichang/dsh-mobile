@@ -96,8 +96,7 @@ real_bridge
 
 # The seams: the revoke of this device from X2 (the fake now closes with 4003 after the
 # response), and S10's revoke of another device on a real bridge (S29's second ports).
-# Only S21's revoke test: its two all-offline card tests fail on main since 04a3d0e (the card's
-# `hosts.offlineCard` id is lost under `newSession.body`), which is not this slice's code.
+# Only S21's revoke test: scripts/demo/hosts.sh runs the other S21 tests.
 ui_part s21-seam S21HostsUITests/testRevokeThisDeviceAsksThenOpens08
 step "seam: scripts/demo/s10.sh (log: $LOGS/s10.log)"
 demo_part s10-seam env DSHM_BRIDGE_PORT="$DSHM_SECOND_BRIDGE_PORT" DSHM_WEB_PORT="$DSHM_SECOND_WEB_PORT" \

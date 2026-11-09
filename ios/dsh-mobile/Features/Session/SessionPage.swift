@@ -96,11 +96,27 @@ private struct NewSessionBody: View {
         .gesture(DragGesture(minimumDistance: 20).onEnded { drag in
             if drag.translation.height > 30 { endEditing() }
         })
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("newSession.body")
+        .modifier(NewSessionBodyContainer(isOn: !store.allHostsOffline))
     }
 
     private func endEditing() { Keyboard.dismiss() }
+}
+
+/// The accessibility container `newSession.body`, except while the all-offline card shows (D134):
+/// with the card as its only child, SwiftUI drops the card's own container, and with it the
+/// `hosts.offlineCard` identifier. Then the card is the container of the page's middle.
+private struct NewSessionBodyContainer: ViewModifier {
+    let isOn: Bool
+
+    func body(content: Content) -> some View {
+        if isOn {
+            content
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("newSession.body")
+        } else {
+            content
+        }
+    }
 }
 
 /// The thin session page: milestone card on top (a tap opens the timeline sheet), approvals,
@@ -583,6 +599,7 @@ struct ComposerView: View {
                 }
                 .pickerStyle(.menu)
                 .tint(DSHTheme.textSecondary)
+                .dismissesKeyboardBeforeMenu() // D67
                 .accessibilityIdentifier("composer.host")
                 .disabled(store.isSending)
             } else if let host {

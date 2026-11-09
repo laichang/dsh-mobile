@@ -38,6 +38,8 @@ public enum DebugLaunchOptions {
     /// `-DSHMFakeScenario turns` (S27): a done Web session with two turns hours apart (`FakeTurns`).
     /// `-DSHMFakeScenario conversation` (D117): the default task, on a host that takes follow-ups
     /// (`conversation.v1`), so the session page has its composer.
+    /// `-DSHMFakeScenario attachments` (D67): with `-DSHMFakeBridge multi`, both hosts take
+    /// attachments (`attachments.v1`), so the composer has its host menu and its "+" menu.
     public static let fakeScenarioKey = "DSHMFakeScenario"
     /// `-DSHMFakeAsk <text>` (S18): with the FakeBridge approvals scenario, a task whose prompt
     /// contains `<text>` asks for an approval before its reply, so a new approval arrives in an
