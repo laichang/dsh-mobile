@@ -58,7 +58,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
 | S13 | done | merged `adedb03` | 2026-11-09 | — |
 | S14 | done | merged `aac51a9` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
-| S15 | doing | `claude/s15-steered-message` | 2026-11-09 | Slice owner builds (§8) |
+| S15 | review | merged `0c2fc15` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 | S16 | review | merged `5a9f691` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 
 ## 1. Approach
@@ -879,6 +879,8 @@ Append-only, dated.
 
 - **2026-11-09 · S16 merged; S6 done; S15 built, merge of main goes to a fix agent.** S16 merged (5a9f691) after the fix agent merged main and the reviewer passed it (/tmp/dshm-review/S16-7b62238.txt). The user ticked S6's [human] item, so S6 is done. Note: the user's tick was still uncommitted in PLAN.md when the coordinator ran scripts/plan pending, so the tick went into commit 9b23c18 with the §9 row (the coordinator did not make the edit). Finding for an issue: scripts/plan commits all of PLAN.md, also edits it did not make; it should refuse when PLAN.md has changes of others. S15 is built (D143: a message sent with 立即发送 shows in the transcript at once, marked until DSH takes it; cause: real DSH hands a steer to the agent only when the current step ends, 56 s in the user's case); fix-slice review PASS at 02717aa. Its merge with main conflicts in ARCHITECTURE.md, so a new fix agent merges main and the reviewer runs again. The Simulator preview (iPhone 17 Pro) now runs main with S14 and S16.
 
+- **2026-11-09 · S15 merged.** Merged as `0c2fc15`; `scripts/check-plan` on the merge commit passed. `scripts/review S15` at `cfd2a8c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S15-cfd2a8c.txt`). 1 open `[human]` item, so S15 is `review`. §9 rows 40, 41 (D143). Fix-slice test review PASS at cfd2a8c (merge of main by a fix agent): /tmp/dshm-review/S15-cfd2a8c.txt (bridge 116, DSHKit 164, app build, followup.sh --steer against real DSH). D143 provisional. The user's local Localizable.xcstrings (Xcode reformat) did not apply over the merge; it is kept in stash coord-s15-localizable-user.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -924,3 +926,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 37 | S16 | decision | ARCHITECTURE D146, *provisional*: System callbacks that run on the system's queue go through `SystemCallback.value` (amends D116) | `claude/s16-mic-crash` | merged `5a9f691` |
 | 38 | S16 | `[human]` | The user no longer sees the bug | `main` | `5a9f691` |
 | 39 | S16 | decision | Test-only target SystemCallbackDoubles (Objective-C, in no product) in ios/DSHKit/Package.swift, provisional | `main` | — |
+| 40 | S15 | decision | ARCHITECTURE D143, *provisional*: A message sent now shows in the transcript at once (screen 04, amends D101) | `claude/s15-steered-message` | merged `0c2fc15` |
+| 41 | S15 | `[human]` | The user no longer sees the bug | `main` | `0c2fc15` |
