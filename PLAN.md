@@ -58,7 +58,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
 | S13 | done | merged `adedb03` | 2026-11-09 | — |
 | S14 | done | merged `aac51a9` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
-| S15 | review | merged `0c2fc15` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
+| S15 | done | merged `0c2fc15` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 | S16 | review | merged `5a9f691` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 
 ## 1. Approach
