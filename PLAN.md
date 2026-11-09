@@ -57,7 +57,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S11 | done | merged `87cd8da` | 2026-11-09 | — (provisional D134 in §9) |
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
 | S13 | done | merged `adedb03` | 2026-11-09 | — |
-| S14 | review | merged `aac51a9` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
+| S14 | done | merged `aac51a9` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 | S15 | doing | `claude/s15-steered-message` | 2026-11-09 | Slice owner builds (§8) |
 | S16 | doing | `claude/s16-mic-crash` | 2026-11-09 | Slice owner builds (§8) |
 
