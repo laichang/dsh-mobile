@@ -21,3 +21,4 @@ S10	claude/s10-offline-rich-detail	1	47811	3284	47841	3314	dshm-S10	~/.dshm/home
 S11	claude/s11-hosts-tests	2	47812	3285	47842	3315	dshm-S11	~/.dshm/home-s11	D134-D136	2026-11-09
 S13	claude/s13-keyboard-host-menu	1	47811	3284	47841	3314	dshm-S13	~/.dshm/home-s13	D137-D139	2026-11-09
 S14	claude/s14-bold-replies	0	47810	3283	47840	3313	dshm-S14	~/.dshm/home-s14	D140-D142	2026-11-09
+S15	claude/s15-steered-message	1	47811	3284	47841	3314	dshm-S15	~/.dshm/home-s15	D143-D145	2026-11-09
