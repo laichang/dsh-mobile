@@ -505,6 +505,10 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
   - Also passed on this branch: `scripts/demo/t0.sh`, `s23.sh` (S23, S19, S16, S14, T1, S18, S15), `s26.sh`, `s28.sh --no-s8`, `followup.sh`, `followup.sh --running`, `model-failures.sh`.
   - Not: flaky or failing tests that #24/#25 do not name (not repaired; for the coordinator): (1) `S20PickersUITests/testUnavailableModelKeepsApplyOffAndSelectsNothing` failed once by the Live Activity race (run 2), passed in 2 runs right after. (2) `S21HostsUITests` both tests failed in `s21.sh` before main's S11 fix (no `hosts.offlineCard` element; before any typed step) — S11 changed these tests since. (3) `S9PairedHostsUITests/testPairedDevicesAndInlineAnswersStayWithTheirHost` failed in `s9.sh`: the 所有任务 rows have the reply as title ("Hello from host 0."), not the prompt; the typed prompt was in the field and the task completed. (4) `S7WorkspaceUITests` failed at its first step in `s7.sh` (first test of the run, before D129: the launch race pattern). (5) `LiveActivityUITests` failed once in `live-activity.sh` on dshm-S9: the activity showed in the Dynamic Island, the lock screen did not show (the lock did not take). Not re-run (the app restart stopped questions.sh, attachments.sh, s7.sh, live-activity.sh).
   - Next: a reviewer runs `scripts/review S9` on the head commit; the three #24 parts must not be flaky.
+- **2026-11-09 · Review PASS at c853d15.**
+  - The first review at `956689a` said FAIL for every test: pointer, though every part passed: `ui-health.sh` wrote the xcodebuild output only to its part logs, and `scripts/review` looks for the pass lines in its own log. `ui-health.sh` now prints the pass lines too (`c853d15`).
+  - `scripts/review S9` at `c853d15` (independent reviewer, full run): `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S9-c853d15.txt`). S16 scroll test 37.7 s; longest idle wait of any test 3.7 s.
+  - Provisional for §9: D128 (UIKit view animations off under `-DSHMUIKitAnimations NO`), D129 (Debug test launches start no Live Activities unless they ask; amends D119).
 
 ### S10 · Fix: rich detail after an offline relaunch
 
