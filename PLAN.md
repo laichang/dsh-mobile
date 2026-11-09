@@ -49,7 +49,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S3 | done | merged `33e96ff` | 2026-11-09 | — (provisional D110 in §9) |
 | S4 | done | merged `83c82ce` | 2026-11-09 | — (provisional D107, D108 in §9) |
 | S5 | done | merged `5362e43` | 2026-11-09 | — (provisional D116, D117 in §9) |
-| S6 | review | merged `b4d0a65` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
+| S6 | done | merged `b4d0a65` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 | S7 | done | merged `1978046` | 2026-11-08 | — (provisional D98 in §9) |
 | S8 | done | merged `b62405c` | 2026-11-09 | — (provisional D125 in §9) |
 | S9 | done | merged `4a4dbf9` | 2026-11-09 | — (provisional D128, D129 in §9) |
