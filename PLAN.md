@@ -47,7 +47,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S3 | todo | — | 2026-11-10 | Assign it and start a session |
 | S4 | todo | — | 2026-11-10 | Assign it and start a session |
 | S5 | todo | — | 2026-11-10 | Assign it and start a session |
-| S6 | todo | — | 2026-11-10 | Assign it and start a session |
+| S6 | doing | `claude/s6-architecture-current` | 2026-11-10 | Slice owner builds (§8) |
 | S7 | todo | — | 2026-11-10 | Assign it and start a session |
 
 ## 1. Approach
@@ -342,6 +342,8 @@ Append-only, dated.
 - **2026-11-10 · T0 assigned.** Branch `claude/t0-plan-graph`, simulator `dshm-T0`, DSHM_HOME `~/.dshm/home-t0`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D147–D149. `eval "$(scripts/slice-env T0)"` exports them.
 
 - **2026-11-10 · S1 assigned.** Branch `claude/s1-output-wrappers`, simulator `dshm-S1`, DSHM_HOME `~/.dshm/home-s1`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D150–D152. `eval "$(scripts/slice-env S1)"` exports them.
+
+- **2026-11-10 · S6 assigned.** Branch `claude/s6-architecture-current`, simulator `dshm-S6`, DSHM_HOME `~/.dshm/home-s6`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D153–D155. `eval "$(scripts/slice-env S6)"` exports them.
 
 ## 9. Pending user confirmation
 
