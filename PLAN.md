@@ -833,6 +833,8 @@ Append-only, dated.
 
 - **2026-11-09 · S16 assigned.** Branch `claude/s16-mic-crash`, simulator `dshm-S16`, DSHM_HOME `~/.dshm/home-s16`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D146–D148. `eval "$(scripts/slice-env S16)"` exports them.
 
+- **2026-11-09 · S16 fix slice: mic crash on a real iPhone.** The user reported that a tap on the mic key crashes the app on the real iPhone. Fix slice S16 (D146–D148) runs as a background agent; 3 slices run (S14, S15, S16). The coordinator asked the user for the crash log. The user also saw no '+' on the follow-up composer while a task ran: that is the provisional D18 amendment (§9 row 13: attachments only once a task is done), not a bug; the coordinator pointed the user at it as a §9 choice.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
