@@ -59,7 +59,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S13 | done | merged `adedb03` | 2026-11-09 | — |
 | S14 | done | merged `aac51a9` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 | S15 | doing | `claude/s15-steered-message` | 2026-11-09 | Slice owner builds (§8) |
-| S16 | doing | `claude/s16-mic-crash` | 2026-11-09 | Slice owner builds (§8) |
+| S16 | review | merged `5a9f691` | 2026-11-09 | User accepts 1 `[human]` item (§9) |
 
 ## 1. Approach
 
@@ -860,6 +860,8 @@ Append-only, dated.
 
 - **2026-11-09 · User: S14 passes on the real iPhone.** The user wrote in chat (2026-11-09): "验证通过" for the bold check on the real iPhone (build from main with S14). The user ticks S14's [human] item (PLAN.md line 623).
 
+- **2026-11-09 · S16 merged.** Merged as `5a9f691`; `scripts/check-plan` on the merge commit passed. `scripts/review S16` at `7b62238`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S16-7b62238.txt`). 1 open `[human]` item, so S16 is `review`. §9 rows 37, 38 (D146). Fix-slice test review PASS at 7b62238 (merge of main by a fix agent): /tmp/dshm-review/S16-7b62238.txt (voice.sh, VoiceUITests incl. testRealPermissionPromptsDoNotCrashTheApp, SystemCallbackTests, DSHKit 162, bridge 115, app build). Not run: the branch where the real permission alerts are answered (the simulator held a stored answer). D146 and the test target SystemCallbackDoubles provisional.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
@@ -902,3 +904,5 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 34 | S9 | decision | D129 | `main` | — |
 | 35 | S14 | decision | ARCHITECTURE D140, *provisional*: Emphasis next to CJK text, as DSH Web shows it | `claude/s14-bold-replies` | merged `aac51a9` |
 | 36 | S14 | `[human]` | The user no longer sees the bug | `main` | `aac51a9` |
+| 37 | S16 | decision | ARCHITECTURE D146, *provisional*: System callbacks that run on the system's queue go through `SystemCallback.value` (amends D116) | `claude/s16-mic-crash` | merged `5a9f691` |
+| 38 | S16 | `[human]` | The user no longer sees the bug | `main` | `5a9f691` |
