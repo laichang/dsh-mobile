@@ -620,7 +620,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 **Done when**
 - [x] [auto] A test reproduces the reported bug and passes with the fix — Evidence: test:TranscriptEmphasisTests/boldNextToCJKPunctuation · test:TranscriptEmphasisTests/streamedListReplyIsBold
-- [ ] [human] The user no longer sees the bug — Evidence:
+- [x] [human] The user no longer sees the bug — Evidence: human:2026-11-09 iPhone 17 Pro, bold next to CJK punctuation renders as on DSH web
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
 
