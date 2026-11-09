@@ -881,6 +881,8 @@ Append-only, dated.
 
 - **2026-11-09 · S15 merged.** Merged as `0c2fc15`; `scripts/check-plan` on the merge commit passed. `scripts/review S15` at `cfd2a8c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S15-cfd2a8c.txt`). 1 open `[human]` item, so S15 is `review`. §9 rows 40, 41 (D143). Fix-slice test review PASS at cfd2a8c (merge of main by a fix agent): /tmp/dshm-review/S15-cfd2a8c.txt (bridge 116, DSHKit 164, app build, followup.sh --steer against real DSH). D143 provisional. The user's local Localizable.xcstrings (Xcode reformat) did not apply over the merge; it is kept in stash coord-s15-localizable-user.
 
+- **2026-11-09 · S15 merged; all fix slices merged; heartbeat stopped.** S15 merged (0c2fc15) after the fix agent merged main and the reviewer passed it (/tmp/dshm-review/S15-cfd2a8c.txt). No slice is todo, doing or blocked. S15 and S16 wait for the user's [human] check on the real iPhone. The user's local Localizable.xcstrings (Xcode reformat) did not apply over the merge and is kept in stash coord-s15-localizable-user. Heartbeat 314f990d stopped.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
