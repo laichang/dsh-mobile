@@ -608,7 +608,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S14 · Fix: Bold text in phone replies
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-09: User, 2026-11-09, real iPhone, reply to 今天周几: "手机端的回复，markdown渲染出错，字体没有加粗，web端展示正常。" The DSH reply text was: 今天是 **2026 年 11 月 9 日，星期一**。 (deepseek-flash, session 1e7315f3).
 
