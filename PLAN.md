@@ -58,6 +58,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S12 | done | merged `2574d2f` | 2026-11-09 | — |
 | S13 | done | merged `adedb03` | 2026-11-09 | — |
 | S14 | todo | — | 2026-11-09 | Fix: Bold text in phone replies; start a fix session |
+| S15 | todo | — | 2026-11-09 | Fix: Steered message stays above the field; start a fix session |
 
 ## 1. Approach
 
@@ -108,6 +109,7 @@ flowchart LR
     S12["S12 · Fix: DSHKit store tests time out under load"]
     S13["S13 · Fix: the keyboard stays up when the host menu opens"]
     S14["S14 · Fix: Bold text in phone replies"]
+    S15["S15 · Fix: Steered message stays above the field"]
 
     T0 --> S1
     T1 --> S2
@@ -609,6 +611,24 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Status** todo · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-09: User, 2026-11-09, real iPhone, reply to 今天周几: "手机端的回复，markdown渲染出错，字体没有加粗，web端展示正常。" The DSH reply text was: 今天是 **2026 年 11 月 9 日，星期一**。 (deepseek-flash, session 1e7315f3).
+
+**Cuts**: Find the cause. Fix it. Add a test that fails without the fix.
+
+**Demo**: —
+
+**Done when**
+- [ ] [auto] A test reproduces the reported bug and passes with the fix — Evidence:
+- [ ] [human] The user no longer sees the bug — Evidence:
+
+**Not**: Other changes. Report other bugs to the coordinator as new fix slices.
+
+**Log**: —
+
+### S15 · Fix: Steered message stays above the field
+
+**Status** todo · **Needs** — · **Branch** —
+
+**Why**: The user reported a bug on 2026-11-09: User, 2026-11-09, real iPhone: while 总结 dsh-mobile 所有文件 ran, the user sent 不用了 and tapped 立即发送: "不用了 没有出现在对话流，而是继续出现在对话框悬浮着". DSH did deliver it: the agent's reply starts 好的，停在汇总这里 (session 5eea5b1c). D101 says the app takes the message out of the queue and draws the bubble when DSH writes it into the session.
 
 **Cuts**: Find the cause. Fix it. Add a test that fails without the fix.
 
