@@ -432,14 +432,6 @@ private struct SessionComposer: View {
                         .foregroundStyle(DSHTheme.textTertiary)
                         .accessibilityIdentifier("session.followUp")
                     Spacer(minLength: 0)
-                    // Screen 04 tags the follow-up field with its milestone.
-                    Text(verbatim: "M2")
-                        .font(DSHTheme.mono(.caption2).weight(.semibold))
-                        .foregroundStyle(DSHTheme.textSecondary)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(Color.white.opacity(0.08), in: .rect(cornerRadius: 6))
-                        .accessibilityHidden(true)
                 }
             }
             HStack(spacing: 8) {
