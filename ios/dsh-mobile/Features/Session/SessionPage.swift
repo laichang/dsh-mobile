@@ -583,6 +583,7 @@ struct ComposerView: View {
                 }
                 .pickerStyle(.menu)
                 .tint(DSHTheme.textSecondary)
+                .dismissesKeyboardBeforeMenu() // D67
                 .accessibilityIdentifier("composer.host")
                 .disabled(store.isSending)
             } else if let host {

@@ -75,7 +75,8 @@ final class ShellModel {
 }
 
 /// S24 (D67): puts the keyboard away, wherever the focus is (the composer's prompt, a sheet's
-/// field). The shell calls it on each move; `NewSessionBody` on a tap or a swipe down.
+/// field). The shell calls it on each move; `NewSessionBody` on a tap or a swipe down; a menu on
+/// the composer just before it shows (`dismissesKeyboardBeforeMenu`).
 @MainActor
 enum Keyboard {
     static func dismiss() {
