@@ -347,6 +347,8 @@ Append-only, dated.
 
 - **2026-11-10 · Coordinator rule: a slice with no [ui] item passes review by a separate test run.** scripts/review refuses a slice with no [ui] items (issue #45). Seven of the nine M2.5 slices are [auto] only. The coordinator applies the user's M2 rule for fix slices (2026-11-09, "reviewer跑测试") to them: a separate reviewer, on the clean head commit, runs each cmd:/test: pointer of the slice, the full DSHKit swift test, the bridge tests and an app build for testing; all pass → RESULT: PASS in /tmp/dshm-review/<ID>-<commit>.txt. Pending user confirmation (§9).
 
+- **2026-11-10 · Heartbeat deleted: all work waits for the user.** Heartbeat 1b7fe4cd deleted (WORKFLOW §5.5). Waiting for the user: S1 merge (uncommitted AGENTS.md/ARCHITECTURE.md on main block it; stash-merge-reapply or user commits first); T0 and S6 each wait for a shell-command approval in their sessions. A new heartbeat starts when work runs again.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
