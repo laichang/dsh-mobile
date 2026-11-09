@@ -777,3 +777,4 @@ Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, 
 | 27 | S8 | decision | ARCHITECTURE D125, *provisional*: A bridge that cannot listen: the reason comes from both sides (screens H, X3; amends D98) | `claude/s8-bridge-listen-errors` | merged `b62405c` |
 | 28 | S8 | decision | D98 amended by D125: a TCP check after a timeout raises the most a dead address can cost from 5 s to 6 s | `claude/s8-bridge-listen-errors` | `ffb2589` |
 | 29 | S11 | decision | ARCHITECTURE D134, *provisional*: The all-offline card keeps its own accessibility container (screen X3; amends D59) | `claude/s11-hosts-tests` | merged `87cd8da` |
+| 30 | S13 | decision | D67 amended: .dismissesKeyboardBeforeMenu() hooks UIKit's menuActionTriggered behind the host Picker(.menu) and the attach menu (relies on SwiftUI internals; KeyboardMenusUITests catches a regression) | `claude/s13-keyboard-host-menu` | `0298cc2` |
