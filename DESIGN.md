@@ -33,7 +33,7 @@ Aligned with DSH desktop and Web ([deepseek.com/harness](https://www.deepseek.co
 
 System font (PingFang SC for Chinese), SF Mono for commands and paths. Thinking and tool calls collapse to one line; tool calls are `verb · target · +/−` rows.
 
-Markdown in replies (screen 04): code blocks a shade below the canvas; tables as native tables, as DSH Web shows them: the header row on a light fill, hairlines between rows, each column aligned as the delimiter row says. A long cell wraps (a column is at most 240 pt). A table wider than the screen scrolls sideways in its own row; the page does not (S28, ARCHITECTURE.md D79).
+Markdown in replies (screen 04): code blocks a shade below the canvas; tables as native tables, as DSH Web shows them: the header row on a light fill, hairlines between rows, each column aligned as the delimiter row says. A long cell wraps (a column is at most 240 pt). A table wider than the screen scrolls sideways in its own row; the page does not (S28, ARCHITECTURE.md D79). Bold and italic next to Chinese text show as in DSH Web, also where the stars touch CJK punctuation, as in `**星期一（Monday）**是` (S14, D140).
 
 ### App icon
 

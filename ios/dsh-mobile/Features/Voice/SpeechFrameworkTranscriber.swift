@@ -29,9 +29,9 @@ final class SpeechFrameworkTranscriber: Transcriber {
     private var listening = false
 
     func permission() async -> DictationPermission {
-        let speech = await withCheckedContinuation { (done: CheckedContinuation<SFSpeechRecognizerAuthorizationStatus, Never>) in
-            SFSpeechRecognizer.requestAuthorization { done.resume(returning: $0) }
-        }
+        // The Speech framework answers on a queue of its own: a handler written here would be on
+        // the main actor, and Swift 6 stops the app when it runs there (D146).
+        let speech = await SystemCallback.value { SFSpeechRecognizer.requestAuthorization($0) }
         switch speech {
         case .authorized: break
         case .restricted: return .restricted
