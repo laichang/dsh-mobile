@@ -89,8 +89,8 @@ public struct FakeDevices: Sendable {
 }
 
 /// S21 · the hosts of screens H, X2 and X3 (`-DSHMFakeBridge hosts…`): MacBook-Pro (online, with
-/// devices and audit records), hk-1 (its DSH is too old for the bridge) and 公司-PC (a session
-/// waits on the user there). A UI test stops and starts the reachable hosts with the Darwin
+/// a model catalog, devices and audit records), hk-1 (its DSH is too old for the bridge) and
+/// 公司-PC (a session waits on the user there). A UI test stops and starts the reachable hosts with the Darwin
 /// notifications `hostsDown` and `hostsUp`, and revokes this phone on MacBook-Pro from another
 /// client with `hostsRevoke` (the app's `FakeHostsSwitch`).
 public enum FakeHosts {
@@ -126,11 +126,18 @@ public enum FakeHosts {
             pageSize: 2)
     }
 
+    /// D59: MacBook-Pro's model catalog (`models.v1`), so screen H shows its default model.
+    public static let defaultModelName = "DeepSeek-V41-Flash"
+    static var macPickers: FakeBridge.Pickers {
+        .init(catalog: FakePickers.catalog(failures: []),
+              workspaces: FakePickers.workspaces(FakePickers.home, [FakePickers.q3]))
+    }
+
     /// The hosts that a UI test can stop and start: every host of the variant except hk-1.
     public static func hosts(_ variant: Variant) -> (configs: [TaskListStore.HostConfig], switchable: [FakeHost]) {
         var hosts: [(String, FakeHost)] = []
         hosts.append((macName, FakeHost(script: .init(reply: ["Reply ", "from ", macName], chunkDelay: .milliseconds(200)),
-                                        hostName: macName, devices: macDevices())))
+                                        hostName: macName, pickers: macPickers, devices: macDevices())))
         if variant == .three {
             hosts.append((hkName, FakeHost(hostName: hkName, incompatibleDsh: ("0.8.2", "0.9.x"))))
             var waiting = Dshm_V1_TaskSummary()
