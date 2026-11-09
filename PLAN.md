@@ -883,6 +883,8 @@ Append-only, dated.
 
 - **2026-11-09 · S15 merged; all fix slices merged; heartbeat stopped.** S15 merged (0c2fc15) after the fix agent merged main and the reviewer passed it (/tmp/dshm-review/S15-cfd2a8c.txt). No slice is todo, doing or blocked. S15 and S16 wait for the user's [human] check on the real iPhone. The user's local Localizable.xcstrings (Xcode reformat) did not apply over the merge and is kept in stash coord-s15-localizable-user. Heartbeat 314f990d stopped.
 
+- **2026-11-09 · Device checks: S15, S16, dictation, photo + PDF pass; 4 issues.** The user, 2026-11-09, real iPhone (build from main with S14–S16): S16 mic (permission prompts, Chinese dictation into the field), S15 立即发送 (the message shows in the transcript at once with its mark), and the photo + PDF attachment check: "验证通过". The user ticks these items. The user asked for issues (not fix slices) for: #38 hold-to-record mic key, #39 the camera attachment crashes when the user takes the photo, #40 a tap on a sent image does nothing, #41 open Markdown files the agent writes, as DSH Web does.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
