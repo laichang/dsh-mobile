@@ -851,6 +851,8 @@ Append-only, dated.
 
 - **2026-11-09 · Interruption: app quit stopped S15 and the S16 merge agent; resumed.** About 14:00 the Claude app quit. It stopped the S15 owner (clean at 02717aa, status review, no review result yet) and the S16 fix agent (merge of main in progress, ARCHITECTURE.md unmerged). The heartbeat did not fire for an hour. The coordinator resumed both agents with recovery briefs: S15 runs its fix-slice test review; the S16 fix agent finishes the merge and its review.
 
+- **2026-11-09 · User: S14 passes on the real iPhone.** The user wrote in chat (2026-11-09): "验证通过" for the bold check on the real iPhone (build from main with S14). The user ticks S14's [human] item (PLAN.md line 623).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
