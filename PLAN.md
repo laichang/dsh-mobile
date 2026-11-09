@@ -655,7 +655,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A test reproduces the reported bug and passes with the fix — Evidence:
+- [x] [auto] A test reproduces the reported bug and passes with the fix — Evidence: test:VoiceUITests/testRealPermissionPromptsDoNotCrashTheApp · test:SystemCallbackTests/anAnswerOnTheSystemsQueueReachesAMainActorCaller · test:SystemCallbackTests/manyAnswersInARow · cmd:scripts/demo/voice.sh
 - [ ] [human] The user no longer sees the bug — Evidence:
 
 **Not**: Other changes. Report other bugs to the coordinator as new fix slices.
