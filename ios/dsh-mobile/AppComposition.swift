@@ -1,4 +1,5 @@
 import DSHCore
+import DSHProtocol
 import Foundation
 import SwiftData
 #if DEBUG
@@ -122,6 +123,7 @@ final class AppModel {
                 script.ask = options.fakeAsk.map { ($0, FakeApprovalSheet.asked) }
                 let fake = FakeHost(script: script,
                                     hostName: name, reachable: index != 0 || !options.fakeBridgeOffline,
+                                    extraCapabilities: options.fakeScenario == "attachments" ? [DSHProtocolInfo.attachmentsCapability] : [],
                                     approvals: options.fakeApprovals ? FakeApprovals.seed(for: name) : [])
                 if options.fakeApprovals { FakeApprovalSheet.watchWebAnswers(fake) }
                 return .init(key: "fake:\(name)", connection: HostConnection(endpoint: endpoint,

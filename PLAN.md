@@ -570,7 +570,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S13 · Fix: the keyboard stays up when the host menu opens
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: Closes #28. D67: the keyboard goes first before any action that is not typing. D67 puts the keyboard away on page changes, sheets and the drawer, but not for the host `Picker(.menu)` on the composer (`SessionPage.swift`, shown with 2 or more hosts).
 
@@ -579,11 +579,13 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/keyboard.sh`.
 
 **Done when**
-- [ ] [ui] With the keyboard up on 01, open the host menu: the keyboard goes first, then the menu shows (`cmd:scripts/demo/keyboard.sh`) — Evidence:
+- [x] [ui] With the keyboard up on 01, open the host menu: the keyboard goes first, then the menu shows (`cmd:scripts/demo/keyboard.sh`) — Evidence: cmd:scripts/demo/keyboard.sh · test:KeyboardMenusUITests/testHostMenuPutsKeyboardAwayFirst · test:KeyboardMenusUITests/testAttachMenuPutsKeyboardAwayFirst · shot:evidence/S13/keyboard-host-menu.png · shot:evidence/S13/keyboard-attach-menu.png
 
 **Not**: —
 
 **Log**: —
+- **2026-11-09 · Built; the item ticked, review next.** Done: #28 reproduced in the Simulator (iOS 26.4, two FakeBridge hosts): with the on-screen keyboard up on 01, the host menu and the "+" menu opened and the keyboard stayed (KeyboardMenusUITests failed on app.keyboards while the menu showed). Fix: .dismissesKeyboardBeforeMenu() (ios/dsh-mobile/Shell/KeyboardMenus.swift) adds a .menuActionTriggered action to the UIControl that SwiftUI draws for the menu; UIKit sends it just before the menu shows, so the keyboard goes first and the menu opens at the composer's place. It covers the composer's host menu and the "+" attach menu (on 01 and on the session page). The model and workspace keys open sheets (D67 covered them already); the mic key and the queued-message actions open no menu. Tried and dropped: a simultaneous TapGesture and onAppear in the menu items (never run), dismiss on touch down (the composer moves with the keyboard, the touch ends outside the key, the menu does not open). Test: -DSHMFakeScenario attachments gives the two multi fake hosts attachments.v1. Demo scripts/demo/keyboard.sh (KeyboardMenusUITests, then S24KeyboardDismissUITests as the seam) passed 3 times in a row. Provisional: the D67 amendment (mechanism and alternatives); DESIGN.md Navigation names the composer menus. No new dependencies. Seen, not fixed: with two hosts the host name in the composer's context line wraps to two lines ("Home / Mac") next to "Default workspace"; it was so before this change. Next: reviewer runs scripts/review S13.
+- **2026-11-09 · Review PASS at 427d9a6.** Review: /tmp/dshm-review/S13-427d9a6.txt RESULT: PASS (full run, separate reviewer, no retry). No flaky parts. Provisional: D67 amendment (composer menus, .menuActionTriggered), commit 0298cc2. Next: the coordinator merges.
 
 ## 6. Exit
 

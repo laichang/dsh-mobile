@@ -39,6 +39,7 @@ struct AttachMenu: View {
             .background(Color.white.opacity(0.08), in: .circle)
         }
         .disabled(disabled || full || loading)
+        .dismissesKeyboardBeforeMenu() // D67
         .accessibilityLabel("Attach")
         .accessibilityIdentifier(target == .composer ? "composer.attach" : "session.attach")
         .photosPicker(isPresented: $choosingPhoto, selection: $photo, matching: .images, photoLibrary: .shared())
