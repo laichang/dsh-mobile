@@ -809,6 +809,8 @@ Append-only, dated.
 
 - **2026-11-09 · S15 assigned.** Branch `claude/s15-steered-message`, simulator `dshm-S15`, DSHM_HOME `~/.dshm/home-s15`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D143–D145. `eval "$(scripts/slice-env S15)"` exports them.
 
+- **2026-11-09 · Device checks: 2 bugs to fix slices S14, S15; 4 demos pass on main.** The user runs the [human] items on a real iPhone (free team, bundle prefix com.laichang in the git-ignored Signing.local.xcconfig, Tailscale). S6's Live Activity item: the user saw the activity (the user ticks it). Pairing first failed: the bridge records its addresses once at listen time, so a Tailscale address that comes up after DSH starts is not in the QR (finding for an issue: pair.js should read the interfaces again). The user reported two bugs, now fix slices: S14 (bold text not rendered in a phone reply) and S15 (a steered message stays above the field after DSH delivered it). Both run as background agents (D140–D142, D143–D145). A verify agent ran the 4 demos the app restart stopped on S9's branch, on main dc9fe43: questions.sh --all, attachments.sh --all, s7.sh, live-activity.sh all PASS on the first run. Findings for issues: attachments.sh has no default resources and needs a booted simulator; s7.sh defaults to dshm-S7, which does not exist. Heartbeat restarted.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
