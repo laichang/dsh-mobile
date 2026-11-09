@@ -114,9 +114,12 @@ public struct TranscriptBlocks {
         table = nil
     }
 
+    /// Inline Markdown. S14 (D140): `*` and `**` next to CJK text also emphasize, as in DSH Web.
     public static func markdown(_ text: String) -> AttributedString {
-        (try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
-            ?? AttributedString(text)
+        CJKEmphasis.markdown(text) { source in
+            (try? AttributedString(markdown: source, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+                ?? AttributedString(source)
+        }
     }
 
     // MARK: - S28 · GFM tables
