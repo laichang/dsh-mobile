@@ -885,6 +885,8 @@ Append-only, dated.
 
 - **2026-11-09 · Device checks: S15, S16, dictation, photo + PDF pass; 4 issues.** The user, 2026-11-09, real iPhone (build from main with S14–S16): S16 mic (permission prompts, Chinese dictation into the field), S15 立即发送 (the message shows in the transcript at once with its mark), and the photo + PDF attachment check: "验证通过". The user ticks these items. The user asked for issues (not fix slices) for: #38 hold-to-record mic key, #39 the camera attachment crashes when the user takes the photo, #40 a tap on a sent image does nothing, #41 open Markdown files the agent writes, as DSH Web does.
 
+- **2026-11-09 · User: all §6 exit checks pass on the real iPhone.** The user wrote in chat (2026-11-09): "都验证通过了" for the open §6 exit items (follow-up after done, queue and 立即发送, agent questions, photo + PDF, lock screen Live Activity, Wi-Fi off reconnect over Tailscale, failure without balance then continue). Note: the photo + PDF item names the camera, and the user reported earlier that the camera crashes when the user takes the photo (#39). The user ticks the items.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
