@@ -736,6 +736,8 @@ Append-only, dated.
 
 - **2026-11-09 · S11 merged.** Merged as `87cd8da`; `scripts/check-plan` on the merge commit passed. `scripts/review S11` at `12ffe5c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S11-12ffe5c.txt`). No open `[human]` items, so S11 is `done`. §9 rows 29 (D134).
 
+- **2026-11-09 · S11 merged.** S11 merged as 87cd8da (review PASS on 12ffe5c, S11-12ffe5c.txt, no flaky part). #23 reproduced on e09651c: since 04a3d0e the newSession.body container swallowed the card's own container on iOS 26; while the card shows, the card is now the container (D134, amends D59, in §9). #27: FakeHosts' MacBook-Pro now sends the FakePickers catalog; a UI test checks the default model row. Note for the user: with the debug channel label the model name is cut off on screen ('默认 DeepSeek-V…'); the accessibility label is full.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
