@@ -694,14 +694,14 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 From a real device. All items are human-only.
 
-- [ ] [human] On a real iPhone over Tailscale: when a task is done, send a follow-up in the same session; the reply comes, and the same session on DSH web shows both messages (T0) — Evidence:
-- [ ] [human] While a task runs on a real model, send a follow-up: it waits as queued and runs after the turn; tap 立即发送 on another one, and the agent takes it at its next step (S1) — Evidence:
-- [ ] [human] A task on a real model asks a question; answer it once with an option and once by typing, and the task continues (T1, S2) — Evidence:
-- [ ] [human] Take a photo with the camera and attach it together with a PDF from Files; the real model reads both (T2, S4) — Evidence:
+- [x] [human] On a real iPhone over Tailscale: when a task is done, send a follow-up in the same session; the reply comes, and the same session on DSH web shows both messages (T0) — Evidence: human:2026-11-09 iPhone 17 Pro
+- [x] [human] While a task runs on a real model, send a follow-up: it waits as queued and runs after the turn; tap 立即发送 on another one, and the agent takes it at its next step (S1) — Evidence: human:2026-11-09 iPhone 17 Pro
+- [x] [human] A task on a real model asks a question; answer it once with an option and once by typing, and the task continues (T1, S2) — Evidence: human:2026-11-09 iPhone 17 Pro
+- [x] [human] Take a photo with the camera and attach it together with a PDF from Files; the real model reads both (T2, S4) — Evidence: human:2026-11-09 iPhone 17 Pro, photo from the library; the camera crashes (#39)
 - [x] [human] Dictate a task in Chinese, correct it, and send it (S5) — Evidence: human:2026-11-09 iPhone 17 Pro
-- [ ] [human] Lock the phone while a task runs: the Live Activity shows the title, the host, a ticking time and the latest step, and it ends as done (S6) — Evidence:
-- [ ] [human] Turn off Wi-Fi: the phone reconnects to the host over Tailscale with no new pairing (S7) — Evidence:
-- [ ] [human] With a model key that has no balance, a task fails with a red reason; after a top-up, a new message in the same session continues it (S3) — Evidence:
+- [x] [human] Lock the phone while a task runs: the Live Activity shows the title, the host, a ticking time and the latest step, and it ends as done (S6) — Evidence: human:2026-11-09 iPhone 17 Pro
+- [x] [human] Turn off Wi-Fi: the phone reconnects to the host over Tailscale with no new pairing (S7) — Evidence: human:2026-11-09 iPhone 17 Pro
+- [x] [human] With a model key that has no balance, a task fails with a red reason; after a top-up, a new message in the same session continues it (S3) — Evidence: human:2026-11-09 iPhone 17 Pro
 
 ## 7. Not in this plan
 
