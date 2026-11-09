@@ -7,7 +7,10 @@
 #                                      testDictateATaskThenAFollowUpAndSend (the mic fills the field,
 #                                      send starts the task with that text; the same on the session
 #                                      page after typed text) and
-#                                      testDeniedSpeechSaysHowToTurnItOnAndKeepsTheField
+#                                      testDeniedSpeechSaysHowToTurnItOnAndKeepsTheField, then
+#                                      testRealPermissionPromptsDoNotCrashTheApp (the real Speech
+#                                      framework's permission prompts, answered on the system's
+#                                      queue: allow speech, turn off the microphone; D146)
 #   scripts/demo/voice.sh --shots DIR  also write the screenshots (1/3 size) into DIR
 #   DSHM_RESUME=1                      skip the parts that passed for the same code (lib.sh demo_part)
 #
@@ -32,9 +35,9 @@ SHOT_DIR="$(mktemp -d)"
 trap 'rm -rf "$SHOT_DIR"' EXIT
 export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR"
 
-step "DSHKit DictationTests (swift test, FakeTranscriber; log: $LOGS/swift-test.log)"
+step "DSHKit DictationTests and SystemCallbackTests (swift test, FakeTranscriber; log: $LOGS/swift-test.log)"
 demo_part voice-swift-test bash -c '
-  swift test --package-path ios/DSHKit --filter DictationTests > "$1" 2>&1 || { grep -E "✘|error:" "$1" | head -40; exit 1; }
+  swift test --package-path ios/DSHKit --filter "DictationTests|SystemCallbackTests" > "$1" 2>&1 || { grep -E "✘|error:" "$1" | head -40; exit 1; }
   grep -E "✔ Suite|Test run" "$1"
   if grep -qE "Test .* skipped|[1-9][0-9]* tests? skipped" "$1"; then echo "swift tests were skipped" >&2; exit 1; fi' _ "$LOGS/swift-test.log"
 
@@ -61,6 +64,9 @@ ui voice-ui-dictate testDictateATaskThenAFollowUpAndSend "$LOGS/ui-dictate.log"
 
 step "UI: speech permission denied (log: $LOGS/ui-denied.log)"
 ui voice-ui-denied testDeniedSpeechSaysHowToTurnItOnAndKeepsTheField "$LOGS/ui-denied.log"
+
+step "UI: the real permission prompts do not crash the app (log: $LOGS/ui-real-permission.log)"
+ui voice-ui-real-permission testRealPermissionPromptsDoNotCrashTheApp "$LOGS/ui-real-permission.log"
 
 if [ -n "$SHOTS" ]; then
   step "screenshots → $SHOTS (1/3 size)"
