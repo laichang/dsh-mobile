@@ -763,6 +763,8 @@ Append-only, dated.
 
 - **2026-11-09 · S9 merged.** Merged as `4a4dbf9`; `scripts/check-plan` on the merge commit passed. `scripts/review S9` at `c853d15`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S9-c853d15.txt`). No open `[human]` items, so S9 is `done`. §9 rows 31, 32 (D128, D129). Review PASS at c853d15 (independent reviewer). #24 and #25 did not reproduce; the fixes address the causes found (shared focus helper, D128, D129). Not run to the end on the branch (app restart): questions.sh --all, attachments.sh --all, s7.sh, live-activity.sh.
 
+- **2026-11-09 · All slices merged; heartbeat stopped.** S9 merged (4a4dbf9). No slice is todo, doing or blocked. §9 rows 33 and 34 are duplicates of rows 31 and 32 (D128, D129): the coordinator ran scripts/plan pending after 'merged' had already added them. Confirm 31/32 and ignore 33/34. Finding for an issue: scripts/plan pending does not refuse a row that is already in §9. Open at plan end: §9 provisional items, S6's [human] item, the §6 exit [human] items, the issues to open. Not run to the end on S9's branch (app restart): questions.sh --all, attachments.sh --all, s7.sh, live-activity.sh; their tests now use the shared typing helper. The coordinator stopped the heartbeat e8ffa347.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
