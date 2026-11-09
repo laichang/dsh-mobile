@@ -514,7 +514,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S11 · Fix: hosts tests for the all-offline card and the default model row
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: Closes #23 and #27. The user, 2026-11-08, for #22–#28: "这些看看还能不能复现，能的话就修复了". If a bug does not reproduce, the Log names the runs that show it, and the coordinator closes the issue with them.
 
@@ -525,12 +525,19 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 **Demo**: `scripts/demo/hosts.sh`.
 
 **Done when**
-- [ ] [ui] `testAllOfflineCardNamesEachHostAndGoesWhenOneIsBack` and `testHostsSheetShowsEachHostsState` find `hosts.offlineCard` and pass in the review run with no retry (`cmd:scripts/demo/hosts.sh`) — Evidence:
-- [ ] [ui] The hosts sheet shows the default model of the catalog that `FakeHost` sends, and a UI test checks it (`cmd:scripts/demo/hosts.sh`) — Evidence:
+- [x] [ui] `testAllOfflineCardNamesEachHostAndGoesWhenOneIsBack` and `testHostsSheetShowsEachHostsState` find `hosts.offlineCard` and pass in the review run with no retry (`cmd:scripts/demo/hosts.sh`) — Evidence: cmd:scripts/demo/hosts.sh · test:S21HostsUITests/testAllOfflineCardNamesEachHostAndGoesWhenOneIsBack · test:S21HostsUITests/testHostsSheetShowsEachHostsState · test:OfflineReasonsUITests/testAnotherProgramOnTheBridgePort · shot:evidence/S11/s21-all-offline.png · shot:evidence/S11/s21-hosts-sheet.png
+- [x] [ui] The hosts sheet shows the default model of the catalog that `FakeHost` sends, and a UI test checks it (`cmd:scripts/demo/hosts.sh`) — Evidence: cmd:scripts/demo/hosts.sh · test:S21HostsUITests/testHostsSheetShowsTheDefaultModelOfTheCatalog · test:HostsControlTests/allHostsOfflineOnlyWhenNoHostCanTakeATaskAndNotWhileOneComesBack · shot:evidence/S11/s21-hosts-default-model.png
 
 **Not**: —
 
 **Log**: —
+- **2026-11-09 · #23 reproduced and fixed; #27 done; 3 clean demo runs.**
+  - #23 reproduced on main e09651c (scripts/demo/hosts.sh, before the fix): both card tests failed at the card wait (S21HostsUITests.swift:75 and :111). The tree showed the card's lines and text directly under newSession.body, with no hosts.offlineCard. Cause: since 04a3d0e the card is the only accessible child of the newSession.body container, and SwiftUI drops the card's own container. Fix (D134, provisional): while the card shows, NewSessionBody is no accessibility container; the card is. The gestures stay. OfflineReasonsUITests waits on the card again.
+  - The two #23 tests needed no text change: the card and row text of S7 and S8 still match their predicates.
+  - #27: FakeHosts' MacBook-Pro sends FakePickers' catalog (models.v1, workspaces.v1). HostsControlTests checks the catalog; S21HostsUITests/testHostsSheetShowsTheDefaultModelOfTheCatalog checks the row label '默认 DeepSeek-V41-Flash'. The row truncates the name on the debug channel ('未加密（调试）' is longer than '端到端加密'); the label has it in full.
+  - New demo scripts/demo/hosts.sh: HostsControlTests, S21HostsUITests, seams (S29 FakeHosts revoke tests, S2 offline card, T1 keyboard test on newSession.body, scripts/demo/bridge-errors.sh for S8).
+  - Runs after the fix: hosts.sh 3 times, all parts passed with no retry, no flaky part.
+  - Next: reviewer runs scripts/review S11.
 
 ### S12 · Fix: DSHKit store tests time out under load
 
