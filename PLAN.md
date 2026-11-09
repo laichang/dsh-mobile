@@ -847,6 +847,8 @@ Append-only, dated.
 
 - **2026-11-09 · S14 merged.** Merged as `aac51a9`; `scripts/check-plan` on the merge commit passed. `scripts/review S14` at `0502516`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S14-0502516.txt`). 1 open `[human]` item, so S14 is `review`. §9 rows 35, 36 (D140). Review by the user's fix-slice rule (§8 2026-11-09): /tmp/dshm-review/S14-0502516.txt RESULT: PASS (test pointers, DSHKit 160, bridge 115, app build). D140 provisional.
 
+- **2026-11-09 · S16 built, review PASS; merge of main goes to a fix agent.** S16 (mic crash: a main-actor closure handed to SFSpeechRecognizer.requestAuthorization ran on the system's XPC queue, and Swift 6's run-time isolation check stopped the app; D146, SystemCallback) is built at f0c36ee; fix-slice test review PASS at a7ce2b8 (/tmp/dshm-review/S16-a7ce2b8.txt: voice.sh, DSHKit 158, bridge 115, app build). It crashed on the Simulator too; S5's tests used FakeTranscriber. git merge-tree with main (after S14) conflicts in ARCHITECTURE.md (D140 vs D146), so by the issue #37 rule a new fix agent merges main and a reviewer runs the test review again. For the user, the coordinator built main (S14) for the Simulator iPhone 17 Pro and paired it with the user's DSH.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
