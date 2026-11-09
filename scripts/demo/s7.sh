@@ -38,9 +38,9 @@ done
 grep -q 's7-host: ready' "$LOGS/host.log" || { tail -12 "$LOGS/host.log"; exit 1; }
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 export TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT" TEST_RUNNER_DSHM_S7_REPOS="$fixtures" TEST_RUNNER_DSHM_SHOT_DIR="$(mktemp -d)"
-xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  -jobs 4 -parallel-testing-enabled NO -only-testing:dsh-mobileUITests/S7WorkspaceUITests > "$LOGS/ui.log" 2>&1 || {
+  -jobs 4 -parallel-testing-enabled NO -only-testing:dsh-mobileUITests/S7WorkspaceUITests --log "$LOGS/ui.log" || {
     grep -E 'error:|Test Case|failed' "$LOGS/ui.log"; exit 1;
   }
 grep -E "Test Case.*testSamePromptReadsTwoActualRepositories.*passed" "$LOGS/ui.log"

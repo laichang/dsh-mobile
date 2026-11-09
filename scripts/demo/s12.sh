@@ -35,10 +35,10 @@ done
 lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null || { echo "Out-of-range DSH failed to start; see $logs/host.log"; exit 1; }
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 export TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT" TEST_RUNNER_DSHM_SHOT_DIR="$DSH_HOME"
-xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "${DSHM_DD:-/tmp/dshm-s12-dd}" -parallel-testing-enabled NO -jobs 4 \
   -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates -only-testing:dsh-mobileUITests/S12UpstreamUITests \
-  > "$logs/ui.log" 2>&1 || { grep -E 'error:|Test Case' "$logs/ui.log" | tail -20; exit 1; }
+  --log "$logs/ui.log" || { grep -E 'error:|Test Case' "$logs/ui.log" | tail -20; exit 1; }
 grep -E 'Test Case.*testUnsupportedHostDisplaysBridgeUpdateAndKeepsPrompt.* passed' "$logs/ui.log"
 demo_no_skipped_ui "$logs/ui.log"
 if [ "${1:-}" = --shots ]; then

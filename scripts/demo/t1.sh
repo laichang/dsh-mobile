@@ -41,12 +41,12 @@ SHOT_DIR="$(mktemp -d)"
 export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR" TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT"
 
 step "build the app and UI tests ($SIM)"
-xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DSHM_DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+  --log "$LOGS/build.log" || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 step "UI: T1 shell, and every FakeBridge UI test of T0–S13 on the new shell"
-xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO \
   -only-testing:dsh-mobileUITests/T1ShellUITests \
   -only-testing:dsh-mobileUITests/T0DemoUITests/testDemoWithFakeBridge \
@@ -58,7 +58,7 @@ xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-m
   -only-testing:dsh-mobileUITests/S3MilestonesUITests/testTimelineWithFakeBridge \
   -only-testing:dsh-mobileUITests/S3MilestonesUITests/testNoMilestonesNoCard \
   -only-testing:dsh-mobileUITests/S9MultiHostUITests \
-  > "$LOGS/ui-fake.log" 2>&1 || { grep -E "error:|Test Case.*(passed|failed)" "$LOGS/ui-fake.log"; exit 1; }
+  --log "$LOGS/ui-fake.log" || { grep -E "error:|Test Case.*(passed|failed)" "$LOGS/ui-fake.log"; exit 1; }
 grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui-fake.log"
 demo_no_skipped_ui "$LOGS/ui-fake.log"
 

@@ -44,14 +44,14 @@ SHOT_DIR="$(mktemp -d)"
 export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR" TEST_RUNNER_DSHM_BRIDGE_PORT="$PORT"
 
 step "build the app and UI tests ($SIM)"
-xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+  --log "$LOGS/build.log" || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 uitest() { # name, then -only-testing targets
   local name=$1; shift
-  xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
-    -derivedDataPath "$DD" "$@" > "$LOGS/$name.log" 2>&1 \
+  scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+    -derivedDataPath "$DD" "$@" --log "$LOGS/$name.log" \
     || { grep -E "error:|Test Case.*(passed|failed)" "$LOGS/$name.log"; exit 1; }
   grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/$name.log"
   demo_no_skipped_ui "$LOGS/$name.log"

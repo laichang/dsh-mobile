@@ -35,9 +35,9 @@ SHOT_DIR="$(mktemp -d)"
 export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR"
 
 step "build the app and UI tests ($SIM)"
-xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DSHM_DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+  --log "$LOGS/build.log" || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 step "UI: 所有任务 (S15), and the FakeBridge UI tests of T1, S2, S3, S9 that use it"
 UI_TESTS=(
@@ -50,8 +50,8 @@ UI_TESTS=(
 )
 demo_part s15-ui bash -c '
   log=$1; shift
-  xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
-    -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "$@" > "$log" 2>&1 \
+  scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+    -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "$@" --log "$log" \
     || { grep -E "error:|Test Case.*(passed|failed)" "$log"; exit 1; }
   grep -E "Test Case.*(passed|failed|skipped)" "$log"
   source scripts/demo/lib.sh; demo_no_skipped_ui "$log"' _ "$LOGS/ui.log" "${UI_TESTS[@]}"

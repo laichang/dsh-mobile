@@ -26,23 +26,20 @@ SIM="$DSHM_SIM"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 
 step "bridge: pnpm test (log: $LOGS/bridge.log)"
-if demo_part bridge bash -c 'cd bridge && pnpm install --frozen-lockfile >/dev/null && pnpm test' > "$LOGS/bridge.log" 2>&1; then
-  grep -E "^ℹ (tests|pass|fail)" "$LOGS/bridge.log" || true
-else
-  tail -40 "$LOGS/bridge.log"; echo "bridge tests failed" >&2; exit 1
+if ! demo_part bridge bash -c '(cd bridge && pnpm install --frozen-lockfile >/dev/null) && scripts/pnpm-test --log "$1"' \
+  _ "$LOGS/bridge.log"; then
+  echo "bridge tests failed" >&2; exit 1
 fi
 
 step "DSHKit: LastTurnTests (log: $LOGS/dshkit.log)"
-if demo_part dshkit swift test --package-path ios/DSHKit --filter LastTurnTests > "$LOGS/dshkit.log" 2>&1; then
-  grep -E "Test run with" "$LOGS/dshkit.log" || true
-else
-  tail -30 "$LOGS/dshkit.log"; echo "DSHKit tests failed" >&2; exit 1
+if ! demo_part dshkit scripts/swift-test --package-path ios/DSHKit --filter LastTurnTests --log "$LOGS/dshkit.log"; then
+  echo "DSHKit tests failed" >&2; exit 1
 fi
 
 step "build the app and UI tests ($SIM)"
-xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DSHM_DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+  --log "$LOGS/build.log" || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 # One part per UI test class (lib.sh demo_part): a failure in one does not run the others again.
 ui_part() { # name, then -only-testing selectors
@@ -50,9 +47,9 @@ ui_part() { # name, then -only-testing selectors
   local args=() t
   for t in "$@"; do args+=("-only-testing:dsh-mobileUITests/$t"); done
   step "UI: $name (log: $LOGS/ui-$name.log)"
-  if demo_part "ui-$name" xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+  if demo_part "ui-$name" scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
       -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" \
-      > "$LOGS/ui-$name.log" 2>&1; then
+      --log "$LOGS/ui-$name.log"; then
     grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui-$name.log" || true
   else
     grep -E "error:|Test Case.*(passed|failed)" "$LOGS/ui-$name.log" || tail -30 "$LOGS/ui-$name.log"

@@ -27,9 +27,9 @@ if ! lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
 fi
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 export TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT" TEST_RUNNER_DSHM_SHOT_DIR="$(mktemp -d)"
-xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  -parallel-testing-enabled NO -only-testing:dsh-mobileUITests/S6ModelsUITests > "$LOGS/ui.log" 2>&1 || {
+  -parallel-testing-enabled NO -only-testing:dsh-mobileUITests/S6ModelsUITests --log "$LOGS/ui.log" || {
     grep -E 'error:|Test Case|failed' "$LOGS/ui.log"; exit 1;
   }
 grep -E "Test Case.*passed" "$LOGS/ui.log"

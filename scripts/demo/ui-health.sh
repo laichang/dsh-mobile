@@ -89,8 +89,8 @@ ui_test() { # part name, then Suite or Suite/test selectors
   # Activity left by an earlier run): the first test then got an app without its launch arguments
   # (ARCHITECTURE D129). Remove the app first; xcodebuild installs it again.
   xcrun simctl uninstall "$SIM" chang.dsh-mobile >/dev/null 2>&1 || true
-  if ! xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
-      -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" > "$log" 2>&1; then
+  if ! scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+      -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" --log "$log"; then
     grep -E "error:|Test Case.*(passed|failed)" "$log" || tail -30 "$log"
     ui_waits "$log" "$S16_SCROLL=$S16_LIMIT" || true
     echo "UI tests failed: $name" >&2
@@ -132,9 +132,9 @@ step "bridge dependencies (pnpm install --frozen-lockfile)"
 (cd bridge && corepack pnpm install --frozen-lockfile >/dev/null)
 
 step "build the app and UI tests ($SIM)"
-xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DSHM_DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+  --log "$LOGS/build.log" || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 STATUS=0
 for part in focus-s3 focus-s2 focus-t0 idle-s16 idle-s15 idle-s19 idle-s20; do
