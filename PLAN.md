@@ -626,7 +626,7 @@ Each slice needs only the tracer, unless "Needs" says otherwise.
 
 ### S15 · Fix: Steered message stays above the field
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** review · **Needs** — · **Branch** —
 
 **Why**: The user reported a bug on 2026-11-09: User, 2026-11-09, real iPhone: while 总结 dsh-mobile 所有文件 ran, the user sent 不用了 and tapped 立即发送: "不用了 没有出现在对话流，而是继续出现在对话框悬浮着". DSH did deliver it: the agent's reply starts 好的，停在汇总这里 (session 5eea5b1c). D101 says the app takes the message out of the queue and draws the bubble when DSH writes it into the session.
 
