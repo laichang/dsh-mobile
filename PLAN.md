@@ -849,6 +849,8 @@ Append-only, dated.
 
 - **2026-11-09 · S16 built, review PASS; merge of main goes to a fix agent.** S16 (mic crash: a main-actor closure handed to SFSpeechRecognizer.requestAuthorization ran on the system's XPC queue, and Swift 6's run-time isolation check stopped the app; D146, SystemCallback) is built at f0c36ee; fix-slice test review PASS at a7ce2b8 (/tmp/dshm-review/S16-a7ce2b8.txt: voice.sh, DSHKit 158, bridge 115, app build). It crashed on the Simulator too; S5's tests used FakeTranscriber. git merge-tree with main (after S14) conflicts in ARCHITECTURE.md (D140 vs D146), so by the issue #37 rule a new fix agent merges main and a reviewer runs the test review again. For the user, the coordinator built main (S14) for the Simulator iPhone 17 Pro and paired it with the user's DSH.
 
+- **2026-11-09 · Interruption: app quit stopped S15 and the S16 merge agent; resumed.** About 14:00 the Claude app quit. It stopped the S15 owner (clean at 02717aa, status review, no review result yet) and the S16 fix agent (merge of main in progress, ARCHITECTURE.md unmerged). The heartbeat did not fire for an hour. The coordinator resumed both agents with recovery briefs: S15 runs its fix-slice test review; the S16 fix agent finishes the merge and its review.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
