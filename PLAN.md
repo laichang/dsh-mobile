@@ -377,6 +377,8 @@ Append-only, dated.
 
 - **2026-11-10 · Guard patch committed by the user; T0 continues; heartbeat restarted.** The user approved and committed the scripts/check-plan patch on claude/t0-plan-graph as 47fdbf5 (CHECK_PLAN_ALLOW=1, by hand). T0 back to doing. New heartbeat: CronCreate job 1a6d2c25.
 
+- **2026-11-10 · T0 review FAIL: results can be recorded without a verifier.** Separate review at c78da12: RESULT: FAIL (/tmp/dshm-review/T0-c78da12.txt). All parts passed except the adversarial check: scripts/plan record --results <agent JSON> or a direct git notes write on refs/notes/dshm-verify makes passed true with no verifier run. Also plandata.py (imported by check-plan) is not protected. Sent back to the owner: one writer that runs the checks itself; a test; ARCHITECTURE says the merge-time rerun (T1) is the gate; guard patches (protect plandata.py; git-guard blocks writes to the notes ref) for the user to commit.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
