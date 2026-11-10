@@ -532,6 +532,8 @@ Append-only, dated.
 
 - **2026-11-10 · Resumed by the user. S7 round 1 continues in a visible session (local_00b6d305) from the brief and the stopped agent's uncommitted work. New heartbeat 67e35906.**
 
+- **2026-11-11 · S7 round 1 at b1b9093: plan/ format, import, WORKFLOW.md removed, AGENTS.md Process section. Not done: hook changes (.claude/hooks, .codex/hooks; classifier refused) and PLAN.md delete (plan-guard refused). A background agent drafts /tmp/dshm-s7-guard.patch in a scratch clone for the user to review and apply.**
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
