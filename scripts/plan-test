@@ -1,9 +1,9 @@
 #!/bin/bash
-# Tests for scripts/plan (bookkeeping in plan/, the cleanup after a merge, the plan/ graph and
-# verifier results), scripts/slice-env, scripts/status (disk lines), and dshm_code_key and the
-# free-space floor (scripts/demo/lib.sh), in a temporary clone (the repo is not touched). The
-# cleanup tests use a fake xcrun, HOME and /tmp under the temporary directory: no real simulator,
-# worktree, branch or directory is deleted.
+# Tests for scripts/plan: bookkeeping in plan/, the cleanup after a merge, the plan/ graph,
+# verifier results. Also scripts/slice-env, the disk lines of scripts/status, dshm_code_key,
+# the free-space floor of scripts/demo/lib.sh. All in a temporary clone (the repo is not touched).
+# The cleanup tests use a fake xcrun, HOME and /tmp under the temporary directory: no real
+# simulator, worktree, branch or directory is deleted.
 #   scripts/plan-test        ends with "failures: 0"
 set -uo pipefail
 SRC="$(git rev-parse --show-toplevel)"

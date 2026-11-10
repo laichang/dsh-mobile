@@ -124,7 +124,8 @@ class Plan:
         self.exists = plandata.PLAN_FILE in self.before
         self.doc = json.loads(self.before[plandata.PLAN_FILE]) if self.exists else None
         self.slices = {}           # ID -> items doc, for each items file that a command changes
-        self.extra_files = []      # other files to commit with plan/
+        # Other files to commit with plan/.
+        self.extra_files = []
 
     def load(self):
         if not self.exists:
