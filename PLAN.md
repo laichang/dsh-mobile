@@ -40,14 +40,14 @@ This file exists only while this requirement is in progress. It serves this requ
 
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
-| T0 | doing | `claude/t0-plan-graph` | 2026-11-10 | Slice owner builds (§8) |
+| T0 | doing | `claude/t0-plan-graph` | 2026-11-10 | Owner ticks item 2 after the guard patch 47fdbf5; then separate review |
 | T1 | todo | — | 2026-11-10 | Assign it and start a session |
-| S1 | doing | `claude/s1-output-wrappers` | 2026-11-10 | Slice owner builds (§8) |
+| S1 | done | merged `3b960e8` | 2026-11-10 | — (provisional D150 in §9) |
 | S2 | todo | — | 2026-11-10 | Assign it and start a session |
 | S3 | todo | — | 2026-11-10 | Assign it and start a session |
 | S4 | todo | — | 2026-11-10 | Assign it and start a session |
 | S5 | todo | — | 2026-11-10 | Assign it and start a session |
-| S6 | doing | `claude/s6-architecture-current` | 2026-11-10 | Slice owner builds (§8) |
+| S6 | done | merged `46d4f3d` | 2026-11-10 | — |
 | S7 | todo | — | 2026-11-10 | Assign it and start a session |
 
 ## 1. Approach
@@ -195,13 +195,17 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A failing test shows as one `file:line` line, and the full log is in `/tmp/dshm-*` — Evidence:
-- [ ] [auto] A passing run of each wrapper (`scripts/xc build`, `scripts/xc test`, `swift test`, `pnpm test`) writes 20 lines or fewer — Evidence:
-- [ ] [auto] A check fails when a demo script or `scripts/review` calls `xcodebuild`, `swift test` or `pnpm test` without a wrapper — Evidence:
+- [x] [auto] A failing test shows as one `file:line` line, and the full log is in `/tmp/dshm-*` — Evidence: cmd:scripts/wrap-test
+- [x] [auto] A passing run of each wrapper (`scripts/xc build`, `scripts/xc test`, `swift test`, `pnpm test`) writes 20 lines or fewer — Evidence: cmd:scripts/wrap-test --real
+- [x] [auto] A check fails when a demo script or `scripts/review` calls `xcodebuild`, `swift test` or `pnpm test` without a wrapper — Evidence: cmd:scripts/check-wrappers · cmd:scripts/wrap-test
 
 **Not**: Changes to what the tests check.
 
 **Log**: —
+- **2026-11-10 · Wrappers done; all items ticked.** Done: scripts/xc, scripts/swift-test, scripts/pnpm-test (parsing in scripts/lib/wrap.py) print a JSON summary of 6-7 lines on a pass and one file:line line per error (first 10); the full log goes to --log FILE or /tmp/dshm-logs/. All 44 demo scripts, lib.sh and scripts/review call them (xcodebuild ... > LOG 2>&1 became scripts/xc ... --log LOG). scripts/review also greps the logs named by the summaries' "log" lines for test: pointers, and its swift test run keeps its log. scripts/check-wrappers fails on a raw call; scripts/wrap-test (fast) and scripts/wrap-test --real test all three items. T0 demo passes through the wrappers (6 UI tests). Provisional: D150. No new dependencies.
+  Not done: check-wrappers runs on demand only; it is not in the pre-commit hook (a guard file, owned by the user). bridge-errors.sh still runs `node --test` on one file bare (not in the scope of the check). scripts/review S1 cannot pass: S1 has no [ui] items, and review exits 2 for that.
+  Note: the simulator dshm-S1 did not exist; I created it (iPhone 17 Pro, iOS 26.4).
+  Next: coordinator merges; user confirms D150.
 
 ### S2 · Slice brief: scripts/brief <ID> replaces reading the docs
 
@@ -310,12 +314,20 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A test fails when ARCHITECTURE.md, STORY.md, AGENTS.md or a README contains `\bD[0-9]+\b` or a milestones section — Evidence:
-- [ ] [auto] ARCHITECTURE.md is 10k tokens or fewer (test) — Evidence:
+- [x] [auto] A test fails when ARCHITECTURE.md, STORY.md, AGENTS.md or a README contains `\bD[0-9]+\b` or a milestones section — Evidence: cmd:scripts/check-docs-test cmd:scripts/check-docs
+- [x] [auto] ARCHITECTURE.md is 10k tokens or fewer (test) — Evidence: cmd:scripts/check-docs-test cmd:scripts/check-docs
 
 **Not**: Code (S5). WORKFLOW.md and DESIGN.md (S7, S4 remove them).
 
 **Log**: —
+- **2026-11-10 · Items ticked; review next.** Done: ARCHITECTURE.md written again as the current state (no Dxx, no §7 milestones; about 9.8k tokens by the scripts/check-docs estimate, was about 37k). STORY.md: no APNs push, no relay (direct LAN or Tailscale), no host guess; X4 as a red failure was already in §8. README.md, README.zh-CN.md: Roadmap replaced by a short Status, D1–D55 reference gone, relay and push in Out of scope. bridge/README.md and the five spike READMEs: Dxx references replaced. AGENTS.md: the ARCHITECTURE.md entry and scripts/check-docs. New scripts/check-docs and scripts/check-docs-test (failures: 0). T0 demo passed (§4.1).
+  Provisional: the retained-block Markdown rendering stays provisional in ARCHITECTURE.md §5.4 (real-device timing open), as #35 allows. The token count is an estimate (ASCII/3.7 + one per other character; the old file gives 37.3k), not a real tokenizer.
+  Not done (other slices): code comments still cite "ARCHITECTURE §4 Keys" and Dxx numbers (S5); old section numbers in code comments will be wrong after this rewrite (S5). DESIGN.md and design/board.html still show push and relay as later work and the host guess as "later" (S4). check-docs is not in the pre-commit hook (a guard file; the user decides).
+  Setup: dshm-S6 did not exist; created with xcrun simctl create dshm-S6 "iPhone 17 Pro". SwiftPM could not clone swift-protobuf (network reset); copied the cached bare repo from the main checkout's ios/DSHKit/.build into this worktree's .build.
+  Next: scripts/review S6 by a reviewer subagent.
+- **2026-11-10 · TLS 1.3 next transport; review has no parts.** At the coordinator's request: ARCHITECTURE.md §4.2 describes the wire as built (Noise) and adds TLS 1.3 over WSS as the user's decided next transport (2026-11-10, not built), from the coordinator's paraphrase of the user's uncommitted edit on main; nothing was copied from the main checkout. To stay under 10k tokens, three sentences elsewhere were shortened; the estimate is now about 9.9k, so the margin is about 90 tokens.
+  Review: a reviewer subagent ran `scripts/review S6`. It printed "review: S6 has no [ui] items" and wrote no result file: S6 has only [auto] items, so the review run has nothing to run. Both [auto] items are re-runnable with scripts/check-docs-test (failures: 0 on the head commit).
+- **2026-11-10 · Merged main (S1 wrappers).** At the coordinator's request: merged main (S1 merged, 3b960e8) into the slice branch. ARCHITECTURE.md conflict resolved: the S6 rewrite stays; §7 Testing now describes the output wrappers (scripts/xc, scripts/swift-test, scripts/pnpm-test, scripts/check-wrappers) as the current state, without an ID, marked provisional pending user confirmation, with their reason and alternatives. AGENTS.md keeps main's wrapper line. To stay under 10k tokens, the drawer motion line, the Free Personal Team section (folded into §5.7) and three sentences were shortened; the estimate is now about 9.9k. scripts/check-docs: ok; scripts/check-docs-test: failures: 0.
 
 ### S7 · Remove WORKFLOW.md and use only the new plan format
 
@@ -365,9 +377,30 @@ Append-only, dated.
 
 - **2026-11-10 · S6 assigned.** Branch `claude/s6-architecture-current`, simulator `dshm-S6`, DSHM_HOME `~/.dshm/home-s6`, bridge 47812, web 3285; second host 47842/3315. Decision numbers D153–D155. `eval "$(scripts/slice-env S6)"` exports them.
 
+- **2026-11-10 · Coordinator rule: a slice with no [ui] item passes review by a separate test run.** scripts/review refuses a slice with no [ui] items (issue #45). Seven of the nine M2.5 slices are [auto] only. The coordinator applies the user's M2 rule for fix slices (2026-11-09, "reviewer跑测试") to them: a separate reviewer, on the clean head commit, runs each cmd:/test: pointer of the slice, the full DSHKit swift test, the bridge tests and an app build for testing; all pass → RESULT: PASS in /tmp/dshm-review/<ID>-<commit>.txt. Pending user confirmation (§9).
+
+- **2026-11-10 · Heartbeat deleted: all work waits for the user.** Heartbeat 1b7fe4cd deleted (WORKFLOW §5.5). Waiting for the user: S1 merge (uncommitted AGENTS.md/ARCHITECTURE.md on main block it; stash-merge-reapply or user commits first); T0 and S6 each wait for a shell-command approval in their sessions. A new heartbeat starts when work runs again.
+
+- **2026-11-10 · S1 merged.** Merged as `3b960e8`; `scripts/check-plan` on the merge commit passed. `scripts/review S1` at `d7c4462`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S1-d7c4462.txt`). No open `[human]` items, so S1 is `done`. §9 rows 1 (D150).
+
+- **2026-11-10 · S1 merged; heartbeat restarted.** S1 merged as 3b960e8 (review: separate reviewer, /tmp/dshm-review/S1-d7c4462.txt, RESULT: PASS). The user's uncommitted AGENTS.md/ARCHITECTURE.md edits were stashed for the merge and reapplied without conflict (user's choice). Reviewer notes for later: check-wrappers is not in the pre-commit hook; bridge-errors.sh calls node --test directly; the xc failing case uses a recorded log. New heartbeat: CronCreate job 1a5c4ac0. T0 and S6 still wait for a shell-command approval by the user.
+
+- **2026-11-10 · Interruption: the Mac slept about 5.5 h.** Heartbeat 1a5c4ac0 did not fire from about 10:00 to 15:37 (the Mac or the app slept; the app restarted). Recovery (§5.4): T0 resumed by itself after the restart and runs plan-test. S6 finished at 87befa7 (with the user's TLS 1.3 next transport); a separate reviewer runs its review now (rule of §8 for slices with no [ui] item).
+
+- **2026-11-10 · User confirms: a slice with no [ui] item passes review by a separate test run.** The user confirmed the coordinator rule of 2026-11-10 (in chat, 2026-11-10: "可以") for M2.5: a separate reviewer runs, on the clean head, each cmd:/test: pointer of the slice, the full DSHKit swift test, the bridge tests and an app build for testing; all pass → RESULT: PASS in /tmp/dshm-review/<ID>-<commit>.txt. No longer provisional.
+
+- **2026-11-10 · S6 merged.** Merged as `46d4f3d`; `scripts/check-plan` on the merge commit passed. `scripts/review S6` at `ef8004c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S6-ef8004c.txt`). No open `[human]` items, so S6 is `done`.
+
+- **2026-11-10 · S6 merged.** S6 merged as 46d4f3d (closes #35; #62 closes with S5). Reviews by a separate reviewer: /tmp/dshm-review/S6-87befa7.txt PASS, then /tmp/dshm-review/S6-ef8004c.txt PASS after the owner merged main (S1's D150 now a provisional entry without an ID). The user's uncommitted AGENTS.md line (FEATURES.md) was reapplied; the user's uncommitted ARCHITECTURE.md D6/D21 edit (TLS 1.3) is superseded by S6's text and kept in /tmp/dshm-user-architecture-superseded.patch. T0 waits for the user to commit a guard patch to scripts/check-plan (/tmp/dshm-t0-patch).
+
+- **2026-11-10 · All work waits for the user; heartbeat deleted.** T0 is blocked at 4cd16d1: item 2 needs the guard patch to scripts/check-plan (/tmp/dshm-t0-patch/scripts/check-plan), which only the user commits. All other open slices need T0. Heartbeat 1a5c4ac0 deleted (§5.5); a new one starts when work runs again.
+
+- **2026-11-10 · Guard patch committed by the user; T0 continues; heartbeat restarted.** The user approved and committed the scripts/check-plan patch on claude/t0-plan-graph as 47fdbf5 (CHECK_PLAN_ALLOW=1, by hand). T0 back to doing. New heartbeat: CronCreate job 1a6d2c25.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
+| 1 | S1 | decision | ARCHITECTURE D150, *provisional*: Build and test output goes through wrappers | `claude/s1-output-wrappers` | merged `3b960e8` |

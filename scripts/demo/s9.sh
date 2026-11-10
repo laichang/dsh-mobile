@@ -57,10 +57,10 @@ JS
 export TEST_RUNNER_DSHM_S9_OFFER_0="$(offer 0)" TEST_RUNNER_DSHM_S9_OFFER_1="$(offer 1)"
 export TEST_RUNNER_DSHM_S9_PORT_0="${ports[0]}" TEST_RUNNER_DSHM_S9_PORT_1="${ports[1]}"
 export TEST_RUNNER_DSHM_SHOT_DIR="$(mktemp -d)"
-xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "${DSHM_DD:-/tmp/dshm-s9-dd}" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
   -parallel-testing-enabled NO -jobs 4 -only-testing:dsh-mobileUITests/S9MultiHostUITests \
-  -only-testing:dsh-mobileUITests/S9PairedHostsUITests > "$LOGS/ui.log" 2>&1 || {
+  -only-testing:dsh-mobileUITests/S9PairedHostsUITests --log "$LOGS/ui.log" || {
     grep -E 'error:|Test Case|XCTAssert' "$LOGS/ui.log"; exit 1;
   }
 grep -E 'Test Case.*testTwoHostsShareTheListAndTheOfflineHostIsNamed.*passed' "$LOGS/ui.log"

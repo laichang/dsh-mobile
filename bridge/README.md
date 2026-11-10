@@ -1,12 +1,12 @@
 # dsh-mobile bridge
 
-A [Cordis](https://github.com/cordiverse/cordis) plugin that runs inside your own DeepSeek Harness (DSH) host and lets the dsh-mobile iOS app talk to it. It opens its **own** WebSocket listener and speaks the protobuf protocol in [`../protocol/frame.proto`](../protocol/frame.proto). The app never talks to DSH's native API (ARCHITECTURE D4).
+A [Cordis](https://github.com/cordiverse/cordis) plugin that runs inside your own DeepSeek Harness (DSH) host and lets the dsh-mobile iOS app talk to it. It opens its **own** WebSocket listener and speaks the protobuf protocol in [`../protocol/frame.proto`](../protocol/frame.proto). The app never talks to DSH's native API: upstream changes are absorbed here (ARCHITECTURE.md §4).
 
-Status (S1): the listener (`0.0.0.0:47801` by default) is end-to-end encrypted with Noise (ARCHITECTURE D6, D21). A phone pairs once by scanning a QR the bridge prints, then reconnects with its own key. `CreateTask` creates a DSH session and streams its reply. The S7 composer can choose the host's default workspace, a recent workspace, or the absolute path of another existing directory on that host.
+The listener (`0.0.0.0:47801` by default) is end-to-end encrypted with Noise. A phone pairs once by scanning a QR the bridge prints, then reconnects with its own key. The bridge creates DSH sessions and streams them, maps milestones and transcript rows, holds approvals and agent questions, takes follow-up messages and attachments, and lists models, workspaces, devices and the audit log.
 
-S2 adds `ListTasks` and `Resume` (capability `resume.v1`): tasks keep running when the app disconnects, and every event is numbered in a per-host log so the app can fetch exactly what it missed (ARCHITECTURE D20). The log is kept in memory; restarting DSH starts a new one.
+Tasks keep running when the app disconnects. Every event is numbered in a per-host log, so the app fetches exactly what it missed (`Resume`). The log is kept in memory; restarting DSH starts a new one.
 
-S4 adds held approvals (`approvals.v1`). A paired phone or DSH web client can answer a request once. Set `approvalTimeoutMs` in the bridge plugin config to change the 24-hour default. The bridge rejects expired approvals and records decisions in `approvals.jsonl` in its state directory. Requests from other DSH sessions appear on the phone while they need a decision.
+Held approvals: a paired phone or a DSH web client answers a request once. Set `approvalTimeoutMs` in the bridge plugin config to change the 24-hour default. The bridge rejects expired approvals and records decisions in `approvals.jsonl` in its state directory. Requests from other DSH sessions appear on the phone while they need a decision.
 
 
 ## Requirements
@@ -83,13 +83,13 @@ On a paired phone, open **Devices and audit** under the host. The list marks the
 
 ## Local acceptance host (for development)
 
-`node scripts/dsh-up.mjs` starts DSH 0.2.2-rc.1 from `~/.dshm/runtime` with `DSH_HOME=~/.dshm/home`, enables this bridge, and points DSH at DSH's mock LLM server, so no API key is needed. The script header lists its environment variables. Unlike the defaults above, it binds the bridge to `127.0.0.1` with `devPlaintext` on, so the Simulator can use both T0's plaintext path and Noise; for a real iPhone run it with `DSHM_BRIDGE_HOST=0.0.0.0 DSHM_BRIDGE_DEV_PLAINTEXT=0`. S1's demo is `scripts/demo/s1.sh`.
+`node scripts/dsh-up.mjs` starts DSH 0.2.2-rc.1 from `~/.dshm/runtime` with `DSH_HOME=~/.dshm/home`, enables this bridge, and points DSH at DSH's mock LLM server, so no API key is needed. The script header lists its environment variables. Unlike the defaults above, it binds the bridge to `127.0.0.1` with `devPlaintext` on, so the Simulator can use both the plaintext path and Noise; for a real iPhone run it with `DSHM_BRIDGE_HOST=0.0.0.0 DSHM_BRIDGE_DEV_PLAINTEXT=0`. The pairing demo is `scripts/demo/s1.sh`.
 
 This is the development host on the maintainer's Mac:
 - DSH is installed with npm (`@deepseek-ai/dsh@0.2.2-rc.1` and `@deepseek-ai/dsh-llm-mock-server@0.2.2-rc.1`) into `~/.dshm/runtime`.
 - `~/.dshm/bin/pnpm` is a shim for `corepack pnpm@11.28.5`; put it on `PATH` for `dsh plugin`.
 - The default `~/.dsh` is left untouched.
-- S3's milestone demo uses `node scripts/demo/s3-host.mjs` instead: the same setup with `DSH_HOME=~/.dshm/home-s3`, web port 3285 and bridge port 47812 (written to the profile's `cordis.patch.yml`), and DSH's mock LLM scripted to keep a three-item todo list (ARCHITECTURE D19). `scripts/demo/s3.sh` runs it.
+- The milestone demo uses `node scripts/demo/s3-host.mjs` instead: the same setup with `DSH_HOME=~/.dshm/home-s3`, web port 3285 and bridge port 47812 (written to the profile's `cordis.patch.yml`), and DSH's mock LLM scripted to keep a three-item todo list. `scripts/demo/s3.sh` runs it.
 - Other worktrees use their own `DSH_HOME` and ports. For example, X1/X4 use `~/.dshm/home-x1x4`, web port 3282 and bridge ports 47803–47809.
 
 ## Development

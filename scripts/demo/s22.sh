@@ -62,8 +62,8 @@ if [ "$PART" = ui ]; then
   TEST_RUNNER_DSHM_PAIR_URL="$(DSH_HOME="$PROFILE" node bridge/lib/scripts/pair.js --url-only)"
   export TEST_RUNNER_DSHM_PAIR_URL TEST_RUNNER_DSHM_SHOT_DIR="$S22_SHOT_DIR"
   log="$LOGS/ui.log"
-  xcodebuild test-without-building "${args[@]}" -only-testing:dsh-mobileUITests/S22FirstRunUITests \
-    > "$log" 2>&1 || { grep -E 'error:|Test Case' "$log" | tail -20; exit 1; }
+  scripts/xc test-without-building "${args[@]}" -only-testing:dsh-mobileUITests/S22FirstRunUITests \
+    --log "$log" || { grep -E 'error:|Test Case' "$log" | tail -20; exit 1; }
   grep -E "Test Case.*(passed|failed|skipped)" "$log"
   source scripts/demo/lib.sh
   demo_no_skipped_ui "$log"
@@ -77,7 +77,7 @@ demo_prepare_bridge
 (cd bridge && corepack pnpm exec tsc -p .) > "$LOGS/tsc.log" 2>&1 || { tail -20 "$LOGS/tsc.log"; exit 1; }
 
 step "Release build of the app and UI tests ($SIM)"
-xcodebuild build-for-testing "${args[@]}" > "$LOGS/build.log" 2>&1 \
+scripts/xc build-for-testing "${args[@]}" --log "$LOGS/build.log" \
   || { grep -E 'error:|failed' "$LOGS/build.log" | tail -20; exit 1; }
 
 S22_SHOT_DIR="$(mktemp -d)"

@@ -1,0 +1,10 @@
+#!/bin/bash
+# swift test with a short JSON summary (counts, the first errors as file:line). The full log goes
+# to --log FILE or to /tmp/dshm-logs/. The exit code is the exit code of swift test.
+#
+#   scripts/swift-test [--log FILE] [swift test args…]     default: --package-path ios/DSHKit
+#
+# Summary format: scripts/lib/wrap.py.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+exec python3 "$ROOT/scripts/lib/wrap.py" run swift-test "$@"

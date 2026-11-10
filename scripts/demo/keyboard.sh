@@ -32,16 +32,16 @@ trap 'rm -rf "$SHOT_DIR"' EXIT
 export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR"
 
 step "build the app and UI tests ($SIM; log: $LOGS/build.log)"
-xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DSHM_DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+  --log "$LOGS/build.log" || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 ui() { # part name, log, then -only-testing selectors
   local name=$1 log=$2; shift 2
   local args=() t
   for t in "$@"; do args+=("-only-testing:dsh-mobileUITests/$t"); done
-  if demo_part "$name" xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
-      -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" > "$log" 2>&1; then
+  if demo_part "$name" scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+      -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" --log "$log"; then
     grep -E "Test Case.*(passed|failed|skipped)" "$log" || true
   else
     grep -E "error:|Test Case.*(passed|failed)" "$log" || tail -30 "$log"

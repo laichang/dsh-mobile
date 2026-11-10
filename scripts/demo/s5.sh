@@ -30,9 +30,9 @@ done
 lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null || { echo "S5 bridge did not start" >&2; exit 1; }
 shot_dir="$(mktemp -d)"
 export TEST_RUNNER_DSHM_REAL_DSH=1 TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT" TEST_RUNNER_DSHM_SHOT_DIR="$shot_dir"
-xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "${DSHM_DD:-/tmp/dshm-s5-dd}" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  -parallel-testing-enabled NO -jobs 4 -only-testing:dsh-mobileUITests/S5InterruptUITests > "$LOGS/ui.log" 2>&1 || {
+  -parallel-testing-enabled NO -jobs 4 -only-testing:dsh-mobileUITests/S5InterruptUITests --log "$LOGS/ui.log" || {
     grep -E 'error:|Test Case' "$LOGS/ui.log"; exit 1;
   }
 grep -E "Test Case.*testInterruptLongRunningTask.* passed" "$LOGS/ui.log"

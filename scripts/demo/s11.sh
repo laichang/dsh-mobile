@@ -33,7 +33,7 @@ if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; 
 args=(-project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -configuration Release -destination "$DEST"
       -derivedDataPath "${DSHM_DD:-/tmp/dshm-s11-dd}" -parallel-testing-enabled NO -jobs 4 ONLY_ACTIVE_ARCH=YES
       -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates)
-xcodebuild build-for-testing "${args[@]}" > "$LOGS/build.log" 2>&1 || { grep -E 'error:|failed' "$LOGS/build.log" | tail -20; exit 1; }
+scripts/xc build-for-testing "${args[@]}" --log "$LOGS/build.log" || { grep -E 'error:|failed' "$LOGS/build.log" | tail -20; exit 1; }
 xcrun simctl bootstatus "$SIM" -b >/dev/null
 if xcrun simctl get_app_container "$SIM" chang.dsh-mobile app >/dev/null 2>&1; then
   xcrun simctl uninstall "$SIM" chang.dsh-mobile
@@ -56,8 +56,8 @@ export TEST_RUNNER_DSHM_PAIR_URL="$(pair_url)" TEST_RUNNER_DSHM_SHOT_DIR="$SHOTS
 run_ui() {
   local test=$1
   local log="$LOGS/$test.log"
-  xcodebuild test-without-building "${args[@]}" -only-testing:"dsh-mobileUITests/S11FirstRunUITests/$test" \
-    > "$log" 2>&1 || { grep -E 'error:|Test Case' "$log" | tail -20; exit 1; }
+  scripts/xc test-without-building "${args[@]}" -only-testing:"dsh-mobileUITests/S11FirstRunUITests/$test" \
+    --log "$log" || { grep -E 'error:|Test Case' "$log" | tail -20; exit 1; }
   grep -E "Test Case.*$test.*passed" "$log"
   demo_no_skipped_ui "$log"
 }

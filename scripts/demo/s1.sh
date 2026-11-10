@@ -87,13 +87,13 @@ if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; 
 export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR" TEST_RUNNER_DSHM_BRIDGE_PORT="$PORT" TEST_RUNNER_DSHM_REAL_DSH=1
 export TEST_RUNNER_DSHM_PAIR_URL="$(pair_url)"
 export TEST_RUNNER_DSHM_EXPIRED_PAIR_URL="$(pair_url --ttl-minutes 0)"
-xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+  --log "$LOGS/build.log" || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 uitest() { # name, then -only-testing targets; fails on any failed or skipped test
   local name=$1; shift
-  xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
-    -derivedDataPath "$DD" "$@" > "$LOGS/uitest-$name.log" 2>&1 \
+  scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+    -derivedDataPath "$DD" "$@" --log "$LOGS/uitest-$name.log" \
     || { grep -E "error:|Test Case|XCTAssert" "$LOGS/uitest-$name.log"; exit 1; }
   grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/uitest-$name.log"
   demo_no_skipped_ui "$LOGS/uitest-$name.log"

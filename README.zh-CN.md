@@ -13,7 +13,7 @@
 [![Protobuf](https://img.shields.io/badge/protocol-protobuf-4285F4)](protocol/)
 [![E2E: Noise](https://img.shields.io/badge/E2E-Noise_IK-2ea44f)](#安全)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm_Noncommercial-blue)](#许可证)
-[![Status: M1 preview](https://img.shields.io/badge/status-M1_preview-orange)](#路线图)
+[![Status: preview](https://img.shields.io/badge/status-preview-orange)](#现状)
 
 [English](README.md) · 简体中文
 
@@ -59,7 +59,9 @@ DSH 常驻在你自己的机器上：家里的 Mac、公司的 Windows、NAT 后
 - 📂 **工作区选择**：执行端的默认工作区、最近用过的工作区，或该机器上任意一个绝对路径。
 - ⏹️ **随时打断**。
 - 📴 **不怕断网**：每台执行端有一条带续传游标的事件日志。杀掉 App、断开 Wi-Fi、再打开，错过的内容一条不少地补回来。
-- 🔐 **端到端加密**：扫一次二维码完成配对，此后每一帧都经过 Noise 加密，局域网、Tailscale、将来的中继一视同仁。
+- 🔐 **端到端加密**：扫一次二维码完成配对，此后每一帧都经过 Noise 加密，局域网、Tailscale 一视同仁。没有中转服务器，也没有我们自己的服务器：手机直连你的执行端。
+- 💬 **任务进行中也能说话**：追加的消息排到下一轮，或者立即发送；在卡片或输入框里回答 Agent 的提问；带照片和文件；在手机上本地语音输入。
+- 🔒 **实时活动**：每个正在跑的任务在锁屏上计时（只在本机更新，不用推送）。
 - 🧾 **设备与审计**：查看所有已配对设备，手机丢了随时吊销；谁、什么时候、在哪台设备上批准了什么，都有记录。
 
 ## 工作原理
@@ -82,7 +84,7 @@ DSH 目前还没有配对、推送、中继，也没有稳定公开的通信协�
 | **Bridge 插件** | [`bridge/`](bridge/) | 一个 Cordis 插件，装进你已经在用的 DSH。它开自己的监听端口，吸收上游 API 的变化，App 永远不直接对接 DSH 的内部协议。 |
 | **协议** | [`protocol/`](protocol/) | 两端之间唯一的契约：`.proto` 文件、Swift 与 TS 的代码生成、两端共同测试的 golden fixtures。 |
 
-完整设计与每个决策（D1–D55）的理由见 [ARCHITECTURE.md](ARCHITECTURE.md)。
+完整设计及其理由见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
 ## 快速开始
 
@@ -155,16 +157,11 @@ node bridge/lib/scripts/pair.js
 > [!WARNING]
 > Noise 实现是自己写的，**尚未经过独立安全审计**。非常欢迎审阅。
 
-## 路线图
+## 现状
 
-| | 范围 | 状态 |
-|---|---|---|
-| **M1** | 扫码配对 + 端到端加密、统一任务列表、输入框（执行端、工作区、模型、推理强度）、里程碑、流式详情、打断、中途切换模型、App 内审批、多执行端、设备与审计、跨客户端会话 | 🚧 大部分切片已完成，界面打磨中（[PLAN.md](PLAN.md)） |
-| **M2** | 推送通知（bridge 直连 APNs）、风险分级、最高级需 Face ID、开跑前对齐计划与预先授权、任务中追加消息与回答 Agent 提问 | 计划中 |
-| **M3** | 产物：Quick Look 预览、系统分享面板进出、照片作为上下文 | 计划中 |
-| **M4** | 实时活动 / 灵动岛、语音下任务、无法直连时的中继传输 | 计划中 |
+「功能」里列的都已做好、在用。还没做：风险分级（最高一级需 Face ID）、开跑前对齐计划与预先授权、产物预览与分享出去、分享扩展。待办见 [issues](https://github.com/laichang/dsh-mobile/issues)。
 
-**暂不做**：替你安装或托管 DSH；端侧模型（将来以「本机执行端」的形式接入）；手机直接调用模型 API。
+**暂不做**：替你安装或托管 DSH；端侧模型（将来以「本机执行端」的形式接入）；手机直接调用模型 API；推送通知（APNs）；中转服务器；根据任务内容猜执行端。
 
 > [!NOTE]
 > DSH 本身还是开发者预览版。bridge 目前只精确支持 DSH **`0.2.2-rc.1`**。遇到其他版本时仍然可以配对，并告诉 App 已安装和支持的版本，方便你知道该升级哪一边。
@@ -174,7 +171,7 @@ node bridge/lib/scripts/pair.js
 这个仓库由 AI 编程 Agent（Claude Code 和 Codex）在一位人类的主导下并行规划、开发和评审。这套流程本身也是项目的一部分：
 
 - **[STORY.md](STORY.md)**：产品愿景和九条设计原则。每条原则都对应 **[设计稿](DESIGN.md)** 里的一个画面。
-- **[PLAN.md](PLAN.md)**：先打一发曳光弹（tracer bullet），再做纵向切片。每个「Done when」条目都有分级（`[auto]`、`[ui]`、`[human]`）和必须可解析的证据，由 pre-commit hook 检查。
+- **计划文件**（[M1 的计划，见 tag `m1`](https://github.com/laichang/dsh-mobile/blob/m1/PLAN.md)）：先打一发曳光弹（tracer bullet），再做纵向切片。每个「Done when」条目都有分级（`[auto]`、`[ui]`、`[human]`）和必须可解析的证据，由 pre-commit hook 检查。计划文件只在一个需求进行中时存在；其他一切都是 [GitHub issue](https://github.com/laichang/dsh-mobile/issues)。
 - **[WORKFLOW.md](WORKFLOW.md)**：协调会话如何在 git worktree 里调度各个切片会话，独立评审如何重跑每一项界面检查，哪些决定必须留给人。
 - **[`evidence/`](evidence/)**：每个已完成切片背后的截图。
 
