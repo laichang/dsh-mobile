@@ -536,6 +536,8 @@ Append-only, dated.
 
 - **2026-11-11 · User decision: keep blocking guard-file changes in a slice merge into main; the user merges them with CHECK_PLAN_ALLOW. S7 restores the refusal in check-plan and fixes check-ids on refusal-test. Hook patch drafted: /tmp/dshm-s7-guard.patch.**
 
+- **2026-11-11 · S7 at 174c516 (check-ids fix, guard refusal restored). Hook patch /tmp/dshm-s7-guard.patch applied in a scratch clone of 174c516: guard-test 0, codex-guard-test 0, refusal-test 0, check-ids pass; check-old-docs hits only PLAN.md. Waiting for the user to review and apply the patch and remove PLAN.md.**
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
