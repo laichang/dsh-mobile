@@ -46,7 +46,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S2 | done | merged `a75b85c` | 2026-11-10 | — |
 | S3 | done | merged `ea755c4` | 2026-11-10 | — |
 | S4 | done | merged `7a73893` | 2026-11-10 | — |
-| S5 | doing | `claude/s5-remove-ids` | 2026-11-10 | Slice owner builds (§8) |
+| S5 | done | merged `424b093` | 2026-11-10 | — |
 | S6 | done | merged `46d4f3d` | 2026-11-10 | — |
 | S7 | todo | — | 2026-11-10 | Assign it and start a session |
 
@@ -517,6 +517,8 @@ Append-only, dated.
 - **2026-11-10 · S5 built by a background agent; separate review runs.** S5 at a31ef62 (worktree agent-a97ffb07f7089f892): Dxx lines in code 643 → 62 (binaries, golden data, check scripts, plan tools); scripts/check-ids finds 0 on the branch; 33 UI test classes, 5 suites, 32 demo scripts, fixtures, env names, s2.proto and bridge/src/s2 renamed; fixtures same bytes. UI tests only compiled, so the review runs real demos. Open for S7: scripts/review looks for scripts/demo/<ID>.sh, which check-ids now forbids; hook wiring of check-ids. The user's uncommitted FEATURES.md (65 references) and scripts/feature-map-test (2) cite the old demo and test names.
 
 - **2026-11-10 · S5 review FAIL: comments broken by the mechanical pass.** Separate review at a31ef62: RESULT: FAIL (/tmp/dshm-review/S5-a31ef62.txt), only on comment quality (4 of 15 sampled comments broken: dangling 'see', empty '///.', lost spaces, 'follows.' with no target). All else passed, including round-trip.sh, hosts.sh and followup.sh run for real on a simulator the reviewer created (no script creates dshm-<ID> simulators: an issue for later). Round 2: a detector script over the whole diff, hand repairs, the detector as a test, demo-name wording in READMEs and lib.sh.
+
+- **2026-11-10 · S5 merged.** Merged as `424b093`; `scripts/check-plan` on the merge commit passed. `scripts/review S5` at `d15d8e2`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S5-d15d8e2.txt`). No open `[human]` items, so S5 is `done`.
 
 ## 9. Pending user confirmation
 
