@@ -28,7 +28,7 @@ if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; 
 args=(-project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST"
       -derivedDataPath "${DSHM_DD:-/tmp/dshm-s10-dd}" -parallel-testing-enabled NO -jobs 4
       -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates)
-xcodebuild build-for-testing "${args[@]}" > "$LOGS/build.log" 2>&1 || { grep -E 'error:|failed' "$LOGS/build.log" | tail -20; exit 1; }
+scripts/xc build-for-testing "${args[@]}" --log "$LOGS/build.log" || { grep -E 'error:|failed' "$LOGS/build.log" | tail -20; exit 1; }
 : > "$LOGS/host.log"
 DSHM_HOME="$PROFILE" node scripts/demo/s4-host.mjs > "$LOGS/host.log" 2>&1 &
 host_pid=$!
@@ -56,7 +56,7 @@ JS
 export TEST_RUNNER_DSHM_S10_PEER="$peer" TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT"
 export TEST_RUNNER_DSHM_PAIR_URL="$(pair_url)" TEST_RUNNER_DSHM_SHOT_DIR="$FIXTURE"
 export TEST_RUNNER_DSHM_S4_COMMAND="$DSHM_S4_COMMAND"
-xcodebuild test-without-building "${args[@]}" -only-testing:dsh-mobileUITests/S10DevicesUITests > "$LOGS/ui.log" 2>&1 || {
+scripts/xc test-without-building "${args[@]}" -only-testing:dsh-mobileUITests/S10DevicesUITests --log "$LOGS/ui.log" || {
   grep -E 'error:|Test Case' "$LOGS/ui.log" | tail -20; exit 1
 }
 grep -E 'Test Case.*testAuditAndRevokeAnotherPairedDevice.* passed' "$LOGS/ui.log"

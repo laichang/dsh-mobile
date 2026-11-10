@@ -67,9 +67,9 @@ export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR" TEST_RUNNER_DSHM_BRIDGE_PORT="$PORT
 ONLY=(-only-testing:dsh-mobileUITests/S3MilestonesUITests)
 if [ $FAKE_ONLY = 0 ]; then export TEST_RUNNER_DSHM_REAL_DSH=1
 else ONLY+=(-skip-testing:dsh-mobileUITests/S3MilestonesUITests/testMilestonesAgainstRealDSH); fi
-xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates "${ONLY[@]}" \
-  > "$LOGS/uitest.log" 2>&1 || { grep -E "error:|Test Case" "$LOGS/uitest.log"; exit 1; }
+  --log "$LOGS/uitest.log" || { grep -E "error:|Test Case" "$LOGS/uitest.log"; exit 1; }
 grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/uitest.log"
 demo_no_skipped_ui "$LOGS/uitest.log"
 

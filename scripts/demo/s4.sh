@@ -33,10 +33,10 @@ if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; 
 export TEST_RUNNER_DSHM_S4_CONTROL="$(awk '/^s4-host: ready / { print $3; exit }' "$LOGS/host.log")"
 export TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT" TEST_RUNNER_DSHM_S4_COMMAND="$DSHM_S4_COMMAND"
 export TEST_RUNNER_DSHM_SHOT_DIR="$FIXTURE"
-xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "${DSHM_DD:-/tmp/dshm-s4-dd}" -parallel-testing-enabled NO -jobs 4 \
   -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates -only-testing:dsh-mobileUITests/S4ApprovalUITests \
-  > "$LOGS/uitest.log" 2>&1 || { grep -E 'error:|Test Case' "$LOGS/uitest.log" | tail -24; exit 1; }
+  --log "$LOGS/uitest.log" || { grep -E 'error:|Test Case' "$LOGS/uitest.log" | tail -24; exit 1; }
 grep -E 'Test Case.*(passed|failed|skipped)' "$LOGS/uitest.log"
 demo_no_skipped_ui "$LOGS/uitest.log"
 test "$(cat "$FIXTURE/tmp/x")" = 'S4 fixture'

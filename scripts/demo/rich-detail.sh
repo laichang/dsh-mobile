@@ -36,9 +36,9 @@ if [ "$OFFLINE_ONLY" = 0 ]; then
 fi
 
 step "build the app and UI tests ($SIM, log: $LOGS/build.log)"
-xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+  --log "$LOGS/build.log" || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 shot_dir="$(mktemp -d)"
 host_pid=""
@@ -63,9 +63,9 @@ run_ui() { # DSHM_S8_REPLY, test name
   export TEST_RUNNER_DSHM_S8_REPLY="$1" TEST_RUNNER_DSHM_SHOT_DIR="$shot_dir" TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT"
   local log="$LOGS/$1.log"
   step "UI: S8RichDetailUITests/$2 (log: $log)"
-  xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+  scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
     -derivedDataPath "$DD" -parallel-testing-enabled NO \
-    -only-testing:"dsh-mobileUITests/S8RichDetailUITests/$2" > "$log" 2>&1 || {
+    -only-testing:"dsh-mobileUITests/S8RichDetailUITests/$2" --log "$log" || {
       grep -E 'error:|Test Case' "$log"; echo "UI test failed: $2" >&2; exit 1;
     }
   grep -E "Test Case.*$2.*passed" "$log"

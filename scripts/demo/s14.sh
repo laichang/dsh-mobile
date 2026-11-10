@@ -36,7 +36,7 @@ export DSHM_S14_SHOTS="${DSHM_S14_SHOTS:-$LOGS/shots}"; mkdir -p "$DSHM_S14_SHOT
 SIM="$DSHM_SIM"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 export TEST_RUNNER_DSHM_SHOT_DIR="$DSHM_S14_SHOTS"
-UI=(xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST"
+UI=(scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST"
   -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO)
 REAL=dsh-mobileUITests/S14DrawerUITests/testWebAndPhoneSessionsShareAWorkspaceWithRealDSH
 
@@ -48,7 +48,7 @@ ui_check() { # log: every test passed, none skipped
 case "$PART" in
   ui-fake)
     step "UI: drawer tree, marks, badge, offline host, no drawer.v1 (FakeBridge)"
-    "${UI[@]}" -only-testing:dsh-mobileUITests/S14DrawerUITests -skip-testing:"$REAL" > "$LOGS/ui-fake.log" 2>&1 \
+    "${UI[@]}" -only-testing:dsh-mobileUITests/S14DrawerUITests -skip-testing:"$REAL" --log "$LOGS/ui-fake.log" \
       || { grep -E "error:|Test Case.*(passed|failed)" "$LOGS/ui-fake.log"; exit 1; }
     ui_check "$LOGS/ui-fake.log"
     exit 0 ;;
@@ -72,7 +72,7 @@ case "$PART" in
       sleep 0.5
     done
     [ -e "$DSHM_S14_SIGNALS/workspace" ] || { cat "$LOGS/web.log"; exit 1; }
-    "${UI[@]}" -only-testing:"$REAL" > "$LOGS/ui-real.log" 2>&1 \
+    "${UI[@]}" -only-testing:"$REAL" --log "$LOGS/ui-real.log" \
       || { grep -E "error:|Test Case.*(passed|failed)" "$LOGS/ui-real.log"; cat "$LOGS/web.log"; exit 1; }
     ui_check "$LOGS/ui-real.log"
     wait "$web_pid" || { cat "$LOGS/web.log"; exit 1; }
@@ -89,9 +89,9 @@ step "DSHKit tests (swift test; DrawerTreeTests)"
 demo_swift_tests "$LOGS/swift-test.log"
 
 step "build the app and UI tests ($SIM)"
-xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DSHM_DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+  --log "$LOGS/build.log" || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 rm -f "$DSHM_S14_SHOTS"/*.png
 demo_part s14-ui-fake "$0" --part ui-fake

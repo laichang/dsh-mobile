@@ -122,7 +122,7 @@ A Cordis plugin in the user's DSH profile (install: `bridge/README.md`). It is t
 ### 4.2 Pairing and the encrypted wire
 
 - **Noise**: pairing `Noise_IKpsk1_25519_ChaChaPoly_SHA256` with psk = the QR's 32-byte one-time secret; reconnect `Noise_IK_25519_ChaChaPoly_SHA256`. IK because the QR already delivers the host key; psk1 so that the host refuses a wrong secret at message 1; SHA256 because CryptoKit has no BLAKE2. Own state machine on CryptoKit (Swift) and `@noble/*` (TS): `ios/DSHKit/Sources/DSHCore/Noise/`, `bridge/src/pairing/noise.ts`.
-- **Offer** = the URL `dshm://pair?v=1&n=<host name>&a=<host:port,…>&k=<host key>&i=<offer id>&s=<secret>&x=<expiry>` (k/i/s unpadded base64url, 32/16/32 bytes; x Unix seconds). The bridge prints it as a terminal QR at startup when no device is paired, and on demand with `node bridge/lib/scripts/pair.js`. The addresses are every external IPv4 of the Mac (LAN, Tailscale). An offer is single use (burnt on the first valid message 1) and expires after 10 minutes. A URL, not a binary blob, so the same link can be pasted and serves as the Debug deep link.
+- **Offer** = the URL `dshm://pair?v=1&n=<host name>&a=<host:port,…>&k=<host key>&i=<offer id>&s=<secret>&x=<expiry>` (k/i/s unpadded base64url, 32/16/32 bytes; x Unix seconds). The bridge prints it as a terminal QR at startup when no device is paired, and on demand with `node bridge/lib/scripts/pair.js`. The addresses are every external IPv4 of the Mac (LAN, Tailscale). An offer is single use (burnt on the first valid message 1) and expires after 10 minutes. A URL, so it can be pasted and serves as the Debug deep link.
 - **Wire**: the first WebSocket message is `[1, mode, offer id if pairing] ‖ Noise message 1`; the header is bound into the prologue (`"dshm/1" ‖ header`); handshake payloads are empty. Then one WebSocket binary message = one Noise transport message = one protobuf `Frame`. Noise caps a message at 65535 bytes, so files go up in parts (§4.8).
 - **Close codes**: 4000 bad hello, 4001 pairing refused (unknown, expired, used, wrong secret), 4002 handshake failed, 4003 device unknown.
 - **State** in `$DSH_HOME/dsh-mobile-bridge/` (dir 0700, files 0600, atomic writes): host key, offers, device registry, approval journal.
@@ -226,7 +226,6 @@ DSHProtocol
 - One `ShellModel` holds the page (`ShellPage`: new session, session, all tasks), the sheet (`SheetRoute`) and the drawer. No `NavigationStack`.
 - The app opens on a blank new session with the default host and workspace, also when the cache has tasks; it never reopens the last place (STORY §3). When the host accepts the first message, the same page becomes that session's page at once, whatever the reply; a failed send keeps the prompt and shows `composer.error`.
 - The drawer (from the left edge) groups host > workspace (by path) > session, with marks for waiting, running and unread. Read state is local: `CachedTask.readThrough` stores the host `updatedAt` that the user saw (host and phone clocks differ). The badge counts 等我处理.
-- Motion (`ShellModel.open`, `DrawerMotion`): a highlight and haptic on tap, a 120 ms cross-fade, one spring to close the drawer; the approval sheet waits until the motion ends.
 - Landing: an unread finished session opens at the final answer's start; a running one at the bottom; a read one where the user last scrolled in this run of the app, else the end.
 - The keyboard goes away before any action that is not typing: `ShellModel` dismisses it when the page, sheet or drawer changes; composer menus open in place, so each has `.dismissesKeyboardBeforeMenu()` (it hooks the UIKit control that SwiftUI draws; `KeyboardMenusUITests` fails if a later iOS changes it).
 
@@ -242,7 +241,7 @@ DSHProtocol
 
 ### 5.5 All tasks
 
-A drawer page with 等我处理 / 正在跑 / 已完成 across hosts, from the cache. One line per offline host. A task with pending approvals shows one card per approval, a task with a waiting question its question card; both answer in place. Other tasks are one-line rows; a completed row shows a short answer inline (completed, at most 280 characters and three non-empty lines, no code fence).
+A drawer page with 等我处理 / 正在跑 / 已完成 across hosts, from the cache. One line per offline host. A task with pending approvals shows one card per approval, a task with a waiting question its question card; both answer in place. Other tasks are one-line rows; a short completed answer shows inline.
 
 ### 5.6 Voice input
 
@@ -251,12 +250,9 @@ A drawer page with 等我处理 / 正在跑 / 已完成 across hosts, from the c
 ### 5.7 Live Activity
 
 - One activity per task that runs on an online host: title, host, time since the turn started (`Text(timerInterval:)`, so it ticks while the app is suspended), the latest step, `done/total`. `LiveActivities` (DSHCore) brings them in line with the task list after each change: start, update with a `staleDate` 15 minutes on, end when the task is done, failed, stopped or waits on the user. An ended activity stays on the lock screen; never two for one task; after a relaunch existing activities are taken over by task key.
-- Local only: without push, the step changes only while the app runs; then `staleDate` greys it.
+- Local only: without push, the step changes only while the app runs; then `staleDate` greys it. A free Apple team signs everything (builds expire after 7 days).
 - The app sends everything in the ActivityKit state (`DSHActivity` library). No App Group, no shared files, no entitlements, so a free Apple team can sign the extension (`ios/LiveActivity`).
 
-### 5.8 Free Personal Team
-
-Builds expire after 7 days. No push and no App Groups are used, so nothing needs a paid account.
 
 ## 6. Protocol (`protocol/`)
 
@@ -288,17 +284,17 @@ Builds expire after 7 days. No push and no App Groups are used, so nothing needs
 ## 7. Testing
 
 - **DSHKit**: `swift test` on the Mac. `FakeHost` / `FakeBridge` (`DSHTestSupport`) is a fake bridge process whose tasks and log outlive connections, with scripts for milestones, approvals, questions, follow-ups, outcomes and turns. It closes and refuses with 4003 like the bridge.
-- **Bridge**: `pnpm test` with `FakeDSH` (`bridge/test/`), and live checks against real DSH with its mock model (`scripts/dsh-up.mjs`).
+- **Bridge**: `FakeDSH` (`bridge/test/`), and live checks against real DSH with its mock model (`scripts/dsh-up.mjs`).
+- **Output wrappers (provisional, pending user confirmation):** `scripts/xc <action>` (xcodebuild), `scripts/swift-test` and `scripts/pnpm-test` write the full log to `/tmp/dshm-*` and print a short JSON summary (counts, the first 10 errors as `file:line: message`, the log path); parsing is in `scripts/lib/wrap.py`. Demo scripts and `scripts/review` call only the wrappers (`scripts/check-wrappers` fails on a raw call). Why: a full xcodebuild log fills an agent's context; `xcbeautify` or `xcpretty` add a dependency and give no JSON, and `xcresulttool` is slow and only for xcodebuild.
 - **UI tests** run only through `scripts/demo/<name>.sh` or `scripts/review`, which load the machine guard in `scripts/demo/lib.sh` (free space, CPU, simulator limit).
 - **Debug-only entry points**, behind `#if DEBUG` and the Debug Info.plist; `scripts/check-release-clean` proves a Release build has none:
   - `-DSHM…` launch arguments (`DebugEntryPoints.swift`): `-DSHMFakeBridge` and `-DSHMFakeScenario <name>` put a `FakeHost` in process; others preset the prompt, the bridge port (default 47801), speech, the store and pairing.
   - The URL scheme `dshm://pair?…` and the accessibility identifiers that the UI tests use.
-- `-DSHMUIKitAnimations NO` turns off UIKit view animations: XCUITest waits for their count to reach zero, and under load a lost end cost 60 s per step. A Debug launch with a `-DSHM…` argument starts no Live Activities unless it passes `-DSHMLiveActivityProbe YES`: a stray activity made the system open the app without the test's arguments.
+- `-DSHMUIKitAnimations NO` turns off UIKit view animations (XCUITest waits for them to end; under load that cost 60 s per step). A Debug launch with a `-DSHM…` argument starts no Live Activities unless it passes `-DSHMLiveActivityProbe YES`.
 
 ## 8. Known limits and risks
 
 - The Noise code is hand-written and not audited.
 - The host log is in memory: a DSH restart loses the resume cursor (the app then reloads the list and marks lost running tasks failed).
 - Approval fan-out to the DSH desktop app is not verified.
-- Without push, the phone learns of a decision or a result only while the app runs; the Live Activity keeps the time ticking.
 - Not built yet (STORY.md wants them): risk tiers and Face ID for the top tier, plan alignment with pre-authorization, contact by other channels, artifact preview and share-out, the share extension, attachments while a task runs, and a later answer to a question that DSH's timed mode continued.

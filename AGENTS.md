@@ -19,6 +19,7 @@ Read on demand, not all at once:
 - `bridge/`: the DSH companion plugin (TypeScript, pnpm; `FakeDSH` in `bridge/test/`). Install: `bridge/README.md`
 - `protocol/`: the protobuf contract between the app and the bridge (`frame.proto`, golden `fixtures/`). Regenerate code with `scripts/codegen`
 - `scripts/bootstrap`: sets up a new Mac and runs the T0 demo (WORKFLOW.md §2)
+- `scripts/xc`, `scripts/swift-test`, `scripts/pnpm-test`: run xcodebuild, `swift test` and `pnpm test` with a short JSON summary; the full log goes to `/tmp/dshm-*`. Use them, not the bare tools. `scripts/check-wrappers` fails on a bare call in a demo script or `scripts/review`; `scripts/wrap-test` tests both
 - `scripts/demo/<slice>.sh`: re-runnable demo per slice; `scripts/dsh-up.mjs` starts a local DSH + bridge with a mock model
 - `design/`: the design board (`board.html` is the source; `board.png` and `screens/` are renders from `scripts/render-design`). See DESIGN.md
 - `evidence/<slice>/`: screenshots cited by the plan's `shot:` pointers; deleted with PLAN.md

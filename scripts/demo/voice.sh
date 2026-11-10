@@ -37,20 +37,19 @@ export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR"
 
 step "DSHKit DictationTests and SystemCallbackTests (swift test, FakeTranscriber; log: $LOGS/swift-test.log)"
 demo_part voice-swift-test bash -c '
-  swift test --package-path ios/DSHKit --filter "DictationTests|SystemCallbackTests" > "$1" 2>&1 || { grep -E "✘|error:" "$1" | head -40; exit 1; }
-  grep -E "✔ Suite|Test run" "$1"
+  scripts/swift-test --package-path ios/DSHKit --filter "DictationTests|SystemCallbackTests" --log "$1" || exit 1
   if grep -qE "Test .* skipped|[1-9][0-9]* tests? skipped" "$1"; then echo "swift tests were skipped" >&2; exit 1; fi' _ "$LOGS/swift-test.log"
 
 step "build the app and UI tests ($SIM)"
-xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DSHM_DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+  --log "$LOGS/build.log" || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 ui() { # name test log
   local name=$1 test=$2 log=$3
-  if demo_part "$name" xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+  if demo_part "$name" scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
       -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO \
-      -only-testing:"dsh-mobileUITests/VoiceUITests/$test" > "$log" 2>&1; then
+      -only-testing:"dsh-mobileUITests/VoiceUITests/$test" --log "$log"; then
     grep -E "Test Case.*(passed|failed|skipped)" "$log" || true
   else
     grep -E "error:|Test Case.*(passed|failed)" "$log" || tail -30 "$log"

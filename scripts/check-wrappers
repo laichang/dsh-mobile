@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""Fails when a demo script or scripts/review runs a build or test tool without its output wrapper.
+
+    scripts/check-wrappers            check scripts/demo/*.sh and scripts/review
+    scripts/check-wrappers FILE…      check these files
+
+A raw tool call writes its full log into the context of the agent that runs the script. Use:
+    xcodebuild …     ->  scripts/xc <action> …
+    swift test …     ->  scripts/swift-test …
+    pnpm test        ->  scripts/pnpm-test
+Each wrapper prints a short JSON summary and writes the full log to /tmp/dshm-* (scripts/lib/wrap.py).
+
+It reads shell text: comments, heredoc bodies and message lines (step, echo, printf) are not calls.
+Output: one "file:line: …" line for each raw call. Exit code 1 if there is one, else 0.
+"""
+
+import glob
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+RAW = [
+    (re.compile(r"(?:^|[\s;&|(=`'\"])xcodebuild(?=\s|$)"), "xcodebuild", "scripts/xc"),
+    (re.compile(r"\bswift\s+test\b"), "swift test", "scripts/swift-test"),
+    (re.compile(r"\b(?:pnpm|npm)\s+(?:run\s+)?test\b"), "pnpm test", "scripts/pnpm-test"),
+]
+MESSAGE = re.compile(r"^(?:step|echo|printf|say|log)\b")
+HEREDOC = re.compile(r"<<-?\s*(['\"]?)(\w+)\1")
+
+
+def logical_lines(text):
+    """(first line number, joined text) for each logical line; heredoc bodies are left out."""
+    lines = text.split("\n")
+    i, end_tag = 0, None
+    while i < len(lines):
+        if end_tag is not None:
+            if lines[i].strip() == end_tag:
+                end_tag = None
+            i += 1
+            continue
+        start, s = i, lines[i]
+        while s.endswith("\\") and i + 1 < len(lines):
+            i += 1
+            s = s[:-1] + " " + lines[i].strip()
+        m = HEREDOC.search(s)
+        if m:
+            end_tag = m.group(2)
+        yield start + 1, s
+        i += 1
+
+
+def check(path):
+    out = []
+    try:
+        text = Path(path).read_text(errors="replace")
+    except OSError as e:
+        return [f"{path}: cannot read: {e}"]
+    for n, s in logical_lines(text):
+        code = s.strip()
+        if not code or code.startswith("#") or MESSAGE.match(code):
+            continue
+        code = re.sub(r"(^|\s)#.*$", r"\1", code)   # a trailing comment
+        for rx, tool, wrapper in RAW:
+            if rx.search(code):
+                out.append(f"{path}:{n}: runs {tool} without its wrapper; use {wrapper}")
+    return out
+
+
+def main(argv):
+    if argv and argv[0] in ("-h", "--help"):
+        print(__doc__)
+        return 0
+    files = argv or sorted(glob.glob(str(ROOT / "scripts/demo/*.sh"))) + [str(ROOT / "scripts/review")]
+    found = [line.replace(str(ROOT) + "/", "") for f in files for line in check(f)]
+    for line in found:
+        print(line)
+    if found:
+        print(f"check-wrappers: {len(found)} raw tool call(s). See scripts/check-wrappers --help.", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
