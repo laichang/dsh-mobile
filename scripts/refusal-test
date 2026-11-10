@@ -97,6 +97,12 @@ mkdir -p ios && printf '// See D123 for the reason.\nlet x = 1\n' > ios/IdTest.s
 refused "a decision ID in code" git commit -q -m "id"
 git rm -q --cached ios/IdTest.swift; rm -f ios/IdTest.swift
 
+echo "a guard file in a merge into main"
+echo "# a guard change" >> .githooks/pre-merge-commit && git commit -qam "guard change"
+git checkout -q main
+refused "the merge of a slice that changes a guard file" git merge -q --no-ff --no-edit claude/s1-a-slice
+git merge --abort 2>/dev/null; git checkout -q claude/s1-a-slice
+
 echo "scripts/review"
 refused "review with no ID" scripts/review
 refused "review with an unknown arg" scripts/review S1 --bad

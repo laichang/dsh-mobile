@@ -8,10 +8,11 @@ text, files and screens and only gains evidence pointers that resolve, and the l
 append-only. With --agent, a `human:` pointer is refused too: only the user records a [human] item.
 
 With --staged it also fails on staged build output (.build/, node_modules/, DerivedData/,
-*.xcresult) and on staged files larger than MAX_FILE_MB. On main, it fails on a commit that is not
-a merge and changes code (CODE_PATHS) or a guard file (PROTECTED): code and guards reach main only
-by the merge of a slice branch, and the user reads a guard diff at that merge. A bug that the user
-reports becomes a fix slice (`scripts/plan fix`).
+*.xcresult) and on staged files larger than MAX_FILE_MB. On main, it fails on each commit, also a
+merge, that changes a guard file (PROTECTED): the user reviews the guard diff and merges it by
+hand. It fails on a commit that is not a merge and changes code (CODE_PATHS): code reaches main
+only by the merge of a slice branch. A bug that the user reports becomes a fix slice
+(`scripts/plan fix`).
 
 During a merge of main into another branch (MERGE_HEAD, or GIT_REFLOG_ACTION in
 pre-merge-commit), plan/ is judged against the plan/ of main.
@@ -108,18 +109,18 @@ def staged_problems(trusted=None):
 
 
 def code_on_main():
-    """Code or a guard file in the index of a commit on main that is not a merge."""
+    """On main: a guard file in the index of any commit, also a merge (the user reviews the guard
+    diff and merges it by hand), and code in the index of a commit that is not a merge."""
     if git_run("symbolic-ref", "-q", "--short", "HEAD").stdout.strip() != "main":
         return []
-    if (git_run("rev-parse", "-q", "--verify", "MERGE_HEAD").returncode == 0
-            or os.environ.get("GIT_REFLOG_ACTION", "").split()[:1] == ["merge"]):
-        return []
+    merging = (git_run("rev-parse", "-q", "--verify", "MERGE_HEAD").returncode == 0
+               or os.environ.get("GIT_REFLOG_ACTION", "").split()[:1] == ["merge"])
     errs = []
     for f in staged_files():
         if is_protected(f):
-            errs.append(f"GUARD ON MAIN: {f}. Next: change a guard on a slice branch; the user reads "
-                        f"the diff when the coordinator merges it")
-        elif CODE_PATHS.search(f):
+            errs.append(f"GUARD ON MAIN: {f}. Next: ask the user to review the guard diff and merge "
+                        f"with CHECK_PLAN_ALLOW=1")
+        elif CODE_PATHS.search(f) and not merging:
             errs.append(f"CODE ON MAIN: {f}. Next: code reaches main only by the merge of a slice "
                         f"branch; for a bug, `scripts/plan fix` and a fix slice")
     return errs
