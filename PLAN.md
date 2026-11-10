@@ -455,6 +455,8 @@ Append-only, dated.
 
 - **2026-11-10 · S3 assigned.** Branch `claude/s3-run-plan-workflow`, simulator `dshm-S3`, DSHM_HOME `~/.dshm/home-s3`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D162–D164. `eval "$(scripts/slice-env S3)"` exports them.
 
+- **2026-11-10 · T1 merged; S2 and S3 start; heartbeat restarted.** T1 merged as 15982e9 after the user approved the scripts/lib/plandata.py diff (option A); closes #57 with T0. Fake plan branches and T1 worktree removed. New heartbeat: CronCreate job 88097d29. S2 and S3 assigned. Briefs carry: no Dxx IDs in docs, wrappers, no guard file edits, the T1 known limits (S3), and the scripts/xc missing-simulator issue (S2 owns scripts/brief only; S3 fixes scripts/xc if it needs it).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
