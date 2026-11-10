@@ -40,7 +40,7 @@ This file exists only while this requirement is in progress. It serves this requ
 
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
-| T0 | doing | `claude/t0-plan-graph` | 2026-11-10 | Owner ticks item 2 after the guard patch 47fdbf5; then separate review |
+| T0 | doing | `claude/t0-plan-graph` | 2026-11-10 | Owner repairs the review FAIL (self-recorded results); then guard patches for the user; then a new separate review |
 | T1 | todo | — | 2026-11-10 | Assign it and start a session |
 | S1 | done | merged `3b960e8` | 2026-11-10 | — (provisional D150 in §9) |
 | S2 | todo | — | 2026-11-10 | Assign it and start a session |
