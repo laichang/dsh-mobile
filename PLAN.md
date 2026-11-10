@@ -267,6 +267,11 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
   Note for §8: ARCHITECTURE.md was at 10,000 tokens; to fit the new bullet the "Output wrappers" bullet is shorter. It is now just under the cap, so the next slice that adds to it must cut too.
   Not done: the `/run-plan` prompt that tells the build agent to read only the brief is in S3 (run-plan.js).
   Next: review.
+- **2026-11-10 · Round 2: Why, Cuts and Not in the brief.** Done: merged main (S3, ea755c4); the ARCHITECTURE.md conflict keeps both sides, and the wrappers and brief bullets are shorter to stay at most 10k tokens. The brief has the node's Why, Cuts and Not, read from its section of the plan file at `--base` with the section parser of `scripts/lib/plangen.py`. The file list adds each file that the Cuts name: a path, a glob (a glob with more than 5 matches is listed as itself, for example `scripts/demo/*.sh`), a unique file name (`Theme+S14.swift`) and a bare path (`DESIGN.md`). New rule: do not run `scripts/plan verify` or `scripts/plan merge`. The AGENTS.md repo layout is in the brief only when the node names no files, each bullet cut to its first sentence. Files listed: at most 30.
+  Test: `scripts/brief-test` also checks that each live node and each fixture brief has its Why, Cuts and Not, and each file of the base that the Cuts name is in the file list; fixtures get a plan file section. Largest real brief: about 2.55k tokens (S3); largest fixture: about 2.64k (the generated node).
+  Checks: brief-test, plan-test, run-plan-test, check-docs, check-wrappers pass.
+  Note for S7: `plan/<ID>.json` has no Why, Cuts or Not, so `scripts/brief` reads them from the plan file section; S7 moves these fields into `plan/` and changes `scope()` in `scripts/brief` to read them there.
+  Next: review.
 
 ### S3 · One run-plan Workflow for all plans, with the rework loop
 
