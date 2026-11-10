@@ -6,3 +6,4 @@ id	branch	slot	bridge	web	bridge2	web2	sim	home	decisions	assigned
 T0	claude/t0-plan-graph	0	47810	3283	47840	3313	dshm-T0	~/.dshm/home-t0	D147-D149	2026-11-10
 S1	claude/s1-output-wrappers	1	47811	3284	47841	3314	dshm-S1	~/.dshm/home-s1	D150-D152	2026-11-10
 S6	claude/s6-architecture-current	2	47812	3285	47842	3315	dshm-S6	~/.dshm/home-s6	D153-D155	2026-11-10
+T1	claude/t1-workflow-round-trip	0	47810	3283	47840	3313	dshm-T1	~/.dshm/home-t1	D156-D158	2026-11-10
