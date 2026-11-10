@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+"""Fails when code names a decision ID or a plan slice ID.
+
+  scripts/check-ids [ROOT]   check the tracked files of ROOT (default: this repo)
+
+Code outlives a plan: a comment says the reason in words, and a type, test, file, env or protocol
+name says the feature. In ios/, bridge/, protocol/, scripts/ and design/ it finds:
+  - a decision ID: the word D<number> (D18)
+  - a slice ID: S<number> or T<number> as a word (S14, T0), at the start of a name (S14DrawerUITests),
+    after a lower-case letter (hostsS21) or between underscores (DSHM_S4_COMMAND)
+  - a file or directory name that starts with one (s14.sh, S14Tests.swift, s2_pb.ts, Theme+S14.swift)
+Design screen names (X1, P3, F4, V2) are not slice IDs. Skipped: binary files; the plan tools, which
+take slice IDs as data; the checks that describe the rule and their tests; protocol/fixtures/ (golden
+bytes). A line that must keep an ID (golden data) carries the marker `check-ids: keep`.
+Exit 0 = no ID, 1 = an ID (one line per hit: path:line: kind ID).
+"""
+import os
+import re
+import subprocess
+import sys
+
+ROOT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), '..'))
+AREAS = ('ios', 'bridge', 'protocol', 'scripts', 'design')
+SKIP = re.compile(r'''^(
+    scripts/(plan|plan-test|brief|brief-test|slice-env|resources\.tsv|status|review|run-plan-args|run-plan-test
+            |check-plan|check-ids|check-ids-test|check-design|check-design-test|check-docs|check-docs-test)$
+  | scripts/lib/(dshm\.py|plandata\.py|plan-template\.md)$
+  | scripts/test/run-plan\.test\.mjs$
+  | scripts/fixtures/fake-plan/
+  | protocol/fixtures/
+)''', re.X)
+BINARY = re.compile(r'\.(png|jpe?g|gif|pdf|binpb|ico|icns|car|zip|gz|ttf|otf|woff2?|mp3|m4a|wav)$', re.I)
+DECISION = re.compile(r'\bD[0-9]{1,3}\b')
+SLICE = re.compile(r'\b[ST][0-9]{1,2}\b|\b[ST][0-9]{1,2}(?=[A-Z][a-z])|(?<=[a-z])[ST][0-9]{1,2}\b|(?<=_)[ST][0-9]{1,2}(?=_)')
+NAME = re.compile(r'(?:^|[^A-Za-z0-9])([sStT][0-9]{1,2}|D[0-9]{1,3})(?=[^0-9a-z]|$)')
+KEEP = 'check-ids: keep'
+
+
+def files(root):
+    r = subprocess.run(['git', '-C', root, 'ls-files', '--', *AREAS], capture_output=True, text=True)
+    if r.returncode == 0:
+        return [f for f in r.stdout.splitlines() if os.path.isfile(os.path.join(root, f))]
+    out = []
+    for area in AREAS:
+        for d, dirs, names in os.walk(os.path.join(root, area)):
+            dirs[:] = [x for x in dirs if x not in ('node_modules', '.build', 'lib', '.git')]
+            out += [os.path.relpath(os.path.join(d, n), root) for n in names]
+    return out
+
+
+def main():
+    hits = []
+    for f in sorted(files(ROOT)):
+        if SKIP.match(f):
+            continue
+        for part in f.split('/'):
+            m = NAME.search(part)
+            if m:
+                hits.append(f'{f}: file name with ID {m.group(1)}')
+                break
+        if BINARY.search(f):
+            continue
+        try:
+            text = open(os.path.join(ROOT, f), encoding='utf-8').read()
+        except (UnicodeDecodeError, OSError):
+            continue
+        for n, line in enumerate(text.split('\n'), 1):
+            if KEEP in line:
+                continue
+            m = DECISION.search(line)
+            if m:
+                hits.append(f'{f}:{n}: decision ID {m.group(0)}')
+                continue
+            m = SLICE.search(line)
+            if m:
+                hits.append(f'{f}:{n}: slice ID {m.group(0)}')
+    for h in hits:
+        print(h)
+    if hits:
+        print(f'check-ids: {len(hits)} ID(s) in code; say the reason or the feature in words', file=sys.stderr)
+        return 1
+    print('check-ids: no decision or slice ID in code')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
