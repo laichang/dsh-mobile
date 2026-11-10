@@ -260,6 +260,13 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 **Not**: Screens in the brief (S4).
 
 **Log**: —
+- **2026-11-10 · Build: scripts/brief and scripts/brief-test.** Done: `scripts/brief <ID>` writes the packet from `plan/plan.json` and `plan/<ID>.json` at `--base`: items with tier and evidence (new evidence marked), the files of the node (new files marked), the commands (evidence, demos the items name, `scripts/plan-test`, `scripts/check-docs`, `scripts/check-wrappers`, and the wrappers of the areas its files touch; all areas when it names no files), facts quoted by bullet or paragraph from AGENTS.md (Repo layout) and ARCHITECTURE.md, and the rules of a slice agent. T1 interface kept (`--round`, `--base`, `--out`); new `--preview` for a node with no branch (without it, refused as before). `.claude/workflows/run-plan.js` not changed.
+  Test: `scripts/brief-test` (new file, so no existing evidence changes): each node of the live `plan/`, the fake plan fixture and a generated node of the largest size is 3k tokens or fewer (the estimate of `scripts/check-docs`); each path and command it names exists at the base; each quoted fact is found; the checks catch a bad brief. Largest brief: about 2.6k tokens (the generated node); live nodes 1.3k–2.2k.
+  Checks: `scripts/brief-test`, `scripts/plan-test`, `scripts/run-plan-test`, `scripts/check-docs`, `scripts/check-wrappers` pass; T0 demo passed (without `DSHM_SIM`: simulator `dshm-S2` does not exist).
+  Provisional: the brief design (ARCHITECTURE.md §7 "Slice brief"); `--preview`; a demo is listed only when the items name it (not `scripts/demo/<id>.sh`, which old milestones reuse).
+  Note for §8: ARCHITECTURE.md was at 10,000 tokens; to fit the new bullet the "Output wrappers" bullet is shorter. It is now just under the cap, so the next slice that adds to it must cut too.
+  Not done: the `/run-plan` prompt that tells the build agent to read only the brief is in S3 (run-plan.js).
+  Next: review.
 
 ### S3 · One run-plan Workflow for all plans, with the rework loop
 
