@@ -488,6 +488,8 @@ Append-only, dated.
 
 - **2026-11-10 · S2 merged; S4 runs as a background agent (session start refused).** S2 merged as a75b85c (closes #59); review /tmp/dshm-review/S2-479c065.txt PASS. The user's uncommitted AGENTS.md line was stashed for the merge and reapplied (backup /tmp/dshm-user-agents-s2.patch). S4 assigned; the app refused a session start in a turn from a subagent message (§5.3), so S4 runs as a background agent in its own worktree, from /tmp/dshm-brief/S4-r1.md (scripts/brief --preview: no command writes branches into plan/plan.json yet, a gap for S7). Reviewer notes for later: S5's Cut asks for a pre-commit check but guard edits are forbidden (put it in check-docs); S7 needs guard edits (user review at merge, option A); run-plan.js needs branches in plan/plan.json.
 
+- **2026-11-10 · S4 built by a background agent; separate review runs.** S4 at d222eb6 (worktree agent-a39dfdb065bf5ebff): 7 components, 26 screens, 62 rules; 8 theme files and 13 tokens renamed; DESIGN.md and board removed. Agent: 116 tool uses, about 25 min, 221k tokens in all (sum over turns, not the peak context). Issues to open at the end (user consent): pairing screen 08 vs upstream; share sheet and iPad not drawn; screen L draws push, which STORY excludes; screen captions cite decision and slice IDs (S5).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
