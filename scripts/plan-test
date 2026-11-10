@@ -1,5 +1,5 @@
 #!/bin/bash
-# Tests for scripts/plan (with the cleanup after a merge), scripts/slice-env, scripts/status (disk
+# Tests for scripts/plan (with the cleanup after a merge; the plan/ graph and verifier results), scripts/slice-env, scripts/status (disk
 # lines), and dshm_code_key and the free-space floor (scripts/demo/lib.sh), in a temporary clone
 # (the repo is not touched). The cleanup tests use a fake xcrun, HOME and /tmp under the temporary
 # directory: no real simulator, worktree, branch or directory is deleted.
@@ -33,8 +33,10 @@ git checkout -q -B main HEAD
 # The working copy of the tools under test (they may be uncommitted in $SRC).
 cp "$SRC"/scripts/plan "$SRC"/scripts/slice-env "$SRC"/scripts/check-plan "$SRC"/scripts/status "$SRC"/scripts/review scripts/
 cp "$SRC"/scripts/demo/lib.sh scripts/demo/lib.sh
-mkdir -p scripts/lib && cp "$SRC"/scripts/lib/dshm.py "$SRC"/scripts/lib/plangen.py "$SRC"/scripts/lib/plan-template.md scripts/lib/
-cp "$SRC"/scripts/resources.tsv scripts/
+mkdir -p scripts/lib && cp "$SRC"/scripts/lib/dshm.py "$SRC"/scripts/lib/plangen.py "$SRC"/scripts/lib/plan-template.md \
+  "$SRC"/scripts/lib/plandata.py "$SRC"/scripts/lib/plan.schema.json scripts/lib/
+# The registry header only: the rows of a live run must not change the tests.
+sed '/^id[[:space:]]/q' "$SRC"/scripts/resources.tsv > scripts/resources.tsv
 # The tests make their own plan: they do not depend on a live plan, or on whether one exists.
 git rm -q --ignore-unmatch PLAN.md
 git add -A scripts && git commit -q -m "tools under test" --allow-empty
@@ -205,7 +207,9 @@ s90=$(awk '/^### S90 /{f=1} /^### S91 /{f=0} f' PLAN.md)
 printf '%s\n' "$s90" | tail -4 | grep -qF "· built, to review.**" && ok "Log entry at the end of S90" || bad "Log entry not at the end of S90"
 # A provisional decision and a commit, then the merge.
 first=$(awk -F'\t' '$1=="S90"{print $10}' scripts/resources.tsv | sed -E 's/^D([0-9]+).*/\1/')
-awk -v n="$first" '{print} /^\| D57 \|/{print "| D" n " | *Provisional, pending user confirmation (S90, test).* **A test decision.** Text. | Why. |"}' \
+# After the D57 row, or at the end when ARCHITECTURE.md has no decision table.
+awk -v n="$first" 'function row(){print "| D" n " | *Provisional, pending user confirmation (S90, test).* **A test decision.** Text. | Why. |"; done=1}
+  {print} /^\| D57 \|/{row()} END{if(!done){print ""; print "| # | Decision | Why |"; print "|---|---|---|"; row()}}' \
   ARCHITECTURE.md > ARCHITECTURE.md.new && mv ARCHITECTURE.md.new ARCHITECTURE.md
 # An open [human] item, so the merge leaves S90 in review.
 python3 - <<'PY'
@@ -386,6 +390,123 @@ echo "x" > untracked-test.swift; k4=$(key); rm -f untracked-test.swift
 [ "$k2" = "$k3" ] && ok "PLAN.md and evidence/ do not change the key" || bad "PLAN.md or evidence changed the key"
 [ "$k3" != "$k4" ] && ok "an untracked source file changes the key" || bad "untracked file ignored"
 git diff --cached --quiet && ok "the real index is not touched" || bad "index changed"
+
+echo "plan/ graph (dag) and passed from the verifier results"
+git checkout -q main
+rm -rf plan && mkdir plan
+planjson() { # planjson <S1 needs as a JSON list>
+  cat > plan/plan.json <<JSON
+{"title": "Test · plan/", "nodes": [
+  {"id": "T0", "kind": "tracer", "title": "thin path", "needs": [], "branch": "claude/t0-x"},
+  {"id": "S1", "kind": "slice", "title": "feature", "needs": $1, "branch": null},
+  {"id": "X1", "kind": "spike", "title": "question", "needs": [], "branch": null}]}
+JSON
+}
+item() { printf '{"tier": "%s", "text": "%s", "files": [], "screens": [], "passed": %s}' "$1" "$2" "${3:-false}"; }
+items() { # items <ID> <passed of item 0>
+  printf '{"id": "%s", "items": [%s, %s]}\n' "$1" "$(item auto "$1 works" "$2")" "$(item ui "$1 shows")" > "plan/$1.json"
+}
+planjson '["T0", "X1"]'; items T0 false; items S1 false; items X1 false
+expect "dag --json with no PLAN.md" 0 scripts/plan dag --json
+scripts/plan dag --json > "$T/dag.json" 2>&1
+python3 -c 'import json,sys; g=json.load(open(sys.argv[1])); assert g["order"]==["T0","X1","S1"], g["order"]; assert {"from":"X1","to":"S1"} in g["edges"]; assert len(g["nodes"])==3' "$T/dag.json" \
+  && ok "dag: the order puts each need first, and the edges go from need to node" || bad "dag output: $(head -5 "$T/dag.json")"
+expect "lint of a good plan/" 0 python3 -c 'import sys; sys.path.insert(0,"scripts/lib"); import plandata; e=plandata.tree_errors(plandata.worktree_files(".")); print(e); sys.exit(1 if e else 0)'
+planjson '["T0", "S9"]'
+expect "dag: an unknown need fails" 1 scripts/plan dag --json
+scripts/plan dag --json > "$T/dag.out" 2>&1; has "the error names the unknown need" "$T/dag.out" "S1 needs S9, which is not in the graph"
+python3 - <<'PY'
+import json; p = json.load(open("plan/plan.json")); p["nodes"][0]["needs"] = ["S1"]; p["nodes"][1]["needs"] = ["T0"]
+json.dump(p, open("plan/plan.json", "w"))
+PY
+expect "dag: a cycle fails" 1 scripts/plan dag --json
+scripts/plan dag --json > "$T/dag.out" 2>&1; has "the error shows the cycle" "$T/dag.out" "the needs make a cycle: T0 -> S1 -> T0"
+planjson '["S1"]'
+expect "dag: a node that needs itself fails" 1 scripts/plan dag --json
+planjson '["T0"]'
+python3 - <<'PY'
+import json; p = json.load(open("plan/plan.json")); p["nodes"][2]["id"] = "S2"; json.dump(p, open("plan/plan.json", "w"))
+PY
+expect "dag: a spike with an S ID fails" 1 scripts/plan dag --json
+planjson '["T0"]'
+expect "dag of a good graph again" 0 scripts/plan dag --json
+git add plan && git commit -q -m "plan/ fixtures"
+
+# passed in a file is always false: a hand edit to true fails the checks.
+items T0 true
+scripts/plan lint > "$T/lint.out" 2>&1; has "lint: a hand edit that sets passed to true fails" "$T/lint.out" 'plan/T0.json.items[0].passed: must be false'
+if grep -q plandata scripts/check-plan; then
+  git add plan/T0.json
+  expect "check-plan --staged: a hand edit that sets passed to true fails" 1 scripts/check-plan --staged
+  scripts/check-plan --staged > "$T/cp.out" 2>&1; has "check-plan names the field" "$T/cp.out" "passed: must be false"
+  items T0 false; git add plan/T0.json
+  expect "check-plan --staged: a good plan/ passes" 0 scripts/check-plan --staged
+  planjson '["T0", "S9"]'; git add plan/plan.json
+  expect "check-plan --staged: an unknown need fails" 1 scripts/check-plan --staged
+  planjson '["T0"]'; git add plan/plan.json
+else
+  printf '  skip  check-plan --staged on plan/: scripts/check-plan has no plan/ hook yet (guard file; the user applies it)\n'
+  items T0 false
+fi
+git diff --quiet HEAD -- plan && ok "the plan/ fixtures are back as committed" || bad "plan/ fixtures changed"
+
+# Verifier results: `scripts/plan verify` is their only writer. It runs the cmd: evidence on a
+# clean checkout of the head and keeps the commands and exit codes (git notes, per commit).
+plan_cmds=$(scripts/plan -h | sed -nE 's/.*\{([a-z,-]+)\}.*/\1/p' | head -1 | tr , ' ')
+[ -n "$plan_cmds" ] && ok "the scripts/plan commands are listed" || bad "no command list in scripts/plan -h"
+takes=""; for c in $plan_cmds; do scripts/plan "$c" -h 2>&1 | grep -q -- '--results' && takes="$takes $c"; done
+[ -z "$takes" ] && ok "no scripts/plan command takes results from outside" || bad "commands that take results:$takes"
+expect "record (results from outside) is gone" 1 scripts/plan record T0 --results /dev/null
+expect "verify with no branch yet is refused" 1 scripts/plan verify T0
+expect "passed with no branch yet" 0 scripts/plan passed T0
+git checkout -q -b claude/t0-x
+printf '#!/bin/sh\necho "ran $*" >> "$VERIFY_MARK"\nexit "${VERIFY_EXIT:-0}"\n' > check.sh && chmod +x check.sh
+git add check.sh && git commit -q -m "a check"; H0=$(git rev-parse HEAD)
+ev_item() { printf '{"tier": "%s", "text": "%s", "files": [], "screens": [], "passed": false, "evidence": %s}' "$@"; }
+printf '{"id": "T0", "items": [%s, %s, %s]}\n' "$(ev_item auto "T0 works" '["cmd:check.sh one"]')" \
+  "$(ev_item ui "T0 shows" "[\"cmd:check.sh two\", \"commit:$H0\"]")" "$(ev_item auto "no command" '["test:SomeTest"]')" > plan/T0.json
+git add plan/T0.json && git commit -q -m "T0 evidence"; H1=$(git rev-parse HEAD)
+scripts/plan passed T0 --json > "$T/p0.json"
+python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["passed"] is False and d["verifier"] is None and not any(i["passed"] for i in d["items"])' "$T/p0.json" \
+  && ok "no results: nothing passed" || bad "no results: $(cat "$T/p0.json")"
+export VERIFY_MARK="$T/mark" DSHM_VERIFY_LOGS="$T/verify-logs"
+rm -f "$VERIFY_MARK"
+expect "verify runs" 0 scripts/plan verify T0
+[ "$(sort "$VERIFY_MARK" 2>/dev/null | tr '\n' ' ')" = "ran one ran two " ] && ok "verify ran each cmd: pointer one time" \
+  || bad "the checks did not run: $(cat "$VERIFY_MARK" 2>&1)"
+[ -z "$(git worktree list | grep dshm-verify)" ] && ok "verify removes its clean checkout" || bad "checkout left: $(git worktree list)"
+scripts/plan passed T0 --json > "$T/p1.json"
+python3 -c '
+import json,sys; d=json.load(open(sys.argv[1]))
+assert [i["passed"] for i in d["items"]]==[True,True,False], d
+assert d["verifier"]=="scripts/plan verify" and d["passed"] is False
+assert [r["cmd"] for r in d["items"][0]["runs"]]==["check.sh one"] and d["items"][0]["runs"][0]["exit"]==0
+assert any(r["cmd"].startswith("git merge-base --is-ancestor") for r in d["items"][1]["runs"])' "$T/p1.json" \
+  && ok "results keep the commands and exit codes; an item with no cmd: does not pass" || bad "results: $(cat "$T/p1.json")"
+git ls-tree -r --name-only HEAD | grep -q dshm-verify && bad "results are in the branch tree" || ok "the results are not in a commit of the branch"
+printf '{"id": "T0", "items": [%s, %s]}\n' "$(ev_item auto "T0 works" '["cmd:check.sh one"]')" \
+  "$(ev_item ui "T0 shows" "[\"cmd:check.sh two\", \"commit:$H0\"]")" > plan/T0.json
+git commit -q -am "T0: drop the item with no command"; H2=$(git rev-parse HEAD)
+scripts/plan passed T0 > "$T/p2.out" 2>&1
+has "a new commit: the old results do not count" "$T/p2.out" "passed: false"
+has "a new commit: the old results are named stale" "$T/p2.out" "stale: results for ${H1:0:12}"
+VERIFY_EXIT=1 scripts/plan verify T0 >/dev/null 2>&1
+scripts/plan passed T0 > "$T/p3.out" 2>&1; has "a failing check: not passed" "$T/p3.out" "passed: false"
+has "a failing check: its exit code is kept" "$T/p3.out" "check.sh one → 1"
+scripts/plan verify T0 >/dev/null 2>&1
+scripts/plan passed T0 > "$T/p4.out" 2>&1; has "all checks pass on the head: passed" "$T/p4.out" "passed: true"
+has "passed names the verifier" "$T/p4.out" "verified by scripts/plan verify"
+# A note written by hand in another shape counts for nothing.
+git notes --ref=refs/notes/dshm-verify add -f -m "{\"T0\": {\"slice\": \"T0\", \"commit\": \"$H2\", \"verifier\": \"me\", \"items\": [{\"item\": 0, \"passed\": true}, {\"item\": 1, \"passed\": true}]}}" "$H2" 2>/dev/null
+scripts/plan passed T0 > "$T/p5.out" 2>&1; has "a hand-written note without runs: not passed" "$T/p5.out" "passed: false"
+printf '{"tier": "auto", "text": "T0 works", "files": [], "screens": [], "passed": true}' > "$T/item.json"
+printf '{"id": "T0", "items": [%s]}\n' "$(cat "$T/item.json")" > plan/T0.json && git commit -q -am "hand edit"
+expect "a committed hand edit of passed stops passed" 1 scripts/plan passed T0
+expect "a committed hand edit of passed stops verify" 1 scripts/plan verify T0
+git notes --ref=refs/notes/dshm-verify list > /dev/null && ok "results are git notes in refs/notes/dshm-verify" || bad "no notes ref"
+unset VERIFY_MARK DSHM_VERIFY_LOGS
+git checkout -q main
+rm -rf plan; git checkout -q -- plan 2>/dev/null; git rm -rq plan && git commit -q -m "remove plan/ fixtures"
 
 echo "free-space floor (scripts/demo/lib.sh guard, fake xcrun)"
 guard() { # guard <env…>: source lib.sh as a demo does, with the simulator plan-test-sim

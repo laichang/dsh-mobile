@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/laichang/dsh-mobile/scripts/lib/plan.schema.json",
+  "title": "dsh-mobile plan/ files and verifier results",
+  "description": "plan/plan.json is a `plan`; plan/<ID>.json is a `slice`; the results that `scripts/plan verify` stores (a git note) are `results`. scripts/lib/plandata.py checks these and the rules a schema cannot say (unique IDs, known needs, no cycle, the ID of a file).",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^(T|X|S)[0-9]+$"
+    },
+    "plan": {
+      "type": "object",
+      "required": [
+        "title",
+        "nodes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "title",
+        "needs",
+        "branch"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "tracer",
+            "spike",
+            "slice"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "needs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "branch": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^claude/[a-z0-9][a-z0-9-]*$"
+        }
+      }
+    },
+    "slice": {
+      "type": "object",
+      "required": [
+        "id",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/item"
+          }
+        }
+      }
+    },
+    "item": {
+      "type": "object",
+      "required": [
+        "tier",
+        "text",
+        "files",
+        "screens",
+        "passed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tier": {
+          "enum": [
+            "auto",
+            "ui",
+            "human"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "screens": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "passed": {
+          "const": false,
+          "description": "Always false in the file. The value that counts comes from the verifier results for the head commit of the slice branch (scripts/plan passed)."
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(cmd|test|commit|shot|human):"
+          },
+          "description": "Pointers. `scripts/plan verify` runs each `cmd:` (a repo-relative executable and its arguments) and checks each `commit:`; an item with no `cmd:` does not pass."
+        }
+      }
+    },
+    "results": {
+      "type": "object",
+      "required": [
+        "slice",
+        "commit",
+        "verifier",
+        "host",
+        "at",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "slice": {
+          "$ref": "#/$defs/id"
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "verifier": {
+          "const": "scripts/plan verify"
+        },
+        "host": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/result"
+          }
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "required": [
+        "item",
+        "passed",
+        "runs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "item": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/run"
+          }
+        }
+      }
+    },
+    "run": {
+      "type": "object",
+      "required": [
+        "cmd",
+        "exit",
+        "seconds",
+        "log"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "cmd": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exit": {
+          "type": "integer"
+        },
+        "seconds": {
+          "type": "number"
+        },
+        "log": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

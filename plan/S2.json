@@ -1,0 +1,19 @@
+{
+  "id": "S2",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "A test makes sure that the brief of each node in the `plan/` fixtures is 3k tokens or fewer",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "Each file and command that a brief names exists (test)",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

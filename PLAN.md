@@ -110,7 +110,7 @@ A tracer is one thin round trip that one session can finish without running out 
 
 ### T0 · Tracer bullet: plan/ graph, and passed only from the verifier
 
-**Status** todo · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: Part of #57. The data half of the new path: the graph and the items move to JSON, and no agent can set passed by hand. The current run still uses PLAN.md; plan/ lives next to it.
 
@@ -123,12 +123,42 @@ A tracer is one thin round trip that one session can finish without running out 
 **Demo**: scripts/plan-test
 
 **Done when**
-- [ ] [auto] `scripts/plan dag --json` writes the graph of `plan/plan.json`; a cycle or an unknown need makes it fail — Evidence:
-- [ ] [auto] A hand edit that sets `passed` to true makes `scripts/check-plan` fail; `passed` follows only the verifier results for the head commit, and a new commit makes them stale — Evidence:
+- [x] [auto] `scripts/plan dag --json` writes the graph of `plan/plan.json`; a cycle or an unknown need makes it fail — Evidence: cmd:scripts/plan-test · commit:7fa61e3
+- [x] [auto] A hand edit that sets `passed` to true makes `scripts/check-plan` fail; `passed` follows only the verifier results for the head commit, and a new commit makes them stale — Evidence: cmd:scripts/plan-test · commit:7fa61e3 · commit:47fdbf5
 
 **Not**: The Workflow and the brief (T1). Replacing PLAN.md (S7).
 
 **Log**: —
+- **2026-11-10 · Built plan/ and verifier results; check-plan hook waits for the user.** Done:
+  - `plan/plan.json` and `plan/<ID>.json` (from the current PLAN.md), schema `scripts/lib/plan.schema.json`, checks in `scripts/lib/plandata.py`.
+  - `scripts/plan dag --json` (cycle, unknown need, self need, wrong ID kind fail), `scripts/plan passed <ID>`, `scripts/plan record <ID>`; `scripts/plan lint` also checks plan/.
+  - Verifier results: git notes in `refs/notes/dshm-verify` on the head commit of the slice branch (D147, provisional). `passed` in a file is `const false`; a new commit makes old results stale (`passed` names them).
+  - plan-test: plan/ fixtures; `failures: 0`, one skip (below). The test clone now starts from the registry header: the live S1 row made "assign with no plan is refused" fail.
+  - §4.1: no script creates the simulator `dshm-<ID>`; I created `dshm-T0` with `xcrun simctl create`. SwiftPM needed the proxy (`GIT_CONFIG_*` http.proxy). The first UI run on the new simulator failed one test (keyboard focus), the next run passed all.
+
+  Not done:
+  - Item 2, its check-plan part: `scripts/check-plan` is a guard file and imports nothing from `scripts/lib/`. The user must add `plan_dir_errors()` (calls `plandata.staged_errors`) to `--staged`. The patch is with the coordinator. When it is in, the skipped plan-test cases run, and item 2 can be ticked.
+
+  Next: the user applies the check-plan patch; then run plan-test, tick item 2, and run the review again.
+- **2026-11-10 · Item 2 done with the check-plan hook.** Done:
+  - The user committed the check-plan hook (`plan_dir_errors`, 47fdbf5). plan-test now runs the check-plan cases: a staged `"passed": true` fails, a good plan/ passes, an unknown need fails. `failures: 0`, no skip.
+  - Item 2 ticked: check-plan refuses `passed` true; `scripts/plan passed` follows only the results for the head commit; a new commit makes them stale (plan-test cases).
+
+  Flaky: `T0DemoUITests/testDemoAgainstRealDSH` (scripts/demo/t0.sh) failed one time (no keyboard focus on `composer.prompt`) on the new simulator `dshm-T0`. The next full run passed all 4 UI tests with no code change. T0 changes no app code, so this is not from T0. Not repaired (WORKFLOW §10.1).
+
+  Not done: the review. `scripts/review` refuses a slice with no [ui] items; the coordinator starts a separate reviewer.
+
+  Provisional: D147 (plan/ format; verifier results as git notes in `refs/notes/dshm-verify`). No new dependency.
+- **2026-11-10 · Merged main; ARCHITECTURE in the new style.**
+  - Merged main (S1 wrappers, S6 ARCHITECTURE rewrite) into the branch: 5e40021. ARCHITECTURE.md: the plan/ data and where the verifier results live are one provisional bullet in §7 Testing, with no ID (the file is at the 10k-token cap: about 9,990 now).
+  - plan-test failed after the merge: its provisional-decision fixture needed the `| D57 |` row, which S6 removed. The fixture now adds the row at the end when there is no table. `scripts/check-docs`, `scripts/check-wrappers`, `scripts/plan-test` (`failures: 0`) pass.
+  - Next: the coordinator's reviewer.
+- **2026-11-10 · Review FAIL repaired: verify is the only writer of results.**
+  - The review at c78da12 found a bypass: `scripts/plan record` took any JSON, and `git notes` could write the results ref by hand.
+  - Repair (e8b680b): `record` is gone. `scripts/plan verify <ID>` checks out the branch head clean, runs the `cmd:` evidence of each item there, checks `commit:` pointers, and stores commands, exit codes and logs as the note for that commit. `passed` counts an item only with runs that all exited 0, from a note in the verify shape. Items get an `evidence` list (plan/T0.json has it).
+  - plan-test: no `scripts/plan` command takes `--results`; verify runs each check one time and removes its checkout; a failing check, a hand-written note and a committed hand edit of `passed` do not pass. `failures: 0`. check-docs and check-wrappers pass.
+  - ARCHITECTURE: results are advisory (a shell can forge a note); the merge step reruns verify.
+  - Guard patches for the user, not applied: /tmp/dshm-t0-patch2/a-protect-plandata.patch (plandata.py and the schema into PROTECTED, also in plan-guard) and /tmp/dshm-t0-patch2/b-git-guard-notes.patch (git-guard denies agent writes to refs/notes/dshm-verify; verify passes because the hook sees only the typed command). guard-test on a scratch clone with both: failures: 0.
 
 ### T1 · Tracer bullet: One fake node from brief to merge through the Workflow
 

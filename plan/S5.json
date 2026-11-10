@@ -1,0 +1,26 @@
+{
+  "id": "S5",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "The check fails on a fixture with `D18` or `S14` in code, and passes on the slice branch",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "The golden fixtures in `protocol/fixtures/` are the same bytes as before",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "`swift test`, `pnpm test` and the XCUITest build pass after the renames",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

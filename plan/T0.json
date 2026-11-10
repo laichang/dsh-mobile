@@ -1,0 +1,39 @@
+{
+  "id": "T0",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "`scripts/plan dag --json` writes the graph of `plan/plan.json`; a cycle or an unknown need makes it fail",
+      "files": [
+        "scripts/plan",
+        "scripts/lib/plandata.py",
+        "scripts/lib/plan.schema.json",
+        "plan/plan.json",
+        "scripts/plan-test"
+      ],
+      "screens": [],
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/plan-test"
+      ]
+    },
+    {
+      "tier": "auto",
+      "text": "A hand edit that sets `passed` to true makes `scripts/check-plan` fail; `passed` follows only the verifier results for the head commit, and a new commit makes them stale",
+      "files": [
+        "scripts/plan",
+        "scripts/lib/plandata.py",
+        "scripts/lib/plan.schema.json",
+        "plan/plan.json",
+        "scripts/plan-test",
+        "scripts/check-plan"
+      ],
+      "screens": [],
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/plan-test",
+        "commit:47fdbf5"
+      ]
+    }
+  ]
+}
