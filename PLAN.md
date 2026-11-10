@@ -459,6 +459,8 @@ Append-only, dated.
 
 - **2026-11-10 · Run paused by the user.** The user paused the run (2026-11-10, in chat: "先暂停"). Stopped: the separate reviews of S2 (cc5b2bf) and S3 (b60495c), before they wrote results. Heartbeat 88097d29 deleted. S2 and S3 are built, committed and clean on their branches; their slice sessions are idle. To resume: rerun both reviews; merge the first that passes; the other merges main (they conflict only in ARCHITECTURE.md); then S4.
 
+- **2026-11-10 · Run resumed by the user.** The user resumed the run (2026-11-10, in chat: "继续"). S2 cc5b2bf and S3 b60495c unchanged. New heartbeat: CronCreate job 09bd2dd0. The S2 and S3 reviewers resumed.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
