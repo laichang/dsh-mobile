@@ -13,7 +13,7 @@ The argument is the milestone, for example `M2`: $ARGUMENTS. With no argument, u
    - the milestone and its description: `gh api repos/laichang/dsh-mobile/milestones --jq '.[] | {number, title, description}'`;
    - its issues: `gh issue list --milestone <title> --state open --json number,title,labels,body`;
    - the open `upstream` issues: `gh issue list --label upstream --state open`. Ask the user whether the plan includes them;
-   - what the issues cite: the `Dxx` entries in ARCHITECTURE.md, and STORY.md and DESIGN.md for each change that the user sees.
+   - what the issues cite: the `Dxx` entries in ARCHITECTURE.md, and STORY.md and design/screens.json for each change that the user sees.
 3. Write the plan with `scripts/plan` only (WORKFLOW.md §3.1). Do not write PLAN.md by hand. Do not commit it yet: until the user approves, you can write it again from the start.
    - `scripts/plan new "<milestone> · <short name>"`
    - `scripts/plan add tracer|spike|slice …` for each section, then `scripts/plan add exit "<check>"` for each real-device check.

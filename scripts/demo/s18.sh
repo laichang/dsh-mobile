@@ -1,5 +1,5 @@
 #!/bin/bash
-# S18 demo and checks: the approval sheet in a session (PLAN.md §5 S18, DESIGN.md screen 05).
+# S18 demo and checks: the approval sheet in a session (PLAN.md §5 S18, design screen 05).
 # Re-runnable evidence for S18's Done when items. FakeBridge only: two in-process hosts; Home Mac
 # starts with a task that waits on `rm -rf ~/Desktop/Q3/tmp` (`-DSHMFakeBridge approvals`), and a
 # new task asks for the same command (`-DSHMFakeAsk`). The Web's answer is a Darwin notification

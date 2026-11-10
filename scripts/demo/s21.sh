@@ -1,5 +1,5 @@
 #!/bin/bash
-# S21 demo and checks: hosts and control (PLAN.md §5 S21, DESIGN.md screens H, X2, X3).
+# S21 demo and checks: hosts and control (PLAN.md §5 S21, design screen H, X2, X3).
 # Re-runnable evidence for S21's Done when items. FakeBridge only: in-process hosts from
 # `FakeHosts` (`-DSHMFakeBridge hosts`, `hosts-one`); the UI test stops and starts them with
 # Darwin notifications. No DSH and no port is needed.

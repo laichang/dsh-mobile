@@ -1,12 +1,12 @@
 import CoreFoundation
 import XCTest
 
-/// S18 · the approval sheet in a session (PLAN.md §5 S18, DESIGN.md screen 05), against the
+/// S18 · the approval sheet in a session (PLAN.md §5 S18, design screen 05), against the
 /// in-process FakeBridge (`-DSHMFakeBridge approvals`): two hosts, and Home Mac starts with a task
 /// that waits on `rm -rf ~/Desktop/Q3/tmp`. With `-DSHMFakeAsk 'Clean up'`, a new task asks for
 /// the same command before its reply. The Web's answer is a Darwin notification that the fake
 /// hosts resolve as another client would (`FakeApprovalSheet`).
-/// The app runs in Chinese, like the design board. scripts/demo/s18.sh runs these;
+/// The app runs in Chinese, like the design screens. scripts/demo/s18.sh runs these;
 /// TEST_RUNNER_DSHM_SHOT_DIR keeps the screenshots.
 ///
 /// The Mac can be very slow (load average 100+): every check waits on a predicate.

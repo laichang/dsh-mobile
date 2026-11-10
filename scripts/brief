@@ -12,8 +12,11 @@ the plan file at REF: plan/<ID>.json has no such fields yet); its items with tie
 files of the items and of the Cuts (marked "new" when REF does not have them); the commands to run
 (the evidence, the checks, the output wrappers for the areas the files touch, a demo that the items
 name); the facts of those areas, a bullet or a paragraph of ARCHITECTURE.md, and the repo layout of
-AGENTS.md when the node names no files; and the rules for a slice agent. Screens are not in the brief yet. scripts/brief-test keeps each brief at 3k tokens or
-fewer and checks that each file and command it names exists.
+AGENTS.md when the node names no files; the screens of the node from design/screens.json at REF (the
+`screens` of its items, and each design/screens/<id>.html or png that its files name: title, file,
+STORY sections, what it needs, where it goes, its rules with their XCUITests); and the rules for a
+slice agent. scripts/brief-test keeps each brief at 3k tokens or fewer and checks that each file and
+command it names exists; scripts/check-design-test checks the screens.
 
 --preview writes the brief of a node that has no branch yet (the branch line says so). Without it,
 such a node is refused: the run-plan Workflow needs a branch to build on.
@@ -23,6 +26,8 @@ Exit 0 = written, 1 = refused (unknown ID, no branch, no plan data), 2 = usage.
 
 import argparse
 import fnmatch
+import importlib.machinery
+import json
 import re
 import sys
 from pathlib import Path
@@ -61,6 +66,14 @@ AREAS = {
             ("ARCHITECTURE.md", "### Toolchain", "Codegen:"),
             ("ARCHITECTURE.md", "## 6. Protocol", "**Evolution**"),
         ],
+    },
+    "design": {
+        "prefixes": ("design/",),
+        "commands": [
+            ("scripts/check-design", "after a change in `design/`, a theme file or a UI test name"),
+            ("scripts/render-design <id>", "after a change in `design/screens/<id>.html` or `design/kit/`; commit the png"),
+        ],
+        "facts": [("ARCHITECTURE.md", "### 5.1 Layers", "**Design as data")],
     },
     "process": {
         "prefixes": ("scripts/", "plan/", ".claude/", ".agents/", "AGENTS.md", "WORKFLOW.md", "ARCHITECTURE.md"),
@@ -105,6 +118,11 @@ RULES = [
 PLAN_MD = "PLAN" + ".md"
 MAX_FILES = 30      # files listed in a brief; more are counted, not listed
 MAX_GLOB = 5        # a glob in the Cuts with more matches is listed as the glob
+SCREENS_FILE = "design/screens.json"
+MAX_TOKENS = 2950   # scripts/brief-test allows 3,000; the Screens section fills what the rest leaves
+SCREENS_RESERVE = 40    # tokens kept for the last lines of the Screens section
+estimate_tokens = importlib.machinery.SourceFileLoader(
+    "check_docs", str(Path(__file__).resolve().parent / "check-docs")).load_module().estimate_tokens
 
 
 def doc_lines(root, base, doc):
@@ -165,7 +183,7 @@ def node_files(items, cuts, modes):
             found = [p for p in modes if p.rsplit("/", 1)[-1] == tok]
             found = found if len(found) == 1 else []
         out += [f for f in found if f not in out]
-    for word in re.findall(r"[A-Za-z0-9_.][A-Za-z0-9_./+-]*", "\n".join(cuts)):   # DESIGN.md, AGENTS.md
+    for word in re.findall(r"[A-Za-z0-9_.][A-Za-z0-9_./+-]*", "\n".join(cuts)):   # AGENTS.md, STORY.md
         if word in modes and word not in out:
             out.append(word)
     return out
@@ -193,6 +211,73 @@ def scope(root, base, sid):
         elif cur and line.strip():
             out[cur].append(line.rstrip())
     return out
+
+
+def screen_ids(items, files):
+    """The screens of a node: the `screens` of its items, then each design/screens/<id>.html or
+    .png that its files name."""
+    out = []
+    for it in items:
+        out += [s for s in it.get("screens", []) if s not in out]
+    for f in files:
+        m = re.fullmatch(r"design/screens/([^/]+)\.(html|png)", f)
+        if m and m.group(1) not in out:
+            out.append(m.group(1))
+    return out
+
+
+def screen_lines(root, base, ids, budget):
+    """The Screens section: each screen of the node from design/screens.json at base, in about
+    budget tokens or fewer. The screens come in order, each with its rules; when the budget is
+    spent, the other rules are counted and the other screens are named only."""
+    r = plandata._git(root, "show", f"{base}:{SCREENS_FILE}")
+    try:
+        nodes = {n["id"]: n for n in json.loads(r.stdout)["nodes"]} if r.returncode == 0 else {}
+    except (ValueError, KeyError, TypeError):
+        nodes = {}
+    lines = ["", "## Screens", "",
+             f"From `{SCREENS_FILE}`: open the html for the caption; the png is the phone. "
+             "Change a screen, its rules and STORY together.", ""]
+    left = budget - estimate_tokens("\n".join(lines))
+    named, spent = [], False      # named: the screens with no room, in one line at the end
+    for sid in ids:
+        n = nodes.get(sid)
+        if n is None:
+            lines.append(f"- {sid}: not in `{SCREENS_FILE}` at the base (a new screen: add it there)")
+            continue
+        head = f"- {sid} · {n['title']}"
+        if n.get("type") == "screen":
+            head += f": `design/screens/{sid}.html`"
+        if n.get("built") is False:
+            head += " (not in the code yet)"
+        facts = []
+        if n.get("story"):
+            facts.append("STORY " + " ".join(n["story"]))
+        if n.get("needs"):
+            facts.append("needs " + ", ".join(n["needs"]))
+        if n.get("nav"):
+            facts.append("goes to " + ", ".join(sorted({e["to"] for e in n["nav"]})))
+        block = [head] + (["  - " + "; ".join(facts)] if facts else [])
+        cost = estimate_tokens("\n".join(block)) + 1
+        if spent or cost > left - SCREENS_RESERVE:
+            spent = True
+            named.append(sid)
+            continue
+        lines += block
+        left -= cost
+        rules = n.get("rules", [])
+        for i, rule in enumerate(rules):
+            line = f"  - rule: {rule['text']} (`{rule['test']}`)"
+            if estimate_tokens(line) + 1 > left - SCREENS_RESERVE:
+                lines.append(f"  - and {len(rules) - i} more rules in `{SCREENS_FILE}`")
+                left -= 15
+                spent = True
+                break
+            lines.append(line)
+            left -= estimate_tokens(line) + 1
+    if named:
+        lines.append(f"- Also: {', '.join(named)}: see `{SCREENS_FILE}`")
+    return lines
 
 
 def areas_of(files):
@@ -274,7 +359,10 @@ def brief(root, sid, rnd, base, preview=False):
     if len(files) > MAX_FILES:
         lines.append(f"- and {len(files) - MAX_FILES} more in `plan/{sid}.json`")
 
-    areas = areas_of(files)
+    sids = screen_ids(its, files)
+    screens_at = len(lines)      # the Screens section goes here, in what the rest of the brief leaves
+
+    areas = areas_of(files + ([SCREENS_FILE] if sids else []))
     lines += ["", "## Commands", "",
               "Run from the worktree, after `eval \"$(scripts/slice-env " + sid + ")\"` (the ports, "
               "`DSHM_HOME` and simulator of the node). Each prints a short summary; the full log is in `/tmp/dshm-*`.", ""]
@@ -308,6 +396,9 @@ def brief(root, sid, rnd, base, preview=False):
         lines += ["", "Repo layout (AGENTS.md, shortened):", ""] + [f"- {short(b)}" for b in layout]
 
     lines += ["", "## Rules", ""] + [f"- {r.format(sid=sid)}" for r in RULES]
+    if sids:
+        budget = MAX_TOKENS - estimate_tokens("\n".join(lines) + "\n")
+        lines[screens_at:screens_at] = screen_lines(root, tip, sids, budget)
     return "\n".join(lines) + "\n"
 
 

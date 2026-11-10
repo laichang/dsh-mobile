@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>dsh-mobile · X3 · 所有执行端都离线</title>
+<link rel="stylesheet" href="../kit/kit.css">
+</head>
+<body class="one">
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" style="left:0;box-shadow:none">
+    <div class="nav">
+      <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+      <div class="navtitle"><b>新会话</b></div>
+      <div class="iconbtn ghost"></div>
+    </div>
+    <div class="scroll" style="padding:0 16px">
+      <div style="margin-top:230px" class="card">
+        <div style="display:flex;gap:8px;align-items:center;font-size:15px;font-weight:600"><svg class="i s" style="color:var(--amber)"><use href="#wifi"/></svg>执行端都离线，暂时不能下任务</div>
+        <div class="list" style="margin-top:6px">
+          <div class="li" style="padding:10px 2px"><span class="dot off" style="margin-top:6px"></span><div style="flex:1;font-size:14px">MacBook-Pro<div style="font-size:12px;color:var(--amber)">另一个程序占用了端口 47801</div></div><span style="font-size:12.5px;color:var(--t3)">10 分钟前</span></div>
+          <div class="li" style="padding:10px 2px"><span class="dot off" style="margin-top:6px"></span><div style="flex:1;font-size:14px">hk-1<div style="font-size:12px;color:var(--t3)">连不上这台电脑</div></div><span style="font-size:12.5px;color:var(--t3)">1 小时前</span></div>
+          <div class="li" style="padding:10px 2px"><span class="dot off" style="margin-top:6px"></span><div style="flex:1;font-size:14px">公司-PC<div style="font-size:12px;color:var(--amber)">端口 47801 上没有程序在监听</div></div><span style="font-size:12.5px;color:var(--t3)">2 小时前</span></div>
+        </div>
+        <div style="font-size:12.5px;color:var(--t2);line-height:1.55;margin-top:4px">回到和电脑同一个 Wi-Fi，或打开 Tailscale。连上后自动恢复，历史会话离线也能看。</div>
+      </div>
+    </div>
+    <div class="composer">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--amber);margin-bottom:10px"><span class="dot off"></span>没有在线的执行端</div>
+      <div class="ph">描述任务，/ 命令，@ 文件或会话</div>
+      <div class="bar"><span class="pill" style="opacity:.5">DeepSeek-V41-Flash <span class="w">· High</span></span><span class="mic"><svg class="i s"><use href="#mic"/></svg></span><span class="send idle" style="opacity:.4"><svg class="i s"><use href="#up"/></svg></span></div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>X3</i>所有执行端都离线<span class="mtag m1">M1 · 补状态</span></h3><ul>
+  <li>§3：逐台写出哪台离线、最后连接时间，不只说“连不上”。</li>
+  <li>每台写出原因（D125）：另一个程序占用端口、端口上没有程序在监听、连不上。每台电脑都连得上、只是桥接没应答时，提示改成去电脑上看看 DSH。</li>
+  <li>给出能做的事（同一 Wi-Fi / Tailscale）；发送键置灰，抽屉里的历史照常能看（S2 缓存）。</li>
+  <li>只有部分离线时不出这张卡，只在输入框顶上的执行端那行显示状态。</li>
+</ul></div>
+</div>
+<script src="../kit/kit.js"></script>
+</body>
+</html>

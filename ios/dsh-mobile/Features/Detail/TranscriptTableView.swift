@@ -40,7 +40,7 @@ struct TranscriptTableView: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment.frame)
-            .background(header ? DSHTheme.s28TableHeaderFill : .clear)
+            .background(header ? DSHTheme.tableHeaderFill : .clear)
             .overlay(alignment: .bottom) {
                 if !last {
                     Rectangle().fill(DSHTheme.hairline).frame(height: 1 / displayScale)

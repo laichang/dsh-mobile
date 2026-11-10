@@ -118,7 +118,7 @@ Before each write, `scripts/plan` draws §2 Map again from the **Needs** fields 
 - The plan file exists only while a requirement is in progress. When no requirement is in progress, there is no plan file.
 - The plan file serves only the current requirement. While the user sets a requirement, other ideas come up. Do not put them in the plan file. Open an issue for each of them.
 - Each item that the current plan does not do is an issue: an idea, a follow-up, a deferred check, or a known bug. Do not list these items in the plan file. `scripts/plan lint` stops a list in §7 of the plan file.
-- Living documents (AGENTS.md, STORY.md, DESIGN.md, ARCHITECTURE.md, README.md, this file) and the code do not refer to the content of a plan: its sections, its items, or its slice IDs. They also do not refer to issues: they tell what is true now. An issue refers to the `Dxx` entries and the code that it changes. When its work is merged, change the `Dxx` entry. This file tells how a plan file works. It does not refer to one plan.
+- Living documents (AGENTS.md, STORY.md, design/screens.json, ARCHITECTURE.md, README.md, this file) and the code do not refer to the content of a plan: its sections, its items, or its slice IDs. They also do not refer to issues: they tell what is true now. An issue refers to the `Dxx` entries and the code that it changes. When its work is merged, change the `Dxx` entry. This file tells how a plan file works. It does not refer to one plan.
 
 To start a requirement:
 

@@ -39,8 +39,8 @@ struct MilestoneBar: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(DSHTheme.s16BarFill, in: .rect(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(alert != nil ? DSHTheme.s19FailBarBorder
+        .background(DSHTheme.milestoneBarFill, in: .rect(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(alert != nil ? DSHTheme.failBarBorder
             : asking ? DSHTheme.amber.opacity(0.4) : DSHTheme.hairline))
         .contentShape(.rect)
     }
@@ -71,7 +71,7 @@ struct MilestoneBar: View {
     @ViewBuilder
     private var icon: some View {
         if alert != nil {
-            Image(systemName: "exclamationmark.triangle").foregroundStyle(DSHTheme.s19FailText)
+            Image(systemName: "exclamationmark.triangle").foregroundStyle(DSHTheme.failText)
         } else if asking {
             Image(systemName: "bubble.left").foregroundStyle(DSHTheme.amber)
         } else {
@@ -96,7 +96,7 @@ struct MilestoneBar: View {
         }
     }
 
-    /// Blue while it runs, green when done, red when it failed (DESIGN.md "Visual language").
+    /// Blue while it runs, green when done, red when it failed (the DSHTheme visual language).
     private var tint: Color {
         switch kind {
         case .finished?: DSHTheme.green

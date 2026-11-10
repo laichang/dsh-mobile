@@ -1,6 +1,6 @@
 #!/bin/bash
-# Render the app icon (design/icon.svg, DESIGN.md "App icon") to the asset catalog with headless
-# Chrome, as scripts/render-design does for the board. One 1024×1024 PNG per iOS appearance (D70):
+# Render the app icon (design/icon.svg; what it shows: its header) to the asset catalog with headless
+# Chrome, as scripts/render-design does for the screens. One 1024×1024 PNG per iOS appearance (D70):
 #   AppIcon.png         default (light): opaque, blue background, no alpha channel
 #   AppIcon-dark.png    dark: transparent background (iOS draws its dark background)
 #   AppIcon-tinted.png  tinted: grayscale on transparent (iOS applies the tint from luminance)

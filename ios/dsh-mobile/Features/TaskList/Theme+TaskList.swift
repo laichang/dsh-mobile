@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// S15 · tokens of 所有任务 (03) that `DSHTheme` does not have. The values are the board's own
-/// (`design/board.html` `:root`, `.card`, `.cmd`, `.tag`, `.btn`); `DSHTheme` stays frozen.
+/// Tokens of 所有任务 (03) that `DSHTheme` does not have. The values are the design kit's own
+/// (`design/kit/kit.css` `:root`, `.card`, `.cmd`, `.tag`, `.btn`).
 extension DSHTheme {
     /// Cards on the canvas (`--card`).
     static let card = Color(hex: 0x1E1F22)

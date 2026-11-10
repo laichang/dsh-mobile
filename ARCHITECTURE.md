@@ -1,6 +1,6 @@
 # ARCHITECTURE
 
-How dsh-mobile is built now, and why. Product intent is in [STORY.md](STORY.md), screens in [DESIGN.md](DESIGN.md). It tells only the current state; change it in the same commit as the code. A choice that the user has not confirmed yet is marked **provisional**. Ideas and work still to do are [GitHub issues](https://github.com/laichang/dsh-mobile/issues), not entries here.
+How dsh-mobile is built now, and why. Product intent is in [STORY.md](STORY.md), screens in `design/screens.json`. It tells only the current state; change it in the same commit as the code. A choice that the user has not confirmed yet is marked **provisional**. Ideas and work still to do are [GitHub issues](https://github.com/laichang/dsh-mobile/issues), not entries here.
 
 Upstream is DeepSeek Harness (DSH) `0.2.2-rc.1`, a developer preview with breaking changes expected.
 
@@ -196,7 +196,7 @@ Features (SwiftUI views + @Observable stores)
    Shell (ShellModel: page, SheetRoute, drawer), Drawer, Session page + composer, All tasks
   , Approval sheet, Questions, Pickers, Hosts, Devices, First run, Voice, Attachments, Live Activity
 Theme
-   DSHTheme (DESIGN.md tokens) + Theme+<feature>.swift files
+   DSHTheme (base tokens) + Theme+<feature>.swift files
 DSHCore (DSHKit)
    HostConnection, SecureChannel (Noise over WebSocket), Pairing, TaskListStore (Sync)
   , Milestones, Transcript, Outcome, FollowUpQueue, Questions, Attachments, Dictation, LiveActivities
@@ -206,6 +206,7 @@ DSHProtocol
    generated from protocol/ (swift-protobuf)
 ```
 
+- **Design as data (provisional, pending user confirmation):** `design/screens.json`: screens and shared parts (needs, nav, STORY sections, rules with XCUITests). A screen is `design/screens/<id>.html` on `design/kit/` (png: `scripts/render-design`); `scripts/check-design` checks them and the theme names. Not chosen: one board.
 - **One `HostConnection` per paired host.** It owns its WebSocket, handshake, address order and reconnect. Each connection runs a fresh handshake (Noise has no session resumption); the cipher, outbox and receive loop belong to one connection generation, so a stale loop never tears down a newer one.
 - **`TaskListStore`** runs one sync loop per host: connect, Hello, Resume from the cached cursor; on a drop, backoff from 0.5 s to 30 s. `background()` closes the sockets; `foreground()` reconnects at once. iOS cannot keep sockets alive in the background.
 - **Cache**: events at or below the cursor, and chunks at or below a task's chunk seq, are skipped, so replays are idempotent. Saved within about 150 ms of each event. After a `LogReset` the app calls `ListTasks`; a cached task still running in a log that is gone is marked failed ("the bridge restarted").
@@ -226,7 +227,7 @@ DSHProtocol
 - One `ShellModel` holds the page (`ShellPage`: new session, session, all tasks), the sheet (`SheetRoute`) and the drawer. No `NavigationStack`.
 - The app opens on a blank new session with the default host and workspace, also when the cache has tasks; it never reopens the last place (STORY §3). When the host accepts the first message, the same page becomes that session's page at once, whatever the reply; a failed send keeps the prompt and shows `composer.error`.
 - The drawer (from the left edge) groups host > workspace (by path) > session, with marks for waiting, running and unread. Read state is local: `CachedTask.readThrough` stores the host `updatedAt` that the user saw (host and phone clocks differ). The badge counts 等我处理.
-- Landing: an unread finished session opens at the final answer's start; a running one at the bottom; a read one where the user last scrolled in this run of the app, else the end.
+- Landing (06, F4): a read session opens where the user last scrolled in this run, else at the end.
 - The keyboard goes away before any action that is not typing: `ShellModel` dismisses it when the page, sheet or drawer changes; composer menus open in place, so each has `.dismissesKeyboardBeforeMenu()` (it hooks the UIKit control that SwiftUI draws; `KeyboardMenusUITests` fails if a later iOS changes it).
 
 ### 5.4 Session page
@@ -234,9 +235,9 @@ DSHProtocol
 - From the top: page bar, `MilestoneBar` (the step in progress, `done / total` finished todos, a progress line; a tap opens the timeline), a status line, the transcript, the composer. The bar and the status line do not scroll.
 - The transcript is `StructuredTranscript`: streamed text cut by thinking rows ("已思考 8 秒 ›"), tool rows (DSH's tool name · target · +/− lines), user bubbles, and question cards; a row opens its details in a sheet. Without `transcript.v1`, or for a session read from the journal, it is plain Markdown.
 - **Markdown** (`TranscriptBlocks`): Foundation attributed Markdown for prose, native rows for fenced code, diffs and terminal output, GFM pipe tables (columns sized to the widest cell up to 240 pt, the table scrolls sideways in its row), and CJK emphasis (`CJKEmphasis`: `*`/`**` pairs next to CJK text that CommonMark refuses, as DSH Web's remark-cjk-friendly renders them). No Markdown package.
-- **Provisional, pending user confirmation**: completed blocks render once, and only the unfinished tail is parsed again as chunks arrive. On 5,000 lines in the Simulator this cut the p95 update time from 12.80–15.06 ms (whole-prefix reparse) to 1.14–2.06 ms. Real-device timing is still open: `spikes/x3-markdown/run` on an iPhone.
-- **Approval sheet**: comes up when the session opens with a pending approval and when a new one arrives. The command (else the path, else the arguments), the reason, 拒绝 / 允许一次. It closes only when the approval leaves the task (an answer here or `ApprovalResolved` from elsewhere), so a failed answer does not hide it; a swipe leaves a one-line bar. Offline host: grey buttons with one line why.
-- **Outcome**: before the final answer, one row 已工作 · N 步 · M 次审批 (N = milestones, M = answered approvals). Done: 用时 (from the latest turn's start, `turn_started_at_ms`, else `createdAt`) and the model. Failed: a red card with DSH's message, the code as a tag, 复制错误, 新会话里再试, and a note that a message below continues the session. `AUTH` and `QUOTA` show the app's own copy; other codes show DSH's message. Stopped: the same card, neutral. Nothing is summarized.
+- **Provisional, pending user confirmation**: completed blocks render once, and only the unfinished tail is parsed again as chunks arrive. On 5,000 lines in the Simulator the p95 update time fell from 12.80–15.06 ms (whole-prefix reparse) to 1.14–2.06 ms. Real-device timing is still open: `spikes/x3-markdown/run` on an iPhone.
+- **Approval sheet** (screen 05): the command (else the path, else the arguments), the reason, 拒绝 / 允许一次. It closes only when the approval leaves the task (an answer here or `ApprovalResolved` from elsewhere), so a failed answer does not hide it; a swipe leaves a one-line bar. Offline host: grey buttons with one line why.
+- **Outcome**: before the final answer, one row 已工作 · N 步 · M 次审批 (N = milestones, M = answered approvals). Done: 用时 (from the latest turn's start, `turn_started_at_ms`, else `createdAt`) and the model. Failed: a red card (screen X1) with DSH's message and the code as a tag. `AUTH` and `QUOTA` show the app's own copy; other codes show DSH's message. Stopped: the same card, neutral. Nothing is summarized.
 - **Composer**: text, "+" (Photo Library, Camera, Files; one item per use), chips with progress, the mic key, send/stop in one place. Files larger than 20 MiB are refused before upload. Follow-ups queue above the field while the task runs, with 立即发送 and remove. While a question waits, the field says "回答 Agent…" and the send key answers it; text equal to an option label picks that option.
 
 ### 5.5 All tasks
@@ -250,7 +251,7 @@ A drawer page with 等我处理 / 正在跑 / 已完成 across hosts, from the c
 ### 5.7 Live Activity
 
 - One activity per task that runs on an online host: title, host, time since the turn started (`Text(timerInterval:)`, so it ticks while the app is suspended), the latest step, `done/total`. `LiveActivities` (DSHCore) brings them in line with the task list after each change: start, update with a `staleDate` 15 minutes on, end when the task is done, failed, stopped or waits on the user. An ended activity stays on the lock screen; never two for one task; after a relaunch existing activities are taken over by task key.
-- Local only: without push, the step changes only while the app runs; then `staleDate` greys it. A free Apple team signs everything (builds expire after 7 days).
+- Local only: without push, the step changes only while the app runs; then `staleDate` greys it.
 - The app sends everything in the ActivityKit state (`DSHActivity` library). No App Group, no shared files, no entitlements, so a free Apple team can sign the extension (`ios/LiveActivity`).
 
 
@@ -300,4 +301,4 @@ A drawer page with 等我处理 / 正在跑 / 已完成 across hosts, from the c
 - The host log is in memory: a DSH restart loses the resume cursor (the app then reloads the list and marks lost running tasks failed).
 - Approval fan-out to the DSH desktop app is not verified.
 - The merge step does not protect a helper reached via `../`; `scripts/plan passed` trusts any note.
-- Not built yet (STORY.md wants them): risk tiers and Face ID for the top tier, plan alignment with pre-authorization, contact by other channels, artifact preview and share-out, the share extension, attachments while a task runs, and a later answer to a question that DSH's timed mode continued.
+- Not built yet (STORY.md wants them; screens with `built: false` in `design/screens.json`): contact by other channels, artifact preview and share-out, the share extension, attachments while a task runs, and a later answer to a question that DSH's timed mode continued.

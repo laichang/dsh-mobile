@@ -74,7 +74,7 @@ struct TranscriptView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             // S16 · DSH style (screen 04): a block a shade below the canvas, under a hairline.
-            .background(DSHTheme.s16CodeFill, in: RoundedRectangle(cornerRadius: 12))
+            .background(DSHTheme.codeFill, in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(DSHTheme.hairline))
             .accessibilityIdentifier("transcript.fence." + language)
         case .table(let table):
@@ -84,8 +84,8 @@ struct TranscriptView: View {
 
     private func diffTint(_ line: String) -> Color {
         if line.hasPrefix("+++") || line.hasPrefix("---") || line.hasPrefix("@@") { return .clear }
-        if line.hasPrefix("+") { return DSHTheme.s16DiffAdded }
-        if line.hasPrefix("-") { return DSHTheme.s16DiffRemoved }
+        if line.hasPrefix("+") { return DSHTheme.diffAdded }
+        if line.hasPrefix("-") { return DSHTheme.diffRemoved }
         return .clear
     }
 
@@ -95,7 +95,7 @@ struct TranscriptView: View {
         for run in text.runs {
             if run.inlinePresentationIntent?.contains(.code) == true {
                 styled[run.range].font = DSHTheme.mono(code)
-                styled[run.range].backgroundColor = DSHTheme.s16InlineCodeFill
+                styled[run.range].backgroundColor = DSHTheme.inlineCodeFill
             }
             if run.link != nil {
                 styled[run.range].foregroundColor = DSHTheme.blue

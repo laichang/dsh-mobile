@@ -1,7 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <!--
-    dsh-mobile app icon (DESIGN.md "App icon"). Original artwork: a phone in front that sends work
-    to a terminal window, the user's own computer. Colors come from the DESIGN.md visual language.
+    dsh-mobile app icon. Original artwork: a phone in front that sends work to a terminal window,
+    the user's own computer (STORY §1, execution elsewhere). It does not use the DeepSeek whale or
+    any other mark: dsh-mobile is a client, not DeepSeek's app. Colors come from DSHTheme
+    (ios/dsh-mobile/Theme/DSHTheme.swift). Default = Blue background, a Canvas terminal, a white
+    phone with a Blue arrow; dark = transparent background, a Slate terminal, a Blue phone;
+    tinted = grayscale on transparent. An asset catalog, not an Icon Composer .icon file.
     scripts/render-icon sets the CSS variables per appearance (default, dark, tinted) and writes
     the PNGs into ios/dsh-mobile/Assets.xcassets/AppIcon.appiconset/.
     Safe area: every shape stays inside x 170..854, y 200..860, away from the masked corners.

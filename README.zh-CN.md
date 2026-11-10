@@ -170,7 +170,7 @@ node bridge/lib/scripts/pair.js
 
 这个仓库由 AI 编程 Agent（Claude Code 和 Codex）在一位人类的主导下并行规划、开发和评审。这套流程本身也是项目的一部分：
 
-- **[STORY.md](STORY.md)**：产品愿景和九条设计原则。每条原则都对应 **[设计稿](DESIGN.md)** 里的一个画面。
+- **[STORY.md](STORY.md)**：产品愿景和九条设计原则。每条原则都对应 **[design/screens.json](design/screens.json)** 里的一个画面。
 - **计划文件**（[M1 的计划，见 tag `m1`](https://github.com/laichang/dsh-mobile/blob/m1/PLAN.md)）：先打一发曳光弹（tracer bullet），再做纵向切片。每个「Done when」条目都有分级（`[auto]`、`[ui]`、`[human]`）和必须可解析的证据，由 pre-commit hook 检查。计划文件只在一个需求进行中时存在；其他一切都是 [GitHub issue](https://github.com/laichang/dsh-mobile/issues)。
 - **[WORKFLOW.md](WORKFLOW.md)**：协调会话如何在 git worktree 里调度各个切片会话，独立评审如何重跑每一项界面检查，哪些决定必须留给人。
 - **[`evidence/`](evidence/)**：每个已完成切片背后的截图。
@@ -183,7 +183,7 @@ node bridge/lib/scripts/pair.js
 ios/            SwiftUI App · DSHKit 包（协议、连接、store、FakeBridge）
 bridge/         DSH 伴随插件（TypeScript、pnpm、node:test、FakeDSH）
 protocol/       frame.proto + golden fixtures · 用 scripts/codegen 重新生成
-design/         设计稿（board.html → board.png、screens/）
+design/         画面（screens.json、screens/<id>.html → png、kit/）、App 图标
 spikes/         关键决策背后的 X1–X4 实验
 scripts/        bootstrap · demo/<slice>.sh · codegen · check-plan · review
 evidence/       PLAN.md 引用的截图
@@ -212,7 +212,7 @@ git config core.hooksPath .githooks
 
 提交贡献即表示你同意维护者可以按本项目许可证、以及单独的商业许可证授权你的贡献。
 
-写代码之前请先读 [AGENTS.md](AGENTS.md)（对人同样适用）：代码是唯一的事实来源，STORY、DESIGN、ARCHITECTURE 要和代码一起改。产品和交互上的改动请遵循 [STORY.md](STORY.md) 里的原则。
+写代码之前请先读 [AGENTS.md](AGENTS.md)（对人同样适用）：代码是唯一的事实来源，STORY、画面、ARCHITECTURE 要和代码一起改。产品和交互上的改动请遵循 [STORY.md](STORY.md) 里的原则。
 
 ## 致谢
 

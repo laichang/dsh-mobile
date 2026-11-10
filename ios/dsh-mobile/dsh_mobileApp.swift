@@ -10,7 +10,7 @@ struct dsh_mobileApp: App {
     var body: some Scene {
         WindowGroup {
             root
-                // DESIGN.md "Visual language": the app always uses dark mode (T1).
+                // the DSHTheme visual language: the app always uses dark mode (T1).
                 .preferredColorScheme(.dark)
                 .environment(\.hostActions, HostActions(pair: { app.startPairing() }, forget: { app.forgetHost($0) }))
                 .environment(\.transcriber, app.transcriber)

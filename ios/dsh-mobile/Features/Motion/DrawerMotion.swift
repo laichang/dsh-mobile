@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// S23 · drawer motion (DESIGN.md "Navigation", screens F1–F4). A tap on a session in the drawer
+/// S23 · drawer motion (design/screens.json nav and rules, screens F1–F4). A tap on a session in the drawer
 /// (or on 所有任务, or on an approval card in 03) moves in three steps:
 /// - F1, 0 ms: the row is highlighted (`DrawerPressStyle`) with a light haptic (`ShellModel.taps`);
 /// - F2, 0–120 ms: the peeking edge cross-fades to the target page, from the cache; the drawer

@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// S21 · hosts and control tokens on top of `DSHTheme` (frozen). Values from design/board.html,
-/// screens H, X2 and X3.
+/// Hosts and control tokens on top of `DSHTheme`. Values from the design kit, screens H, X2 and X3.
 extension DSHTheme {
     /// The sheets of the hosts screens (H, X2).
     static let hostsSheet = Color(hex: 0x1C1C1E)

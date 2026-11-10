@@ -1,5 +1,5 @@
 #!/bin/bash
-# S25 check: the app has an icon in each iOS appearance (PLAN.md S25, DESIGN.md "App icon", D70).
+# S25 check: the app has an icon in each iOS appearance (PLAN.md S25, design/icon.svg, D70).
 # The bug: AppIcon.appiconset had slots and no images, so the built app had no icon and iOS showed
 # a blank one. This builds the app and checks the built bundle, not the source files:
 #   - Info.plist has CFBundleIcons › CFBundlePrimaryIcon › CFBundleIconName = AppIcon

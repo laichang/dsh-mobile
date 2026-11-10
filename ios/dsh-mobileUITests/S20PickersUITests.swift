@@ -3,7 +3,7 @@ import XCTest
 /// S20 · the workspace sheet (07) and the model sheet (M, X4) (PLAN.md §5 S20), against two
 /// in-process FakeBridge hosts with models and workspaces (`-DSHMFakeBridge pickers`).
 /// MacBook-Pro is the default host; its DeepSeek-V41-Pro leaves the catalog once a task uses it.
-/// The app runs in Chinese, like the design board; the checks use identifiers, values and paths.
+/// The app runs in Chinese, like the design screens; the checks use identifiers, values and paths.
 /// Every check of a label, value or enabled state waits with a predicate (the Mac is often slow).
 /// scripts/demo/s20.sh runs these; TEST_RUNNER_DSHM_SHOT_DIR keeps the screenshots.
 @MainActor

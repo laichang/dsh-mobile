@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>dsh-mobile · P3 · 风险分级的审批</title>
+<link rel="stylesheet" href="../kit/kit.css">
+</head>
+<body class="one">
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" data-t="ppt" style="left:0;box-shadow:none"></div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag red"><svg class="i xs"><use href="#shield"/></svg>高风险 · 删除文件</span><span style="font-size:12.5px;color:var(--t3)">任务已暂停</span></div>
+    <div style="font-size:21px;font-weight:700;margin-top:10px">删除 37 个文件</div>
+    <div style="font-size:13.5px;color:var(--t2);margin-top:4px">整理 Q3 报表成 PPT · MacBook-Pro</div>
+    <div class="cmd" style="margin-top:12px">rm -rf ~/Desktop/Q3/tmp</div>
+    <div class="kv" style="margin-top:4px"><span>影响</span><span>1 个文件夹 · 37 个文件 · 212 MB</span></div>
+    <div class="kv"><span>包含</span><span style="font-family:var(--mono);font-size:12px">slide_01.png, chart_q3.svg …</span></div>
+    <div class="kv" style="border:0"><span>Agent 的理由</span><span>清理生成 PPT 时的中间图片</span></div>
+    <div class="opt on" style="margin-top:4px"><span class="radio"></span><div>只批准这一次</div></div>
+    <div class="opt"><span class="radio"></span><div>本任务内都允许删除这个目录</div></div>
+    <div class="btnrow" style="margin-top:14px"><div class="btn tall" style="flex:.8;color:#FF7B72">拒绝</div><div class="btn tall blue"><svg class="i"><use href="#faceid"/></svg>面容 ID 批准</div></div>
+    <div class="fine">高风险不能在锁屏上批准</div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>P3</i>风险分级的审批<span class="mtag mx">M2</span></h3><ul>
+  <li>§5：标题写影响（“删除 37 个文件”），附数量、大小、样例，不只给命令。</li>
+  <li>最高一级要面容 ID（需要 Secure Enclave 签名密钥，D22）；锁屏只能看，不能批。</li>
+  <li>可选“本任务内都允许”，范围限定到具体目录。M1 的 05 是它的简化版。</li>
+</ul></div>
+</div>
+<script src="../kit/kit.js"></script>
+</body>
+</html>

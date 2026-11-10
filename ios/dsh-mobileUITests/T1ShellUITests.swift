@@ -1,6 +1,6 @@
 import XCTest
 
-/// T1 · the new UI shell (PLAN.md §5 T1, DESIGN.md "Navigation"), against the in-process
+/// T1 · the new UI shell (PLAN.md §5 T1, design/screens.json nav and rules), against the in-process
 /// FakeBridge: nothing else needs to run. scripts/demo/t1.sh runs these; set
 /// TEST_RUNNER_DSHM_SHOT_DIR to save the screenshots there. Helpers: UITestSupport.swift.
 @MainActor

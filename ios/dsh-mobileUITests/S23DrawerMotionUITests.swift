@@ -1,7 +1,7 @@
 import CoreFoundation
 import XCTest
 
-/// S23 · drawer motion and landing positions (PLAN.md §5 S23, DESIGN.md "Navigation", F1–F4), against
+/// S23 · drawer motion and landing positions (PLAN.md §5 S23, design/screens.json nav and rules, F1–F4), against
 /// the in-process FakeBridge:
 /// - `-DSHMFakeScenario outcomes` (S19): "… open a PR" asks to run `git push`, and after the Web
 ///   allows it, gives a final answer longer than the screen and ends done;
