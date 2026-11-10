@@ -363,6 +363,11 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
   Provisional: the check rule and its skips; DSHM_EVIDENCE; the feature names. ARCHITECTURE.md is at 9997 of 10000 tokens, so these are in AGENTS.md and here, not in ARCHITECTURE.md.
   Changed files that evidence runs (reviewer must allow): scripts/brief-test (t0.sh is now round-trip.sh), scripts/lib/plan-template.md (example path), scripts/status (comment).
   Not done: scripts/review needs scripts/demo/<slice ID>.sh for [ui] items with only test: pointers; that name conflicts with check-ids (S7). UI tests not run (scripts/xc build-for-testing passes); the renamed demos not run. Simulator dshm-S5 does not exist (DSHM_SIM unset for the build).
+- **2026-11-10 · Round 2: damaged comments repaired; check-id-removal.** Done:
+  - scripts/check-id-removal compares each changed comment line with the line it replaced (merge base with main): a comment of only punctuation, a word that needs more at the end (see, per, follows, …), a lost space before "." or ",", empty brackets, a double space. scripts/check-ids-test runs its cases and runs it on the repo.
+  - It found 7 comments that the mechanical pass damaged; a manual scan for lines that end in ARCHITECTURE/PLAN/see/"(" found 1 more. Repaired 7, deleted 1 (DrawerMotion.swift "///."). scripts/fixtures/fake-plan/setup is the same as on main again. Three comments that cited PLAN.md sections now say the reason in words (FakeBridge, GoldenFixturesTests, ShellModel).
+  - README.md, README.zh-CN.md, scripts/demo/lib.sh: scripts/demo/<feature>.sh.
+  Checks: check-ids, check-ids-test, check-id-removal, swift-test (164), pnpm-test (116), scripts/xc build, check-docs, check-plan pass. The detector does not read meaning: a removal that leaves good grammar but a weaker reason is not found.
 
 ### S6 · ARCHITECTURE and STORY as the current state
 
