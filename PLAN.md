@@ -468,6 +468,8 @@ Append-only, dated.
 
 - **2026-11-10 · S3 merged.** Merged as `ea755c4`; `scripts/check-plan` on the merge commit passed. `scripts/review S3` at `b60495c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S3-b60495c.txt`). No open `[human]` items, so S3 is `done`.
 
+- **2026-11-10 · S3 merged; S2 round 2 for brief content.** S3 merged as ea755c4 (closes #60). Review /tmp/dshm-review/S3-b60495c.txt PASS; note: MAX_ROUNDS counts rounds of the current run only (args.rounds {ID:2} gives 3 more). S2 review /tmp/dshm-review/S2-cc5b2bf.txt PASS on its items, but a brief carries only the items, not Why/Cuts/Not, so a fresh agent cannot build S4 from it. S2 round 2: merge main; add Why/Cuts/Not from the PLAN.md section (S7 moves them into plan/); add the rule not to run verify/merge; tests.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
