@@ -41,7 +41,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
 | T0 | done | merged `e3daa5a` | 2026-11-10 | — |
-| T1 | doing | `claude/t1-workflow-round-trip` | 2026-11-10 | Owner repairs review FAIL (changed evidence); then a new separate review; user reviews plandata.py diff at merge |
+| T1 | doing | `claude/t1-workflow-round-trip` | 2026-11-10 | Review PASS at 80be885 (/tmp/dshm-review/T1-80be885.txt); user approves the plandata.py diff (option A), then the coordinator merges |
 | S1 | done | merged `3b960e8` | 2026-11-10 | — (provisional D150 in §9) |
 | S2 | todo | — | 2026-11-10 | Assign it and start a session |
 | S3 | todo | — | 2026-11-10 | Assign it and start a session |
