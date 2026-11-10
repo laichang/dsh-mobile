@@ -301,6 +301,8 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
   Not done (other slices): code comments still cite "ARCHITECTURE §4 Keys" and Dxx numbers (S5); old section numbers in code comments will be wrong after this rewrite (S5). DESIGN.md and design/board.html still show push and relay as later work and the host guess as "later" (S4). check-docs is not in the pre-commit hook (a guard file; the user decides).
   Setup: dshm-S6 did not exist; created with xcrun simctl create dshm-S6 "iPhone 17 Pro". SwiftPM could not clone swift-protobuf (network reset); copied the cached bare repo from the main checkout's ios/DSHKit/.build into this worktree's .build.
   Next: scripts/review S6 by a reviewer subagent.
+- **2026-11-10 · TLS 1.3 next transport; review has no parts.** At the coordinator's request: ARCHITECTURE.md §4.2 describes the wire as built (Noise) and adds TLS 1.3 over WSS as the user's decided next transport (2026-11-10, not built), from the coordinator's paraphrase of the user's uncommitted edit on main; nothing was copied from the main checkout. To stay under 10k tokens, three sentences elsewhere were shortened; the estimate is now about 9.9k, so the margin is about 90 tokens.
+  Review: a reviewer subagent ran `scripts/review S6`. It printed "review: S6 has no [ui] items" and wrote no result file: S6 has only [auto] items, so the review run has nothing to run. Both [auto] items are re-runnable with scripts/check-docs-test (failures: 0 on the head commit).
 
 ### S7 · Remove WORKFLOW.md and use only the new plan format
 
