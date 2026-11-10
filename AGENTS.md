@@ -9,7 +9,7 @@ Read on demand, not all at once:
 1. **This file**: what the repo is and where to find more.
 2. **[STORY.md](STORY.md)** (in Chinese): product vision, the nine design principles, non-goals, and capabilities that depend on upstream DSH. Read it before making any product or UX decision; confirm with the user before going against it.
 3. **[DESIGN.md](DESIGN.md)**: the screens and interactions (`design/board.html`, rendered to `design/board.png` and `design/screens/`). STORY is DESIGN, DESIGN is STORY: read it with STORY.md before any UI work, and change both together.
-4. **[ARCHITECTURE.md](ARCHITECTURE.md)**: tech stack, system shape (iOS app + DSH bridge plugin + protocol), key decisions with rationale, milestones, and open risks. Read it before writing code; update it when a decision changes.
+4. **[ARCHITECTURE.md](ARCHITECTURE.md)**: how dsh-mobile is built now: tech stack, system shape (iOS app + DSH bridge plugin + protocol), key choices with their reasons, and known limits. It tells only the current state (no decision IDs, no history, no milestones; at most 10k tokens; `scripts/check-docs`). Read it before writing code; change it in the same commit as the code it describes.
 5. **[WORKFLOW.md](WORKFLOW.md)**: how work moves here, for every agent (Claude Code, Codex, …): setting up a new Mac (`scripts/bootstrap`), the coordinator and slice sessions, the long-horizon run, status titles, merging, and what stays with the user. Read it before picking up any work. It's a living doc.
 6. **`PLAN.md`**: the plan of the current requirement, only while one is in progress: tracer bullets first, then near-independent vertical slices. Before picking up work, read its §0 status table and "How to use this file". With no requirement there is no PLAN.md: ideas, follow-ups and bugs are [GitHub issues](https://github.com/laichang/dsh-mobile/issues) (WORKFLOW.md §3.2).
 
@@ -22,6 +22,7 @@ Read on demand, not all at once:
 - `scripts/demo/<slice>.sh`: re-runnable demo per slice; `scripts/dsh-up.mjs` starts a local DSH + bridge with a mock model
 - `design/`: the design board (`board.html` is the source; `board.png` and `screens/` are renders from `scripts/render-design`). See DESIGN.md
 - `evidence/<slice>/`: screenshots cited by the plan's `shot:` pointers; deleted with PLAN.md
+- `scripts/check-docs`: checks that ARCHITECTURE.md, STORY.md, AGENTS.md and the READMEs have no decision IDs or milestones section, and that ARCHITECTURE.md stays at most 10k tokens (test: `scripts/check-docs-test`)
 - `scripts/check-plan`: guards the Done when items of PLAN.md (WORKFLOW.md §12)
 - `scripts/review <ID>`: the review run of one slice; `scripts/demo/lib.sh` also holds the machine guard (WORKFLOW.md §6.1, §10.1)
 - `scripts/plan`: writes and keeps PLAN.md without hand edits (`new`, `add`, `lint`, §0, §8, §9, ticks, Logs; format in `scripts/lib/plan-template.md`, WORKFLOW.md §3.1); `scripts/status`: the run in one screen; `scripts/slice-env <ID>`: the resources of a slice, from `scripts/resources.tsv` (WORKFLOW.md §5, §6). Tests: `scripts/plan-test`

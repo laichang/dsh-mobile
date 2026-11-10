@@ -13,7 +13,7 @@ Dispatch tasks, watch progress, approve risky actions, and get results back from
 [![Protobuf](https://img.shields.io/badge/protocol-protobuf-4285F4)](protocol/)
 [![E2E: Noise](https://img.shields.io/badge/E2E-Noise_IK-2ea44f)](#security)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm_Noncommercial-blue)](#license)
-[![Status: M1 preview](https://img.shields.io/badge/status-M1_preview-orange)](#roadmap)
+[![Status: preview](https://img.shields.io/badge/status-preview-orange)](#status)
 
 English · [简体中文](README.zh-CN.md)
 
@@ -59,7 +59,9 @@ The phone does exactly four things: **dispatch, watch, decide, receive.** It nev
 - 📂 **Workspace picker.** The host's default, recent workspaces, or any absolute path on that host.
 - ⏹️ **Interrupt any time.**
 - 📴 **Survives bad networks.** A per-host event log with resume cursors: kill the app, lose Wi-Fi, reopen, and you see exactly what you missed. Nothing is lost.
-- 🔐 **End-to-end encrypted.** Pair once by QR. Every frame is Noise-encrypted, on LAN, Tailscale or a future relay alike.
+- 🔐 **End-to-end encrypted.** Pair once by QR. Every frame is Noise-encrypted, on the LAN or over Tailscale alike. No relay and no server of ours: the phone talks straight to your hosts.
+- 💬 **Talk to a running task.** Follow-up messages wait for the next turn or go in now; answer the agent's questions from a card or the composer; attach photos and files; dictate on the device.
+- 🔒 **Live Activity.** Each running task ticks on the lock screen (local only, no push).
 - 🧾 **Devices and audit.** See every paired device, revoke a lost phone, and review who approved what, when, from which device.
 
 ## How it works
@@ -82,7 +84,7 @@ DSH has no pairing, no push, no relay, and no stable public wire API yet. So thi
 | **Bridge plugin** | [`bridge/`](bridge/) | A Cordis plugin you install into the DSH you already run. It opens its own listener and absorbs upstream API churn, so the app never speaks DSH's internal protocol. |
 | **Protocol** | [`protocol/`](protocol/) | The only contract between the two: `.proto` files, codegen for Swift and TS, and golden fixtures that both sides test against. |
 
-Read [ARCHITECTURE.md](ARCHITECTURE.md) for the full design and the rationale behind each decision (D1–D55).
+Read [ARCHITECTURE.md](ARCHITECTURE.md) for the full design and the reasons behind it.
 
 ## Quick start
 
@@ -155,16 +157,11 @@ Full install, configuration and state-file details: [bridge/README.md](bridge/RE
 > [!WARNING]
 > The Noise implementation is hand-rolled and **has not been independently audited**. Reviews are very welcome.
 
-## Roadmap
+## Status
 
-| | Scope | Status |
-|---|---|---|
-| **M1** | QR pairing + E2E, unified task list, composer (host, workspace, model, effort), milestones, streaming detail, interrupt, mid-task model switch, in-app approvals, multi-host, devices and audit, cross-client sessions | 🚧 Most slices built; UI polish in progress ([PLAN.md](PLAN.md)) |
-| **M2** | Live Activity of each running task on the lock screen (local, no push), push notifications (APNs, straight from the bridge), risk tiers, Face ID for the top tier, plan alignment and pre-authorization, follow-up messages and agent questions mid-task | Planned |
-| **M3** | Artifacts: Quick Look preview, share sheet in and out, photos as context | Planned |
-| **M4** | Push updates of Live Activities, voice input, relay transport for hosts you can't reach directly | Planned |
+Built and in use: everything under Features. Not built yet: risk tiers with Face ID for the top tier, plan alignment and pre-authorization, artifact preview and share-out, the share extension. Open work is in the [issues](https://github.com/laichang/dsh-mobile/issues).
 
-**Out of scope:** installing or hosting DSH for you, on-device models (they would plug in later as a "this phone" host), and calling model APIs from the phone.
+**Out of scope:** installing or hosting DSH for you, on-device models (they would plug in later as a "this phone" host), calling model APIs from the phone, push notifications (APNs), a relay server, and guessing the host from the prompt.
 
 > [!NOTE]
 > DSH itself is a developer preview. The bridge supports DSH **`0.2.2-rc.1`** exactly. On any other version it still pairs and tells the app which versions are installed and supported, so you know what to update.

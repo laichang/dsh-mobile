@@ -1,0 +1,86 @@
+#!/bin/bash
+# Tests for scripts/check-docs, on small doc trees in a temporary directory (the repo is not
+# touched), and one run on the repository itself.
+#   scripts/check-docs-test        ends with "failures: 0"
+set -uo pipefail
+SRC="$(git rev-parse --show-toplevel)"
+CHECK="$SRC/scripts/check-docs"
+T=$(cd "$(mktemp -d "${TMPDIR:-/tmp}/dshm-docs-test.XXXXXX")" && pwd -P)
+trap 'rm -rf "$T"' EXIT
+FAIL=0
+ok()  { printf '  ok    %s\n' "$1"; }
+bad() { printf '  FAIL  %s\n' "$1"; FAIL=$((FAIL + 1)); }
+
+# tree <name>: a clean doc tree (not a git repository: check-docs finds READMEs on disk)
+tree() {
+  local d="$T/$1"; mkdir -p "$d/bridge" "$d/spikes/x1"
+  printf '# ARCHITECTURE\n\n## 1. Bridge\n\n### Milestone mapper\n\nMaps DSH events (DSH 0.2.2, D-pad, ID12, 3D).\n' > "$d/ARCHITECTURE.md"
+  printf '# 原则\n\n默认展示**里程碑级的进度摘要**。\n' > "$d/STORY.md"
+  printf '# AGENTS.md\n\nRead ARCHITECTURE.md.\n' > "$d/AGENTS.md"
+  printf '# dsh-mobile\n\n## Status\n\nBuilt.\n' > "$d/README.md"
+  printf '# bridge\n\nPort 47801.\n' > "$d/bridge/README.md"
+  printf '# x1\n\nNotes.\n' > "$d/spikes/x1/README.md"
+  echo "$d"
+}
+# expect <name> <0|1> <dir> [<fixed string in the output>]
+expect() {
+  local name=$1 want=$2 dir=$3 needle=${4:-}
+  local out; out=$("$CHECK" --root "$dir" 2>&1); local rc=$?
+  if [ "$want" = 0 ] && [ $rc = 0 ]; then ok "$name"
+  elif [ "$want" = 1 ] && [ $rc = 1 ] && { [ -z "$needle" ] || grep -qF -- "$needle" <<<"$out"; }; then ok "$name"
+  else bad "$name (exit $rc)"; printf '%s\n' "$out" | head -8 | sed 's/^/        /'; fi
+}
+
+echo "check-docs"
+d=$(tree clean);        expect "a clean tree passes (Milestone mapper, D-pad, ID12 are no problem)" 0 "$d"
+
+d=$(tree arch-id);      echo 'See D12 for the reason.' >> "$d/ARCHITECTURE.md"
+expect "a decision ID in ARCHITECTURE.md fails" 1 "$d" "ARCHITECTURE.md:8: decision ID D12"
+d=$(tree story-id);     echo '- 见 D4。' >> "$d/STORY.md"
+expect "a decision ID in STORY.md fails" 1 "$d" "STORY.md:4: decision ID D4"
+d=$(tree agents-id);    echo '(ARCHITECTURE D153)' >> "$d/AGENTS.md"
+expect "a decision ID in AGENTS.md fails" 1 "$d" "AGENTS.md:4: decision ID D153"
+d=$(tree readme-id);    echo 'Every decision (D1–D55).' >> "$d/README.md"
+expect "a decision ID in README.md fails" 1 "$d" "README.md:6: decision ID D1"
+d=$(tree bridge-id);    echo 'Noise (ARCHITECTURE D6, D21).' >> "$d/bridge/README.md"
+expect "a decision ID in bridge/README.md fails" 1 "$d" "bridge/README.md:4: decision ID D6"
+d=$(tree spike-id);     echo 'Recorded as **D17**.' >> "$d/spikes/x1/README.md"
+expect "a decision ID in a spike README fails" 1 "$d" "spikes/x1/README.md:4: decision ID D17"
+d=$(tree zh-readme);    printf '# 中文\n\n完整设计（D1–D55）。\n' > "$d/README.zh-CN.md"
+expect "a decision ID in README.zh-CN.md fails" 1 "$d" "README.zh-CN.md:3: decision ID D1"
+
+d=$(tree arch-ms);      printf '\n## 7. Milestones\n\nM1 done.\n' >> "$d/ARCHITECTURE.md"
+expect "a Milestones heading in ARCHITECTURE.md fails" 1 "$d" "ARCHITECTURE.md:9: milestones section"
+d=$(tree readme-road);  printf '\n## Roadmap\n' >> "$d/README.md"
+expect "a Roadmap heading in README.md fails" 1 "$d" "README.md:7: milestones section"
+d=$(tree zh-road);      printf '\n## 路线图\n' >> "$d/STORY.md"
+expect "a 路线图 heading fails" 1 "$d" "STORY.md:5: milestones section"
+d=$(tree ms-row);       printf '\n| | Scope |\n|---|---|\n| **M2** | Push |\n' >> "$d/README.md"
+expect "a milestone table row fails" 1 "$d" "README.md:9: milestones section"
+d=$(tree ms-row-plain); printf '\n| M4 | Relay |\n' >> "$d/AGENTS.md"
+expect "a plain milestone table row fails" 1 "$d" "AGENTS.md:5: milestones section"
+d=$(tree fenced);       printf '\n```\n## Milestones\n| M1 | x |\n```\n' >> "$d/README.md"
+expect "a milestones heading inside a code fence passes" 0 "$d"
+
+d=$(tree big)
+python3 -c "import sys; open(sys.argv[1],'a').write('word ' * 7300)" "$d/ARCHITECTURE.md"
+expect "ARCHITECTURE.md of about 9,900 tokens passes" 0 "$d"
+python3 -c "import sys; open(sys.argv[1],'a').write('word ' * 100)" "$d/ARCHITECTURE.md"
+expect "ARCHITECTURE.md of more than 10,000 tokens fails" 1 "$d" "more than 10000"
+d=$(tree big-cjk)
+python3 -c "import sys; open(sys.argv[1],'a').write('里' * 10001)" "$d/ARCHITECTURE.md"
+expect "10,001 CJK characters count as more than 10,000 tokens" 1 "$d" "more than 10000"
+d=$(tree big-other)
+python3 -c "import sys; open(sys.argv[1],'a').write('word ' * 9000)" "$d/STORY.md"
+expect "the token limit is for ARCHITECTURE.md only" 0 "$d"
+
+d=$(tree old)
+git -C "$SRC" show d5271d1:ARCHITECTURE.md > "$d/ARCHITECTURE.md" 2>/dev/null \
+  && expect "the old ARCHITECTURE.md (Dxx, §7 Milestones, ~37k tokens) fails" 1 "$d" "more than 10000"
+
+echo "repository"
+if out=$("$CHECK" 2>&1); then ok "scripts/check-docs passes on this repository"
+else bad "scripts/check-docs fails on this repository"; printf '%s\n' "$out" | head -20 | sed 's/^/        /'; fi
+
+echo "failures: $FAIL"
+[ "$FAIL" = 0 ]

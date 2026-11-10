@@ -1,6 +1,6 @@
 # X3 · Streaming Markdown on iOS
 
-For S8, retain each completed Markdown block and parse only the open tail when the next chunk arrives. On the iPhone 17 Pro simulator, this reduced p95 update time from 12.80–15.06 ms to 1.14–2.06 ms in the measured run. The choice in D10 is provisional pending the real-device run.
+For S8, retain each completed Markdown block and parse only the open tail when the next chunk arrives. On the iPhone 17 Pro simulator, this reduced p95 update time from 12.80–15.06 ms to 1.14–2.06 ms in the measured run. The choice (ARCHITECTURE.md §5.4) is provisional pending the real-device run.
 
 ## Reproduce
 
