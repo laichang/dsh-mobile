@@ -1,8 +1,8 @@
 #!/bin/bash
-# Node test of the run-plan Workflow (.claude/workflows/run-plan.js) with a fake agent(): one node
-# from brief to merge in a temporary clone; the merge step checks the merge commit again itself
-# and ignores the reports of the build and verify agents. The repo is not touched.
-#   scripts/run-plan-test      ends with "fail 0"
+# Node test of the run-plan Workflow (.claude/workflows/run-plan.js) with a fake agent(): scheduling,
+# prompts, the rework loop, fixes and the return (scripted agent), and one node from brief to merge
+# in a temporary clone (real shell steps). The repo is not touched.
+#   scripts/run-plan-test [--test-name-pattern=RE]   ends with "fail 0"
 set -euo pipefail
 ROOT=$(git rev-parse --show-toplevel)
-exec node --test --test-reporter=spec "$ROOT/scripts/test/run-plan.test.mjs"
+exec node --test --test-reporter=spec "$@" "$ROOT/scripts/test/run-plan.test.mjs"

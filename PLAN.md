@@ -263,7 +263,7 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 
 ### S3 · One run-plan Workflow for all plans, with the rework loop
 
-**Status** todo · **Needs** T1 · **Branch** —
+**Status** doing · **Needs** T1 · **Branch** —
 
 **Why**: Closes #60. One fixed Workflow script runs every plan; the graph comes in as args from `scripts/plan dag --json`.
 
@@ -277,15 +277,20 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 **Demo**: —
 
 **Done when**
-- [ ] [auto] With a fake agent: a node starts when its needs are met, and 3 nodes or fewer run at the same time — Evidence:
-- [ ] [auto] The prompt of a node has only its ID, round and brief path; the same node in a changed graph has the same prompt — Evidence:
-- [ ] [auto] A node becomes blocked after 3 rounds, after 2 rounds with the same evidence, and after an out-of-scope report — Evidence:
-- [ ] [auto] A fix adds a `passed: false` item and blocks only the nodes that have not started and share files or screens with it — Evidence:
-- [ ] [auto] The return of the Workflow fits the schema and is about 300 tokens or fewer; `/run-plan` calls the Workflow — Evidence:
+- [x] [auto] With a fake agent: a node starts when its needs are met, and 3 nodes or fewer run at the same time — Evidence: cmd:scripts/run-plan-test --test-name-pattern=needs.are.merged
+- [x] [auto] The prompt of a node has only its ID, round and brief path; the same node in a changed graph has the same prompt — Evidence: cmd:scripts/run-plan-test --test-name-pattern=brief.path
+- [x] [auto] A node becomes blocked after 3 rounds, after 2 rounds with the same evidence, and after an out-of-scope report — Evidence: cmd:scripts/run-plan-test --test-name-pattern=rework|blocked|honest.verifier|needs.review
+- [x] [auto] A fix adds a `passed: false` item and blocks only the nodes that have not started and share files or screens with it — Evidence: cmd:scripts/run-plan-test --test-name-pattern=a.fix.blocks|brief.to.merge
+- [x] [auto] The return of the Workflow fits the schema and is about 300 tokens or fewer; `/run-plan` calls the Workflow — Evidence: cmd:scripts/run-plan-test --test-name-pattern=return.fits
 
 **Not**: Replacing PLAN.md (S7).
 
 **Log**: —
+- **2026-11-10 · Run-plan Workflow for the graph; all items ticked.** Done: .claude/workflows/run-plan.js runs the graph from scripts/run-plan-args (new, read only: dag --json of the plan at --into, scope = files and screens of each node, done = nodes with merge-step results on the first-parent history plus --done, fixes from --fix ID:ITEM, --started, --round). 3 nodes at a time or fewer; a node starts when its needs are merged. Prompts: ID, round, brief path (shell steps also the target and checkout), never needs. Rework: fresh rounds until the merge step merges; blocked after 3 rounds, 2 rounds with the same failure evidence (verify or merge), a build report outside_slice (BUILD_SCHEMA, the only field read), or a failed brief. A merge refused for changed evidence returns review with the files; the Workflow never passes --allow-changed-evidence. Return: {into, tip, merged, blocked, review, waiting}, under 300 tokens in a 9-node test. /run-plan (.agents/skills/run-plan) calls the Workflow. scripts/run-plan-test: 10 tests (6 scripted graph tests, 4 real-shell round trips); it now forwards args (--test-name-pattern) for per-item evidence.
+  Provisional: scripts/run-plan-args as the args source; done derived from merge-step notes; blocked also on a failed brief; a running node is never held by a fix (the stopped run's nodes come in as --started); ARCHITECTURE.md trimmed to stay under 10k tokens.
+  Not done: the T1 known limits (a helper reached via ../ is not protected; plan passed trusts any note) need a scripts/lib/ change (a checker): listed in ARCHITECTURE.md §8 instead. Nodes merged by hand (T0, T1, S1, S6) need --done. No real Workflow run (not needed for S3). Merging S3 changes scripts/run-plan-test and scripts/test/run-plan.test.mjs, which are evidence files: the merge step refuses them without review (option A).
+  Note: the simulator dshm-S3 does not exist; T0 demo passed with DSHM_SIM unset (scripts/xc not changed).
+  Next: separate reviewer; coordinator merges.
 
 ### S4 · Design as data: screens.json and one HTML file per screen
 

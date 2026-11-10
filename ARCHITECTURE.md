@@ -104,9 +104,9 @@ Interrupt, model switch and follow-up messages take the same outbound path as an
 ### Toolchain
 
 - Codegen: `buf` + `protoc-gen-es` (pinned devDependencies of `bridge/`) and `protoc-gen-swift` built by SwiftPM from the swift-protobuf version that `ios/DSHKit` pins. One entry point: `scripts/codegen`.
-- Generated code is committed; `scripts/codegen --check` fails when regeneration changes a file. On a merge conflict in generated files, run codegen again. Xcode builds without a codegen toolchain, and protocol changes show in review.
+- Generated code is committed; `scripts/codegen --check` fails when regeneration changes a file. Xcode builds without a codegen toolchain, and protocol changes show in review.
 - Bridge: pnpm, pinned by `packageManager` (Node ≥ 24.9, as DSH requires); tests use `node:test`.
-- Swift: one local package `ios/DSHKit` with the targets `DSHProtocol` (generated), `DSHCore` (connection, channels, store, models), `DSHActivity` (Live Activity types, no dependencies) and `DSHTestSupport` (fakes, Debug only). The app target holds views. `swift test` runs on the Mac without a Simulator. DSHKit targets macOS 15 for these host tests: a test bundle built for macOS 26 cannot load on macOS 15 with Xcode 26.
+- Swift: one local package `ios/DSHKit` with the targets `DSHProtocol` (generated), `DSHCore` (connection, channels, store, models), `DSHActivity` (Live Activity types, no dependencies) and `DSHTestSupport` (fakes, Debug only). The app target holds views. `swift test` runs on the Mac without a Simulator. DSHKit targets macOS 15 for these host tests (a macOS 26 test bundle cannot load on macOS 15).
 - Dependencies are pinned to exact versions (`ios/DSHKit/Package.swift`, `bridge/package.json`).
 
 ## 4. Bridge plugin (`bridge/`)
@@ -285,17 +285,18 @@ A drawer page with 等我处理 / 正在跑 / 已完成 across hosts, from the c
 
 - **DSHKit**: `swift test` on the Mac. `FakeHost` / `FakeBridge` (`DSHTestSupport`) is a fake bridge process whose tasks and log outlive connections, with scripts for milestones, approvals, questions, follow-ups, outcomes and turns. It closes and refuses with 4003 like the bridge.
 - **Bridge**: `FakeDSH` (`bridge/test/`), and live checks against real DSH with its mock model (`scripts/dsh-up.mjs`).
-- **Output wrappers (provisional, pending user confirmation):** `scripts/xc <action>` (xcodebuild), `scripts/swift-test` and `scripts/pnpm-test` write the full log to `/tmp/dshm-*` and print a short JSON summary (counts, the first 10 errors as `file:line: message`, the log path); parsing is in `scripts/lib/wrap.py`. Demo scripts and `scripts/review` call only the wrappers (`scripts/check-wrappers` fails on a raw call). Why: a full xcodebuild log fills an agent's context; `xcbeautify` or `xcpretty` add a dependency and give no JSON, and `xcresulttool` is slow and only for xcodebuild.
-- **Plan data (provisional, pending user confirmation):** `plan/*.json`; `scripts/plan verify` runs `cmd:` evidence on the branch head (advisory note). `scripts/plan merge` uses the target's tools and items, reruns on the merge commit, ignores reports, refuses unreviewed edits of `cmd:` files, their directories, `scripts/lib/`. Not chosen: trust notes. Workflow: `.claude/workflows/run-plan.js`.
+- **Output wrappers (provisional, pending user confirmation):** `scripts/xc <action>` (xcodebuild), `scripts/swift-test` and `scripts/pnpm-test` write the full log to `/tmp/dshm-*` and print a short JSON summary (counts, the first errors as `file:line: message`, the log path; parser `scripts/lib/wrap.py`). Demo scripts and `scripts/review` call only the wrappers (`scripts/check-wrappers` fails on a raw call). Why: a full log fills an agent's context; `xcbeautify`/`xcpretty` give no JSON, `xcresulttool` is slow.
+- **Plan data (provisional, pending user confirmation):** `plan/*.json`; `scripts/plan verify` runs `cmd:` evidence on the branch head (an advisory note). `scripts/plan merge` uses the target's tools and items, reruns on the merge commit, ignores reports, refuses unreviewed edits of `cmd:` files, their directories, `scripts/lib/`. `.claude/workflows/run-plan.js` (args: `scripts/run-plan-args`) runs ≤3 nodes at once, ≤3 fresh rounds each.
 - **UI tests** run only through `scripts/demo/<name>.sh` or `scripts/review`, which load the machine guard in `scripts/demo/lib.sh` (free space, CPU, simulator limit).
 - **Debug-only entry points**, behind `#if DEBUG` and the Debug Info.plist; `scripts/check-release-clean` proves a Release build has none:
   - `-DSHM…` launch arguments (`DebugEntryPoints.swift`): `-DSHMFakeBridge` and `-DSHMFakeScenario <name>` put a `FakeHost` in process; others preset the prompt, the bridge port (default 47801), speech, the store and pairing.
   - The URL scheme `dshm://pair?…` and the accessibility identifiers that the UI tests use.
-- `-DSHMUIKitAnimations NO` turns off UIKit view animations (XCUITest waits for them: 60 s per step under load). A Debug launch with a `-DSHM…` argument starts no Live Activities unless it passes `-DSHMLiveActivityProbe YES`.
+- `-DSHMUIKitAnimations NO` turns off UIKit view animations (XCUITest waits for them, up to 60 s a step). A Debug launch with a `-DSHM…` argument starts no Live Activities unless it passes `-DSHMLiveActivityProbe YES`.
 
 ## 8. Known limits and risks
 
 - The Noise code is hand-written and not audited.
 - The host log is in memory: a DSH restart loses the resume cursor (the app then reloads the list and marks lost running tasks failed).
 - Approval fan-out to the DSH desktop app is not verified.
+- The merge step does not protect a helper reached via `../`; `scripts/plan passed` trusts any note.
 - Not built yet (STORY.md wants them): risk tiers and Face ID for the top tier, plan alignment with pre-authorization, contact by other channels, artifact preview and share-out, the share extension, attachments while a task runs, and a later answer to a question that DSH's timed mode continued.
