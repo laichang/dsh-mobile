@@ -46,7 +46,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S2 | done | merged `a75b85c` | 2026-11-10 | — |
 | S3 | done | merged `ea755c4` | 2026-11-10 | — |
 | S4 | done | merged `7a73893` | 2026-11-10 | — |
-| S5 | todo | — | 2026-11-10 | Assign it and start a session |
+| S5 | doing | `claude/s5-remove-ids` | 2026-11-10 | Slice owner builds (§8) |
 | S6 | done | merged `46d4f3d` | 2026-11-10 | — |
 | S7 | todo | — | 2026-11-10 | Assign it and start a session |
 
@@ -495,6 +495,8 @@ Append-only, dated.
 - **2026-11-10 · S4 built by a background agent; separate review runs.** S4 at d222eb6 (worktree agent-a39dfdb065bf5ebff): 7 components, 26 screens, 62 rules; 8 theme files and 13 tokens renamed; DESIGN.md and board removed. Agent: 116 tool uses, about 25 min, 221k tokens in all (sum over turns, not the peak context). Issues to open at the end (user consent): pairing screen 08 vs upstream; share sheet and iPad not drawn; screen L draws push, which STORY excludes; screen captions cite decision and slice IDs (S5).
 
 - **2026-11-10 · S4 merged.** Merged as `7a73893`; `scripts/check-plan` on the merge commit passed. `scripts/review S4` at `d222eb6`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S4-d222eb6.txt`). No open `[human]` items, so S4 is `done`.
+
+- **2026-11-10 · S5 assigned.** Branch `claude/s5-remove-ids`, simulator `dshm-S5`, DSHM_HOME `~/.dshm/home-s5`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D168–D170. `eval "$(scripts/slice-env S5)"` exports them.
 
 ## 9. Pending user confirmation
 
