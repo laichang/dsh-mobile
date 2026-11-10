@@ -110,7 +110,7 @@ A tracer is one thin round trip that one session can finish without running out 
 
 ### T0 · Tracer bullet: plan/ graph, and passed only from the verifier
 
-**Status** blocked · **Needs** — · **Branch** —
+**Status** doing · **Needs** — · **Branch** —
 
 **Why**: Part of #57. The data half of the new path: the graph and the items move to JSON, and no agent can set passed by hand. The current run still uses PLAN.md; plan/ lives next to it.
 
