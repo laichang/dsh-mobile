@@ -486,6 +486,8 @@ Append-only, dated.
 
 - **2026-11-10 · S2 merged.** Merged as `a75b85c`; `scripts/check-plan` on the merge commit passed. `scripts/review S2` at `479c065`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S2-479c065.txt`). No open `[human]` items, so S2 is `done`.
 
+- **2026-11-10 · S2 merged; S4 runs as a background agent (session start refused).** S2 merged as a75b85c (closes #59); review /tmp/dshm-review/S2-479c065.txt PASS. The user's uncommitted AGENTS.md line was stashed for the merge and reapplied (backup /tmp/dshm-user-agents-s2.patch). S4 assigned; the app refused a session start in a turn from a subagent message (§5.3), so S4 runs as a background agent in its own worktree, from /tmp/dshm-brief/S4-r1.md (scripts/brief --preview: no command writes branches into plan/plan.json yet, a gap for S7). Reviewer notes for later: S5's Cut asks for a pre-commit check but guard edits are forbidden (put it in check-docs); S7 needs guard edits (user review at merge, option A); run-plan.js needs branches in plan/plan.json.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
