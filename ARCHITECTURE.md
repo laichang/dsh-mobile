@@ -131,7 +131,7 @@ A Cordis plugin in the user's DSH profile (install: `bridge/README.md`). It is t
 
 ### 4.3 Tasks, the host log and resume
 
-- Tasks belong to the host's `TaskHub` (`bridge/src/s2/`), not to a connection: closing the socket does not stop a task.
+- Tasks belong to the host's `TaskHub` (`bridge/src/tasks/`), not to a connection: closing the socket does not stop a task.
 - Each event that the bridge sends is appended to one per-host log with a monotonic `Event.host_seq`, named by a random `log_id` per bridge process. The log is in memory (the last 50,000 events). DSH has no resume cursor of its own, and the bridge keeps running when the phone sleeps. Restarting DSH starts a new log.
 - `Resume { log_id, after_seq }` replays the logged events after the cursor, answers `Resumed`, and then sends live events. Replay and subscribe happen in one synchronous step, so nothing falls between them. When the cursor does not apply (another `log_id`, or trimmed events), the bridge sends `LogReset` and replays all it kept.
 - `ListTasks` returns each task with its state, pending approvals and questions, model and workspace, so a card comes back after a trim or a fresh cache.

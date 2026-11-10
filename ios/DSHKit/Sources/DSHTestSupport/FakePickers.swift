@@ -3,7 +3,7 @@ import DSHCore
 import DSHProtocol
 import Foundation
 
-/// S20 · two FakeBridge hosts with models and workspaces, as on screens 07, M and X4
+/// Two FakeBridge hosts with models and workspaces, as on screens 07, M and X4
 /// (`-DSHMFakeBridge pickers`). MacBook-Pro is the default host. Its DeepSeek-V41-Pro leaves the
 /// catalog once a task uses it, and its OpenRouter list fails.
 public enum FakePickers {

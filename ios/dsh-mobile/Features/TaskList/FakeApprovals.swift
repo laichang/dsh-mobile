@@ -1,7 +1,7 @@
 #if DEBUG
 import DSHTestSupport
 
-/// S15 · the FakeBridge scenario `-DSHMFakeBridge approvals` (and `approvals-office-offline`):
+/// The FakeBridge scenario `-DSHMFakeBridge approvals` (and `approvals-office-offline`):
 /// each fake host starts with one task that waits on an approval, so 所有任务 shows approvals
 /// from two hosts. Debug only.
 enum FakeApprovals {

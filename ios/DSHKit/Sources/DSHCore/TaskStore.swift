@@ -1,8 +1,8 @@
 import Foundation
 import Observation
 
-/// State behind T0's single-task screen: one composer, one task at a time, in memory only. Since
-/// S2 the app uses `TaskListStore` (durable list + resume); this stays as T0's minimal client.
+/// State behind the first single-task screen: one composer, one task at a time, in memory only. Since
+/// the durable list, the app uses `TaskListStore` (durable list + resume); this stays as the minimal client.
 @MainActor
 @Observable
 public final class TaskStore {
@@ -30,7 +30,7 @@ public final class TaskStore {
     public var prompt: String
     public private(set) var transcript = ""
     public private(set) var status: Status = .idle
-    /// S3: the current task's milestones (card + timeline).
+    /// The current task's milestones (card + timeline).
     public private(set) var milestones = MilestoneTimeline()
 
     private let connection: HostConnection

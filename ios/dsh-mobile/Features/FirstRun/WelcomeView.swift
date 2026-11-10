@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// S22 · first run (screen 08, STORY §6). With no paired computer, say what the phone does, what
+/// First run (screen 08, STORY §6). With no paired computer, say what the phone does, what
 /// the user needs (a computer with DSH and the bridge; same Wi-Fi or Tailscale), and offer the two
-/// ways in: scan the QR the terminal prints, or paste the link printed under it. Copy follows S11.
+/// ways in: scan the QR the terminal prints, or paste the link printed under it.
 ///
 /// Accessibility contract: `firstRun.purpose`, `firstRun.requiresHost`, `firstRun.step` (×2; the
 /// second one is the network requirement), `pairing.scan`, `pairing.pasteLink`, `firstRun.setup`.
@@ -86,7 +86,7 @@ struct WelcomeView: View {
 enum FirstRun {
     static let setupGuide = URL(string: "https://github.com/laichang/dsh-mobile/blob/main/bridge/README.md")!
 
-    /// The first task that fills the composer after the first pairing (ARCHITECTURE D49, D63).
+    /// The first task that fills the composer after the first pairing.
     static var suggestion: String {
         String(localized: "Say hello and describe one way you can help me on this computer.")
     }

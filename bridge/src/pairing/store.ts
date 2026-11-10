@@ -1,5 +1,5 @@
 /**
- * The bridge's pairing state on disk (ARCHITECTURE D21): the host's Noise static key, open
+ * The bridge's pairing state on disk: the host's Noise static key, open
  * pairing offers, and the device registry. One directory, default `$DSH_HOME/dsh-mobile-bridge`,
  * mode 0700, files 0600. Every call re-reads the files, so `scripts/pair.ts` (a separate
  * process) can add offers while the bridge runs. Writes are atomic (temp file + rename).
@@ -168,7 +168,7 @@ export class PairingStore {
   private offersJSON(): OfferJSON[] { return this.read<OfferJSON[]>('offers.json') ?? [] }
   private registry(): Registry {
     const value = this.read<DeviceJSON[] | Registry>('devices.json')
-    // S1 stored an array. Its pairedAt and offer ID provide the original pairing event.
+    // The first format stored an array. Its pairedAt and offer ID provide the original pairing event.
     if (Array.isArray(value)) return { devices: value, history: value.map(paired) }
     return value ?? { devices: [], history: [] }
   }

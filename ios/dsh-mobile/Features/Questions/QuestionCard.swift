@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Screen P1 · a question from the agent, as a card in the transcript and under 等我处理 in 所有任务
 /// (STORY §4–§5). One chip per option; a tap answers. A multi-select question takes one or more
-/// chips and then 回答. On the session page the composer can answer too ("回答 Agent…", D113). The
+/// chips and then 回答. On the session page the composer can answer too ("回答 Agent…"). The
 /// task waits and never chooses by itself. Once answered (here, in the composer or on DSH Web) the
 /// card shows the answer in place of the chips.
 struct QuestionCard: View {

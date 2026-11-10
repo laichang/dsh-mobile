@@ -1,11 +1,11 @@
 #!/bin/bash
-# The Live Activity of a running task on the lock screen (screen L, ARCHITECTURE D119-D121).
+# The Live Activity of a running task on the lock screen (screen L).
 # FakeBridge in the app (`-DSHMFakeScenario live-activity`): three todos, five seconds apart. The UI
 # test starts the task, locks the Simulator, reads the activity on the lock screen (title, host,
 # latest step, a time that ticks), unlocks, waits for the end, and reads it again as done.
 #
 #   scripts/demo/live-activity.sh            DSHKit tests (FakeActivitySystem), then the UI test
-#   scripts/demo/live-activity.sh --shots    also refresh the screenshots in evidence/S6/
+#   scripts/demo/live-activity.sh --shots    also refresh the screenshots in evidence/live-activity/
 #   scripts/demo/live-activity.sh --ui-only  only the UI test
 #   scripts/demo/live-activity.sh --keep     keep the screenshots and the lock screen dumps (prints where)
 #
@@ -39,7 +39,7 @@ scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destinatio
 grep -E 'Test Case.*(passed|failed|skipped)' "$LOGS/uitest.log"
 demo_no_skipped_ui "$LOGS/uitest.log"
 if [ $SHOTS = 1 ]; then
-  mkdir -p evidence/S6
-  for f in "$SHOTDIR"/live-activity-*.png; do sips --resampleWidth 402 "$f" --out "evidence/S6/$(basename "$f")" >/dev/null; done
+  mkdir -p ${DSHM_EVIDENCE:-evidence/live-activity}
+  for f in "$SHOTDIR"/live-activity-*.png; do sips --resampleWidth 402 "$f" --out "${DSHM_EVIDENCE:-evidence/live-activity}/$(basename "$f")" >/dev/null; done
 fi
 echo 'live activity demo passed'

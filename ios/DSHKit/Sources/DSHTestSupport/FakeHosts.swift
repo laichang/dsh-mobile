@@ -3,7 +3,7 @@ import DSHCore
 import DSHProtocol
 import Foundation
 
-/// S21 · the paired devices and audit records of a fake host (`devices.v1`), like the bridge's
+/// The paired devices and audit records of a fake host (`devices.v1`), like the bridge's
 /// `ListDevices`, `ListAudit` and `RevokeDevice` (bridge/src/server.ts). A revoke of the current
 /// device answers first, then the host closes that device's connections and refuses new ones.
 public struct FakeDevices: Sendable {
@@ -88,7 +88,7 @@ public struct FakeDevices: Sendable {
     static func ms(minutesAgo: Int) -> Int64 { Int64(Date().timeIntervalSince1970 * 1000) - Int64(minutesAgo) * 60_000 }
 }
 
-/// S21 · the hosts of screens H, X2 and X3 (`-DSHMFakeBridge hosts…`): MacBook-Pro (online, with
+/// The hosts of screens H, X2 and X3 (`-DSHMFakeBridge hosts…`): MacBook-Pro (online, with
 /// a model catalog, devices and audit records), hk-1 (its DSH is too old for the bridge) and
 /// 公司-PC (a session waits on the user there). A UI test stops and starts the reachable hosts with the Darwin
 /// notifications `hostsDown` and `hostsUp`, and revokes this phone on MacBook-Pro from another
@@ -108,7 +108,7 @@ public enum FakeHosts {
     public static let otherDevice = "dshm-77b0e4d2"
     public static let hostsDown = "chang.dsh-mobile.fake.hosts-down"
     public static let hostsUp = "chang.dsh-mobile.fake.hosts-up"
-    /// S29: another client revokes this phone on MacBook-Pro (`FakeHost.revokeThisDevice()`).
+    /// Another client revokes this phone on MacBook-Pro (`FakeHost.revokeThisDevice()`).
     public static let hostsRevoke = "chang.dsh-mobile.fake.hosts-revoke"
 
     /// MacBook-Pro's records, newest first: two fit on the first page, one more on the next.
@@ -126,7 +126,7 @@ public enum FakeHosts {
             pageSize: 2)
     }
 
-    /// D59: MacBook-Pro's model catalog (`models.v1`), so screen H shows its default model.
+    /// MacBook-Pro's model catalog (`models.v1`), so screen H shows its default model.
     public static let defaultModelName = "DeepSeek-V41-Flash"
     static var macPickers: FakeBridge.Pickers {
         .init(catalog: FakePickers.catalog(failures: []),

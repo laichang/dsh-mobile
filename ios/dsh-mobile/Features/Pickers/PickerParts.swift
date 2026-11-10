@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// S20 · the parts the workspace sheet (07) and the model sheet (M, X4) share: a grey group
+/// The parts the workspace sheet (07) and the model sheet (M, X4) share: a grey group
 /// title, a card of rows with hairlines, and a row with a check mark on the right.
 struct PickerGroupTitle: View {
     let text: String

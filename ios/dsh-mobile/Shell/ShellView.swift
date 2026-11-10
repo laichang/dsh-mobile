@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// T1 · the navigation shell (design/screens.json nav and rules): one page at a time, and the workspace
+/// The navigation shell (design/screens.json nav and rules): one page at a time, and the workspace
 /// drawer on its left. The drawer pushes the page (it doesn't cover it). A drag from the left
 /// edge moves the drawer and the page with the finger; on release, the position and the velocity
 /// decide if it opens or goes back. There is no `NavigationStack` and no back button: details
@@ -27,7 +27,7 @@ struct ShellView: View {
                         .frame(width: width)
                         .offset(x: offset - width)
                 }
-                // S23 F2: the peeking edge cross-fades to the new page (`ShellModel.fading`).
+                // F2: the peeking edge cross-fades to the new page (`ShellModel.fading`).
                 ZStack {
                     page(shell.page)
                         .id(shell.page)
@@ -51,7 +51,7 @@ struct ShellView: View {
         }
         .background(DSHTheme.canvas.ignoresSafeArea())
         .modifier(DrawerReadTracker(store: store, shell: shell))
-        .sensoryFeedback(.impact(weight: .light), trigger: shell.taps) // S23 F1
+        .sensoryFeedback(.impact(weight: .light), trigger: shell.taps) // F1
         .environment(shell)
         .environment(store)
         .sheet(item: $shell.sheet) { route in
@@ -69,7 +69,7 @@ struct ShellView: View {
             SessionPage(store: store, taskKey: nil, showFirstTask: $showFirstTask)
         case .session(let key):
             SessionPage(store: store, taskKey: key, showFirstTask: $showFirstTask,
-                        lastPosition: shell.lastPositions[key]) // S23: read once, when the page is made
+                        lastPosition: shell.lastPositions[key]) // Read once, when the page is made
                 .id(key)
         case .allTasks:
             AllTasksPage(store: store)
@@ -88,7 +88,7 @@ struct ShellView: View {
                 if dragOffset == nil {
                     let horizontal = abs(value.translation.width) > abs(value.translation.height)
                     guard horizontal, shell.drawerOpen || value.startLocation.x <= Self.edgeWidth else { return }
-                    // S24 (D67): the keyboard goes when the drag starts, not when the drawer settles.
+                    // The keyboard goes when the drag starts, not when the drawer settles.
                     Keyboard.dismiss()
                 }
                 dragOffset = min(max(base + value.translation.width, 0), width)
@@ -96,7 +96,7 @@ struct ShellView: View {
             .onEnded { value in
                 guard let current = dragOffset else { return }
                 let open = Self.settlesOpen(offset: current, velocity: value.velocity.width, width: width)
-                // S23 F3: the same spring as the slide after a tap in the drawer.
+                // F3: the same spring as the slide after a tap in the drawer.
                 withAnimation(DrawerMotion.slide) {
                     shell.drawerOpen = open
                     dragOffset = nil
@@ -149,7 +149,7 @@ struct PageBar<Trailing: View>: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            // S26: the trailing slot is always as wide as the drawer button, so the title is
+            // The trailing slot is always as wide as the drawer button, so the title is
             // centered on the screen, not in the space right of the button. `EmptyView` takes no
             // width, also in a frame; `Color.clear` does. A trailing view sits in the slot.
             Color.clear

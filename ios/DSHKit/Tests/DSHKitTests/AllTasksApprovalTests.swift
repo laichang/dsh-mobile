@@ -3,14 +3,14 @@ import DSHTestSupport
 import Foundation
 import Testing
 
-/// S15 · 所有任务: a FakeHost that starts with a task waiting on an approval (the scenario of
+/// 所有任务: a FakeHost that starts with a task waiting on an approval (the scenario of
 /// `-DSHMFakeBridge approvals`). An answer from the list resolves it, and the task runs on.
 @MainActor
 @Suite(.serialized) struct AllTasksApprovalTests {
     let storeURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("dshm-s15-\(UUID().uuidString).store")
 
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ what: String, timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
         await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)

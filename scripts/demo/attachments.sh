@@ -1,5 +1,5 @@
 #!/bin/bash
-# Attachments demo and checks (ARCHITECTURE D95, D107): attach one photo on composer 01, send a
+# Attachments demo and checks: attach one photo on composer 01, send a
 # task, and the DSH session has the image. With --all, also files: a photo, a .txt and a .pdf on 01
 # with one removed, and a file on a follow-up, and the DSH sessions have them.
 #

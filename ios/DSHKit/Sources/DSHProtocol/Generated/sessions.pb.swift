@@ -65,7 +65,7 @@ public nonisolated struct Dshm_V1_SessionMessage: Sendable {
 
   public var text: String = String()
 
-  /// A user message's images and files, from the DSH journal, in order (D107).
+  /// A user message's images and files, from the DSH journal, in order.
   public var attachments: [Dshm_V1_AttachmentRef] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()

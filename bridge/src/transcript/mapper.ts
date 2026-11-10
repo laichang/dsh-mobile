@@ -1,7 +1,7 @@
 /**
- * S17 · structured transcript (PLAN.md §5 S17, ARCHITECTURE D61): a deterministic fold over one
+ * Structured transcript: a deterministic fold over one
  * DSH session's follow stream into transcript blocks. No model, no invented text (the same rule
- * as D11): a block carries DSH's own data, and the app words each row itself.
+ * as for milestones): a block carries DSH's own data, and the app words each row itself.
  *
  * Inputs are the `sessionController.follow` frames of DSH 0.2.2-rc.1:
  *   assistant-stream chunk `reasoning-delta`  → THINKING, RUNNING, at the first one of a block
@@ -44,7 +44,7 @@ export interface BlockOut {
 export const THINKING_TEXT_LIMIT = 8000
 export const ARGUMENTS_LIMIT = 4000
 
-/** DSH's agent question tool; its call shows as the question card instead (D92). */
+/** DSH's agent question tool; its call shows as the question card instead. */
 export const QUESTION_TOOL = 'ask_user_question'
 
 /** Argument keys that name what a call acts on, in order of preference. */
@@ -132,7 +132,7 @@ export class TranscriptMapper {
   private attempt = 0
   private readonly tools = new Map<string, BlockOut>()
 
-  /** @param prefix - D89: a later turn's prefix for the IDs of its thinking blocks; tool call IDs are DSH's own. */
+  /** @param prefix - A later turn's prefix for the IDs of its thinking blocks; tool call IDs are DSH's own. */
   constructor(private readonly prefix = '') {}
 
   /** One assistant-stream frame: `start`, `chunk` (with DSH's `time`) or `end`. */

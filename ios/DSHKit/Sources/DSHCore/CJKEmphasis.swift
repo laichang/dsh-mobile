@@ -1,6 +1,6 @@
 import Foundation
 
-/// S14 · emphasis next to CJK text (ARCHITECTURE D140). CommonMark's flanking rules leave
+/// Emphasis next to CJK text. CommonMark's flanking rules leave
 /// `**星期一（Monday）**是` as text: the closing `**` follows punctuation and comes before a letter.
 /// DSH Web renders it bold (its Markdown has remark-cjk-friendly). Foundation's parser has no such
 /// option, so before parsing, the `*` and `**` pairs that only a CJK neighbour keeps apart become

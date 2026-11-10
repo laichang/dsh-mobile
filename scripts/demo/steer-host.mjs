@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// "立即发送" into a long step, against real DSH (ARCHITECTURE D101): DSH Web with the bridge plugin and
+// "立即发送" into a long step, against real DSH: DSH Web with the bridge plugin and
 // DSH's mock model, scripted so that the agent's first step is a slow tool call (`bash`, a sleep of
 // DSHM_STEER_SLEEP seconds, default 30), as a real agent that waits for its subagents. A message
 // sent now during that step goes in only when the step ends. The next step answers with

@@ -28,7 +28,7 @@ public protocol LiveActivityClient: AnyObject {
     func dismiss(key: String)
 }
 
-/// The Live Activity of each running task (screen L, ARCHITECTURE D119–D121). A local activity
+/// The Live Activity of each running task (screen L). A local activity
 /// only: the app starts and updates it while it runs and receives the host's events; no APNs.
 ///
 /// - A task that runs on a host that is online gets one activity. It shows the title, the host,

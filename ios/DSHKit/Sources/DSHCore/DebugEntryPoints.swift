@@ -1,61 +1,61 @@
 #if DEBUG
 import Foundation
 
-/// Debug-only testability entry points (ARCHITECTURE D16). Compiled out of Release;
+/// Debug-only testability entry points. Compiled out of Release;
 /// scripts/check-release-clean verifies none of these strings reach a Release binary.
 public enum DebugLaunchOptions {
     /// `-DSHMFakeBridge YES`: use the in-process FakeBridge instead of the loopback bridge.
-    /// `-DSHMFakeBridge offline` (S2): the FakeBridge host is unreachable.
-    /// `-DSHMFakeBridge drawer`, `drawer-office-offline`, `drawer-v0` (S14): two hosts with
+    /// `-DSHMFakeBridge offline`: the FakeBridge host is unreachable.
+    /// `-DSHMFakeBridge drawer`, `drawer-office-offline`, `drawer-v0`: two hosts with
     /// sessions in workspaces (`FakeDrawer`).
-    /// `-DSHMFakeBridge approvals` (S15): two hosts, each with a task that waits on an approval;
+    /// `-DSHMFakeBridge approvals`: two hosts, each with a task that waits on an approval;
     /// `approvals-office-offline`: the same, with Office Mac unreachable.
-    /// `-DSHMFakeBridge pickers` (S20): two hosts with models and workspaces (`FakePickers`).
-    /// `-DSHMFakeBridge hosts`, `hosts-one` (S21): the hosts of screens H, X2 and X3 (`FakeHosts`).
+    /// `-DSHMFakeBridge pickers`: two hosts with models and workspaces (`FakePickers`).
+    /// `-DSHMFakeBridge hosts`, `hosts-one`: the hosts of screens H, X2 and X3 (`FakeHosts`).
     public static let fakeBridgeKey = "DSHMFakeBridge"
     /// `-DSHMPresetPrompt <text>`: pre-fill the composer.
     public static let presetPromptKey = "DSHMPresetPrompt"
     /// `-DSHMBridgePort <port>`: loopback bridge port (default 47801).
     public static let bridgePortKey = "DSHMBridgePort"
-    /// `-DSHMFakeMilestones YES`: with the FakeBridge, script a three-todo task (S3).
+    /// `-DSHMFakeMilestones YES`: with the FakeBridge, script a three-todo task.
     public static let fakeMilestonesKey = "DSHMFakeMilestones"
-    /// `-DSHMResetStore YES` (S2): start with an empty task cache.
+    /// `-DSHMResetStore YES`: start with an empty task cache.
     public static let resetStoreKey = "DSHMResetStore"
-    /// `-DSHMConnectDelay <seconds>` (S2): show the cache for a while before the first connection.
+    /// `-DSHMConnectDelay <seconds>`: show the cache for a while before the first connection.
     public static let connectDelayKey = "DSHMConnectDelay"
-    /// `-DSHMResetPairing YES`: forget paired hosts and the device key at launch (S1 UI tests).
+    /// `-DSHMResetPairing YES`: forget paired hosts and the device key at launch (pairing UI tests).
     public static let resetPairingKey = "DSHMResetPairing"
-    /// `-DSHMFakeHold <text>` (T1): with the FakeBridge, a task whose prompt contains `<text>`
+    /// `-DSHMFakeHold <text>`: with the FakeBridge, a task whose prompt contains `<text>`
     /// stays running until the app quits, so a UI test can act on a running task.
     public static let fakeHoldKey = "DSHMFakeHold"
-    /// `-DSHMFakeScenario coding` (S16): with the FakeBridge, a five-step coding task with a long
+    /// `-DSHMFakeScenario coding`: with the FakeBridge, a five-step coding task with a long
     /// Markdown reply that keeps running until the user stops it (`FakeBridge.Script.codingTask`).
-    /// `-DSHMFakeScenario outcomes` (S19): a task that asks for one approval and ends done with a
+    /// `-DSHMFakeScenario outcomes`: a task that asks for one approval and ends done with a
     /// long final answer, one that fails on its third step, and one that runs until it is stopped
     /// (`FakeBridge.Script.outcomes`). The Web's answer is `FakeApprovalSheet`'s notification.
-    /// `-DSHMFakeScenario transcript` (S17): a task with thinking and tool-call blocks
+    /// `-DSHMFakeScenario transcript`: a task with thinking and tool-call blocks
     /// (`FakeTranscript`); `transcript-v0`: the same blocks from a host without `transcript.v1`.
-    /// `-DSHMFakeScenario turns` (S27): a done Web session with two turns hours apart (`FakeTurns`).
-    /// `-DSHMFakeScenario conversation` (D117): the default task, on a host that takes follow-ups
+    /// `-DSHMFakeScenario turns`: a done Web session with two turns hours apart (`FakeTurns`).
+    /// `-DSHMFakeScenario conversation`: the default task, on a host that takes follow-ups
     /// (`conversation.v1`), so the session page has its composer.
-    /// `-DSHMFakeScenario attachments` (D67): with `-DSHMFakeBridge multi`, both hosts take
+    /// `-DSHMFakeScenario attachments`: with `-DSHMFakeBridge multi`, both hosts take
     /// attachments (`attachments.v1`), so the composer has its host menu and its "+" menu.
     public static let fakeScenarioKey = "DSHMFakeScenario"
-    /// `-DSHMFakeAsk <text>` (S18): with the FakeBridge approvals scenario, a task whose prompt
+    /// `-DSHMFakeAsk <text>`: with the FakeBridge approvals scenario, a task whose prompt
     /// contains `<text>` asks for an approval before its reply, so a new approval arrives in an
     /// open session.
     public static let fakeAskKey = "DSHMFakeAsk"
-    /// `-DSHMFakeSpeech <phrase>` (D116): the mic key uses `FakeTranscriber`, which "hears"
+    /// `-DSHMFakeSpeech <phrase>`: the mic key uses `FakeTranscriber`, which "hears"
     /// `<phrase>`; `-DSHMFakeSpeech denied`: the user turned speech recognition off.
     public static let fakeSpeechKey = "DSHMFakeSpeech"
-    /// `-DSHMUIKitAnimations NO` (D128): UI tests turn off UIKit's view animations
+    /// `-DSHMUIKitAnimations NO`: UI tests turn off UIKit's view animations
     /// (`UIView.setAnimationsEnabled(false)`), so XCUITest never waits for one to end.
     public static let uikitAnimationsKey = "DSHMUIKitAnimations"
-    /// `-DSHMLiveActivityProbe YES` (D119): the app shows what ActivityKit has (`liveactivity.probe`).
+    /// `-DSHMLiveActivityProbe YES`: the app shows what ActivityKit has (`liveactivity.probe`).
     public static let liveActivityProbeKey = "DSHMLiveActivityProbe"
 
-    /// D129: whether the app starts Live Activities. A launch with any `-DSHM…` argument is a test
-    /// launch (D16); it starts them only when it asks with `-DSHMLiveActivityProbe YES`. A Live
+    /// Whether the app starts Live Activities. A launch with any `-DSHM…` argument is a test
+    /// launch; it starts them only when it asks with `-DSHMLiveActivityProbe YES`. A Live
     /// Activity left by one test run made liveactivitiesd open the app after the next install, and
     /// XCUITest then drove that process, which had none of the test's launch arguments.
     public static func liveActivitiesOn(_ arguments: [String]) -> Bool {
@@ -76,17 +76,17 @@ public enum DebugLaunchOptions {
         public var resetPairing = false
         public var fakeHold: String?
         public var fakeScenario: String?
-        /// S14: the `FakeDrawer` variant (`drawer`, `drawer-office-offline`, `drawer-v0`).
+        /// The `FakeDrawer` variant (`drawer`, `drawer-office-offline`, `drawer-v0`).
         public var fakeDrawer: String?
         public var fakeApprovals = false
-        /// S20: the `FakePickers` hosts.
+        /// The `FakePickers` hosts.
         public var fakePickers = false
         public var fakeAsk: String?
-        /// S21: the `FakeHosts` variant (`hosts`, `hosts-one`).
+        /// The `FakeHosts` variant (`hosts`, `hosts-one`).
         public var fakeHosts: String?
-        /// D116: the phrase of `FakeTranscriber`, or `denied`.
+        /// The phrase of `FakeTranscriber`, or `denied`.
         public var fakeSpeech: String?
-        /// D128: false turns off UIKit's view animations.
+        /// False turns off UIKit's view animations.
         public var uikitAnimations = true
 
         public init(
@@ -147,7 +147,7 @@ public enum DebugLaunchOptions {
 }
 
 /// Routes for the reserved `dshm://` scheme, which only Debug builds register. `dshm://pair?…`
-/// carries a `PairingOffer` (S1); Release builds get the same offer from the QR scanner.
+/// carries a `PairingOffer`; Release builds get the same offer from the QR scanner.
 public enum DebugDeepLink: Equatable, Sendable {
     case pair(parameters: [String: String])
 

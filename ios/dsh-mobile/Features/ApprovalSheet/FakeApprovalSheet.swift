@@ -3,7 +3,7 @@ import CoreFoundation
 import DSHTestSupport
 import Synchronization
 
-/// S18 · the FakeBridge parts of the approval sheet scenario. Debug only.
+/// The FakeBridge parts of the approval sheet scenario. Debug only.
 ///
 /// - `-DSHMFakeAsk <text>` with `-DSHMFakeBridge approvals`: a task whose prompt contains `<text>`
 ///   asks for `asked` before its reply, so a new approval arrives in an open session.

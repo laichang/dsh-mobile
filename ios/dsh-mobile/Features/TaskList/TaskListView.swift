@@ -8,7 +8,7 @@ import SwiftUI
 /// and the tool arguments (STORY §5); a card of a host that is not connected has grey buttons and
 /// says why. An agent question is its card, which answers there too (P1). A tap on a task opens
 /// its session page. Short answers show in the row (the
-/// 280-character rule, ARCHITECTURE D51). S15 · design screen 03, ARCHITECTURE D55.
+/// 280-character rule). Design screen 03.
 struct AllTasksPage: View {
     let store: TaskListStore
 
@@ -81,7 +81,7 @@ struct TaskListView: View {
                             .padding(.bottom, 8)
                     }
                 } else if row.state == .waitingOnUser, let question = row.blocks.pendingQuestion {
-                    // P1: an agent question needs a decision like an approval (D113).
+                    // P1: an agent question needs a decision like an approval.
                     AllTasksQuestionCard(row: row, question: question, store: store)
                         .padding(.bottom, 8)
                 } else if !row.approvalOnly {
@@ -187,7 +187,7 @@ struct HostStatusRow: View {
     }
 }
 
-/// Which channel the host is reached over (S1): end-to-end encrypted (Noise), or plaintext on
+/// Which channel the host is reached over: end-to-end encrypted (Noise), or plaintext on
 /// Debug's loopback dev path. `host.channel` value = the channel name.
 struct HostChannelRow: View {
     let host: TaskListStore.HostStatus
@@ -209,7 +209,7 @@ struct HostChannelRow: View {
 }
 
 /// A task in 所有任务 (`.run` on the board): state, title, one status line, and the progress on
-/// the right. A short completed answer shows under the title (D51).
+/// the right. A short completed answer shows under the title.
 struct TaskRowView: View {
     let row: TaskListStore.TaskRow
 

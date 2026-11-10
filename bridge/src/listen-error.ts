@@ -1,6 +1,6 @@
 /**
  * Why the bridge could not open its listener, as one line for DSH's log and the terminal
- * (ARCHITECTURE D125). A bridge that cannot listen cannot tell the phone anything, so this line
+ *. A bridge that cannot listen cannot tell the phone anything, so this line
  * is the only place the host says why: it names the address, the cause and the fix. DSH keeps
  * running without the bridge's listener.
  */

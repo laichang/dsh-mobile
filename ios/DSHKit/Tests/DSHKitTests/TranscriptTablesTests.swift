@@ -3,7 +3,7 @@ import DSHTestSupport
 import Foundation
 import Testing
 
-/// S28 · GFM pipe tables in `TranscriptBlocks` (D79).
+/// GFM pipe tables in `TranscriptBlocks`.
 @Suite struct TranscriptTablesTests {
     private func md(_ text: String) -> AttributedString { TranscriptBlocks.markdown(text) }
 
@@ -118,9 +118,9 @@ import Testing
     }
 }
 
-/// S28 · the FakeBridge reply behind S28MarkdownTablesUITests' wide table.
+/// The FakeBridge reply behind MarkdownTablesUITests' wide table.
 @MainActor
-@Suite(.serialized) struct S28TablesReplyTests {
+@Suite(.serialized) struct TablesReplyTests {
     @Test func tablesPromptRepliesWithAWideTable() async throws {
         var script = FakeBridge.Script.codingTask(delay: .milliseconds(10))
         script.chunkDelay = .milliseconds(1)

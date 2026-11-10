@@ -1,14 +1,14 @@
 import { AttachmentKind } from '../gen/attachments_pb.ts'
-import { TaskState } from '../gen/s2_pb.ts'
+import { TaskState } from '../gen/durable_list_pb.ts'
 import { failureOf, isUserInterrupt } from '../milestones/mapper.ts'
-import type { TaskHub } from '../s2/task-hub.ts'
+import type { TaskHub } from '../tasks/task-hub.ts'
 
 interface Row {
   sessionId: string
   blank: boolean
   running: boolean
   updatedAt: number
-  /** S14: the session's directory on the host. */
+  /** The session's directory on the host. */
   cwd?: string
   projections?: { kind?: 'sequenced' | 'cached'; asOfSeq?: number; values: { title?: string | null } }
 }
@@ -26,7 +26,7 @@ export interface SessionReader {
 
 type Block = { type: string; text?: string; attachment?: { name?: string; bytes?: number; mediaType?: string } }
 
-/** D107: a user message's image and file blocks, as chips. The journal has no media type for a file. */
+/** A user message's image and file blocks, as chips. The journal has no media type for a file. */
 function attachments(content: readonly Block[] | undefined) {
   return (content ?? []).flatMap(b => b.type === 'image' || b.type === 'file' ? [{
     kind: b.type === 'image' ? AttachmentKind.IMAGE : AttachmentKind.FILE,
@@ -103,7 +103,7 @@ export class SessionDirectory {
           const hostTitle = rename?.title || row.projections?.values.title || undefined
           const title = page.hasMore ? row.projections?.values.title ?? prompt : prompt ?? row.projections?.values.title
           const at = page.records.at(-1)?.event.time ?? row.updatedAt
-          // S27: the latest turn's start, so that the phone's 用时 leaves out the idle time between turns.
+          // The latest turn's start, so that the phone's 用时 leaves out the idle time between turns.
           const turnStart = page.records.findLast(({event}) => event.type === 'turn/start')?.event.time ??
             page.records.findLast(({event}) => message(event)?.fromUser)?.event.time
           this.hub.observeSession(row.sessionId, BigInt(page.cursor), title ?? row.sessionId,

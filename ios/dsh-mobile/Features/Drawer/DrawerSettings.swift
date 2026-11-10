@@ -2,7 +2,7 @@ import DSHCore
 import DSHProtocol
 import SwiftUI
 
-/// S14 · the settings button at the bottom of the drawer, beside pairing (screen 02).
+/// The settings button at the bottom of the drawer, beside pairing (screen 02).
 struct DrawerSettingsButton: View {
     @Environment(ShellModel.self) private var shell
 
@@ -15,8 +15,8 @@ struct DrawerSettingsButton: View {
     }
 }
 
-/// S14 · settings: the paired hosts as this phone sees them, and the app version. Device
-/// management and audit stay in each host (H, S10); S21 adds the hosts sheet.
+/// Settings: the paired hosts as this phone sees them, and the app version. Device
+/// management and audit stay in each host (H), as in the hosts sheet.
 struct DrawerSettingsSheet: View {
     let store: TaskListStore
 

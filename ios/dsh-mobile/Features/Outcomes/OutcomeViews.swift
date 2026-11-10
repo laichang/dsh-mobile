@@ -3,12 +3,12 @@ import DSHProtocol
 import SwiftUI
 import UIKit
 
-/// S19 · done and failed on the session page (screens 06 and X1, STORY §4, ARCHITECTURE D60).
+/// Done and failed on the session page (screens 06 and X1, STORY §4).
 /// When a task has ended, the page shows:
 /// - the process as one row, "已工作 · N 步 · M 次审批 ›", which opens all the steps in a sheet;
 /// - when the session was finished and not read on this phone, the page opens at the start of the
-///   final answer (`OutcomeAnchor`), with no marker there (S27, D76);
-/// - done: a footer with the time the latest turn took (D76); failed or stopped: a card with the raw failure
+///   final answer (`OutcomeAnchor`), with no marker there;
+/// - done: a footer with the time the latest turn took; failed or stopped: a card with the raw failure
 ///   message, "复制错误" and "新会话里再试" (the original prompt in a new session, 01).
 /// The milestone bar turns red and says the step (`TaskOutcome.barAlert`).
 ///
@@ -51,7 +51,7 @@ extension TaskOutcome {
 }
 
 /// What comes before the final answer of a finished task: the process row. When the page opens
-/// at the answer, the row is the scroll target; S27 (D76) removed the marker under it.
+/// at the answer, the row is the scroll target, with no marker under it.
 struct OutcomeLead: View {
     let row: TaskListStore.TaskRow
     let outcome: TaskOutcome?
@@ -122,7 +122,7 @@ struct OutcomeEnd: View {
     }
 }
 
-/// "用时 5 分 24 秒 · <model>", under a hairline. S27 (D76): the latest turn's time, from its
+/// "用时 5 分 24 秒 · <model>", under a hairline. The latest turn's time, from its
 /// start (`TaskRow.lastTurnStart`) to the task's last update, so that the idle time between the
 /// turns of a Web session does not count.
 private struct OutcomeFooter: View {
@@ -171,7 +171,7 @@ private struct OutcomeCard: View {
             .accessibilityLabel(failed ? Text("Task failed", tableName: "Outcomes") : Text("Task stopped", tableName: "Outcomes"))
             .accessibilityIdentifier("outcome.title")
             if failed {
-                // D104: the app's own words for some model failures, DSH's text for the others.
+                // The app's own words for some model failures, DSH's text for the others.
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(verbatim: outcome.shownError)
                         .font(DSHTheme.mono(.footnote))
@@ -185,7 +185,7 @@ private struct OutcomeCard: View {
                 .padding(.vertical, 10)
                 .background(DSHTheme.errorFill, in: .rect(cornerRadius: 10))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(DSHTheme.hairline))
-                FailureContinueHint(store: store, row: row) // D110
+                FailureContinueHint(store: store, row: row)
             } else {
                 Group {
                     if let step = outcome.stoppedAtStep {

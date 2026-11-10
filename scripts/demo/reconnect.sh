@@ -1,6 +1,5 @@
 #!/bin/bash
-# Reconnect to every saved address of a host, on real DSH and an iOS Simulator (screen H,
-# ARCHITECTURE D21 e, D98).
+# Reconnect to every saved address of a host, on real DSH and an iOS Simulator (screen H).
 #
 # The host has two addresses. The first (DSHM_SECOND_BRIDGE_PORT) is a proxy that forwards one
 # connection and then dies (scripts/demo/reconnect-proxy.mjs); the second (DSHM_BRIDGE_PORT) is
@@ -10,7 +9,7 @@
 # offline with the error of each address.
 #
 #   scripts/demo/reconnect.sh           DSHKit tests, then the UI tests on real DSH (Noise)
-#   scripts/demo/reconnect.sh --shots   also refresh the screenshots in evidence/S7/ (1/3 size)
+#   scripts/demo/reconnect.sh --shots   also refresh the screenshots in evidence/reconnect/ (1/3 size)
 #   DSHM_RESUME=1                      skip the parts that passed for the same code (lib.sh demo_part)
 #
 # Resources (scripts/slice-env): DSHM_BRIDGE_PORT, DSHM_SECOND_BRIDGE_PORT, DSHM_WEB_PORT,
@@ -99,11 +98,11 @@ stop "$PROXY_PID"; PROXY_PID=""
 TEST_RUNNER_DSHM_RECONNECT_ALL_DEAD=1 ui_part reconnect-all-dead ReconnectUITests/testAllAddressesDeadShowEachError
 
 if [ $SHOTS = 1 ]; then
-  step "screenshots → evidence/S7 (1/3 size)"
-  mkdir -p evidence/S7
+  step "screenshots → ${DSHM_EVIDENCE:-evidence/reconnect} (1/3 size)"
+  mkdir -p ${DSHM_EVIDENCE:-evidence/reconnect}
   for f in "$SHOT_DIR"/reconnect-*.png; do
     [ -e "$f" ] || { echo "no new shots (the UI parts were skipped)"; break; }
-    out="evidence/S7/$(basename "$f")"
+    out="${DSHM_EVIDENCE:-evidence/reconnect}/$(basename "$f")"
     sips --resampleWidth 402 "$f" --out "$out" >/dev/null
     echo "$out $(du -h "$out" | cut -f1)"
   done

@@ -1,10 +1,10 @@
 import DSHCore
 import SwiftUI
 
-/// S17 · the streamed transcript with its collapsed rows (screen 04, ARCHITECTURE D61): the text
-/// as S16 shows it, cut where each thinking or tool-call row sits. A row is one line; a tap opens
+/// The streamed transcript with its collapsed rows (screen 04): the text
+/// as the plain transcript shows it, cut where each thinking or tool-call row sits. A row is one line; a tap opens
 /// its details in a sheet. With no rows (a bridge without `transcript.v1`, or a task with no
-/// thinking and no tools) this is S16's `TranscriptView`, unchanged.
+/// thinking and no tools) this is the plain `TranscriptView`, unchanged.
 struct StructuredTranscriptView: View {
     let row: TaskListStore.TaskRow
     let text: String
@@ -22,9 +22,9 @@ struct StructuredTranscriptView: View {
                     case .text(let piece):
                         TranscriptView(source: piece)
                     case .user(let item):
-                        // D89: a follow-up, under the answer before it; D107: with its files.
+                        // A follow-up, under the answer before it, with its files.
                         if case .userMessage(let text) = item.kind {
-                            // D143: a message sent now is RUNNING until DSH gives it to the agent.
+                            // A message sent now is RUNNING until DSH gives it to the agent.
                             UserBubble(text: text, attachments: item.attachments ?? [], pending: item.state == .running)
                         }
                     case .thinking(let item):
@@ -133,7 +133,7 @@ struct TranscriptBlockRow: View {
                 .padding(.vertical, 6)
                 .contentShape(Rectangle())
             case .userMessage(let text):
-                UserBubble(text: text, pending: item.state == .running) // D89: groups() draws it as a bubble, not as a row
+                UserBubble(text: text, pending: item.state == .running) // Groups() draws it as a bubble, not as a row
             }
         }
         .buttonStyle(.plain)

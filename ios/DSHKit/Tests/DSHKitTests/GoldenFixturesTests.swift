@@ -3,7 +3,7 @@ import Foundation
 import SwiftProtobuf
 import Testing
 
-/// The Swift half of PLAN §1 "Cross-language truth": the TS half is bridge/test/fixtures.test.ts.
+/// The Swift half of the cross-language golden fixtures: the TS half is bridge/test/fixtures.test.ts.
 @Suite struct GoldenFixtures {
     static let fixturesDir = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent()  // DSHKitTests
@@ -43,7 +43,7 @@ import Testing
     }
 
     @Test func helloFixtureMatchesProtocolInfo() throws {
-        let bytes = try Data(contentsOf: Self.fixturesDir.appending(path: "t0_hello_response.binpb"))
+        let bytes = try Data(contentsOf: Self.fixturesDir.appending(path: "core_hello_response.binpb"))
         let frame = try Dshm_V1_Frame(serializedBytes: bytes)
         #expect(frame.response.hello.protocolVersion == DSHProtocolInfo.version)
         #expect(frame.response.hello.capabilities == [DSHProtocolInfo.tasksCapability])

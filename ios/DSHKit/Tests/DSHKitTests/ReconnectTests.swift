@@ -5,7 +5,7 @@ import SwiftData
 import Synchronization
 import Testing
 
-/// A reconnect tries every saved address of a host (ARCHITECTURE D98, amends D21 e). The Mac is
+/// A reconnect tries every saved address of a host. The Mac is
 /// a `FakeNoiseHost` in front of a `FakeHost`; its two addresses are two routes to it (a LAN
 /// address and a Tailscale one), and a route can die (refused) or go silent (no answer).
 @MainActor
@@ -52,7 +52,7 @@ import Testing
         func close() async { closed.continuation.finish() }
     }
 
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ what: String = "", timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
         await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)
@@ -136,7 +136,7 @@ import Testing
         #expect(store.hosts.first?.addressFailures == [])
     }
 
-    /// A host that revoked this phone (close 4003, D82) says so at any address: the search ends
+    /// A host that revoked this phone (close 4003) says so at any address: the search ends
     /// there, and the other address is not tried.
     @Test func revokedAtTheFirstAddressDoesNotTryTheNext() async throws {
         let routes = Routes()

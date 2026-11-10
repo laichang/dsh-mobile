@@ -5,13 +5,13 @@ import Foundation
 import SwiftProtobuf
 import Testing
 
-/// S14 · the drawer's host › workspace › session tree, its marks, and the local read state.
+/// The drawer's host › workspace › session tree, its marks, and the local read state.
 @MainActor
 @Suite(.serialized) struct DrawerTreeTests {
     let storeURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("dshm-s14-\(UUID().uuidString).store")
 
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ what: String, timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
         await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)
@@ -34,10 +34,10 @@ import Testing
         return frame.event.taskUpserted.task
     }
 
-    /// The Swift half of the S14 golden fixtures: the same frames bridge/test/drawer.test.ts sends.
+    /// The Swift half of the drawer golden fixtures: the same frames bridge/test/drawer.test.ts sends.
     @Test func goldenWebAndPhoneSessionsDecodeTheirWorkspace() async throws {
-        let phone = try Self.fixture("s14_phone_session_upserted_event")
-        let web = try Self.fixture("s14_web_session_upserted_event")
+        let phone = try Self.fixture("drawer_phone_session_upserted_event")
+        let web = try Self.fixture("drawer_web_session_upserted_event")
         #expect(phone.workspace == "/work/app" && phone.hasWorkspace)
         #expect(web.workspace == "/work/app" && web.externalSession)
         // Through a host, into the cache, into one workspace of the drawer.

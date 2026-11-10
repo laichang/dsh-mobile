@@ -200,7 +200,7 @@ struct Transcript: Decodable, Sendable, CustomTestStringConvertible {
         let file = try JSONDecoder().decode(File.self, from: Data(contentsOf: noiseFixtures.appending(path: "transcripts.json")))
         let pair = try #require(Transcript.load().first { $0.name == "pair" })
         let offer = try PairingOffer(string: file.offerURL)
-        #expect(offer.hostName == "Mac mini (S1)")
+        #expect(offer.hostName == "Mac mini (S1)") // check-ids: keep (golden transcripts)
         #expect(offer.addresses.map(\.description) == ["192.168.1.5:47801", "[fd7a:115c:a1e0::1]:47801", "100.64.0.7:47801"])
         #expect(offer.hostKey == (try NoiseKeyPair(privateKey: b(pair.hostStatic))).publicKey)
         #expect(offer.offerID == b(pair.offerId!))
@@ -213,8 +213,8 @@ struct Transcript: Decodable, Sendable, CustomTestStringConvertible {
         #expect(throws: PairingOffer.ParseError.badField("s")) { try PairingOffer(string: Self.link(s: [1, 2, 3])) }
         #expect(throws: PairingOffer.ParseError.badField("a")) { try PairingOffer(string: Self.link(a: "nope")) }
         #expect(throws: PairingOffer.ParseError.notAPairingLink) { try PairingOffer(string: "https://example.com/pair?v=1") }
-        // T0's stub link is not an offer.
-        #expect(throws: PairingOffer.ParseError.self) { try PairingOffer(string: "dshm://pair?host=127.0.0.1&port=47801&secret=t0-stub") }
+        // The old stub link is not an offer.
+        #expect(throws: PairingOffer.ParseError.self) { try PairingOffer(string: "dshm://pair?host=127.0.0.1&port=47801&secret=round-trip-stub") }
     }
 
     @Test func parsesAddresses() {
@@ -237,7 +237,7 @@ final class Clock: @unchecked Sendable {
 
 @MainActor
 @Suite struct PairingTests {
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ condition: () -> Bool, timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation) async throws {
         await waitForStore("", timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)
@@ -252,8 +252,8 @@ final class Clock: @unchecked Sendable {
         return Pairing(keys: keys, hosts: hosts, transport: factory, now: { clock.now })
     }
 
-    /// PLAN S1 in miniature: pair with IKpsk1, then a new connection reconnects with IK and runs
-    /// the T0 task over Noise.
+    /// Pairing in miniature: pair with IKpsk1, then a new connection reconnects with IK and runs
+    /// the round-trip task over Noise.
     @Test func pairsThenRunsTaskOverNoise() async throws {
         let host = FakeNoiseHost(now: { [clock] in clock.now })
         let offer = await host.makeOffer()
@@ -331,7 +331,7 @@ final class Clock: @unchecked Sendable {
         #expect(paired.addresses.first == HostEndpoint(host: "192.0.2.2", port: 2))
     }
 
-    /// S31: the failure names why each address failed; the bare "couldn't reach" hid an ATS refusal.
+    /// The failure names why each address failed; the bare "couldn't reach" hid an ATS refusal.
     @Test func unreachableNamesTheReasonForEachAddress() async throws {
         let host = FakeNoiseHost(now: { [clock] in clock.now })
         let offer = await host.makeOffer(addresses: [HostEndpoint(host: "100.79.171.34", port: 47801), HostEndpoint(host: "192.0.2.2", port: 2)])

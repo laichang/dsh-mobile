@@ -3,14 +3,14 @@ import DSHTestSupport
 import Foundation
 import Testing
 
-/// S19 · done and failed against the FakeBridge outcomes scenario (`-DSHMFakeScenario outcomes`):
+/// Done and failed against the FakeBridge outcomes scenario (`-DSHMFakeScenario outcomes`):
 /// what `TaskOutcome` reads from the store when a task is done, failed or stopped.
 @MainActor
 @Suite(.serialized) struct OutcomeFakeTests {
     let storeURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("dshm-s19-\(UUID().uuidString).store")
 
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ what: String, timeout: Duration = .seconds(10), sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
         await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)

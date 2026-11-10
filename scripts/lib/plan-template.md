@@ -24,7 +24,7 @@ This file exists only while this requirement is in progress. It serves this requ
   | Pointer | Resolves when |
   |---|---|
   | `test:<Name>` | the name appears in Swift/TS test sources (`Suite/name` = both parts in one file) |
-  | `cmd:<path> [args]` | the repo-relative path exists and is executable, e.g. `cmd:scripts/demo/t0.sh` |
+  | `cmd:<path> [args]` | the repo-relative path exists and is executable, e.g. `cmd:scripts/demo/round-trip.sh` |
   | `commit:<hash>` | `git cat-file -e <hash>^{commit}` succeeds |
   | `shot:<path>` | the file exists under `evidence/<slice ID>/` |
   | `human:<YYYY-MM-DD> <device or note>` | `[human]` items only, e.g. `human:2026-11-20 iPhone 16, PR link …` |

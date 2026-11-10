@@ -13,7 +13,7 @@ export function deviceList(store: PairingStore, currentDeviceId: string) {
 
 export function auditPage(store: PairingStore, beforeId: string) {
   const records: Record[] = store.pairingHistory().map(row => ({ ...row, atMs: BigInt(row.atMs) }))
-  // S4 already persists the authenticated answerer and the exact tool arguments before a tool can run.
+  // The approvals service already persists the authenticated answerer and the exact tool arguments before a tool can run.
   const file = join(store.dir, 'approvals.jsonl')
   if (existsSync(file)) {
     for (const line of readFileSync(file, 'utf8').split('\n')) {

@@ -1,5 +1,5 @@
 /**
- * Terminal-first pairing UI (PLAN S1 "Cuts"): pick the addresses a phone can reach, make an
+ * Terminal-first pairing UI: pick the addresses a phone can reach, make an
  * offer, and print it as a QR code plus the `dshm://pair?…` link.
  */
 import { hostname, networkInterfaces } from 'node:os'

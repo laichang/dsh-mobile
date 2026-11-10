@@ -5,8 +5,8 @@ import { join } from 'node:path'
 import { test, type TestContext } from 'node:test'
 import { ApprovalHolder, type ApprovalRequest, type Pending, type Resolved } from '../src/approvals/holder.ts'
 import { ApprovalOutcome } from '../src/gen/approvals_pb.ts'
-import { HostLog } from '../src/s2/host-log.ts'
-import { TaskHub } from '../src/s2/task-hub.ts'
+import { HostLog } from '../src/tasks/host-log.ts'
+import { TaskHub } from '../src/tasks/task-hub.ts'
 
 const args = '{"command":"rm /tmp/x"}'
 const req: ApprovalRequest = { toolName: 'bash', callId: 'c', reason: 'Confirm delete', agent: { session: {

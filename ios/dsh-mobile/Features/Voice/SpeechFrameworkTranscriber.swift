@@ -2,7 +2,7 @@
 import DSHCore
 import Speech
 
-/// On-device speech to text with iOS 26's `SpeechAnalyzer` (ARCHITECTURE D116): the microphone
+/// On-device speech to text with iOS 26's `SpeechAnalyzer`: the microphone
 /// goes through `AVAudioEngine` into the analyzer, in the language of the phone. It uses
 /// `SpeechTranscriber` where the device has it, else `DictationTranscriber` (the keyboard's
 /// dictation model, on more devices). Nothing leaves the phone; the first use of a language can
@@ -30,7 +30,7 @@ final class SpeechFrameworkTranscriber: Transcriber {
 
     func permission() async -> DictationPermission {
         // The Speech framework answers on a queue of its own: a handler written here would be on
-        // the main actor, and Swift 6 stops the app when it runs there (D146).
+        // the main actor, and Swift 6 stops the app when it runs there.
         let speech = await SystemCallback.value { SFSpeechRecognizer.requestAuthorization($0) }
         switch speech {
         case .authorized: break
@@ -106,7 +106,7 @@ final class SpeechFrameworkTranscriber: Transcriber {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
-    /// Finalized words add up; the volatile words after them change until they are final (D117).
+    /// Finalized words add up; the volatile words after them change until they are final.
     private nonisolated static func forward<Results: AsyncSequence & Sendable>(
         _ results: Results, to out: AsyncThrowingStream<DictationResult, any Error>.Continuation,
         _ read: @escaping @Sendable (Results.Element) -> (String, Bool)

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Local acceptance host for T0: real DSH 0.2.2-rc.1 + the dsh-mobile bridge, driven by DSH's
- * mock LLM server (no API key; see PLAN.md T0 Log). Runs in the foreground until Ctrl-C.
+ * Local acceptance host: real DSH 0.2.2-rc.1 + the dsh-mobile bridge, driven by DSH's
+ * mock LLM server (no API key). Runs in the foreground until Ctrl-C.
  *
  *   node scripts/dsh-up.mjs            # DSH web on 127.0.0.1:3281, bridge on 127.0.0.1:47801
  *
@@ -11,7 +11,7 @@
  *
  * Bridge (read by bridge/src/index.ts resolveConfig): DSHM_BRIDGE_PORT (47801), DSHM_BRIDGE_HOST
  * and DSHM_BRIDGE_DEV_PLAINTEXT. This development host defaults to 127.0.0.1 with the dev-only
- * plaintext path on (T0's demo uses it) next to Noise. For a real iPhone (S1), run with
+ * plaintext path on (the round-trip demo uses it) next to Noise. For a real iPhone, run with
  * DSHM_BRIDGE_HOST=0.0.0.0 DSHM_BRIDGE_DEV_PLAINTEXT=0 and pair with `node bridge/lib/scripts/pair.js`.
  */
 import { spawn, spawnSync } from 'node:child_process'

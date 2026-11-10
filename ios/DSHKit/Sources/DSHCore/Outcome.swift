@@ -1,8 +1,8 @@
 import Foundation
 
-/// S19 · what the session page says about a task that has ended (screens 06 and X1, ARCHITECTURE
-/// D60). Built only from data the host sent: the state, the failure message, the milestone
-/// timeline and the answered approvals. Nothing is summarized (D11).
+/// What the session page says about a task that has ended (screens 06 and X1).
+/// Built only from data the host sent: the state, the failure message, the milestone
+/// timeline and the answered approvals. Nothing is summarized.
 public struct TaskOutcome: Equatable, Sendable {
     public enum Kind: String, Sendable {
         case done, failed, interrupted
@@ -18,10 +18,10 @@ public struct TaskOutcome: Equatable, Sendable {
     public var stoppedAtStep: Int?
     /// The failure message, as the host gave it; empty when there is none.
     public var error: String
-    /// D104: DSH's failure class when the task failed on its model (`QUOTA`, `AUTH`, …); empty otherwise.
+    /// DSH's failure class when the task failed on its model (`QUOTA`, `AUTH`, …); empty otherwise.
     public var code: String
 
-    /// D104: the failures whose provider text the app does not show; it says them in its own
+    /// The failures whose provider text the app does not show; it says them in its own
     /// words, as DSH Web does. Every other failure shows `error` as it is.
     public enum OwnCopy: Sendable, Equatable {
         /// `AUTH`: the API key is not valid (DeepSeek's text names the masked key).

@@ -1,5 +1,5 @@
 /**
- * Both ends of the bridge's Noise handshake (ARCHITECTURE D6, D21).
+ * Both ends of the bridge's Noise handshake.
  * - `NoiseResponder` is the bridge side: pairing (`IKpsk1`, psk = the offer's one-time secret)
  *   and reconnect (`IK`, the phone's static key must be in the device registry).
  * - `NoiseInitiator` is the phone side in TypeScript, for tests and `scripts/client.ts`. The app's

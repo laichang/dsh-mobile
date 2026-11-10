@@ -4,13 +4,13 @@ import Foundation
 import SwiftData
 import Testing
 
-/// S2 · durable list + resume against `FakeHost` (PLAN.md §5).
+/// Durable list + resume against `FakeHost`.
 @MainActor
 @Suite(.serialized) struct TaskListStoreTests {
     let storeURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("dshm-s2-\(UUID().uuidString).store")
 
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ what: String = "", timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
         await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)
@@ -34,7 +34,7 @@ import Testing
             hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: prompt)
         store.backoff = (.milliseconds(20), .milliseconds(100))
         // send() returns as soon as the host is online; under load the first connect can take
-        // longer than 500 ms, and then send() gave nil (S20 review, 2026-11-07).
+        // longer than 500 ms, and then send() gave nil.
         store.sendWaitsFor = .seconds(5)
         return store
     }
@@ -238,7 +238,7 @@ import Testing
         host.setReachable(false)
         try await waitUntil("offline") { store.hosts.first?.reachability == .offline }
         #expect(store.offlineHosts.map(\.name) == ["FakeBridge Mac"])
-        // S21 seam: with no host online the send key is off (X3); 01 names the host on its card.
+        // With no host online the send key is off (X3); 01 names the host on its card.
         store.prompt = "Will not go out"
         #expect(store.allHostsOffline)
         #expect(!store.canSend)

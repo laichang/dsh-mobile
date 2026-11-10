@@ -4,7 +4,7 @@ import DSHTestSupport
 import Foundation
 import Testing
 
-/// Attachments (ARCHITECTURE D95): the Swift half of the golden upload. The TS half is
+/// Attachments: the Swift half of the golden upload. The TS half is
 /// bridge/test/attachments.test.ts; both read protocol/fixtures/attachments/.
 @MainActor
 @Suite(.serialized) struct AttachmentsTests {
@@ -22,10 +22,10 @@ import Testing
 
     static func hex(_ data: Data) -> String { data.map { String(format: "%02x", $0) }.joined() }
 
-    /// Noise caps one transport message at 65535 bytes, 16 of them the tag (D21).
+    /// Noise caps one transport message at 65535 bytes, 16 of them the tag.
     static let noiseMaxPlaintext = 65535 - 16
 
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ what: String, timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
         await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)
@@ -140,7 +140,7 @@ import Testing
         await bridge.close()
     }
 
-    // MARK: - D107: files of any type, more than one, in follow-ups
+    // MARK: - Files of any type, more than one, in follow-ups
 
     static let notes = FileAttachment(data: Data("Buy milk.\n买牛奶。\n".utf8), mediaType: "text/plain", name: "notes.txt")
     static let report = FileAttachment(data: Data(("%PDF-1.4\n" + String(repeating: "x", count: Attachments.partSize + 10) + "\n%%EOF\n").utf8),

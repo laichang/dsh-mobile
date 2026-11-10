@@ -1,11 +1,11 @@
 import Foundation
 
-/// S14 · what the workspace drawer (screen 02) shows for one host: host › workspace › session,
-/// like the DSH desktop sidebar (ARCHITECTURE D54). Pure, so `swift test` covers the rules.
+/// What the workspace drawer (screen 02) shows for one host: host › workspace › session,
+/// like the DSH desktop sidebar. Pure, so `swift test` covers the rules.
 ///
 /// - With `drawer.v1`, sessions are grouped by their workspace directory. Workspaces are ordered
 ///   by their newest session, and sessions newest first.
-/// - Without `drawer.v1` (an older bridge), the drawer shows host › session, as T1 did.
+/// - Without `drawer.v1` (an older bridge), the drawer shows host › session, as the first shell did.
 /// - An offline host has no capabilities until it connects again. Its cached sessions keep their
 ///   workspaces, so the cache decides: group when any cached session has a workspace.
 public struct DrawerTree: Equatable, Sendable {
@@ -70,7 +70,7 @@ public struct DrawerTree: Equatable, Sendable {
     }
 }
 
-/// S14 · the status mark at the end of a drawer row (screen 02).
+/// The status mark at the end of a drawer row (screen 02).
 public enum DrawerMark: String, Sendable {
     /// Amber dot: the session waits on you (an approval or a question).
     case waiting

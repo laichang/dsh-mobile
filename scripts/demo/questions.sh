@@ -61,7 +61,7 @@ grep -E 'Test Case.*(passed|failed|skipped)' "$LOGS/uitest.log"
 demo_no_skipped_ui "$LOGS/uitest.log"
 if [ $SHOTS = 1 ]; then
   for f in "$SHOTDIR"/*.png; do
-    case "$(basename "$f")" in questions-pending.png|questions-answered.png) dir=evidence/T1 ;; *) dir=evidence/S2 ;; esac
+    case "$(basename "$f")" in questions-pending.png|questions-answered.png) dir=${DSHM_EVIDENCE:-evidence/questions} ;; *) dir=${DSHM_EVIDENCE:-evidence/questions} ;; esac
     mkdir -p "$dir"
     sips --resampleWidth 402 "$f" --out "$dir/$(basename "$f")" >/dev/null
     echo "$dir/$(basename "$f")"

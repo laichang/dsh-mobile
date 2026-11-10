@@ -1,6 +1,6 @@
 import XCTest
 
-/// Follow-ups while a task runs, and after a stop (ARCHITECTURE D18, D101, screen 04, X1), against
+/// Follow-ups while a task runs, and after a stop (screen 04, X1), against
 /// real DSH with its mock LLM. Needs scripts/demo/followup-host.mjs in its running mode (DSH Web +
 /// the bridge, a slow mock reply); `scripts/demo/followup.sh --running` runs it. The host checks
 /// afterwards that DSH has the messages in one session each, in the order the agent took them.
@@ -123,7 +123,7 @@ final class FollowUpQueueUITests: XCTestCase {
         waitForCount(queued, 1, timeout: 15, in: app)
         app.buttons.matching(identifier: "followup.sendNow").element(boundBy: 0).tap()
 
-        // D143: at once (the tool step runs 30 s more), the message is a bubble in the transcript,
+        // At once (the tool step runs 30 s more), the message is a bubble in the transcript,
         // marked until DSH gives it to the agent; nothing floats above the field.
         let bubbles = any(app, "session.message.user")
         waitForCount(bubbles, 2, timeout: 10, in: app)

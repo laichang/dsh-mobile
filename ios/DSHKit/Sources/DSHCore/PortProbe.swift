@@ -2,7 +2,7 @@ import Foundation
 import Network
 import Synchronization
 
-/// What a plain TCP connection to one address found (D125).
+/// What a plain TCP connection to one address found.
 public enum PortProbeResult: Sendable, Equatable {
     /// Something takes TCP connections on the port.
     case accepted
@@ -13,7 +13,7 @@ public enum PortProbeResult: Sendable, Equatable {
 }
 
 /// Opens a plain TCP connection to an address and closes it at once, within the given time
-/// (D125). `HostConnection` asks it after an address gave no answer to the WebSocket and Noise
+///. `HostConnection` asks it after an address gave no answer to the WebSocket and Noise
 /// handshake: it tells "another program holds the port and says nothing" from "the computer is not
 /// reachable". Tests inject a fake; the app uses `TCPPortProbe.probe`.
 public typealias PortProbe = @Sendable (HostEndpoint, Duration) async -> PortProbeResult

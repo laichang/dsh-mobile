@@ -1,7 +1,7 @@
 #!/bin/bash
 # The bridge cannot listen because another program holds its port: the bridge says why in DSH's
 # log, and the phone says why on the host row (H) and the offline card (X3). Real DSH and an iOS
-# Simulator (ARCHITECTURE D125).
+# Simulator.
 #
 # 1. DSH and its bridge run on DSHM_BRIDGE_PORT; the app pairs with them.
 # 2. The script stops DSH, starts another program on that port (scripts/demo/port-holder.mjs, an
@@ -12,7 +12,7 @@
 #    nothing listens on the port.
 #
 #   scripts/demo/bridge-errors.sh           tests, then the UI tests on real DSH (Noise)
-#   scripts/demo/bridge-errors.sh --shots   also refresh the screenshots in evidence/S8/ (1/3 size)
+#   scripts/demo/bridge-errors.sh --shots   also refresh the screenshots in evidence/bridge-errors/ (1/3 size)
 #   DSHM_RESUME=1                          skip the parts that passed for the same code (lib.sh demo_part)
 #
 # Resources (scripts/slice-env): DSHM_BRIDGE_PORT, DSHM_WEB_PORT, DSHM_HOME, DSHM_SIM, DSHM_DD.
@@ -121,11 +121,11 @@ stop "$HOLDER_PID"; HOLDER_PID=""
 TEST_RUNNER_DSHM_BRIDGE_ERRORS_STEP=free ui_part bridge-errors-free OfflineReasonsUITests/testNothingListensOnTheBridgePort
 
 if [ $SHOTS = 1 ]; then
-  step "screenshots → evidence/S8 (1/3 size)"
-  mkdir -p evidence/S8
+  step "screenshots → ${DSHM_EVIDENCE:-evidence/bridge-errors} (1/3 size)"
+  mkdir -p ${DSHM_EVIDENCE:-evidence/bridge-errors}
   for f in "$SHOT_DIR"/bridge-errors-*.png; do
     [ -e "$f" ] || { echo "no new shots (the UI parts were skipped)"; break; }
-    out="evidence/S8/$(basename "$f")"
+    out="${DSHM_EVIDENCE:-evidence/bridge-errors}/$(basename "$f")"
     sips --resampleWidth 402 "$f" --out "$out" >/dev/null
     echo "$out $(du -h "$out" | cut -f1)"
   done

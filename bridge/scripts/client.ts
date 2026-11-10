@@ -4,7 +4,7 @@
  *   node lib/scripts/client.js --identity id.json --pair 'dshm://pair?…' "prompt"   pair over Noise
  *   node lib/scripts/client.js --identity id.json "prompt"                reconnect over Noise
  * The identity file holds this client's Noise static key and the paired host (created by --pair).
- * Milestones (S3) go to stderr as `client: milestone <seq> <KIND> [<todos as P/I/C>] <text>`.
+ * Milestones go to stderr as `client: milestone <seq> <KIND> [<todos as P/I/C>] <text>`.
  * Exit 0 when the task ends COMPLETED, 1 otherwise.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'

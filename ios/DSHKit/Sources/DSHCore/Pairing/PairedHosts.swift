@@ -7,7 +7,7 @@ public struct PairedHost: Sendable, Equatable, Codable, Identifiable {
     /// Hex of the first 8 bytes of the host key; stable across address changes.
     public var id: String
     public var name: String
-    /// The address that worked last first (pairing, then each reconnect, D98), then the others from the QR.
+    /// The address that worked last first (pairing, then each reconnect), then the others from the QR.
     public var addresses: [HostEndpoint]
     public var hostKey: [UInt8]
     public var pairedAt: Date
@@ -26,7 +26,7 @@ public protocol PairedHostStore: Sendable {
     func load() -> [PairedHost]
     /// Adds the host, replacing any earlier pairing with the same host key.
     func save(_ host: PairedHost) throws
-    /// Replaces the pairing with the same host key in its place (D98: a new address order).
+    /// Replaces the pairing with the same host key in its place (a new address order).
     /// Does nothing if the host is not paired.
     func update(_ host: PairedHost) throws
     func removeAll() throws

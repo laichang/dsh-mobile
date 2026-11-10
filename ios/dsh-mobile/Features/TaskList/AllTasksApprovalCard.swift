@@ -2,11 +2,11 @@ import DSHCore
 import Foundation
 import SwiftUI
 
-/// S15 · an approval in 所有任务 (03, `.card.needs` on the board). It says what will happen
+/// An approval in 所有任务 (03, `.card.needs` on the board). It says what will happen
 /// (STORY §5): the tool, the command or the path, the reason, and the full tool arguments on
 /// request. 拒绝 / 允许一次 answer it on its host. When the host is not connected, the buttons are
 /// grey and one line says why: the answer can only go through that host, and the task stays
-/// paused there; nothing is allowed by default (STORY §5, ARCHITECTURE D55).
+/// paused there; nothing is allowed by default (STORY §5).
 ///
 /// Identifiers: `approval.card`, `approval.host`, `approval.command`, `approval.path`,
 /// `approval.arguments` (toggle), `approval.arguments.full`, `approval.deny`, `approval.allow`,

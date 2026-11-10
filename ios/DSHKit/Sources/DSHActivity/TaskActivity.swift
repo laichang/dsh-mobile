@@ -3,7 +3,7 @@ import Foundation
 import ActivityKit
 #endif
 
-/// What the Live Activity of one task shows (screen L, ARCHITECTURE D119). The app fills it from
+/// What the Live Activity of one task shows (screen L). The app fills it from
 /// the task list; the widget extension only draws it. It goes to the extension through ActivityKit
 /// itself, not through an App Group: a free Apple team may not have App Groups.
 public struct TaskActivityState: Codable, Hashable, Sendable {

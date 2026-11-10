@@ -8,10 +8,10 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-/// Conversation: more messages into the DSH session of a task (ARCHITECTURE D18, D89, D101).
+/// Conversation: more messages into the DSH session of a task.
 /// Capability "conversation.v1"; the queue while a task runs adds "conversation.v2". Field numbers in frame.proto: 360–379.
 ///
-/// A task is one DSH session (D13). After its first prompt the user can send more messages into
+/// A task is one DSH session. After its first prompt the user can send more messages into
 /// the same session. Each message starts (or joins) a turn whose output streams under the same
 /// task ID: AssistantChunk continues the task's chunk seq, TaskUpserted moves it back to RUNNING,
 /// and TaskEnded ends the turn. The bridge logs a UserMessage for each accepted message, so
@@ -183,7 +183,7 @@ public nonisolated struct Dshm_V1_SendMessage: Sendable {
 
   public var text: String = String()
 
-  /// Staged uploads (attachments.proto), in prompt order, after the text (D107).
+  /// Staged uploads (attachments.proto), in prompt order, after the text.
   public var uploadIds: [String] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -223,7 +223,7 @@ public nonisolated struct Dshm_V1_UserMessage: Sendable {
   /// When the bridge accepted it, Unix milliseconds.
   public var timeMs: Int64 = 0
 
-  /// The files sent with it, in order (D107).
+  /// The files sent with it, in order.
   public var attachments: [Dshm_V1_AttachmentRef] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()

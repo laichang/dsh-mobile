@@ -5,13 +5,13 @@ import Foundation
 import SwiftProtobuf
 import Synchronization
 
-/// In-process stand-in for the bridge (PLAN §1 "Test alone"). Speaks real `Frame` bytes, so
+/// In-process stand-in for the bridge, so app tests need no real one. Speaks real `Frame` bytes, so
 /// `HostConnection`, the channel, and protobuf coding are all exercised. Debug builds only.
 ///
 /// `FakeHost` is the bridge process: its tasks and event log outlive connections, like the real
-/// bridge's `TaskHub` (S2). Each `FakeBridge` is one connection (one transport) to it.
+/// bridge's `TaskHub`. Each `FakeBridge` is one connection (one transport) to it.
 public final class FakeBridge: BridgeTransport {
-    /// S3: one scripted milestone. `todos` is the whole list right after it.
+    /// One scripted milestone. `todos` is the whole list right after it.
     public struct Step: Sendable {
         public var kind: Milestone.Kind
         public var text: String
@@ -30,28 +30,28 @@ public final class FakeBridge: BridgeTransport {
         /// Lets a test inspect the streamed prefix before the remaining chunks are delivered.
         public var afterFirstChunk: (@Sendable () async -> Void)?
         public var failWith: String?
-        /// D104: with `failWith`, DSH's failure class that `TaskEnded` and the summary carry (`QUOTA`, …).
+        /// With `failWith`, DSH's failure class that `TaskEnded` and the summary carry (`QUOTA`, …).
         public var failureCode = ""
-        /// D110: with `followUpReply`, the host advertises `failures.v1` and a failed task takes a follow-up.
+        /// With `followUpReply`, the host advertises `failures.v1` and a failed task takes a follow-up.
         public var reportsFailures = true
-        /// S3: milestones sent before the reply, `milestoneDelay` apart. When there are any, a
+        /// Milestones sent before the reply, `milestoneDelay` apart. When there are any, a
         /// closing FINISHED (or FAILED, with `failWith`) follows the reply, as the real bridge does.
         public var milestones: [Step]
         public var milestoneDelay: Duration
-        /// T1: a task whose prompt contains this text stops after its first milestone (or before
+        /// A task whose prompt contains this text stops after its first milestone (or before
         /// its reply, with no milestones) and stays running for the rest of the run.
         public var holdPrompt: String?
-        /// S16: the reply streams after this many milestones (nil: after all of them).
+        /// The reply streams after this many milestones (nil: after all of them).
         public var replyAfterMilestones: Int?
-        /// S16: every task stays running after its reply and its milestones, until it is interrupted.
+        /// Every task stays running after its reply and its milestones, until it is interrupted.
         public var holdAfterReply = false
-        /// S16: the host advertises `interrupt.v1` and stops a task like the real bridge: an
+        /// The host advertises `interrupt.v1` and stops a task like the real bridge: an
         /// `InterruptAccepted`, then an INTERRUPTED milestone and `TaskEnded(INTERRUPTED)`.
         public var interruptible = false
-        /// S18: a task whose prompt contains `ask.prompt` asks for `ask.approval` before its reply
+        /// A task whose prompt contains `ask.prompt` asks for `ask.approval` before its reply
         /// and waits until it is answered (here, or from elsewhere with `answerFromElsewhere`).
         public var ask: (prompt: String, approval: PendingApproval)?
-        /// S19: a task whose prompt contains `prompt` runs `script` instead (its milestones, reply
+        /// A task whose prompt contains `prompt` runs `script` instead (its milestones, reply
         /// and end). Hold, ask and the host's capabilities still come from this script.
         public var variants: [Variant] = []
 
@@ -68,15 +68,15 @@ public final class FakeBridge: BridgeTransport {
         func variant(for prompt: String) -> Script {
             variants.first { !$0.prompt.isEmpty && prompt.contains($0.prompt) }?.script ?? self
         }
-        /// S17: transcript blocks, each sent just before reply chunk `beforeChunk` (0-based;
+        /// Transcript blocks, each sent just before reply chunk `beforeChunk` (0-based;
         /// `reply.count` or more: after the reply). The host sends them whatever its capabilities.
         public var blocks: [(beforeChunk: Int, block: Dshm_V1_TranscriptBlock)] = []
-        /// D89: with a value, the host advertises `conversation.v1`. A follow-up on a completed task
+        /// With a value, the host advertises `conversation.v1`. A follow-up on a completed task
         /// is accepted like the real bridge does it: `MessageAccepted`, a logged `UserMessage`, the
         /// task RUNNING again, this reply (its chunk seqs go on), and `TaskEnded(COMPLETED)`.
-        /// D110: a failed task takes one too, and its turn completes (the user topped up).
+        /// A failed task takes one too, and its turn completes (the user topped up).
         public var followUpReply: [String]?
-        /// D101: with `followUpReply`, the host also advertises `conversation.v2`, as the real bridge:
+        /// With `followUpReply`, the host also advertises `conversation.v2`, as the real bridge:
         /// a follow-up while the task runs waits (`QueuedMessage`); `EditQueue` steers or removes it.
         /// When the reply has streamed, steered messages go in (each a `UserMessage` and this reply),
         /// then each queued one runs as its own turn; the task ends after the last. A stop returns them.
@@ -112,7 +112,7 @@ public final class FakeBridge: BridgeTransport {
             return prompt.contains(holdPrompt)
         }
 
-        /// S16 · a coding task (`-DSHMFakeScenario coding`): five todos, three done and the fourth
+        /// A coding task (`-DSHMFakeScenario coding`): five todos, three done and the fourth
         /// running ("3 / 5"); a long Markdown reply, so the transcript scrolls; then it keeps running
         /// until the user taps stop.
         public static func codingTask(delay: Duration = .milliseconds(300)) -> Script {
@@ -135,7 +135,7 @@ public final class FakeBridge: BridgeTransport {
                 milestoneDelay: delay)
             script.holdAfterReply = true
             script.interruptible = true
-            // S28: a prompt with `tablesPrompt` gets a reply with a wide GFM table.
+            // A prompt with `tablesPrompt` gets a reply with a wide GFM table.
             script.variants = [.init(prompt: FakeBridge.tablesPrompt, script: Script(
                 reply: FakeBridge.tablesReply.split(separator: "\n", omittingEmptySubsequences: false).map { $0 + "\n" },
                 chunkDelay: .milliseconds(40)))]
@@ -147,7 +147,7 @@ public final class FakeBridge: BridgeTransport {
             return ask.approval
         }
 
-        /// A three-todo task that ticks its todos off one by one (S3 demo, `-DSHMFakeMilestones YES`).
+        /// A three-todo task that ticks its todos off one by one (milestones demo, `-DSHMFakeMilestones YES`).
         public static func threeTodos(delay: Duration = .milliseconds(1500)) -> Script {
             let items = FakeBridge.threeTodoItems
             func list(done: Int, active: Int?) -> [Todo] {
@@ -172,7 +172,7 @@ public final class FakeBridge: BridgeTransport {
         }
     }
 
-    /// S15: a task that waits on an approval when the host starts, as if DSH had paused it there.
+    /// A task that waits on an approval when the host starts, as if DSH had paused it there.
     public struct PendingApproval: Sendable {
         public var title: String
         public var tool: String
@@ -187,7 +187,7 @@ public final class FakeBridge: BridgeTransport {
         }
     }
 
-    /// S20: the host advertises `models.v1` and `workspaces.v1` and answers their requests.
+    /// The host advertises `models.v1` and `workspaces.v1` and answers their requests.
     /// A model in `goneAfterUse` leaves the catalog once a task uses it (the scenario's stand-in
     /// for a provider key that expired on the host).
     public struct Pickers: Sendable {
@@ -205,7 +205,7 @@ public final class FakeBridge: BridgeTransport {
     public static let defaultReply = Script().reply.joined()
     public static let codingTodoItems = ["Find the failing test", "Reproduce it", "Fix the order of replayed events",
                                          "Run the tests", "Open a pull request"]
-    /// S16: long enough to scroll on any iPhone; ends with a line a UI test can look for.
+    /// Long enough to scroll on any iPhone; ends with a line a UI test can look for.
     public static let codingReply = """
         The failing test is `TaskListStoreTests/resume`: after a reconnect, replayed events were put **after** the new ones.
 
@@ -249,7 +249,7 @@ public final class FakeBridge: BridgeTransport {
 
         Running the tests now.
         """
-    /// S28: the coding scenario's prompt for a reply with a wide table (as DSH answered the user's
+    /// The coding scenario's prompt for a reply with a wide table (as DSH answered the user's
     /// "demo directory" task): alignment, inline code and bold in cells, an escaped pipe, long cells.
     public static let tablesPrompt = "Compare the test runs in a table"
     public static let tablesReply = """
@@ -265,7 +265,7 @@ public final class FakeBridge: BridgeTransport {
         """
     public static let threeTodoItems = ["Read the project layout", "Write the summary", "Check the summary against the code"]
 
-    /// A fresh host behind every connection this factory opens (T0 behaviour, plus S2's log).
+    /// A fresh host behind every connection this factory opens (a fresh host, plus the durable list's log).
     public static func factory(script: Script = Script()) -> BridgeTransportFactory {
         FakeHost(script: script).factory
     }
@@ -274,7 +274,7 @@ public final class FakeBridge: BridgeTransport {
         var inbox: [Data] = []
         var waiter: CheckedContinuation<Data, any Error>?
         var closed = false
-        /// S29: the WebSocket close code the bridge sent (4003 device unknown), if any.
+        /// The WebSocket close code the bridge sent (4003 device unknown), if any.
         var closeCode: Int?
 
         var closedError: any Error {
@@ -320,7 +320,7 @@ public final class FakeBridge: BridgeTransport {
 
     // MARK: Bridge side
 
-    /// The bridge closes this connection (it went away, or the network dropped). S29: with a
+    /// The bridge closes this connection (it went away, or the network dropped). With a
     /// `code`, it closes with that WebSocket close code, like the bridge's 4003 after a revoke.
     func drop(code: Int? = nil) {
         state.withLock { s in
@@ -351,7 +351,7 @@ public enum FakeHostError: Error, Equatable {
 }
 
 /// The fake bridge process: tasks, per-host event log, ListTasks and Resume, like
-/// `bridge/src/s2/`. Tests can make it unreachable, drop connections, or restart it.
+/// `bridge/src/tasks/`. Tests can make it unreachable, drop connections, or restart it.
 public final class FakeHost: Sendable {
     public let hostName: String
     private let incompatibleDsh: (installed: String, supported: String)?
@@ -359,15 +359,15 @@ public final class FakeHost: Sendable {
     /// an earlier app launch never collides with a new one that happens to be numbered the same.
     private let taskIDPrefix = "fake-\(UUID().uuidString.prefix(8).lowercased())-task"
     private let script: FakeBridge.Script
-    /// Capabilities this host adds to T0–S3's (for example S14's `drawer.v1`).
+    /// Capabilities this host adds to the base ones (for example `drawer.v1`).
     private let extraCapabilities: [String]
-    /// S15: with any, the host advertises `approvals.v1` and answers `AnswerApproval`.
+    /// With any, the host advertises `approvals.v1` and answers `AnswerApproval`.
     private let approvals: [FakeBridge.PendingApproval]
-    /// S20: with a value, the host answers model and workspace requests.
+    /// With a value, the host answers model and workspace requests.
     private let pickers: FakeBridge.Pickers?
-    /// S15, S18: seeded approvals or a script that asks for one.
+    /// Seeded approvals or a script that asks for one.
     private var answersApprovals: Bool { !approvals.isEmpty || script.ask != nil }
-    /// S27: with any, the host advertises `sessions.v1` and answers `ReadSession` with these
+    /// With any, the host advertises `sessions.v1` and answers `ReadSession` with these
     /// journals (task id → its latest page), like a DSH session made on the Web.
     private let journals: [String: Dshm_V1_SessionPage]
 
@@ -376,7 +376,7 @@ public final class FakeHost: Sendable {
         var resumed = false
         var ownTasks: Set<String> = []
         var helloDone = false
-        /// D95: this connection's uploads, like bridge/src/attachments/staging.ts.
+        /// This connection's uploads, like bridge/src/attachments/staging.ts.
         var uploads: [String: FakeUpload] = [:]
     }
 
@@ -394,45 +394,45 @@ public final class FakeHost: Sendable {
         var connections: [UUID: Connection] = [:]
         var reachable = true
         var prompts: [String] = []
-        /// D95: the files each CreateTask named, in order (one entry per task).
+        /// The files each CreateTask named, in order (one entry per task).
         var attachments: [[(begin: Dshm_V1_UploadBegin, data: Data)]] = []
         var uploadFrameSizes: [Int] = []
         var tasksCreated = 0
         var incarnation = 0
-        /// S20: models that left the catalog (`Pickers.goneAfterUse`).
+        /// Models that left the catalog (`Pickers.goneAfterUse`).
         var goneModels: Set<String> = []
-        /// S21: `devices.v1` records; `revoked` once this phone's device lost its access.
+        /// `devices.v1` records; `revoked` once this phone's device lost its access.
         var devices: FakeDevices?
         var revoked = false
-        /// S29: every attempt to open a connection, also the refused ones.
+        /// Every attempt to open a connection, also the refused ones.
         var connectAttempts = 0
-        /// S16: interrupted tasks; their stream stops.
+        /// Interrupted tasks; their stream stops.
         var stopped: Set<String> = []
-        /// D101: per task, how many turns a follow-up after a stop started; an older turn's stream stops.
+        /// Per task, how many turns a follow-up after a stop started; an older turn's stream stops.
         var turns: [String: Int] = [:]
-        /// D89: each task's last chunk seq, so a follow-up turn goes on from it.
+        /// Each task's last chunk seq, so a follow-up turn goes on from it.
         var chunkSeqs: [String: UInt64] = [:]
-        /// D89: every follow-up message, in order.
+        /// Every follow-up message, in order.
         var followUps: [String] = []
-        /// D107: the files each follow-up named, in order (one entry per follow-up).
+        /// The files each follow-up named, in order (one entry per follow-up).
         var followUpAttachments: [[(begin: Dshm_V1_UploadBegin, data: Data)]] = []
-        /// D107: how many UploadBegin requests arrived (a refusal before the upload sends none).
+        /// How many UploadBegin requests arrived (a refusal before the upload sends none).
         var uploadBegins = 0
-        /// D101: per task, the follow-ups that wait, in order.
+        /// Per task, the follow-ups that wait, in order.
         var queued: [String: [Dshm_V1_QueuedMessage]] = [:]
-        /// D101: every queue edit, as "steer <text>" or "remove <text>".
+        /// Every queue edit, as "steer <text>" or "remove <text>".
         var queueEdits: [String] = []
         /// Every accepted answer to an agent question, as DSH got it.
         var questionAnswers: [Dshm_V1_AnswerQuestion] = []
-        /// S16: each task's latest milestone seq and todos, for the INTERRUPTED milestone.
+        /// Each task's latest milestone seq and todos, for the INTERRUPTED milestone.
         var lastMilestones: [String: (seq: UInt64, todos: [Todo])] = [:]
-        /// S12: tests that wait in `ended(_:count:)`.
+        /// Tests that wait in `ended(_:count:)`.
         var endWaiters: [(taskID: String, count: Int, waiter: CheckedContinuation<Void, Never>)] = []
     }
 
     private let state = Mutex(State())
 
-    /// - Parameter seed: sessions the host already has, as if other clients made them (S14).
+    /// - Parameter seed: sessions the host already has, as if other clients made them.
     public init(script: FakeBridge.Script = .init(), hostName: String = "FakeBridge Mac", reachable: Bool = true,
                 incompatibleDsh: (installed: String, supported: String)? = nil,
                 seed: [Dshm_V1_TaskSummary] = [], extraCapabilities: [String] = [],
@@ -456,7 +456,7 @@ public final class FakeHost: Sendable {
         self.seed(approvals)
     }
 
-    /// S15: each approval is a waiting task. Its ids depend only on the host name and the
+    /// Each approval is a waiting task. Its ids depend only on the host name and the
     /// position, like a DSH session that outlives the app: a later launch finds the same task.
     private func seed(_ approvals: [FakeBridge.PendingApproval]) {
         let slug = hostName.lowercased().filter { $0.isLetter || $0.isNumber }
@@ -491,32 +491,32 @@ public final class FakeHost: Sendable {
     }
 
     public var prompts: [String] { state.withLock { $0.prompts } }
-    /// D89: the follow-up messages this host accepted, in order.
+    /// The follow-up messages this host accepted, in order.
     public var followUps: [String] { state.withLock { $0.followUps } }
     /// Every accepted answer to an agent question, in order: what reached DSH.
     public var questionAnswers: [Dshm_V1_AnswerQuestion] { state.withLock { $0.questionAnswers } }
-    /// D101: the queue edits this host made, in order ("steer <text>", "remove <text>").
+    /// The queue edits this host made, in order ("steer <text>", "remove <text>").
     public var queueEdits: [String] { state.withLock { $0.queueEdits } }
-    /// D95: per created task, the staged files it named: (media type, name, bytes).
+    /// Per created task, the staged files it named: (media type, name, bytes).
     public var attachments: [[(mediaType: String, name: String, data: Data)]] {
         state.withLock { $0.attachments.map { $0.map { (mediaType: $0.begin.mediaType, name: $0.begin.name, data: $0.data) } } }
     }
-    /// D107: per follow-up, the staged files it named: (media type, name, bytes).
+    /// Per follow-up, the staged files it named: (media type, name, bytes).
     public var followUpAttachments: [[(mediaType: String, name: String, data: Data)]] {
         state.withLock { $0.followUpAttachments.map { $0.map { (mediaType: $0.begin.mediaType, name: $0.begin.name, data: $0.data) } } }
     }
-    /// D107: how many uploads began on this host.
+    /// How many uploads began on this host.
     public var uploadBegins: Int { state.withLock { $0.uploadBegins } }
-    /// D95: the encoded size of every UploadChunk request frame received, in order.
+    /// The encoded size of every UploadChunk request frame received, in order.
     public var uploadFrameSizes: [Int] { state.withLock { $0.uploadFrameSizes } }
     private var takesAttachments: Bool { extraCapabilities.contains(DSHProtocolInfo.attachmentsCapability) }
     public var logID: String { state.withLock { $0.logID } }
     public var head: UInt64 { state.withLock { UInt64($0.log.count) } }
     public var connectionCount: Int { state.withLock { $0.connections.count } }
-    /// S29: connection attempts so far (a refused or unreachable attempt counts too).
+    /// Connection attempts so far (a refused or unreachable attempt counts too).
     public var connectAttempts: Int { state.withLock { $0.connectAttempts } }
 
-    /// S29: another client (the web UI, another phone) revokes this phone's device, as with
+    /// Another client (the web UI, another phone) revokes this phone's device, as with
     /// `RevokeDevice` from there: the host records it, closes this device's connections with
     /// 4003 (device unknown) and refuses it from now on. The phone gets no response.
     public func revokeThisDevice() {
@@ -577,7 +577,7 @@ public final class FakeHost: Sendable {
         try state.withLock { s in
             s.connectAttempts += 1
             guard s.reachable else { throw FakeHostError.unreachable }
-            // S29: like the bridge's handshake (bridge/src/pairing/handshake.ts), a revoked
+            // Like the bridge's handshake (bridge/src/pairing/handshake.ts), a revoked
             // device is refused with close 4003 device unknown.
             guard !s.revoked else {
                 throw BridgeTransportError.closed(code: PairingWire.CloseCode.deviceUnknown.rawValue, reason: "device not paired")
@@ -615,7 +615,7 @@ public final class FakeHost: Sendable {
                     if !journals.isEmpty { hello.capabilities.append("sessions.v1") }
                     if script.followUpReply != nil {
                         hello.capabilities.append(DSHProtocolInfo.conversationCapability)
-                        if script.reportsFailures { hello.capabilities.append(DSHProtocolInfo.failuresCapability) } // D110
+                        if script.reportsFailures { hello.capabilities.append(DSHProtocolInfo.failuresCapability) }
                     }
                     if script.followUpReply != nil && script.queuesFollowUps { hello.capabilities.append(DSHProtocolInfo.queueCapability) }
                     if script.question != nil { hello.capabilities.append(DSHProtocolInfo.questionsCapability) }
@@ -658,10 +658,10 @@ public final class FakeHost: Sendable {
                 let hold = script.holds(create.prompt)
                 let ask = script.asks(create.prompt)
                 let question = script.questions(create.prompt)
-                let variant = script.variant(for: create.prompt) // S19
+                let variant = script.variant(for: create.prompt)
                 Task { await self.stream(taskID: taskID, incarnation: incarnation, hold: hold, ask: ask, question: question, using: variant) }
             case .uploadBegin(let begin)? where takesAttachments:
-                // D107: any media type; the four image types enter as images, the rest as files.
+                // Any media type; the four image types enter as images, the rest as files.
                 s.uploadBegins += 1
                 if conn.uploads[begin.uploadID] != nil || begin.uploadID.isEmpty || begin.sha256.count != 32 || begin.size == 0 {
                     bridge.deliver(Self.uploadError(id, "upload/invalid", "Bad upload."))
@@ -748,7 +748,7 @@ public final class FakeHost: Sendable {
                                                      FakeBridge.Step(.interrupted, todos: last.todos))
                     Self.append(event, taskID: interrupt.taskID, in: &s)
                 }
-                // D101: what still waits does not run after a stop; its text goes back to the composer.
+                // What still waits does not run after a stop; its text goes back to the composer.
                 for var message in s.queued.removeValue(forKey: interrupt.taskID) ?? [] {
                     message.placement = .returned
                     var event = Dshm_V1_Event()
@@ -767,8 +767,8 @@ public final class FakeHost: Sendable {
             case .sendMessage(let message)? where script.followUpReply != nil:
                 let at = s.tasks.firstIndex { $0.taskID == message.taskID }
                 let state = at.map { s.tasks[$0].state }
-                // D101: while the task runs the message waits; after a stop it continues the task.
-                // D110: after a failure too.
+                // While the task runs the message waits; after a stop it continues the task.
+                // After a failure too.
                 let running = script.queuesFollowUps && (state == .running || state == .waitingOnUser)
                 let idle = state == .completed || (script.reportsFailures && state == .failed)
                     || (script.queuesFollowUps && state == .interrupted)
@@ -779,7 +779,7 @@ public final class FakeHost: Sendable {
                     bridge.deliver(Self.response(id, .error(error)))
                     return
                 }
-                // D107: files with a follow-up, used up by it, like CreateTask's; not into a running task's queue.
+                // Files with a follow-up, used up by it, like CreateTask's; not into a running task's queue.
                 if running && !message.uploadIds.isEmpty {
                     var error = Dshm_V1_Error()
                     error.code = "message/refused"
@@ -912,14 +912,14 @@ public final class FakeHost: Sendable {
         }
     }
 
-    /// S20: the catalog without the models that left it.
+    /// The catalog without the models that left it.
     private static func catalog(_ pickers: FakeBridge.Pickers, gone: Set<String>) -> ModelCatalog {
         var catalog = pickers.catalog
         for i in catalog.groups.indices { catalog.groups[i].models.removeAll { gone.contains($0.id) } }
         return catalog
     }
 
-    /// S20: a running task switches model; a model that is not in the catalog is refused.
+    /// A running task switches model; a model that is not in the catalog is refused.
     private func selectModel(_ select: Dshm_V1_SelectModel, requestID: UInt64, bridge: FakeBridge, in s: inout State) {
         guard let pickers, Self.catalog(pickers, gone: s.goneModels).entry(for: select.selection) != nil,
               let at = s.tasks.firstIndex(where: { $0.taskID == select.taskID }) else {
@@ -938,7 +938,7 @@ public final class FakeHost: Sendable {
         Self.upserted(s.tasks[at], in: &s)
     }
 
-    /// S15: the answer resolves the approval, and the task goes on to its reply.
+    /// The answer resolves the approval, and the task goes on to its reply.
     private func answerApproval(_ answer: Dshm_V1_AnswerApproval, requestID: UInt64, bridge: FakeBridge, in s: inout State) {
         guard let at = s.tasks.firstIndex(where: { $0.pendingApprovals.contains { $0.id == answer.id } }) else {
             var error = Dshm_V1_Error()
@@ -1026,7 +1026,7 @@ public final class FakeHost: Sendable {
         return resolved
     }
 
-    /// S18: another client (the Web) answers every pending approval of this host. The phone
+    /// Another client (the Web) answers every pending approval of this host. The phone
     /// gets only the `ApprovalResolved` event, as from the real bridge.
     public func answerFromElsewhere(allow: Bool) {
         state.withLock { s in
@@ -1053,7 +1053,7 @@ public final class FakeHost: Sendable {
         s.tasks[at].updatedAtMs = Self.nowMs()
         Self.upserted(s.tasks[at], in: &s)
         let incarnation = s.incarnation
-        let variant = script.variant(for: s.tasks[at].title) // S19
+        let variant = script.variant(for: s.tasks[at].title)
         Task { await self.stream(taskID: taskID, incarnation: incarnation, using: variant) }
         return resolved
     }
@@ -1061,9 +1061,9 @@ public final class FakeHost: Sendable {
     private func stream(taskID: String, incarnation: Int, hold: Bool = false,
                         ask: FakeBridge.PendingApproval? = nil, question: [AgentQuestion.Item]? = nil,
                         using variant: FakeBridge.Script? = nil) async {
-        let script = variant ?? self.script // S19: the task's own script, if its prompt picks one
-        let turn = state.withLock { $0.turns[taskID, default: 0] } // D101: a stop ends this turn's stream
-        // S3: milestones are logged like any other event, so Resume replays them.
+        let script = variant ?? self.script // The task's own script, if its prompt picks one
+        let turn = state.withLock { $0.turns[taskID, default: 0] } // A stop ends this turn's stream
+        // Milestones are logged like any other event, so Resume replays them.
         var milestoneSeq: UInt64 = 0
         var lastTodos: [Todo] = []
         func milestone(_ step: FakeBridge.Step) -> Bool {
@@ -1087,7 +1087,7 @@ public final class FakeHost: Sendable {
         }
         if hold { return }
         if let ask {
-            // S18: the task pauses on an approval; `resolve` streams the reply after the answer.
+            // The task pauses on an approval; `resolve` streams the reply after the answer.
             try? await Task.sleep(for: script.chunkDelay)
             state.withLock { s in
                 guard s.incarnation == incarnation, let at = s.tasks.firstIndex(where: { $0.taskID == taskID }) else { return }
@@ -1141,7 +1141,7 @@ public final class FakeHost: Sendable {
             }
             return
         }
-        // S17: blocks are logged like chunks, in their place among them.
+        // Blocks are logged like chunks, in their place among them.
         func blocks(before chunk: Int) -> Bool {
             for entry in script.blocks where entry.beforeChunk == chunk || (chunk == script.reply.count && entry.beforeChunk > chunk) {
                 var block = entry.block
@@ -1165,7 +1165,7 @@ public final class FakeHost: Sendable {
             chunk.text = text
             let alive = state.withLock { s -> Bool in
                 guard s.incarnation == incarnation, !s.stopped.contains(taskID), s.turns[taskID, default: 0] == turn else { return false }
-                // D89: the chunk seq goes on across the turns of a task, as the bridge's TaskHub does.
+                // The chunk seq goes on across the turns of a task, as the bridge's TaskHub does.
                 chunk.seq = (s.chunkSeqs[taskID] ?? 0) + 1
                 s.chunkSeqs[taskID] = chunk.seq
                 var event = Dshm_V1_Event()
@@ -1184,7 +1184,7 @@ public final class FakeHost: Sendable {
             try? await Task.sleep(for: script.milestoneDelay)
             if !milestone(step) { return }
         }
-        // D101: steered messages go in at the next step, then each queued one runs as its own turn.
+        // Steered messages go in at the next step, then each queued one runs as its own turn.
         while true {
             let taken = state.withLock { s -> Bool in
                 guard s.incarnation == incarnation, !s.stopped.contains(taskID), s.turns[taskID, default: 0] == turn, var list = s.queued[taskID], !list.isEmpty else { return false }
@@ -1291,7 +1291,7 @@ public final class FakeHost: Sendable {
         append(event, taskID: summary.taskID, in: &s)
     }
 
-    /// Numbers, logs, and forwards one event: to resumed connections, and to T0-style
+    /// Numbers, logs, and forwards one event: to resumed connections, and to Resume-less
     /// connections that created the task.
     private static func append(_ event: Dshm_V1_Event, taskID: String, in s: inout State) {
         var logged = event
@@ -1314,7 +1314,7 @@ public final class FakeHost: Sendable {
         s.log.count { if case .taskEnded(let e)? = $0.body { e.taskID == taskID } else { false } }
     }
 
-    /// S12 (tests): returns once this host has logged `count` ends of `taskID` (each turn ends
+    /// For tests: returns once this host has logged `count` ends of `taskID` (each turn ends
     /// once), so a test waits for the host while the app is away instead of sleeping.
     public func ended(_ taskID: String, count: Int = 1) async {
         await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in

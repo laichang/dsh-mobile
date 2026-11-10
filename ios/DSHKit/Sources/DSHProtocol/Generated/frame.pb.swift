@@ -9,16 +9,18 @@
 //   https://github.com/apple/swift-protobuf/
 
 // The only contract between the iOS app (ios/) and the bridge plugin (bridge/).
-// See ARCHITECTURE.md §6 and PLAN.md §1 "How slices stay independent".
+// See ARCHITECTURE.md §6.
 //
 // Evolution rules:
 // - Additive only. Never reuse or renumber a field; reserve removed ones.
-// - Request / Response / Event bodies reserve 20 field numbers per slice:
-//   T0 1–19, S1 20–39, S2 40–59, S3 60–79, S4 80–99, S5 100–119, S6 120–139,
-//   S7 140–159, S8 160–179, S9 180–199, S10 200–219, S11 220–239, S12 240–259.
-//   A slice adds its messages in protocol/<slice>.proto and only a one-line
-//   registration per oneof here.
-// - Each slice advertises a capability string in Hello.capabilities
+// - Request / Response / Event bodies reserve 20 field numbers per feature:
+//   the core 1–19, pairing 20–39, the durable list 40–59, milestones 60–79,
+//   approvals 80–99, interrupt 100–119, models 120–139, workspaces 140–159,
+//   devices 200–219, the upstream version 240–259 (160–199 and 220–239 are
+//   free); later features take the next free block after the highest number
+//   here. A feature adds its messages in protocol/<feature>.proto and only a
+//   one-line registration per oneof here.
+// - Each feature advertises a capability string in Hello.capabilities
 //   (e.g. "approvals.v1"); the app hides UI the bridge can't serve.
 
 import SwiftProtobuf
@@ -76,7 +78,7 @@ public nonisolated enum Dshm_V1_TaskStatus: SwiftProtobuf.Enum, Swift.CaseIterab
 }
 
 /// One WebSocket binary message carries exactly one Frame (inside the
-/// SecureChannel; plaintext only on loopback in T0).
+/// SecureChannel; plaintext only on loopback).
 public nonisolated struct Dshm_V1_Frame: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -131,7 +133,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
 
   public var body: Dshm_V1_Request.OneOf_Body? = nil
 
-  /// T0: 2–19
+  /// 2–19
   public var hello: Dshm_V1_Hello {
     get {
       if case .hello(let v)? = body {return v}
@@ -148,7 +150,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .createTask(newValue)}
   }
 
-  /// S2: 40–59 (s2.proto)
+  /// 40–59 (durable_list.proto)
   public var listTasks: Dshm_V1_ListTasks {
     get {
       if case .listTasks(let v)? = body {return v}
@@ -290,10 +292,10 @@ public nonisolated struct Dshm_V1_Request: Sendable {
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
-    /// T0: 2–19
+    /// 2–19
     case hello(Dshm_V1_Hello)
     case createTask(Dshm_V1_CreateTask)
-    /// S2: 40–59 (s2.proto)
+    /// 40–59 (durable_list.proto)
     case listTasks(Dshm_V1_ListTasks)
     case resume(Dshm_V1_Resume)
     case answerApproval(Dshm_V1_AnswerApproval)
@@ -329,7 +331,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
 
   public var body: Dshm_V1_Response.OneOf_Body? = nil
 
-  /// T0: 2–19
+  /// 2–19
   public var error: Dshm_V1_Error {
     get {
       if case .error(let v)? = body {return v}
@@ -354,7 +356,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .taskCreated(newValue)}
   }
 
-  /// S2: 40–59 (s2.proto)
+  /// 40–59 (durable_list.proto)
   public var taskList: Dshm_V1_TaskList {
     get {
       if case .taskList(let v)? = body {return v}
@@ -480,11 +482,11 @@ public nonisolated struct Dshm_V1_Response: Sendable {
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
-    /// T0: 2–19
+    /// 2–19
     case error(Dshm_V1_Error)
     case hello(Dshm_V1_Hello)
     case taskCreated(Dshm_V1_TaskCreated)
-    /// S2: 40–59 (s2.proto)
+    /// 40–59 (durable_list.proto)
     case taskList(Dshm_V1_TaskList)
     case resumed(Dshm_V1_Resumed)
     case approvalResolved(Dshm_V1_ApprovalResolved)
@@ -516,7 +518,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
 
   public var body: Dshm_V1_Event.OneOf_Body? = nil
 
-  /// T0: 1–19
+  /// 1–19
   public var assistantChunk: Dshm_V1_AssistantChunk {
     get {
       if case .assistantChunk(let v)? = body {return v}
@@ -533,7 +535,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .taskEnded(newValue)}
   }
 
-  /// S3: 60–79
+  /// 60–79
   public var milestoneAdded: Dshm_V1_MilestoneAdded {
     get {
       if case .milestoneAdded(let v)? = body {return v}
@@ -542,7 +544,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .milestoneAdded(newValue)}
   }
 
-  /// S2: 40–59 (s2.proto)
+  /// 40–59 (durable_list.proto)
   public var taskUpserted: Dshm_V1_TaskUpserted {
     get {
       if case .taskUpserted(let v)? = body {return v}
@@ -583,7 +585,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .modelSelected(newValue)}
   }
 
-  /// S17 (transcript.proto)
+  /// transcript.proto
   public var transcriptBlock: Dshm_V1_TranscriptBlock {
     get {
       if case .transcriptBlock(let v)? = body {return v}
@@ -626,25 +628,25 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .questionResolved(newValue)}
   }
 
-  /// S2: per-host monotonic sequence number in the bridge's event log (s2.proto), from 1.
+  /// Per-host monotonic sequence number in the bridge's event log (durable_list.proto), from 1.
   /// 0 when the event isn't logged (LogReset).
   public var hostSeq: UInt64 = 0
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
-    /// T0: 1–19
+    /// 1–19
     case assistantChunk(Dshm_V1_AssistantChunk)
     case taskEnded(Dshm_V1_TaskEnded)
-    /// S3: 60–79
+    /// 60–79
     case milestoneAdded(Dshm_V1_MilestoneAdded)
-    /// S2: 40–59 (s2.proto)
+    /// 40–59 (durable_list.proto)
     case taskUpserted(Dshm_V1_TaskUpserted)
     case logReset(Dshm_V1_LogReset)
     case approvalPending(Dshm_V1_ApprovalPending)
     case approvalResolved(Dshm_V1_ApprovalResolved)
     case modelSelected(Dshm_V1_ModelSelected)
-    /// S17 (transcript.proto)
+    /// transcript.proto
     case transcriptBlock(Dshm_V1_TranscriptBlock)
     case userMessage(Dshm_V1_UserMessage)
     /// conversation.proto
@@ -697,7 +699,7 @@ public nonisolated struct Dshm_V1_Error: Sendable {
   public init() {}
 }
 
-/// Start a task: one DSH session + one prompt (ARCHITECTURE D13).
+/// Start a task: one DSH session + one prompt.
 public nonisolated struct Dshm_V1_CreateTask: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -748,7 +750,7 @@ public nonisolated struct Dshm_V1_TaskCreated: Sendable {
 }
 
 /// A piece of assistant text, in order. `seq` starts at 1 per task and has no
-/// gaps (since S2 the bridge numbers it per task, not per connection).
+/// gaps (the bridge numbers it per task, not per connection).
 public nonisolated struct Dshm_V1_AssistantChunk: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -774,10 +776,10 @@ public nonisolated struct Dshm_V1_TaskEnded: Sendable {
 
   public var status: Dshm_V1_TaskStatus = .unspecified
 
-  /// Why it failed, when status is FAILED. For a model failure: DSH's text as it is (D104).
+  /// Why it failed, when status is FAILED. For a model failure: DSH's text as it is.
   public var message: String = String()
 
-  /// Model failures (fields 420–439, D104): DSH's stable failure class when status is FAILED
+  /// Model failures (fields 420–439): DSH's stable failure class when status is FAILED
   /// (`AUTH`, `QUOTA`, `ACCOUNT_QUOTA`, `RATE_LIMIT`, `INVALID_REQUEST`, `HTTP_404`, …); empty when
   /// DSH gave none. The app chooses its own text for some codes and shows `message` for the others.
   public var failureCode: String = String()

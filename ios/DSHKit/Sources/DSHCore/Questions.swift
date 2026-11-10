@@ -1,7 +1,7 @@
 import DSHProtocol
 import Foundation
 
-/// A question from the agent (STORY §4–§5, screen P1, ARCHITECTURE D18, D92). DSH's
+/// A question from the agent (STORY §4–§5, screen P1). DSH's
 /// `ask_user_question` waits until a person answers: the bridge holds it, the phone shows it as a
 /// card in the transcript, and the first answer (phone or DSH Web) wins.
 public struct AgentQuestion: Codable, Equatable, Sendable {

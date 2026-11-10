@@ -1,5 +1,5 @@
 /**
- * Golden Noise transcripts for the bridge's wire (ARCHITECTURE D6, D21): fixed keys in, exact
+ * Golden Noise transcripts for the bridge's wire: fixed keys in, exact
  * bytes out. `pnpm noise-fixtures` writes protocol/fixtures/noise/transcripts.json; the TS test
  * (test/pairing.test.ts) regenerates and compares it, and the Swift test
  * (ios/DSHKit/Tests/DSHKitTests/NoiseChannelTests.swift) replays the phone side against it, so the
@@ -77,7 +77,7 @@ function transcript(name: string, mode: Mode): Transcript {
 /** The pair transcript's offer as the QR's `dshm://pair?…` URL (parsed by PairingOffer.swift). */
 function offer(): string {
   return offerURL({
-    hostName: 'Mac mini (S1)',
+    hostName: 'Mac mini (S1)', // check-ids: keep (golden transcripts)
     addresses: ['192.168.1.5:47801', '[fd7a:115c:a1e0::1]:47801', '100.64.0.7:47801'],
     hostKey: keyPairFromSecret(fill(0x11)).publicKey,
     offerId: fill(0x55, 16),

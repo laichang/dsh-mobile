@@ -2,8 +2,8 @@ import DSHCore
 import DSHProtocol
 import SwiftUI
 
-/// The workspace part of the "host · workspace" line above the composer (S7, restyled in S20 to
-/// screen 01). It opens `WorkspacePicker` as a sheet (`SheetRoute.workspace`). The choice is for
+/// The workspace part of the "host · workspace" line above the composer (screen
+/// 01). It opens `WorkspacePicker` as a sheet (`SheetRoute.workspace`). The choice is for
 /// this one new session: it is not saved, and a sent task or a relaunch goes back to the default.
 struct WorkspaceControl: View {
     let store: TaskListStore
@@ -51,7 +51,7 @@ enum WorkspacePath {
     }
 }
 
-/// S20 · the workspace sheet (screen 07, STORY §3): the host switch at the top, the host default,
+/// The workspace sheet (screen 07, STORY §3): the host switch at the top, the host default,
 /// recent workspaces, and an absolute path on this host.
 struct WorkspacePicker: View {
     let store: TaskListStore

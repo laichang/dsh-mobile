@@ -1,5 +1,5 @@
 /**
- * S3 milestone mapper (ARCHITECTURE D11, D19): a deterministic fold over one DSH session's durable
+ * Milestone mapper: a deterministic fold over one DSH session's durable
  * events into milestones. No model, no invented text: a milestone carries DSH's own words (a
  * todo's content, a failure message) or none, and the app labels each kind itself.
  *
@@ -56,7 +56,7 @@ function parseTodos(data: unknown): TodoItem[] | undefined {
   return out
 }
 
-/** Why a turn failed, as the phone gets it: DSH's text and DSH's failure class (D104). */
+/** Why a turn failed, as the phone gets it: DSH's text and DSH's failure class. */
 export interface Failure {
   message: string
   /** DSH's stable `HarnessError.code` (`AUTH`, `QUOTA`, `RATE_LIMIT`, `HTTP_404`, …); empty when DSH gave none. */
@@ -64,7 +64,7 @@ export interface Failure {
 }
 
 /**
- * D104: a turn that ended with `{ kind: 'error', error: { message, code } }` (every model failure)
+ * A turn that ended with `{ kind: 'error', error: { message, code } }` (every model failure)
  * gives DSH's `message` as it is, and its `code`. Any other end gives its reason kind, with the
  * detail after it when there is one.
  */
@@ -87,7 +87,7 @@ export function isUserInterrupt(reason: { kind?: unknown; reason?: { kind?: unkn
   return reason?.kind === 'aborted' && reason.reason?.kind === 'user'
 }
 
-/** Maps the events of one task (one DSH session, D13; the first turn) into milestones. */
+/** Maps the events of one task (one DSH session, the first turn) into milestones. */
 export class MilestoneMapper {
   private todos: TodoItem[] = []
   private planMode = false

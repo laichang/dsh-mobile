@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Checks the DSH sessions of AttachmentsUITests' file tests (ARCHITECTURE D107), made since
+// Checks the DSH sessions of AttachmentsUITests' file tests, made since
 // <since> (Unix seconds):
 //   - "Read these files.": the first user message has the photo, then report.pdf as a file part,
 //     in that order, and not notes.txt (removed on the phone);

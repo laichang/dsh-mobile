@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// D101 · screen 04: the follow-ups that wait while the task runs, above the composer's field, as
+/// Screen 04: the follow-ups that wait while the task runs, above the composer's field, as
 /// in the Codex and Claude apps. Each runs as the next turn by itself (排队中); "立即发送" moves it
 /// into the running turn, where the agent takes it at its next step (下一步发送); × takes it out.
 /// When DSH takes a message, it leaves this list and shows in the transcript, where DSH took it.

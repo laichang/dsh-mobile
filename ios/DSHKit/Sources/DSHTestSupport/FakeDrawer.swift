@@ -3,7 +3,7 @@ import DSHCore
 import DSHProtocol
 import Foundation
 
-/// S14 · two FakeBridge hosts with sessions in workspaces, as on screen 02 (`-DSHMFakeBridge drawer…`).
+/// Two FakeBridge hosts with sessions in workspaces, as on screen 02 (`-DSHMFakeBridge drawer…`).
 /// The sessions are already on the hosts, as if the Web client or the phone made them earlier.
 public enum FakeDrawer {
     public enum Variant: String, Sendable, CaseIterable {

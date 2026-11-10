@@ -1,9 +1,9 @@
 // Noise Protocol Framework (rev 34) on CryptoKit: DH 25519, ChaChaPoly or AESGCM, SHA256.
-// Ported from the X2 spike (spikes/x2-noise/swift/Sources/NoiseKit/Noise.swift) for S1, with a
+// Ported from the Noise spike (spikes/x2-noise/swift/Sources/NoiseKit/Noise.swift), with a
 // `Noise` prefix on every type. Mirrors bridge/src/pairing/noise.ts. Proven by the official
 // vectors (protocol/fixtures/noise/official-vectors.json) and the cross-language golden
-// transcripts (protocol/fixtures/noise/transcripts.json). Hand-rolled and unaudited: see
-// ARCHITECTURE D6 and D21.
+// transcripts (protocol/fixtures/noise/transcripts.json). Hand-rolled and unaudited
+// (ARCHITECTURE.md, Security).
 import CryptoKit
 import Foundation
 

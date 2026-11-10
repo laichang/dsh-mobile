@@ -1,7 +1,7 @@
 import DSHProtocol
 import Foundation
 
-/// D101 · a follow-up that waits while its task runs (screen 04): above the composer until DSH
+/// A follow-up that waits while its task runs (screen 04): above the composer until DSH
 /// takes it into a turn. Then it is a `.userMessage` row of the transcript, where DSH took it.
 public struct QueuedMessage: Codable, Equatable, Sendable, Identifiable {
     public enum Placement: String, Codable, Sendable {
@@ -48,7 +48,7 @@ public struct QueuedMessage: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
-/// D101 · a task's waiting follow-ups, in the order they were sent.
+/// A task's waiting follow-ups, in the order they were sent.
 public struct FollowUpQueue: Codable, Equatable, Sendable {
     public private(set) var messages: [QueuedMessage] = []
 

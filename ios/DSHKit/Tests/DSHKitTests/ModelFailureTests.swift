@@ -5,12 +5,12 @@ import Foundation
 import SwiftData
 import Testing
 
-/// D104, D110 · a model failure, against `FakeHost`: the task ends failed with DSH's text and its
+/// A model failure, against `FakeHost`: the task ends failed with DSH's text and its
 /// failure class, the outcome picks the app's own words for `AUTH` and `QUOTA`, and a new message
 /// in the same session continues the task (`conversation.v1`).
 @MainActor
 @Suite(.serialized) struct ModelFailureTests {
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ what: String = "", timeout: Duration = .seconds(10), sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
         await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)

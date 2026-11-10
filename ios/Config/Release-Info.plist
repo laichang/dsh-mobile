@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Release builds (INFOPLIST_FILE for Release). Merged with the generated keys. No URL scheme
-     (ARCHITECTURE D16); the ATS key is the same as in Debug-Info.plist (D88). -->
+<!-- Release builds (INFOPLIST_FILE for Release). Merged with the generated keys. No URL scheme;
+     the ATS key is the same as in Debug-Info.plist. -->
 <plist version="1.0">
 <dict>
-	<!-- ARCHITECTURE D88 (S31): the bridge is reached by plain ws:// at the IP addresses in the
+	<!-- The bridge is reached by plain ws:// at the IP addresses in the
 	     pairing QR (LAN, Tailscale 100.x, any other interface of the Mac). ATS refuses cleartext to
 	     IPs outside the local ranges, and NSExceptionDomains cannot name IP addresses. Every frame is
-	     Noise-encrypted (D6, D21), and the app talks to no other server. Same key in Debug and
+	     Noise-encrypted, and the app talks to no other server. Same key in Debug and
 	     Release (scripts/check-release-clean compares them). -->
 	<key>NSAppTransportSecurity</key>
 	<dict>

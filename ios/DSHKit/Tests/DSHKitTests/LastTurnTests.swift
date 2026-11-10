@@ -5,13 +5,13 @@ import Foundation
 import SwiftProtobuf
 import Testing
 
-/// S27 · the done footer's 用时 counts the latest turn only (ARCHITECTURE D76).
+/// The done footer's 用时 counts the latest turn only.
 @MainActor
 @Suite(.serialized) struct LastTurnTests {
     let storeURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("dshm-s27-\(UUID().uuidString).store")
 
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ what: String, timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
         await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)
@@ -22,12 +22,12 @@ import Testing
         return try Dshm_V1_Frame(serializedBytes: bytes).event.taskUpserted.task
     }
 
-    /// The Swift half of the S27 golden fixture (bridge/test/drawer.test.ts); S14's fixture is the
+    /// The Swift half of the latest-turn golden fixture (bridge/test/drawer.test.ts); the drawer's fixture is the
     /// same session from an older bridge, without the field.
     @Test func goldenWebSessionCarriesItsLatestTurnStart() throws {
-        let web = try Self.fixture("s27_web_session_upserted_event")
+        let web = try Self.fixture("last_turn_web_session_upserted_event")
         #expect(web.hasTurnStartedAtMs && web.turnStartedAtMs == 1_793_000_000_000)
-        let old = try Self.fixture("s14_web_session_upserted_event")
+        let old = try Self.fixture("drawer_web_session_upserted_event")
         #expect(!old.hasTurnStartedAtMs)
     }
 

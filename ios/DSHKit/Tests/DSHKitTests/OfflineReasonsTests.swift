@@ -5,7 +5,7 @@ import Network
 import Synchronization
 import Testing
 
-/// Why a host is offline, for each of its addresses (ARCHITECTURE D125, on top of D98): nothing
+/// Why a host is offline, for each of its addresses (on top of the address order): nothing
 /// listens on the port (refused), another program holds the port (it takes the connection but is
 /// no DSH bridge), or the computer is not reachable (no answer). First with fake sockets that
 /// fail the way URLSession and the TCP probe do, then with real sockets on the loopback interface.

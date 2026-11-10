@@ -347,13 +347,27 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 **Demo**: —
 
 **Done when**
-- [ ] [auto] The check fails on a fixture with `D18` or `S14` in code, and passes on the slice branch — Evidence:
-- [ ] [auto] The golden fixtures in `protocol/fixtures/` are the same bytes as before — Evidence:
-- [ ] [auto] `swift test`, `pnpm test` and the XCUITest build pass after the renames — Evidence:
+- [x] [auto] The check fails on a fixture with `D18` or `S14` in code, and passes on the slice branch — Evidence: cmd:scripts/check-ids-test · cmd:scripts/check-ids
+- [x] [auto] The golden fixtures in `protocol/fixtures/` are the same bytes as before — Evidence: cmd:scripts/check-fixtures-same 3a391bb
+- [x] [auto] `swift test`, `pnpm test` and the XCUITest build pass after the renames — Evidence: cmd:scripts/swift-test · cmd:scripts/pnpm-test · cmd:scripts/xc build-for-testing
 
 **Not**: Docs (S6). WORKFLOW.md (S7 removes it).
 
 **Log**: —
+- **2026-11-10 · IDs removed from code; check-ids.** Done:
+  - Comments: each Dxx and slice ID is gone from ios/, bridge/, protocol/, scripts/, design/ (screen captions too). A still-useful reason stays in words. `git grep '\bD[0-9]{1,3}\b'` in these folders: 643 lines before, 62 after (binaries, golden data, the check scripts and the plan tools). scripts/check-ids on main: 1756 hits; on this branch: 0.
+  - Names: 33 UI test classes, 5 DSHKit suites, 32 demo scripts and hosts (scripts/demo/<feature>.sh), 40 golden fixture files (core_, durable_list_, … prefixes), 19 env names, shot names. protocol/s2.proto is now durable_list.proto, bridge/src/s2/ is bridge/src/tasks/, bridge/test/s2.test.ts is durable-list.test.ts. Field numbers, wire names and fixture bytes are the same (scripts/check-fixtures-same 3a391bb). Generated code: comments, and the proto file name in its descriptor and imports.
+  - The check: scripts/check-ids (test: scripts/check-ids-test). It is a plain script, not in the pre-commit hook: the hook is a guard file, so S7 wires it in under user review.
+  - Demos write screenshots to $DSHM_EVIDENCE (default evidence/<demo>): check-plan wants shot: files under evidence/<slice ID>/.
+  Kept on purpose: the plan tools (slice IDs are their data); check-docs, check-design, check-ids and their tests (the IDs are fixtures); protocol/fixtures/; the host name "Mac mini (S1)" in the golden Noise transcripts (marked `check-ids: keep`); design screen names X1–X4, F1–F4, P1–P4, V1, V2 (not slice IDs).
+  Provisional: the check rule and its skips; DSHM_EVIDENCE; the feature names. ARCHITECTURE.md is at 9997 of 10000 tokens, so these are in AGENTS.md and here, not in ARCHITECTURE.md.
+  Changed files that evidence runs (reviewer must allow): scripts/brief-test (t0.sh is now round-trip.sh), scripts/lib/plan-template.md (example path), scripts/status (comment).
+  Not done: scripts/review needs scripts/demo/<slice ID>.sh for [ui] items with only test: pointers; that name conflicts with check-ids (S7). UI tests not run (scripts/xc build-for-testing passes); the renamed demos not run. Simulator dshm-S5 does not exist (DSHM_SIM unset for the build).
+- **2026-11-10 · Round 2: damaged comments repaired; check-id-removal.** Done:
+  - scripts/check-id-removal compares each changed comment line with the line it replaced (merge base with main): a comment of only punctuation, a word that needs more at the end (see, per, follows, …), a lost space before "." or ",", empty brackets, a double space. scripts/check-ids-test runs its cases and runs it on the repo.
+  - It found 7 comments that the mechanical pass damaged; a manual scan for lines that end in ARCHITECTURE/PLAN/see/"(" found 1 more. Repaired 7, deleted 1 (DrawerMotion.swift "///."). scripts/fixtures/fake-plan/setup is the same as on main again. Three comments that cited PLAN.md sections now say the reason in words (FakeBridge, GoldenFixturesTests, ShellModel).
+  - README.md, README.zh-CN.md, scripts/demo/lib.sh: scripts/demo/<feature>.sh.
+  Checks: check-ids, check-ids-test, check-id-removal, swift-test (164), pnpm-test (116), scripts/xc build, check-docs, check-plan pass. The detector does not read meaning: a removal that leaves good grammar but a weaker reason is not found.
 
 ### S6 · ARCHITECTURE and STORY as the current state
 

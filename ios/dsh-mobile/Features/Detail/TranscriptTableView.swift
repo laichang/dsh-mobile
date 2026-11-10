@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// S28 · a GFM table in the transcript (screen 04, D79): the header row on a fill, hairlines between
+/// A GFM table in the transcript (screen 04): the header row on a fill, hairlines between
 /// rows, each column aligned as its delimiter row says. A column is as wide as its widest cell, up to
 /// `maxColumnWidth`; a longer cell wraps. A table wider than the page scrolls inside its own row.
 struct TranscriptTableView: View {

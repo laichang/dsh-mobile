@@ -1,5 +1,5 @@
 #!/bin/bash
-# Voice input demo and checks (ARCHITECTURE D116, D117): the mic key on the composer of 01 and of
+# Voice input demo and checks: the mic key on the composer of 01 and of
 # the session page, with the fake transcriber (-DSHMFakeSpeech) and the FakeBridge. App only: no
 # DSH and no bridge.
 #
@@ -10,7 +10,7 @@
 #                                      testDeniedSpeechSaysHowToTurnItOnAndKeepsTheField, then
 #                                      testRealPermissionPromptsDoNotCrashTheApp (the real Speech
 #                                      framework's permission prompts, answered on the system's
-#                                      queue: allow speech, turn off the microphone; D146)
+#                                      queue: allow speech, turn off the microphone)
 #   scripts/demo/voice.sh --shots DIR  also write the screenshots (1/3 size) into DIR
 #   DSHM_RESUME=1                      skip the parts that passed for the same code (lib.sh demo_part)
 #

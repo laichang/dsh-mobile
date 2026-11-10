@@ -2,7 +2,7 @@ import CryptoKit
 import DSHProtocol
 import Foundation
 
-/// Attachments (ARCHITECTURE D95, D107): a file larger than one Noise message (65535 bytes, D21)
+/// Attachments: a file larger than one Noise message (65535 bytes)
 /// goes to the host in parts before the `CreateTask` or `SendMessage` that names it
 /// (protocol/attachments.proto).
 public enum Attachments {
@@ -12,7 +12,7 @@ public enum Attachments {
     public static let maxBytes = 20 * 1024 * 1024
     /// Attachments in one message (`MAX_UPLOADS_PER_CONNECTION`).
     public static let maxCount = 5
-    /// The image types DSH takes in a prompt; any other file goes as a file part (D18).
+    /// The image types DSH takes in a prompt; any other file goes as a file part.
     public static let imageMediaTypes: Set<String> = ["image/jpeg", "image/png", "image/webp", "image/gif"]
 
     public static func isImage(_ mediaType: String) -> Bool { imageMediaTypes.contains(mediaType.lowercased()) }
@@ -63,7 +63,7 @@ public struct FileAttachment: Sendable, Equatable, Identifiable {
 
     public var kind: AttachmentKind { Attachments.isImage(mediaType) ? .image : .file }
 
-    /// Over `Attachments.maxBytes`: refused before the upload (D107).
+    /// Over `Attachments.maxBytes`: refused before the upload.
     public var isTooLarge: Bool { size > Attachments.maxBytes }
 
     /// What the sent message shows for it.
@@ -73,7 +73,7 @@ public struct FileAttachment: Sendable, Equatable, Identifiable {
 }
 
 /// One attachment of a user message, as the transcript shows it: a chip with its name, or the
-/// thumbnail of an image on the phone that sent it (D107). The host keeps the bytes.
+/// thumbnail of an image on the phone that sent it. The host keeps the bytes.
 public struct MessageAttachment: Codable, Equatable, Sendable {
     public var kind: AttachmentKind
     public var name: String
@@ -115,7 +115,7 @@ extension Array where Element == MessageAttachment {
     }
 }
 
-/// D107: one attachment on a composer, and where its upload is. The chip draws the status.
+/// One attachment on a composer, and where its upload is. The chip draws the status.
 public struct ComposerAttachment: Identifiable, Equatable, Sendable {
     public enum Status: Equatable, Sendable {
         case ready
@@ -137,7 +137,7 @@ public struct ComposerAttachment: Identifiable, Equatable, Sendable {
     }
 }
 
-/// D107: which composer an attachment is on: the new-session composer (01) or a session page's (04).
+/// Which composer an attachment is on: the new-session composer (01) or a session page's (04).
 public enum AttachTarget: Hashable, Sendable {
     case composer
     case followUp(taskKey: String)

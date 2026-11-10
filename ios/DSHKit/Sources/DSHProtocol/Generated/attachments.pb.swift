@@ -8,8 +8,8 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-/// Attachments: a file larger than one Noise message (65535 bytes, ARCHITECTURE D21) goes to the
-/// host in parts before the CreateTask or SendMessage that uses it (ARCHITECTURE D95, D107).
+/// Attachments: a file larger than one Noise message (65535 bytes) goes to the
+/// host in parts before the CreateTask or SendMessage that uses it.
 /// Capability "attachments.v1".
 ///
 ///   UploadBegin  → UploadAck      the bridge checks the declared size
@@ -19,7 +19,7 @@
 ///   SendMessage { upload_ids }    the staged files go into a follow-up (conversation.proto)
 ///
 /// An image of a type DSH takes in a prompt (jpeg, png, webp, gif) enters as an image; any other
-/// file enters as a file, and the model gets its name and a saved path on the host (D18).
+/// file enters as a file, and the model gets its name and a saved path on the host.
 /// A refusal is an Error response: upload/too-large, upload/too-many, upload/missing-part,
 /// upload/hash-mismatch, upload/unknown. A refused upload is dropped; send it again from the start.
 

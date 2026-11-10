@@ -2,7 +2,7 @@
 import DSHCore
 import Foundation
 
-/// S19 · done and failed (screens 06 and X1), `-DSHMFakeScenario outcomes`. Debug only.
+/// Done and failed (screens 06 and X1), `-DSHMFakeScenario outcomes`. Debug only.
 ///
 /// - A prompt that contains `FakeBridge.outcomeDonePrompt` ("open a PR"): five todos. After four,
 ///   the task asks to run `git push` (the approval), then streams a final answer longer than the
@@ -60,7 +60,7 @@ extension FakeBridge {
 }
 
 extension FakeBridge.Script {
-    /// The S19 host: the done task is the default; the failing upload is a variant.
+    /// The outcomes host: the done task is the default; the failing upload is a variant.
     public static func outcomes(delay: Duration = .milliseconds(300)) -> Self {
         func list(_ items: [String], done: Int) -> [Todo] {
             items.enumerated().map { i, content in

@@ -1,5 +1,5 @@
 /**
- * Attachments (ARCHITECTURE D95, D107): put the parts of one upload together, check its size and
+ * Attachments: put the parts of one upload together, check its size and
  * its SHA-256, and keep the file until a CreateTask or a SendMessage names it. One `UploadStaging`
  * per connection, so a dropped connection drops its uploads; the app sends them again.
  */
@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto'
 export const ATTACHMENTS_CAPABILITY = 'attachments.v1'
 /** Data bytes in one UploadChunk: one Frame stays well under Noise's 65535-byte message. */
 export const PART_SIZE = 48 * 1024
-/** Largest file the bridge takes (D107). DSH's own image limit is 50 MiB; the app sends photos as JPEG. */
+/** Largest file the bridge takes. DSH's own image limit is 50 MiB; the app sends photos as JPEG. */
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 /** Attachments in one message, and uploads one connection can hold at a time (staged and in progress). */
 export const MAX_UPLOADS_PER_CONNECTION = 5
@@ -17,7 +17,7 @@ export const IMAGE_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'imag
 /** The media type of a file the app sent with no type. */
 export const UNKNOWN_MEDIA_TYPE = 'application/octet-stream'
 
-/** How a staged file enters the prompt: as an image the model sees, or as a file with a saved path (D18). */
+/** How a staged file enters the prompt: as an image the model sees, or as a file with a saved path. */
 export type AttachmentKind = 'image' | 'file'
 
 export function attachmentKind(mediaType: string): AttachmentKind {

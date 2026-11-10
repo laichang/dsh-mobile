@@ -103,7 +103,7 @@ svg.s{width:16px;height:16px} svg.xs{width:13px;height:13px} svg.l{width:24px;he
 .send{width:34px;height:34px;border-radius:17px;background:var(--blue);display:grid;place-items:center;margin-left:auto;color:#fff;flex:none}
 .send.stop{background:var(--t1);color:#111}
 .send.idle{background:rgba(255,255,255,.14);color:var(--t2)}
-/* voice: the mic key left of send, the line above the field (D117) */
+/* voice: the mic key left of send, the line above the field */
 .mic{width:34px;height:34px;border-radius:17px;background:rgba(255,255,255,.08);display:grid;place-items:center;margin-left:auto;color:var(--t2);flex:none}
 .mic + .send{margin-left:0}
 .mic.on{background:var(--blue);color:#fff}

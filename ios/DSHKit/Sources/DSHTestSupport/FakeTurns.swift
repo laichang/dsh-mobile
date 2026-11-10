@@ -3,7 +3,7 @@ import DSHCore
 import DSHProtocol
 import Foundation
 
-/// S27 · a Web session with two turns far apart (`-DSHMFakeScenario turns`), as in the user's bug
+/// A Web session with two turns far apart (`-DSHMFakeScenario turns`), as in the user's bug
 /// on a real iPhone (2026-11-07): the first turn is 2 h 37 min 15 s before the end of the second,
 /// and the second turn took 1 min 24 s. The session is done and not read on this phone, and its
 /// final answer is longer than the screen. The host answers `ReadSession` with the journal.
@@ -12,7 +12,7 @@ public enum FakeTurns {
     public static let title = "Plan a weekend in Hangzhou"
     public static let firstPrompt = "Plan a weekend in Hangzhou for two"
     public static let secondPrompt = "Make it a day trip instead"
-    /// From the first turn's start to the end of the session: what the footer said before S27.
+    /// From the first turn's start to the end of the session: what the footer said before.
     public static let sinceFirstTurn: Int64 = (2 * 3600 + 37 * 60 + 15) * 1000
     /// The second turn, from its start to its end: what the footer says.
     public static let lastTurn: Int64 = 84 * 1000

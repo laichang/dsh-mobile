@@ -1,4 +1,4 @@
-/** S3: a mapped `Milestone` → the `MilestoneAdded` event body (protocol/milestones.proto). */
+/** A mapped `Milestone` → the `MilestoneAdded` event body (protocol/milestones.proto). */
 import type { MessageInitShape } from '@bufbuild/protobuf'
 import { MilestoneKind, TodoStatus, type MilestoneAddedSchema } from '../gen/milestones_pb.ts'
 import type { Milestone, MilestoneKindName, TodoStatusName } from './mapper.ts'

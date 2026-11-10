@@ -1,5 +1,5 @@
 /**
- * S14 · the drawer (PLAN.md §5 S14). The bridge sends each session's workspace (TaskSummary
+ * The drawer. The bridge sends each session's workspace (TaskSummary
  * field 280) for a phone session and for a Web session, and both frames are the golden fixtures
  * that the Swift tests decode too.
  */
@@ -9,8 +9,8 @@ import { describe, test } from 'node:test'
 import { create, toBinary, toJson } from '@bufbuild/protobuf'
 import { DshTasks } from '../src/dsh.ts'
 import { FrameSchema } from '../src/gen/frame_pb.ts'
-import { HostLog, type LoggedEvent } from '../src/s2/host-log.ts'
-import { TaskHub } from '../src/s2/task-hub.ts'
+import { HostLog, type LoggedEvent } from '../src/tasks/host-log.ts'
+import { TaskHub } from '../src/tasks/task-hub.ts'
 import { SessionDirectory, type SessionReader } from '../src/sessions/directory.ts'
 import { FakeDSH } from './fake-dsh.ts'
 import { FIXTURES_DIR } from './fixtures.ts'
@@ -59,7 +59,7 @@ describe('DrawerWorkspaces', () => {
     await hub.close()
     const phone = upserts(hub.log, 'session-1')[0]
     assert.equal(phone.body?.case === 'taskUpserted' && phone.body.value.task?.workspace, '/work/app')
-    assert.deepEqual(toBinary(FrameSchema, frameOf(phone)), golden('s14_phone_session_upserted_event'),
+    assert.deepEqual(toBinary(FrameSchema, frameOf(phone)), golden('drawer_phone_session_upserted_event'),
       JSON.stringify(toJson(FrameSchema, frameOf(phone))))
     assert.equal(hub.list().find(t => t.taskId === 'session-2')?.workspace, '/home/user')
 
@@ -69,9 +69,9 @@ describe('DrawerWorkspaces', () => {
     await directory.reconcile()
     const web = upserts(webHub.log, 'web-1').at(-1)!
     assert.equal(web.body?.case === 'taskUpserted' && web.body.value.task?.workspace, '/work/app')
-    // S27: the same frame with the latest turn's start (`turn_started_at_ms`); S14's golden is the
+    // The same frame with the latest turn's start (`turn_started_at_ms`); the drawer's golden is the
     // frame from an older bridge, which the app still reads.
-    assert.deepEqual(toBinary(FrameSchema, frameOf(web)), golden('s27_web_session_upserted_event'),
+    assert.deepEqual(toBinary(FrameSchema, frameOf(web)), golden('last_turn_web_session_upserted_event'),
       JSON.stringify(toJson(FrameSchema, frameOf(web))))
     directory.close()
     await webHub.close()

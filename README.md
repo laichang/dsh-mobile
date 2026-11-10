@@ -113,7 +113,7 @@ bootstrap: done. The T0 round trip runs on this Mac.
 Each feature has its own re-runnable demo, for example:
 
 ```bash
-scripts/demo/s15.sh
+scripts/demo/all-tasks.sh
 ```
 
 ### 2. Use it with your own DSH
@@ -185,7 +185,7 @@ bridge/         DSH companion plugin (TypeScript, pnpm, node:test, FakeDSH)
 protocol/       frame.proto + golden fixtures · regenerate with scripts/codegen
 design/         screens (screens.json, screens/<id>.html → png, kit/), app icon
 spikes/         X1–X4 experiments behind key decisions
-scripts/        bootstrap · demo/<slice>.sh · codegen · check-plan · review
+scripts/        bootstrap · demo/<feature>.sh · codegen · check-plan · review
 evidence/       screenshots cited by the current plan (only while one is in progress)
 ```
 
@@ -197,7 +197,7 @@ evidence/       screenshots cited by the current plan (only while one is in prog
 | `cd ios/DSHKit && swift test` | Protocol, Noise, store and sync tests on the Mac |
 | `cd bridge && pnpm test` | Bridge tests against `FakeDSH`, golden fixtures, Noise vectors |
 | `scripts/codegen` | Regenerate Swift + TS from `protocol/*.proto` (`--check` fails if anything changes) |
-| `scripts/demo/<slice>.sh` | Drive one feature end to end in the Simulator |
+| `scripts/demo/<feature>.sh` | Drive one feature end to end in the Simulator |
 | `node scripts/dsh-up.mjs` | Start a local DSH + bridge with the mock model |
 
 Enable the repo's git hooks after cloning:

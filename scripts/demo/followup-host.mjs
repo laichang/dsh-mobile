@@ -1,9 +1,9 @@
 // Follow-up demo host: real DSH Web with the bridge plugin and DSH's mock LLM, in the DSH home
 // DSHM_HOME. It tells the Simulator the bridge port, waits until the phone has sent a task and a
 // follow-up, and then reads DSH's own session list through the Web API: one DSH session must
-// hold both messages, each with a reply after it (ARCHITECTURE D89). Exits 0 when it does.
+// hold both messages, each with a reply after it. Exits 0 when it does.
 //
-// DSHM_FOLLOWUP_MODE=running (ARCHITECTURE D101): a slower mock reply (about 35 s), so a turn runs
+// DSHM_FOLLOWUP_MODE=running: a slower mock reply (about 35 s), so a turn runs
 // while the phone queues follow-ups. It waits for two UI tests: `messages-queue` (a prompt, a
 // queued follow-up, and one sent now) and `messages-interrupt` (a prompt, stopped, and a message
 // that continues it). DSH must hold each conversation in one session, in the order the agent
@@ -130,7 +130,7 @@ try {
     assert.ok(session.messages.filter(m => !m.fromUser).every(m => m.text === MOCK_TEXT))
     console.log('followup host: the follow-up is in the same DSH session')
   } else {
-    // D101: the one sent now went in at the next step of the first turn; the queued one ran next.
+    // The one sent now went in at the next step of the first turn; the queued one ran next.
     const [prompt, later, now] = sent['messages-queue']
     const queue = sessionOf(prompt)
     assert.deepEqual(shape(queue), ['user: ' + prompt, 'agent', 'user: ' + now, 'agent', 'user: ' + later, 'agent'],

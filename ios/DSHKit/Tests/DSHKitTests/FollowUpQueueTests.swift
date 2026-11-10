@@ -4,7 +4,7 @@ import DSHTestSupport
 import Foundation
 import Testing
 
-/// D101 · follow-ups while a task runs, against `FakeHost` (`conversation.v2`): a follow-up waits
+/// Follow-ups while a task runs, against `FakeHost` (`conversation.v2`): a follow-up waits
 /// in the queue and runs as the next turn; "立即发送" moves it into the running turn; remove takes
 /// it out; the queue stays the same after a reconnect; after a stop, a new message continues.
 @MainActor
@@ -14,7 +14,7 @@ import Testing
 
     /// - Parameter pause: with one, the first turn stops after its first chunk until the stream
     ///   finishes, so the follow-ups reach the host before that turn ends, however busy the
-    ///   machine (S12: under load the turn ended first).
+    ///   machine (under load the turn ended first).
     func host(chunkDelay: Duration = .milliseconds(120), pause: AsyncStream<Void>? = nil) -> FakeHost {
         var script = FakeBridge.Script(reply: Self.first, chunkDelay: chunkDelay)
         if let pause { script.afterFirstChunk = { for await _ in pause {} } }
@@ -73,7 +73,7 @@ import Testing
         let row = try #require(store.task(key))
         try await store.sendNow(row.queue[1], for: row)
         try await store.removeQueued(row.queue[0], for: row)
-        // D143: sent now, it leaves the queue for the transcript at once, where the user sent it.
+        // Sent now, it leaves the queue for the transcript at once, where the user sent it.
         await waitForStore("edited") { Self.queue(store.task(key)).isEmpty && store.task(key)?.blocks.followUpCount == 1 }
         #expect(host.queueEdits == ["steer Now this.", "remove Not this."])
 
@@ -84,7 +84,7 @@ import Testing
         #expect(done.queue.isEmpty)
     }
 
-    /// S15, the reported bug: "立即发送" while the agent is in a long step (real DSH gives a steered
+    /// The reported bug: "立即发送" while the agent is in a long step (real DSH gives a steered
     /// message to the agent only when the step ends; here the first turn waits after its first
     /// chunk). The message must show in the transcript at once, not float above the field, and
     /// keep its place when DSH takes it.
@@ -125,7 +125,7 @@ import Testing
         #expect(fresh.task(key)?.queue.isEmpty == true)
     }
 
-    /// D143: a stop before DSH took a message sent now takes it out of the transcript, and its
+    /// A stop before DSH took a message sent now takes it out of the transcript, and its
     /// text goes back to the composer, as for a queued one.
     @Test func aStopBeforeDSHTookAMessageSentNowGivesItBack() async throws {
         let (pause, release) = AsyncStream<Void>.makeStream()
@@ -202,7 +202,7 @@ import Testing
         var script = FakeBridge.Script(reply: ["Oops."], chunkDelay: .milliseconds(10), failWith: "error: rate limited")
         script.followUpReply = Self.second
         script.queuesFollowUps = true
-        script.reportsFailures = false // D110 needs `failures.v1`
+        script.reportsFailures = false // A failed task's follow-up needs `failures.v1`
         let store = try launch(FakeHost(script: script))
         store.foreground()
         defer { store.background() }

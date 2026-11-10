@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { SessionDirectory, type SessionReader } from '../src/sessions/directory.ts'
-import { TaskHub } from '../src/s2/task-hub.ts'
-import { TaskState } from '../src/gen/s2_pb.ts'
+import { TaskHub } from '../src/tasks/task-hub.ts'
+import { TaskState } from '../src/gen/durable_list_pb.ts'
 import { AttachmentKind } from '../src/gen/attachments_pb.ts'
 
-// D107: the journal's image and file blocks become the message's attachments, so a replay shows the chips.
+// The journal's image and file blocks become the message's attachments, so a replay shows the chips.
 test('journalUserMessageCarriesItsImagesAndFilesAsAttachments', async () => {
   const hub = new TaskHub({ interrupt() {}, async start() { return { taskId: 'phone', output: (async function* () {})() } } })
   const events = [
@@ -92,7 +92,7 @@ test('webSessionsBeforeAndAfterPairingAndPhoneTaskHaveOneHostRowEach', async () 
   await hub.close()
 })
 
-// S27 · Real-iPhone bug (2026-11-07): a Web session with turns hours apart showed "用时 2小时37分钟15秒",
+// Real-iPhone bug (2026-11-07): a Web session with turns hours apart showed "用时 2小时37分钟15秒",
 // because the phone counted from the first turn. The summary now says when the latest turn started.
 test('webSessionSummarySaysWhenItsLatestTurnStarted', async () => {
   const hub = new TaskHub({ interrupt() {}, async start() { return { taskId: 'phone', output: (async function* () {})() } } })

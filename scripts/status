@@ -29,8 +29,8 @@ IDLE_AFTER_MIN = 45        # a doing slice with no process and no commit for thi
 HEARTBEAT_STALE_MIN = 30   # the heartbeat fires about every 20 minutes
 SIM_LIMIT, MIN_IDLE = 3, 15
 DU_TIMEOUT_S = 5           # du over /tmp/dshm-* (DerivedData copies); skipped with --fast
-# Demos that run after their merge: t0.sh at the start of each work session (WORKFLOW.md §4.1) and
-# t1.sh --all as a regression in reviews. Their /tmp/dshm-t0*, /tmp/dshm-t1* are caches, not leftovers.
+# Demos that run after their merge: round-trip.sh at the start of each work session (WORKFLOW.md §4.1) and
+# shell.sh --all as a regression in reviews. Their /tmp/dshm-t0*, /tmp/dshm-t1* are caches, not leftovers.
 SHARED_DEMO_TMP = ("T0", "T1")
 REVIEW_DIR = Path("/tmp/dshm-review")
 PROC_RE = re.compile(r"xcodebuild|swift-test|swiftpm-testing|scripts/review|scripts/demo/|xctest|swift test|swift-build")

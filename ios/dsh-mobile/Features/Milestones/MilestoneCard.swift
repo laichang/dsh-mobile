@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// S3 task card: the current milestone and the todo list, so progress shows without the
+/// Milestone task card: the current milestone and the todo list, so progress shows without the
 /// transcript (STORY principle 4). Tapping it opens the timeline.
 struct MilestoneCard: View {
     let timeline: MilestoneTimeline

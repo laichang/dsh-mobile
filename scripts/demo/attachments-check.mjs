@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Checks that a DSH session made since <since> (Unix seconds) has the photo in its first user
-// message (ARCHITECTURE D95): the prompt text and an `image` part of <width>x<height> whose
+// message: the prompt text and an `image` part of <width>x<height> whose
 // attachment object is in DSH's store.
 //   node scripts/demo/attachments-check.mjs <DSH_HOME> <since> <prompt> <width>x<height>
 import { existsSync } from 'node:fs'

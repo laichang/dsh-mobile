@@ -2,7 +2,7 @@
 import DSHCore
 import Foundation
 
-/// A transcriber that "hears" a fixed phrase (D116, D16): partial results that grow a few
+/// A transcriber that "hears" a fixed phrase: partial results that grow a few
 /// characters or a word at a time, `step` apart, then the final result. Debug builds choose it
 /// with `-DSHMFakeSpeech <phrase>`; `-DSHMFakeSpeech denied` makes it report that the user turned
 /// speech recognition off.

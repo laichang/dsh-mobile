@@ -164,7 +164,7 @@ describe('TranscriptMapper', () => {
   })
 })
 
-describe('S17TranscriptFixtures', () => {
+describe('TranscriptFixtures', () => {
   const decode = (name: string) => {
     const frame = fromBinary(FrameSchema, new Uint8Array(readFileSync(`${FIXTURES_DIR}/${name}.binpb`)))
     assert.ok(frame.kind.case === 'event' && frame.kind.value.body.case === 'transcriptBlock')
@@ -172,18 +172,18 @@ describe('S17TranscriptFixtures', () => {
   }
 
   test('thinkingAndToolBlocksDecode', () => {
-    const thinking = decode('s17_thinking_block_event')
+    const thinking = decode('transcript_thinking_block_event')
     assert.equal(thinking.state, TranscriptBlockState.DONE)
     assert.ok(thinking.kind.case === 'thinking')
     assert.equal(thinking.kind.value.durationMs, 8000n)
     assert.equal(thinking.kind.value.text, '先看测试为什么失败。')
 
-    const tool = decode('s17_tool_block_event')
+    const tool = decode('transcript_tool_block_event')
     assert.ok(tool.kind.case === 'tool')
     assert.deepEqual([tool.kind.value.tool, tool.kind.value.target, tool.kind.value.linesAdded, tool.kind.value.linesRemoved],
       ['edit', 'ios/DSHKit/Sources/DSHCore/Sync/TaskListStore.swift', 12, 3])
 
-    const failed = decode('s17_failed_tool_block_event')
+    const failed = decode('transcript_failed_tool_block_event')
     assert.equal(failed.state, TranscriptBlockState.FAILED)
     assert.ok(failed.kind.case === 'tool')
     assert.deepEqual([failed.kind.value.error, failed.kind.value.argumentsTruncated], ['exit code 1', true])

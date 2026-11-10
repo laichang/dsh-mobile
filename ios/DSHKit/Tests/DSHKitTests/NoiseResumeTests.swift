@@ -4,12 +4,12 @@ import Foundation
 import SwiftData
 import Testing
 
-/// S1 × S2 seam (S1 landed second, PLAN.md §5 S1): the durable list over `NoiseChannel`. After
+/// Pairing with the durable list: the durable list over `NoiseChannel`. After
 /// kill/reopen the app reconnects with a fresh IK handshake and resumes from its cached cursor.
 @MainActor
 @Suite(.serialized, .timeLimit(.minutes(2))) struct NoiseResumeTests {
     let storeURL = FileManager.default.temporaryDirectory
-        .appendingPathComponent("dshm-s1s2-\(UUID().uuidString).store")
+        .appendingPathComponent("dshm-noise-resume-\(UUID().uuidString).store")
     let keys = InMemoryDeviceKeyStore()
     let hosts = InMemoryPairedHostStore()
 
@@ -23,8 +23,8 @@ import Testing
             hosts: [.init(key: "noise:\(paired.id)", connection: connection)], prompt: "Count to five.")
         store.backoff = (.milliseconds(20), .milliseconds(100))
         // send() returns as soon as the host is online; under load the first connect can take
-        // longer than 500 ms, and then send() gave nil (S20 review, 2026-11-07). The 30 s
-        // are only a deadline for a busy machine (S12).
+        // longer than 500 ms, and then send() gave nil. The 30 s
+        // are only a deadline for a busy machine.
         store.sendWaitsFor = .seconds(30)
         return store
     }
@@ -100,7 +100,7 @@ import Testing
 
     @Test func droppedNoiseConnectionReconnectsAndReplaysOnlyTheGap() async throws {
         // The task waits after its first chunk until the drop, so it cannot end before the drop
-        // on a busy machine (S12: then no reconnect was needed yet when the test looked).
+        // on a busy machine (then no reconnect was needed yet when the test looked).
         let (pause, release) = AsyncStream<Void>.makeStream()
         defer { release.finish() }
         var script = FakeBridge.Script(reply: Self.reply, chunkDelay: .milliseconds(40))

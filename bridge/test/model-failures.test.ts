@@ -1,5 +1,5 @@
 /**
- * Model failures (ARCHITECTURE D104, D110), against FakeDSH replaying what real DSH 0.2.2-rc.1
+ * Model failures, against FakeDSH replaying what real DSH 0.2.2-rc.1
  * emitted for each failure (`test/fixtures/model-failures/<case>.json`: every follow frame, recorded
  * with a fake DeepSeek provider in front of DSH's mock LLM). A model failure ends the task as
  * FAILED with DSH's text and failure class, nothing keeps it running, and a new message into the
@@ -16,7 +16,7 @@ import { DshTasks, type FollowFrame } from '../src/dsh.ts'
 import { MessageMode } from '../src/gen/conversation_pb.ts'
 import { FrameSchema, TaskStatus, type Event, type Frame, type Response } from '../src/gen/frame_pb.ts'
 import { MilestoneKind } from '../src/gen/milestones_pb.ts'
-import { TaskState } from '../src/gen/s2_pb.ts'
+import { TaskState } from '../src/gen/durable_list_pb.ts'
 import { failureOf } from '../src/milestones/mapper.ts'
 import { CONVERSATION_CAPABILITY, PLAINTEXT_PATH, startBridgeServer, type BridgeServer } from '../src/server.ts'
 import { FakeDSH, type FakeDSHOptions } from './fake-dsh.ts'
@@ -126,7 +126,7 @@ describe('ModelFailuresAgainstFakeDSH', () => {
       const error = ends(recorded)[0].error!
       assert.equal(ends(recorded)[0].kind, 'error')
 
-      // TaskEnded: FAILED, DSH's message as it is, and DSH's failure class (D104).
+      // TaskEnded: FAILED, DSH's message as it is, and DSH's failure class.
       const events = client.events()
       const end = events.flatMap((e) => (e.body.case === 'taskEnded' ? [e.body.value] : []))[0]
       assert.deepEqual([end.taskId, end.status, end.message, end.failureCode], [taskId, TaskStatus.FAILED, error.message, error.code])
@@ -162,7 +162,7 @@ describe('ModelFailuresAgainstFakeDSH', () => {
       assert.equal(accepted.body.case, 'messageAccepted')
       await client.until((fs) => endedCount(fs) === 2)
 
-      // The same DSH session, prompted again after the failure (D110).
+      // The same DSH session, prompted again after the failure.
       assert.deepEqual(dsh.prompts.map((p) => p.sessionId), [taskId, taskId])
       const events = client.events()
       const taskEnds = events.flatMap((e) => (e.body.case === 'taskEnded' ? [e.body.value] : []))
