@@ -500,6 +500,8 @@ Append-only, dated.
 
 - **2026-11-10 · S4 merged; S5 runs as a background agent.** S4 merged as 7a73893 (closes #61); review /tmp/dshm-review/S4-d222eb6.txt PASS (captions and bodies byte-identical to the old board, 26/26 pngs identical, token values unchanged). The user's AGENTS.md line was stashed and reapplied (backup /tmp/dshm-user-agents-s4.patch). S5 assigned; it starts as a background agent from /tmp/dshm-brief/S5-r1.md (session start refused in a turn from a subagent message). Scope: 643 Dxx lines in 238 files and slice IDs in names; the check goes into a plain script, the hook wiring is for S7 (user review).
 
+- **2026-11-10 · S5 built by a background agent; separate review runs.** S5 at a31ef62 (worktree agent-a97ffb07f7089f892): Dxx lines in code 643 → 62 (binaries, golden data, check scripts, plan tools); scripts/check-ids finds 0 on the branch; 33 UI test classes, 5 suites, 32 demo scripts, fixtures, env names, s2.proto and bridge/src/s2 renamed; fixtures same bytes. UI tests only compiled, so the review runs real demos. Open for S7: scripts/review looks for scripts/demo/<ID>.sh, which check-ids now forbids; hook wiring of check-ids. The user's uncommitted FEATURES.md (65 references) and scripts/feature-map-test (2) cite the old demo and test names.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
