@@ -11,3 +11,4 @@ S2	claude/s2-slice-brief	0	47810	3283	47840	3313	dshm-S2	~/.dshm/home-s2	D159-D1
 S3	claude/s3-run-plan-workflow	1	47811	3284	47841	3314	dshm-S3	~/.dshm/home-s3	D162-D164	2026-11-10
 S4	claude/s4-design-as-data	1	47811	3284	47841	3314	dshm-S4	~/.dshm/home-s4	D165-D167	2026-11-10
 S5	claude/s5-remove-ids	0	47810	3283	47840	3313	dshm-S5	~/.dshm/home-s5	D168-D170	2026-11-10
+S7	claude/s7-plan-dir	0	47810	3283	47840	3313	dshm-S7	~/.dshm/home-s7	D171-D173	2026-11-10

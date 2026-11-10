@@ -48,7 +48,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S4 | done | merged `7a73893` | 2026-11-10 | — |
 | S5 | done | merged `424b093` | 2026-11-10 | — |
 | S6 | done | merged `46d4f3d` | 2026-11-10 | — |
-| S7 | todo | — | 2026-11-10 | Assign it and start a session |
+| S7 | doing | `claude/s7-plan-dir` | 2026-11-10 | Slice owner builds (§8) |
 
 ## 1. Approach
 
@@ -521,6 +521,8 @@ Append-only, dated.
 - **2026-11-10 · S5 merged.** Merged as `424b093`; `scripts/check-plan` on the merge commit passed. `scripts/review S5` at `d15d8e2`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S5-d15d8e2.txt`). No open `[human]` items, so S5 is `done`.
 
 - **2026-11-10 · S5 merged (424b093) after a separate review PASS. Left for the end issue list: broken comment lines in scripts/demo/pairing.sh:2, all-tasks.sh:2, session-page.sh:2 and StructuredTranscriptView.swift:136.**
+
+- **2026-11-10 · S7 assigned.** Branch `claude/s7-plan-dir`, simulator `dshm-S7`, DSHM_HOME `~/.dshm/home-s7`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D171–D173. `eval "$(scripts/slice-env S7)"` exports them.
 
 ## 9. Pending user confirmation
 
