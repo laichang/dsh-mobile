@@ -526,6 +526,8 @@ Append-only, dated.
 
 - **2026-11-10 · S7 assigned (claude/s7-plan-dir); session start refused (turn not from the user), so a background agent builds it from /tmp/dshm-brief/S7-r1.md. Brief note: S7 may change guard files; the user reviews that diff at merge (option A).**
 
+- **2026-11-10 · User decisions for the end issue list: share sheet and iPad not drawn (mark as not done); remove push from L/X1/P1; screen 08 pairing vs upstream stays open; the scheduler allocates simulators per node; delete comments the code can express (the 4 broken lines first). Open the issues at plan end. claude/feature-map branch and worktree deleted per the user.**
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
