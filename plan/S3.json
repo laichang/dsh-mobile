@@ -1,0 +1,40 @@
+{
+  "id": "S3",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "With a fake agent: a node starts when its needs are met, and 3 nodes or fewer run at the same time",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "The prompt of a node has only its ID, round and brief path; the same node in a changed graph has the same prompt",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "A node becomes blocked after 3 rounds, after 2 rounds with the same evidence, and after an out-of-scope report",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "A fix adds a `passed: false` item and blocks only the nodes that have not started and share files or screens with it",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "The return of the Workflow fits the schema and is about 300 tokens or fewer; `/run-plan` calls the Workflow",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

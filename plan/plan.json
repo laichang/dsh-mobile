@@ -1,0 +1,85 @@
+{
+  "title": "M2.5 · Process as code",
+  "nodes": [
+    {
+      "id": "T0",
+      "kind": "tracer",
+      "title": "plan/ graph, and passed only from the verifier",
+      "needs": [],
+      "branch": "claude/t0-plan-graph"
+    },
+    {
+      "id": "T1",
+      "kind": "tracer",
+      "title": "One fake node from brief to merge through the Workflow",
+      "needs": [
+        "T0"
+      ],
+      "branch": null
+    },
+    {
+      "id": "S1",
+      "kind": "slice",
+      "title": "Output wrappers: JSON summaries for build and test output",
+      "needs": [],
+      "branch": "claude/s1-output-wrappers"
+    },
+    {
+      "id": "S2",
+      "kind": "slice",
+      "title": "Slice brief: scripts/brief <ID> replaces reading the docs",
+      "needs": [
+        "T1"
+      ],
+      "branch": null
+    },
+    {
+      "id": "S3",
+      "kind": "slice",
+      "title": "One run-plan Workflow for all plans, with the rework loop",
+      "needs": [
+        "T1"
+      ],
+      "branch": null
+    },
+    {
+      "id": "S4",
+      "kind": "slice",
+      "title": "Design as data: screens.json and one HTML file per screen",
+      "needs": [
+        "S2"
+      ],
+      "branch": null
+    },
+    {
+      "id": "S5",
+      "kind": "slice",
+      "title": "Remove Dxx and slice IDs from code",
+      "needs": [
+        "S4"
+      ],
+      "branch": null
+    },
+    {
+      "id": "S6",
+      "kind": "slice",
+      "title": "ARCHITECTURE and STORY as the current state",
+      "needs": [],
+      "branch": "claude/s6-architecture-current"
+    },
+    {
+      "id": "S7",
+      "kind": "slice",
+      "title": "Remove WORKFLOW.md and use only the new plan format",
+      "needs": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S6"
+      ],
+      "branch": null
+    }
+  ]
+}

@@ -13,7 +13,16 @@ PLAN.md exists only while a requirement is in progress. With no PLAN.md, every c
 Read-only (anywhere):
   plan show <ID>                       the §0 row and the slice section
   plan title [--milestone M1]          the coordinator status title, counted from §0
-  plan lint                            check the format of PLAN.md (exit 1 on an error)
+  plan lint                            check the format of PLAN.md and the files in plan/ (exit 1)
+  plan dag --json                      write the graph of plan/plan.json (nodes, edges, order) to
+        stdout; a cycle, an unknown need or a schema error makes it fail (no PLAN.md needed)
+  plan passed <ID> [--json]            passed of each item of <ID>, derived from the verifier
+        results for the head commit of its branch (scripts/lib/plandata.py); results for an
+        older commit are stale and count for nothing
+
+Verifier (not the slice owner; WORKFLOW.md §10):
+  plan record <ID> --results FILE|-    store verifier results for the head commit of the branch
+        of <ID> (schema `results` in scripts/lib/plan.schema.json), as a git note
 
 Coordinator (on main):
   plan new "<title>"                   start the plan of a requirement the user has set, from
@@ -58,6 +67,7 @@ Exit 0 = OK, 1 = refused or check failed, 2 = usage.
 import argparse
 import difflib
 import glob
+import json
 import os
 import re
 import shutil
@@ -68,6 +78,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import dshm  # noqa: E402
+import plandata  # noqa: E402
 import plangen  # noqa: E402
 
 PlanError = dshm.PlanError
@@ -233,12 +244,58 @@ def cmd_title(p, a):
 
 
 def cmd_lint(p, a):
-    errors = plangen.lint(p.lines)
+    errors = plangen.lint(p.lines) + plandata.tree_errors(plandata.worktree_files(p.root))
     for e in errors:
         print(f"plan lint: {e}")
     if not errors:
         print("plan lint: OK")
     return 1 if errors else 0
+
+
+def cmd_dag(p, a):
+    try:
+        g = plandata.dag(plandata.load_plan(p.root))
+    except plandata.DataError as e:
+        raise PlanError(str(e))
+    if a.json:
+        print(json.dumps(g, indent=2, ensure_ascii=False))
+    else:
+        for sid in g["order"]:
+            n = next(n for n in g["nodes"] if n["id"] == sid)
+            print(f"{sid}  needs {', '.join(n['needs']) or '—'}  {n['title']}")
+    return 0
+
+
+def cmd_passed(p, a):
+    try:
+        d = plandata.derive(p.root, a.id)
+    except plandata.DataError as e:
+        raise PlanError(str(e))
+    if a.json:
+        print(json.dumps(d, indent=2, ensure_ascii=False))
+        return 0
+    head = d["head"][:12] if d["head"] else "no commit"
+    who = f"verified by {d['verifier']}" if d["verifier"] else "no verifier results for this commit"
+    print(f"{d['id']} · {d['branch'] or 'no branch'} @ {head} · {who}")
+    if d["stale"]:
+        print(f"  stale: results for {d['stale'][:12]} do not count for {head}")
+    for it in d["items"]:
+        mark = "x" if it["passed"] else " "
+        print(f"  [{mark}] [{it['tier']}] {it['text']}" + (f" — {it['evidence']}" if it["evidence"] else ""))
+    print(f"passed: {str(d['passed']).lower()}")
+    return 0
+
+
+def cmd_record(p, a):
+    try:
+        results = json.loads(read_body(a.results) if a.results == "-" else Path(a.results).read_text())
+        head = plandata.record(p.root, a.id, results)
+    except (OSError, json.JSONDecodeError) as e:
+        raise PlanError(f"cannot read the results: {e}")
+    except plandata.DataError as e:
+        raise PlanError(str(e))
+    print(f"plan: recorded the results of {results['verifier']} for {a.id} at {head[:12]} ({plandata.NOTES_REF})")
+    return 0
 
 
 def cmd_new(p, a):
@@ -585,6 +642,9 @@ def main():
     sp = add("show", cmd_show); sp.add_argument("id")
     sp = add("title", cmd_title); sp.add_argument("--milestone")
     add("lint", cmd_lint)
+    sp = add("dag", cmd_dag); sp.add_argument("--json", action="store_true")
+    sp = add("passed", cmd_passed); sp.add_argument("id"); sp.add_argument("--json", action="store_true")
+    sp = add("record", cmd_record); sp.add_argument("id"); sp.add_argument("--results", required=True)
     sp = add("new", cmd_new); sp.add_argument("title")
     sp = add("add", cmd_add); sp.add_argument("kind", choices=[*plangen.KINDS, "exit"]); sp.add_argument("name")
     sp.add_argument("--why", default=""); sp.add_argument("--cuts", default="")
@@ -614,7 +674,7 @@ def main():
             if getattr(a, attr, None):
                 dshm.check_id(getattr(a, attr))
         p = Plan(dshm.toplevel())
-        if not p.exists and a.fn not in (cmd_new, cmd_cleanup):
+        if not p.exists and a.fn not in (cmd_new, cmd_cleanup, cmd_dag, cmd_passed, cmd_record):
             raise PlanError(plangen.NO_PLAN)
         return a.fn(p, a)
     except PlanError as e:

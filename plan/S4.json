@@ -1,0 +1,33 @@
+{
+  "id": "S4",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "`scripts/check-design` passes on main, and fixtures make it fail for a STORY section without a screen, a cycle, and a rule whose XCUITest does not exist",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "A check fails when a DSHTheme file or token name contains a slice ID (`S14`, `s19`, …)",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "`scripts/brief <ID>` includes the screens of the slice from `design/screens.json`, and the 3k token test still passes",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "ui",
+      "text": "`scripts/render-design` renders each `design/screens/<id>.html` to its png",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}
