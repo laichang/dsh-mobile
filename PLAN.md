@@ -255,7 +255,7 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 
 **Done when**
 - [x] [auto] A test makes sure that the brief of each node in the `plan/` fixtures is 3k tokens or fewer — Evidence: cmd:scripts/brief-test · commit:8dcbe97
-- [ ] [auto] Each file and command that a brief names exists (test) — Evidence:
+- [x] [auto] Each file and command that a brief names exists (test) — Evidence: cmd:scripts/brief-test · commit:8dcbe97
 
 **Not**: Screens in the brief (S4).
 
