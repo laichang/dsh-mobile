@@ -457,6 +457,8 @@ Append-only, dated.
 
 - **2026-11-10 · T1 merged; S2 and S3 start; heartbeat restarted.** T1 merged as 15982e9 after the user approved the scripts/lib/plandata.py diff (option A); closes #57 with T0. Fake plan branches and T1 worktree removed. New heartbeat: CronCreate job 88097d29. S2 and S3 assigned. Briefs carry: no Dxx IDs in docs, wrappers, no guard file edits, the T1 known limits (S3), and the scripts/xc missing-simulator issue (S2 owns scripts/brief only; S3 fixes scripts/xc if it needs it).
 
+- **2026-11-10 · Run paused by the user.** The user paused the run (2026-11-10, in chat: "先暂停"). Stopped: the separate reviews of S2 (cc5b2bf) and S3 (b60495c), before they wrote results. Heartbeat 88097d29 deleted. S2 and S3 are built, committed and clean on their branches; their slice sessions are idle. To resume: rerun both reviews; merge the first that passes; the other merges main (they conflict only in ARCHITECTURE.md); then S4.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
