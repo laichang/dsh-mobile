@@ -12,7 +12,10 @@
         "scripts/plan-test"
       ],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/plan-test"
+      ]
     },
     {
       "tier": "auto",
@@ -26,7 +29,11 @@
         "scripts/check-plan"
       ],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/plan-test",
+        "commit:47fdbf5"
+      ]
     }
   ]
 }

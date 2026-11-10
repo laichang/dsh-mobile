@@ -7,18 +7,28 @@ The schema is scripts/lib/plan.schema.json. This module checks it (a small valid
 of JSON Schema that the file uses: no dependency) and the rules a schema cannot say: unique IDs,
 the kind of each ID, known needs, no cycle, one plan/<ID>.json for each node.
 
-`passed` in a plan/<ID>.json is always false. The value that counts is derived: the verifier
-results for the head commit of the slice branch. A verifier stores them with `scripts/plan
-record`, as a git note on that commit (ref refs/notes/dshm-verify, shared by all worktrees). The
-results are not in a commit of the branch, so no edit on the branch can make them, and a new
-commit has no results until a verifier runs again: old results are stale.
+`passed` in a plan/<ID>.json is always false. The value that counts is derived from the results
+of `scripts/plan verify <ID>`: it checks out the head commit of the slice branch clean, runs the
+`cmd:` evidence of each item there (and checks `commit:` pointers), and stores the commands and
+their exit codes as a git note on that commit (ref refs/notes/dshm-verify, shared by all
+worktrees). No command takes results from outside. A new commit has no results until verify runs
+again: old results are stale. An item passes only with at least one `cmd:` pointer and every run
+at exit 0. The results are advisory: anyone with a shell can write a note, so the merge step runs
+verify again on the commit that it merges.
 
-Used by scripts/plan (dag, passed, record, lint) and by scripts/check-plan (staged plan/ files).
+Used by scripts/plan (dag, passed, verify, lint) and by scripts/check-plan (staged plan/ files).
 """
 
+import datetime
 import json
+import os
 import re
+import shlex
+import shutil
+import socket
 import subprocess
+import tempfile
+import time
 from pathlib import Path
 
 PLAN_DIR = "plan"
@@ -28,6 +38,8 @@ SCHEMA_PATH = Path(__file__).resolve().with_name("plan.schema.json")
 PREFIX = {"tracer": "T", "spike": "X", "slice": "S"}
 SLICE_FILE_RE = re.compile(r"^plan/(?P<id>(T|X|S)\d+)\.json$")
 STALE_DEPTH = 50                # how far back `passed` looks for stale results
+VERIFIER = "scripts/plan verify"
+TIMEOUT = int(os.environ.get("DSHM_VERIFY_TIMEOUT", "3600"))    # seconds, for each command
 
 
 class DataError(Exception):
@@ -54,6 +66,7 @@ def _type_ok(value, t):
         "array": lambda v: isinstance(v, list),
         "string": lambda v: isinstance(v, str),
         "integer": lambda v: isinstance(v, int) and not isinstance(v, bool),
+        "number": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
         "boolean": lambda v: isinstance(v, bool),
         "null": lambda v: v is None,
     }[t](value)
@@ -289,42 +302,94 @@ def note(root, commit):
 
 
 def results_for(root, sid, commit):
+    """The results of `scripts/plan verify` for sid at commit, or None. A note in any other shape
+    (no runs, another verifier, another commit) counts for nothing."""
     res = note(root, commit).get(sid)
-    if not isinstance(res, dict) or check_against(res, "results", "note") or res["commit"] != commit:
+    if (not isinstance(res, dict) or check_against(res, "results", "note") or res["commit"] != commit
+            or res["verifier"] != VERIFIER):
         return None
     return res
 
 
-def record(root, sid, results):
-    """Store verifier results for the head commit of the branch of sid. Returns the commit."""
-    errs = check_against(results, "results", "results")
-    if errs:
-        raise DataError("\n".join(errs))
-    if results["slice"] != sid:
-        raise DataError(f"the results are for {results['slice']}, not {sid}")
-    plan, items = load(root)
-    node = next((n for n in plan["nodes"] if n["id"] == sid), None)
+def item_passed(r):
+    """An item passed when its record has runs and each run exited 0 (not the flag alone)."""
+    return bool(r.get("passed")) and bool(r.get("runs")) and all(x["exit"] == 0 for x in r["runs"])
+
+
+def _store(root, commit, sid, results):
+    data = note(root, commit)
+    data[sid] = results
+    _git(root, "notes", f"--ref={NOTES_REF}", "add", "-f", "-F", "-", commit, check=True,
+         input=json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+
+
+def _run(cmd, cwd, logpath):
+    """Run one cmd: pointer (a repo-relative executable and its arguments) in cwd."""
+    argv = shlex.split(cmd)
+    exe = Path(cwd, argv[0]) if argv else None
+    t0 = time.monotonic()
+    if not argv or Path(argv[0]).is_absolute() or ".." in Path(argv[0]).parts \
+            or not exe.is_file() or not os.access(exe, os.X_OK):
+        Path(logpath).write_text(f"verify: {cmd!r} is not a repo-relative executable\n")
+        return {"cmd": cmd, "exit": 127, "seconds": 0.0, "log": str(logpath)}
+    with open(logpath, "w") as log:
+        try:
+            r = subprocess.run([str(exe), *argv[1:]], cwd=cwd, stdout=log, stderr=subprocess.STDOUT,
+                               stdin=subprocess.DEVNULL, timeout=TIMEOUT)
+            code = r.returncode
+        except subprocess.TimeoutExpired:
+            log.write(f"\nverify: timed out after {TIMEOUT} s\n")
+            code = 124
+    return {"cmd": cmd, "exit": code, "seconds": round(time.monotonic() - t0, 1), "log": str(logpath)}
+
+
+def _ancestor(root, ref, head):
+    r = _git(root, "merge-base", "--is-ancestor", ref, head)
+    return {"cmd": f"git merge-base --is-ancestor {ref} {head[:12]}", "exit": r.returncode,
+            "seconds": 0.0, "log": ""}
+
+
+def verify(root, sid, say=print):
+    """Run the evidence of each item of sid on a clean checkout of the head of its branch, and
+    store what ran (commands, exit codes) as the results for that commit. The only writer of
+    results: no command takes results from outside."""
+    plan = load_plan(root)
+    node = next((n for n in plan.get("nodes", []) if n.get("id") == sid), None)
     if node is None:
         raise DataError(f"{sid} is not a node of {PLAN_FILE}")
     head = branch_head(root, node["branch"])
     if head is None:
         raise DataError(f"{sid} has no branch with a commit ({node['branch']})")
-    if results["commit"] != head:
-        raise DataError(f"the results are for {results['commit'][:12]}, but the head of {node['branch']} "
-                        f"is {head[:12]}: results for an older commit are stale")
-    n = len(items[sid])
-    seen = set()
-    for r in results["items"]:
-        if r["item"] >= n:
-            raise DataError(f"{sid} has {n} items; there is no item {r['item']}")
-        if r["item"] in seen:
-            raise DataError(f"item {r['item']} has two results")
-        seen.add(r["item"])
-    data = note(root, head)
-    data[sid] = results
-    _git(root, "notes", f"--ref={NOTES_REF}", "add", "-f", "-F", "-", head, check=True,
-         input=json.dumps(data, indent=2, ensure_ascii=False) + "\n")
-    return head
+    logs = Path(os.environ.get("DSHM_VERIFY_LOGS", "/tmp/dshm-verify"))
+    logs.mkdir(parents=True, exist_ok=True)
+    tmp = Path(tempfile.mkdtemp(prefix=f"dshm-verify-{sid.lower()}-"))
+    wt = tmp / "head"
+    _git(root, "worktree", "add", "-q", "--detach", str(wt), head, check=True)
+    try:
+        _, items = load(wt)
+        done, out = {}, []
+        for i, it in enumerate(items[sid]):
+            runs = []
+            ptrs = [p.strip() for p in it.get("evidence", [])]
+            cmds = [p[4:].strip() for p in ptrs if p.startswith("cmd:")]
+            if it["tier"] != "human":
+                for p in ptrs:
+                    if p.startswith("commit:"):
+                        runs.append(_ancestor(wt, p[7:].strip(), head))
+                for c in cmds:
+                    if c not in done:
+                        say(f"verify {sid} item {i}: {c}")
+                        done[c] = _run(c, wt, logs / f"{sid}-{head[:12]}-{len(done)}.log")
+                    runs.append(done[c])
+            ok = bool(cmds) and all(r["exit"] == 0 for r in runs)
+            out.append({"item": i, "passed": ok, "runs": runs})
+    finally:
+        _git(root, "worktree", "remove", "--force", str(wt))
+        shutil.rmtree(tmp, ignore_errors=True)
+    results = {"slice": sid, "commit": head, "verifier": VERIFIER, "host": socket.gethostname(),
+               "at": datetime.datetime.now().astimezone().isoformat(timespec="seconds"), "items": out}
+    _store(root, head, sid, results)
+    return results
 
 
 def derive(root, sid):
@@ -334,13 +399,21 @@ def derive(root, sid):
     if node is None:
         raise DataError(f"{sid} is not a node of {PLAN_FILE}")
     head = branch_head(root, node["branch"])
+    if head:    # the items as the head commit has them: the ones that verify ran
+        r = _git(root, "show", f"{head}:plan/{sid}.json")
+        if r.returncode == 0:
+            doc = json.loads(r.stdout)
+            errs = check_against(doc, "slice", f"plan/{sid}.json at {head[:12]}")
+            if errs:
+                raise DataError("\n".join(errs))
+            items = {sid: doc["items"]}
     res = results_for(root, sid, head) if head else None
     by_item = {r["item"]: r for r in res["items"]} if res else {}
     out_items = []
     for i, it in enumerate(items[sid]):
         r = by_item.get(i, {})
         out_items.append({"item": i, "tier": it["tier"], "text": it["text"],
-                          "passed": bool(r.get("passed")), "evidence": r.get("evidence", "")})
+                          "passed": item_passed(r), "runs": r.get("runs", [])})
     stale = None
     if head and res is None:
         log = _git(root, "rev-list", f"--max-count={STALE_DEPTH}", head).stdout.split()
@@ -349,6 +422,7 @@ def derive(root, sid):
     return {
         "id": sid, "branch": node["branch"], "head": head,
         "verifier": res["verifier"] if res else None,
+        "verified_at": res["at"] if res else None,
         "stale": stale,
         "passed": bool(res) and bool(checked) and all(i["passed"] for i in checked),
         "items": out_items,

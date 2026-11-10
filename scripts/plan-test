@@ -450,44 +450,62 @@ else
 fi
 git diff --quiet HEAD -- plan && ok "the plan/ fixtures are back as committed" || bad "plan/ fixtures changed"
 
-# Verifier results, per slice and per commit (git notes).
+# Verifier results: `scripts/plan verify` is their only writer. It runs the cmd: evidence on a
+# clean checkout of the head and keeps the commands and exit codes (git notes, per commit).
+plan_cmds=$(scripts/plan -h | sed -nE 's/.*\{([a-z,-]+)\}.*/\1/p' | head -1 | tr , ' ')
+[ -n "$plan_cmds" ] && ok "the scripts/plan commands are listed" || bad "no command list in scripts/plan -h"
+takes=""; for c in $plan_cmds; do scripts/plan "$c" -h 2>&1 | grep -q -- '--results' && takes="$takes $c"; done
+[ -z "$takes" ] && ok "no scripts/plan command takes results from outside" || bad "commands that take results:$takes"
+expect "record (results from outside) is gone" 1 scripts/plan record T0 --results /dev/null
+expect "verify with no branch yet is refused" 1 scripts/plan verify T0
 expect "passed with no branch yet" 0 scripts/plan passed T0
-git checkout -q -b claude/t0-x && echo one > t0-work.txt && git add t0-work.txt && git commit -q -m "T0 work"
-H1=$(git rev-parse HEAD); git checkout -q main
+git checkout -q -b claude/t0-x
+printf '#!/bin/sh\necho "ran $*" >> "$VERIFY_MARK"\nexit "${VERIFY_EXIT:-0}"\n' > check.sh && chmod +x check.sh
+git add check.sh && git commit -q -m "a check"; H0=$(git rev-parse HEAD)
+ev_item() { printf '{"tier": "%s", "text": "%s", "files": [], "screens": [], "passed": false, "evidence": %s}' "$@"; }
+printf '{"id": "T0", "items": [%s, %s, %s]}\n' "$(ev_item auto "T0 works" '["cmd:check.sh one"]')" \
+  "$(ev_item ui "T0 shows" "[\"cmd:check.sh two\", \"commit:$H0\"]")" "$(ev_item auto "no command" '["test:SomeTest"]')" > plan/T0.json
+git add plan/T0.json && git commit -q -m "T0 evidence"; H1=$(git rev-parse HEAD)
 scripts/plan passed T0 --json > "$T/p0.json"
 python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["passed"] is False and d["verifier"] is None and not any(i["passed"] for i in d["items"])' "$T/p0.json" \
   && ok "no results: nothing passed" || bad "no results: $(cat "$T/p0.json")"
-res() { # res <slice> <commit> <passed of item 0> <passed of item 1> [extra item index]
-  printf '{"slice": "%s", "commit": "%s", "verifier": "reviewer-agent", "items": [{"item": 0, "passed": %s, "evidence": "test:A"}, {"item": %s, "passed": %s}]}' \
-    "$1" "$2" "$3" "${5:-1}" "$4"
-}
-res T0 "$H1" true false > "$T/r.json"
-expect "record results for the head" 0 scripts/plan record T0 --results "$T/r.json"
+export VERIFY_MARK="$T/mark" DSHM_VERIFY_LOGS="$T/verify-logs"
+rm -f "$VERIFY_MARK"
+expect "verify runs" 0 scripts/plan verify T0
+[ "$(sort "$VERIFY_MARK" 2>/dev/null | tr '\n' ' ')" = "ran one ran two " ] && ok "verify ran each cmd: pointer one time" \
+  || bad "the checks did not run: $(cat "$VERIFY_MARK" 2>&1)"
+[ -z "$(git worktree list | grep dshm-verify)" ] && ok "verify removes its clean checkout" || bad "checkout left: $(git worktree list)"
 scripts/plan passed T0 --json > "$T/p1.json"
-python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert [i["passed"] for i in d["items"]]==[True,False] and d["passed"] is False and d["verifier"]=="reviewer-agent"' "$T/p1.json" \
-  && ok "passed follows the results item by item" || bad "results 1: $(cat "$T/p1.json")"
-res T0 "$H1" true true | scripts/plan record T0 --results - >/dev/null 2>&1
+python3 -c '
+import json,sys; d=json.load(open(sys.argv[1]))
+assert [i["passed"] for i in d["items"]]==[True,True,False], d
+assert d["verifier"]=="scripts/plan verify" and d["passed"] is False
+assert [r["cmd"] for r in d["items"][0]["runs"]]==["check.sh one"] and d["items"][0]["runs"][0]["exit"]==0
+assert any(r["cmd"].startswith("git merge-base --is-ancestor") for r in d["items"][1]["runs"])' "$T/p1.json" \
+  && ok "results keep the commands and exit codes; an item with no cmd: does not pass" || bad "results: $(cat "$T/p1.json")"
+git ls-tree -r --name-only HEAD | grep -q dshm-verify && bad "results are in the branch tree" || ok "the results are not in a commit of the branch"
+printf '{"id": "T0", "items": [%s, %s]}\n' "$(ev_item auto "T0 works" '["cmd:check.sh one"]')" \
+  "$(ev_item ui "T0 shows" "[\"cmd:check.sh two\", \"commit:$H0\"]")" > plan/T0.json
+git commit -q -am "T0: drop the item with no command"; H2=$(git rev-parse HEAD)
 scripts/plan passed T0 > "$T/p2.out" 2>&1
-has "all items passed: the slice passed" "$T/p2.out" "passed: true"
-has "passed names the verifier" "$T/p2.out" "verified by reviewer-agent"
-git ls-tree -r --name-only claude/t0-x | grep -q dshm-verify && bad "results are in the branch tree" || ok "the results are not in a commit of the branch"
-expect "results for another slice are refused" 1 scripts/plan record S1 --results "$T/r.json"
-res T0 "$H1" true true 5 > "$T/r5.json"
-expect "a result for an item that does not exist is refused" 1 scripts/plan record T0 --results "$T/r5.json"
-printf '{"slice": "T0", "commit": "%s", "verifier": "v", "items": [], "passed": true}' "$H1" > "$T/rbad.json"
-expect "results with an unknown field are refused" 1 scripts/plan record T0 --results "$T/rbad.json"
-git checkout -q claude/t0-x && echo two >> t0-work.txt && git commit -qam "T0 more work"
-H2=$(git rev-parse HEAD); git checkout -q main
-scripts/plan passed T0 > "$T/p3.out" 2>&1
-has "a new commit: the old results do not count" "$T/p3.out" "passed: false"
-has "a new commit: the old results are named stale" "$T/p3.out" "stale: results for ${H1:0:12}"
-expect "results for an older commit are refused" 1 scripts/plan record T0 --results "$T/r.json"
-res T0 "$H2" true true | scripts/plan record T0 --results - >/dev/null 2>&1
-scripts/plan passed T0 > "$T/p4.out" 2>&1; has "results for the new head count" "$T/p4.out" "passed: true"
-items T0 true
-expect "a hand edit of passed in the worktree stops passed" 1 scripts/plan passed T0
-items T0 false
+has "a new commit: the old results do not count" "$T/p2.out" "passed: false"
+has "a new commit: the old results are named stale" "$T/p2.out" "stale: results for ${H1:0:12}"
+VERIFY_EXIT=1 scripts/plan verify T0 >/dev/null 2>&1
+scripts/plan passed T0 > "$T/p3.out" 2>&1; has "a failing check: not passed" "$T/p3.out" "passed: false"
+has "a failing check: its exit code is kept" "$T/p3.out" "check.sh one → 1"
+scripts/plan verify T0 >/dev/null 2>&1
+scripts/plan passed T0 > "$T/p4.out" 2>&1; has "all checks pass on the head: passed" "$T/p4.out" "passed: true"
+has "passed names the verifier" "$T/p4.out" "verified by scripts/plan verify"
+# A note written by hand in another shape counts for nothing.
+git notes --ref=refs/notes/dshm-verify add -f -m "{\"T0\": {\"slice\": \"T0\", \"commit\": \"$H2\", \"verifier\": \"me\", \"items\": [{\"item\": 0, \"passed\": true}, {\"item\": 1, \"passed\": true}]}}" "$H2" 2>/dev/null
+scripts/plan passed T0 > "$T/p5.out" 2>&1; has "a hand-written note without runs: not passed" "$T/p5.out" "passed: false"
+printf '{"tier": "auto", "text": "T0 works", "files": [], "screens": [], "passed": true}' > "$T/item.json"
+printf '{"id": "T0", "items": [%s]}\n' "$(cat "$T/item.json")" > plan/T0.json && git commit -q -am "hand edit"
+expect "a committed hand edit of passed stops passed" 1 scripts/plan passed T0
+expect "a committed hand edit of passed stops verify" 1 scripts/plan verify T0
 git notes --ref=refs/notes/dshm-verify list > /dev/null && ok "results are git notes in refs/notes/dshm-verify" || bad "no notes ref"
+unset VERIFY_MARK DSHM_VERIFY_LOGS
+git checkout -q main
 rm -rf plan; git checkout -q -- plan 2>/dev/null; git rm -rq plan && git commit -q -m "remove plan/ fixtures"
 
 echo "free-space floor (scripts/demo/lib.sh guard, fake xcrun)"

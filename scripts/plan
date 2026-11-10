@@ -21,8 +21,10 @@ Read-only (anywhere):
         older commit are stale and count for nothing
 
 Verifier (not the slice owner; WORKFLOW.md §10):
-  plan record <ID> --results FILE|-    store verifier results for the head commit of the branch
-        of <ID> (schema `results` in scripts/lib/plan.schema.json), as a git note
+  plan verify <ID>                     check out the head commit of the branch of <ID> clean, run
+        the `cmd:` evidence of each item there (and check `commit:` pointers), and store the
+        commands and exit codes as a git note on that commit. The only way to make results: no
+        command takes them from outside. Logs: /tmp/dshm-verify/
 
 Coordinator (on main):
   plan new "<title>"                   start the plan of a requirement the user has set, from
@@ -275,26 +277,26 @@ def cmd_passed(p, a):
         print(json.dumps(d, indent=2, ensure_ascii=False))
         return 0
     head = d["head"][:12] if d["head"] else "no commit"
-    who = f"verified by {d['verifier']}" if d["verifier"] else "no verifier results for this commit"
+    who = f"verified by {d['verifier']} at {d['verified_at']}" if d["verifier"] else "no verifier results for this commit"
     print(f"{d['id']} · {d['branch'] or 'no branch'} @ {head} · {who}")
     if d["stale"]:
         print(f"  stale: results for {d['stale'][:12]} do not count for {head}")
     for it in d["items"]:
         mark = "x" if it["passed"] else " "
-        print(f"  [{mark}] [{it['tier']}] {it['text']}" + (f" — {it['evidence']}" if it["evidence"] else ""))
+        runs = " · ".join(f"{r['cmd']} → {r['exit']}" for r in it["runs"])
+        print(f"  [{mark}] [{it['tier']}] {it['text']}" + (f" — {runs}" if runs else ""))
     print(f"passed: {str(d['passed']).lower()}")
     return 0
 
 
-def cmd_record(p, a):
+def cmd_verify(p, a):
     try:
-        results = json.loads(read_body(a.results) if a.results == "-" else Path(a.results).read_text())
-        head = plandata.record(p.root, a.id, results)
-    except (OSError, json.JSONDecodeError) as e:
-        raise PlanError(f"cannot read the results: {e}")
+        res = plandata.verify(p.root, a.id, say=lambda m: print(f"plan: {m}", flush=True))
     except plandata.DataError as e:
         raise PlanError(str(e))
-    print(f"plan: recorded the results of {results['verifier']} for {a.id} at {head[:12]} ({plandata.NOTES_REF})")
+    ok = sum(1 for r in res["items"] if plandata.item_passed(r))
+    print(f"plan: verified {a.id} at {res['commit'][:12]}: {ok} of {len(res['items'])} items passed "
+          f"({plandata.NOTES_REF})")
     return 0
 
 
@@ -644,7 +646,7 @@ def main():
     add("lint", cmd_lint)
     sp = add("dag", cmd_dag); sp.add_argument("--json", action="store_true")
     sp = add("passed", cmd_passed); sp.add_argument("id"); sp.add_argument("--json", action="store_true")
-    sp = add("record", cmd_record); sp.add_argument("id"); sp.add_argument("--results", required=True)
+    sp = add("verify", cmd_verify); sp.add_argument("id")
     sp = add("new", cmd_new); sp.add_argument("title")
     sp = add("add", cmd_add); sp.add_argument("kind", choices=[*plangen.KINDS, "exit"]); sp.add_argument("name")
     sp.add_argument("--why", default=""); sp.add_argument("--cuts", default="")
@@ -674,7 +676,7 @@ def main():
             if getattr(a, attr, None):
                 dshm.check_id(getattr(a, attr))
         p = Plan(dshm.toplevel())
-        if not p.exists and a.fn not in (cmd_new, cmd_cleanup, cmd_dag, cmd_passed, cmd_record):
+        if not p.exists and a.fn not in (cmd_new, cmd_cleanup, cmd_dag, cmd_passed, cmd_verify):
             raise PlanError(plangen.NO_PLAN)
         return a.fn(p, a)
     except PlanError as e:
