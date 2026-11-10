@@ -20,9 +20,10 @@ Read on demand, not all at once:
 - `protocol/`: the protobuf contract between the app and the bridge (`frame.proto`, golden `fixtures/`). Regenerate code with `scripts/codegen`
 - `scripts/bootstrap`: sets up a new Mac and runs the T0 demo (WORKFLOW.md §2)
 - `scripts/xc`, `scripts/swift-test`, `scripts/pnpm-test`: run xcodebuild, `swift test` and `pnpm test` with a short JSON summary; the full log goes to `/tmp/dshm-*`. Use them, not the bare tools. `scripts/check-wrappers` fails on a bare call in a demo script or `scripts/review`; `scripts/wrap-test` tests both
-- `scripts/demo/<slice>.sh`: re-runnable demo per slice; `scripts/dsh-up.mjs` starts a local DSH + bridge with a mock model
+- `scripts/demo/<feature>.sh`: re-runnable demo per feature (screenshots to `$DSHM_EVIDENCE`); `scripts/dsh-up.mjs` starts a local DSH + bridge with a mock model
 - `design/`: the screens (`screens.json`; `screens/<id>.html` with its png from `scripts/render-design`; the shared `kit/`) and the app icon (`icon.svg`, `scripts/render-icon`). `scripts/check-design` checks the screens and the theme names (test: `scripts/check-design-test`)
 - `evidence/<slice>/`: screenshots cited by the plan's `shot:` pointers; deleted with PLAN.md
+- `scripts/check-ids`: fails on a decision or slice ID in code (test: `scripts/check-ids-test`); `scripts/check-fixtures-same <rev>`: the golden fixtures keep their bytes
 - `scripts/check-docs`: checks that ARCHITECTURE.md, STORY.md, AGENTS.md and the READMEs have no decision IDs or milestones section, and that ARCHITECTURE.md stays at most 10k tokens (test: `scripts/check-docs-test`)
 - `scripts/check-plan`: guards the Done when items of PLAN.md (WORKFLOW.md §12)
 - `scripts/review <ID>`: the review run of one slice; `scripts/demo/lib.sh` also holds the machine guard (WORKFLOW.md §6.1, §10.1)
