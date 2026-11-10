@@ -129,6 +129,17 @@ A tracer is one thin round trip that one session can finish without running out 
 **Not**: The Workflow and the brief (T1). Replacing PLAN.md (S7).
 
 **Log**: —
+- **2026-11-10 · Built plan/ and verifier results; check-plan hook waits for the user.** Done:
+  - `plan/plan.json` and `plan/<ID>.json` (from the current PLAN.md), schema `scripts/lib/plan.schema.json`, checks in `scripts/lib/plandata.py`.
+  - `scripts/plan dag --json` (cycle, unknown need, self need, wrong ID kind fail), `scripts/plan passed <ID>`, `scripts/plan record <ID>`; `scripts/plan lint` also checks plan/.
+  - Verifier results: git notes in `refs/notes/dshm-verify` on the head commit of the slice branch (D147, provisional). `passed` in a file is `const false`; a new commit makes old results stale (`passed` names them).
+  - plan-test: plan/ fixtures; `failures: 0`, one skip (below). The test clone now starts from the registry header: the live S1 row made "assign with no plan is refused" fail.
+  - §4.1: no script creates the simulator `dshm-<ID>`; I created `dshm-T0` with `xcrun simctl create`. SwiftPM needed the proxy (`GIT_CONFIG_*` http.proxy). The first UI run on the new simulator failed one test (keyboard focus), the next run passed all.
+
+  Not done:
+  - Item 2, its check-plan part: `scripts/check-plan` is a guard file and imports nothing from `scripts/lib/`. The user must add `plan_dir_errors()` (calls `plandata.staged_errors`) to `--staged`. The patch is with the coordinator. When it is in, the skipped plan-test cases run, and item 2 can be ticked.
+
+  Next: the user applies the check-plan patch; then run plan-test, tick item 2, and run the review again.
 
 ### T1 · Tracer bullet: One fake node from brief to merge through the Workflow
 
