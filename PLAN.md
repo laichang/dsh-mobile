@@ -530,6 +530,8 @@ Append-only, dated.
 
 - **2026-11-10 · Paused by the user (lid closed). S7 build agent stopped; its uncommitted work stays in .claude/worktrees/s7-plan-dir. Heartbeat 09bd2dd0 deleted. On resume: commit or restart S7 round 1, new heartbeat.**
 
+- **2026-11-10 · Resumed by the user. S7 round 1 continues in a visible session (local_00b6d305) from the brief and the stopped agent's uncommitted work. New heartbeat 67e35906.**
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
