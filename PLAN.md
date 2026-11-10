@@ -528,6 +528,8 @@ Append-only, dated.
 
 - **2026-11-10 · User decisions for the end issue list: share sheet and iPad not drawn (mark as not done); remove push from L/X1/P1; screen 08 pairing vs upstream stays open; the scheduler allocates simulators per node; delete comments the code can express (the 4 broken lines first). Open the issues at plan end. claude/feature-map branch and worktree deleted per the user.**
 
+- **2026-11-10 · Paused by the user (lid closed). S7 build agent stopped; its uncommitted work stays in .claude/worktrees/s7-plan-dir. Heartbeat 09bd2dd0 deleted. On resume: commit or restart S7 round 1, new heartbeat.**
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
