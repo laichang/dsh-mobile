@@ -1,4 +1,4 @@
-# Shared by scripts/demo/<slice>.sh (source it after `cd "$ROOT"` and setting PATH).
+# Shared by scripts/demo/<feature>.sh (source it after `cd "$ROOT"` and setting PATH).
 # Each check fails the demo on a failed *or skipped* test, so a demo can't pass by not running.
 #   demo_prepare_bridge   pnpm install (first, so a fresh clone has buf), then `scripts/codegen --check`
 #   demo_bridge_tests LOG node:test suite (scripts/pnpm-test); prints the JSON summary

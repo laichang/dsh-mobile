@@ -10,7 +10,6 @@ import SwiftUI
 ///   as a released drag (`DrawerMotion.slide`);
 /// - F4, 350 ms: the page fills the screen and lands (`SessionLanding`). A pending approval's sheet
 ///   (05) comes up only now (`ShellModel.moving`).
-///.
 enum DrawerMotion {
     /// F2: the cross-fade of the peeking edge.
     static let fade = Duration.milliseconds(120)

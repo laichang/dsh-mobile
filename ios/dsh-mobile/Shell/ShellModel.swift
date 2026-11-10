@@ -6,7 +6,7 @@ import UIKit
 /// bottom sheet is up, and whether the workspace drawer is open. There is no navigation stack:
 /// the left edge belongs to the drawer, and details open as sheets.
 ///
-/// Registration points for the UI slices (PLAN.md "How the UI slices stay independent"): a slice
+/// Registration points for features: a feature
 /// adds one case to `ShellPage` or `SheetRoute`, and one line where each is switched over
 /// (`ShellView.page(_:)`, `SheetRoute.content(store:)`, `DrawerView`).
 @MainActor

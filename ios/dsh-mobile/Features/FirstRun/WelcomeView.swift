@@ -2,7 +2,7 @@ import SwiftUI
 
 /// First run (screen 08, STORY §6). With no paired computer, say what the phone does, what
 /// the user needs (a computer with DSH and the bridge; same Wi-Fi or Tailscale), and offer the two
-/// ways in: scan the QR the terminal prints, or paste the link printed under it. Copy follows.
+/// ways in: scan the QR the terminal prints, or paste the link printed under it.
 ///
 /// Accessibility contract: `firstRun.purpose`, `firstRun.requiresHost`, `firstRun.step` (×2; the
 /// second one is the network requirement), `pairing.scan`, `pairing.pasteLink`, `firstRun.setup`.

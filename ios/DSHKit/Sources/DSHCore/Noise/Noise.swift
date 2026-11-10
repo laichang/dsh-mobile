@@ -2,8 +2,8 @@
 // Ported from the Noise spike (spikes/x2-noise/swift/Sources/NoiseKit/Noise.swift), with a
 // `Noise` prefix on every type. Mirrors bridge/src/pairing/noise.ts. Proven by the official
 // vectors (protocol/fixtures/noise/official-vectors.json) and the cross-language golden
-// transcripts (protocol/fixtures/noise/transcripts.json). Hand-rolled and unaudited: see
-//.
+// transcripts (protocol/fixtures/noise/transcripts.json). Hand-rolled and unaudited
+// (ARCHITECTURE.md, Security).
 import CryptoKit
 import Foundation
 

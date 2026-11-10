@@ -5,7 +5,7 @@ import Foundation
 import SwiftProtobuf
 import Synchronization
 
-/// In-process stand-in for the bridge (PLAN §1 "Test alone"). Speaks real `Frame` bytes, so
+/// In-process stand-in for the bridge, so app tests need no real one. Speaks real `Frame` bytes, so
 /// `HostConnection`, the channel, and protobuf coding are all exercised. Debug builds only.
 ///
 /// `FakeHost` is the bridge process: its tasks and event log outlive connections, like the real

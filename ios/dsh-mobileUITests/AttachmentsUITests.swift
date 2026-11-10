@@ -98,7 +98,7 @@ final class AttachmentsUITests: XCTestCase {
         saveShot("attachments-session")
     }
 
-    /// A photo, a.txt and a.pdf on composer 01; the.txt is removed; the bubble shows the
+    /// A photo, a .txt and a .pdf on composer 01; the .txt is removed; the bubble shows the
     /// other two, and the demo then checks that the DSH session has the image and the PDF.
     func testAttachPhotoTextAndPDFRemoveOneAndSend() throws {
         let app = try launch(prompt: "Read these files.")

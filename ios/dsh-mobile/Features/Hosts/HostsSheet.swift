@@ -130,7 +130,7 @@ private struct HostRow: View {
                             .lineLimit(1)
                     }
                 }
-                // Which of the host's addresses this phone uses (LAN, Tailscale,...).
+                // Which of the host's addresses this phone uses (LAN, Tailscale, ...).
                 if let address = host.address {
                     Text("Via \(address.description)", tableName: "Hosts")
                         .font(.subheadline.monospacedDigit())

@@ -185,7 +185,7 @@ bridge/         DSH 伴随插件（TypeScript、pnpm、node:test、FakeDSH）
 protocol/       frame.proto + golden fixtures · 用 scripts/codegen 重新生成
 design/         画面（screens.json、screens/<id>.html → png、kit/）、App 图标
 spikes/         关键决策背后的 X1–X4 实验
-scripts/        bootstrap · demo/<slice>.sh · codegen · check-plan · review
+scripts/        bootstrap · demo/<feature>.sh · codegen · check-plan · review
 evidence/       PLAN.md 引用的截图
 ```
 
@@ -197,7 +197,7 @@ evidence/       PLAN.md 引用的截图
 | `cd ios/DSHKit && swift test` | 在 Mac 上跑协议、Noise、store、同步相关测试 |
 | `cd bridge && pnpm test` | 针对 `FakeDSH`、golden fixtures、Noise 向量的 bridge 测试 |
 | `scripts/codegen` | 从 `protocol/*.proto` 重新生成 Swift + TS（`--check` 在有变化时失败） |
-| `scripts/demo/<slice>.sh` | 在模拟器里端到端演示某个功能 |
+| `scripts/demo/<feature>.sh` | 在模拟器里端到端演示某个功能 |
 | `node scripts/dsh-up.mjs` | 用 mock 模型启动本地 DSH + bridge |
 
 clone 之后启用仓库的 git hooks：

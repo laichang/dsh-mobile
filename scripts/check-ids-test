@@ -57,6 +57,31 @@ expect('the plan tools are skipped', {**CLEAN, 'scripts/plan': 'ids = ["S14", "T
 expect('protocol/fixtures is skipped', {**CLEAN, 'protocol/fixtures/x.json': '{"name": "S14"}\n'}, 0)
 expect('docs outside the code areas are not checked (check-docs does)', {**CLEAN, 'NOTES.md': 'D18\n'}, 0)
 
+# scripts/check-id-removal: comments that an ID removal left damaged.
+REMOVAL = os.path.join(HERE, 'check-id-removal')
+g = {}
+exec(open(REMOVAL).read().replace("if __name__ == '__main__':", "if False:"), g)
+for name, old, new, bad in [
+    ('a comment of only punctuation', '// ARCHITECTURE D6.', '//.', True),
+    ('a dangling "see"', '// Hand-rolled: see D6.', '// Hand-rolled: see.', True),
+    ('a dangling "follows"', '/// Copy follows S11.', '/// Copy follows.', True),
+    ('a lost space before a dot', '/// D107: a .txt file', '/// A.txt file', True),
+    ('empty parentheses', '// the reply (D18).', '// the reply ().', True),
+    ('a double space', '// the reply (D18) here.', '// the reply  here.', True),
+    ('a clean removal', '/// Saved path (D18).', '/// Saved path.', False),
+    ('code is not a comment', 'let a = b // D17', 'let a = b', False),
+]:
+    got = bool(g['problems'](old, new))
+    ok = got == bad
+    failures += not ok
+    print(f"{'ok  ' if ok else 'FAIL'} check-id-removal: {name}")
+r = subprocess.run([sys.executable, REMOVAL], capture_output=True, text=True, cwd=os.path.dirname(HERE))
+ok = r.returncode == 0
+failures += not ok
+print(f"{'ok  ' if ok else 'FAIL'} check-id-removal: no damaged comment since main")
+if not ok:
+    print(r.stdout[:2000])
+
 r = run(os.path.dirname(HERE))
 ok = r.returncode == 0
 failures += not ok

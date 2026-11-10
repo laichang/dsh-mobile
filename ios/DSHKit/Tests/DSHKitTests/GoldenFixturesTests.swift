@@ -3,7 +3,7 @@ import Foundation
 import SwiftProtobuf
 import Testing
 
-/// The Swift half of PLAN §1 "Cross-language truth": the TS half is bridge/test/fixtures.test.ts.
+/// The Swift half of the cross-language golden fixtures: the TS half is bridge/test/fixtures.test.ts.
 @Suite struct GoldenFixtures {
     static let fixturesDir = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent()  // DSHKitTests
