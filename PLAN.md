@@ -417,6 +417,8 @@ Append-only, dated.
 
 - **2026-11-10 · T0 merged by the user; T1 starts.** The user committed the T0 merge as e3daa5a (CHECK_PLAN_ALLOW=1, guard file scripts/check-plan; merge-time review of option A). Review: /tmp/dshm-review/T0-ab98dbc.txt PASS (first review c78da12 FAIL, repaired). Gaps handed to T1: no script does the merge-time verify rerun yet; a cmd: pointer can be a symlink to a file outside the commit; an uncommitted edit to plan/plan.json can point verify at another branch. T0's guard patches in /tmp/dshm-t0-patch2/ are not applied (option A).
 
+- **2026-11-10 · T1 review FAIL: a branch can rewrite its own evidence.** Separate review at 8f50672: RESULT: FAIL (/tmp/dshm-review/T1-8f50672.txt). scripts/plan merge runs evidence in the merged tree, so a branch that changes its existing check to exit 0 merges. Coordinator rule sent to the owner (provisional): tooling from the target; an evidence file that exists on the target and is changed by the branch blocks the merge unless the coordinator passes --allow-changed-evidence after a reviewer read the diff (recorded in the merge message); new evidence files are allowed and listed for the reviewer. All other attacks held. plandata.py diff (user reviews at merge, option A): no check of check-plan is weakened.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
