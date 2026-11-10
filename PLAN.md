@@ -181,6 +181,16 @@ A tracer is one thin round trip that one session can finish without running out 
 **Not**: More than one node, the rework loop, and fixes (S3). The full brief (S2).
 
 **Log**: —
+- **2026-11-10 · Item 1 done; item 2 waits for the real Workflow run.** Done:
+  - `scripts/plan merge <ID> --into <branch>` is the merge step. It runs the copy of the tools committed at the tip of the target (it starts that copy from a clean checkout when the running copy differs), takes the branch and the items from plan/ as committed there (the branch may only add evidence pointers), makes the merge commit in a clean checkout, runs the evidence on it, keeps the results in a git note on the merge commit, and moves the target only on a pass. Inputs: the ID and the target. It reads no report and no earlier results.
+  - The three gaps from the T0 review: a `cmd:` that is a symlink, goes through a symlink, or is not an executable file of the commit fails (exit 127); `verify` and `passed` take the branch from plan/ as committed (`--base`, default HEAD); the merge-time rerun is `scripts/plan merge`. Tests in `scripts/plan-test`.
+  - `scripts/brief <ID>` (stub): slice, branch, worktree, items with evidence, rules, from plan/ as committed at `--base`.
+  - `.claude/workflows/run-plan.js`: one node, brief → build agent (prompt: ID, round, brief path) → `scripts/plan verify` → `scripts/plan merge`. Self-contained (the Workflow runtime has no imports); `scripts/run-plan-test` loads the file with a fake `agent()` and runs the shell steps for real in a temporary clone: honest build merges; a build that lies plus a verifier that lies does not merge; an honest verifier stops it before the merge step.
+  - Fake plan: `scripts/fixtures/fake-plan/` (node S99, its check, and `setup` for throwaway branches `claude/fake-plan-base` and `claude/s99-fake-node`).
+
+  Not done: item 2 (the coordinator runs the Workflow tool; args are in the report).
+
+  Provisional: the merge step makes and checks the merge commit, not only the slice head; the branch adds evidence, main keeps tier, text, files and screens; the evidence commands run from the merged tree (a branch can still change a check script: the reviewer sees that diff); the workflow logic stays in the workflow file, which the test evaluates, instead of a separate module.
 
 ## 4. Spikes
 
