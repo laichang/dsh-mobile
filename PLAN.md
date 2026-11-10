@@ -371,6 +371,8 @@ Append-only, dated.
 
 - **2026-11-10 · S6 merged.** Merged as `46d4f3d`; `scripts/check-plan` on the merge commit passed. `scripts/review S6` at `ef8004c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S6-ef8004c.txt`). No open `[human]` items, so S6 is `done`.
 
+- **2026-11-10 · S6 merged.** S6 merged as 46d4f3d (closes #35; #62 closes with S5). Reviews by a separate reviewer: /tmp/dshm-review/S6-87befa7.txt PASS, then /tmp/dshm-review/S6-ef8004c.txt PASS after the owner merged main (S1's D150 now a provisional entry without an ID). The user's uncommitted AGENTS.md line (FEATURES.md) was reapplied; the user's uncommitted ARCHITECTURE.md D6/D21 edit (TLS 1.3) is superseded by S6's text and kept in /tmp/dshm-user-architecture-superseded.patch. T0 waits for the user to commit a guard patch to scripts/check-plan (/tmp/dshm-t0-patch).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
