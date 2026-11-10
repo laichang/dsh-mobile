@@ -30,13 +30,18 @@ Verifier (not the slice owner; WORKFLOW.md §10):
         its path. Logs: /tmp/dshm-verify/
 
 Merge step (the coordinator, or the merge node of the Workflow):
-  plan merge <ID> --into <branch> [--dry-run]
+  plan merge <ID> --into <branch> [--allow-changed-evidence PATH] [--dry-run]
         merge the branch of <ID> into <branch> only if the checks pass on the merge commit.
         It always runs the copy of these tools committed at the tip of <branch> (it starts that
         copy from a clean checkout when the running copy differs), takes the branch and the
         items from plan/ as committed there (the slice branch may only add evidence), makes the
         merge commit in a clean checkout, runs the evidence on it, stores the results on the
         merge commit, and then moves <branch> to it. It reads no report and no earlier results.
+        An evidence file (a `cmd:` executable, a file argument, or a file that such a script
+        names) that the target has and the branch changes or deletes stops the merge: a reviewer
+        or the user must look at it. After that, the coordinator passes
+        --allow-changed-evidence <path> (repeatable); the merge commit message records it. New
+        evidence files of the branch are listed as "new evidence, judged by the reviewer".
         Prints a JSON summary; exit 0 = merged (--dry-run: passed), 1 = not
 
 Coordinator (on main):
@@ -324,12 +329,17 @@ def cmd_merge(p, a):
         say(f"running the merge tools of {a.into} at {base[:12]}")
         with plandata.Checkout(root, base, f"merge-tools-{a.id.lower()}") as wt:
             argv = [sys.executable, str(wt / "scripts/plan"), "merge", a.id, "--into", a.into]
+            argv += [x for f in a.allow for x in ("--allow-changed-evidence", f)]
             return subprocess.run(argv + (["--dry-run"] if a.dry_run else []), cwd=wt).returncode
     try:
-        res = plandata.merge(root, a.id, a.into, dry=a.dry_run, say=say)
+        res = plandata.merge(root, a.id, a.into, dry=a.dry_run, allow=a.allow, say=say)
     except plandata.DataError as e:
         raise PlanError(str(e))
     print(json.dumps(res, indent=2, ensure_ascii=False))
+    for f in res["new_evidence"]:
+        say(f"new evidence, judged by the reviewer: {f}")
+    for f in res["allowed_changed_evidence"]:
+        say(f"changed evidence allowed by --allow-changed-evidence: {f}")
     ok = res["passed"] if a.dry_run else res["merged"]
     say(("passed" if a.dry_run else f"merged {a.id} into {a.into} as {res['merge'][:12]}") if ok
         else f"not merged: the checks failed on the merge commit {res['merge'][:12]}")
@@ -685,6 +695,7 @@ def main():
     sp.add_argument("--base", default="HEAD")
     sp = add("verify", cmd_verify); sp.add_argument("id"); sp.add_argument("--base", default="HEAD")
     sp = add("merge", cmd_merge); sp.add_argument("id"); sp.add_argument("--into", required=True)
+    sp.add_argument("--allow-changed-evidence", dest="allow", action="append", default=[], metavar="PATH")
     sp = add("new", cmd_new); sp.add_argument("title")
     sp = add("add", cmd_add); sp.add_argument("kind", choices=[*plangen.KINDS, "exit"]); sp.add_argument("name")
     sp.add_argument("--why", default=""); sp.add_argument("--cuts", default="")

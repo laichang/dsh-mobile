@@ -556,7 +556,56 @@ def checked_out(root, branch):
     return None
 
 
-def merge(root, sid, into, dry=False, say=print):
+def _tree(root, commit):
+    """{path: (mode, blob)} of every file of commit."""
+    out = {}
+    for line in _git(root, "ls-tree", "-r", "-z", commit, check=True).stdout.split("\0"):
+        if line:
+            meta, path = line.split("\t", 1)
+            mode, _, blob = meta.split()
+            out[path] = (mode, blob)
+    return out
+
+
+PATH_RE = re.compile(r"[A-Za-z0-9_.][A-Za-z0-9_./-]*")
+
+
+def evidence_files(root, items, commits):
+    """The files that the cmd: evidence of items names: each executable, each argument that is a
+    file, and (for a text file among them) each path of a file that it names. One level, in the
+    trees of commits."""
+    trees = [_tree(root, c) for c in commits]
+    known = lambda f: any(f in t for t in trees)
+    files = set()
+    for it in items:
+        if it["tier"] == "human":
+            continue
+        for ptr in it.get("evidence", []):
+            if ptr.startswith("cmd:"):
+                files.update(a for a in shlex.split(ptr[4:].strip()) if known(a))
+    for f in list(files):
+        for c in commits:
+            r = _git(root, "cat-file", "-p", f"{c}:{f}")
+            if r.returncode == 0:
+                for w in PATH_RE.findall(r.stdout):
+                    parts = w.split("/")     # $ROOT/scripts/x names scripts/x
+                    files.update(c for c in ("/".join(parts[i:]).lstrip("./") for i in range(len(parts)))
+                                 if ("/" in c or "." in c) and known(c))
+    return sorted(files)
+
+
+def evidence_changes(root, items, base, head):
+    """(changed, new): evidence files that exist on the target and that the branch changes or
+    deletes (against the merge base), and evidence files that only the branch has."""
+    fork = _git(root, "merge-base", base, head, check=True).stdout.strip()
+    tb, tf, th = _tree(root, base), _tree(root, fork), _tree(root, head)
+    files = evidence_files(root, items, [base, head])
+    changed = [f for f in files if f in tb and tf.get(f) != th.get(f)]
+    new = [f for f in files if f not in tb]
+    return changed, new
+
+
+def merge(root, sid, into, dry=False, allow=(), say=print):
     """The merge step. Merge the branch of sid into `into`, only if the checks pass on the merge
     commit itself. Inputs are the ID and the target branch, nothing else: no report, no earlier
     results. The branch and the items come from the plan as committed at the tip of `into`
@@ -581,10 +630,24 @@ def merge(root, sid, into, dry=False, say=print):
     if errs:
         raise DataError("\n".join(errs))
     items = merge_items(base_items[sid], head_doc["items"])
+    changed, new = evidence_changes(root, items, base, head)
+    blocked = [f for f in changed if f not in allow]
+    if blocked:
+        raise DataError("evidence changed by the slice: a reviewer or the user must look at it:\n"
+                        + "".join(f"  {f}\n" for f in blocked)
+                        + "After a reviewer has read that diff, the coordinator may pass "
+                        + " ".join(f"--allow-changed-evidence {f}" for f in blocked))
+    used = [f for f in allow if f in changed]
     summary = {"slice": sid, "into": into, "base": base, "branch": node["branch"], "head": head,
-               "merge": None, "passed": False, "merged": False, "items": []}
+               "merge": None, "passed": False, "merged": False, "new_evidence": new,
+               "allowed_changed_evidence": used, "items": []}
+    msg = f"Merge {sid}: {node['title']}"
+    if new:
+        msg += "\n\nNew evidence, judged by the reviewer: " + ", ".join(new)
+    if used:
+        msg += "\n\n" + "".join(f"allow-changed-evidence: {f}\n" for f in used)
     with Checkout(root, base, f"merge-{sid.lower()}") as wt:
-        m = _git(wt, "merge", "--no-ff", "--no-edit", "-m", f"Merge {sid}: {node['title']}", head)
+        m = _git(wt, "merge", "--no-ff", "--no-edit", "-m", msg, head)
         if m.returncode != 0:
             _git(wt, "merge", "--abort")
             raise DataError(f"the merge of {node['branch']} into {into} failed:\n{m.stdout}{m.stderr}")

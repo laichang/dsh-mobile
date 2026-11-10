@@ -537,8 +537,9 @@ export DSHM_VERIFY_LOGS="$T/verify-logs"
 mkdir -p plan
 printf '{"title": "Test · merge", "nodes": [{"id": "S5", "kind": "slice", "title": "merge me", "needs": [], "branch": "claude/s5-m"}]}\n' > plan/plan.json
 printf '{"id": "S5", "items": [{"tier": "auto", "text": "S5 works", "files": [], "screens": [], "passed": false, "evidence": ["cmd:s5-check.sh"]}]}\n' > plan/S5.json
-printf '#!/bin/sh\n[ "$(cat s5.txt 2>/dev/null)" = yes ]\n' > s5-check.sh && chmod +x s5-check.sh
-git add plan s5-check.sh && git commit -q -m "merge fixtures"; BASE=$(git rev-parse HEAD)
+mkdir -p checks && printf '[ "$(cat s5.txt 2>/dev/null)" = yes ]\n' > checks/s5-inner.sh
+printf '#!/bin/sh\nexec sh "$(dirname "$0")/checks/s5-inner.sh"\n' > s5-check.sh && chmod +x s5-check.sh
+git add plan s5-check.sh checks && git commit -q -m "merge fixtures"; BASE=$(git rev-parse HEAD)
 git branch claude/s5-m
 git worktree add -q "$T/wt-s5" claude/s5-m
 echo no > "$T/wt-s5/s5.txt" && git -C "$T/wt-s5" add s5.txt && git -C "$T/wt-s5" commit -q -m "s5: not done"
@@ -563,6 +564,19 @@ sed -i '' 's/S5 works/S5 works (said the branch)/' "$T/wt-s5/plan/S5.json" && gi
 scripts/plan merge S5 --into main > "$T/m3.out" 2>&1 && bad "merge passed with changed items" || ok "merge: the branch may not change the items"
 has "merge names the changed items" "$T/m3.out" "the branch changed the items"
 git -C "$T/wt-s5" reset -q --hard HEAD~1
+# Evidence that the target has and the branch changes stops the merge (also a file that the
+# check script runs); a reviewer reads that diff first.
+printf 'exit 0\n' > "$T/wt-s5/checks/s5-inner.sh" && git -C "$T/wt-s5" commit -q -am "s5: the inner check passes"
+scripts/plan merge S5 --into main > "$T/m5.out" 2>&1 && bad "merge passed with a changed inner check" || ok "merge: a changed file that the check runs refuses"
+has "the refusal names the file that the check runs" "$T/m5.out" "  checks/s5-inner.sh"
+git -C "$T/wt-s5" reset -q --hard HEAD~1
+printf '#!/bin/sh\nexit 0\n' > "$T/wt-s5/s5-check.sh" && git -C "$T/wt-s5" commit -q -am "s5: the check passes"
+scripts/plan merge S5 --into main > "$T/m6.out" 2>&1 && bad "merge passed with a changed check (case a)" || ok "merge: a check changed by the branch refuses (case a)"
+has "the refusal says why" "$T/m6.out" "evidence changed by the slice: a reviewer or the user must look at it"
+has "the refusal names the check" "$T/m6.out" "  s5-check.sh"
+[ "$(git rev-parse main)" = "$BASE" ] && ok "merge: the target did not move" || bad "main moved"
+expect "merge --allow-changed-evidence for another path still refuses" 1 scripts/plan merge S5 --into main --allow-changed-evidence other.sh
+git -C "$T/wt-s5" reset -q --hard HEAD~1
 echo yes > "$T/wt-s5/s5.txt" && git -C "$T/wt-s5" commit -q -am "s5: done"; H=$(git rev-parse claude/s5-m)
 expect "merge --dry-run: passes" 0 scripts/plan merge S5 --into main --dry-run
 [ "$(git rev-parse main)" = "$BASE" ] && ok "merge --dry-run: the target did not move" || bad "main moved on a dry run"
@@ -575,9 +589,29 @@ git notes --ref=refs/notes/dshm-verify show "$M" > "$T/m4.json" 2>&1
 python3 -c 'import json,sys; d=json.load(open(sys.argv[1]))["S5"]; assert d["commit"]==sys.argv[2] and d["items"][0]["runs"][0]["exit"]==0, d' "$T/m4.json" "$M" \
   && ok "merge: the results of its own run are on the merge commit" || bad "merge note: $(head -5 "$T/m4.json")"
 [ -z "$(git worktree list | grep dshm-merge)" ] && ok "merge removes its clean checkouts" || bad "checkout left: $(git worktree list)"
+# A new evidence file of the branch merges; the merge lists it for the reviewer.
+printf '#!/bin/sh\nexit 0\n' > "$T/wt-s5/new-check.sh" && chmod +x "$T/wt-s5/new-check.sh"
+python3 - "$T/wt-s5/plan/S5.json" <<'PYT'
+import json, sys; d = json.load(open(sys.argv[1])); d["items"][0]["evidence"].append("cmd:new-check.sh")
+open(sys.argv[1], "w").write(json.dumps(d) + "\n")
+PYT
+git -C "$T/wt-s5" add -A && git -C "$T/wt-s5" commit -q -m "s5: a new test"
+git -C "$T/wt-s5" merge -q main 2>/dev/null
+scripts/plan merge S5 --into main > "$T/m7.out" 2>&1 && ok "merge: a new evidence file merges" || bad "new evidence: $(tail -5 "$T/m7.out")"
+has "merge lists the new evidence for the reviewer" "$T/m7.out" "new evidence, judged by the reviewer: new-check.sh"
+git log -1 --format=%B main | grep -qF "New evidence, judged by the reviewer: new-check.sh" && ok "the merge commit names the new evidence" \
+  || bad "merge message: $(git log -1 --format=%B main)"
+# Case (a) with the flag, after a reviewer read the diff: merges and records the flag.
+M2=$(git rev-parse main)
+printf '#!/bin/sh\nexit 0\n' > "$T/wt-s5/s5-check.sh" && echo no > "$T/wt-s5/s5.txt" && git -C "$T/wt-s5" commit -q -am "s5: the check passes"
+expect "merge: case (a) refuses again" 1 scripts/plan merge S5 --into main
+expect "merge: case (a) with --allow-changed-evidence merges" 0 scripts/plan merge S5 --into main --allow-changed-evidence s5-check.sh
+[ "$(git rev-parse main^1)" = "$M2" ] && ok "merge with the flag: the target is the new merge commit" || bad "main: $(git log --oneline -2 main)"
+git log -1 --format=%B main | grep -qxF "allow-changed-evidence: s5-check.sh" && ok "the merge commit records the flag and the path" \
+  || bad "merge message: $(git log -1 --format=%B main)"
 git worktree remove --force "$T/wt-s5"
 unset DSHM_VERIFY_LOGS
-git rm -rq plan s5-check.sh s5.txt && git commit -q -m "remove merge fixtures"
+git rm -rq plan s5-check.sh s5.txt checks new-check.sh && git commit -q -m "remove merge fixtures"
 
 echo "free-space floor (scripts/demo/lib.sh guard, fake xcrun)"
 guard() { # guard <env…>: source lib.sh as a demo does, with the simulator plan-test-sim
