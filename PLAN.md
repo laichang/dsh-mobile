@@ -42,7 +42,7 @@ This file exists only while this requirement is in progress. It serves this requ
 |---|---|---|---|---|
 | T0 | doing | `claude/t0-plan-graph` | 2026-11-10 | Slice owner builds (§8) |
 | T1 | todo | — | 2026-11-10 | Assign it and start a session |
-| S1 | doing | `claude/s1-output-wrappers` | 2026-11-10 | Slice owner builds (§8) |
+| S1 | done | merged `3b960e8` | 2026-11-10 | — (provisional D150 in §9) |
 | S2 | todo | — | 2026-11-10 | Assign it and start a session |
 | S3 | todo | — | 2026-11-10 | Assign it and start a session |
 | S4 | todo | — | 2026-11-10 | Assign it and start a session |
@@ -353,9 +353,12 @@ Append-only, dated.
 
 - **2026-11-10 · Heartbeat deleted: all work waits for the user.** Heartbeat 1b7fe4cd deleted (WORKFLOW §5.5). Waiting for the user: S1 merge (uncommitted AGENTS.md/ARCHITECTURE.md on main block it; stash-merge-reapply or user commits first); T0 and S6 each wait for a shell-command approval in their sessions. A new heartbeat starts when work runs again.
 
+- **2026-11-10 · S1 merged.** Merged as `3b960e8`; `scripts/check-plan` on the merge commit passed. `scripts/review S1` at `d7c4462`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S1-d7c4462.txt`). No open `[human]` items, so S1 is `done`. §9 rows 1 (D150).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
 
 | # | Slice | Kind | Item | Branch | Commit |
 |---|---|---|---|---|---|
+| 1 | S1 | decision | ARCHITECTURE D150, *provisional*: Build and test output goes through wrappers | `claude/s1-output-wrappers` | merged `3b960e8` |
