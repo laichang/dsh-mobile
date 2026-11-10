@@ -498,6 +498,8 @@ Append-only, dated.
 
 - **2026-11-10 · S5 assigned.** Branch `claude/s5-remove-ids`, simulator `dshm-S5`, DSHM_HOME `~/.dshm/home-s5`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D168–D170. `eval "$(scripts/slice-env S5)"` exports them.
 
+- **2026-11-10 · S4 merged; S5 runs as a background agent.** S4 merged as 7a73893 (closes #61); review /tmp/dshm-review/S4-d222eb6.txt PASS (captions and bodies byte-identical to the old board, 26/26 pngs identical, token values unchanged). The user's AGENTS.md line was stashed and reapplied (backup /tmp/dshm-user-agents-s4.patch). S5 assigned; it starts as a background agent from /tmp/dshm-brief/S5-r1.md (session start refused in a turn from a subagent message). Scope: 643 Dxx lines in 238 files and slice IDs in names; the check goes into a plain script, the hook wiring is for S7 (user review).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
