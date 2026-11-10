@@ -11,7 +11,7 @@ final class S1PairingUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Pair through the deep link (IKpsk1), then the T0 demo over Noise (IK reconnect) against
+    /// Pair through the deep link (IKpsk1), then the round-trip demo over Noise (IK reconnect) against
     /// the local bridge; then the same link again is refused because the secret was used.
     func testPairViaDeepLinkThenDemoOverNoise() throws {
         try XCTSkipUnless(env["DSHM_PAIR_URL"] != nil, "needs a pairing link; run scripts/demo/s1.sh")
@@ -19,7 +19,7 @@ final class S1PairingUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMResetPairing", "YES", "-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47801"]
         app.launch()
-        // Unpaired Debug build: T0's plaintext dev path. Host rows are in the drawer.
+        // Unpaired Debug build: the plaintext dev path. Host rows are in the drawer.
         openDrawer(app)
         let channel = app.descendants(matching: .any)["host.channel"]
         XCTAssertTrue(channel.waitForExistence(timeout: 10))
@@ -36,7 +36,7 @@ final class S1PairingUITests: XCTestCase {
         saveShot("s1-paired")
         reopened.buttons["pairing.done"].tap()
 
-        // The T0 demo, now over Noise to the paired host.
+        // The round-trip demo, now over Noise to the paired host.
         openDrawer(reopened)
         let noise = reopened.descendants(matching: .any)["host.channel"]
         XCTAssertTrue(noise.waitForExistence(timeout: 10))
@@ -95,7 +95,7 @@ final class S1PairingUITests: XCTestCase {
         saveShot("s1-expired-code-refused")
     }
 
-    // MARK: - S1 × S2 seam: kill/reopen over Noise resumes from the cursor
+    // MARK: - Pairing with the durable list: kill/reopen over Noise resumes from the cursor
 
     /// Phase 1 of 2 (scripts/demo/s1.sh, TEST_RUNNER_DSHM_RESUME_PHASE=1, after the pairing tests):
     /// the paired app connects over Noise, catches up, and is killed. s1.sh then runs a task on the

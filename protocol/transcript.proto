@@ -3,7 +3,7 @@
 //
 // The bridge maps DSH's typed session data into blocks, deterministically: thinking from the
 // timed `reasoning-delta` chunks of the assistant stream, tool calls from the durable `tool/call`
-// and `tool/result` events. No model summarizes anything (the same rule as D11): a block carries
+// and `tool/result` events. No model summarizes anything (the same rule as for milestones): a block carries
 // DSH's own data (the tool's name, its target from the arguments, the lines in its diff, DSH's
 // timestamps), and the app words each row itself ("已思考 8 秒", "Edit TaskListStore.swift +12 −3").
 //

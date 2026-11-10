@@ -34,7 +34,7 @@ import Testing
         return frame.event.taskUpserted.task
     }
 
-    /// The Swift half of the S14 golden fixtures: the same frames bridge/test/drawer.test.ts sends.
+    /// The Swift half of the drawer golden fixtures: the same frames bridge/test/drawer.test.ts sends.
     @Test func goldenWebAndPhoneSessionsDecodeTheirWorkspace() async throws {
         let phone = try Self.fixture("s14_phone_session_upserted_event")
         let web = try Self.fixture("s14_web_session_upserted_event")

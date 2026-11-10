@@ -35,7 +35,7 @@ public struct AddressFailure: Sendable, Equatable, CustomStringConvertible {
     /// "192.168.1.5:47801 (URL error -1001, timed out)".
     public var description: String { "\(endpoint.description) (\(reason))" }
 
-    /// A short reason for a failed connection, for the failure detail. S31: the bare "couldn't
+    /// A short reason for a failed connection, for the failure detail. The bare "couldn't
     /// reach" hid an App Transport Security refusal.
     public static func reason(for error: any Error) -> String {
         if let timeout = error as? AddressTimeout { return timeout.description }

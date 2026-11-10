@@ -14,7 +14,7 @@ import Testing
 
     /// - Parameter pause: with one, the first turn stops after its first chunk until the stream
     ///   finishes, so the follow-ups reach the host before that turn ends, however busy the
-    ///   machine (S12: under load the turn ended first).
+    ///   machine (under load the turn ended first).
     func host(chunkDelay: Duration = .milliseconds(120), pause: AsyncStream<Void>? = nil) -> FakeHost {
         var script = FakeBridge.Script(reply: Self.first, chunkDelay: chunkDelay)
         if let pause { script.afterFirstChunk = { for await _ in pause {} } }
@@ -84,7 +84,7 @@ import Testing
         #expect(done.queue.isEmpty)
     }
 
-    /// S15, the reported bug: "立即发送" while the agent is in a long step (real DSH gives a steered
+    /// The reported bug: "立即发送" while the agent is in a long step (real DSH gives a steered
     /// message to the agent only when the step ends; here the first turn waits after its first
     /// chunk). The message must show in the transcript at once, not float above the field, and
     /// keep its place when DSH takes it.
@@ -202,7 +202,7 @@ import Testing
         var script = FakeBridge.Script(reply: ["Oops."], chunkDelay: .milliseconds(10), failWith: "error: rate limited")
         script.followUpReply = Self.second
         script.queuesFollowUps = true
-        script.reportsFailures = false // D110 needs `failures.v1`
+        script.reportsFailures = false // A failed task's follow-up needs `failures.v1`
         let store = try launch(FakeHost(script: script))
         store.foreground()
         defer { store.background() }

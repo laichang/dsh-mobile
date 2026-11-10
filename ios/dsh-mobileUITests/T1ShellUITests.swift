@@ -63,7 +63,7 @@ final class T1ShellUITests: XCTestCase {
     }
 
     /// The first message creates the session, and the same page shows the reply: no list routing
-    /// and no grace period (which supersedes D34).
+    /// and no grace period.
     func testFirstMessageCreatesSessionOnSamePage() {
         let app = launch(["-DSHMFakeBridge", "YES"])
         assertNewSession(app)

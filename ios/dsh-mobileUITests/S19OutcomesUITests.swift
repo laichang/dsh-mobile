@@ -66,7 +66,7 @@ final class S19OutcomesUITests: XCTestCase {
         let app = launch()
         startTask(app, Self.donePrompt)
 
-        // The task asks to run `git push` (S18's sheet). Leave it, and go to a new session.
+        // The task asks to run `git push` (the approval sheet). Leave it, and go to a new session.
         let sheet = app.descendants(matching: .any).matching(identifier: "approval.sheet").firstMatch
         XCTAssertTrue(sheet.waitForExistence(timeout: 40), app.debugDescription)
         closeApprovalSheet(app)

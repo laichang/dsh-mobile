@@ -8,7 +8,7 @@ import SwiftUI
 /// and the tool arguments (STORY §5); a card of a host that is not connected has grey buttons and
 /// says why. An agent question is its card, which answers there too (P1). A tap on a task opens
 /// its session page. Short answers show in the row (the
-/// 280-character rule, ARCHITECTURE D51). S15 · design screen 03.
+/// 280-character rule). Design screen 03.
 struct AllTasksPage: View {
     let store: TaskListStore
 

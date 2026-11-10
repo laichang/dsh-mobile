@@ -1,5 +1,5 @@
 #!/bin/bash
-# Set up a Mac for dsh-mobile development, then prove the T0 round trip runs (WORKFLOW.md §2).
+# Set up a Mac for dsh-mobile development, then prove the round trip runs (WORKFLOW.md §2).
 # Safe to run again: each step checks first and skips what is already in place.
 #
 #   scripts/bootstrap              set up, then run scripts/demo/t0.sh (real DSH + mock LLM)

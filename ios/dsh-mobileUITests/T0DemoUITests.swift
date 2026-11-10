@@ -1,12 +1,12 @@
 import XCTest
 
-/// T0 demo in the Simulator, driven by accessibility identifiers.
+/// Round-trip demo in the Simulator, driven by accessibility identifiers.
 /// - `testDemoWithFakeBridge` needs nothing else running.
 /// - `testDemoAgainstRealDSH` needs `node scripts/dsh-up.mjs` (real DSH + bridge on 47801) and
 ///   runs only with TEST_RUNNER_DSHM_REAL_DSH=1; scripts/demo/t0.sh sets that up.
 /// Set TEST_RUNNER_DSHM_SHOT_DIR to save a screenshot of the finished screen there.
-/// Every launch passes `-DSHMResetPairing YES`, so a pairing left by S1's tests doesn't move
-/// these onto Noise: T0 is the Debug plaintext loopback path. Helpers: UITestSupport.swift.
+/// Every launch passes `-DSHMResetPairing YES`, so a pairing left by the pairing tests doesn't move
+/// these onto Noise: this is the Debug plaintext loopback path. Helpers: UITestSupport.swift.
 @MainActor
 final class T0DemoUITests: XCTestCase {
     override func setUp() {
@@ -32,7 +32,7 @@ final class T0DemoUITests: XCTestCase {
         XCTAssertTrue(app.buttons["composer.send"].isEnabled)
     }
 
-    /// T0 reserved `dshm://pair?…`; since S1 it opens the real pairing screen. T0's stub link
+    /// `dshm://pair?…` opens the real pairing screen. The old stub link
     /// carries no offer, so the screen says it can't use it, and Close returns to the composer.
     func testPairDeepLinkOpensPairingStub() throws {
         let app = XCUIApplication()

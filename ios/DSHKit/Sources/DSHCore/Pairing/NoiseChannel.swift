@@ -106,7 +106,7 @@ public struct NoiseChannel: SecureChannel {
         return try Self.finish(state, reply: Array(reply))
     }
 
-    /// The bridge's refusals are its close codes (D21 b). D125: any other code, except "going
+    /// The bridge's refusals are its close codes. Any other code, except "going
     /// away" (1001, a bridge that shuts down) and "abnormal" (1006, no close frame), comes from a
     /// WebSocket server that is not a bridge.
     static func refusal(code: Int, reason: String) -> NoiseChannelError {

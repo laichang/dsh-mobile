@@ -4,7 +4,7 @@ import Foundation
 import SwiftData
 import Testing
 
-/// S2 × S3 seam (S2 landed second): a task's milestones are cached with it, so the
+/// The durable list with milestones: a task's milestones are cached with it, so the
 /// card survives kill/reopen, and the gap is replayed by Resume exactly once.
 @MainActor
 @Suite(.serialized, .timeLimit(.minutes(2))) struct CachedMilestoneTests {

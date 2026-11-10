@@ -1,5 +1,5 @@
 // Durable list + resume.
-// Field numbers 40–59 in Request / Response / Event are S2's; frame.proto only registers them.
+// Field numbers 40–59 in Request / Response / Event are the durable list's; frame.proto only registers them.
 //
 // The bridge numbers every Event it logs with a per-host monotonic `Event.host_seq` inside one
 // event log, named by `log_id`. The app remembers (log_id, last host_seq) and, after any
@@ -46,10 +46,10 @@ message TaskSummary {
   bool external_session = 261;
   // Short result for the latest turn. Empty suppresses a stale or long inline answer.
   optional string latest_reply = 262;
-  // S14 (drawer.v1, fields 280–299): the absolute directory of the session's workspace on the
+  // The drawer (drawer.v1, fields 280–299): the absolute directory of the session's workspace on the
   // host, from the DSH session (`cwd`) or the phone's CreateTask. Absent when the host does not know it.
   optional string workspace = 280;
-  // S27 (fields 540–559): when the session's latest turn started (its `turn/start`, else its user
+  // The latest turn (fields 540–559): when the session's latest turn started (its `turn/start`, else its user
   // message), Unix milliseconds. The done footer's 用时 runs from here to updated_at_ms. Absent from
   // an older bridge: the app counts from created_at_ms, as before.
   optional int64 turn_started_at_ms = 540;

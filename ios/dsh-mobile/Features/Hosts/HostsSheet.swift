@@ -152,7 +152,7 @@ private struct HostRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HostLastConnection(date: host.lastConnectedAt)
                     .foregroundStyle(DSHTheme.textSecondary)
-                // Every address was tried; the last error of each. D125: in words when it
+                // Every address was tried; the last error of each. In words when it
                 // says why the bridge does not answer, with the error after it.
                 ForEach(host.addressFailures, id: \.endpoint.description) { failure in
                     if let kind = failure.kind {

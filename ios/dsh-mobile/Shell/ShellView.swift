@@ -27,7 +27,7 @@ struct ShellView: View {
                         .frame(width: width)
                         .offset(x: offset - width)
                 }
-                // S23 F2: the peeking edge cross-fades to the new page (`ShellModel.fading`).
+                // F2: the peeking edge cross-fades to the new page (`ShellModel.fading`).
                 ZStack {
                     page(shell.page)
                         .id(shell.page)
@@ -51,7 +51,7 @@ struct ShellView: View {
         }
         .background(DSHTheme.canvas.ignoresSafeArea())
         .modifier(DrawerReadTracker(store: store, shell: shell))
-        .sensoryFeedback(.impact(weight: .light), trigger: shell.taps) // S23 F1
+        .sensoryFeedback(.impact(weight: .light), trigger: shell.taps) // F1
         .environment(shell)
         .environment(store)
         .sheet(item: $shell.sheet) { route in
@@ -96,7 +96,7 @@ struct ShellView: View {
             .onEnded { value in
                 guard let current = dragOffset else { return }
                 let open = Self.settlesOpen(offset: current, velocity: value.velocity.width, width: width)
-                // S23 F3: the same spring as the slide after a tap in the drawer.
+                // F3: the same spring as the slide after a tap in the drawer.
                 withAnimation(DrawerMotion.slide) {
                     shell.drawerOpen = open
                     dragOffset = nil

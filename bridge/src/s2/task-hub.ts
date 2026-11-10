@@ -129,7 +129,7 @@ export class TaskHub {
       if (files.length) throw new Error('Attach files when the task is done.')
       return this.sendWhileRunning(taskId, text, mode, onAccepted)
     }
-    // Not while an earlier send waits. D110: a failed task takes a new message (the user fixed the cause).
+    // Not while an earlier send waits. A failed task takes a new message (the user fixed the cause).
     const afterFailure = summary.state === TaskState.FAILED
     if ((summary.state !== TaskState.COMPLETED && summary.state !== TaskState.INTERRUPTED && !afterFailure)
         || this.sending.has(taskId)) {
@@ -244,7 +244,7 @@ export class TaskHub {
     this.log.append(taskId, { case: 'queuedMessage', value: { taskId, messageId, text, timeMs, placement } })
   }
 
-  /** A new turn of the task: RUNNING, with its own start (S27: 用时 counts the latest turn only). */
+  /** A new turn of the task: RUNNING, with its own start (用时 counts the latest turn only). */
   private turnStarted(summary: Summary, at: number) {
     summary.message = ''
     summary.failureCode = ''
@@ -444,7 +444,7 @@ export class TaskHub {
     summary.message = end.message ?? ''
     summary.failureCode = end.code ?? ''
     summary.updatedAtMs = BigInt(this.now())
-    // State first, then TaskEnded: TaskEnded stays the task's last event (T0's contract).
+    // State first, then TaskEnded: TaskEnded stays the task's last event (the oldest clients rely on it).
     this.upserted(summary)
     this.log.append(summary.taskId, {
       case: 'taskEnded',

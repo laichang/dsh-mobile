@@ -1,5 +1,5 @@
 /**
- * S3 milestone mapper: a deterministic fold over one DSH session's durable
+ * Milestone mapper: a deterministic fold over one DSH session's durable
  * events into milestones. No model, no invented text: a milestone carries DSH's own words (a
  * todo's content, a failure message) or none, and the app labels each kind itself.
  *

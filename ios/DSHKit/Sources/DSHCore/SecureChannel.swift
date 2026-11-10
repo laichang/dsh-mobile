@@ -29,7 +29,7 @@ public struct HostEndpoint: Sendable, Equatable, Codable, CustomStringConvertibl
     }
 
     #if DEBUG
-    /// The bridge on this Mac, as seen from the iOS Simulator (T0's plaintext dev path). Debug
+    /// The bridge on this Mac, as seen from the iOS Simulator (the plaintext dev path). Debug
     /// builds only; `-DSHMBridgePort` overrides the port.
     public static func localBridge(port: Int = 47801) -> HostEndpoint {
         HostEndpoint(host: "127.0.0.1", port: port)
@@ -79,7 +79,7 @@ public enum SecureChannelError: Error, Equatable, CustomStringConvertible {
 
 /// No encryption, so it only talks to loopback literals (127.0.0.0/8, ::1). Host names, even
 /// "localhost", are refused: they can resolve anywhere. Debug builds only: it reaches the
-/// bridge's dev-only `/plaintext` path (bridge `devPlaintext`), which T0's demo uses.
+/// bridge's dev-only `/plaintext` path (bridge `devPlaintext`), which the round-trip demo uses.
 public struct PlaintextChannel: SecureChannel {
     public let name = "plaintext"
     public let path = "/plaintext"

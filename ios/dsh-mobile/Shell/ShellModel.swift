@@ -40,7 +40,7 @@ final class ShellModel {
         let fromDrawer = drawerOpen
         moving = true
         fading = true
-        // Assign the page directly (T1: a page set inside `withTransaction` could get lost);
+        // Assign the page directly (a page set inside `withTransaction` could get lost);
         // `ShellView` animates it while `fading` is true.
         self.page = page
         motion = Task { [weak self] in

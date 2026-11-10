@@ -86,7 +86,7 @@ public final class TaskListStore {
         public var externalSession: Bool
         public var approvalOnly: Bool
         public var approvals: [Approval]
-        /// S3 milestones, from the cache: the list row shows the card.
+        /// Milestones, from the cache: the list row shows the card.
         public var milestones: MilestoneTimeline
         public var modelSelection: ModelSelection?
         /// The session's workspace directory on the host (`drawer.v1`), from the cache.
@@ -485,7 +485,7 @@ public final class TaskListStore {
     }
 
     /// Sends `text` into the DSH session of `row`. The user message and the new turn arrive as host
-    /// events, so the page shows them in order, and a reconnect replays them. D101: while the task
+    /// events, so the page shows them in order, and a reconnect replays them. While the task
     /// runs, the message waits in its queue (`QUEUE`): the next turn, unless the user sends it now.
     /// Once the task is done, the files on the page's composer go up first and with the
     /// message; then they leave it.
@@ -563,8 +563,8 @@ public final class TaskListStore {
         try await links.first { $0.key == hostKey }!.connection.answerQuestion(id: question.requestID, answers: answers)
     }
 
-    /// Answers an agent question with what the user typed in the session's composer ("回答 Agent…",
-    /// D113): the text goes to the question, not into the task as a follow-up.
+    /// Answers an agent question with what the user typed in the session's composer ("回答 Agent…"):
+    /// the text goes to the question, not into the task as a follow-up.
     public func answerQuestion(_ question: AgentQuestion, hostKey: String, typed text: String) async throws {
         try await answerQuestion(question, hostKey: hostKey, answers: question.replies(typed: text))
     }
@@ -898,7 +898,7 @@ public final class TaskListStore {
             task.updatedAt = snapshot.updatedAt
             task.turnStartedAt = snapshot.turnStartedAt
         }
-        // The questions of the summary, as D25 does for approvals: a card the trimmed log lost.
+        // The questions of the summary, as for approvals: a card the trimmed log lost.
         var blocks = structuredTranscript(of: task)
         if blocks.restoreQuestions(snapshot.questions, offset: task.transcript.utf8.count, ended: task.state.isTerminal) {
             task.structuredTranscript = blocks

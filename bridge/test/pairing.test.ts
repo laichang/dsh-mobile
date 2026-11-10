@@ -296,7 +296,7 @@ describe('PairingBridge', () => {
     const store = tempStore(() => time++)
     const device = store.registerDevice(generateKeyPair().publicKey, new Uint8Array([1]))
     const path = join(store.dir, 'devices.json')
-    writeFileSync(path, JSON.stringify(JSON.parse(readFileSync(path, 'utf8')).devices)) // S1 format
+    writeFileSync(path, JSON.stringify(JSON.parse(readFileSync(path, 'utf8')).devices)) // the first format
     assert.equal(store.pairingHistory()[0].atMs, device.pairedAt)
     for (let i = 2; i <= 52; i++) store.registerDevice(generateKeyPair().publicKey, new Uint8Array([i]))
     const first = auditPage(store, '')
@@ -441,7 +441,7 @@ describe('PlaintextChannelDevOnly', () => {
   })
 })
 
-/** S1 × S2 seam (S1 landed second): the durable list's Resume works over a Noise reconnect. */
+/** Pairing with the durable list: the durable list's Resume works over a Noise reconnect. */
 describe('ResumeOverNoise', () => {
   test('ikReconnectResumesFromTheCursor', async () => {
     const store = tempStore()

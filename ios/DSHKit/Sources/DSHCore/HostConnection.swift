@@ -89,7 +89,7 @@ public struct TaskSnapshot: Sendable, Equatable {
     public var sessionRevision: UInt64?
     public var externalSession = false
     public var latestReply: String?
-    /// S14 (`drawer.v1`): the session's workspace directory on the host.
+    /// With `drawer.v1`: the session's workspace directory on the host.
     public var workspace: String?
     /// When the latest turn started; nil from an older bridge (then `createdAt` stands in).
     public var turnStartedAt: Date?
@@ -251,7 +251,7 @@ public actor HostConnection {
 
     /// - Parameters:
     ///   - endpoints: every address of the host, the one to try first first. Not empty.
-    ///   - probe: D125: a plain TCP connect after an address gave no answer, to tell another
+    ///   - probe: a plain TCP connect after an address gave no answer, to tell another
     ///     program that holds the port from a computer that is not reachable (`TCPPortProbe.probe`).
     ///   - onAddressesChange: called with the new order when a different address than the first
     ///     worked, so the caller can save it (`Pairing.connection(to:)`).

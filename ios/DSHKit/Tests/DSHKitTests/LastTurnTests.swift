@@ -22,7 +22,7 @@ import Testing
         return try Dshm_V1_Frame(serializedBytes: bytes).event.taskUpserted.task
     }
 
-    /// The Swift half of the S27 golden fixture (bridge/test/drawer.test.ts); S14's fixture is the
+    /// The Swift half of the latest-turn golden fixture (bridge/test/drawer.test.ts); the drawer's fixture is the
     /// same session from an older bridge, without the field.
     @Test func goldenWebSessionCarriesItsLatestTurnStart() throws {
         let web = try Self.fixture("s27_web_session_upserted_event")

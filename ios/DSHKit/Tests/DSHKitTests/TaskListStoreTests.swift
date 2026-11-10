@@ -238,7 +238,7 @@ import Testing
         host.setReachable(false)
         try await waitUntil("offline") { store.hosts.first?.reachability == .offline }
         #expect(store.offlineHosts.map(\.name) == ["FakeBridge Mac"])
-        // S21 seam: with no host online the send key is off (X3); 01 names the host on its card.
+        // With no host online the send key is off (X3); 01 names the host on its card.
         store.prompt = "Will not go out"
         #expect(store.allHostsOffline)
         #expect(!store.canSend)

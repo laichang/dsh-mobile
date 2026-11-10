@@ -1,6 +1,6 @@
 import XCTest
 
-/// S3 demo in the Simulator: a multi-step task's todos tick off on the task card,
+/// Milestones demo in the Simulator: a multi-step task's todos tick off on the task card,
 /// and the detail view shows the milestone timeline.
 /// - `testTodosTickOffOnCardWithFakeBridge`, `testTimelineWithFakeBridge` need nothing else running
 ///   (`-DSHMFakeBridge YES -DSHMFakeMilestones YES`).
@@ -117,7 +117,7 @@ final class S3MilestonesUITests: XCTestCase {
         assertTimeline(app, kinds: Self.fakeKinds, shot: "s3-fakebridge-timeline")
     }
 
-    /// A bridge that sends no milestones (T0's FakeBridge script) gets T0's screen, no card.
+    /// A bridge that sends no milestones (the plain FakeBridge script) gets the plain screen, no card.
     func testNoMilestonesNoCard() {
         let app = launch(["-DSHMFakeBridge", "YES"])
         send(app, "Introduce yourself in one sentence.")

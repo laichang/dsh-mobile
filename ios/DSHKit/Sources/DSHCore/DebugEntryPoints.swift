@@ -23,7 +23,7 @@ public enum DebugLaunchOptions {
     public static let resetStoreKey = "DSHMResetStore"
     /// `-DSHMConnectDelay <seconds>`: show the cache for a while before the first connection.
     public static let connectDelayKey = "DSHMConnectDelay"
-    /// `-DSHMResetPairing YES`: forget paired hosts and the device key at launch (S1 UI tests).
+    /// `-DSHMResetPairing YES`: forget paired hosts and the device key at launch (pairing UI tests).
     public static let resetPairingKey = "DSHMResetPairing"
     /// `-DSHMFakeHold <text>`: with the FakeBridge, a task whose prompt contains `<text>`
     /// stays running until the app quits, so a UI test can act on a running task.

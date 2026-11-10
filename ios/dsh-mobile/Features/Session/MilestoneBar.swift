@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// The milestone bar of a session page (screen 04, ARCHITECTURE D23 (b)): one line with the
+/// The milestone bar of a session page (screen 04): one line with the
 /// step being worked on and "done / total", and a thin progress line under it. It sits above the
 /// scrolling transcript, so it stays at the top while the transcript scrolls. A tap opens all the
 /// steps in a sheet (`SheetRoute.milestones`). Details on demand (STORY §4).

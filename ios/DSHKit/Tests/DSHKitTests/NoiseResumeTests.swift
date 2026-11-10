@@ -4,7 +4,7 @@ import Foundation
 import SwiftData
 import Testing
 
-/// S1 × S2 seam (S1 landed second): the durable list over `NoiseChannel`. After
+/// Pairing with the durable list: the durable list over `NoiseChannel`. After
 /// kill/reopen the app reconnects with a fresh IK handshake and resumes from its cached cursor.
 @MainActor
 @Suite(.serialized, .timeLimit(.minutes(2))) struct NoiseResumeTests {
@@ -100,7 +100,7 @@ import Testing
 
     @Test func droppedNoiseConnectionReconnectsAndReplaysOnlyTheGap() async throws {
         // The task waits after its first chunk until the drop, so it cannot end before the drop
-        // on a busy machine (S12: then no reconnect was needed yet when the test looked).
+        // on a busy machine (then no reconnect was needed yet when the test looked).
         let (pause, release) = AsyncStream<Void>.makeStream()
         defer { release.finish() }
         var script = FakeBridge.Script(reply: Self.reply, chunkDelay: .milliseconds(40))

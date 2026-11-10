@@ -1,6 +1,6 @@
 import XCTest
 
-/// Shared by the slice UI tests (…): drive the composer and the T1 shell, open deep links, save shots.
+/// Shared by the UI tests: drive the composer and the shell, open deep links, save shots.
 @MainActor
 extension XCTestCase {
     var env: [String: String] { ProcessInfo.processInfo.environment }
@@ -76,7 +76,7 @@ extension XCTestCase {
         return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: element)], timeout: timeout) == .completed
     }
 
-    // MARK: - T1 shell: the drawer replaces the navigation stack
+    // MARK: - The shell: the drawer replaces the navigation stack
 
     /// Opens the workspace drawer with its button (no-op if it is open).
     func openDrawer(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {

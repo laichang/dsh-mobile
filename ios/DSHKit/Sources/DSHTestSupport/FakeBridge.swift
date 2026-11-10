@@ -147,7 +147,7 @@ public final class FakeBridge: BridgeTransport {
             return ask.approval
         }
 
-        /// A three-todo task that ticks its todos off one by one (S3 demo, `-DSHMFakeMilestones YES`).
+        /// A three-todo task that ticks its todos off one by one (milestones demo, `-DSHMFakeMilestones YES`).
         public static func threeTodos(delay: Duration = .milliseconds(1500)) -> Script {
             let items = FakeBridge.threeTodoItems
             func list(done: Int, active: Int?) -> [Todo] {
@@ -265,7 +265,7 @@ public final class FakeBridge: BridgeTransport {
         """
     public static let threeTodoItems = ["Read the project layout", "Write the summary", "Check the summary against the code"]
 
-    /// A fresh host behind every connection this factory opens (T0 behaviour, plus S2's log).
+    /// A fresh host behind every connection this factory opens (a fresh host, plus the durable list's log).
     public static func factory(script: Script = Script()) -> BridgeTransportFactory {
         FakeHost(script: script).factory
     }
@@ -320,7 +320,7 @@ public final class FakeBridge: BridgeTransport {
 
     // MARK: Bridge side
 
-    /// The bridge closes this connection (it went away, or the network dropped). S29: with a
+    /// The bridge closes this connection (it went away, or the network dropped). With a
     /// `code`, it closes with that WebSocket close code, like the bridge's 4003 after a revoke.
     func drop(code: Int? = nil) {
         state.withLock { s in
@@ -359,7 +359,7 @@ public final class FakeHost: Sendable {
     /// an earlier app launch never collides with a new one that happens to be numbered the same.
     private let taskIDPrefix = "fake-\(UUID().uuidString.prefix(8).lowercased())-task"
     private let script: FakeBridge.Script
-    /// Capabilities this host adds to T0–S3's (for example S14's `drawer.v1`).
+    /// Capabilities this host adds to the base ones (for example `drawer.v1`).
     private let extraCapabilities: [String]
     /// With any, the host advertises `approvals.v1` and answers `AnswerApproval`.
     private let approvals: [FakeBridge.PendingApproval]
@@ -1291,7 +1291,7 @@ public final class FakeHost: Sendable {
         append(event, taskID: summary.taskID, in: &s)
     }
 
-    /// Numbers, logs, and forwards one event: to resumed connections, and to T0-style
+    /// Numbers, logs, and forwards one event: to resumed connections, and to Resume-less
     /// connections that created the task.
     private static func append(_ event: Dshm_V1_Event, taskID: String, in s: inout State) {
         var logged = event
@@ -1314,7 +1314,7 @@ public final class FakeHost: Sendable {
         s.log.count { if case .taskEnded(let e)? = $0.body { e.taskID == taskID } else { false } }
     }
 
-    /// S12 (tests): returns once this host has logged `count` ends of `taskID` (each turn ends
+    /// For tests: returns once this host has logged `count` ends of `taskID` (each turn ends
     /// once), so a test waits for the host while the app is away instead of sleeping.
     public func ended(_ taskID: String, count: Int = 1) async {
         await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in

@@ -138,8 +138,8 @@ private struct SessionTranscript: View {
     @State private var followsLanding = true
     /// Scrolls a read session back to its last position.
     @State private var position = ScrollPosition()
-    /// The height of S19's rows before the final answer. A saved position counts from below
-    /// them, so the same text comes back to the same place (S27, D76: the rows are now the same on
+    /// The height of the outcome rows before the final answer. A saved position counts from below
+    /// them, so the same text comes back to the same place (the rows are now the same on
     /// every visit, because the marker of the unread visit is gone).
     @State private var leadHeight: CGFloat = 0
 
@@ -163,7 +163,7 @@ private struct SessionTranscript: View {
         let host = store.hosts.first { $0.key == row?.hostKey }
         VStack(spacing: 0) {
             // The milestone bar and the status line sit above the scroll view, so they stay
-            // at the top while the transcript scrolls (ARCHITECTURE D23 (b)).
+            // at the top while the transcript scrolls.
             // P1: an agent question waits: the bar says 等你回答, also before the first milestone.
             let asking = row?.blocks.pendingQuestion != nil
             if let timeline = row?.milestones, !timeline.isEmpty || asking {
@@ -220,7 +220,7 @@ private struct SessionTranscript: View {
                         }
                         if !showJournal {
                             lead(row, outcome)
-                            StructuredTranscriptView(row: row, text: row.singleTurnTranscript(messages), store: store) // S17, P1
+                            StructuredTranscriptView(row: row, text: row.singleTurnTranscript(messages), store: store)
                         } else if history == nil && historyError == nil {
                             if host?.reachability == .online { ProgressView() }
                             else { Text("Connect to this host to load the conversation.").foregroundStyle(DSHTheme.textSecondary) }
@@ -268,7 +268,7 @@ private struct SessionTranscript: View {
                 case .answerStart, .lastPosition: break
                 case .followBottom, .end: return
                 }
-                // A few times: the page can still be in its motion (S23 F2–F3), and a lazy
+                // A few times: the page can still be in its motion (F2–F3), and a lazy
                 // transcript lays out more text after the first scroll.
                 for delay in [80, 250, 500] {
                     try? await Task.sleep(for: .milliseconds(delay))
@@ -301,7 +301,7 @@ private struct SessionTranscript: View {
         return host.isEmpty ? row.attachments : host.keepingThumbnails(of: row.attachments)
     }
 
-    /// S19's rows before the final answer, in one stack so that S23 can measure them.
+    /// The outcome rows before the final answer, in one stack so that the drawer motion can measure them.
     @ViewBuilder
     private func lead(_ row: TaskListStore.TaskRow, _ outcome: TaskOutcome?) -> some View {
         if outcome != nil || opensAtAnswer {
@@ -344,7 +344,7 @@ private struct SessionTranscript: View {
 }
 
 /// The user's message: a bubble on the right (DSHTheme.bubble).
-/// The files sent with it show above it. D143: a message sent now ("立即发送") shows
+/// The files sent with it show above it. A message sent now ("立即发送") shows
 /// at once, `pending` until DSH gives it to the agent at its next step.
 struct UserBubble: View {
     let text: String
@@ -684,7 +684,7 @@ private extension View {
 }
 
 extension TaskState {
-    /// Stable token for UI tests (`task.status` accessibility value, T0's tokens for its states).
+    /// Stable token for UI tests (`task.status` accessibility value, the first tokens for its states).
     var token: String {
         switch self {
         case .running: "running"

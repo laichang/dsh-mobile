@@ -2,7 +2,7 @@ import DSHCore
 import DSHProtocol
 import SwiftUI
 
-/// The model pill (restyled in S20 to screen 01): the composer's choice, or a running task's.
+/// The model pill (screen 01): the composer's choice, or a running task's.
 /// It opens `ModelPicker` as a sheet (`SheetRoute.model`).
 struct ModelControl: View {
     let store: TaskListStore

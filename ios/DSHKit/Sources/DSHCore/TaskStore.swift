@@ -1,8 +1,8 @@
 import Foundation
 import Observation
 
-/// State behind T0's single-task screen: one composer, one task at a time, in memory only. Since
-/// S2 the app uses `TaskListStore` (durable list + resume); this stays as T0's minimal client.
+/// State behind the first single-task screen: one composer, one task at a time, in memory only. Since
+/// the durable list, the app uses `TaskListStore` (durable list + resume); this stays as the minimal client.
 @MainActor
 @Observable
 public final class TaskStore {

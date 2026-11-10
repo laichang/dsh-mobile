@@ -1,7 +1,7 @@
 import Foundation
 
-/// What the session page says about a task that has ended (screens 06 and X1, ARCHITECTURE
-/// D60). Built only from data the host sent: the state, the failure message, the milestone
+/// What the session page says about a task that has ended (screens 06 and X1).
+/// Built only from data the host sent: the state, the failure message, the milestone
 /// timeline and the answered approvals. Nothing is summarized.
 public struct TaskOutcome: Equatable, Sendable {
     public enum Kind: String, Sendable {

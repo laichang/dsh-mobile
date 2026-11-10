@@ -1,13 +1,13 @@
 /**
  * The bridge's own WebSocket listener (ARCHITECTURE §5.1). One binary WebSocket message carries
- * one `Frame` through the connection's channel. T0 serves Hello and CreateTask; S2 adds ListTasks
+ * one `Frame` through the connection's channel. It serves Hello and CreateTask, then ListTasks
  * and Resume, and tasks now belong to the host's `TaskHub`, not to the connection.
  *
  * Channels:
  * - Noise on every path except `PLAINTEXT_PATH`: the first message is the handshake
  *   (src/pairing/wire.ts), then each message is one Noise transport message.
  * - Plaintext on `PLAINTEXT_PATH`, only when a PlaintextChannel is configured, which in turn
- *   only listens on loopback (development and T0's demo).
+ *   only listens on loopback (development and the round-trip demo).
  */
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import { WebSocketServer, type WebSocket } from 'ws'
@@ -150,7 +150,7 @@ function serveConnection(
   } else if (!options.noise) {
     return socket.close(1008, `plaintext only, on ${PLAINTEXT_PATH}`)
   }
-  // Which logged events this connection receives. Before Resume (a T0-style client): only the
+  // Which logged events this connection receives. Before Resume (a client without the durable list): only the
   // events of tasks it created here. After Resume: every event, in host_seq order.
   const ownTasks = new Set<string>()
   let resumed = false
@@ -237,7 +237,7 @@ function serveConnection(
         if (!resumed) subscribeOwnTasks()
         try {
           // The task id is known before any of its events are logged: answer first, then the
-          // subscription forwards its events (T0 clients rely on TaskCreated preceding them).
+          // subscription forwards its events (clients without Resume rely on TaskCreated preceding them).
           if (request.body.value.modelSelection && !options.tasks.selectModel) {
             return fail(id, 'model/unavailable', 'This host cannot select the requested model.')
           }

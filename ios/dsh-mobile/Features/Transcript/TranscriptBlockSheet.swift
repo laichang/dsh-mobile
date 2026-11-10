@@ -3,8 +3,8 @@ import SwiftUI
 
 /// The details of one collapsed row, in a bottom sheet (design/screens.json: details open as sheets).
 /// Tool call: verb and the whole target, DSH's tool name, the state, the lines added and removed,
-/// DSH's error, and the raw arguments. Thinking: how long, and DSH's reasoning text. A full diff
-/// view is not part of S17 (PLAN.md S17 "Not").
+/// DSH's error, and the raw arguments. Thinking: how long, and DSH's reasoning text. No full diff
+/// view.
 struct TranscriptBlockSheet: View {
     let store: TaskListStore
     let taskKey: String

@@ -4,7 +4,7 @@ import DSHCore
 import Foundation
 import Observation
 
-/// The Live Activities of the tasks, through ActivityKit (screen L, ARCHITECTURE D119–D121). Local
+/// The Live Activities of the tasks, through ActivityKit (screen L). Local
 /// activities only: no push token is asked for, so a free Apple team can run them. The widget
 /// extension (`ios/LiveActivity`) draws them from `TaskActivityState`.
 @MainActor

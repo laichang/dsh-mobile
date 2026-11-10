@@ -1,7 +1,7 @@
 #!/bin/bash
 # Proves a Release build carries none of the debug-only testability entry points
 #: FakeBridge, the -DSHM* launch arguments, and the dshm://pair deep link;
-# and, since S1, no PlaintextChannel: Release talks to a bridge only over Noise.
+# and no PlaintextChannel: Release talks to a bridge only over Noise.
 # And both builds carry the same ATS keys.
 # Also checks the Debug build *does* carry them, so a passing result means something.
 set -euo pipefail

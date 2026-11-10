@@ -140,7 +140,7 @@ else
   scripts/pnpm-test > "$W/real-pnpm.out" 2>&1; expect_pass_short "scripts/pnpm-test" "$W/real-pnpm.out" $?
   scripts/swift-test > "$W/real-swift.out" 2>&1; expect_pass_short "scripts/swift-test" "$W/real-swift.out" $?
   scripts/xc build > "$W/real-build.out" 2>&1; expect_pass_short "scripts/xc build" "$W/real-build.out" $?
-  # One FakeBridge UI test: the T0 demo without the real-DSH test.
+  # One FakeBridge UI test: the round-trip demo without the real-DSH test.
   scripts/xc test -only-testing:dsh-mobileUITests/T0DemoUITests \
     -skip-testing:dsh-mobileUITests/T0DemoUITests/testDemoAgainstRealDSH > "$W/real-test.out" 2>&1
   expect_pass_short "scripts/xc test" "$W/real-test.out" $?

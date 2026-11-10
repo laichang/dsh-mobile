@@ -111,7 +111,7 @@ final class S2DurableListUITests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 5))
         XCTAssertTrue(row.label.contains("Offline check"), row.label)
 
-        // S21 seam: with no host online, the new session names the host on the all-offline card
+        // With no host online, the new session names the host on the all-offline card
         // (X3), and the send key is off instead of failing after the tap.
         newSession(app)
         let line = app.descendants(matching: .any).matching(identifier: "hosts.offlineCard.host").firstMatch
@@ -139,7 +139,7 @@ final class S2DurableListUITests: XCTestCase {
         saveShot("s2-offline-real-host")
     }
 
-    /// S2 × S3 seam (S2 landed second): list rows show the milestone card, and after kill/reopen
+    /// The durable list with milestones: list rows show the milestone card, and after kill/reopen
     /// with the host unreachable the card and the timeline still come from the cache.
     func testCachedMilestonesAfterKillAndReopenWithFakeBridge() {
         let prompt = "Milestone cache check"

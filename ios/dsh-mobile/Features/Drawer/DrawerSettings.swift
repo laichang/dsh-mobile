@@ -16,7 +16,7 @@ struct DrawerSettingsButton: View {
 }
 
 /// Settings: the paired hosts as this phone sees them, and the app version. Device
-/// management and audit stay in each host (H); S21 adds the hosts sheet.
+/// management and audit stay in each host (H), as in the hosts sheet.
 struct DrawerSettingsSheet: View {
     let store: TaskListStore
 

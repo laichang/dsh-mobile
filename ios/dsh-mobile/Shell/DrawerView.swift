@@ -2,10 +2,10 @@ import DSHCore
 import SwiftUI
 
 /// The thin workspace drawer (02): 新建会话, 所有任务, and the sessions in groups by host.
-/// Each host group starts with the host's status, its channel and its device management (S1, S2,
-/// S10), so a host's state shows where its sessions are.
+/// Each host group starts with the host's status, its channel and its device management,
+/// so a host's state shows where its sessions are.
 ///
-/// Registration point: each section is one line in `body`. S14's `DrawerHostTree` shows each host
+/// Registration point: each section is one line in `body`. `DrawerHostTree` shows each host
 /// as host › workspace › session with status marks, the "2 / 3" hosts online, and settings.
 struct DrawerView: View {
     let store: TaskListStore
@@ -94,7 +94,7 @@ private struct DrawerAllTasksRow: View {
             .padding(.vertical, 12)
             .contentShape(.rect)
         }
-        .buttonStyle(.drawerPress) // S23 F1
+        .buttonStyle(.drawerPress) // F1
         .foregroundStyle(DSHTheme.textPrimary)
         .accessibilityIdentifier("drawer.allTasks")
     }

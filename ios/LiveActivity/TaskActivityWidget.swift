@@ -3,8 +3,8 @@ import DSHActivity
 import SwiftUI
 import WidgetKit
 
-/// The widget extension of dsh-mobile: only the Live Activity of a running task (screen L,
-/// ARCHITECTURE D119). The app starts, updates and ends it; this draws `TaskActivityState`.
+/// The widget extension of dsh-mobile: only the Live Activity of a running task (screen L).
+/// The app starts, updates and ends it; this draws `TaskActivityState`.
 @main
 struct LiveActivityBundle: WidgetBundle {
     var body: some Widget {

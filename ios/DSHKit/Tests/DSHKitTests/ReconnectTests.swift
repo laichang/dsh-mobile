@@ -5,7 +5,7 @@ import SwiftData
 import Synchronization
 import Testing
 
-/// A reconnect tries every saved address of a host (amends D21 e). The Mac is
+/// A reconnect tries every saved address of a host. The Mac is
 /// a `FakeNoiseHost` in front of a `FakeHost`; its two addresses are two routes to it (a LAN
 /// address and a Tailscale one), and a route can die (refused) or go silent (no answer).
 @MainActor

@@ -1,7 +1,7 @@
 /**
  * Structured transcript: a deterministic fold over one
  * DSH session's follow stream into transcript blocks. No model, no invented text (the same rule
- * as D11): a block carries DSH's own data, and the app words each row itself.
+ * as for milestones): a block carries DSH's own data, and the app words each row itself.
  *
  * Inputs are the `sessionController.follow` frames of DSH 0.2.2-rc.1:
  *   assistant-stream chunk `reasoning-delta`  → THINKING, RUNNING, at the first one of a block
@@ -132,7 +132,7 @@ export class TranscriptMapper {
   private attempt = 0
   private readonly tools = new Map<string, BlockOut>()
 
-  /** @param prefix - D89: a later turn's prefix for the IDs of its thinking blocks; tool call IDs are DSH's own. */
+  /** @param prefix - A later turn's prefix for the IDs of its thinking blocks; tool call IDs are DSH's own. */
   constructor(private readonly prefix = '') {}
 
   /** One assistant-stream frame: `start`, `chunk` (with DSH's `time`) or `end`. */

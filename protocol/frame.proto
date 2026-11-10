@@ -1,14 +1,16 @@
 // The only contract between the iOS app (ios/) and the bridge plugin (bridge/).
-// See ARCHITECTURE.md §6 and PLAN.md §1 "How slices stay independent".
+// See ARCHITECTURE.md §6.
 //
 // Evolution rules:
 // - Additive only. Never reuse or renumber a field; reserve removed ones.
-// - Request / Response / Event bodies reserve 20 field numbers per slice:
-//   T0 1–19, S1 20–39, S2 40–59, S3 60–79, S4 80–99, S5 100–119, S6 120–139,
-//   S7 140–159, S8 160–179, S9 180–199, S10 200–219, S11 220–239, S12 240–259.
-//   A slice adds its messages in protocol/<slice>.proto and only a one-line
-//   registration per oneof here.
-// - Each slice advertises a capability string in Hello.capabilities
+// - Request / Response / Event bodies reserve 20 field numbers per feature:
+//   the core 1–19, pairing 20–39, the durable list 40–59, milestones 60–79,
+//   approvals 80–99, interrupt 100–119, models 120–139, workspaces 140–159,
+//   devices 200–219, the upstream version 240–259 (160–199 and 220–239 are
+//   free); later features take the next free block after the highest number
+//   here. A feature adds its messages in protocol/<feature>.proto and only a
+//   one-line registration per oneof here.
+// - Each feature advertises a capability string in Hello.capabilities
 //   (e.g. "approvals.v1"); the app hides UI the bridge can't serve.
 
 syntax = "proto3";
@@ -29,7 +31,7 @@ import "questions.proto";
 import "attachments.proto";
 
 // One WebSocket binary message carries exactly one Frame (inside the
-// SecureChannel; plaintext only on loopback in T0).
+// SecureChannel; plaintext only on loopback).
 message Frame {
   oneof kind {
     Request request = 1;
@@ -105,7 +107,7 @@ message Event {
     ApprovalPending approval_pending = 80;
     ApprovalResolved approval_resolved = 81;
     ModelSelected model_selected = 120;
-    TranscriptBlock transcript_block = 340; // S17 (transcript.proto)
+    TranscriptBlock transcript_block = 340; // transcript.proto
     UserMessage user_message = 360; QueuedMessage queued_message = 361; // conversation.proto
     QuestionPending question_pending = 380; // questions.proto
     QuestionResolved question_resolved = 381;
@@ -146,7 +148,7 @@ message TaskCreated {
 }
 
 // A piece of assistant text, in order. `seq` starts at 1 per task and has no
-// gaps (since S2 the bridge numbers it per task, not per connection).
+// gaps (the bridge numbers it per task, not per connection).
 message AssistantChunk {
   string task_id = 1;
   uint64 seq = 2;

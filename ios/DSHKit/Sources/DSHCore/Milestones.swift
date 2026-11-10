@@ -43,7 +43,7 @@ public struct Milestone: Sendable, Equatable, Identifiable, Codable {
     }
 }
 
-/// A task's milestones in order, and what the task card shows from them. Codable: S2's cache
+/// A task's milestones in order, and what the task card shows from them. Codable: the durable list's cache
 /// keeps each task's timeline (`CachedTask.milestonesData`).
 public struct MilestoneTimeline: Sendable, Equatable, Codable {
     public private(set) var milestones: [Milestone] = []

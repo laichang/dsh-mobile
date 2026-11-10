@@ -1,8 +1,8 @@
 // Noise Protocol Framework (rev 34) on @noble/*: DH 25519, ChaChaPoly or AESGCM, SHA256.
-// Ported from the X2 spike (spikes/x2-noise/ts/src/noise.ts) for S1; mirrors
+// Ported from the Noise spike (spikes/x2-noise/ts/src/noise.ts); mirrors
 // ios/DSHKit/Sources/DSHCore/Noise/Noise.swift. Proven by the official vectors
 // (protocol/fixtures/noise/official-vectors.json) and the cross-language golden transcripts
-// (protocol/fixtures/noise/). Hand-rolled and unaudited: see ARCHITECTURE D6 and the X2 risks.
+// (protocol/fixtures/noise/). Hand-rolled and unaudited (ARCHITECTURE.md, Security).
 import { x25519 } from '@noble/curves/ed25519.js'
 import { chacha20poly1305 } from '@noble/ciphers/chacha.js'
 import { gcm } from '@noble/ciphers/aes.js'

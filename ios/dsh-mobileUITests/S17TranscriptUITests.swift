@@ -86,7 +86,7 @@ final class S17TranscriptUITests: XCTestCase {
         XCTAssertTrue(any(app, "transcript.sheet.title").waitForNonExistence(timeout: 5))
     }
 
-    /// Without `transcript.v1`, the session page shows the S16 view: the text, no rows.
+    /// Without `transcript.v1`, the session page shows the plain view: the text, no rows.
     func testWithoutTranscriptCapabilityShowsTheS16View() {
         let app = launch("transcript-v0")
         send(app)

@@ -50,7 +50,7 @@ struct dsh_mobileApp: App {
     }
 
     // The pairing screen replaces the main screen rather than using a sheet: a sheet presented
-    // from onOpenURL didn't show up in XCUITest's accessibility tree (T0 Log).
+    // from onOpenURL didn't show up in XCUITest's accessibility tree.
     @ViewBuilder private var root: some View {
         if let route = app.pairingRoute {
             PairingView(route: route) {

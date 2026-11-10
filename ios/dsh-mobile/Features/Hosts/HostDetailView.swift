@@ -10,7 +10,7 @@ import SwiftUI
 /// Accessibility contract: `host.detail` (label: the host name), `device.current` (label: this
 /// device's id), `device.id.<id>`, `device.revoke.<id>`, `device.revoke.confirm`,
 /// `audit.<action>` (label: the whole record), `audit.loadOlder`. The `device.*` and `audit.*`
-/// identifiers are the ones of S10's `DeviceManagementView`.
+/// identifiers are the ones of `DeviceManagementView`.
 struct HostDetailView: View {
     let store: TaskListStore
     let hostKey: String

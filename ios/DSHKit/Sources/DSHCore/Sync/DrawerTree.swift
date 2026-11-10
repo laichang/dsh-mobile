@@ -5,7 +5,7 @@ import Foundation
 ///
 /// - With `drawer.v1`, sessions are grouped by their workspace directory. Workspaces are ordered
 ///   by their newest session, and sessions newest first.
-/// - Without `drawer.v1` (an older bridge), the drawer shows host › session, as T1 did.
+/// - Without `drawer.v1` (an older bridge), the drawer shows host › session, as the first shell did.
 /// - An offline host has no capabilities until it connects again. Its cached sessions keep their
 ///   workspaces, so the cache decides: group when any cached session has a workspace.
 public struct DrawerTree: Equatable, Sendable {

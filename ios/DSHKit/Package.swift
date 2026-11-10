@@ -1,5 +1,5 @@
 // swift-tools-version: 6.2
-// DSHKit: everything in the app that isn't a view. See ARCHITECTURE.md D15 (provisional).
+// DSHKit: everything in the app that isn't a view. See ARCHITECTURE.md, Toolchain.
 import PackageDescription
 
 let package = Package(

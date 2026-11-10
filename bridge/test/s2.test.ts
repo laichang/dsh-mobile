@@ -225,7 +225,7 @@ describe('ResumeAgainstFakeDSH', () => {
   })
 })
 
-/** S2 × S3 seam (S2 landed second): milestones are host-log events, so Resume replays them. */
+/** The durable list with milestones: milestones are host-log events, so Resume replays them. */
 describe('ResumeReplaysMilestones', () => {
   test('resumeAfterSeqReplaysTheMissedMilestonesOnce', async () => {
     const steps = (...s: string[]) => ({ todos: s.map((status, i) => ({ content: `Step ${i + 1}`, status })) })

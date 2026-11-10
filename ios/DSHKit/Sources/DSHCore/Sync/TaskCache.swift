@@ -78,7 +78,7 @@ public final class CachedTask {
     /// `[MessageAttachment]` with the thumbnails of images; empty without any.
     public var sentAttachmentsData: Data = Data()
 
-    /// The first message's attachments as this phone sent them; a cache from before D107 has only
+    /// The first message's attachments as this phone sent them; a cache from before files of any type has only
     /// `photoThumbnail`.
     public var sentAttachments: [MessageAttachment] {
         get {

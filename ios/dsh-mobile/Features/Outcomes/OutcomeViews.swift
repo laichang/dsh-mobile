@@ -51,7 +51,7 @@ extension TaskOutcome {
 }
 
 /// What comes before the final answer of a finished task: the process row. When the page opens
-/// at the answer, the row is the scroll target; S27 removed the marker under it.
+/// at the answer, the row is the scroll target, with no marker under it.
 struct OutcomeLead: View {
     let row: TaskListStore.TaskRow
     let outcome: TaskOutcome?
@@ -122,7 +122,7 @@ struct OutcomeEnd: View {
     }
 }
 
-/// "用时 5 分 24 秒 · <model>", under a hairline. S27: the latest turn's time, from its
+/// "用时 5 分 24 秒 · <model>", under a hairline. The latest turn's time, from its
 /// start (`TaskRow.lastTurnStart`) to the task's last update, so that the idle time between the
 /// turns of a Web session does not count.
 private struct OutcomeFooter: View {

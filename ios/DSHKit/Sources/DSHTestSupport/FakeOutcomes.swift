@@ -60,7 +60,7 @@ extension FakeBridge {
 }
 
 extension FakeBridge.Script {
-    /// The S19 host: the done task is the default; the failing upload is a variant.
+    /// The outcomes host: the done task is the default; the failing upload is a variant.
     public static func outcomes(delay: Duration = .milliseconds(300)) -> Self {
         func list(_ items: [String], done: Int) -> [Todo] {
             items.enumerated().map { i, content in

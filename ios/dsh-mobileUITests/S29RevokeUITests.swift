@@ -132,7 +132,7 @@ final class S29RevokeUITests: XCTestCase {
         }
     }
 
-    /// The hosts sheet path on a real bridge (scripts/dsh-up.mjs on S29's ports, Noise): pair,
+    /// The hosts sheet path on a real bridge (scripts/dsh-up.mjs on its own ports, Noise): pair,
     /// revoke this device in X2. The bridge answers, then closes with 4003 and refuses the phone.
     func testRevokeThisDeviceInHostsSheetOnTheRealBridgeOpens08AndStays() throws {
         let app = try pairWithRealBridge("DSHM_S29_PAIR_URL")
@@ -151,7 +151,7 @@ final class S29RevokeUITests: XCTestCase {
         expect08AndStays(app, shot: "s29-real-bridge-08")
     }
 
-    /// The drawer's "Devices and audit" under the host (S10's view) can revoke this device too.
+    /// The drawer's "Devices and audit" under the host (the devices view) can revoke this device too.
     /// Before the fix it only closed the view: the host stayed in the drawer and retried every
     /// few seconds (the reported bug). Now the close 4003 makes the app forget it.
     func testRevokeThisDeviceInDrawerDevicesOnTheRealBridgeOpens08AndStays() throws {

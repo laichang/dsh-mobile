@@ -118,7 +118,7 @@ private struct DrawerHostHeader: View {
         }
     }
 
-    /// The same words as T1's host status row, for VoiceOver and the UI tests.
+    /// The same words as the shell's host status row, for VoiceOver and the UI tests.
     private var label: String {
         var parts: [String] = switch host.reachability {
         case .online: ["\(host.name) · connected"]
@@ -185,7 +185,7 @@ private struct DrawerSessionRow: View {
                 .background(current ? DSHTheme.drawerCurrentRow : .clear, in: .rect(cornerRadius: 10))
                 .contentShape(.rect)
         }
-        .buttonStyle(.drawerPress) // S23 F1: highlighted under the finger
+        .buttonStyle(.drawerPress) // F1: highlighted under the finger
         .accessibilityElement(children: .combine)
         .accessibilityValue(row.state.token)
         .accessibilityIdentifier("drawer.session")
@@ -243,7 +243,7 @@ private struct DrawerMarkView: View {
 }
 
 /// "●●○ 2 / 3" at the top of the drawer: how many paired hosts are online now.
-/// S21 makes it open the hosts sheet.
+/// It opens the hosts sheet.
 struct DrawerHostsOnline: View {
     let hosts: [TaskListStore.HostStatus]
 

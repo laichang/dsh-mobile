@@ -168,7 +168,7 @@ export class PairingStore {
   private offersJSON(): OfferJSON[] { return this.read<OfferJSON[]>('offers.json') ?? [] }
   private registry(): Registry {
     const value = this.read<DeviceJSON[] | Registry>('devices.json')
-    // S1 stored an array. Its pairedAt and offer ID provide the original pairing event.
+    // The first format stored an array. Its pairedAt and offer ID provide the original pairing event.
     if (Array.isArray(value)) return { devices: value, history: value.map(paired) }
     return value ?? { devices: [], history: [] }
   }

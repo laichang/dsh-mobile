@@ -2,9 +2,9 @@ import DSHCore
 import SwiftUI
 
 /// The streamed transcript with its collapsed rows (screen 04): the text
-/// as S16 shows it, cut where each thinking or tool-call row sits. A row is one line; a tap opens
+/// as the plain transcript shows it, cut where each thinking or tool-call row sits. A row is one line; a tap opens
 /// its details in a sheet. With no rows (a bridge without `transcript.v1`, or a task with no
-/// thinking and no tools) this is S16's `TranscriptView`, unchanged.
+/// thinking and no tools) this is the plain `TranscriptView`, unchanged.
 struct StructuredTranscriptView: View {
     let row: TaskListStore.TaskRow
     let text: String
@@ -22,7 +22,7 @@ struct StructuredTranscriptView: View {
                     case .text(let piece):
                         TranscriptView(source: piece)
                     case .user(let item):
-                        // A follow-up, under the answer before it; D107: with its files.
+                        // A follow-up, under the answer before it, with its files.
                         if case .userMessage(let text) = item.kind {
                             // A message sent now is RUNNING until DSH gives it to the agent.
                             UserBubble(text: text, attachments: item.attachments ?? [], pending: item.state == .running)

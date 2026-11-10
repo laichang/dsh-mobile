@@ -26,7 +26,7 @@ public protocol PairedHostStore: Sendable {
     func load() -> [PairedHost]
     /// Adds the host, replacing any earlier pairing with the same host key.
     func save(_ host: PairedHost) throws
-    /// Replaces the pairing with the same host key in its place (D98: a new address order).
+    /// Replaces the pairing with the same host key in its place (a new address order).
     /// Does nothing if the host is not paired.
     func update(_ host: PairedHost) throws
     func removeAll() throws

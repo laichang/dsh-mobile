@@ -1,6 +1,6 @@
 import XCTest
 
-/// Why a host is offline, on real DSH (screens H and X3, ARCHITECTURE D125;
+/// Why a host is offline, on real DSH (screens H and X3;
 /// scripts/demo/bridge-errors.sh). The app pairs with the bridge on DSHM_BRIDGE_PORT. Then the
 /// script restarts DSH while another program (an HTTP server) holds that port, so the bridge
 /// cannot listen: the hosts sheet and the offline card say that another program uses the port.

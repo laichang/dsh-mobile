@@ -114,7 +114,7 @@ public struct TranscriptBlocks {
         table = nil
     }
 
-    /// Inline Markdown. S14: `*` and `**` next to CJK text also emphasize, as in DSH Web.
+    /// Inline Markdown. `*` and `**` next to CJK text also emphasize, as in DSH Web.
     public static func markdown(_ text: String) -> AttributedString {
         CJKEmphasis.markdown(text) { source in
             (try? AttributedString(markdown: source, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
@@ -122,7 +122,7 @@ public struct TranscriptBlocks {
         }
     }
 
-    // MARK: - S28 · GFM tables
+    // MARK: - GFM tables
 
     /// A row's cells: outer pipes are optional, `\|` is a pipe inside a cell (also in code spans).
     /// A header row must have a pipe; a body row may have none (one cell).

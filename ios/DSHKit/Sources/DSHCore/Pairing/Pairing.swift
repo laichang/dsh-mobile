@@ -4,7 +4,7 @@ import Observation
 public enum PairingError: Error, Equatable, CustomStringConvertible {
     case expired
     /// Each address tried, with why it failed (`reason(for:)`), e.g. `100.79.171.34:47801
-    /// (URL error -1022, App Transport Security)`. S31: the bare "couldn't reach" hid an ATS refusal.
+    /// (URL error -1022, App Transport Security)`. The bare "couldn't reach" hid an ATS refusal.
     case unreachable([String])
 
     public var description: String {

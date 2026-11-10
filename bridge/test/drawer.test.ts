@@ -69,7 +69,7 @@ describe('DrawerWorkspaces', () => {
     await directory.reconcile()
     const web = upserts(webHub.log, 'web-1').at(-1)!
     assert.equal(web.body?.case === 'taskUpserted' && web.body.value.task?.workspace, '/work/app')
-    // The same frame with the latest turn's start (`turn_started_at_ms`); S14's golden is the
+    // The same frame with the latest turn's start (`turn_started_at_ms`); the drawer's golden is the
     // frame from an older bridge, which the app still reads.
     assert.deepEqual(toBinary(FrameSchema, frameOf(web)), golden('s27_web_session_upserted_event'),
       JSON.stringify(toJson(FrameSchema, frameOf(web))))

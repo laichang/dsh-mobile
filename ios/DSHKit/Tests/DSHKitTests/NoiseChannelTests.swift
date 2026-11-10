@@ -213,7 +213,7 @@ struct Transcript: Decodable, Sendable, CustomTestStringConvertible {
         #expect(throws: PairingOffer.ParseError.badField("s")) { try PairingOffer(string: Self.link(s: [1, 2, 3])) }
         #expect(throws: PairingOffer.ParseError.badField("a")) { try PairingOffer(string: Self.link(a: "nope")) }
         #expect(throws: PairingOffer.ParseError.notAPairingLink) { try PairingOffer(string: "https://example.com/pair?v=1") }
-        // T0's stub link is not an offer.
+        // The old stub link is not an offer.
         #expect(throws: PairingOffer.ParseError.self) { try PairingOffer(string: "dshm://pair?host=127.0.0.1&port=47801&secret=t0-stub") }
     }
 
@@ -252,8 +252,8 @@ final class Clock: @unchecked Sendable {
         return Pairing(keys: keys, hosts: hosts, transport: factory, now: { clock.now })
     }
 
-    /// PLAN S1 in miniature: pair with IKpsk1, then a new connection reconnects with IK and runs
-    /// the T0 task over Noise.
+    /// Pairing in miniature: pair with IKpsk1, then a new connection reconnects with IK and runs
+    /// the round-trip task over Noise.
     @Test func pairsThenRunsTaskOverNoise() async throws {
         let host = FakeNoiseHost(now: { [clock] in clock.now })
         let offer = await host.makeOffer()

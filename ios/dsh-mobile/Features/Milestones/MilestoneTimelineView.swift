@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// S3 detail: the task's whole milestone timeline, newest last, with the todo list on top.
+/// Milestone detail: the task's whole milestone timeline, newest last, with the todo list on top.
 struct MilestoneTimelineView: View {
     let timeline: MilestoneTimeline
 

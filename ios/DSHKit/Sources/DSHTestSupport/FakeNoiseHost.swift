@@ -14,7 +14,7 @@ public actor FakeNoiseHost {
     public private(set) var devices: [[UInt8]] = []
     /// Connections refused, with the close reason the bridge would send.
     public private(set) var refusals: [String] = []
-    /// Completed IK reconnect handshakes (S1 x S2 seam tests).
+    /// Completed IK reconnect handshakes (Noise resume tests).
     public private(set) var reconnects = 0
     private let now: @Sendable () -> Date
 
@@ -33,7 +33,7 @@ public actor FakeNoiseHost {
                             offerID: id, secret: secret, expiresAt: expiresAt)
     }
 
-    /// A fresh `FakeHost` behind every connection (T0 behaviour, like `FakeBridge.factory`).
+    /// A fresh `FakeHost` behind every connection (like `FakeBridge.factory`).
     public nonisolated func factory(script: FakeBridge.Script = .init()) -> BridgeTransportFactory {
         { _ in FakeNoiseConnection(host: self, inner: try FakeHost(script: script).connection()) }
     }
