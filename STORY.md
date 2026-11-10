@@ -2,7 +2,7 @@
 
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)，目前已有Web端、桌面端，但缺少了手机端。所以我们的目标是做出DeepSeek Harness Mobile (dsh-mobile)， iOS 版本。
 
-界面与交互见 [DESIGN.md](DESIGN.md)（设计稿 `design/board.html`）。**STORY is DESIGN, DESIGN is STORY**：每条原则都对应设计稿里的画面，改一个就同时改另一个。
+界面与交互见 [design/screens.json](design/screens.json)（每个画面是 `design/screens/<id>.html`）。**STORY is DESIGN, DESIGN is STORY**：每条原则都对应至少一个画面，改一个就同时改另一个。
 
 # 理念
 

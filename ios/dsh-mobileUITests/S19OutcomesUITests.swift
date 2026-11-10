@@ -1,14 +1,14 @@
 import CoreFoundation
 import XCTest
 
-/// S19 · done and failed (PLAN.md §5 S19, DESIGN.md screens 06 and X1), against the in-process
+/// S19 · done and failed (PLAN.md §5 S19, design screen 06 and X1), against the in-process
 /// FakeBridge's outcomes scenario (`-DSHMFakeScenario outcomes`, `FakeBridge.Script.outcomes`):
 /// - "… open a PR": five todos; after four it asks to run `git push`, then gives a final answer
 ///   longer than the screen and ends done;
 /// - "… upload …": four todos; it fails on the third with `upload: 403 Forbidden (token expired)`;
 /// - "Rename …": runs until the user stops it.
 /// The Web's answer is a Darwin notification (`FakeApprovalSheet`). The app runs in Chinese, like
-/// the design board. scripts/demo/s19.sh runs these; TEST_RUNNER_DSHM_SHOT_DIR keeps the shots.
+/// the design screens. scripts/demo/s19.sh runs these; TEST_RUNNER_DSHM_SHOT_DIR keeps the shots.
 ///
 /// The Mac can be very slow: every check waits on a predicate.
 @MainActor

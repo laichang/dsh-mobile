@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// S14 · drawer tokens on top of `DSHTheme` (frozen). Values from design/board.html, screen 02.
+/// Drawer tokens on top of `DSHTheme`. Values from the design kit, screen 02 (`design/screens/02.html`).
 extension DSHTheme {
     /// The highlighted row of the session that shows now.
     static let drawerCurrentRow = Color.white.opacity(0.06)

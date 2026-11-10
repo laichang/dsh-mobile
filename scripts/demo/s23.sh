@@ -1,5 +1,5 @@
 #!/bin/bash
-# S23 demo and checks: drawer motion and landing positions (PLAN.md §5 S23, DESIGN.md F1–F4).
+# S23 demo and checks: drawer motion and landing positions (PLAN.md §5 S23, design screens F1–F4).
 # Re-runnable evidence for S23's Done when items. Everything runs against the in-process
 # FakeBridge (scenarios `outcomes` and `coding`); no DSH is needed.
 #

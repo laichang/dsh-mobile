@@ -1,0 +1,962 @@
+{
+  "about": "The screens of dsh-mobile as data. A screen is design/screens/<id>.html (the phone and its caption; it loads design/kit/) and its render <id>.png (scripts/render-design). A component is a shared part of design/kit/kit.js. needs: the nodes it builds on (no cycles); nav: where a user action goes; story: the STORY.md sections it serves; rules: each with the XCUITest that checks it; built: false while the code does not have it. scripts/check-design checks it.",
+  "nodes": [
+    {
+      "id": "status-bar",
+      "type": "component",
+      "title": "The iPhone status bar",
+      "part": "sbar",
+      "needs": [],
+      "nav": [],
+      "story": [],
+      "rules": []
+    },
+    {
+      "id": "drawer",
+      "type": "component",
+      "title": "The workspace drawer: new session, 所有任务, host › workspace › sessions",
+      "part": "side",
+      "needs": [],
+      "nav": [],
+      "story": [],
+      "rules": []
+    },
+    {
+      "id": "new-session",
+      "type": "component",
+      "title": "A blank new session: drawer button, title, the composer with host and workspace",
+      "part": "wshome",
+      "needs": [],
+      "nav": [],
+      "story": [],
+      "rules": []
+    },
+    {
+      "id": "new-session-attachments",
+      "type": "component",
+      "title": "The new session with attachment chips and the + menu open",
+      "part": "wshome-att",
+      "needs": [],
+      "nav": [],
+      "story": [],
+      "rules": []
+    },
+    {
+      "id": "session-running",
+      "type": "component",
+      "title": "A running session: pinned milestones, transcript, the composer with a queued follow-up",
+      "part": "sess",
+      "needs": [],
+      "nav": [],
+      "story": [],
+      "rules": []
+    },
+    {
+      "id": "session-done",
+      "type": "component",
+      "title": "A finished session, opened at its final answer",
+      "part": "q3",
+      "needs": [],
+      "nav": [],
+      "story": [],
+      "rules": []
+    },
+    {
+      "id": "session-behind-sheet",
+      "type": "component",
+      "title": "A session page behind a bottom sheet",
+      "part": "ppt",
+      "needs": [],
+      "nav": [],
+      "story": [],
+      "rules": []
+    },
+    {
+      "id": "01",
+      "type": "screen",
+      "title": "打开 App · 空白新会话",
+      "built": true,
+      "needs": [
+        "status-bar",
+        "new-session-attachments"
+      ],
+      "nav": [
+        {
+          "to": "07",
+          "by": "tap the host and workspace line above the composer"
+        },
+        {
+          "to": "M",
+          "by": "tap the model pill"
+        },
+        {
+          "to": "S",
+          "by": "swipe right from the left edge"
+        },
+        {
+          "to": "02",
+          "by": "tap the drawer button"
+        },
+        {
+          "to": "04",
+          "by": "send the first message: it creates the session on this page"
+        },
+        {
+          "to": "V1",
+          "by": "tap the mic key"
+        }
+      ],
+      "story": [
+        "§1",
+        "§3",
+        "§7"
+      ],
+      "rules": [
+        {
+          "text": "Launch shows a blank new session with the default host and workspace",
+          "test": "testLaunchShowsBlankNewSession"
+        },
+        {
+          "text": "The first message creates the session on the same page",
+          "test": "testFirstMessageCreatesSessionOnSamePage"
+        },
+        {
+          "text": "The title is centered between the toolbar buttons",
+          "test": "testNewSessionTitleIsCentered"
+        },
+        {
+          "text": "Attachments: + opens photos, camera and files; each is a chip with ×; they go in the order added",
+          "test": "testAttachPhotoTextAndPDFRemoveOneAndSend"
+        },
+        {
+          "text": "The keyboard goes first: the host menu and the + menu put it away before they open",
+          "test": "testHostMenuPutsKeyboardAwayFirst"
+        },
+        {
+          "text": "The keyboard goes first for the + menu too",
+          "test": "testAttachMenuPutsKeyboardAwayFirst"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "type": "screen",
+      "title": "工作区抽屉 · 左缘右滑",
+      "built": true,
+      "needs": [
+        "status-bar",
+        "drawer",
+        "new-session"
+      ],
+      "nav": [
+        {
+          "to": "01",
+          "by": "tap 新建会话"
+        },
+        {
+          "to": "03",
+          "by": "tap 所有任务"
+        },
+        {
+          "to": "F1",
+          "by": "tap a session"
+        },
+        {
+          "to": "H",
+          "by": "tap the hosts pill “2 / 3”"
+        }
+      ],
+      "story": [
+        "§2",
+        "§4"
+      ],
+      "rules": [
+        {
+          "text": "Sessions are grouped by host and workspace; amber = needs you, spinner = running, blue dot = done and unread",
+          "test": "testDrawerGroupsByHostAndWorkspaceWithStatusMarks"
+        },
+        {
+          "text": "The badge on the drawer button counts the items that wait on the user",
+          "test": "testBadgeCountMatchesWaitingOnMe"
+        },
+        {
+          "text": "An offline host is grey; its cached sessions still open",
+          "test": "testOfflineHostSessionsOpenFromTheCache"
+        },
+        {
+          "text": "Sessions started on the web or desktop are in the drawer too",
+          "test": "testWebAndPhoneSessionsShareAWorkspaceWithRealDSH"
+        },
+        {
+          "text": "The drawer button puts the keyboard away first",
+          "test": "testDrawerButtonPutsKeyboardAway"
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "type": "screen",
+      "title": "所有任务 · 从抽屉打开",
+      "built": true,
+      "needs": [
+        "status-bar"
+      ],
+      "nav": [
+        {
+          "to": "F1",
+          "by": "tap a title or an approval card: the same motion as a drawer tap"
+        },
+        {
+          "to": "02",
+          "by": "tap the drawer button"
+        }
+      ],
+      "story": [
+        "§4",
+        "§5"
+      ],
+      "rules": [
+        {
+          "text": "Three sections across hosts: waiting on me, running, done",
+          "test": "testAllTasksShowsThreeSectionsAcrossHosts"
+        },
+        {
+          "text": "An approval of an offline host is grey with the reason; deny / allow once on an online one",
+          "test": "testOfflineHostApprovalIsGreyAndTheOnlineOneIsApproved"
+        },
+        {
+          "text": "It opens from the drawer, and its rows open sessions",
+          "test": "testAllTasksAndDrawerOpenSessions"
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "type": "screen",
+      "title": "会话 · 运行中",
+      "built": true,
+      "needs": [
+        "status-bar",
+        "session-running"
+      ],
+      "nav": [
+        {
+          "to": "M",
+          "by": "tap the model pill"
+        },
+        {
+          "to": "05",
+          "by": "an approval arrives"
+        },
+        {
+          "to": "P1",
+          "by": "the agent asks a question"
+        },
+        {
+          "to": "06",
+          "by": "the task finishes"
+        },
+        {
+          "to": "X1",
+          "by": "the task fails or is stopped"
+        },
+        {
+          "to": "02",
+          "by": "tap the drawer button or swipe from the left edge"
+        }
+      ],
+      "story": [
+        "§1",
+        "§4",
+        "§7",
+        "§8"
+      ],
+      "rules": [
+        {
+          "text": "The milestone bar stays pinned at the top while the transcript scrolls",
+          "test": "testMilestoneBarStaysAtTopWhileTranscriptScrolls"
+        },
+        {
+          "text": "Send becomes stop while the task runs",
+          "test": "testStopInterruptsFromTheSendPosition"
+        },
+        {
+          "text": "Tool calls are verb · target · +/− rows; a tap opens the details in a bottom sheet",
+          "test": "testToolRowsShowVerbTargetAndLinesAndOpenASheet"
+        },
+        {
+          "text": "Markdown tables are native tables: header fill, hairlines, columns aligned as the delimiter row says",
+          "test": "testReplyTableShowsAsTable"
+        },
+        {
+          "text": "A table wider than the screen scrolls sideways in its own row; the page does not",
+          "test": "testWideTableScrollsInItsRow"
+        },
+        {
+          "text": "Follow-ups while it runs are queued above the composer and go one per turn, in order",
+          "test": "testFollowUpsWhileATaskRunsAgainstRealDSH"
+        },
+        {
+          "text": "Send now puts the queued message in the transcript at once",
+          "test": "testSendNowDuringALongStepAgainstRealDSH"
+        },
+        {
+          "text": "Session pages have no back button; details open as bottom sheets",
+          "test": "testNoBackButtonAndTimelineSheet"
+        },
+        {
+          "text": "A tap or a swipe down on the page puts the keyboard away",
+          "test": "testKeyboardGoesAwayOnTapOrSwipeDown"
+        },
+        {
+          "text": "A long title truncates and does not overlap the buttons",
+          "test": "testLongTitleTruncatesWithoutOverlap"
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "type": "screen",
+      "title": "审批 · 在会话里",
+      "built": true,
+      "needs": [
+        "status-bar",
+        "session-behind-sheet"
+      ],
+      "nav": [
+        {
+          "to": "04",
+          "by": "answer, or swipe the sheet down"
+        }
+      ],
+      "story": [
+        "§1",
+        "§5"
+      ],
+      "rules": [
+        {
+          "text": "The sheet comes up when the session opens with a pending approval, and when a new one arrives",
+          "test": "testSheetComesUpWhenTheSessionOpensAndWhenANewApprovalArrives"
+        },
+        {
+          "text": "An answer on any client closes the sheet",
+          "test": "testWebAnswerClosesTheSheet"
+        },
+        {
+          "text": "Two buttons only: deny / allow once; no always-allow",
+          "test": "testDenyExactCommandAndContinue"
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "type": "screen",
+      "title": "会话 · 完成",
+      "built": true,
+      "needs": [
+        "status-bar",
+        "session-done"
+      ],
+      "nav": [
+        {
+          "to": "04",
+          "by": "send a follow-up: the task runs again in the same session"
+        },
+        {
+          "to": "02",
+          "by": "tap the drawer button"
+        }
+      ],
+      "story": [
+        "§1",
+        "§7"
+      ],
+      "rules": [
+        {
+          "text": "Unread: the page opens at the start of the final answer, with no marker",
+          "test": "testDoneSessionNotReadOpensAtTheStartOfTheFinalAnswer"
+        },
+        {
+          "text": "用时 counts the latest turn only",
+          "test": "testDoneFooterCountsTheLatestTurnOnly"
+        },
+        {
+          "text": "A follow-up goes to the same DSH session and the task runs again",
+          "test": "testFollowUpInAFinishedSessionAgainstRealDSH"
+        },
+        {
+          "text": "A follow-up can carry attachments",
+          "test": "testAttachFileToFollowUp"
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "type": "screen",
+      "title": "换工作区 · 点输入框顶上那行",
+      "built": true,
+      "needs": [
+        "01",
+        "status-bar",
+        "new-session"
+      ],
+      "nav": [
+        {
+          "to": "01",
+          "by": "pick a workspace"
+        }
+      ],
+      "story": [
+        "§3"
+      ],
+      "rules": [
+        {
+          "text": "The workspace choice holds for this new session only; the next launch uses the default",
+          "test": "testWorkspaceChoiceDoesNotStayAfterRelaunch"
+        },
+        {
+          "text": "A picker sheet puts the keyboard away first",
+          "test": "testPickerSheetsPutKeyboardAway"
+        }
+      ]
+    },
+    {
+      "id": "08",
+      "type": "screen",
+      "title": "首次启动",
+      "built": true,
+      "needs": [
+        "status-bar"
+      ],
+      "nav": [
+        {
+          "to": "01",
+          "by": "pairing succeeds: the composer holds an editable first task"
+        }
+      ],
+      "story": [
+        "§6"
+      ],
+      "rules": [
+        {
+          "text": "The welcome says what the app is and what it needs, in Chinese",
+          "test": "testChineseWelcomeAndGuide"
+        },
+        {
+          "text": "A pasted link pairs, then 01 opens with an editable first task",
+          "test": "testPastedLinkPairsAndOpensTheFirstTask"
+        }
+      ]
+    },
+    {
+      "id": "F1",
+      "type": "screen",
+      "title": "按下 · 0 ms",
+      "built": true,
+      "needs": [
+        "02",
+        "status-bar",
+        "drawer",
+        "new-session"
+      ],
+      "nav": [
+        {
+          "to": "F2",
+          "by": "lift the finger"
+        }
+      ],
+      "story": [
+        "§4"
+      ],
+      "rules": []
+    },
+    {
+      "id": "F2",
+      "type": "screen",
+      "title": "露出的边换内容 · 0–120 ms",
+      "built": true,
+      "needs": [
+        "F1",
+        "status-bar",
+        "drawer",
+        "session-done"
+      ],
+      "nav": [
+        {
+          "to": "F3",
+          "by": "after 120 ms"
+        }
+      ],
+      "story": [
+        "§4"
+      ],
+      "rules": []
+    },
+    {
+      "id": "F3",
+      "type": "screen",
+      "title": "滑出 · 120–350 ms",
+      "built": true,
+      "needs": [
+        "F2",
+        "status-bar",
+        "drawer",
+        "session-done"
+      ],
+      "nav": [
+        {
+          "to": "F4",
+          "by": "after 350 ms"
+        }
+      ],
+      "story": [
+        "§4"
+      ],
+      "rules": []
+    },
+    {
+      "id": "F4",
+      "type": "screen",
+      "title": "铺满 · 350 ms",
+      "built": true,
+      "needs": [
+        "F3",
+        "status-bar",
+        "session-done"
+      ],
+      "nav": [
+        {
+          "to": "06",
+          "by": "a finished session"
+        },
+        {
+          "to": "04",
+          "by": "a running session"
+        },
+        {
+          "to": "05",
+          "by": "from an approval card: the sheet rises"
+        }
+      ],
+      "story": [
+        "§4"
+      ],
+      "rules": [
+        {
+          "text": "Done and unread lands at the answer; read returns to the last position",
+          "test": "testDoneUnreadLandsAtTheAnswerAndReadReturnsToTheLastPosition"
+        },
+        {
+          "text": "A running session lands at the bottom and follows",
+          "test": "testRunningSessionLandsAtTheBottom"
+        }
+      ]
+    },
+    {
+      "id": "S",
+      "type": "screen",
+      "title": "左缘右滑 · 打开抽屉",
+      "built": true,
+      "needs": [
+        "02",
+        "status-bar",
+        "drawer",
+        "new-session"
+      ],
+      "nav": [
+        {
+          "to": "02",
+          "by": "release past the middle or fast"
+        }
+      ],
+      "story": [
+        "§3"
+      ],
+      "rules": [
+        {
+          "text": "The drawer follows the finger from the left edge; a slow release short of the middle closes it",
+          "test": "testEdgeDragOpensDrawerAndSlowReleaseCloses"
+        },
+        {
+          "text": "The edge drag puts the keyboard away first",
+          "test": "testEdgeDragPutsKeyboardAway"
+        }
+      ]
+    },
+    {
+      "id": "M",
+      "type": "screen",
+      "title": "模型 · 点模型胶囊",
+      "built": true,
+      "needs": [
+        "04",
+        "status-bar",
+        "session-running"
+      ],
+      "nav": [
+        {
+          "to": "04",
+          "by": "apply: the next turn uses the model"
+        },
+        {
+          "to": "X4",
+          "by": "the picked model is not available"
+        }
+      ],
+      "story": [
+        "§8"
+      ],
+      "rules": [
+        {
+          "text": "The model can change while the task runs; the next turn uses it",
+          "test": "testRaiseEffortDuringRealTask"
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "type": "screen",
+      "title": "执行端 · 点抽屉顶部“2 / 3”",
+      "built": true,
+      "needs": [
+        "status-bar",
+        "drawer",
+        "new-session"
+      ],
+      "nav": [
+        {
+          "to": "X2",
+          "by": "tap a host"
+        }
+      ],
+      "story": [
+        "§2",
+        "§9"
+      ],
+      "rules": [
+        {
+          "text": "Each host shows its state: online with its address, or offline with the last connection",
+          "test": "testHostsSheetShowsEachHostsState"
+        },
+        {
+          "text": "The default model of the host's catalog shows",
+          "test": "testHostsSheetShowsTheDefaultModelOfTheCatalog"
+        },
+        {
+          "text": "An unsupported DSH version names the installed and supported versions",
+          "test": "testUnsupportedHostDisplaysBridgeUpdateAndKeepsPrompt"
+        },
+        {
+          "text": "The error starts with its reason: another program on the port",
+          "test": "testAnotherProgramOnTheBridgePort"
+        },
+        {
+          "text": "The error starts with its reason: nothing listens on the port",
+          "test": "testNothingListensOnTheBridgePort"
+        },
+        {
+          "text": "Reconnect tries each saved address, the last good one first",
+          "test": "testDeadFirstAddressFallsThroughToTheSecond"
+        }
+      ]
+    },
+    {
+      "id": "L",
+      "type": "screen",
+      "title": "锁屏",
+      "built": true,
+      "needs": [],
+      "nav": [
+        {
+          "to": "04",
+          "by": "tap the Live Activity"
+        }
+      ],
+      "story": [
+        "§4",
+        "§5"
+      ],
+      "rules": [
+        {
+          "text": "A running task has a Live Activity on the lock screen",
+          "test": "testRunningTaskShowsItsLiveActivityOnTheLockScreen"
+        }
+      ]
+    },
+    {
+      "id": "X1",
+      "type": "screen",
+      "title": "失败",
+      "built": true,
+      "needs": [
+        "status-bar"
+      ],
+      "nav": [
+        {
+          "to": "01",
+          "by": "新会话里再试: the prompt is in the composer of a new session"
+        },
+        {
+          "to": "04",
+          "by": "send a message: the task continues"
+        }
+      ],
+      "story": [
+        "§4",
+        "§7",
+        "§8"
+      ],
+      "rules": [
+        {
+          "text": "新会话里再试 puts the original prompt into a new session",
+          "test": "testFailedTaskRetriesInANewSessionWithTheOriginalPrompt"
+        },
+        {
+          "text": "A stopped task shows the same card, not red",
+          "test": "testStoppedTaskShowsTheSameCard"
+        },
+        {
+          "text": "A model failure ends in red; a new message continues the task",
+          "test": "testNoBalanceFailsInRedThenANewMessageContinuesAgainstRealDSH"
+        },
+        {
+          "text": "After a stop, a new message continues in the same session",
+          "test": "testContinueAfterAnInterruptAgainstRealDSH"
+        }
+      ]
+    },
+    {
+      "id": "X2",
+      "type": "screen",
+      "title": "设备与审计 · 从 H 点进一台",
+      "built": true,
+      "needs": [
+        "H",
+        "status-bar"
+      ],
+      "nav": [
+        {
+          "to": "08",
+          "by": "revoke this phone from its last host"
+        }
+      ],
+      "story": [
+        "§9"
+      ],
+      "rules": [
+        {
+          "text": "Devices and audit of a host; revoke another device after a confirm",
+          "test": "testAuditAndRevokeAnotherPairedDevice"
+        },
+        {
+          "text": "Revoke this phone asks first, then 08 opens",
+          "test": "testRevokeThisDeviceAsksThenOpens08"
+        },
+        {
+          "text": "A revoked host leaves the drawer and is not retried",
+          "test": "testRevokedHostLeavesTheDrawerAndIsNotRetried"
+        },
+        {
+          "text": "With no host left, 08 opens",
+          "test": "testRevokedLastHostOpens08"
+        }
+      ]
+    },
+    {
+      "id": "X3",
+      "type": "screen",
+      "title": "所有执行端都离线",
+      "built": true,
+      "needs": [
+        "status-bar"
+      ],
+      "nav": [
+        {
+          "to": "02",
+          "by": "tap the drawer button: the cached history shows"
+        }
+      ],
+      "story": [
+        "§3"
+      ],
+      "rules": [
+        {
+          "text": "Each offline host is named with its reason; the card goes when one is back",
+          "test": "testAllOfflineCardNamesEachHostAndGoesWhenOneIsBack"
+        }
+      ]
+    },
+    {
+      "id": "X4",
+      "type": "screen",
+      "title": "模型不可用",
+      "built": true,
+      "needs": [
+        "M",
+        "status-bar",
+        "session-running"
+      ],
+      "nav": [
+        {
+          "to": "M",
+          "by": "pick another model"
+        }
+      ],
+      "story": [
+        "§8"
+      ],
+      "rules": [
+        {
+          "text": "An unavailable model keeps apply off and selects nothing",
+          "test": "testUnavailableModelKeepsApplyOffAndSelectsNothing"
+        }
+      ]
+    },
+    {
+      "id": "P1",
+      "type": "screen",
+      "title": "Agent 提问",
+      "built": true,
+      "needs": [
+        "status-bar"
+      ],
+      "nav": [
+        {
+          "to": "04",
+          "by": "answer with an option or in the composer"
+        }
+      ],
+      "story": [
+        "§4"
+      ],
+      "rules": [
+        {
+          "text": "A tap on an option answers, and the task continues",
+          "test": "testTapAnOptionAnswersAndTheTaskContinues"
+        },
+        {
+          "text": "An answer typed in the composer goes to the question, not as a follow-up",
+          "test": "testTypeAnAnswerInTheComposer"
+        },
+        {
+          "text": "A waiting question is under waiting on me, also after a relaunch",
+          "test": "testAWaitingQuestionIsUnderWaitingOnMeAcrossARelaunch"
+        }
+      ]
+    },
+    {
+      "id": "P2",
+      "type": "screen",
+      "title": "开跑前对齐计划 + 预授权",
+      "built": false,
+      "needs": [
+        "status-bar"
+      ],
+      "nav": [
+        {
+          "to": "04",
+          "by": "approve the plan"
+        }
+      ],
+      "story": [
+        "§5"
+      ],
+      "rules": []
+    },
+    {
+      "id": "P3",
+      "type": "screen",
+      "title": "风险分级的审批",
+      "built": false,
+      "needs": [
+        "05",
+        "status-bar",
+        "session-behind-sheet"
+      ],
+      "nav": [
+        {
+          "to": "04",
+          "by": "answer"
+        }
+      ],
+      "story": [
+        "§5"
+      ],
+      "rules": []
+    },
+    {
+      "id": "P4",
+      "type": "screen",
+      "title": "暂停太久后重新确认",
+      "built": false,
+      "needs": [
+        "05",
+        "status-bar",
+        "session-behind-sheet"
+      ],
+      "nav": [
+        {
+          "to": "04",
+          "by": "confirm the new impact"
+        }
+      ],
+      "story": [
+        "§5"
+      ],
+      "rules": []
+    },
+    {
+      "id": "V1",
+      "type": "screen",
+      "title": "语音下任务 · 正在听",
+      "built": true,
+      "needs": [
+        "status-bar"
+      ],
+      "nav": [
+        {
+          "to": "V2",
+          "by": "tap the mic without permission"
+        },
+        {
+          "to": "04",
+          "by": "send: the dictated text goes as the message"
+        }
+      ],
+      "story": [
+        "§7"
+      ],
+      "rules": [
+        {
+          "text": "Dictation writes into the field; nothing is sent without a tap on send",
+          "test": "testDictateATaskThenAFollowUpAndSend"
+        }
+      ]
+    },
+    {
+      "id": "V2",
+      "type": "screen",
+      "title": "语音下任务 · 没有权限",
+      "built": true,
+      "needs": [
+        "V1",
+        "status-bar"
+      ],
+      "nav": [
+        {
+          "to": "V1",
+          "by": "turn the permission on and tap the mic again"
+        }
+      ],
+      "story": [
+        "§7"
+      ],
+      "rules": [
+        {
+          "text": "Without permission the mic does not listen, the field keeps its text, and a line says how to turn it on",
+          "test": "testDeniedSpeechSaysHowToTurnItOnAndKeepsTheField"
+        }
+      ]
+    }
+  ]
+}

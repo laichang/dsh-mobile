@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>dsh-mobile · 03 · 所有任务 · 从抽屉打开</title>
+<link rel="stylesheet" href="../kit/kit.css">
+</head>
+<body class="one">
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" style="left:0;box-shadow:none">
+    <div class="nav">
+      <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+      <div class="navtitle"><b>所有任务</b><small>3 台执行端</small></div>
+      <div class="iconbtn ghost"></div>
+    </div>
+    <div class="scroll" style="padding:0 14px">
+      <div style="display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--t2);background:var(--card);border:1px solid var(--hair);border-radius:12px;padding:9px 12px;margin-top:4px"><span class="dot off"></span>公司-PC 离线 · 最后连接 2 小时前</div>
+      <div class="sec2"><span>等我处理</span><span class="n">2</span></div>
+      <div class="card needs" style="padding:12px 13px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag amber"><svg class="i xs"><use href="#hand"/></svg>批准 bash？</span><span style="font-size:12px;color:var(--t3)">MacBook-Pro</span></div>
+        <div style="font-size:14.5px;font-weight:600;margin-top:8px">整理 Q3 报表成 PPT</div>
+        <div class="cmd" style="margin-top:8px">rm -rf ~/Desktop/Q3/tmp</div>
+        <div style="font-size:12.5px;color:var(--t2);margin-top:7px">清理生成 PPT 时的中间图片 · <span style="color:#8EA2FF">工具参数 ›</span></div>
+        <div class="btnrow" style="margin-top:10px"><div class="btn" style="height:34px;color:#FF7B72">拒绝</div><div class="btn primary" style="height:34px">允许一次</div></div>
+      </div>
+      <div class="card needs" style="padding:12px 13px;margin-top:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag amber"><svg class="i xs"><use href="#hand"/></svg>批准 write？</span><span style="font-size:12px;color:var(--t3)">公司-PC · 离线</span></div>
+        <div style="font-size:14px;margin-top:8px">写入 <span class="ic">reports/week45.md</span></div>
+        <div class="btnrow" style="margin-top:10px;opacity:.4"><div class="btn" style="height:32px;font-size:13px">拒绝</div><div class="btn" style="height:32px;font-size:13px">允许一次</div></div>
+        <div style="font-size:11.5px;color:var(--t3);margin-top:6px">公司-PC 重新连上后才能回复；任务一直暂停，不会默认放行</div>
+      </div>
+      <div class="sec2"><span>正在跑</span><span class="n">2</span></div>
+      <div class="run" style="padding:6px 4px"><span class="spinner"></span><div style="min-width:0"><div class="tt" style="font-size:14px">修复 CI 挂掉的测试并提 PR</div><div class="st">运行测试 · dsh-mobile</div></div><span class="pc">3/5</span></div>
+      <div class="run" style="padding:6px 4px"><span class="spinner"></span><div style="min-width:0"><div class="tt" style="font-size:14px">压缩昨天的素材</div><div class="st">压缩文件 · hk-1 · media</div></div><span class="pc">1/4</span></div>
+      <div class="sec2"><span>已完成</span><span class="n">12</span></div>
+      <div style="padding:2px 4px"><div style="display:flex;gap:8px;align-items:center;font-size:14px"><svg class="i s" style="color:var(--green)"><use href="#checkc"/></svg>Translate: Bonjour.<span style="margin-left:auto;font-size:12px;color:var(--t3)">MacBook-Pro</span></div><div class="inl" style="margin-left:24px">Hello.</div></div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>03</i>所有任务 · 从抽屉打开<span class="mtag m1">M1 · 换样式</span></h3><ul>
+  <li>就是现在的 Tasks 列表（等我处理 / 正在跑 / 已完成，跨执行端），挪进抽屉、换成 DSH 风格。</li>
+  <li>审批卡用 M1 已有的字段：工具名、命令、理由、工具参数；<b>拒绝 / 允许一次</b>。</li>
+  <li>Agent 提问也在等我处理里，显示成提问卡（P1），可以直接在这里回答；点标题打开会话。</li>
+  <li>执行端离线时按钮置灰并说明原因（和代码一致）；短任务的回答直接显示在行内。</li>
+</ul></div>
+</div>
+<script src="../kit/kit.js"></script>
+</body>
+</html>

@@ -1,8 +1,8 @@
 import XCTest
 
-/// S15 · 所有任务 (PLAN.md §5 S15, DESIGN.md screen 03), against the in-process FakeBridge with
+/// S15 · 所有任务 (PLAN.md §5 S15, design screen 03), against the in-process FakeBridge with
 /// two hosts that each start with a task waiting on an approval (`-DSHMFakeBridge approvals`).
-/// The app runs in Chinese, like the design board; the checks use identifiers and host names.
+/// The app runs in Chinese, like the design screens; the checks use identifiers and host names.
 /// scripts/demo/s15.sh runs these; TEST_RUNNER_DSHM_SHOT_DIR keeps the screenshots.
 @MainActor
 final class S15AllTasksUITests: XCTestCase {

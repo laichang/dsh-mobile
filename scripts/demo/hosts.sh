@@ -1,5 +1,5 @@
 #!/bin/bash
-# The hosts sheet (H) and the all-offline card (X3) on FakeBridge hosts (DESIGN.md screens H, X3;
+# The hosts sheet (H) and the all-offline card (X3) on FakeBridge hosts (design screen H, X3;
 # ARCHITECTURE D134). `-DSHMFakeBridge hosts` has MacBook-Pro (online, with a model catalog),
 # hk-1 (its DSH is too old) and 公司-PC; the UI tests stop and start them with Darwin
 # notifications (`FakeHostsSwitch`).

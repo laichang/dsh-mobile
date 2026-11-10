@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// T1 · the navigation shell (DESIGN.md "Navigation"): one page at a time, and the workspace
+/// T1 · the navigation shell (design/screens.json nav and rules): one page at a time, and the workspace
 /// drawer on its left. The drawer pushes the page (it doesn't cover it). A drag from the left
 /// edge moves the drawer and the page with the finger; on release, the position and the velocity
 /// decide if it opens or goes back. There is no `NavigationStack` and no back button: details
@@ -113,7 +113,7 @@ struct ShellView: View {
 }
 
 /// The page's top bar: the drawer button on the left, a title, and an optional subtitle.
-/// Session pages have no back button (DESIGN.md "Navigation").
+/// Session pages have no back button (design/screens.json nav and rules).
 struct PageBar<Trailing: View>: View {
     let title: String
     var subtitle: String?

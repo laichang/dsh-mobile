@@ -1,5 +1,5 @@
 #!/bin/bash
-# S15 demo and checks: 所有任务 (PLAN.md §5 S15, DESIGN.md screen 03). Re-runnable evidence for
+# S15 demo and checks: 所有任务 (PLAN.md §5 S15, design screen 03). Re-runnable evidence for
 # S15's Done when items. FakeBridge only: two in-process hosts, each with a task that waits on an
 # approval (`-DSHMFakeBridge approvals`); no DSH and no port is needed.
 #

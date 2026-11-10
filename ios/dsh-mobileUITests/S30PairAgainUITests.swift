@@ -6,7 +6,7 @@ import XCTest
 /// open your paired computers". The app kept the forgotten host's key (`noise:<host id>`, from
 /// the host key) in memory and dropped the same Mac from the new store.
 /// Real DSH + bridge (scripts/dsh-up.mjs on S30's ports, Noise). scripts/demo/s30.sh runs it
-/// with three fresh pairing links. The app runs in Chinese, like the design board.
+/// with three fresh pairing links. The app runs in Chinese, like the design screens.
 @MainActor
 final class S30PairAgainUITests: XCTestCase {
     override func setUp() {

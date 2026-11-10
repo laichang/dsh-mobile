@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>dsh-mobile · 05 · 审批 · 在会话里</title>
+<link rel="stylesheet" href="../kit/kit.css">
+</head>
+<body class="one">
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" data-t="ppt" style="left:0;box-shadow:none"></div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag amber"><svg class="i xs"><use href="#hand"/></svg>Bash</span><span style="font-size:12.5px;color:var(--t3)">任务已暂停，等你决定</span></div>
+    <div style="font-size:21px;font-weight:700;margin-top:10px">批准执行这条命令？</div>
+    <div style="font-size:13.5px;color:var(--t2);margin-top:4px">整理 Q3 报表成 PPT · MacBook-Pro</div>
+    <div class="cmd" style="margin-top:14px">rm -rf ~/Desktop/Q3/tmp</div>
+    <div class="kv" style="margin-top:6px"><span>Agent 的理由</span><span style="max-width:220px">清理生成 PPT 时的中间图片</span></div>
+    <div class="kv" style="border:0"><span>工具参数</span><span style="color:#8EA2FF">展开 ›</span></div>
+    <div class="btnrow" style="margin-top:14px"><div class="btn tall" style="flex:.8;color:#FF7B72">拒绝</div><div class="btn tall primary">允许一次</div></div>
+    <div class="fine">不处理不会默认放行，任务一直暂停<br>手机、网页、桌面任一端都能看到这条审批</div>
+    <div style="margin-top:14px;border:1px dashed var(--hair-2);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--t2);line-height:1.6"><span class="mtag mx" style="margin:0 6px 0 0">M2</span>风险分级 · 影响摘要（多少文件、发给谁）· 最高级要面容 ID · 本任务预授权</div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>05</i>审批 · 在会话里<span class="mtag m1">M1 · 换样式</span></h3><ul>
+  <li>会话里有待批项时直接升起；内容就是 S4 的：工具、完整命令、理由、可展开的工具参数。</li>
+  <li>两个按钮：<b>拒绝 / 允许一次</b>。没有“总是允许”。</li>
+  <li>新的待批项到达时也直接升起。任何一端（手机、网页、桌面）处理后自动收起。下滑可暂时收起；会话页留一行「等你决定 · 命令 · 查看 ›」，点它再升起。</li>
+  <li>虚线框是 M2 才有的部分，先在设计里占位，不进 M1。</li>
+</ul></div>
+</div>
+<script src="../kit/kit.js"></script>
+</body>
+</html>

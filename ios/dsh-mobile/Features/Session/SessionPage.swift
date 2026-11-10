@@ -343,7 +343,7 @@ private struct SessionTranscript: View {
     }
 }
 
-/// The user's message: a bubble on the right (DESIGN.md: bubble token).
+/// The user's message: a bubble on the right (DSHTheme.bubble).
 /// The files sent with it (D95, D107) show above it. D143: a message sent now ("立即发送") shows
 /// at once, `pending` until DSH gives it to the agent at its next step.
 struct UserBubble: View {

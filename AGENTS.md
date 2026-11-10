@@ -8,7 +8,7 @@ Read on demand, not all at once:
 
 1. **This file**: what the repo is and where to find more.
 2. **[STORY.md](STORY.md)** (in Chinese): product vision, the nine design principles, non-goals, and capabilities that depend on upstream DSH. Read it before making any product or UX decision; confirm with the user before going against it.
-3. **[DESIGN.md](DESIGN.md)**: the screens and interactions (`design/board.html`, rendered to `design/board.png` and `design/screens/`). STORY is DESIGN, DESIGN is STORY: read it with STORY.md before any UI work, and change both together.
+3. **[design/screens.json](design/screens.json)**: the screens as data: for each screen, the STORY sections it serves, what it needs, where a user action goes, and its rules, each with the XCUITest that checks it. A screen is `design/screens/<id>.html` (the phone and its caption, on the shared `design/kit/`) with its png. STORY is DESIGN, DESIGN is STORY: read the screens of your work with STORY.md before any UI work, and change both together.
 4. **[ARCHITECTURE.md](ARCHITECTURE.md)**: how dsh-mobile is built now: tech stack, system shape (iOS app + DSH bridge plugin + protocol), key choices with their reasons, and known limits. It tells only the current state (no decision IDs, no history, no milestones; at most 10k tokens; `scripts/check-docs`). Read it before writing code; change it in the same commit as the code it describes.
 5. **[WORKFLOW.md](WORKFLOW.md)**: how work moves here, for every agent (Claude Code, Codex, …): setting up a new Mac (`scripts/bootstrap`), the coordinator and slice sessions, the long-horizon run, status titles, merging, and what stays with the user. Read it before picking up any work. It's a living doc.
 6. **`PLAN.md`**: the plan of the current requirement, only while one is in progress: tracer bullets first, then near-independent vertical slices. Before picking up work, read its §0 status table and "How to use this file". With no requirement there is no PLAN.md: ideas, follow-ups and bugs are [GitHub issues](https://github.com/laichang/dsh-mobile/issues) (WORKFLOW.md §3.2).
@@ -21,7 +21,7 @@ Read on demand, not all at once:
 - `scripts/bootstrap`: sets up a new Mac and runs the T0 demo (WORKFLOW.md §2)
 - `scripts/xc`, `scripts/swift-test`, `scripts/pnpm-test`: run xcodebuild, `swift test` and `pnpm test` with a short JSON summary; the full log goes to `/tmp/dshm-*`. Use them, not the bare tools. `scripts/check-wrappers` fails on a bare call in a demo script or `scripts/review`; `scripts/wrap-test` tests both
 - `scripts/demo/<slice>.sh`: re-runnable demo per slice; `scripts/dsh-up.mjs` starts a local DSH + bridge with a mock model
-- `design/`: the design board (`board.html` is the source; `board.png` and `screens/` are renders from `scripts/render-design`). See DESIGN.md
+- `design/`: the screens (`screens.json`; `screens/<id>.html` with its png from `scripts/render-design`; the shared `kit/`) and the app icon (`icon.svg`, `scripts/render-icon`). `scripts/check-design` checks the screens and the theme names (test: `scripts/check-design-test`)
 - `evidence/<slice>/`: screenshots cited by the plan's `shot:` pointers; deleted with PLAN.md
 - `scripts/check-docs`: checks that ARCHITECTURE.md, STORY.md, AGENTS.md and the READMEs have no decision IDs or milestones section, and that ARCHITECTURE.md stays at most 10k tokens (test: `scripts/check-docs-test`)
 - `scripts/check-plan`: guards the Done when items of PLAN.md (WORKFLOW.md §12)
@@ -34,8 +34,8 @@ Read on demand, not all at once:
 ## Code is truth
 
 - **Code is the source of truth.** The code should express the ideas in STORY.md and ARCHITECTURE.md, and every idea should map to code. If code and docs disagree, either fix the code or update the doc. Don't leave them out of sync.
-- **STORY is DESIGN, DESIGN is STORY.** Every STORY principle maps to a screen on the design board, and every screen serves a STORY principle. A change to one is a change to the other, in the same commit. Each screen's milestone tag says whether the code has it yet (DESIGN.md).
-- **Delete working docs once they're done; there is no archive.** Any discussion, proposal, plan, or design note about the app (code, UX, architecture, etc.) is temporary. When it has been acted on or dropped, move what stays true into the code or a living doc (this file, STORY.md, DESIGN.md, ARCHITECTURE.md, WORKFLOW.md), open an issue for what is still to do, and delete it. git keeps the history. Living docs and code never refer to a working doc.
+- **STORY is DESIGN, DESIGN is STORY.** Every STORY principle maps to a screen in `design/screens.json`, and every screen serves a STORY principle (`scripts/check-design`). A change to one is a change to the other, in the same commit. A screen with `"built": false` is not in the code yet.
+- **Delete working docs once they're done; there is no archive.** Any discussion, proposal, plan, or design note about the app (code, UX, architecture, etc.) is temporary. When it has been acted on or dropped, move what stays true into the code or a living doc (this file, STORY.md, design/screens.json, ARCHITECTURE.md, WORKFLOW.md), open an issue for what is still to do, and delete it. git keeps the history. Living docs and code never refer to a working doc.
 
 ## Conventions
 

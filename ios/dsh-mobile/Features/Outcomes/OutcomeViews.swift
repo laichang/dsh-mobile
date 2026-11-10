@@ -166,7 +166,7 @@ private struct OutcomeCard: View {
                 Image(systemName: failed ? "exclamationmark.triangle" : "stop.circle")
             }
             .font(.system(size: 15, weight: .semibold))
-            .foregroundStyle(failed ? DSHTheme.s19FailText : DSHTheme.textSecondary)
+            .foregroundStyle(failed ? DSHTheme.failText : DSHTheme.textSecondary)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(failed ? Text("Task failed", tableName: "Outcomes") : Text("Task stopped", tableName: "Outcomes"))
             .accessibilityIdentifier("outcome.title")
@@ -183,7 +183,7 @@ private struct OutcomeCard: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(DSHTheme.s19ErrorFill, in: .rect(cornerRadius: 10))
+                .background(DSHTheme.errorFill, in: .rect(cornerRadius: 10))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(DSHTheme.hairline))
                 FailureContinueHint(store: store, row: row) // D110
             } else {
@@ -202,7 +202,7 @@ private struct OutcomeCard: View {
                     Button(action: copy) {
                         Text(copied ? LocalizedStringKey("Copied") : LocalizedStringKey("Copy error"), tableName: "Outcomes")
                             .frame(maxWidth: .infinity, minHeight: 40)
-                            .background(DSHTheme.s19SecondaryButton, in: .rect(cornerRadius: 12))
+                            .background(DSHTheme.secondaryButton, in: .rect(cornerRadius: 12))
                     }
                     .foregroundStyle(DSHTheme.textPrimary)
                     .accessibilityIdentifier("outcome.copy")
@@ -223,8 +223,8 @@ private struct OutcomeCard: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(failed ? DSHTheme.s19FailFill : DSHTheme.s19StoppedFill, in: .rect(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(failed ? DSHTheme.s19FailBorder : DSHTheme.hairline))
+        .background(failed ? DSHTheme.failFill : DSHTheme.stoppedFill, in: .rect(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(failed ? DSHTheme.failBorder : DSHTheme.hairline))
         .accessibilityElement(children: .contain)
         .accessibilityValue(outcome.kind.rawValue)
         .accessibilityIdentifier("outcome.card")

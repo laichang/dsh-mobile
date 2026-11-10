@@ -6,7 +6,7 @@ import XCTest
 /// client" with the Darwin notification `hosts-revoke` (`FakeHostsSwitch`): the phone gets no
 /// revoke response, only the close. The bug (2026-11-08): the host stayed in the drawer and
 /// showed "connecting" every few seconds. Now the app forgets it and says so once.
-/// The app runs in Chinese, like the design board. scripts/demo/s29.sh runs these.
+/// The app runs in Chinese, like the design screens. scripts/demo/s29.sh runs these.
 @MainActor
 final class S29RevokeUITests: XCTestCase {
     static let mac = "MacBook-Pro"

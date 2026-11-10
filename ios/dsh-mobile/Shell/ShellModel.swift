@@ -2,7 +2,7 @@ import DSHCore
 import SwiftUI
 import UIKit
 
-/// T1 · the navigation state of the shell (DESIGN.md "Navigation"): which page shows, which
+/// T1 · the navigation state of the shell (design/screens.json nav and rules): which page shows, which
 /// bottom sheet is up, and whether the workspace drawer is open. There is no navigation stack:
 /// the left edge belongs to the drawer, and details open as sheets.
 ///
@@ -30,7 +30,7 @@ final class ShellModel {
     @ObservationIgnored var lastPositions: [String: CGFloat] = [:]
     @ObservationIgnored private var motion: Task<Void, Never>?
 
-    /// Shows a page. With the drawer open, it moves like DESIGN.md F1–F4 (S23, `DrawerMotion`):
+    /// Shows a page. With the drawer open, it moves like design screens F1–F4 (S23, `DrawerMotion`):
     /// the peeking edge cross-fades to the page (0–120 ms), then the page slides in with a spring
     /// and pushes the drawer away (120–350 ms). Without the drawer (the composer's first message,
     /// a card in 03), the page cross-fades in place.
@@ -94,7 +94,7 @@ enum ShellPage: Hashable {
     case allTasks
 }
 
-/// Every bottom sheet of the shell (DESIGN.md: details open as bottom sheets).
+/// Every bottom sheet of the shell (design/screens.json: details open as bottom sheets).
 enum SheetRoute: Identifiable, Hashable {
     /// A task's whole milestone timeline (S3).
     case milestones(taskKey: String)

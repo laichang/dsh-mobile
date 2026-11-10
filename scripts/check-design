@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+"""Check the design data and the theme names.
+
+  scripts/check-design [--root DIR]     DIR: the repo (default: this checkout)
+
+design/screens.json: each node has an id, a type (`component` or `screen`), a title, and lists
+needs, nav, story and rules. A screen has design/screens/<id>.html (it loads design/kit/kit.js) and
+its png; a component names a part (a <template id> of design/kit/kit.js). Each needs and nav target
+is a node; needs has no cycle. Each STORY.md principle (`## N.` under `# 原则`) has a screen whose
+story names §N, and each story names a principle that exists. Each rule names one XCUITest: exactly
+one `func <test>(` in ios/dsh-mobileUITests/. Each design/screens/*.html is a screen node.
+
+Theme: no DSHTheme file (DSHTheme*.swift, Theme+*.swift under ios/) and no DSHTheme token (a
+static member of `enum DSHTheme` or `extension DSHTheme`) has a slice ID in its name (`S14`,
+`s19`, `T1`): name a token or file for its feature.
+
+Exit 0 = ok, 1 = a problem (each on one line), 2 = usage.
+"""
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+SLICE_ID = re.compile(r"(?:^|(?<=[^A-Za-z0-9])|(?<=[a-z]))[STst][0-9]+(?![0-9])")
+TYPES = ("component", "screen")
+
+
+def story_sections(root):
+    """The numbers of the principles of STORY.md: `## N.` headings under `# 原则`."""
+    out, inside = [], False
+    for line in (root / "STORY.md").read_text().splitlines():
+        if line.startswith("# "):
+            inside = line.strip() == "# 原则"
+        elif inside:
+            m = re.match(r"^## (\d+)\.", line)
+            if m:
+                out.append(f"§{m.group(1)}")
+    return out
+
+
+def needs_cycle(nodes):
+    """One cycle of the needs graph as a list of ids, or None."""
+    graph = {n["id"]: [x for x in n.get("needs", []) if isinstance(x, str)] for n in nodes}
+    state = {}
+
+    def visit(v, path):
+        state[v] = 1
+        path.append(v)
+        for w in graph.get(v, []):
+            if state.get(w) == 1:
+                return path[path.index(w):] + [w]
+            if w in graph and not state.get(w):
+                c = visit(w, path)
+                if c:
+                    return c
+        path.pop()
+        state[v] = 2
+        return None
+
+    for v in graph:
+        if not state.get(v):
+            c = visit(v, [])
+            if c:
+                return c
+    return None
+
+
+def ui_tests(root):
+    """{test name: count} of `func test…(` in the UI test target."""
+    count = {}
+    for f in sorted((root / "ios/dsh-mobileUITests").glob("**/*.swift")):
+        for name in re.findall(r"\bfunc\s+(test\w*)\s*\(", f.read_text()):
+            count[name] = count.get(name, 0) + 1
+    return count
+
+
+def check_screens(root):
+    problems = []
+    path = root / "design/screens.json"
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError) as e:
+        return [f"design/screens.json: {e}"]
+    nodes = data.get("nodes")
+    if not isinstance(nodes, list) or not nodes:
+        return ["design/screens.json: no nodes"]
+    kit = root / "design/kit/kit.js"
+    parts = set(re.findall(r'<template id=\\?"([^"\\]+)\\?"', kit.read_text())) if kit.exists() else set()
+    ids = [n.get("id") for n in nodes]
+    known = set(ids)
+    for i in sorted({i for i in ids if ids.count(i) > 1}, key=str):
+        problems.append(f"node {i}: the id is used more than once")
+    sections = story_sections(root)
+    tests = ui_tests(root)
+    for n in nodes:
+        nid = n.get("id")
+        where = f"node {nid}"
+        if not isinstance(nid, str) or not nid:
+            problems.append(f"a node has no id: {json.dumps(n, ensure_ascii=False)[:80]}")
+            continue
+        if n.get("type") not in TYPES:
+            problems.append(f"{where}: type is {n.get('type')!r}, not component or screen")
+        if not n.get("title"):
+            problems.append(f"{where}: no title")
+        for key in ("needs", "nav", "story", "rules"):
+            if not isinstance(n.get(key), list):
+                problems.append(f"{where}: {key} is not a list")
+                n[key] = []
+        for x in n["needs"]:
+            if x not in known:
+                problems.append(f"{where}: needs {x}, which is not a node")
+        for e in n["nav"]:
+            if not isinstance(e, dict) or e.get("to") not in known or not e.get("by"):
+                problems.append(f"{where}: nav {json.dumps(e, ensure_ascii=False)} needs a node in to and a user action in by")
+        for s in n["story"]:
+            if s not in sections:
+                problems.append(f"{where}: story {s} is not a principle of STORY.md")
+        for r in n["rules"]:
+            t = r.get("test") if isinstance(r, dict) else None
+            if not isinstance(r, dict) or not r.get("text") or not t:
+                problems.append(f"{where}: a rule needs a text and a test: {json.dumps(r, ensure_ascii=False)}")
+            elif tests.get(t, 0) != 1:
+                problems.append(f"{where}: rule test {t} is {'not an XCUITest' if not tests.get(t) else 'not unique'} "
+                                "in ios/dsh-mobileUITests/")
+        if n.get("type") == "screen":
+            html = root / f"design/screens/{nid}.html"
+            if not html.exists():
+                problems.append(f"{where}: no design/screens/{nid}.html")
+            elif "../kit/kit.js" not in html.read_text():
+                problems.append(f"{where}: design/screens/{nid}.html does not load ../kit/kit.js")
+            if not (root / f"design/screens/{nid}.png").exists():
+                problems.append(f"{where}: no design/screens/{nid}.png (scripts/render-design {nid})")
+        elif n.get("type") == "component" and n.get("part") not in parts:
+            problems.append(f"{where}: part {n.get('part')!r} is not a <template id> of design/kit/kit.js")
+    cycle = needs_cycle(nodes)
+    if cycle:
+        problems.append("needs has a cycle: " + " -> ".join(cycle))
+    screens = [n for n in nodes if n.get("type") == "screen"]
+    for s in sections:
+        if not any(s in n.get("story", []) for n in screens):
+            problems.append(f"STORY.md {s} has no screen (a screen whose story names {s})")
+    for f in sorted((root / "design/screens").glob("*.html")):
+        if f.stem not in {n.get("id") for n in screens}:
+            problems.append(f"design/screens/{f.name} is not a screen of design/screens.json")
+    return problems
+
+
+def theme_members(text):
+    """The names of the static members of `enum DSHTheme` / `extension DSHTheme` blocks."""
+    out = []
+    for m in re.finditer(r"^(?:enum|extension)\s+DSHTheme\b[^{]*\{(.*?)^\}", text, re.S | re.M):
+        out += re.findall(r"\bstatic\s+(?:let|var|func)\s+(\w+)", m.group(1))
+    return out
+
+
+def check_theme(root):
+    problems = []
+    for f in sorted((root / "ios").glob("**/*.swift")):
+        rel = f.relative_to(root)
+        if ".build" in rel.parts:
+            continue
+        theme_file = f.name.startswith(("DSHTheme", "Theme+"))
+        if theme_file and SLICE_ID.search(f.stem):
+            problems.append(f"{rel}: the file name of a DSHTheme file has a slice ID; name it for its feature")
+        text = f.read_text()
+        if not theme_file and "DSHTheme" not in text:
+            continue
+        for name in theme_members(text):
+            if SLICE_ID.search(name):
+                problems.append(f"{rel}: DSHTheme.{name} has a slice ID in its name; name it for its feature")
+    return problems
+
+
+def main():
+    ap = argparse.ArgumentParser(prog="scripts/check-design", description="Check design/screens.json and the theme names.")
+    ap.add_argument("--root", default=str(Path(__file__).resolve().parent.parent))
+    a = ap.parse_args()
+    root = Path(a.root)
+    problems = check_screens(root) + check_theme(root)
+    for p in problems:
+        print(f"check-design: {p}")
+    if problems:
+        print(f"check-design: {len(problems)} problems")
+        return 1
+    data = json.loads((root / "design/screens.json").read_text())
+    n = sum(1 for x in data["nodes"] if x["type"] == "screen")
+    r = sum(len(x["rules"]) for x in data["nodes"])
+    print(f"check-design: ok ({n} screens, {r} rules, every STORY principle has a screen)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

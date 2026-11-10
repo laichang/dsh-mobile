@@ -170,7 +170,7 @@ Built and in use: everything under Features. Not built yet: risk tiers with Face
 
 This repo was planned, built and reviewed by AI coding agents (Claude Code and Codex) working in parallel, under one human's direction. The process itself is part of the project:
 
-- **[STORY.md](STORY.md)**: product vision and the nine design principles (in Chinese). Every principle maps to a screen on the **[design board](DESIGN.md)**.
+- **[STORY.md](STORY.md)**: product vision and the nine design principles (in Chinese). Every principle maps to a screen in **[design/screens.json](design/screens.json)**.
 - **The plan** ([M1's, at tag `m1`](https://github.com/laichang/dsh-mobile/blob/m1/PLAN.md)): a tracer bullet first, then vertical slices. Each "Done when" item has a tier (`[auto]`, `[ui]`, `[human]`) and evidence that must resolve, checked by a pre-commit hook. A plan file exists only while a requirement is in progress; everything else is a [GitHub issue](https://github.com/laichang/dsh-mobile/issues).
 - **[WORKFLOW.md](WORKFLOW.md)**: how a coordinator session runs slice sessions in git worktrees, how independent reviewers rerun every UI check, and which decisions stay with the human.
 - **[`evidence/`](https://github.com/laichang/dsh-mobile/tree/m1/evidence)** (at tag `m1`): the screenshots behind each completed M1 slice.
@@ -183,7 +183,7 @@ If you're curious how far long-horizon agentic development can go on a real nati
 ios/            SwiftUI app · DSHKit package (protocol, connection, store, FakeBridge)
 bridge/         DSH companion plugin (TypeScript, pnpm, node:test, FakeDSH)
 protocol/       frame.proto + golden fixtures · regenerate with scripts/codegen
-design/         design board (board.html → board.png, screens/)
+design/         screens (screens.json, screens/<id>.html → png, kit/), app icon
 spikes/         X1–X4 experiments behind key decisions
 scripts/        bootstrap · demo/<slice>.sh · codegen · check-plan · review
 evidence/       screenshots cited by the current plan (only while one is in progress)
@@ -212,7 +212,7 @@ Issues and PRs are welcome, especially Noise/crypto reviews, real-device testing
 
 By submitting a contribution, you agree that the maintainer may license it under the project license and under separate commercial licenses.
 
-Before writing code, read [AGENTS.md](AGENTS.md) (it applies to humans too): the code is the source of truth, and STORY, DESIGN and ARCHITECTURE change together with it. Product and UX changes should follow the principles in [STORY.md](STORY.md).
+Before writing code, read [AGENTS.md](AGENTS.md) (it applies to humans too): the code is the source of truth, and STORY, the screens and ARCHITECTURE change together with it. Product and UX changes should follow the principles in [STORY.md](STORY.md).
 
 ## Acknowledgements
 

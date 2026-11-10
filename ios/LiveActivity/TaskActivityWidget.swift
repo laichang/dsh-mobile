@@ -171,7 +171,7 @@ enum Lines {
     }
 }
 
-/// DESIGN.md "Visual language".
+/// the DSHTheme visual language.
 enum Palette {
     static let canvas = Color(red: 0x15 / 255, green: 0x15 / 255, blue: 0x17 / 255)
     static let text = Color(red: 0xF9 / 255, green: 0xFA / 255, blue: 0xFB / 255)

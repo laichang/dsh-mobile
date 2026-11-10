@@ -6,7 +6,7 @@ import XCTest
 /// only MacBook-Pro.
 /// The test stops and starts the hosts with Darwin notifications (`FakeHostsSwitch`): "down"
 /// takes MacBook-Pro and 公司-PC offline, "up" brings MacBook-Pro back.
-/// The app runs in Chinese, like the design board. scripts/demo/hosts.sh runs these;
+/// The app runs in Chinese, like the design screens. scripts/demo/hosts.sh runs these;
 /// TEST_RUNNER_DSHM_SHOT_DIR keeps the screenshots.
 @MainActor
 final class S21HostsUITests: XCTestCase {

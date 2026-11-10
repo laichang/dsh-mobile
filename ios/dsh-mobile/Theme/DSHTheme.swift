@@ -1,8 +1,12 @@
 import SwiftUI
 
-/// The DESIGN.md "Visual language" tokens (T1). Frozen: UI slices do not change these values.
-/// A slice that needs a new token adds it in `Theme+<Slice>.swift` (PLAN.md "How the UI slices
-/// stay independent"). The app always uses dark mode (`.preferredColorScheme(.dark)` at the root).
+/// The visual language: the base tokens, aligned with DSH desktop and Web (deepseek.com/harness).
+/// The design kit (`design/kit/kit.css`) has the same values for the screens of `design/screens.json`.
+/// System font (PingFang SC for Chinese), SF Mono for commands and paths. Thinking and tool calls
+/// collapse to one line; tool calls are `verb · target · +/−` rows. The base values do not change:
+/// a feature that needs a new token adds it in `Theme+<Feature>.swift`, named for the feature,
+/// never for a plan item (`scripts/check-design`). The app always uses dark mode
+/// (`.preferredColorScheme(.dark)` at the root).
 enum DSHTheme {
     /// Session pages.
     static let canvas = Color(hex: 0x151517)

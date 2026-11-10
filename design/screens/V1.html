@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>dsh-mobile · V1 · 语音下任务 · 正在听</title>
+<link rel="stylesheet" href="../kit/kit.css">
+</head>
+<body class="one">
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" style="left:0;box-shadow:none">
+    <div class="nav">
+      <div class="iconbtn" style="position:relative"><svg class="i"><use href="#sidebar"/></svg><span class="badge">2</span></div>
+      <div class="navtitle"><b>新会话</b></div>
+      <div class="iconbtn ghost"></div>
+    </div>
+    <div class="scroll"></div>
+    <div class="watermark">deepseek</div>
+    <div class="composer">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);margin-bottom:10px"><span class="dot"></span>MacBook-Pro<span style="opacity:.4">·</span><svg class="i xs"><use href="#folder"/></svg>默认工作区<svg class="i xs"><use href="#chevd"/></svg></div>
+      <div class="vline"><span class="vd"></span><span>正在听……说完再点一下麦克风。点发送之前不会发出。</span></div>
+      <div class="ph typed">先看一下 CI 为什么挂了，然后把桌面上的截图整理到<span class="caret"></span></div>
+      <div class="bar">
+        <span class="pill" style="padding:6px"><svg class="i xs"><use href="#plus"/></svg></span>
+        <span class="pill">DeepSeek-V41-Flash <span class="w">· High</span><svg class="i xs"><use href="#chevd"/></svg></span>
+        <span class="mic on"><svg class="i s"><use href="#wave"/></svg></span>
+        <span class="send"><svg class="i s"><use href="#up"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>V1</i>语音下任务 · 正在听<span class="mtag m1">M2 · 已有</span></h3><ul>
+  <li>输入框右下、发送键左边是麦克风键（01、04、06 的输入框都有）。点一下开始听：键变蓝、波形在动，输入框上方一行写着正在听、点发送之前不会发出；再点一下停止（D117）。</li>
+  <li>说的话边听边写进输入框，接在已经输入的文字后面（这里“先看一下 CI 为什么挂了，”是打的字）。识别结果更新时只替换听写的那一段，前面打的字和说话时打的字都保留；中文之间不加空格。</li>
+  <li>不会自己发出：看一遍、改一改，点发送才发。听的时候点发送，就停止听写，发出输入框里现在的文字；改了正在听写的字，就以你改的为准并停止听写。</li>
+  <li>在手机上识别（iOS 26 的 SpeechAnalyzer，D116），音频不离开手机，离线也能用；第一次用某种语言时可能要下载系统的语音模型。</li>
+</ul></div>
+</div>
+<script src="../kit/kit.js"></script>
+</body>
+</html>

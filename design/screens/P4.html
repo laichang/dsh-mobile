@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>dsh-mobile · P4 · 暂停太久后重新确认</title>
+<link rel="stylesheet" href="../kit/kit.css">
+</head>
+<body class="one">
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" data-t="ppt" style="left:0;box-shadow:none"></div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag amber"><svg class="i xs"><use href="#clock"/></svg>等了 6 小时</span><span style="font-size:12.5px;color:var(--t3)">18 小时后自动取消</span></div>
+    <div style="font-size:21px;font-weight:700;margin-top:10px">情况变了，再确认一次</div>
+    <div style="font-size:13.5px;color:var(--t2);margin-top:4px;line-height:1.5">你上次看到这条审批是 6 小时前。恢复之前，执行端重新检查了一遍：</div>
+    <div class="cmd" style="margin-top:12px">rm -rf ~/Desktop/Q3/tmp</div>
+    <div style="margin-top:10px;border:1px solid var(--hair);border-radius:12px;overflow:hidden">
+      <div class="kv" style="padding:10px 12px"><span>当时</span><span>37 个文件 · 212 MB</span></div>
+      <div class="kv" style="padding:10px 12px;border:0;background:rgba(245,165,36,.08)"><span>现在</span><span style="color:var(--amber);font-weight:600">41 个文件 · 230 MB</span></div>
+    </div>
+    <div style="font-size:12.5px;color:var(--t2);margin-top:8px">新增 4 个：<span class="ic">notes.md</span> <span class="ic">final_v2.pptx</span> …</div>
+    <div class="btnrow" style="margin-top:14px"><div class="btn tall" style="flex:.8;color:#FF7B72">拒绝</div><div class="btn tall primary">按现在的情况批准</div></div>
+    <div class="fine">超时会取消任务并通知你，不会默认放行</div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>P4</i>暂停太久后重新确认<span class="mtag mx">M2</span></h3><ul>
+  <li>§5：联系不到你就一直暂停；太久自动取消并通知你。</li>
+  <li>恢复时重新确认：把“当时”和“现在”并排给出，变化高亮（这里多了你新放进去的文件）。</li>
+  <li>批准的是“现在”的影响，不是 6 小时前的那份。</li>
+</ul></div>
+</div>
+<script src="../kit/kit.js"></script>
+</body>
+</html>

@@ -1,22 +1,33 @@
 #!/bin/bash
-# Render design/board.html (DESIGN.md) to PNGs with headless Chrome.
-#   scripts/render-design    writes design/board.png and design/screens/<label>.png
-# A screen's file name is its label on the board (01, F1, X2, P3, ...).
+# Render each design/screens/<id>.html to design/screens/<id>.png with headless Chrome.
+#   scripts/render-design            every screen of design/screens/
+#   scripts/render-design <id>...    only these screens (01, F1, X2, P3, ...)
+# A screen file holds one phone and its caption; it loads the shared kit (design/kit/kit.css,
+# design/kit/kit.js). ?shot hides the caption, so the png is the phone only: 441 x 900 pt at 2x.
+# After the render it checks that each rendered screen has a png of 882 x 1800 pixels.
+# Exit 0 = each screen rendered, 1 = a screen has no png or a wrong size, or no Chrome.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
 [ -x "$CHROME" ] || { echo "render-design: set CHROME to a Chrome or Chromium binary" >&2; exit 1; }
-BOARD="$ROOT/design/board.html"
-OUT="$ROOT/design/screens"
-HEIGHT="${BOARD_HEIGHT:-9700}"
+DIR="$ROOT/design/screens"
 
-shot() { "$CHROME" --headless=new --disable-gpu --hide-scrollbars "$@" 2>/dev/null; }
+if [ $# -gt 0 ]; then ids=("$@"); else
+  ids=(); for f in "$DIR"/*.html; do ids+=("$(basename "$f" .html)"); done
+fi
 
-shot --force-device-scale-factor=1 --window-size=1924,"$HEIGHT" --screenshot="$ROOT/design/board.png" "file://$BOARD"
-rm -rf "$OUT"; mkdir -p "$OUT"
-i=1
-for label in $(grep -o '<h3><i>[^<]*</i>' "$BOARD" | sed -e 's/<h3><i>//' -e 's/<\/i>//'); do
-  shot --force-device-scale-factor=2 --window-size=441,900 --screenshot="$OUT/$label.png" "file://$BOARD?s=$i"
-  i=$((i + 1))
+bad=0
+for id in "${ids[@]}"; do
+  html="$DIR/$id.html" png="$DIR/$id.png"
+  [ -f "$html" ] || { echo "render-design: no $html" >&2; bad=$((bad + 1)); continue; }
+  rm -f "$png"
+  "$CHROME" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
+    --window-size=441,900 --screenshot="$png" "file://$html?shot" >/dev/null 2>&1 || true
+  size=$(sips -g pixelWidth -g pixelHeight "$png" 2>/dev/null | awk '/pixel/ {printf "%s ", $2}')
+  if [ "$size" != "882 1800 " ]; then
+    echo "render-design: $id.png is missing or not 882 x 1800 (${size:-none})" >&2
+    bad=$((bad + 1))
+  fi
 done
-echo "render-design: board.png and $((i - 1)) screens in design/"
+echo "render-design: ${#ids[@]} screens, $bad failed"
+[ "$bad" -eq 0 ]

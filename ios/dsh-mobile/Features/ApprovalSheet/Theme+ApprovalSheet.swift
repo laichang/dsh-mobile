@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// S18 · tokens of the approval sheet (05) that `DSHTheme` and `Theme+S15` do not have. The values
-/// are the board's own (`design/board.html` `.sheet`, `.btn.tall`); `DSHTheme` stays frozen.
+/// Tokens of the approval sheet (screen 05) that `DSHTheme` and `Theme+TaskList` do not have. The
+/// values are the design kit's own (`design/kit/kit.css` `.sheet`, `.btn.tall`).
 extension DSHTheme {
     /// The bottom sheet (`.sheet` background).
     static let sheet = Color(hex: 0x1C1C1F)

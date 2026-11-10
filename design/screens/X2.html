@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>dsh-mobile · X2 · 设备与审计 · 从 H 点进一台</title>
+<link rel="stylesheet" href="../kit/kit.css">
+</head>
+<body class="one">
+<div class="cell">
+<div class="phone">
+  <div class="island"></div><div class="status" data-t="sbar"></div>
+  <div class="mp" style="left:0;box-shadow:none;filter:brightness(.4)"></div>
+  <div class="sheet listsheet" style="top:62px;padding-bottom:30px">
+    <div class="grab"></div>
+    <div class="lhead"><span style="display:flex;align-items:center"><svg class="i s"><use href="#back"/></svg>执行端</span><b>MacBook-Pro</b><span style="width:52px"></span></div>
+    <div style="display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--t2)"><svg class="i xs" style="color:var(--green)"><use href="#lock"/></svg>端到端加密 · 在线</div>
+    <div class="grp">已配对的设备</div>
+    <div class="lst">
+      <div class="it" style="align-items:flex-start"><svg class="i s" viewBox="0 0 24 24" style="margin-top:2px"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/></svg><div style="flex:1"><div style="font-weight:600;font-size:14px">这台设备</div><div style="font:12px var(--mono);color:var(--t2);margin-top:2px">dshm-a3f9c21e</div><div style="font-size:12px;color:var(--t3);margin-top:2px">配对于 11/3 · 最后连接 刚刚</div></div><span style="font-size:13px;color:#FF7B72;margin-top:2px">吊销</span></div>
+      <div class="it" style="align-items:flex-start"><svg class="i s" viewBox="0 0 24 24" style="margin-top:2px"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/></svg><div style="flex:1"><div style="font:12.5px var(--mono);color:var(--t1)">dshm-77b0e4d2</div><div style="font-size:12px;color:var(--t3);margin-top:2px">配对于 10/21 · 最后连接 2 周前</div></div><span style="font-size:13px;color:#FF7B72;margin-top:2px">吊销</span></div>
+    </div>
+    <div class="grp">审计记录</div>
+    <div class="lst">
+      <div class="it" style="align-items:flex-start;flex-direction:column;gap:2px"><div style="display:flex;width:100%"><b style="font-size:13.5px">允许一次</b><span style="margin-left:auto;font-size:12px;color:var(--t3)">11:02</span></div><div style="font:12px var(--mono);color:var(--t1)">bash rm -rf ~/Desktop/Q3/tmp</div><div style="font-size:12px;color:var(--t3)">laichang · dshm-a3f9c21e</div></div>
+      <div class="it" style="align-items:flex-start;flex-direction:column;gap:2px"><div style="display:flex;width:100%"><b style="font-size:13.5px">拒绝</b><span style="margin-left:auto;font-size:12px;color:var(--t3)">10:40</span></div><div style="font:12px var(--mono);color:var(--t1)">write reports/week45.md</div><div style="font-size:12px;color:var(--t3)">laichang · Web</div></div>
+      <div class="it" style="align-items:flex-start;flex-direction:column;gap:2px"><div style="display:flex;width:100%"><b style="font-size:13.5px">吊销设备</b><span style="margin-left:auto;font-size:12px;color:var(--t3)">昨天</span></div><div style="font:12px var(--mono);color:var(--t1)">dshm-1c0045aa</div><div style="font-size:12px;color:var(--t3)">laichang · dshm-a3f9c21e</div></div>
+    </div>
+    <div style="text-align:center;font-size:13px;color:#8EA2FF;margin-top:12px">加载更早的记录</div>
+  </div>
+  <div class="homebar"></div>
+</div>
+<div class="cap"><h3><i>X2</i>设备与审计 · 从 H 点进一台<span class="mtag m1">M1 · 补画面</span></h3><ul>
+  <li>§9：S10 已有的数据——设备 ID、配对时间、最后连接、吊销；审计的动作、内容、谁、哪台设备、时间。</li>
+  <li>吊销前确认：别的设备是“这台设备会和 MacBook-Pro 断开，要重新配对才能连上”；这台手机是“这台手机会从 MacBook-Pro 移除。之后侧边栏里不再有 MacBook-Pro，没有可点的入口，手机也不会再去连它。要再用，需要重新配对。”（S29）。吊销自己：手机忘掉这台执行端；没有剩下的执行端时退回 08，还有别的就回到 01。在别处（Web、别的设备）吊销了这台手机也一样：执行端以 4003 拒绝，手机不再重连，忘掉它，并提示一次“访问已被吊销”（S29）。</li>
+  <li>设备只有 ID 没有名字，所以“这台设备”要标出来；给设备起名需要上游支持。</li>
+</ul></div>
+</div>
+<script src="../kit/kit.js"></script>
+</body>
+</html>
