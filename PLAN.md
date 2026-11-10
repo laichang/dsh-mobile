@@ -421,6 +421,8 @@ Append-only, dated.
 
 - **2026-11-10 · Interruption: app restart stopped the T1 reviewer.** The T1 review at f5c3925 was running when the app restarted; no result file was written. Recovery (§5.4): the same reviewer resumed, with leftovers cleaned first. T1 owner is idle at f5c3925 (clean).
 
+- **2026-11-10 · T1 review 2 FAIL: changed helper via dirname $0.** Separate review at f5c3925: RESULT: FAIL (/tmp/dshm-review/T1-f5c3925.txt), only case (a4): a helper called as "$(dirname "$0")/helper" can be set to exit 0 by the branch and merges silently. Coordinator rule sent (round 3, provisional): protected evidence set = each cmd: file on the target, every existing file in its directory and below, and scripts/lib/; any change needs --allow-changed-evidence per file after a reviewer read it. Also: scripts/xc build fails when DSHM_SIM names a missing simulator (note for S2/S3).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
