@@ -1,6 +1,8 @@
 """The plan as data: plan/plan.json (the graph), plan/<ID>.json (the items), and verifier results.
 
-  plan/plan.json   {"title", "nodes": [{"id", "kind", "title", "needs", "branch"}]}
+  plan/plan.json   {"title", "nodes": [{"id", "kind", "title", "needs", "branch", and the state:
+                    "status", "updated", "next", "merge", "why", "cuts", "not", "demo", "log"}],
+                    "exit", "log", "pending"}
   plan/<ID>.json   {"id", "items": [{"tier", "text", "files", "screens", "passed": false}]}
 
 The schema is scripts/lib/plan.schema.json. This module checks it (a small validator for the part
@@ -16,7 +18,8 @@ again: old results are stale. An item passes only with at least one `cmd:` point
 at exit 0. The results are advisory: anyone with a shell can write a note, so the merge step runs
 verify again on the commit that it merges.
 
-Used by scripts/plan (dag, passed, verify, lint) and by scripts/check-plan (staged plan/ files).
+Used by scripts/plan (every command), scripts/check-plan (each change of plan/), scripts/brief,
+scripts/review, scripts/slice-env and scripts/status.
 """
 
 import datetime
@@ -216,7 +219,10 @@ def tree_errors(files):
         return errs
     perr = check_against(plan, "plan", PLAN_FILE)
     errs += perr or graph_errors(plan)
-    ids = {n["id"] for n in plan.get("nodes", []) if isinstance(n, dict) and "id" in n} if not perr else set()
+    if not perr:
+        errs += [f"{PLAN_FILE}: exit item {i + 1} is [{it['tier']}]; exit items are [human]"
+                 for i, it in enumerate(plan.get("exit", [])) if it["tier"] != "human"]
+    ids ={n["id"] for n in plan.get("nodes", []) if isinstance(n, dict) and "id" in n} if not perr else set()
     for path, doc in docs.items():
         fid = SLICE_FILE_RE.match(path)["id"]
         serr = check_against(doc, "slice", path)
@@ -514,7 +520,7 @@ def derive(root, sid, base="HEAD"):
 # ------------------------------------------------------------------------------------ merge
 
 SELF_FILES = ("scripts/plan", "scripts/lib/plandata.py", "scripts/lib/plan.schema.json",
-              "scripts/lib/dshm.py", "scripts/lib/plangen.py")
+              "scripts/lib/dshm.py")
 
 
 def same_as(root, ref, here):
@@ -692,3 +698,188 @@ def merge(root, sid, into, dry=False, allow=(), say=print):
         _git(root, "update-ref", "-m", f"merge {sid}", f"refs/heads/{into}", commit, base, check=True)
     summary["merged"] = True
     return summary
+
+
+# ------------------------------------------------------------------------- the plan as state
+# plan/plan.json also holds the state of the run: the status, merge and log of each node, the
+# exit items, the plan log and what waits for the user. scripts/plan writes it; check-plan judges
+# each change against the committed plan/ (change_errors).
+
+STATUSES = ("todo", "doing", "review", "done", "blocked")
+ACTIVE = ("todo", "doing", "blocked")
+NO_PLAN = ("no plan/plan.json: no requirement is in progress. "
+           "Next: the user sets a requirement, then the coordinator runs scripts/plan new \"<title>\" on main")
+
+
+def dump(doc):
+    return json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
+
+
+def read_plan(root):
+    """plan/plan.json of the working tree, checked with the whole plan/ tree."""
+    files = worktree_files(root)
+    if PLAN_FILE not in files:
+        raise DataError(NO_PLAN)
+    errs = tree_errors(files)
+    if errs:
+        raise DataError("\n".join(errs) + "\nNext: repair plan/ (scripts/plan lint lists the errors), "
+                        "or `git checkout -- plan/` to go back to the committed plan")
+    return json.loads(files[PLAN_FILE])
+
+
+def find_node(plan, sid):
+    n = next((n for n in plan["nodes"] if n["id"] == sid), None)
+    if n is None:
+        raise DataError(f"{sid} is not a node of {PLAN_FILE}. Next: `scripts/plan dag` lists the nodes; "
+                        f"the coordinator adds one with `scripts/plan add`")
+    return n
+
+
+def statuses(root):
+    """{ID: status} of plan/plan.json in the working tree ({} with no plan)."""
+    p = Path(root, PLAN_FILE)
+    if not p.exists():
+        return {}
+    try:
+        return {n["id"]: n.get("status", "todo") for n in json.loads(p.read_text())["nodes"]}
+    except (json.JSONDecodeError, KeyError, TypeError):
+        return {}
+
+
+def _bare(it):
+    return {k: v for k, v in it.items() if k != "evidence"}
+
+
+def _pointer_problem(root, ptr, tier):
+    kind, sep, value = ptr.partition(":")
+    value = value.strip().strip("`")
+    if not sep or not value:
+        return f"'{ptr}' is not a typed pointer (cmd: / test: / commit: / shot: / human:)"
+    if kind == "cmd":
+        exe = shlex.split(value)[0] if value else ""
+        path = Path(root, exe)
+        if not (path.is_file() and os.access(path, os.X_OK)):
+            return f"cmd: {exe} is not an executable file of the repo"
+    elif kind == "commit":
+        if _git(root, "cat-file", "-e", f"{value}^{{commit}}").returncode != 0:
+            return f"commit: {value} is not a commit of this repo"
+    elif kind == "human":
+        if tier != "human":
+            return "human: is only for a [human] item"
+        date = value.split(" ", 1)[0]
+        try:
+            datetime.date.fromisoformat(date)
+        except ValueError:
+            return f"human: '{date}' is not a YYYY-MM-DD date"
+        if " " not in value.strip():
+            return "human: needs a device or a note after the date"
+    elif kind == "shot":
+        if not Path(root, value).is_file():
+            return f"shot: {value} does not exist"
+    return None
+
+
+def _item_changes(root, where, old, new, agent):
+    errs = []
+    for i, o in enumerate(old):
+        if i >= len(new):
+            errs.append(f"ITEM REMOVED: {where} item {i + 1} ({o['tier']}) {o['text'][:70]!r}. "
+                        f"Next: put it back (`git checkout -- plan/`); only the user removes an item")
+            continue
+        n = new[i]
+        if _bare(o) != _bare(n):
+            errs.append(f"ITEM CHANGED: {where} item {i + 1}: tier, text, files and screens stay as they are.\n"
+                        f"    old: [{o['tier']}] {o['text'][:100]}\n    new: [{n.get('tier')}] {str(n.get('text'))[:100]}\n"
+                        f"  Next: put it back; to change it, tell the user the old text, the new text and why")
+            continue
+        ev_old, ev_new = o.get("evidence", []), n.get("evidence", [])
+        lost = [p for p in ev_old if p not in ev_new]
+        if lost:
+            errs.append(f"EVIDENCE REMOVED: {where} item {i + 1}: {', '.join(lost)}. "
+                        f"Next: put it back; evidence is only added")
+        for p in ev_new:
+            if p in ev_old:
+                continue
+            prob = _pointer_problem(root, p, n["tier"])
+            if prob:
+                errs.append(f"BAD EVIDENCE: {where} item {i + 1}: {prob}. Next: give a pointer that resolves")
+            if agent and p.startswith("human:"):
+                errs.append(f"HUMAN ITEM: {where} item {i + 1}: only the user records a [human] item. "
+                            f"Next: leave it open; the coordinator lists it for the user (scripts/plan pending)")
+    for j in range(len(old), len(new)):
+        if new[j].get("evidence") and any(p.startswith("human:") for p in new[j]["evidence"]):
+            errs.append(f"HUMAN ITEM: {where} item {j + 1} is added with a human: pointer. "
+                        f"Next: add it open; only the user records it")
+    return errs
+
+
+def _log_changes(where, old, new):
+    if new[:len(old)] != old:
+        return [f"LOG CHANGED: {where}: the log is append-only. "
+                f"Next: put the old entries back; add a new entry with scripts/plan log or slice-log"]
+    return []
+
+
+def change_errors(root, old_files, new_files, agent=False):
+    """Errors of a change of plan/ from old_files to new_files ({path: text}): the new tree must be
+    valid, nodes stay, items and exit items keep tier, text, files and screens and only gain
+    evidence (pointers that resolve), logs are append-only. agent: no human: pointer."""
+    errs = tree_errors(new_files)
+    if errs:
+        return [f"PLAN DATA: {e}" for e in errs] + \
+            ["Next: repair plan/ (scripts/plan lint), or write it only with scripts/plan"]
+    if PLAN_FILE not in old_files:
+        return []
+    try:
+        old = {p: json.loads(t) for p, t in old_files.items()}
+    except json.JSONDecodeError:
+        return []
+    new = {p: json.loads(t) for p, t in new_files.items()}
+    op, np_ = old.get(PLAN_FILE), new.get(PLAN_FILE)
+    if np_ is None:
+        return ["PLAN REMOVED: plan/plan.json is gone. Next: when the exit passes, the user removes "
+                "plan/ by hand; an agent does not"]
+    nodes = {n["id"]: n for n in np_["nodes"]}
+    for n in op.get("nodes", []):
+        if n["id"] not in nodes:
+            errs.append(f"NODE REMOVED: {n['id']}. Next: put it back; only the user removes a node")
+            continue
+        errs += _log_changes(f"{PLAN_FILE} {n['id']} log", n.get("log", []), nodes[n["id"]].get("log", []))
+    errs += _log_changes(f"{PLAN_FILE} log", op.get("log", []), np_.get("log", []))
+    errs += _item_changes(root, f"{PLAN_FILE} exit", op.get("exit", []), np_.get("exit", []), agent)
+    for path, doc in old.items():
+        if path == PLAN_FILE or path not in new:
+            continue
+        errs += _item_changes(root, path, doc.get("items", []), new[path].get("items", []), agent)
+    return errs
+
+
+def head_files(root, ref="HEAD"):
+    """The plan/ files of a commit, or {} when the commit has none (or there is no commit)."""
+    try:
+        return committed_files(root, ref)
+    except DataError:
+        return {}
+
+
+def ui_lines(root, sid):
+    """For scripts/review: the demo of the node and its [ui] items, as tab-separated lines."""
+    if not Path(root, PLAN_FILE).exists():
+        return [f"ERR\t{NO_PLAN}"]
+    try:
+        node = find_node(json.loads(Path(root, PLAN_FILE).read_text()), sid)
+        items = json.loads(Path(root, f"plan/{sid}.json").read_text())["items"]
+    except (DataError, OSError, json.JSONDecodeError, KeyError) as e:
+        return [f"ERR\t{e}"]
+    out = [f"DEMO\t{node.get('demo') or ''}"]
+    out += [f"UI\t{i}\t{' · '.join(it.get('evidence', []))}\t{it['text']}"
+            for i, it in enumerate(items, 1) if it["tier"] == "ui"]
+    return out
+
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) == 3 and sys.argv[1] == "ui":
+        print("\n".join(ui_lines(".", sys.argv[2])))
+    else:
+        sys.exit("usage: python3 scripts/lib/plandata.py ui <ID>")

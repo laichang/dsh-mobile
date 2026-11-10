@@ -35,7 +35,7 @@ demo_no_skipped_ui() {
 }
 
 # ---------------------------------------------------------------------------------------------
-# Machine guard (WORKFLOW.md §6.1). Runs when this file is sourced. Rules that live in code, not
+# Machine guard. Runs when this file is sourced. Rules that live in code, not
 # in a prompt:
 #   - Refuses at once when the data volume has less than DSHM_MIN_FREE_GB (30) GB free.
 #   - Waits while the CPU is less than DSHM_MIN_IDLE (15) percent idle, then fails.
@@ -132,7 +132,7 @@ dshm_disk_ok() {
   [ -n "$kb" ] || return 0   # no measurement: do not block
   if [ "$kb" -lt $((floor * 1024 * 1024)) ]; then
     mount=$(df -kP "$HOME" 2>/dev/null | awk 'NR == 2 { print $6 }')
-    echo "guard: $((kb / 1024 / 1024)) GB free on ${mount:-the data volume}, below the floor of $floor GB (DSHM_MIN_FREE_GB). Remove the leftovers that scripts/status lists (scripts/plan cleanup <ID>), then run again (WORKFLOW.md §6.1)." >&2
+    echo "guard: $((kb / 1024 / 1024)) GB free on ${mount:-the data volume}, below the floor of $floor GB (DSHM_MIN_FREE_GB). Next: remove the leftovers that scripts/status lists (scripts/plan cleanup <ID>), then run it again." >&2
     return 1
   fi
 }
@@ -147,7 +147,7 @@ dshm_guard() {
     n=$(printf '%s' "$others" | grep -c . || true)
     if dshm_load_ok && [ "$n" -lt "$limit" ]; then break; fi
     if [ "$waited" -ge "$wait" ]; then
-      echo "guard: the Mac is not ready after ${wait}s (WORKFLOW.md §6.1)." >&2
+      echo "guard: the Mac is not ready after ${wait}s. Next: wait, or stop other demos and builds (scripts/status lists them)." >&2
       echo "guard: CPU $(dshm_cpu_idle)% idle, minimum ${DSHM_MIN_IDLE:-15}%" >&2
       echo "guard: other booted dshm-* simulators ($n, limit $limit):" >&2
       printf '%s\n' "$others" | sed 's/^/  /' >&2
@@ -185,7 +185,7 @@ if [ -z "${DSHM_GUARD_OWNER:-}" ] && [ -n "${SIM:-${DSHM_SIM:-}}" ] && command -
 fi
 
 # ---------------------------------------------------------------------------------------------
-# Parts that resume (WORKFLOW.md §10.1). A script that runs many parts wraps each one:
+# Parts that resume. A script that runs many parts wraps each one:
 #   demo_part <name> <command…>
 # A part that passed is recorded for the current code (the content of the worktree). With
 # DSHM_RESUME=1, a part that passed for the same code is skipped, so a failure in part 9 of 14
@@ -195,14 +195,14 @@ fi
 # `if`, so a function would not stop at its first error.
 
 # The key is the git tree of the worktree content (tracked and untracked, not ignored), so a
-# commit of the same content keeps the key. evidence/ and *.md are not code: slice demos rewrite
-# their shots while a run goes on, and PLAN.md and the docs change after a run (ticks, Log).
+# commit of the same content keeps the key. evidence/, plan/ and *.md are not code: slice demos
+# rewrite their shots while a run goes on, and plan/ and the docs change after a run (evidence, logs).
 dshm_code_key() {
   local idx
   idx=$(mktemp "${TMPDIR:-/tmp}/dshm-key.XXXXXX")
   cp "$(git rev-parse --path-format=absolute --git-path index)" "$idx"
   GIT_INDEX_FILE=$idx git add -A -- . >/dev/null 2>&1
-  GIT_INDEX_FILE=$idx git rm -r -q --cached --ignore-unmatch -- evidence ':(glob)**/*.md' >/dev/null 2>&1
+  GIT_INDEX_FILE=$idx git rm -r -q --cached --ignore-unmatch -- evidence plan ':(glob)**/*.md' >/dev/null 2>&1
   GIT_INDEX_FILE=$idx git write-tree | cut -c1-16
   rm -f "$idx"
 }

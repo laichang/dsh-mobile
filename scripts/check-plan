@@ -1,52 +1,35 @@
 #!/usr/bin/env python3
-"""Guard PLAN.md's Done when items.
+"""Guard the plan data in plan/ and what a commit holds. The git pre-commit and pre-merge-commit
+hooks run it; scripts/plan and .claude/hooks/plan-guard run it on each change they make.
 
-Compares a base version of PLAN.md with a new one and allows only two kinds
-of change to checkbox items:
-  * tick:  "- [ ]" -> "- [x]" (with valid evidence pointers)
-  * add:   a new item (with --agent: added unticked; tick it in a later edit)
+The rules of a change of plan/ are in scripts/lib/plandata.py (change_errors): the schema and the
+graph hold, `passed` is false in every file, no node goes, each item and exit item keeps its tier,
+text, files and screens and only gains evidence pointers that resolve, and the logs are
+append-only. With --agent, a `human:` pointer is refused too: only the user records a [human] item.
 
-Anything else (delete, reword, re-tier, untick, move to another slice, edit
-the evidence of an already-ticked item) fails and prints old vs new.
+With --staged it also fails on staged build output (.build/, node_modules/, DerivedData/,
+*.xcresult) and on staged files larger than MAX_FILE_MB. On main, it fails on a commit that is not
+a merge and changes code (CODE_PATHS) or a guard file (PROTECTED): code and guards reach main only
+by the merge of a slice branch, and the user reads a guard diff at that merge. A bug that the user
+reports becomes a fix slice (`scripts/plan fix`).
 
-Evidence on a ticked item is one or more typed pointers separated by " · ",
-each of which must resolve:
-  test:<Name>           found in Swift/TS test sources
-  cmd:<path> [args]     repo-relative path exists and is executable
-  commit:<hash>         `git cat-file -e <hash>^{commit}` succeeds
-  shot:<path>           file exists under evidence/<slice ID>/
-  human:<YYYY-MM-DD> <device or note>   [human] items only
-
-With --staged it also checks the staged files in plan/ (scripts/lib/plandata.py: the schema,
-the graph, and `passed`, which a file always has as false), and it fails when guard files (PROTECTED below) are staged;
-only the user commits those, by hand. It also fails on staged build output
-(.build/, node_modules/, DerivedData/, *.xcresult) and on staged files larger
-than MAX_FILE_MB. On main, it fails on a commit that is not a merge and changes
-code (CODE_PATHS): code reaches main only by the merge of a slice branch. A bug
-that the user reports becomes a fix slice (WORKFLOW.md §5.2, `scripts/plan fix`).
-
-During a merge (MERGE_HEAD exists; pre-merge-commit, or the commit after a merge
-with conflicts) of main into another branch, the plan file is checked against
-the plan file of main, and guard files that come unchanged from main pass.
+During a merge of main into another branch (MERGE_HEAD, or GIT_REFLOG_ACTION in
+pre-merge-commit), plan/ is judged against the plan/ of main.
 
 Usage:
   scripts/check-plan                          # the same as --staged
-  scripts/check-plan --staged                 # HEAD vs index (pre-commit)
-  scripts/check-plan --new FILE|-             # HEAD vs FILE (or stdin)
-  scripts/check-plan --base FILE --new FILE   # explicit base
-  add --agent to also reject ticking [human] items and adding ticked items.
+  scripts/check-plan --staged                 # the index against HEAD (the git hooks)
+  scripts/check-plan --tree [REF]             # plan/ of REF (default: the working tree) alone
+  scripts/check-plan --base DIR --new DIR [--agent]   # a change between two plan/ directories
 
-A rewrite or guard change the user has approved is committed by the user, by hand:
+A change that the user has approved is committed by the user, by hand:
   CHECK_PLAN_ALLOW=1 git commit ...
-Agents must never set CHECK_PLAN_ALLOW (the Claude Code Bash hook blocks it).
+Agents never set CHECK_PLAN_ALLOW (the Claude Code Bash hook blocks it).
 
-Exit 0 = OK, 1 = violations (printed to stdout), 2 = usage error.
+Exit 0 = OK, 1 = refused (each line names the next step), 2 = usage error.
 """
 
 import argparse
-import collections
-import datetime
-import difflib
 import fnmatch
 import os
 import re
@@ -54,234 +37,24 @@ import subprocess
 import sys
 from pathlib import Path
 
-PLAN = "PLAN.md"
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+import plandata  # noqa: E402
+
 PROTECTED = ["scripts/check-plan", ".githooks/*", ".claude/hooks/*", ".claude/settings.json",
              ".codex/hooks.json", ".codex/hooks/*"]
 BUILD_OUTPUT = re.compile(r"(^|/)(\.build|node_modules|DerivedData)/|\.xcresult(/|$)")
 MAX_FILE_MB = 4
 # Code that reaches main only by a merge. scripts/resources.tsv is bookkeeping (scripts/plan assign).
 CODE_PATHS = re.compile(r"^(ios|bridge|protocol|spikes|scripts)/(?!resources\.tsv$)")
-POINTER_SEP = " · "
-SKIP_DIRS = {".git", "node_modules", "DerivedData", "build", ".build", ".archive", "evidence"}
-
-ITEM_RE = re.compile(
-    r"^\s*- \[(?P<box>[ xX])\] \[(?P<tier>auto|ui|human)\] (?P<desc>.*?)"
-    r"(?:\s+—\s+Evidence:(?P<ev>.*))?\s*$"
-)
-CHECKBOX_RE = re.compile(r"^\s*- \[[ xX]\] ")
-HEADING_RE = re.compile(r"^#{2,4}\s+(?P<text>.+?)\s*$")
-SLICE_ID_RE = re.compile(r"^(?:\d+\.\s*)?(?P<id>T\d+|X\d+|S\d+|M\d+)\b")
-EMPTY_EVIDENCE = {"", "—", "-", "–", "todo", "tbd", "n/a", "none"}
-
-
-class Item:
-    def __init__(self, section, line, lineno, m):
-        self.section = section
-        self.line = line.rstrip("\n")
-        self.lineno = lineno
-        self.checked = m.group("box") in "xX"
-        self.tier = m.group("tier")
-        self.desc = m.group("desc").strip()
-        self.has_marker = m.group("ev") is not None
-        self.evidence = (m.group("ev") or "").strip()
-
-    @property
-    def key(self):
-        return (self.section, self.tier, self.desc)
-
-    def evidence_empty(self):
-        return self.evidence.lower() in EMPTY_EVIDENCE
-
-
-def section_key(heading):
-    m = SLICE_ID_RE.match(heading)
-    return m.group("id") if m else heading
-
-
-def parse(text):
-    """Return (items, malformed_lines)."""
-    items, malformed = [], []
-    section = "(top)"
-    in_fence = False
-    for n, line in enumerate(text.splitlines(), 1):
-        if line.lstrip().startswith("```"):
-            in_fence = not in_fence
-            continue
-        if in_fence:
-            continue
-        h = HEADING_RE.match(line)
-        if h:
-            section = section_key(h.group("text"))
-            continue
-        if not CHECKBOX_RE.match(line):
-            continue
-        m = ITEM_RE.match(line)
-        if m:
-            items.append(Item(section, line, n, m))
-        else:
-            malformed.append((section, n, line.rstrip("\n")))
-    return items, malformed
-
-
-def git_show(spec):
-    r = subprocess.run(["git", "-C", str(ROOT), "show", spec], capture_output=True, text=True)
-    return r.stdout if r.returncode == 0 else None
-
-
-def check(base_text, new_text, agent=False):
-    """Return a list of violation strings."""
-    errors = []
-    old_items, _ = parse(base_text or "")
-    new_items, malformed = parse(new_text)
-
-    for section, n, line in malformed:
-        errors.append(
-            f"MALFORMED (line {n}, {section}): checkbox without a valid "
-            f"[auto|ui|human] tier\n    {line}"
-        )
-
-    new_by_key = collections.defaultdict(list)
-    for it in new_items:
-        new_by_key[it.key].append(it)
-
-    unmatched_new = list(new_items)
-    for old in old_items:
-        candidates = new_by_key.get(old.key)
-        if not candidates:
-            guess = closest(old, unmatched_new)
-            errors.append(
-                f"DELETED OR REWRITTEN ({old.section}, was line {old.lineno}):\n"
-                f"    old: {old.line}\n"
-                f"    new (closest): {guess.line if guess else '(none)'}"
-            )
-            continue
-        new = candidates.pop(0)
-        unmatched_new.remove(new)
-        if old.checked and not new.checked:
-            errors.append(f"UNTICKED ({old.section}, line {new.lineno}):\n"
-                          f"    old: {old.line}\n    new: {new.line}")
-        elif old.checked and new.line.strip() != old.line.strip():
-            errors.append(f"TICKED ITEM CHANGED ({old.section}, line {new.lineno}):\n"
-                          f"    old: {old.line}\n    new: {new.line}")
-        elif not old.checked and new.checked:
-            errors += tick_errors(new, agent)
-
-    for new in unmatched_new:  # genuinely added items
-        if not new.has_marker:
-            errors.append(f"MISSING 'Evidence:' ({new.section}, line {new.lineno}):\n"
-                          f"    new: {new.line}")
-        if new.checked:
-            if agent:
-                errors.append(f"ADDED ALREADY TICKED ({new.section}, line {new.lineno}): "
-                              f"add the item unticked, tick it in a later edit\n"
-                              f"    new: {new.line}")
-            errors += tick_errors(new, agent)
-    return errors
-
-
-def tick_errors(item, agent):
-    errs = []
-    if item.evidence_empty():
-        errs.append(f"TICKED WITHOUT EVIDENCE ({item.section}, line {item.lineno}):\n"
-                    f"    new: {item.line}")
-    else:
-        for problem in pointer_errors(item):
-            errs.append(f"BAD EVIDENCE ({item.section}, line {item.lineno}): {problem}\n"
-                        f"    new: {item.line}")
-    if agent and item.tier == "human":
-        errs.append(f"HUMAN ITEM TICKED BY AGENT ({item.section}, line {item.lineno}): "
-                    f"only the user ticks [human] items\n    new: {item.line}")
-    return errs
-
-
-def pointer_errors(item):
-    problems = []
-    for ptr in (p.strip() for p in item.evidence.split(POINTER_SEP)):
-        kind, sep, value = ptr.partition(":")
-        kind, value = kind.strip(), value.strip().strip("`")
-        if not sep or not value:
-            problems.append(f"'{ptr}' is not a typed pointer "
-                            f"(test: / cmd: / commit: / shot: / human:)")
-        elif kind == "test":
-            problems += check_test(value)
-        elif kind == "cmd":
-            exe = value.split()[0]
-            path = ROOT / exe
-            if not (path.is_file() and os.access(path, os.X_OK)):
-                problems.append(f"cmd: {exe} does not exist or is not executable")
-        elif kind == "commit":
-            r = subprocess.run(["git", "-C", str(ROOT), "cat-file", "-e", f"{value}^{{commit}}"],
-                               capture_output=True)
-            if r.returncode != 0:
-                problems.append(f"commit: {value} is not a commit in this repo")
-        elif kind == "shot":
-            path = (ROOT / value).resolve()
-            want = (ROOT / "evidence" / item.section).resolve()
-            if not path.is_file():
-                problems.append(f"shot: {value} does not exist")
-            elif want not in path.parents:
-                problems.append(f"shot: {value} must be under evidence/{item.section}/")
-        elif kind == "human":
-            if item.tier != "human":
-                problems.append("human: pointers are only allowed on [human] items")
-            else:
-                date, _, note = value.partition(" ")
-                try:
-                    datetime.date.fromisoformat(date)
-                except ValueError:
-                    problems.append(f"human: '{date}' is not a YYYY-MM-DD date")
-                if not note.strip():
-                    problems.append("human: needs a device or note after the date")
-        else:
-            problems.append(f"unknown pointer type '{kind}:'")
-    return problems
-
-
-_test_sources = None
-
-
-def test_sources():
-    global _test_sources
-    if _test_sources is None:
-        found = []
-        for dirpath, dirnames, filenames in os.walk(ROOT):
-            dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
-            parts = Path(dirpath).relative_to(ROOT).parts
-            in_test_dir = any("test" in p.lower() for p in parts)
-            for f in filenames:
-                if f.endswith(".swift") and (in_test_dir or "Tests" in f):
-                    found.append(Path(dirpath) / f)
-                elif re.search(r"\.(ts|tsx|mts|js|mjs)$", f) and (
-                        in_test_dir or re.search(r"\.(test|spec)\.", f)):
-                    found.append(Path(dirpath) / f)
-        _test_sources = found
-    return _test_sources
-
-
-def check_test(name):
-    sources = test_sources()
-    if not sources:
-        return [f"test: {name}: there are no Swift/TS test sources in the repo yet"]
-    # "Suite/name" or "Suite.name": every part must appear in the same file
-    parts = [p for p in re.split(r"[/.]", name) if p] or [name]
-    pats = [re.compile(r"(?<![\w])" + re.escape(p) + r"(?![\w])") for p in parts]
-    for src in sources:
-        try:
-            text = src.read_text(errors="ignore")
-        except OSError:
-            continue
-        if all(p.search(text) for p in pats):
-            return []
-    return [f"test: {name} not found in {len(sources)} Swift/TS test source file(s)"]
-
-
-def is_protected(relpath):
-    return any(fnmatch.fnmatch(relpath, pat) for pat in PROTECTED)
 
 
 def git_run(*args):
     return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True)
+
+
+def is_protected(relpath):
+    return any(fnmatch.fnmatch(relpath, pat) for pat in PROTECTED)
 
 
 def merging_main():
@@ -316,11 +89,6 @@ def staged_files(*filters):
     return [f for f in r.stdout.split("\0") if f]
 
 
-def protected_staged(trusted=None):
-    return [f for f in staged_files() if is_protected(f)
-            and not (trusted and from_commit(f, trusted))]
-
-
 def staged_problems(trusted=None):
     """Build output and files larger than MAX_FILE_MB in the index."""
     errors = []
@@ -328,96 +96,84 @@ def staged_problems(trusted=None):
         if trusted and from_commit(f, trusted):
             continue
         if BUILD_OUTPUT.search(f):
-            errors.append(f"BUILD OUTPUT STAGED: {f} (add its directory to .gitignore and unstage it)")
+            errors.append(f"BUILD OUTPUT STAGED: {f}. Next: add its directory to .gitignore and "
+                          f"`git restore --staged {f}`")
             continue
         r = git_run("cat-file", "-s", f":{f}")
         size = int(r.stdout) if r.returncode == 0 and r.stdout.strip().isdigit() else 0
         if size > MAX_FILE_MB * 1024 * 1024:
-            errors.append(f"LARGE FILE STAGED: {f} ({size / 1048576:.1f} MB, the limit is "
-                          f"{MAX_FILE_MB} MB; keep recordings and builds out of git)")
+            errors.append(f"LARGE FILE STAGED: {f} ({size / 1048576:.1f} MB, the limit is {MAX_FILE_MB} MB). "
+                          f"Next: `git restore --staged {f}`; keep recordings and builds out of git")
     return errors
 
 
-def plan_dir_errors():
-    """The staged plan/ files (schema, graph, passed false), when this tree has plandata.py."""
-    lib = ROOT / "scripts" / "lib"
-    if not (lib / "plandata.py").exists():
-        return []
-    sys.path.insert(0, str(lib))
-    import plandata
-    return [f"PLAN DATA: {e}" for e in plandata.staged_errors(ROOT)]
-
-
 def code_on_main():
-    """Code in the index of a commit on main that is not a merge (WORKFLOW.md §3, §5.2)."""
+    """Code or a guard file in the index of a commit on main that is not a merge."""
     if git_run("symbolic-ref", "-q", "--short", "HEAD").stdout.strip() != "main":
         return []
-    merging = (git_run("rev-parse", "-q", "--verify", "MERGE_HEAD").returncode == 0
-               or os.environ.get("GIT_REFLOG_ACTION", "").split()[:1] == ["merge"])
-    if merging:
+    if (git_run("rev-parse", "-q", "--verify", "MERGE_HEAD").returncode == 0
+            or os.environ.get("GIT_REFLOG_ACTION", "").split()[:1] == ["merge"]):
         return []
-    return [f"CODE ON MAIN: {f} (code reaches main only by the merge of a slice branch; "
-            f"for a bug, start a fix slice: scripts/plan fix, WORKFLOW.md §5.2)"
-            for f in staged_files() if CODE_PATHS.search(f) and not is_protected(f)]
+    errs = []
+    for f in staged_files():
+        if is_protected(f):
+            errs.append(f"GUARD ON MAIN: {f}. Next: change a guard on a slice branch; the user reads "
+                        f"the diff when the coordinator merges it")
+        elif CODE_PATHS.search(f):
+            errs.append(f"CODE ON MAIN: {f}. Next: code reaches main only by the merge of a slice "
+                        f"branch; for a bug, `scripts/plan fix` and a fix slice")
+    return errs
 
 
-def closest(old, pool):
-    same = [p for p in pool if p.section == old.section] or pool
-    if not same:
-        return None
-    return max(same, key=lambda p: difflib.SequenceMatcher(None, old.line, p.line).ratio())
+def dir_files(d):
+    """{plan/<name>: text} of the .json files of a directory (a copy of plan/)."""
+    d = Path(d)
+    if not d.is_dir():
+        return {}
+    return {f"{plandata.PLAN_DIR}/{p.name}": p.read_text() for p in sorted(d.iterdir()) if p.is_file()}
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     src = ap.add_mutually_exclusive_group()
     src.add_argument("--staged", action="store_true", help="check the index against HEAD")
-    src.add_argument("--new", metavar="FILE", help="proposed PLAN.md content ('-' = stdin)")
-    ap.add_argument("--base", metavar="FILE", help="base PLAN.md (default: git HEAD)")
-    ap.add_argument("--agent", action="store_true",
-                    help="also reject ticking [human] items and adding ticked items")
+    src.add_argument("--tree", nargs="?", const="", metavar="REF", help="check plan/ of REF alone")
+    src.add_argument("--new", metavar="DIR", help="a changed copy of plan/")
+    ap.add_argument("--base", metavar="DIR", help="the copy of plan/ before the change (with --new)")
+    ap.add_argument("--agent", action="store_true", help="also refuse a human: pointer")
     args = ap.parse_args(argv)
-    if not args.new:
-        args.staged = True
-    trusted = merging_main() if args.staged else None
-
-    if args.base:
-        base = Path(args.base).read_text() if Path(args.base).exists() else ""
-    elif trusted:
-        # A merge of main into this branch: judge this branch's plan changes against main.
-        base = git_show(f"{trusted}:{PLAN}") or ""
-    else:
-        base = git_show(f"HEAD:{PLAN}") or ""
+    if args.base and not args.new:
+        ap.error("--base needs --new")
 
     errors = []
-    if args.staged:
-        errors += [f"GUARD FILE STAGED: {f} (only the user commits guard changes, by hand)"
-                   for f in protected_staged(trusted)]
+    if args.tree is not None:
+        files = dir_files(ROOT / "plan") if args.tree == "" else plandata.head_files(ROOT, args.tree)
+        if not files:
+            errors.append("NO PLAN: plan/ is empty or missing. Next: the coordinator runs "
+                          "scripts/plan new \"<title>\" on main")
+        errors += [f"PLAN DATA: {e}" for e in plandata.tree_errors(files)]
+    elif args.new:
+        base = dir_files(args.base) if args.base else plandata.head_files(ROOT)
+        errors += plandata.change_errors(ROOT, base, dir_files(args.new), agent=args.agent)
+    else:
+        trusted = merging_main()
+        base = plandata.head_files(ROOT, trusted or "HEAD")
+        staged = plandata.staged_files(ROOT)
+        if staged or base:
+            errors += plandata.change_errors(ROOT, base, staged, agent=False)
         errors += staged_problems(trusted)
         errors += code_on_main()
-        errors += plan_dir_errors()
-        new = git_show(f":{PLAN}")  # None if PLAN.md isn't in the index
-        if new is None and git_show(f"HEAD:{PLAN}") is not None:
-            errors.append(f"PLAN FILE REMOVED: {PLAN} (archiving or deleting the plan is the user's step, by hand)")
-    elif args.new == "-":
-        new = sys.stdin.read()
-    else:
-        new = Path(args.new).read_text()
 
-    if new is not None:
-        errors += check(base, new, agent=args.agent)
-    if errors and args.staged and os.environ.get("CHECK_PLAN_ALLOW") == "1":
+    staged_mode = args.tree is None and not args.new
+    if errors and staged_mode and os.environ.get("CHECK_PLAN_ALLOW") == "1":
         print("check-plan: CHECK_PLAN_ALLOW=1, committing these user-approved changes:\n")
         print("\n".join(errors))
         return 0
     if errors:
-        print("check-plan: PLAN.md Done when items may only be ticked ([ ] -> [x] with "
-              "valid evidence) or added. Never deleted, reworded, re-tiered or unticked. "
-              "Guard files are changed by the user only. Build output and large files stay "
-              "out of git. Code reaches main only by a merge.\n")
+        print("check-plan: refused.\n")
         print("\n".join(errors))
-        print("\nIf an item or a guard truly has to change, explain the original text, the "
-              "new text and the reason to the user, and let the user make the change.")
+        print("\nIf a rule truly has to give way, tell the user the change and the reason in the "
+              "conversation; the user makes that commit by hand.")
         return 1
     return 0
 
