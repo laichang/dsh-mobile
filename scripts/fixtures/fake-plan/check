@@ -1,0 +1,4 @@
+#!/bin/sh
+# The evidence of the fake node: fake-node/hello.txt holds one line, hello.
+[ "$(cat fake-node/hello.txt 2>/dev/null)" = hello ] && echo "fake node: ok" && exit 0
+echo "fake node: fake-node/hello.txt does not hold the line hello"; exit 1

@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""The brief of one slice for a fresh agent: what to build and where, from the plan data.
+
+  scripts/brief <ID> [--round N] [--base REF] [--out PATH]
+
+It reads plan/plan.json and plan/<ID>.json as committed at REF (default HEAD; the merge target),
+never an uncommitted edit, and writes the brief to PATH (default /tmp/dshm-brief/<ID>-r<N>.md).
+It prints the path. A stub: the slice, its branch and worktree, its items with their evidence, and
+the rules of the merge step. The full brief (what to read, the resources) comes later.
+
+Exit 0 = written, 1 = refused (unknown ID, no plan data), 2 = usage.
+"""
+
+import argparse
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+import dshm  # noqa: E402
+import plandata  # noqa: E402
+
+
+def brief(root, sid, rnd, base):
+    plan, items = plandata.load_at(root, base)
+    node = next((n for n in plan["nodes"] if n["id"] == sid), None)
+    if node is None:
+        raise plandata.DataError(f"{sid} is not a node of {plandata.PLAN_FILE} at {base}")
+    if not node["branch"]:
+        raise plandata.DataError(f"{sid} has no branch yet (the coordinator assigns one)")
+    tip = dshm.git("rev-parse", "--verify", f"{base}^{{commit}}", cwd=root)
+    wt = plandata.checked_out(root, node["branch"])
+    where = (f"`{wt}` (it has the branch checked out)" if wt else
+             f"none yet: `git worktree add /tmp/dshm-{sid.lower()}-wt {node['branch']}`")
+    lines = [
+        f"# Brief: {sid} · {node['title']} · round {rnd}",
+        "",
+        f"- Kind: {node['kind']}; needs: {', '.join(node['needs']) or 'nothing'}",
+        f"- Branch: `{node['branch']}` (commit only there)",
+        f"- Worktree: {where}",
+        f"- Plan data: `plan/{sid}.json` at `{base}` ({tip[:12]})",
+        "",
+        "## Items",
+        "",
+    ]
+    for i, it in enumerate(items[sid]):
+        lines.append(f"{i + 1}. [{it['tier']}] {it['text']}")
+        for p in it.get("evidence", []):
+            lines.append(f"   - evidence: `{p}`")
+    lines += [
+        "",
+        "## Rules",
+        "",
+        "- Make each `[auto]` and `[ui]` item true on the branch, and commit. Do not merge, push or rebase.",
+        f"- In `plan/{sid}.json` you may only add evidence pointers (`cmd:<repo-relative executable> <args>`) "
+        "to an item. Do not change a tier, a text, or `passed` (it stays false).",
+        "- The merge step runs the evidence again itself, on the merge commit, with the items of the "
+        "merge target. It does not read your report.",
+        "- End with a short report: the head commit and what you did.",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def main():
+    ap = argparse.ArgumentParser(prog="scripts/brief", description="Write the brief of one slice (see the file header).")
+    ap.add_argument("id")
+    ap.add_argument("--round", type=int, default=1)
+    ap.add_argument("--base", default="HEAD")
+    ap.add_argument("--out")
+    a = ap.parse_args()
+    try:
+        dshm.check_id(a.id)
+        root = dshm.toplevel()
+        text = brief(root, a.id, a.round, a.base)
+    except (plandata.DataError, dshm.PlanError) as e:
+        print(f"brief: {e}", file=sys.stderr)
+        return 1
+    out = Path(a.out or f"/tmp/dshm-brief/{a.id}-r{a.round}.md")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(text)
+    print(out)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

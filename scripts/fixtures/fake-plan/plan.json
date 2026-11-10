@@ -1,0 +1,12 @@
+{
+  "title": "Fake plan · one node from brief to merge",
+  "nodes": [
+    {
+      "id": "S99",
+      "kind": "slice",
+      "title": "Fake node: write fake-node/hello.txt",
+      "needs": [],
+      "branch": "claude/s99-fake-node"
+    }
+  ]
+}

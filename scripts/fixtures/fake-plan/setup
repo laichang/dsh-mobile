@@ -1,0 +1,47 @@
+#!/bin/bash
+# The fake plan for a real run of .claude/workflows/run-plan.js: one node (S99) whose [auto] item
+# a script checks (scripts/fixtures/fake-plan/check), on throwaway branches.
+#
+#   scripts/fixtures/fake-plan/setup [--from REF]   make the branches; print the Workflow args
+#   scripts/fixtures/fake-plan/setup --remove       remove the branches and their worktrees
+#
+# It makes, from REF (default HEAD; it must have the merge tools and this fixture):
+#   claude/fake-plan-base   REF + one commit that replaces plan/ with the fake plan (the target)
+#                           checked out in /tmp/dshm-fake-plan/base (the repo of the run)
+#   claude/s99-fake-node    the branch of the node, at the same commit (the agent builds on it)
+# Keep the branches while a plan item points at the merge commit: a commit: pointer must resolve.
+set -euo pipefail
+ROOT=$(git rev-parse --show-toplevel)
+FIX="$ROOT/scripts/fixtures/fake-plan"
+BASE=claude/fake-plan-base
+NODE=claude/s99-fake-node
+DIR=/tmp/dshm-fake-plan
+NODE_WT=/tmp/dshm-s99-wt
+
+if [ "${1:-}" = --remove ]; then
+  for wt in "$DIR/base" "$NODE_WT"; do
+    git -C "$ROOT" worktree list --porcelain | grep -qxF "worktree $wt" && git -C "$ROOT" worktree remove --force "$wt"
+  done
+  for b in "$BASE" "$NODE"; do
+    git -C "$ROOT" rev-parse -q --verify "refs/heads/$b" >/dev/null && git -C "$ROOT" branch -D "$b"
+  done
+  rm -rf "$DIR"
+  echo "fake-plan: removed"; exit 0
+fi
+FROM=HEAD
+[ "${1:-}" = --from ] && FROM=$2
+for b in "$BASE" "$NODE"; do
+  if git -C "$ROOT" rev-parse -q --verify "refs/heads/$b" >/dev/null; then
+    echo "fake-plan: $b exists; run $0 --remove first" >&2; exit 1
+  fi
+done
+mkdir -p "$DIR"
+git -C "$ROOT" worktree add -q -b "$BASE" "$DIR/base" "$FROM"
+cd "$DIR/base"
+git rm -rq --ignore-unmatch plan
+mkdir -p plan && cp "$FIX/plan.json" "$FIX/S99.json" plan/
+git add plan
+git commit -q -m "Fake plan: one node, for a run of the run-plan Workflow (throwaway)"
+git branch "$NODE" HEAD
+echo "fake-plan: $BASE at $(git rev-parse --short HEAD) in $DIR/base; $NODE at the same commit" >&2
+printf '{"slice": "S99", "round": 1, "into": "%s", "repo": "%s"}\n' "$BASE" "$DIR/base"

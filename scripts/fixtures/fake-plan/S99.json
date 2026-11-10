@@ -1,0 +1,13 @@
+{
+  "id": "S99",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "The file fake-node/hello.txt holds one line: hello",
+      "files": ["fake-node/hello.txt"],
+      "screens": [],
+      "passed": false,
+      "evidence": ["cmd:scripts/fixtures/fake-plan/check"]
+    }
+  ]
+}

@@ -274,6 +274,45 @@ def load_plan(root):
         raise DataError(f"{PLAN_FILE}: not JSON ({e})")
 
 
+def committed_files(root, ref):
+    """The plan/ files of a commit (what is committed, never an uncommitted edit)."""
+    r = _git(root, "ls-tree", "-z", "--name-only", f"{ref}^{{commit}}", "--", f"{PLAN_DIR}/")
+    if r.returncode != 0:
+        raise DataError(f"{ref} is not a commit")
+    return {p: _git(root, "show", f"{ref}:{p}", check=True).stdout for p in filter(None, r.stdout.split("\0"))}
+
+
+def load_at(root, ref):
+    """plan.json and the items of each node, as the commit ref has them (checked)."""
+    files = committed_files(root, ref)
+    if PLAN_FILE not in files:
+        raise DataError(f"{PLAN_FILE} does not exist at {ref}")
+    errs = tree_errors(files)
+    if errs:
+        raise DataError("\n".join(f"{e} (at {ref})" for e in errs))
+    plan = json.loads(files[PLAN_FILE])
+    items = {n["id"]: json.loads(files[f"plan/{n['id']}.json"])["items"] for n in plan["nodes"]}
+    return plan, items
+
+
+def node_at(root, ref, sid):
+    """The node of sid in plan.json as committed at ref (its branch comes from there)."""
+    r = _git(root, "show", f"{ref}:{PLAN_FILE}")
+    if r.returncode != 0:
+        raise DataError(f"{PLAN_FILE} does not exist at {ref}")
+    try:
+        plan = json.loads(r.stdout)
+    except json.JSONDecodeError as e:
+        raise DataError(f"{PLAN_FILE} at {ref}: not JSON ({e})")
+    errs = check_against(plan, "plan", f"{PLAN_FILE} at {ref}")
+    if errs:
+        raise DataError("\n".join(errs))
+    node = next((n for n in plan["nodes"] if n["id"] == sid), None)
+    if node is None:
+        raise DataError(f"{sid} is not a node of {PLAN_FILE} at {ref}")
+    return node
+
+
 # ---------------------------------------------------------------------------------- results
 
 def _git(root, *args, check=False, input=None):
@@ -323,15 +362,36 @@ def _store(root, commit, sid, results):
          input=json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 
 
+def cmd_problem(argv, cwd):
+    """Why argv[0] is not a cmd: pointer that verify runs, or None. It must be a repo-relative
+    path with no symlink in it, inside the checkout, and an executable file of the commit."""
+    if not argv:
+        return "is empty"
+    rel = Path(argv[0])
+    if rel.is_absolute() or ".." in rel.parts:
+        return "is not repo-relative"
+    top, p = Path(cwd).resolve(), Path(cwd)
+    for part in rel.parts:
+        p = p / part
+        if p.is_symlink():
+            return f"goes through the symlink {p.relative_to(cwd)}"
+    if not p.is_file() or not p.resolve().is_relative_to(top):
+        return "is not a file of the checkout"
+    mode = _git(cwd, "ls-tree", "HEAD", "--", rel.as_posix()).stdout.split()[:1]
+    if mode != ["100755"]:
+        return "is not an executable file of the commit"
+    return None
+
+
 def _run(cmd, cwd, logpath):
-    """Run one cmd: pointer (a repo-relative executable and its arguments) in cwd."""
+    """Run one cmd: pointer (a repo-relative executable of the commit and its arguments) in cwd."""
     argv = shlex.split(cmd)
-    exe = Path(cwd, argv[0]) if argv else None
     t0 = time.monotonic()
-    if not argv or Path(argv[0]).is_absolute() or ".." in Path(argv[0]).parts \
-            or not exe.is_file() or not os.access(exe, os.X_OK):
-        Path(logpath).write_text(f"verify: {cmd!r} is not a repo-relative executable\n")
+    why = cmd_problem(argv, cwd)
+    if why:
+        Path(logpath).write_text(f"verify: {cmd!r} {why}\n")
         return {"cmd": cmd, "exit": 127, "seconds": 0.0, "log": str(logpath)}
+    exe = Path(cwd, argv[0])
     with open(logpath, "w") as log:
         try:
             r = subprocess.run([str(exe), *argv[1:]], cwd=cwd, stdout=log, stderr=subprocess.STDOUT,
@@ -349,55 +409,76 @@ def _ancestor(root, ref, head):
             "seconds": 0.0, "log": ""}
 
 
-def verify(root, sid, say=print):
+def run_items(sid, items, wt, commit, say=print):
+    """Run the evidence of items in the clean checkout wt of commit: the results of each item."""
+    logs = Path(os.environ.get("DSHM_VERIFY_LOGS", "/tmp/dshm-verify"))
+    logs.mkdir(parents=True, exist_ok=True)
+    done, out = {}, []
+    for i, it in enumerate(items):
+        runs = []
+        ptrs = [p.strip() for p in it.get("evidence", [])]
+        cmds = [p[4:].strip() for p in ptrs if p.startswith("cmd:")]
+        if it["tier"] != "human":
+            for p in ptrs:
+                if p.startswith("commit:"):
+                    runs.append(_ancestor(wt, p[7:].strip(), commit))
+            for c in cmds:
+                if c not in done:
+                    say(f"verify {sid} item {i}: {c}")
+                    done[c] = _run(c, wt, logs / f"{sid}-{commit[:12]}-{len(done)}.log")
+                runs.append(done[c])
+        ok = bool(cmds) and all(r["exit"] == 0 for r in runs)
+        out.append({"item": i, "passed": ok, "runs": runs})
+    return out
+
+
+def _results(sid, commit, out):
+    return {"slice": sid, "commit": commit, "verifier": VERIFIER, "host": socket.gethostname(),
+            "at": datetime.datetime.now().astimezone().isoformat(timespec="seconds"), "items": out}
+
+
+class Checkout:
+    """A clean detached checkout of commit in a temporary worktree, removed on exit."""
+    def __init__(self, root, commit, name):
+        self.root, self.commit = root, commit
+        self.tmp = Path(tempfile.mkdtemp(prefix=f"dshm-{name}-"))
+        self.path = self.tmp / "wt"
+
+    def __enter__(self):
+        _git(self.root, "worktree", "add", "-q", "--detach", str(self.path), self.commit, check=True)
+        return self.path
+
+    def __exit__(self, *exc):
+        _git(self.root, "worktree", "remove", "--force", str(self.path))
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+
+def verify(root, sid, base="HEAD", say=print):
     """Run the evidence of each item of sid on a clean checkout of the head of its branch, and
-    store what ran (commands, exit codes) as the results for that commit. The only writer of
-    results: no command takes results from outside."""
-    plan = load_plan(root)
-    node = next((n for n in plan.get("nodes", []) if n.get("id") == sid), None)
-    if node is None:
-        raise DataError(f"{sid} is not a node of {PLAN_FILE}")
+    store what ran (commands, exit codes) as the results for that commit. The branch comes from
+    plan.json as committed at base (not from an uncommitted edit). The only writer of results:
+    no command takes results from outside."""
+    node = node_at(root, base, sid)
     head = branch_head(root, node["branch"])
     if head is None:
         raise DataError(f"{sid} has no branch with a commit ({node['branch']})")
-    logs = Path(os.environ.get("DSHM_VERIFY_LOGS", "/tmp/dshm-verify"))
-    logs.mkdir(parents=True, exist_ok=True)
-    tmp = Path(tempfile.mkdtemp(prefix=f"dshm-verify-{sid.lower()}-"))
-    wt = tmp / "head"
-    _git(root, "worktree", "add", "-q", "--detach", str(wt), head, check=True)
-    try:
+    with Checkout(root, head, f"verify-{sid.lower()}") as wt:
         _, items = load(wt)
-        done, out = {}, []
-        for i, it in enumerate(items[sid]):
-            runs = []
-            ptrs = [p.strip() for p in it.get("evidence", [])]
-            cmds = [p[4:].strip() for p in ptrs if p.startswith("cmd:")]
-            if it["tier"] != "human":
-                for p in ptrs:
-                    if p.startswith("commit:"):
-                        runs.append(_ancestor(wt, p[7:].strip(), head))
-                for c in cmds:
-                    if c not in done:
-                        say(f"verify {sid} item {i}: {c}")
-                        done[c] = _run(c, wt, logs / f"{sid}-{head[:12]}-{len(done)}.log")
-                    runs.append(done[c])
-            ok = bool(cmds) and all(r["exit"] == 0 for r in runs)
-            out.append({"item": i, "passed": ok, "runs": runs})
-    finally:
-        _git(root, "worktree", "remove", "--force", str(wt))
-        shutil.rmtree(tmp, ignore_errors=True)
-    results = {"slice": sid, "commit": head, "verifier": VERIFIER, "host": socket.gethostname(),
-               "at": datetime.datetime.now().astimezone().isoformat(timespec="seconds"), "items": out}
+        if sid not in items:
+            raise DataError(f"{sid} is not a node of {PLAN_FILE} at {head[:12]}")
+        out = run_items(sid, items[sid], wt, head, say)
+    results = _results(sid, head, out)
     _store(root, head, sid, results)
     return results
 
 
-def derive(root, sid):
-    """passed of each item of sid, from the verifier results for the head of its branch."""
-    plan, items = load(root)
+def derive(root, sid, base="HEAD"):
+    """passed of each item of sid, from the verifier results for the head of its branch. The
+    branch and the items come from the plan as committed at base, not from an uncommitted edit."""
+    plan, items = load_at(root, base)
     node = next((n for n in plan["nodes"] if n["id"] == sid), None)
     if node is None:
-        raise DataError(f"{sid} is not a node of {PLAN_FILE}")
+        raise DataError(f"{sid} is not a node of {PLAN_FILE} at {base}")
     head = branch_head(root, node["branch"])
     if head:    # the items as the head commit has them: the ones that verify ran
         r = _git(root, "show", f"{head}:plan/{sid}.json")
@@ -427,3 +508,106 @@ def derive(root, sid):
         "passed": bool(res) and bool(checked) and all(i["passed"] for i in checked),
         "items": out_items,
     }
+
+
+# ------------------------------------------------------------------------------------ merge
+
+SELF_FILES = ("scripts/plan", "scripts/lib/plandata.py", "scripts/lib/plan.schema.json",
+              "scripts/lib/dshm.py", "scripts/lib/plangen.py")
+
+
+def same_as(root, ref, here):
+    """True when the copies of the merge tools that run now (in the checkout `here`) are the
+    ones committed at ref, byte for byte."""
+    for f in SELF_FILES:
+        want = _git(root, "rev-parse", "-q", "--verify", f"{ref}:{f}").stdout.strip()
+        have = _git(root, "hash-object", "--", str(Path(here, f))).stdout.strip()
+        if not want or want != have:
+            return False
+    return True
+
+
+def _bare_items(items):
+    return [{k: v for k, v in it.items() if k != "evidence"} for it in items]
+
+
+def merge_items(base_items, head_items):
+    """The items that the merge step checks: tier and text as the base has them (the branch
+    may not change them), the evidence of the base, then the pointers that the branch adds."""
+    if _bare_items(base_items) != _bare_items(head_items):
+        raise DataError("the branch changed the items (tier, text, files or screens); "
+                        "the merge step checks the items of the base")
+    out = []
+    for b, h in zip(base_items, head_items):
+        ev = list(b.get("evidence", []))
+        ev += [p for p in h.get("evidence", []) if p not in ev]
+        out.append({**b, "evidence": ev})
+    return out
+
+
+def checked_out(root, branch):
+    """The worktree that has branch checked out, or None."""
+    wt = None
+    for line in _git(root, "worktree", "list", "--porcelain").stdout.splitlines():
+        if line.startswith("worktree "):
+            wt = line[9:]
+        elif line == f"branch refs/heads/{branch}":
+            return wt
+    return None
+
+
+def merge(root, sid, into, dry=False, say=print):
+    """The merge step. Merge the branch of sid into `into`, only if the checks pass on the merge
+    commit itself. Inputs are the ID and the target branch, nothing else: no report, no earlier
+    results. The branch and the items come from the plan as committed at the tip of `into`
+    (the branch's own copy of the items may only add evidence). It makes the merge commit in a
+    clean checkout of that tip, runs the evidence there, stores the results on the merge commit,
+    and then moves `into` to it (fast-forward of the worktree that has `into` checked out, or a
+    compare-and-swap of the ref). The caller (scripts/plan merge) makes sure that this code is
+    the copy committed at the tip of `into`."""
+    base = branch_head(root, into)
+    if base is None:
+        raise DataError(f"no branch {into}")
+    node = node_at(root, base, sid)
+    head = branch_head(root, node["branch"])
+    if head is None:
+        raise DataError(f"{sid} has no branch with a commit ({node['branch']}, from {PLAN_FILE} at {into})")
+    _, base_items = load_at(root, base)
+    r = _git(root, "show", f"{head}:plan/{sid}.json")
+    if r.returncode != 0:
+        raise DataError(f"plan/{sid}.json does not exist at the head of {node['branch']}")
+    head_doc = json.loads(r.stdout)
+    errs = check_against(head_doc, "slice", f"plan/{sid}.json at {head[:12]}")
+    if errs:
+        raise DataError("\n".join(errs))
+    items = merge_items(base_items[sid], head_doc["items"])
+    summary = {"slice": sid, "into": into, "base": base, "branch": node["branch"], "head": head,
+               "merge": None, "passed": False, "merged": False, "items": []}
+    with Checkout(root, base, f"merge-{sid.lower()}") as wt:
+        m = _git(wt, "merge", "--no-ff", "--no-edit", "-m", f"Merge {sid}: {node['title']}", head)
+        if m.returncode != 0:
+            _git(wt, "merge", "--abort")
+            raise DataError(f"the merge of {node['branch']} into {into} failed:\n{m.stdout}{m.stderr}")
+        commit = _git(wt, "rev-parse", "HEAD", check=True).stdout.strip()
+        if _git(wt, "status", "--porcelain").stdout.strip():
+            raise DataError("the merge checkout is not clean after the merge")
+        out = run_items(sid, items, wt, commit, say)
+    _store(root, commit, sid, _results(sid, commit, out))
+    checked = [o for o, it in zip(out, items) if it["tier"] != "human"]
+    passed = bool(checked) and all(item_passed(o) for o in checked)
+    summary.update(merge=commit, passed=passed, items=[
+        {"item": o["item"], "tier": it["tier"], "text": it["text"], "passed": item_passed(o),
+         "runs": [{"cmd": x["cmd"], "exit": x["exit"]} for x in o["runs"]]} for o, it in zip(out, items)])
+    if not passed or dry:
+        return summary
+    wt = checked_out(root, into)
+    if wt:
+        if _git(wt, "status", "--porcelain", "--untracked-files=no").stdout.strip():
+            raise DataError(f"{wt} has {into} checked out with uncommitted changes; not merged")
+        if _git(wt, "rev-parse", "HEAD").stdout.strip() != base:
+            raise DataError(f"{into} moved during the merge step; not merged")
+        _git(wt, "merge", "-q", "--ff-only", commit, check=True)
+    else:
+        _git(root, "update-ref", "-m", f"merge {sid}", f"refs/heads/{into}", commit, base, check=True)
+    summary["merged"] = True
+    return summary
