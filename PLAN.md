@@ -47,7 +47,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S3 | todo | — | 2026-11-10 | Assign it and start a session |
 | S4 | todo | — | 2026-11-10 | Assign it and start a session |
 | S5 | todo | — | 2026-11-10 | Assign it and start a session |
-| S6 | doing | `claude/s6-architecture-current` | 2026-11-10 | Slice owner builds (§8) |
+| S6 | done | merged `46d4f3d` | 2026-11-10 | — |
 | S7 | todo | — | 2026-11-10 | Assign it and start a session |
 
 ## 1. Approach
@@ -368,6 +368,8 @@ Append-only, dated.
 - **2026-11-10 · Interruption: the Mac slept about 5.5 h.** Heartbeat 1a5c4ac0 did not fire from about 10:00 to 15:37 (the Mac or the app slept; the app restarted). Recovery (§5.4): T0 resumed by itself after the restart and runs plan-test. S6 finished at 87befa7 (with the user's TLS 1.3 next transport); a separate reviewer runs its review now (rule of §8 for slices with no [ui] item).
 
 - **2026-11-10 · User confirms: a slice with no [ui] item passes review by a separate test run.** The user confirmed the coordinator rule of 2026-11-10 (in chat, 2026-11-10: "可以") for M2.5: a separate reviewer runs, on the clean head, each cmd:/test: pointer of the slice, the full DSHKit swift test, the bridge tests and an app build for testing; all pass → RESULT: PASS in /tmp/dshm-review/<ID>-<commit>.txt. No longer provisional.
+
+- **2026-11-10 · S6 merged.** Merged as `46d4f3d`; `scripts/check-plan` on the merge commit passed. `scripts/review S6` at `ef8004c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S6-ef8004c.txt`). No open `[human]` items, so S6 is `done`.
 
 ## 9. Pending user confirmation
 
