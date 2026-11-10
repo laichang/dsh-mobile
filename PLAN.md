@@ -149,6 +149,10 @@ A tracer is one thin round trip that one session can finish without running out 
   Not done: the review. `scripts/review` refuses a slice with no [ui] items; the coordinator starts a separate reviewer.
 
   Provisional: D147 (plan/ format; verifier results as git notes in `refs/notes/dshm-verify`). No new dependency.
+- **2026-11-10 · Merged main; ARCHITECTURE in the new style.**
+  - Merged main (S1 wrappers, S6 ARCHITECTURE rewrite) into the branch: 5e40021. ARCHITECTURE.md: the plan/ data and where the verifier results live are one provisional bullet in §7 Testing, with no ID (the file is at the 10k-token cap: about 9,990 now).
+  - plan-test failed after the merge: its provisional-decision fixture needed the `| D57 |` row, which S6 removed. The fixture now adds the row at the end when there is no table. `scripts/check-docs`, `scripts/check-wrappers`, `scripts/plan-test` (`failures: 0`) pass.
+  - Next: the coordinator's reviewer.
 
 ### T1 · Tracer bullet: One fake node from brief to merge through the Workflow
 
