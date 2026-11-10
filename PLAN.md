@@ -44,7 +44,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | T1 | done | merged `15982e9` | 2026-11-10 | — |
 | S1 | done | merged `3b960e8` | 2026-11-10 | — (provisional D150 in §9) |
 | S2 | doing | `claude/s2-slice-brief` | 2026-11-10 | Slice owner builds (§8) |
-| S3 | doing | `claude/s3-run-plan-workflow` | 2026-11-10 | Slice owner builds (§8) |
+| S3 | done | merged `ea755c4` | 2026-11-10 | — |
 | S4 | todo | — | 2026-11-10 | Assign it and start a session |
 | S5 | todo | — | 2026-11-10 | Assign it and start a session |
 | S6 | done | merged `46d4f3d` | 2026-11-10 | — |
@@ -465,6 +465,8 @@ Append-only, dated.
 - **2026-11-10 · Run paused by the user.** The user paused the run (2026-11-10, in chat: "先暂停"). Stopped: the separate reviews of S2 (cc5b2bf) and S3 (b60495c), before they wrote results. Heartbeat 88097d29 deleted. S2 and S3 are built, committed and clean on their branches; their slice sessions are idle. To resume: rerun both reviews; merge the first that passes; the other merges main (they conflict only in ARCHITECTURE.md); then S4.
 
 - **2026-11-10 · Run resumed by the user.** The user resumed the run (2026-11-10, in chat: "继续"). S2 cc5b2bf and S3 b60495c unchanged. New heartbeat: CronCreate job 09bd2dd0. The S2 and S3 reviewers resumed.
+
+- **2026-11-10 · S3 merged.** Merged as `ea755c4`; `scripts/check-plan` on the merge commit passed. `scripts/review S3` at `b60495c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S3-b60495c.txt`). No open `[human]` items, so S3 is `done`.
 
 ## 9. Pending user confirmation
 
