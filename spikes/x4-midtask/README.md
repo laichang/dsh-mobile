@@ -20,7 +20,7 @@ While pending, both show up in `sessionController.state().queue` with `placement
 Both were accepted in a `steer` and reached the model in the same turn's next step. A real non-vision model route may refuse images ("image-input check"). That's unverified here, and the bridge must map such a refusal to a typed error.
 
 **Agent questions surface on their own seam, distinct from approvals.** The `ask_user_question` tool calls `ctx.userQuestions.ask()`, which dispatches the **`user-questions/request`** waterfall (approvals use `approval/request`).
-- **Holding works like approvals.** The web forwarder holds the question with no tab open, and `sessionController.state().pendingInput` says `['question']`, where an approval says `['approval']`. A prepended plugin answerer parks it the same way, and the web then sees nothing. The same prepend + fan-out holder as X1/D17 applies.
+- **Holding works like approvals.** The web forwarder holds the question with no tab open, and `sessionController.state().pendingInput` says `['question']`, where an approval says `['approval']`. A prepended plugin answerer parks it the same way, and the web then sees nothing. The same prepend + fan-out holder as X1 applies.
 - **Request:** `{ questions, agent, signal }`, with no `callId`. Each question has `id`, `question`, `header`, `options[{label, description}]`, and optional `multiSelect` / `intent`. The questions carry everything needed for display, so no join with the tool call is needed.
 - **Answer:** `{ answers: [{ id, selected: [labels], custom? }] }`. The model gets it verbatim as the tool result. An empty `selected` with no `custom` means "skipped".
 - **A steer sent while a question waits doesn't release it.** It lands in the step after the answer. To unblock the agent, the user answers the question (or cancels the turn).
@@ -31,7 +31,7 @@ Both were accepted in a `steer` and reached the model in the same turn's next st
 
 - **§1, mid-task context row:** now verified (steer vs queue, attachments, question seam). Confirmed by the user on 2026-11-05.
 - **§8.6:** marked as answered by X4 (confirmed by the user on 2026-11-05).
-- **D18** (confirmed by the user on 2026-11-05):
+- **The mid-task context decision** (confirmed by the user on 2026-11-05):
   - The facade exposes `SendMessage { task_id, mode: STEER | QUEUE, parts }`. The app defaults to `STEER`, because a follow-up written while the agent works is meant for this task now.
   - Agent questions go through the same bridge holder as approvals, as their own `QuestionPending` / `AnswerQuestion` messages, not as approvals.
 

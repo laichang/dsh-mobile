@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+"""Checks that the living docs tell the current state, not a history of decisions.
+
+  scripts/check-docs [--root DIR]     exit 0 = clean; exit 1 = each problem on one line
+
+Files: ARCHITECTURE.md, STORY.md, AGENTS.md and each README*.md in the repository (git ls-files;
+under --root without git, every README*.md). Rules:
+  - no decision ID: the word D<number> (for example D12)
+  - no milestones section: a heading named Milestones, Roadmap, 里程碑 or 路线图, or a table row
+    that starts with a milestone name (| M1 |, | **M2** |)
+  - ARCHITECTURE.md is at most 10,000 tokens (estimate below)
+
+Token estimate: one token for each 3.7 ASCII characters, plus one token for each other character
+(CJK text is about one token for each character). On the old ARCHITECTURE.md (137,554 bytes,
+about 37k tokens with a real tokenizer) it gives about 37k.
+
+Tests: scripts/check-docs-test.
+"""
+import os
+import re
+import subprocess
+import sys
+
+DOCS = ["ARCHITECTURE.md", "STORY.md", "AGENTS.md"]
+MAX_ARCH_TOKENS = 10_000
+DECISION = re.compile(r"\bD[0-9]+\b")
+HEADING = re.compile(r"^#{1,6}\s+(?:[0-9.]+\s+)?(milestones?|roadmap|里程碑|路线图)\s*#*\s*$", re.I)
+MILESTONE_ROW = re.compile(r"^\|\s*\**M[0-9]+\**\s*\|")
+
+
+def estimate_tokens(text):
+    ascii_chars = sum(1 for c in text if ord(c) < 128)
+    return round(ascii_chars / 3.7) + (len(text) - ascii_chars)
+
+
+def readmes(root):
+    try:
+        out = subprocess.run(["git", "-C", root, "ls-files", "--", "*README*.md", "README*.md"],
+                             capture_output=True, text=True, check=True).stdout
+        files = [f for f in out.splitlines() if f]
+        if files:
+            return sorted(set(files))
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    found = []
+    for d, dirs, names in os.walk(root):
+        dirs[:] = [x for x in dirs if x not in (".git", "node_modules", ".build")]
+        found += [os.path.relpath(os.path.join(d, n), root) for n in names
+                  if n.startswith("README") and n.endswith(".md")]
+    return sorted(found)
+
+
+def check(root):
+    problems = []
+    for rel in DOCS + readmes(root):
+        path = os.path.join(root, rel)
+        if not os.path.isfile(path):
+            continue
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+        in_fence = False
+        for n, line in enumerate(text.splitlines(), 1):
+            if line.lstrip().startswith("```"):
+                in_fence = not in_fence
+            m = DECISION.search(line)
+            if m:
+                problems.append(f"{rel}:{n}: decision ID {m.group(0)}: say the reason without an ID")
+            if not in_fence and (HEADING.match(line) or MILESTONE_ROW.match(line)):
+                problems.append(f"{rel}:{n}: milestones section: the docs tell the current state; "
+                                "work to do is an issue")
+        if rel == "ARCHITECTURE.md":
+            tokens = estimate_tokens(text)
+            if tokens > MAX_ARCH_TOKENS:
+                problems.append(f"{rel}: about {tokens} tokens, more than {MAX_ARCH_TOKENS}")
+    return problems
+
+
+def main(argv):
+    root = None
+    if len(argv) == 2 and argv[0] == "--root":
+        root = argv[1]
+    elif argv:
+        print(__doc__.strip().splitlines()[2], file=sys.stderr)
+        return 2
+    if root is None:
+        root = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True,
+                              text=True, check=True).stdout.strip()
+    problems = check(root)
+    for p in problems:
+        print(p)
+    if problems:
+        print(f"check-docs: {len(problems)} problem(s)")
+        return 1
+    print("check-docs: ok")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -1,6 +1,6 @@
 # X2 · Spike: Noise interop: conclusion
 
-Working note for PLAN.md X2 (answers ARCHITECTURE §8.3, feeds D6 and S1). Archive it to `.archive/YYYYMMDD/x2-noise.md` once S1 has acted on it.
+Working note for PLAN.md X2 (answers ARCHITECTURE §8.3, feeds the Noise choice and S1). Archive it to `.archive/YYYYMMDD/x2-noise.md` once S1 has acted on it.
 
 ## Answer
 
@@ -44,7 +44,7 @@ You need Swift 6.2+ (Xcode 26) and Node ≥ 22.18, which strips TypeScript types
 
 ## Pattern choice
 
-- **`IK` over `XX`.** The QR already delivers the host static key, which is exactly `IK`'s precondition. `XX` costs an extra half round trip, and its only advantage, not needing the host key in advance, doesn't apply here. `XX` only makes sense if some future flow has no QR. None is planned: the relay in D7 still pairs by QR.
+- **`IK` over `XX`.** The QR already delivers the host static key, which is exactly `IK`'s precondition. `XX` costs an extra half round trip, and its only advantage, not needing the host key in advance, doesn't apply here. `XX` only makes sense if some future flow has no QR. None is planned: a relay, if ever built, would still pair by QR.
 - **A PSK fits the one-time pairing secret, but use `psk1`, not WireGuard's `psk2`.** In `IKpsk2` the psk is mixed in at the end of message 2. So a phone with the wrong secret passes the host's first read, the host answers, and the host can only tell from the phone's first transport message (`ikpsk2WrongSecretPassesFirstMessage`). In `IKpsk1` the psk is mixed in at the end of message 1, so the host rejects before replying (`ikpsk1WrongSecretFailsFirstMessage`, `pairingWrongSecretRejected`). Both are spec-listed patterns, and both are vector-tested here.
 - **Alternative considered: plain `IK` with the secret in the message-1 payload.** That also works, because only the host's static key can decrypt it. But it needs an app-level constant-time compare, and it doesn't bind the secret into the session keys. With `psk1`, a wrong secret is just an AEAD failure inside Noise.
 - **Cipher: ChaChaPoly.** It's the conventional Noise/WireGuard choice, fast in software on both sides, and doesn't depend on AES hardware. AESGCM passes everything too; switching is a one-word change in the protocol name.
@@ -70,7 +70,7 @@ On the TS side, `@noble/*` covers every primitive (x25519, chacha20poly1305, gcm
 2. **The `IK` message-1 payload is replayable and not forward-secret** with respect to the host static key. Keep message 1 and message 2 payloads empty, and send `Hello` as the first transport message.
 3. **Replay of message 1 during pairing.** A replayed message 1 still decrypts, but the replayer can't finish the handshake without the ephemeral private key. So the bridge should mark the secret used on the first valid message 1, and register the device only after the phone's first valid transport message.
 4. **Choosing the pattern before message 1 is unauthenticated.** The host must know pair vs reconnect before reading message 1, e.g. from a one-byte mode in the first frame or a separate WebSocket path. Bind that mode (and the protocol version) into the **prologue**, so tampering just fails the handshake.
-5. **Noise transport assumes in-order, lossless delivery.** WebSocket over TCP gives that. Reconnecting means a new handshake, and there's no session resumption at the crypto layer. A relay that could reorder or drop frames (D7 v2) would need explicit nonces.
+5. **Noise transport assumes in-order, lossless delivery.** WebSocket over TCP gives that. Reconnecting means a new handshake, and there's no session resumption at the crypto layer. A relay that could reorder or drop frames would need explicit nonces.
 6. **65535-byte limit per Noise message.** Protocol frames larger than about 64 KiB, such as artifacts in M3, must be chunked above Noise.
 7. **noble is pure JS.** That's fine for control traffic. If M3 artifact throughput matters, measure it, and consider `node:crypto`'s chacha20-poly1305 behind the same `CipherState`.
 8. **Rekey** is implemented but not exercised by vectors or used. M1 sessions are short-lived, so leave it off.
@@ -82,4 +82,4 @@ On the TS side, `@noble/*` covers every primitive (x25519, chacha20poly1305, gcm
 3. **Wire:** each WebSocket binary message carries one Noise message. The first frame starts with a one-byte mode (`pair` | `reconnect`). Prologue = `"dshm/1" ‖ mode`. Handshake payloads are empty, and `Hello` is the first transport frame.
 4. **QR:** host static public key (32 B), a pairing secret (32 random bytes, used as the `psk1` value), address(es), and an expiry. Enforce secret expiry and single use in the bridge; S1 already has a Done when item for this.
 5. **Keys:** the phone's X25519 Noise static key goes in the Keychain. Open question for S1: with `IK`, the phone's Noise static key already authenticates the device, so decide whether the separate Secure Enclave P-256 identity key (ARCHITECTURE §4) is still needed in M1, or only later (e.g. for signing approvals).
-6. **ARCHITECTURE D6** can then name the concrete choice: `IKpsk1` for pairing, `IK` for reconnect, `25519_ChaChaPoly_SHA256`, prologue binding. Changing a `Dxx` entry is the user's call, so it's proposed here and not edited.
+6. **ARCHITECTURE.md** can then name the concrete choice: `IKpsk1` for pairing, `IK` for reconnect, `25519_ChaChaPoly_SHA256`, prologue binding. Changing a recorded decision is the user's call, so it's proposed here and not edited.

@@ -34,15 +34,15 @@ Screens: [`web/no-balance.jpg`](web/no-balance.jpg), [`web/invalid-key.jpg`](web
 - `AUTH`, `QUOTA`, `INVALID_REQUEST`, `HTTP_404` are **not** retried: the turn ends after one request.
 - Each `llm/retry` carries `{ retry, maxRetries, mode, delayMs, failure: { message, code, status } }`. The bridge can show "retrying (n/5)" from it; S3 doesn't need to.
 
-### Text the phone can show (D104, provisional)
+### Text the phone can show (now in ARCHITECTURE.md §4.9)
 
 - Route on `turn/end.reason.error.code`, like DSH web (`dsh-client-ui-chat` `failureMessage`): `AUTH` → its own copy (DeepSeek's 401 text names a masked key), `QUOTA` / `ACCOUNT_QUOTA` → its own copy ("insufficient balance" in the user's language). Every other code: show `message` as it is, with the code as a small tag.
 - `message` is the provider's English text. For DeepSeek it's short and fit to show ("Model Not Exist", "Insufficient Balance", "Rate Limit Reached").
-- Today's bridge (`describeFailure`) sends `"error: <message>"` and drops `code`. S3 should carry `code` to the app (D104).
+- Today's bridge (`describeFailure`) sends `"error: <message>"` and drops `code`. S3 should carry `code` to the app.
 
 ### A new message after the failure
 
-Tested for every terminal case: after the failure, the provider is healed and a `steer` prompt goes into the same session. DSH accepts it at once (`{ accepted: true }`), starts turn 2, and the turn completes normally (~0.8 s with the mock). The failed turn 1 writes no `assistant/message` (only `assistant/attempt`), so the history holds the two user messages and no failed output (per the dsh-llm-retry README, failed attempts never reach the model; the request body itself was not checked). This is S3's "top up, then send a new message" path, and it needs nothing beyond D89's follow-up.
+Tested for every terminal case: after the failure, the provider is healed and a `steer` prompt goes into the same session. DSH accepts it at once (`{ accepted: true }`), starts turn 2, and the turn completes normally (~0.8 s with the mock). The failed turn 1 writes no `assistant/message` (only `assistant/attempt`), so the history holds the two user messages and no failed output (per the dsh-llm-retry README, failed attempts never reach the model; the request body itself was not checked). This is S3's "top up, then send a new message" path, and it needs nothing beyond the follow-up message.
 
 ### Making each case in tests
 
