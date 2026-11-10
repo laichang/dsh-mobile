@@ -207,7 +207,9 @@ s90=$(awk '/^### S90 /{f=1} /^### S91 /{f=0} f' PLAN.md)
 printf '%s\n' "$s90" | tail -4 | grep -qF "· built, to review.**" && ok "Log entry at the end of S90" || bad "Log entry not at the end of S90"
 # A provisional decision and a commit, then the merge.
 first=$(awk -F'\t' '$1=="S90"{print $10}' scripts/resources.tsv | sed -E 's/^D([0-9]+).*/\1/')
-awk -v n="$first" '{print} /^\| D57 \|/{print "| D" n " | *Provisional, pending user confirmation (S90, test).* **A test decision.** Text. | Why. |"}' \
+# After the D57 row, or at the end when ARCHITECTURE.md has no decision table.
+awk -v n="$first" 'function row(){print "| D" n " | *Provisional, pending user confirmation (S90, test).* **A test decision.** Text. | Why. |"; done=1}
+  {print} /^\| D57 \|/{row()} END{if(!done){print ""; print "| # | Decision | Why |"; print "|---|---|---|"; row()}}' \
   ARCHITECTURE.md > ARCHITECTURE.md.new && mv ARCHITECTURE.md.new ARCHITECTURE.md
 # An open [human] item, so the merge leaves S90 in review.
 python3 - <<'PY'
