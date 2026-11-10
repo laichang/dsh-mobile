@@ -43,7 +43,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | T0 | done | merged `e3daa5a` | 2026-11-10 | — |
 | T1 | done | merged `15982e9` | 2026-11-10 | — |
 | S1 | done | merged `3b960e8` | 2026-11-10 | — (provisional D150 in §9) |
-| S2 | doing | `claude/s2-slice-brief` | 2026-11-10 | Slice owner builds (§8) |
+| S2 | doing | `claude/s2-slice-brief` | 2026-11-10 | Round 2: Why/Cuts/Not in the brief, merge main; then a new separate review |
 | S3 | done | merged `ea755c4` | 2026-11-10 | — |
 | S4 | todo | — | 2026-11-10 | Assign it and start a session |
 | S5 | todo | — | 2026-11-10 | Assign it and start a session |
