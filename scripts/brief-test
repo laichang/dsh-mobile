@@ -1,0 +1,267 @@
+#!/usr/bin/env python3
+"""Tests for scripts/brief, in a temporary clone (the repo is not touched).
+
+  scripts/brief-test        ends with "failures: 0"; exit 1 on a failure
+
+Fixtures: the live plan/ (each node, --preview for a node with no branch), the fake plan of
+scripts/fixtures/fake-plan/, and a generated node of the largest size (5 items, many files in each
+area, evidence and a demo). For each brief:
+  - it is 3,000 tokens or fewer, with the token estimate of scripts/check-docs;
+  - each repo path it names exists at the base (a file marked "new" must not exist; the text of an
+    item is plan data and may name a file to make), each command
+    in its Commands list starts with an executable file of the base, and each fact it quotes from
+    AGENTS.md or ARCHITECTURE.md was found.
+Also: the T1 interface (--round, --base, --out; the path is printed) and the refusals.
+"""
+
+import importlib.machinery
+import json
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+SRC = Path(subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True,
+                          check=True).stdout.strip())
+MAX_TOKENS = 3000
+estimate_tokens = importlib.machinery.SourceFileLoader(
+    "check_docs", str(SRC / "scripts/check-docs")).load_module().estimate_tokens
+# The working copy of the tools and docs that the brief uses (they may be uncommitted in SRC).
+OVERLAY = ["scripts/brief", "scripts/brief-test", "scripts/check-docs", "scripts/lib", "plan", "AGENTS.md", "ARCHITECTURE.md"]
+EXTS = (".md", ".sh", ".json", ".py", ".ts", ".mjs", ".js", ".proto", ".swift", ".html", ".png", ".tsv", ".xcconfig")
+PATH_RE = re.compile(r"[A-Za-z0-9_.][A-Za-z0-9_./-]*")
+
+fails = 0
+largest = (0, "")
+
+
+def ok(name):
+    print(f"  ok    {name}")
+
+
+def bad(name, detail=""):
+    global fails
+    fails += 1
+    print(f"  FAIL  {name}")
+    for line in detail.splitlines()[:12]:
+        print(f"        {line}")
+
+
+def git(repo, *args):
+    return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, check=True).stdout
+
+
+def run_brief(repo, *args):
+    return subprocess.run([str(repo / "scripts/brief"), *args], cwd=repo, capture_output=True, text=True)
+
+
+def tree(repo):
+    """{path: mode} of HEAD."""
+    out = {}
+    for line in git(repo, "ls-tree", "-r", "-z", "HEAD").split("\0"):
+        if line:
+            meta, path = line.split("\t", 1)
+            out[path] = meta.split()[0]
+    return out
+
+
+def exists(word, modes):
+    """word is a file or directory of the tree, or the end of one (`frame.proto`, `fixtures/`)."""
+    w = word.rstrip("/")
+    return any(p == w or p.startswith(w + "/") or p.endswith("/" + w) or f"/{w}/" in f"/{p}" for p in modes)
+
+
+def path_like(word):
+    if word.startswith("claude/") or word in (".", ".."):     # a branch name, not a path
+        return False
+    return "/" in word or any(word.endswith(e) and len(word) > len(e) for e in EXTS)
+
+
+def check_brief(name, text, modes):
+    global largest
+    tokens = estimate_tokens(text)
+    if tokens > largest[0]:
+        largest = (tokens, name)
+    if tokens <= MAX_TOKENS:
+        ok(f"{name}: about {tokens} tokens, {MAX_TOKENS} or fewer")
+    else:
+        bad(f"{name}: about {tokens} tokens, more than {MAX_TOKENS}")
+    missing, extra = [], []
+    for line in text.splitlines():
+        if re.match(r"\d+\. \[", line):     # the text of an item: plan data, it may name files to make
+            continue
+        new = "(new" in line
+        for tok in re.findall(r"`([^`]+)`", line):
+            tok = re.sub(r"\b(cmd|commit):", " ", tok)
+            for word in tok.split():
+                if word.startswith("/") or "<" in word or "*" in word or "$" in word and "/" not in word:
+                    continue
+                for w in PATH_RE.findall(word):
+                    if not path_like(w):
+                        continue
+                    if exists(w, modes):
+                        if new and line.lstrip("- `").startswith(w):
+                            extra.append(w)
+                    elif not new:
+                        missing.append(w)
+    if missing:
+        bad(f"{name}: each path it names exists", "missing: " + ", ".join(sorted(set(missing))))
+    else:
+        ok(f"{name}: each path it names exists")
+    if extra:
+        bad(f"{name}: a file marked new does not exist yet", ", ".join(extra))
+    cmds = re.search(r"^## Commands\n(.*?)^## ", text, re.S | re.M)
+    problems = []
+    for line in (cmds.group(1) if cmds else "").splitlines():
+        m = re.match(r"- `([^`]+)`", line)
+        if not m:
+            continue
+        exe = m.group(1).split()[0]
+        if "(new" in line:
+            if exe in modes:
+                problems.append(f"{exe} is marked new but exists")
+        elif modes.get(exe) != "100755":
+            problems.append(f"{exe} is not an executable file of the base")
+    if not cmds or not re.search(r"^- `", cmds.group(1), re.M):
+        problems.append("no Commands list")
+    if problems:
+        bad(f"{name}: each command it names exists", "\n".join(problems))
+    else:
+        ok(f"{name}: each command it names exists")
+    if "(not found:" in text:
+        bad(f"{name}: each fact was found", "\n".join(l for l in text.splitlines() if "(not found:" in l))
+    else:
+        ok(f"{name}: each fact was found")
+
+
+def briefs_of(repo, label):
+    """Brief each node of plan/plan.json at HEAD of repo, and check each one."""
+    modes = tree(repo)
+    plan = json.loads((repo / "plan/plan.json").read_text())
+    for node in plan["nodes"]:
+        out = repo.parent / f"brief-{label}-{node['id']}.md"
+        args = [node["id"], "--out", str(out)] + ([] if node["branch"] else ["--preview"])
+        r = run_brief(repo, *args)
+        if r.returncode != 0:
+            bad(f"{label} {node['id']}: brief exits 0", r.stderr)
+            continue
+        check_brief(f"{label} {node['id']}", out.read_text(), modes)
+
+
+def commit_plan(repo, branch, plan, slices):
+    git(repo, "checkout", "-q", "-B", branch)
+    shutil.rmtree(repo / "plan")
+    (repo / "plan").mkdir()
+    (repo / "plan/plan.json").write_text(json.dumps(plan, indent=2) + "\n")
+    for sid, items in slices.items():
+        (repo / f"plan/{sid}.json").write_text(json.dumps({"id": sid, "items": items}, indent=2) + "\n")
+    git(repo, "add", "-A", "plan")
+    git(repo, "commit", "-q", "-m", f"fixture {branch}")
+
+
+def largest_node():
+    """One node of the largest size a plan allows: 5 items, files in each area, evidence, a demo."""
+    areas = ["ios/DSHKit/Package.swift", "ios/dsh-mobile/Features/Session/SessionPage.swift",
+             "bridge/src/dsh.ts", "bridge/package.json", "protocol/frame.proto", "scripts/plan",
+             "scripts/lib/plandata.py", "plan/plan.json", "ARCHITECTURE.md"]
+    items = []
+    for i in range(5):
+        items.append({
+            "tier": "human" if i == 4 else ("ui" if i == 3 else "auto"),
+            "text": (f"Item {i + 1}: after a change in each area, the app, the bridge and the protocol "
+                     "keep their behavior; a failing test shows as one file:line line, and the full log "
+                     "is in the log directory of the wrappers, with a summary of 20 lines or fewer"),
+            "files": areas[i:i + 5] + [f"scripts/new-tool-{i}", f"ios/dsh-mobile/Features/New{i}.swift"],
+            "screens": [],
+            "passed": False,
+            "evidence": ["cmd:scripts/plan-test", f"cmd:scripts/demo/t0.sh --part {i}",
+                         "cmd:scripts/new-tool-0 --check", "commit:693a17f"],
+        })
+    plan = {"title": "Largest node", "nodes": [
+        {"id": "S98", "kind": "slice", "title": "A node of the largest size, in every area of the repo",
+         "needs": [], "branch": "claude/s98-largest"}]}
+    return plan, {"S98": items}
+
+
+def main():
+    tmp = Path(tempfile.mkdtemp(prefix="dshm-brief-test."))
+    try:
+        repo = tmp / "repo"
+        subprocess.run(["git", "clone", "-q", str(SRC), str(repo)], check=True)
+        for rel in OVERLAY:
+            dst = repo / rel
+            if dst.is_dir():
+                shutil.rmtree(dst)
+            if (SRC / rel).is_dir():
+                shutil.copytree(SRC / rel, dst, ignore=shutil.ignore_patterns("__pycache__"))
+            else:
+                shutil.copy2(SRC / rel, dst)
+        git(repo, "checkout", "-q", "-B", "base")
+        git(repo, "add", "-A")
+        git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "overlay")
+        git(repo, "config", "user.name", "t")
+        git(repo, "config", "user.email", "t@t")
+
+        print("the checks catch a bad brief")
+        global fails
+        import contextlib, io
+        bad_text = ("# Brief\n\n## Files\n\n- `scripts/no-such-file`\n\n## Commands\n\n- `scripts/no-such-tool --x`: y\n\n"
+                    "## Facts\n\n- (not found: ARCHITECTURE.md x)\n\n" + "word " * 4000 + "\n## Rules\n")
+        before, keep = fails, largest
+        with contextlib.redirect_stdout(io.StringIO()):
+            check_brief("bad", bad_text, tree(repo))
+        caught, fails = fails - before, before
+        globals()["largest"] = keep
+        (ok if caught == 4 else bad)(f"too many tokens, a missing path, a missing command, a missing fact: {caught} of 4 caught")
+
+        print("live plan/")
+        briefs_of(repo, "plan")
+
+        print("T1 interface")
+        plan = json.loads((repo / "plan/plan.json").read_text())
+        unassigned = next((n["id"] for n in plan["nodes"] if not n["branch"]), None)
+        if unassigned:
+            r = run_brief(repo, unassigned, "--out", str(tmp / "x.md"))
+            (ok if r.returncode == 1 and "no branch" in r.stderr else bad)(
+                f"a node with no branch is refused without --preview ({unassigned})")
+        r = run_brief(repo, "S999", "--preview", "--out", str(tmp / "x.md"))
+        (ok if r.returncode == 1 else bad)("an unknown node is refused")
+
+        fake = SRC / "scripts/fixtures/fake-plan"
+        commit_plan(repo, "fake", json.loads((fake / "plan.json").read_text()),
+                    {p.stem: json.loads(p.read_text())["items"] for p in fake.glob("S*.json")})
+        git(repo, "checkout", "-q", "base")
+        out = tmp / "round2" / "S99.md"
+        r = run_brief(repo, "S99", "--round", "2", "--base", "fake", "--out", str(out))
+        if r.returncode == 0 and r.stdout.strip() == str(out) and out.exists():
+            ok("--round, --base, --out: the brief is written to --out and its path is printed")
+            text = out.read_text()
+            (ok if "round 2" in text and "Branch: `claude/s99-fake-node`" in text else bad)(
+                "the brief has the round and the branch of the node at --base")
+            (ok if "fake-node/hello.txt` (new)" in text else bad)("a file that the base does not have is marked new")
+        else:
+            bad("--round, --base, --out", r.stdout + r.stderr)
+
+        print("fake plan (scripts/fixtures/fake-plan)")
+        git(repo, "checkout", "-q", "fake")
+        briefs_of(repo, "fake")
+
+        print("largest node")
+        commit_plan(repo, "largest", *largest_node())
+        briefs_of(repo, "largest")
+        text = (tmp / "brief-largest-S98.md").read_text()
+        (ok if "scripts/demo/t0.sh" in text else bad)("a demo that the items name is in the commands")
+        (ok if "`scripts/new-tool-0 --check`: evidence of an item (new" in text else bad)(
+            "an evidence command that the base does not have is marked new")
+        (ok if "do not tick it" in text else bad)("a [human] item is the user's")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    print(f"largest brief: about {largest[0]} tokens ({largest[1]})")
+    print(f"failures: {fails}")
+    return 1 if fails else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
