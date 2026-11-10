@@ -30,7 +30,7 @@ def brief(root, sid, rnd, base):
     tip = dshm.git("rev-parse", "--verify", f"{base}^{{commit}}", cwd=root)
     wt = plandata.checked_out(root, node["branch"])
     where = (f"`{wt}` (it has the branch checked out)" if wt else
-             f"none yet: `git worktree add /tmp/dshm-{sid.lower()}-wt {node['branch']}`")
+             f"none yet: `git -C {root} worktree add /tmp/dshm-{sid.lower()}-wt {node['branch']}`")
     lines = [
         f"# Brief: {sid} · {node['title']} · round {rnd}",
         "",
