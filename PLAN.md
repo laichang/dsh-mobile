@@ -44,7 +44,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | T1 | done | merged `15982e9` | 2026-11-10 | — |
 | S1 | done | merged `3b960e8` | 2026-11-10 | — (provisional D150 in §9) |
 | S2 | doing | `claude/s2-slice-brief` | 2026-11-10 | Slice owner builds (§8) |
-| S3 | todo | — | 2026-11-10 | Assign it and start a session |
+| S3 | doing | `claude/s3-run-plan-workflow` | 2026-11-10 | Slice owner builds (§8) |
 | S4 | todo | — | 2026-11-10 | Assign it and start a session |
 | S5 | todo | — | 2026-11-10 | Assign it and start a session |
 | S6 | done | merged `46d4f3d` | 2026-11-10 | — |
@@ -452,6 +452,8 @@ Append-only, dated.
 - **2026-11-10 · T1 merged.** Merged as `15982e9`; `scripts/check-plan` on the merge commit passed. `scripts/review T1` at `80be885`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/T1-80be885.txt`). No open `[human]` items, so T1 is `done`.
 
 - **2026-11-10 · S2 assigned.** Branch `claude/s2-slice-brief`, simulator `dshm-S2`, DSHM_HOME `~/.dshm/home-s2`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D159–D161. `eval "$(scripts/slice-env S2)"` exports them.
+
+- **2026-11-10 · S3 assigned.** Branch `claude/s3-run-plan-workflow`, simulator `dshm-S3`, DSHM_HOME `~/.dshm/home-s3`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D162–D164. `eval "$(scripts/slice-env S3)"` exports them.
 
 ## 9. Pending user confirmation
 
