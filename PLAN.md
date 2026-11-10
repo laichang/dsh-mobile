@@ -153,6 +153,12 @@ A tracer is one thin round trip that one session can finish without running out 
   - Merged main (S1 wrappers, S6 ARCHITECTURE rewrite) into the branch: 5e40021. ARCHITECTURE.md: the plan/ data and where the verifier results live are one provisional bullet in §7 Testing, with no ID (the file is at the 10k-token cap: about 9,990 now).
   - plan-test failed after the merge: its provisional-decision fixture needed the `| D57 |` row, which S6 removed. The fixture now adds the row at the end when there is no table. `scripts/check-docs`, `scripts/check-wrappers`, `scripts/plan-test` (`failures: 0`) pass.
   - Next: the coordinator's reviewer.
+- **2026-11-10 · Review FAIL repaired: verify is the only writer of results.**
+  - The review at c78da12 found a bypass: `scripts/plan record` took any JSON, and `git notes` could write the results ref by hand.
+  - Repair (e8b680b): `record` is gone. `scripts/plan verify <ID>` checks out the branch head clean, runs the `cmd:` evidence of each item there, checks `commit:` pointers, and stores commands, exit codes and logs as the note for that commit. `passed` counts an item only with runs that all exited 0, from a note in the verify shape. Items get an `evidence` list (plan/T0.json has it).
+  - plan-test: no `scripts/plan` command takes `--results`; verify runs each check one time and removes its checkout; a failing check, a hand-written note and a committed hand edit of `passed` do not pass. `failures: 0`. check-docs and check-wrappers pass.
+  - ARCHITECTURE: results are advisory (a shell can forge a note); the merge step reruns verify.
+  - Guard patches for the user, not applied: /tmp/dshm-t0-patch2/a-protect-plandata.patch (plandata.py and the schema into PROTECTED, also in plan-guard) and /tmp/dshm-t0-patch2/b-git-guard-notes.patch (git-guard denies agent writes to refs/notes/dshm-verify; verify passes because the hook sees only the typed command). guard-test on a scratch clone with both: failures: 0.
 
 ### T1 · Tracer bullet: One fake node from brief to merge through the Workflow
 
