@@ -16,15 +16,35 @@ Read-only (anywhere):
   plan lint                            check the format of PLAN.md and the files in plan/ (exit 1)
   plan dag --json                      write the graph of plan/plan.json (nodes, edges, order) to
         stdout; a cycle, an unknown need or a schema error makes it fail (no PLAN.md needed)
-  plan passed <ID> [--json]            passed of each item of <ID>, derived from the verifier
-        results for the head commit of its branch (scripts/lib/plandata.py); results for an
-        older commit are stale and count for nothing
+  plan passed <ID> [--json] [--base REF]   passed of each item of <ID>, derived from the
+        verifier results for the head commit of its branch (scripts/lib/plandata.py); results
+        for an older commit are stale and count for nothing. The branch and the items come from
+        plan/ as committed at REF (default HEAD), never from an uncommitted edit
 
 Verifier (not the slice owner; WORKFLOW.md §10):
-  plan verify <ID>                     check out the head commit of the branch of <ID> clean, run
-        the `cmd:` evidence of each item there (and check `commit:` pointers), and store the
-        commands and exit codes as a git note on that commit. The only way to make results: no
-        command takes them from outside. Logs: /tmp/dshm-verify/
+  plan verify <ID> [--base REF]        check out the head commit of the branch of <ID> (from
+        plan/plan.json as committed at REF, default HEAD) clean, run the `cmd:` evidence of each
+        item there (and check `commit:` pointers), and store the commands and exit codes as a
+        git note on that commit. The only way to make results: no command takes them from
+        outside. A `cmd:` is a repo-relative executable file of the commit, with no symlink in
+        its path. Logs: /tmp/dshm-verify/
+
+Merge step (the coordinator, or the merge node of the Workflow):
+  plan merge <ID> --into <branch> [--allow-changed-evidence PATH] [--dry-run]
+        merge the branch of <ID> into <branch> only if the checks pass on the merge commit.
+        It always runs the copy of these tools committed at the tip of <branch> (it starts that
+        copy from a clean checkout when the running copy differs), takes the branch and the
+        items from plan/ as committed there (the slice branch may only add evidence), makes the
+        merge commit in a clean checkout, runs the evidence on it, stores the results on the
+        merge commit, and then moves <branch> to it. It reads no report and no earlier results.
+        A protected evidence file that the branch changes or deletes stops the merge: a reviewer
+        or the user must look at it. Protected: each file of the target that a `cmd:` names (the
+        executable, a file argument, or a path that such a script names), every file of the
+        target in the directory of a `cmd:` file and below it (a file at the top of the repo
+        protects only itself), and scripts/lib/. It does not follow calls. After that, the coordinator passes
+        --allow-changed-evidence <path> (repeatable); the merge commit message records it. New
+        evidence files of the branch are listed as "new evidence, judged by the reviewer".
+        Prints a JSON summary; exit 0 = merged (--dry-run: passed), 1 = not
 
 Coordinator (on main):
   plan new "<title>"                   start the plan of a requirement the user has set, from
@@ -270,7 +290,7 @@ def cmd_dag(p, a):
 
 def cmd_passed(p, a):
     try:
-        d = plandata.derive(p.root, a.id)
+        d = plandata.derive(p.root, a.id, a.base)
     except plandata.DataError as e:
         raise PlanError(str(e))
     if a.json:
@@ -291,13 +311,41 @@ def cmd_passed(p, a):
 
 def cmd_verify(p, a):
     try:
-        res = plandata.verify(p.root, a.id, say=lambda m: print(f"plan: {m}", flush=True))
+        res = plandata.verify(p.root, a.id, a.base, say=lambda m: print(f"plan: {m}", flush=True, file=sys.stderr))
     except plandata.DataError as e:
         raise PlanError(str(e))
     ok = sum(1 for r in res["items"] if plandata.item_passed(r))
     print(f"plan: verified {a.id} at {res['commit'][:12]}: {ok} of {len(res['items'])} items passed "
           f"({plandata.NOTES_REF})")
     return 0
+
+
+def cmd_merge(p, a):
+    root, say = p.root, (lambda m: print(f"plan: {m}", flush=True, file=sys.stderr))
+    base = dshm.git("rev-parse", "-q", "--verify", f"refs/heads/{a.into}^{{commit}}", cwd=root, check=False)
+    if not base:
+        raise PlanError(f"no branch {a.into}")
+    here = Path(__file__).resolve().parent.parent
+    if not plandata.same_as(root, base, here):
+        # Not the copy of the tools at the tip of the target: run that copy instead.
+        say(f"running the merge tools of {a.into} at {base[:12]}")
+        with plandata.Checkout(root, base, f"merge-tools-{a.id.lower()}") as wt:
+            argv = [sys.executable, str(wt / "scripts/plan"), "merge", a.id, "--into", a.into]
+            argv += [x for f in a.allow for x in ("--allow-changed-evidence", f)]
+            return subprocess.run(argv + (["--dry-run"] if a.dry_run else []), cwd=wt).returncode
+    try:
+        res = plandata.merge(root, a.id, a.into, dry=a.dry_run, allow=a.allow, say=say)
+    except plandata.DataError as e:
+        raise PlanError(str(e))
+    print(json.dumps(res, indent=2, ensure_ascii=False))
+    for f in res["new_evidence"]:
+        say(f"new evidence, judged by the reviewer: {f}")
+    for f in res["allowed_changed_evidence"]:
+        say(f"changed evidence allowed by --allow-changed-evidence: {f}")
+    ok = res["passed"] if a.dry_run else res["merged"]
+    say(("passed" if a.dry_run else f"merged {a.id} into {a.into} as {res['merge'][:12]}") if ok
+        else f"not merged: the checks failed on the merge commit {res['merge'][:12]}")
+    return 0 if ok else 1
 
 
 def cmd_new(p, a):
@@ -646,7 +694,10 @@ def main():
     add("lint", cmd_lint)
     sp = add("dag", cmd_dag); sp.add_argument("--json", action="store_true")
     sp = add("passed", cmd_passed); sp.add_argument("id"); sp.add_argument("--json", action="store_true")
-    sp = add("verify", cmd_verify); sp.add_argument("id")
+    sp.add_argument("--base", default="HEAD")
+    sp = add("verify", cmd_verify); sp.add_argument("id"); sp.add_argument("--base", default="HEAD")
+    sp = add("merge", cmd_merge); sp.add_argument("id"); sp.add_argument("--into", required=True)
+    sp.add_argument("--allow-changed-evidence", dest="allow", action="append", default=[], metavar="PATH")
     sp = add("new", cmd_new); sp.add_argument("title")
     sp = add("add", cmd_add); sp.add_argument("kind", choices=[*plangen.KINDS, "exit"]); sp.add_argument("name")
     sp.add_argument("--why", default=""); sp.add_argument("--cuts", default="")
@@ -676,7 +727,7 @@ def main():
             if getattr(a, attr, None):
                 dshm.check_id(getattr(a, attr))
         p = Plan(dshm.toplevel())
-        if not p.exists and a.fn not in (cmd_new, cmd_cleanup, cmd_dag, cmd_passed, cmd_verify):
+        if not p.exists and a.fn not in (cmd_new, cmd_cleanup, cmd_dag, cmd_passed, cmd_verify, cmd_merge):
             raise PlanError(plangen.NO_PLAN)
         return a.fn(p, a)
     except PlanError as e:

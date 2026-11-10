@@ -1,6 +1,6 @@
 # ARCHITECTURE
 
-How dsh-mobile is built now, and why. Product intent is in [STORY.md](STORY.md), screens in [DESIGN.md](DESIGN.md). This file tells only the current state: when the code changes, change this file in the same commit. A choice that the user has not confirmed yet is marked **provisional**. Ideas and work still to do are [GitHub issues](https://github.com/laichang/dsh-mobile/issues), not entries here.
+How dsh-mobile is built now, and why. Product intent is in [STORY.md](STORY.md), screens in [DESIGN.md](DESIGN.md). It tells only the current state; change it in the same commit as the code. A choice that the user has not confirmed yet is marked **provisional**. Ideas and work still to do are [GitHub issues](https://github.com/laichang/dsh-mobile/issues), not entries here.
 
 Upstream is DeepSeek Harness (DSH) `0.2.2-rc.1`, a developer preview with breaking changes expected.
 
@@ -40,11 +40,11 @@ bridge/     2 DSH companion plugin, TypeScript; the user installs it into their 
 protocol/   .proto schema + golden fixtures; the only contract between 1 and 2
 ```
 
-There is no server of ours: no push gateway and no relay. The phone talks only to the bridges of the hosts that the user paired.
+There is no server of ours (no push gateway, no relay): the phone talks only to the bridges of paired hosts.
 
 ### Round trip
 
-The phone's four jobs from STORY.md. Each app ⇄ bridge hop is end-to-end encrypted.
+The phone's four jobs from STORY.md; each app ⇄ bridge hop is E2E-encrypted.
 
 ```mermaid
 sequenceDiagram
@@ -286,12 +286,12 @@ A drawer page with 等我处理 / 正在跑 / 已完成 across hosts, from the c
 - **DSHKit**: `swift test` on the Mac. `FakeHost` / `FakeBridge` (`DSHTestSupport`) is a fake bridge process whose tasks and log outlive connections, with scripts for milestones, approvals, questions, follow-ups, outcomes and turns. It closes and refuses with 4003 like the bridge.
 - **Bridge**: `FakeDSH` (`bridge/test/`), and live checks against real DSH with its mock model (`scripts/dsh-up.mjs`).
 - **Output wrappers (provisional, pending user confirmation):** `scripts/xc <action>` (xcodebuild), `scripts/swift-test` and `scripts/pnpm-test` write the full log to `/tmp/dshm-*` and print a short JSON summary (counts, the first 10 errors as `file:line: message`, the log path); parsing is in `scripts/lib/wrap.py`. Demo scripts and `scripts/review` call only the wrappers (`scripts/check-wrappers` fails on a raw call). Why: a full xcodebuild log fills an agent's context; `xcbeautify` or `xcpretty` add a dependency and give no JSON, and `xcresulttool` is slow and only for xcodebuild.
-- **Plan data (provisional, pending user confirmation):** `plan/*.json`; `passed` in a file stays false. `scripts/plan verify` runs `cmd:` evidence on a clean checkout of the branch head; commands and exit codes go to a git note (`refs/notes/dshm-verify`). Advisory (a shell can forge one): merge reruns verify.
+- **Plan data (provisional, pending user confirmation):** `plan/*.json`; `scripts/plan verify` runs `cmd:` evidence on the branch head (advisory note). `scripts/plan merge` uses the target's tools and items, reruns on the merge commit, ignores reports, refuses unreviewed edits of `cmd:` files, their directories, `scripts/lib/`. Not chosen: trust notes. Workflow: `.claude/workflows/run-plan.js`.
 - **UI tests** run only through `scripts/demo/<name>.sh` or `scripts/review`, which load the machine guard in `scripts/demo/lib.sh` (free space, CPU, simulator limit).
 - **Debug-only entry points**, behind `#if DEBUG` and the Debug Info.plist; `scripts/check-release-clean` proves a Release build has none:
   - `-DSHM…` launch arguments (`DebugEntryPoints.swift`): `-DSHMFakeBridge` and `-DSHMFakeScenario <name>` put a `FakeHost` in process; others preset the prompt, the bridge port (default 47801), speech, the store and pairing.
   - The URL scheme `dshm://pair?…` and the accessibility identifiers that the UI tests use.
-- `-DSHMUIKitAnimations NO` turns off UIKit view animations (XCUITest waits for them to end; under load that cost 60 s per step). A Debug launch with a `-DSHM…` argument starts no Live Activities unless it passes `-DSHMLiveActivityProbe YES`.
+- `-DSHMUIKitAnimations NO` turns off UIKit view animations (XCUITest waits for them: 60 s per step under load). A Debug launch with a `-DSHM…` argument starts no Live Activities unless it passes `-DSHMLiveActivityProbe YES`.
 
 ## 8. Known limits and risks
 

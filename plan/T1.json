@@ -6,14 +6,21 @@
       "text": "With a fake agent, a test takes one node from brief to merge; the merge step runs the verifier again on the merge commit and ignores the agent's report",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/run-plan-test",
+        "cmd:scripts/plan-test"
+      ]
     },
     {
       "tier": "auto",
       "text": "One real Workflow run takes the fake node to a merge on a throwaway branch (Evidence: the run ID and the merge commit)",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "commit:77d9088c6b51bf5dc86583ce37f882c911652d5d"
+      ]
     }
   ]
 }
