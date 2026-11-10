@@ -140,6 +140,15 @@ A tracer is one thin round trip that one session can finish without running out 
   - Item 2, its check-plan part: `scripts/check-plan` is a guard file and imports nothing from `scripts/lib/`. The user must add `plan_dir_errors()` (calls `plandata.staged_errors`) to `--staged`. The patch is with the coordinator. When it is in, the skipped plan-test cases run, and item 2 can be ticked.
 
   Next: the user applies the check-plan patch; then run plan-test, tick item 2, and run the review again.
+- **2026-11-10 · Item 2 done with the check-plan hook.** Done:
+  - The user committed the check-plan hook (`plan_dir_errors`, 47fdbf5). plan-test now runs the check-plan cases: a staged `"passed": true` fails, a good plan/ passes, an unknown need fails. `failures: 0`, no skip.
+  - Item 2 ticked: check-plan refuses `passed` true; `scripts/plan passed` follows only the results for the head commit; a new commit makes them stale (plan-test cases).
+
+  Flaky: `T0DemoUITests/testDemoAgainstRealDSH` (scripts/demo/t0.sh) failed one time (no keyboard focus on `composer.prompt`) on the new simulator `dshm-T0`. The next full run passed all 4 UI tests with no code change. T0 changes no app code, so this is not from T0. Not repaired (WORKFLOW §10.1).
+
+  Not done: the review. `scripts/review` refuses a slice with no [ui] items; the coordinator starts a separate reviewer.
+
+  Provisional: D147 (plan/ format; verifier results as git notes in `refs/notes/dshm-verify`). No new dependency.
 
 ### T1 · Tracer bullet: One fake node from brief to merge through the Workflow
 
