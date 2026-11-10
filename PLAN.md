@@ -43,8 +43,8 @@ This file exists only while this requirement is in progress. It serves this requ
 | T0 | done | merged `e3daa5a` | 2026-11-10 | — |
 | T1 | done | merged `15982e9` | 2026-11-10 | — |
 | S1 | done | merged `3b960e8` | 2026-11-10 | — (provisional D150 in §9) |
-| S2 | doing | `claude/s2-slice-brief` | 2026-11-10 | Slice owner builds (§8) |
-| S3 | doing | `claude/s3-run-plan-workflow` | 2026-11-10 | Slice owner builds (§8) |
+| S2 | doing | `claude/s2-slice-brief` | 2026-11-10 | Round 2: Why/Cuts/Not in the brief, merge main; then a new separate review |
+| S3 | done | merged `ea755c4` | 2026-11-10 | — |
 | S4 | todo | — | 2026-11-10 | Assign it and start a session |
 | S5 | todo | — | 2026-11-10 | Assign it and start a session |
 | S6 | done | merged `46d4f3d` | 2026-11-10 | — |
@@ -270,7 +270,7 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 
 ### S3 · One run-plan Workflow for all plans, with the rework loop
 
-**Status** todo · **Needs** T1 · **Branch** —
+**Status** doing · **Needs** T1 · **Branch** —
 
 **Why**: Closes #60. One fixed Workflow script runs every plan; the graph comes in as args from `scripts/plan dag --json`.
 
@@ -284,15 +284,20 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 **Demo**: —
 
 **Done when**
-- [ ] [auto] With a fake agent: a node starts when its needs are met, and 3 nodes or fewer run at the same time — Evidence:
-- [ ] [auto] The prompt of a node has only its ID, round and brief path; the same node in a changed graph has the same prompt — Evidence:
-- [ ] [auto] A node becomes blocked after 3 rounds, after 2 rounds with the same evidence, and after an out-of-scope report — Evidence:
-- [ ] [auto] A fix adds a `passed: false` item and blocks only the nodes that have not started and share files or screens with it — Evidence:
-- [ ] [auto] The return of the Workflow fits the schema and is about 300 tokens or fewer; `/run-plan` calls the Workflow — Evidence:
+- [x] [auto] With a fake agent: a node starts when its needs are met, and 3 nodes or fewer run at the same time — Evidence: cmd:scripts/run-plan-test --test-name-pattern=needs.are.merged
+- [x] [auto] The prompt of a node has only its ID, round and brief path; the same node in a changed graph has the same prompt — Evidence: cmd:scripts/run-plan-test --test-name-pattern=brief.path
+- [x] [auto] A node becomes blocked after 3 rounds, after 2 rounds with the same evidence, and after an out-of-scope report — Evidence: cmd:scripts/run-plan-test --test-name-pattern=rework|blocked|honest.verifier|needs.review
+- [x] [auto] A fix adds a `passed: false` item and blocks only the nodes that have not started and share files or screens with it — Evidence: cmd:scripts/run-plan-test --test-name-pattern=a.fix.blocks|brief.to.merge
+- [x] [auto] The return of the Workflow fits the schema and is about 300 tokens or fewer; `/run-plan` calls the Workflow — Evidence: cmd:scripts/run-plan-test --test-name-pattern=return.fits
 
 **Not**: Replacing PLAN.md (S7).
 
 **Log**: —
+- **2026-11-10 · Run-plan Workflow for the graph; all items ticked.** Done: .claude/workflows/run-plan.js runs the graph from scripts/run-plan-args (new, read only: dag --json of the plan at --into, scope = files and screens of each node, done = nodes with merge-step results on the first-parent history plus --done, fixes from --fix ID:ITEM, --started, --round). 3 nodes at a time or fewer; a node starts when its needs are merged. Prompts: ID, round, brief path (shell steps also the target and checkout), never needs. Rework: fresh rounds until the merge step merges; blocked after 3 rounds, 2 rounds with the same failure evidence (verify or merge), a build report outside_slice (BUILD_SCHEMA, the only field read), or a failed brief. A merge refused for changed evidence returns review with the files; the Workflow never passes --allow-changed-evidence. Return: {into, tip, merged, blocked, review, waiting}, under 300 tokens in a 9-node test. /run-plan (.agents/skills/run-plan) calls the Workflow. scripts/run-plan-test: 10 tests (6 scripted graph tests, 4 real-shell round trips); it now forwards args (--test-name-pattern) for per-item evidence.
+  Provisional: scripts/run-plan-args as the args source; done derived from merge-step notes; blocked also on a failed brief; a running node is never held by a fix (the stopped run's nodes come in as --started); ARCHITECTURE.md trimmed to stay under 10k tokens.
+  Not done: the T1 known limits (a helper reached via ../ is not protected; plan passed trusts any note) need a scripts/lib/ change (a checker): listed in ARCHITECTURE.md §8 instead. Nodes merged by hand (T0, T1, S1, S6) need --done. No real Workflow run (not needed for S3). Merging S3 changes scripts/run-plan-test and scripts/test/run-plan.test.mjs, which are evidence files: the merge step refuses them without review (option A).
+  Note: the simulator dshm-S3 does not exist; T0 demo passed with DSHM_SIM unset (scripts/xc not changed).
+  Next: separate reviewer; coordinator merges.
 
 ### S4 · Design as data: screens.json and one HTML file per screen
 
@@ -463,6 +468,14 @@ Append-only, dated.
 - **2026-11-10 · S3 assigned.** Branch `claude/s3-run-plan-workflow`, simulator `dshm-S3`, DSHM_HOME `~/.dshm/home-s3`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D162–D164. `eval "$(scripts/slice-env S3)"` exports them.
 
 - **2026-11-10 · T1 merged; S2 and S3 start; heartbeat restarted.** T1 merged as 15982e9 after the user approved the scripts/lib/plandata.py diff (option A); closes #57 with T0. Fake plan branches and T1 worktree removed. New heartbeat: CronCreate job 88097d29. S2 and S3 assigned. Briefs carry: no Dxx IDs in docs, wrappers, no guard file edits, the T1 known limits (S3), and the scripts/xc missing-simulator issue (S2 owns scripts/brief only; S3 fixes scripts/xc if it needs it).
+
+- **2026-11-10 · Run paused by the user.** The user paused the run (2026-11-10, in chat: "先暂停"). Stopped: the separate reviews of S2 (cc5b2bf) and S3 (b60495c), before they wrote results. Heartbeat 88097d29 deleted. S2 and S3 are built, committed and clean on their branches; their slice sessions are idle. To resume: rerun both reviews; merge the first that passes; the other merges main (they conflict only in ARCHITECTURE.md); then S4.
+
+- **2026-11-10 · Run resumed by the user.** The user resumed the run (2026-11-10, in chat: "继续"). S2 cc5b2bf and S3 b60495c unchanged. New heartbeat: CronCreate job 09bd2dd0. The S2 and S3 reviewers resumed.
+
+- **2026-11-10 · S3 merged.** Merged as `ea755c4`; `scripts/check-plan` on the merge commit passed. `scripts/review S3` at `b60495c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S3-b60495c.txt`). No open `[human]` items, so S3 is `done`.
+
+- **2026-11-10 · S3 merged; S2 round 2 for brief content.** S3 merged as ea755c4 (closes #60). Review /tmp/dshm-review/S3-b60495c.txt PASS; note: MAX_ROUNDS counts rounds of the current run only (args.rounds {ID:2} gives 3 more). S2 review /tmp/dshm-review/S2-cc5b2bf.txt PASS on its items, but a brief carries only the items, not Why/Cuts/Not, so a fresh agent cannot build S4 from it. S2 round 2: merge main; add Why/Cuts/Not from the PLAN.md section (S7 moves them into plan/); add the rule not to run verify/merge; tests.
 
 ## 9. Pending user confirmation
 

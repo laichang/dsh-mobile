@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+"""Print the args of the run-plan Workflow (.claude/workflows/run-plan.js) as JSON. Read only.
+
+  scripts/run-plan-args --into main [--repo PATH] [--done ID]... [--fix ID:ITEM]...
+                        [--started ID]... [--round ID=N]...
+
+The plan comes from plan/ as committed at the tip of --into (the merge step uses the same).
+  graph    `scripts/plan dag --json` of that plan
+  scope    {ID: {files, screens}}: the union of the files and screens of the items of each node
+  done     each node that the merge step merged into --into (its results are on a merge commit
+           of the first-parent history, all checked items passed), and each --done ID
+  fixes    --fix S2:3 = item 3 of S2 is a fix (an item with passed: false). S2 runs again; each
+           node that has not started and shares a file or a screen with the item waits for it.
+  started  --started: nodes that the stopped run had started (a fix does not hold them)
+  rounds   --round S2=2: the first round of S2 (default 1)
+  repo     default: the top of this checkout
+A graph change: stop the run, then resume it with resumeFromRunId and the new output of this.
+"""
+import argparse
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+import plandata  # noqa: E402
+
+HISTORY = 500    # first-parent commits of --into that are searched for merge results
+
+
+def merged_ids(root, into, ids):
+    """The IDs whose merge-step results are on a commit of the first-parent history of into."""
+    out = set()
+    log = plandata._git(root, "rev-list", "--first-parent", "--merges", f"--max-count={HISTORY}", into).stdout.split()
+    for c in log:
+        for sid in ids:
+            if sid in out:
+                continue
+            res = plandata.results_for(root, sid, c)
+            if not res:
+                continue
+            r = plandata._git(root, "show", f"{c}:plan/{sid}.json")
+            if r.returncode != 0:
+                continue
+            tiers = [it["tier"] for it in json.loads(r.stdout)["items"]]
+            by = {x["item"]: x for x in res["items"]}
+            checked = [i for i, t in enumerate(tiers) if t != "human"]
+            if checked and all(plandata.item_passed(by.get(i, {})) for i in checked):
+                out.add(sid)
+    return out
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--into", required=True)
+    ap.add_argument("--repo")
+    ap.add_argument("--done", action="append", default=[])
+    ap.add_argument("--fix", action="append", default=[], metavar="ID:ITEM")
+    ap.add_argument("--started", action="append", default=[])
+    ap.add_argument("--round", action="append", default=[], metavar="ID=N")
+    a = ap.parse_args()
+    root = a.repo or subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True,
+                                    text=True, check=True).stdout.strip()
+    try:
+        tip = plandata.branch_head(root, a.into)
+        if tip is None:
+            raise plandata.DataError(f"no branch {a.into}")
+        plan, items = plandata.load_at(root, tip)
+        graph = plandata.dag(plan)
+    except plandata.DataError as e:
+        print(f"run-plan-args: {e}", file=sys.stderr)
+        return 1
+    ids = [n["id"] for n in plan["nodes"]]
+
+    def known(sid, what):
+        if sid not in items:
+            raise SystemExit(f"run-plan-args: {what}: {sid} is not a node of the plan at {a.into}")
+        return sid
+
+    scope = {sid: {"files": sorted({f for it in its for f in it["files"]}),
+                   "screens": sorted({s for it in its for s in it["screens"]})} for sid, its in items.items()}
+    fixes = []
+    for f in a.fix:
+        sid, _, i = f.partition(":")
+        known(sid, "--fix")
+        if not i.isdigit() or int(i) >= len(items[sid]):
+            raise SystemExit(f"run-plan-args: --fix {f}: {sid} has no item {i}")
+        it = items[sid][int(i)]
+        fixes.append({"node": sid, "item": int(i), "files": it["files"], "screens": it["screens"]})
+    rounds = {}
+    for r in a.round:
+        sid, _, n = r.partition("=")
+        if not n.isdigit() or int(n) < 1:
+            raise SystemExit(f"run-plan-args: --round {r}: ID=N, N 1 or more")
+        rounds[known(sid, "--round")] = int(n)
+    done = merged_ids(root, a.into, ids) | {known(s, "--done") for s in a.done}
+    out = {"graph": graph, "scope": scope, "into": a.into, "repo": str(Path(root).resolve()),
+           "done": [s for s in graph["order"] if s in done], "fixes": fixes,
+           "started": [known(s, "--started") for s in a.started], "rounds": rounds}
+    print(json.dumps(out, indent=2, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
