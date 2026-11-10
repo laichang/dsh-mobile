@@ -7,11 +7,12 @@ It reads plan/plan.json and plan/<ID>.json, and the short facts it quotes from A
 ARCHITECTURE.md, as committed at REF (default HEAD; the merge target), never an uncommitted edit.
 It writes the brief to PATH (default /tmp/dshm-brief/<ID>-r<N>.md) and prints the path.
 
-The brief has: the node, its branch and worktree; its items with tier and evidence; the files of
-the node (marked "new" when REF does not have them); the commands to run (the evidence, the checks,
-the output wrappers for the areas the files touch, a demo that the items name); the facts of those
-areas, a section or a bullet of AGENTS.md and ARCHITECTURE.md, not whole files; and the rules for a
-slice agent. Screens are not in the brief yet. scripts/brief-test keeps each brief at 3k tokens or
+The brief has: the node, its branch and worktree; its Why, Cuts and Not (from the node's section of
+the plan file at REF: plan/<ID>.json has no such fields yet); its items with tier and evidence; the
+files of the items and of the Cuts (marked "new" when REF does not have them); the commands to run
+(the evidence, the checks, the output wrappers for the areas the files touch, a demo that the items
+name); the facts of those areas, a bullet or a paragraph of ARCHITECTURE.md, and the repo layout of
+AGENTS.md when the node names no files; and the rules for a slice agent. Screens are not in the brief yet. scripts/brief-test keeps each brief at 3k tokens or
 fewer and checks that each file and command it names exists.
 
 --preview writes the brief of a node that has no branch yet (the branch line says so). Without it,
@@ -21,6 +22,7 @@ Exit 0 = written, 1 = refused (unknown ID, no branch, no plan data), 2 = usage.
 """
 
 import argparse
+import fnmatch
 import re
 import sys
 from pathlib import Path
@@ -28,6 +30,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import dshm  # noqa: E402
 import plandata  # noqa: E402
+import plangen  # noqa: E402
 
 # Areas of the repo: the files of a node select the areas, and each area its commands and facts.
 # A fact is (doc, heading, first words of a bullet or paragraph); None = the first paragraph.
@@ -94,11 +97,14 @@ RULES = [
     "It ignores your report.",
     "A change to a file that existing evidence runs (its command, its directory, `scripts/lib/`) stops the merge "
     "until a reviewer allows it. Add a new test file rather than change one that evidence names.",
+    "Do not run `scripts/plan verify` or `scripts/plan merge`: the coordinator does that.",
     "Out of scope (another node's files, a bug elsewhere): do not fix it; name it in your report.",
     "End with a short report: the head commit, what is done, what is not, each provisional item.",
 ]
 
-MAX_FILES = 20      # files listed in a brief; more are counted, not listed
+PLAN_MD = "PLAN" + ".md"
+MAX_FILES = 30      # files listed in a brief; more are counted, not listed
+MAX_GLOB = 5        # a glob in the Cuts with more matches is listed as the glob
 
 
 def doc_lines(root, base, doc):
@@ -139,12 +145,53 @@ def tree_modes(root, base):
     return {p: m for p, (m, _) in plandata._tree(root, base).items()}
 
 
-def node_files(items):
+def node_files(items, cuts, modes):
+    """The files of the items, then each file that the Cuts name: a repo path, a glob of repo paths
+    (`design/board.*`), or a file name that one file of the base has (`Theme+S14.swift`)."""
     out = []
     for it in items:
         for f in it.get("files", []):
             if f not in out:
                 out.append(f)
+    for tok in re.findall(r"`([^`\s]+)`", "\n".join(cuts)):
+        if "<" in tok or tok.startswith(("/", "claude/")) or not ("/" in tok or "." in tok[1:]):
+            continue
+        if any(c in tok for c in "*?["):
+            found = sorted(p for p in modes if fnmatch.fnmatch(p, tok))
+            found = found if len(found) <= MAX_GLOB else [tok]     # many: the glob itself
+        elif "/" in tok:
+            found = [tok]
+        else:
+            found = [p for p in modes if p.rsplit("/", 1)[-1] == tok]
+            found = found if len(found) == 1 else []
+        out += [f for f in found if f not in out]
+    for word in re.findall(r"[A-Za-z0-9_.][A-Za-z0-9_./+-]*", "\n".join(cuts)):   # DESIGN.md, AGENTS.md
+        if word in modes and word not in out:
+            out.append(word)
+    return out
+
+
+def exists(f, modes):
+    d = f.rstrip("/") + "/"
+    return f in modes or any(p.startswith(d) or fnmatch.fnmatch(p, f) for p in modes)
+
+
+def scope(root, base, sid):
+    """{Why, Cuts, Not}: the lines of each field of the node's section of the plan file at base, or
+    None. plan/<ID>.json has no such fields yet; the plan file is their source until plan/ holds them."""
+    lines = doc_lines(root, base, PLAN_MD)
+    sec = next(((a, b) for a, b, i, _ in plangen.sections(lines) if i == sid), None)
+    if sec is None:
+        return None
+    out, cur = {}, None
+    for line in lines[sec[0] + 1:sec[1]]:
+        m = re.match(r"^\*\*(Status|Why|Cuts|Demo|Done when|Not|Log)\*\*:?\s*(.*)$", line)
+        if m:
+            cur = m.group(1) if m.group(1) in ("Why", "Cuts", "Not") else None
+            if cur:
+                out[cur] = [m.group(2)] if m.group(2) else []
+        elif cur and line.strip():
+            out[cur].append(line.rstrip())
     return out
 
 
@@ -184,6 +231,7 @@ def brief(root, sid, rnd, base, preview=False):
         branch = f"- Branch: `{node['branch']}` (commit only there)"
     else:
         where, branch = "none yet", "- Branch: none yet (the coordinator assigns one)"
+    sc = scope(root, tip, sid)
     lines = [
         f"# Brief: {sid} · {node['title']} · round {rnd}",
         "",
@@ -191,6 +239,20 @@ def brief(root, sid, rnd, base, preview=False):
         branch,
         f"- Worktree: {where}",
         f"- Plan data: `plan/{sid}.json` at `{base}` ({tip[:12]})",
+        "",
+        "## Scope",
+        "",
+    ]
+    if sc is None:
+        lines.append(f"The plan file at the base has no section for {sid}: the items are the whole scope.")
+    else:
+        for name in ("Why", "Cuts", "Not"):
+            body = sc.get(name) or ["—"]
+            if len(body) == 1 and not body[0].startswith("- "):
+                lines.append(f"**{name}**: {body[0]}")
+            else:
+                lines += [f"**{name}**:"] + body
+    lines += [
         "",
         "## Items",
         "",
@@ -203,12 +265,12 @@ def brief(root, sid, rnd, base, preview=False):
     if any(it["tier"] == "human" for it in its):
         lines += ["", "A `[human]` item is the user's: do not tick it or claim it."]
 
-    files = node_files(its)
+    files = node_files(its, (sc or {}).get("Cuts", []), modes)
     lines += ["", "## Files", ""]
     if not files:
-        lines.append("The items name no files: find them from the items and the facts below.")
+        lines.append("The items and Cuts name no files: find them from the scope and the facts below.")
     for f in files[:MAX_FILES]:
-        lines.append(f"- `{f}`" + ("" if f in modes or f.endswith("/") else " (new)"))
+        lines.append(f"- `{f}`" + ("" if exists(f, modes) else " (new)"))
     if len(files) > MAX_FILES:
         lines.append(f"- and {len(files) - MAX_FILES} more in `plan/{sid}.json`")
 
@@ -240,13 +302,25 @@ def brief(root, sid, rnd, base, preview=False):
             text = fact(docs.setdefault(doc, doc_lines(root, tip, doc)), heading, start)
             where = f"{doc} {heading.lstrip('# ')}"
             lines.append(f"- {text} ({where})" if text else f"- (not found: {where})")
-    layout = [b for b in section_bullets(doc_lines(root, tip, "AGENTS.md"), "## Repo layout")
-              if not files or any(f.startswith(p) for p in _bullet_paths(b) for f in files)]
+    # The repo layout only when the node names no files: then the agent must find them.
+    layout = [] if files else section_bullets(doc_lines(root, tip, "AGENTS.md"), "## Repo layout")
     if layout:
-        lines += ["", "Repo layout (AGENTS.md):", ""] + [f"- {b}" for b in layout]
+        lines += ["", "Repo layout (AGENTS.md, shortened):", ""] + [f"- {short(b)}" for b in layout]
 
     lines += ["", "## Rules", ""] + [f"- {r.format(sid=sid)}" for r in RULES]
     return "\n".join(lines) + "\n"
+
+
+def short(bullet, limit=140):
+    """The first sentence of a bullet, at most about limit characters, cut at a word and never
+    inside a code span."""
+    first = re.split(r"(?<=\.)\s", bullet, maxsplit=1)[0]
+    if len(first) <= limit:
+        return first
+    cut = first[:limit].rsplit(" ", 1)[0]
+    if cut.count("`") % 2:
+        cut = cut[:cut.rindex("`")].rstrip()
+    return cut.rstrip(",;:") + " …"
 
 
 def section_bullets(lines, heading):
@@ -260,10 +334,6 @@ def section_bullets(lines, heading):
             out.append(line[2:].strip())
     return out
 
-
-def _bullet_paths(bullet):
-    """The repo paths that open a layout bullet: `ios/`, `scripts/plan`, …"""
-    return [p for p in re.findall(r"`([^`\s]+)`", bullet.split(":")[0]) if "/" in p or p.endswith(".md")]
 
 
 def main():

@@ -11,9 +11,12 @@ area, evidence and a demo). For each brief:
     item is plan data and may name a file to make), each command
     in its Commands list starts with an executable file of the base, and each fact it quotes from
     AGENTS.md or ARCHITECTURE.md was found.
+  - it has the Why, Cuts and Not of the node's section of the plan file (fixtures get one), and
+    each file of the base that the Cuts name is in its file list.
 Also: the T1 interface (--round, --base, --out; the path is printed) and the refusals.
 """
 
+import fnmatch
 import importlib.machinery
 import json
 import re
@@ -31,7 +34,8 @@ estimate_tokens = importlib.machinery.SourceFileLoader(
 # The working copy of the tools and docs that the brief uses (they may be uncommitted in SRC).
 OVERLAY = ["scripts/brief", "scripts/brief-test", "scripts/check-docs", "scripts/lib", "plan", "AGENTS.md", "ARCHITECTURE.md"]
 EXTS = (".md", ".sh", ".json", ".py", ".ts", ".mjs", ".js", ".proto", ".swift", ".html", ".png", ".tsv", ".xcconfig")
-PATH_RE = re.compile(r"[A-Za-z0-9_.][A-Za-z0-9_./-]*")
+PATH_RE = re.compile(r"[A-Za-z0-9_.][A-Za-z0-9_./+-]*")
+PLAN_MD = "PLAN" + ".md"
 
 fails = 0
 largest = (0, "")
@@ -89,8 +93,12 @@ def check_brief(name, text, modes):
     else:
         bad(f"{name}: about {tokens} tokens, more than {MAX_TOKENS}")
     missing, extra = [], []
+    section = None
     for line in text.splitlines():
-        if re.match(r"\d+\. \[", line):     # the text of an item: plan data, it may name files to make
+        if line.startswith("## "):
+            section = line[3:]
+        # The scope and the text of an item are plan data: they may name files to make.
+        if section == "Scope" or re.match(r"\d+\. \[", line):
             continue
         new = "(new" in line
         for tok in re.findall(r"`([^`]+)`", line):
@@ -136,6 +144,61 @@ def check_brief(name, text, modes):
         ok(f"{name}: each fact was found")
 
 
+def plan_scope(plan_md, sid):
+    """{Why, Cuts, Not} -> their lines, from the node's section of the plan file (its own parser)."""
+    m = re.search(rf"^### {sid} · .*?\n(.*?)(?=^##)", plan_md + "\n## end", re.S | re.M)
+    out, cur = {}, None
+    for line in (m.group(1) if m else "").splitlines():
+        f = re.match(r"^\*\*([A-Za-z ]+)\*\*:?\s*(.*)$", line)
+        if f:
+            cur = f.group(1) if f.group(1) in ("Why", "Cuts", "Not") else None
+            if cur:
+                out[cur] = [f.group(2)] if f.group(2) else []
+        elif cur and line.strip():
+            out[cur].append(line.strip())
+    return out
+
+
+def cuts_files(cuts, modes):
+    """The files of the base that the Cuts name: a path, a glob, a unique file name, a bare path."""
+    out = set()
+    text = "\n".join(cuts)
+    for tok in re.findall(r"`([^`\s]+)`", text):
+        if "<" in tok:
+            continue
+        if any(c in tok for c in "*?["):
+            hits = [p for p in modes if fnmatch.fnmatch(p, tok)]
+            out.update(hits if len(hits) <= 5 else [tok])          # many: the brief lists the glob
+        elif tok in modes:
+            out.add(tok)
+        else:
+            hits = [p for p in modes if p.rsplit("/", 1)[-1] == tok]
+            out.update(hits if len(hits) == 1 else [])
+    out.update(w for w in PATH_RE.findall(text) if w in modes)
+    return out
+
+
+def check_scope(name, text, plan_md, sid, modes):
+    """The brief has the Why, Cuts and Not of the node, and each file of the base that the Cuts
+    name is in its file list."""
+    sc = plan_scope(plan_md, sid)
+    if not all(sc.get(k) for k in ("Why", "Cuts", "Not")):
+        bad(f"{name}: the plan file has its Why, Cuts and Not", str(sc))
+        return
+    lost = [l for k in ("Why", "Cuts", "Not") for l in sc[k] if l not in text]
+    if lost:
+        bad(f"{name}: the brief has its Why, Cuts and Not", "\n".join(lost))
+    else:
+        ok(f"{name}: the brief has its Why, Cuts and Not")
+    files = re.search(r"^## Files\n(.*?)^## ", text, re.S | re.M)
+    listed = set(re.findall(r"^- `([^`]+)`", files.group(1) if files else "", re.M))
+    absent = sorted(cuts_files(sc["Cuts"], modes) - listed)
+    if absent:
+        bad(f"{name}: each file that the Cuts name is in the file list", ", ".join(absent))
+    else:
+        ok(f"{name}: each file that the Cuts name is in the file list")
+
+
 def briefs_of(repo, label):
     """Brief each node of plan/plan.json at HEAD of repo, and check each one."""
     modes = tree(repo)
@@ -148,16 +211,25 @@ def briefs_of(repo, label):
             bad(f"{label} {node['id']}: brief exits 0", r.stderr)
             continue
         check_brief(f"{label} {node['id']}", out.read_text(), modes)
+        check_scope(f"{label} {node['id']}", out.read_text(), (repo / PLAN_MD).read_text(), node["id"], modes)
 
 
-def commit_plan(repo, branch, plan, slices):
+def commit_plan(repo, branch, plan, slices, scopes):
+    """plan/ of a fixture, and a plan file with the Why, Cuts and Not of each node (scopes)."""
     git(repo, "checkout", "-q", "-B", branch)
     shutil.rmtree(repo / "plan")
     (repo / "plan").mkdir()
     (repo / "plan/plan.json").write_text(json.dumps(plan, indent=2) + "\n")
     for sid, items in slices.items():
         (repo / f"plan/{sid}.json").write_text(json.dumps({"id": sid, "items": items}, indent=2) + "\n")
-    git(repo, "add", "-A", "plan")
+    md = [f"# {plan['title']}", ""]
+    for n in plan["nodes"]:
+        sc = scopes[n["id"]]
+        md += [f"### {n['id']} · {n['title']}", "", f"**Status** todo · **Needs** — · **Branch** —", "",
+               f"**Why**: {sc['Why']}", "", "**Cuts**", *sc["Cuts"], "", "**Demo**: —", "",
+               "**Done when**", "", f"**Not**: {sc['Not']}", "", "**Log**: —", ""]
+    (repo / PLAN_MD).write_text("\n".join(md))
+    git(repo, "add", "-A", "plan", PLAN_MD)
     git(repo, "commit", "-q", "-m", f"fixture {branch}")
 
 
@@ -179,10 +251,21 @@ def largest_node():
             "evidence": ["cmd:scripts/plan-test", f"cmd:scripts/demo/t0.sh --part {i}",
                          "cmd:scripts/new-tool-0 --check", "commit:693a17f"],
         })
+    scope = {
+        "Why": ("Closes #1 and #2. Each area of the repo changes in one node: the app, the bridge, the "
+                "protocol and the plan tools, so that a fresh agent with only the brief can build all of it, "
+                "keep the old behavior, and show each change with a test of its own."),
+        "Cuts": ["- `ios/DSHKit/Package.swift`, `Theme+S14.swift` and the other theme files get feature names.",
+                 "- `bridge/src/dsh.ts` and `bridge/package.json`: one new request, with its test in `bridge/test/`.",
+                 "- `protocol/frame.proto`: one new message; `scripts/codegen` writes the code again.",
+                 "- `scripts/plan` and `scripts/lib/plandata.py` read the new field; `scripts/new-tool-0` checks it.",
+                 "- Remove DESIGN.md and `design/board.*`; AGENTS.md points to the new files."],
+        "Not": "New screens, new dependencies, or a change to the protocol version.",
+    }
     plan = {"title": "Largest node", "nodes": [
         {"id": "S98", "kind": "slice", "title": "A node of the largest size, in every area of the repo",
          "needs": [], "branch": "claude/s98-largest"}]}
-    return plan, {"S98": items}
+    return plan, {"S98": items}, {"S98": scope}
 
 
 def main():
@@ -215,6 +298,12 @@ def main():
         caught, fails = fails - before, before
         globals()["largest"] = keep
         (ok if caught == 4 else bad)(f"too many tokens, a missing path, a missing command, a missing fact: {caught} of 4 caught")
+        md = "### S97 · x\n\n**Why**: Because.\n\n**Cuts**\n- `scripts/plan` reads it.\n\n**Not**: Other things.\n\n## end\n"
+        before = fails
+        with contextlib.redirect_stdout(io.StringIO()):
+            check_scope("bad", "**Why**: Because.\n## Files\n\n## Rules\n", md, "S97", tree(repo))
+        caught, fails = fails - before, before
+        (ok if caught == 2 else bad)(f"a brief without its Cuts or Not, and a Cuts file not in the list: {caught} of 2 caught")
 
         print("live plan/")
         briefs_of(repo, "plan")
@@ -231,7 +320,10 @@ def main():
 
         fake = SRC / "scripts/fixtures/fake-plan"
         commit_plan(repo, "fake", json.loads((fake / "plan.json").read_text()),
-                    {p.stem: json.loads(p.read_text())["items"] for p in fake.glob("S*.json")})
+                    {p.stem: json.loads(p.read_text())["items"] for p in fake.glob("S*.json")},
+                    {"S99": {"Why": "The fake node of the run-plan test: one file, one check.",
+                             "Cuts": ["- `fake-node/hello.txt`: one line, hello; `scripts/fixtures/fake-plan/check` checks it."],
+                             "Not": "Any other file."}})
         git(repo, "checkout", "-q", "base")
         out = tmp / "round2" / "S99.md"
         r = run_brief(repo, "S99", "--round", "2", "--base", "fake", "--out", str(out))
@@ -256,6 +348,8 @@ def main():
         (ok if "`scripts/new-tool-0 --check`: evidence of an item (new" in text else bad)(
             "an evidence command that the base does not have is marked new")
         (ok if "do not tick it" in text else bad)("a [human] item is the user's")
+        (ok if "Do not run `scripts/plan verify` or `scripts/plan merge`" in text else bad)(
+            "the rules keep verify and merge with the coordinator")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     print(f"largest brief: about {largest[0]} tokens ({largest[1]})")
