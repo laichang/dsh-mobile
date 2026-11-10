@@ -44,11 +44,11 @@ UI_TESTS=(
 )
 demo_part s20-ui bash -c '
   log=$1; shift
-  xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+  scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
     -derivedDataPath "$DSHM_DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-    > "${log%.log}-build.log" 2>&1 || { grep -E "error:" "${log%.log}-build.log"; exit 1; }
-  xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
-    -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "$@" > "$log" 2>&1 \
+    --log "${log%.log}-build.log" || { grep -E "error:" "${log%.log}-build.log"; exit 1; }
+  scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+    -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "$@" --log "$log" \
     || { grep -E "error:|Test Case.*(passed|failed)" "$log"; exit 1; }
   grep -E "Test Case.*(passed|failed|skipped)" "$log"
   source scripts/demo/lib.sh; demo_no_skipped_ui "$log"' _ "$LOGS/ui.log" "${UI_TESTS[@]}"

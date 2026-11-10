@@ -52,9 +52,9 @@ step "DSHKit tests (swift test, FakeBridge, golden photo)"
 demo_part attachments-swift-test bash -c 'source scripts/demo/lib.sh; demo_swift_tests "$1"' _ "$LOGS/swift-test.log"
 
 step "build the app and UI tests ($SIM)"
-xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DSHM_DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+  --log "$LOGS/build.log" || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 step "the golden photo into the simulator's library"
 xcrun simctl addmedia "$SIM" protocol/fixtures/attachments/photo.jpg
@@ -83,9 +83,9 @@ SINCE="$(date +%s)"
 
 step "UI: attach one photo on 01 and send (log: $LOGS/ui.log)"
 export TEST_RUNNER_DSHM_REAL_DSH=1 TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT"
-if demo_part attachments-ui xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+if demo_part attachments-ui scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
     -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO \
-    -only-testing:dsh-mobileUITests/AttachmentsUITests/testAttachOnePhotoAndSend > "$LOGS/ui.log" 2>&1; then
+    -only-testing:dsh-mobileUITests/AttachmentsUITests/testAttachOnePhotoAndSend --log "$LOGS/ui.log"; then
   grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui.log" || true
 else
   grep -E "error:|Test Case.*(passed|failed)" "$LOGS/ui.log" || tail -30 "$LOGS/ui.log"
@@ -102,10 +102,10 @@ node scripts/demo/attachments-check.mjs "$DSHM_HOME" "$SINCE" "What is in this p
 if [ $ALL = 1 ]; then
   SINCE="$(date +%s)"
   step "UI: a photo, a .txt and a .pdf on 01, one removed; a file on a follow-up (log: $LOGS/ui-files.log)"
-  if demo_part attachments-ui-files xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+  if demo_part attachments-ui-files scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
       -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO \
       -only-testing:dsh-mobileUITests/AttachmentsUITests/testAttachPhotoTextAndPDFRemoveOneAndSend \
-      -only-testing:dsh-mobileUITests/AttachmentsUITests/testAttachFileToFollowUp > "$LOGS/ui-files.log" 2>&1; then
+      -only-testing:dsh-mobileUITests/AttachmentsUITests/testAttachFileToFollowUp --log "$LOGS/ui-files.log"; then
     grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui-files.log" || true
   else
     grep -E "error:|Test Case.*(passed|failed)" "$LOGS/ui-files.log" || tail -30 "$LOGS/ui-files.log"

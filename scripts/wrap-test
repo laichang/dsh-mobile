@@ -1,0 +1,149 @@
+#!/bin/bash
+# Tests of the output wrappers (scripts/xc, scripts/swift-test, scripts/pnpm-test, scripts/lib/wrap.py)
+# and of scripts/check-wrappers.
+#
+#   scripts/wrap-test           failing runs: a failing test shows as one file:line line, and the
+#                               full log is in /tmp/dshm-*; check-wrappers fails on a raw call
+#   scripts/wrap-test --real    passing runs of each wrapper on this repository: 20 lines or fewer
+#                               (scripts/xc build, scripts/xc test, scripts/swift-test, scripts/pnpm-test)
+#
+# The failing runs use small packages in /tmp/dshm-wrap-test (a Swift package and a node:test
+# package) and a recorded xcodebuild log. --real uses $DSHM_SIM for scripts/xc test (the machine
+# guard of scripts/demo/lib.sh applies) and $DSHM_DD (default /tmp/dshm-wrap-test-dd).
+# Ends with "failures: N"; the exit code is 0 only when N is 0.
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+REAL=0
+for a in "$@"; do case "$a" in --real) REAL=1 ;; *) echo "unknown arg $a" >&2; exit 2 ;; esac; done
+NODE24="$HOME/.nvm/versions/node/v24.14.0/bin"
+[ -d "$NODE24" ] && export PATH="$NODE24:$PATH"
+W=/tmp/dshm-wrap-test; mkdir -p "$W"
+FAILS=0
+ok() { echo "ok    $*"; }
+bad() { echo "FAIL  $*"; FAILS=$((FAILS + 1)); }
+
+# $1 name, $2 file with the wrapper output, $3 expected exit code, $4 actual exit code.
+# A failing run: exit code not 0, exactly one errors line, and that line is file:line: …
+# (the file exists), and the "log" file is in /tmp/dshm-* and holds the full output.
+expect_one_error() {
+  local name=$1 out=$2 rc=$3 errs log file
+  [ "$rc" != 0 ] || { bad "$name: exit code 0 for a failing test"; return; }
+  errs=$(sed -n '/"errors": \[/,/^  \]/p' "$out" | sed '1d;$d')
+  if [ "$(printf '%s\n' "$errs" | grep -c .)" != 1 ]; then bad "$name: not one error line:"; cat "$out"; return; fi
+  file=$(printf '%s' "$errs" | sed -E 's/^ *"([^:]+):[0-9]+: .*/\1/')
+  if ! printf '%s' "$errs" | grep -qE '^ *"[^": ]+:[0-9]+: '; then bad "$name: error is not file:line: $errs"; return; fi
+  if [ ! -f "$file" ] && [ ! -f "$ROOT/$file" ]; then bad "$name: no file $file"; return; fi
+  log=$(sed -nE 's/^ *"log": "(.*)",?$/\1/p' "$out")
+  case "$log" in /tmp/dshm-*|/private/tmp/dshm-*) ;; *) bad "$name: log $log is not in /tmp/dshm-*"; return ;; esac
+  [ -s "$log" ] || { bad "$name: log $log is empty"; return; }
+  ok "$name: one error line ($(printf '%s' "$errs" | sed -E 's/^ *"//' | cut -c1-90)…), log $log ($(wc -l < "$log" | tr -d ' ') lines)"
+}
+
+# $1 name, $2 output file, $3 exit code. A passing run: exit 0, "ok": true, 20 lines or fewer.
+expect_pass_short() {
+  local name=$1 out=$2 rc=$3 n
+  n=$(wc -l < "$out" | tr -d ' ')
+  if [ "$rc" != 0 ] || ! grep -q '"ok": true' "$out"; then bad "$name: did not pass (exit $rc)"; cat "$out"; return; fi
+  if [ "$n" -gt 20 ]; then bad "$name: $n lines (more than 20)"; cat "$out"; return; fi
+  ok "$name: passed, $n lines: $(grep -E '"tests"' "$out" | sed 's/^ *//')"
+}
+
+if [ $REAL = 0 ]; then
+  # --- swift test: a Swift Testing test that fails --------------------------------------------
+  P="$W/swift-pkg"; rm -rf "$P"; mkdir -p "$P/Sources/Lib" "$P/Tests/LibTests"
+  cat > "$P/Package.swift" <<'EOF'
+// swift-tools-version:6.0
+import PackageDescription
+let package = Package(name: "Lib", targets: [.target(name: "Lib"), .testTarget(name: "LibTests", dependencies: ["Lib"])])
+EOF
+  echo 'public func two() -> Int { 2 }' > "$P/Sources/Lib/Lib.swift"
+  cat > "$P/Tests/LibTests/LibTests.swift" <<'EOF'
+import Testing
+@testable import Lib
+@Suite struct LibTests {
+  @Test func passes() { #expect(two() == 2) }
+  @Test func failsOnPurpose() {
+    #expect(two() == 3)
+  }
+}
+EOF
+  scripts/swift-test --package-path "$P" > "$W/swift.out" 2>&1; rc=$?
+  expect_one_error "swift-test, failing Swift Testing test" "$W/swift.out" 1 $rc
+
+  # --- pnpm test: a node:test test that fails ------------------------------------------------
+  P="$W/node-pkg"; rm -rf "$P"; mkdir -p "$P/test"
+  echo '{"name":"wrap-test","private":true,"type":"module","packageManager":"pnpm@11.28.5","scripts":{"test":"node --test \"test/**/*.test.js\""}}' > "$P/package.json"
+  cat > "$P/test/a.test.js" <<'EOF'
+import test from 'node:test'
+import assert from 'node:assert/strict'
+test('adds', () => { assert.equal(1 + 1, 2) })
+test('fails on purpose', () => {
+  assert.equal(1 + 1, 3)
+})
+EOF
+  scripts/pnpm-test --dir "$P" > "$W/pnpm.out" 2>&1; rc=$?
+  expect_one_error "pnpm-test, failing node:test test" "$W/pnpm.out" 1 $rc
+
+  # --- xcodebuild: a recorded log of a failing UI test (a real run takes minutes) ------------
+  X="$W/xc-failing.log"
+  cat > "$X" <<EOF
+Test Suite 'Selected tests' started at 2026-11-09 08:13:28.089.
+Test Case '-[dsh_mobileUITests.T0DemoUITests testDemoAgainstFakeBridge]' started.
+$ROOT/ios/dsh-mobileUITests/T0DemoUITests.swift:20: error: -[dsh_mobileUITests.T0DemoUITests testDemoAgainstFakeBridge] : XCTAssertTrue failed - the reply did not show
+Test Case '-[dsh_mobileUITests.T0DemoUITests testDemoAgainstFakeBridge]' failed (12.455 seconds).
+Test Case '-[dsh_mobileUITests.T1ShellUITests testShell]' passed (3.100 seconds).
+	 Executed 2 tests, with 1 failure (0 unexpected) in 15.555 (15.560) seconds
+
+Failing tests:
+	T0DemoUITests.testDemoAgainstFakeBridge()
+
+** TEST FAILED **
+EOF
+  python3 scripts/lib/wrap.py parse xc "$X" 65 > "$W/xc.out"
+  expect_one_error "xc, failing XCTest (recorded log)" "$W/xc.out" 65 65
+  grep -q '"tests": {"passed": 1, "failed": 1, "skipped": 0}' "$W/xc.out" && ok "xc, counts from the Test Case lines" \
+    || { bad "xc: wrong counts"; cat "$W/xc.out"; }
+
+  # --- check-wrappers ------------------------------------------------------------------------
+  D="$W/check"; rm -rf "$D"; mkdir -p "$D"
+  cat > "$D/raw.sh" <<'EOF'
+#!/bin/bash
+step "UI tests (xcodebuild test, swift test)"     # a message, not a call
+# xcodebuild test in a comment is not a call
+xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+  -destination "$DEST" > "$LOGS/ui.log" 2>&1
+demo_part dshkit swift test --package-path ios/DSHKit --filter X
+(cd bridge && corepack pnpm test) > "$log" 2>&1
+cat <<'TXT'
+$ swift test
+TXT
+EOF
+  cat > "$D/wrapped.sh" <<'EOF'
+#!/bin/bash
+scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile --log "$LOGS/ui.log"
+demo_part dshkit scripts/swift-test --filter X
+scripts/pnpm-test --log "$log"
+EOF
+  scripts/check-wrappers "$D/raw.sh" > "$W/check.out" 2>&1; rc=$?
+  n=$(grep -c ': runs ' "$W/check.out")
+  if [ $rc = 1 ] && [ "$n" = 3 ] && grep -q 'raw.sh:4: runs xcodebuild' "$W/check.out" \
+    && grep -q 'raw.sh:6: runs swift test' "$W/check.out" && grep -q 'raw.sh:7: runs pnpm test' "$W/check.out"; then
+    ok "check-wrappers fails on raw xcodebuild, swift test and pnpm test (3 lines, exit 1)"
+  else bad "check-wrappers on raw calls (exit $rc, $n lines):"; cat "$W/check.out"; fi
+  if scripts/check-wrappers "$D/wrapped.sh" > "$W/check2.out" 2>&1; then ok "check-wrappers passes wrapped calls"
+  else bad "check-wrappers on wrapped calls:"; cat "$W/check2.out"; fi
+  if scripts/check-wrappers > "$W/check3.out" 2>&1; then ok "check-wrappers passes scripts/demo/*.sh and scripts/review"
+  else bad "check-wrappers on this repository:"; cat "$W/check3.out"; fi
+else
+  export DSHM_DD="${DSHM_DD:-/tmp/dshm-wrap-test-dd}"
+  scripts/pnpm-test > "$W/real-pnpm.out" 2>&1; expect_pass_short "scripts/pnpm-test" "$W/real-pnpm.out" $?
+  scripts/swift-test > "$W/real-swift.out" 2>&1; expect_pass_short "scripts/swift-test" "$W/real-swift.out" $?
+  scripts/xc build > "$W/real-build.out" 2>&1; expect_pass_short "scripts/xc build" "$W/real-build.out" $?
+  # One FakeBridge UI test: the T0 demo without the real-DSH test.
+  scripts/xc test -only-testing:dsh-mobileUITests/T0DemoUITests \
+    -skip-testing:dsh-mobileUITests/T0DemoUITests/testDemoAgainstRealDSH > "$W/real-test.out" 2>&1
+  expect_pass_short "scripts/xc test" "$W/real-test.out" $?
+fi
+echo "failures: $FAILS"
+[ $FAILS = 0 ]

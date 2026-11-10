@@ -46,21 +46,21 @@ step "bridge tests: the listen error line (node:test)"
 demo_part bridge-errors-bridge-test node --test bridge/lib/test/listen-errors.test.js
 
 step "DSHKit tests: the three reasons (swift test, fake and loopback sockets)"
-demo_part bridge-errors-swift-test swift test --package-path ios/DSHKit --filter OfflineReasonsTests
+demo_part bridge-errors-swift-test scripts/swift-test --package-path ios/DSHKit --filter OfflineReasonsTests
 
 step "build the app and UI tests ($SIM)"
-xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DSHM_DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+  --log "$LOGS/build.log" || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 ui_part() { # name, then -only-testing selectors
   local name=$1; shift
   local args=() t
   for t in "$@"; do args+=("-only-testing:dsh-mobileUITests/$t"); done
   step "UI: $name (log: $LOGS/ui-$name.log)"
-  if demo_part "ui-$name" xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+  if demo_part "ui-$name" scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
       -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" \
-      > "$LOGS/ui-$name.log" 2>&1; then
+      --log "$LOGS/ui-$name.log"; then
     grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui-$name.log" || true
   else
     grep -E "error:|Test Case.*(passed|failed)" "$LOGS/ui-$name.log" || tail -30 "$LOGS/ui-$name.log"

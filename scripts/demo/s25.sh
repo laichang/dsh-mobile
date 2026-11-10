@@ -43,9 +43,9 @@ done
 sips -g hasAlpha "$SET/AppIcon.png" | grep -q 'hasAlpha: no' || fail "AppIcon.png has an alpha channel"
 
 step "Release build of the app ($SIM)"
-xcodebuild build -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -configuration Release \
+scripts/xc build -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -configuration Release \
   -destination "$DEST" -derivedDataPath "$DSHM_DD" ONLY_ACTIVE_ARCH=YES \
-  -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates > "$LOGS/build.log" 2>&1 \
+  -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates --log "$LOGS/build.log" \
   || { grep -E 'error:|failed' "$LOGS/build.log" | tail -20; fail "build failed"; }
 APP="$DSHM_DD/Build/Products/Release-iphonesimulator/dsh-mobile.app"
 [ -d "$APP" ] || fail "no app at $APP"

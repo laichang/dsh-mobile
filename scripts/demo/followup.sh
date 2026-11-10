@@ -68,8 +68,8 @@ ui_against_real_dsh() {
     sleep 0.5
   done
   [ -e "$DSHM_FOLLOWUP_SIGNALS/bridge-port" ] || { cat "$LOGS/host.log"; exit 1; }
-  xcodebuild test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
-    -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "$@" > "$log" 2>&1 \
+  scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+    -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "$@" --log "$log" \
     || { grep -E "error:|Test Case.*(passed|failed)" "$log"; cat "$LOGS/host.log"; exit 1; }
   grep -E "Test Case.*(passed|failed|skipped)" "$log"
   demo_no_skipped_ui "$log"
@@ -105,9 +105,9 @@ step "DSHKit tests (swift test, FakeBridge, golden fixtures; FollowUpTests, Foll
 demo_swift_tests "$LOGS/swift-test.log"
 
 step "build the app and UI tests ($SIM)"
-xcodebuild build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DSHM_DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  > "$LOGS/build.log" 2>&1 || { grep -E "error:" "$LOGS/build.log"; exit 1; }
+  --log "$LOGS/build.log" || { grep -E "error:" "$LOGS/build.log"; exit 1; }
 
 rm -f "$DSHM_FOLLOWUP_SHOTS"/*.png
 if [ $STEER = 1 ]; then

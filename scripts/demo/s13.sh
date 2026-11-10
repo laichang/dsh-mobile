@@ -37,9 +37,9 @@ for _ in $(seq 1 240); do
   sleep 0.5
 done
 [ -e "$DSHM_S13_SIGNALS/first-ready" ] || { cat "$logs/web.log"; exit 1; }
-xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$dest" \
+scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$dest" \
   -derivedDataPath "${DSHM_DD:-/tmp/dshm-s13-dd}" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-  -jobs 4 -parallel-testing-enabled NO -only-testing:dsh-mobileUITests/S13SessionVisibilityUITests > "$logs/ui.log" 2>&1 || {
+  -jobs 4 -parallel-testing-enabled NO -only-testing:dsh-mobileUITests/S13SessionVisibilityUITests --log "$logs/ui.log" || {
     grep -E 'error:|Test Case|failed' "$logs/ui.log"; cat "$logs/web.log"; exit 1;
   }
 grep -E 'Test Case.*testWebTurnsUpdateOpenDetailAndResumeAfterDisconnect.*passed' "$logs/ui.log"

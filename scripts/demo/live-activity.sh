@@ -32,10 +32,10 @@ fi
 printf '\n== %s\n' "UI test in the Simulator ($SIM): the lock screen"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 export TEST_RUNNER_DSHM_SHOT_DIR="$SHOTDIR"
-xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "${DSHM_DD:-/tmp/dshm-live-activity-dd}" -parallel-testing-enabled NO -jobs 4 \
   -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates -only-testing:dsh-mobileUITests/LiveActivityUITests \
-  > "$LOGS/uitest.log" 2>&1 || { grep -E 'error:|Test Case|XCTAssert|failed' "$LOGS/uitest.log" | tail -24; exit 1; }
+  --log "$LOGS/uitest.log" || { grep -E 'error:|Test Case|XCTAssert|failed' "$LOGS/uitest.log" | tail -24; exit 1; }
 grep -E 'Test Case.*(passed|failed|skipped)' "$LOGS/uitest.log"
 demo_no_skipped_ui "$LOGS/uitest.log"
 if [ $SHOTS = 1 ]; then

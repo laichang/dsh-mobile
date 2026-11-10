@@ -175,13 +175,17 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A failing test shows as one `file:line` line, and the full log is in `/tmp/dshm-*` — Evidence:
-- [ ] [auto] A passing run of each wrapper (`scripts/xc build`, `scripts/xc test`, `swift test`, `pnpm test`) writes 20 lines or fewer — Evidence:
-- [ ] [auto] A check fails when a demo script or `scripts/review` calls `xcodebuild`, `swift test` or `pnpm test` without a wrapper — Evidence:
+- [x] [auto] A failing test shows as one `file:line` line, and the full log is in `/tmp/dshm-*` — Evidence: cmd:scripts/wrap-test
+- [x] [auto] A passing run of each wrapper (`scripts/xc build`, `scripts/xc test`, `swift test`, `pnpm test`) writes 20 lines or fewer — Evidence: cmd:scripts/wrap-test --real
+- [x] [auto] A check fails when a demo script or `scripts/review` calls `xcodebuild`, `swift test` or `pnpm test` without a wrapper — Evidence: cmd:scripts/check-wrappers · cmd:scripts/wrap-test
 
 **Not**: Changes to what the tests check.
 
 **Log**: —
+- **2026-11-10 · Wrappers done; all items ticked.** Done: scripts/xc, scripts/swift-test, scripts/pnpm-test (parsing in scripts/lib/wrap.py) print a JSON summary of 6-7 lines on a pass and one file:line line per error (first 10); the full log goes to --log FILE or /tmp/dshm-logs/. All 44 demo scripts, lib.sh and scripts/review call them (xcodebuild ... > LOG 2>&1 became scripts/xc ... --log LOG). scripts/review also greps the logs named by the summaries' "log" lines for test: pointers, and its swift test run keeps its log. scripts/check-wrappers fails on a raw call; scripts/wrap-test (fast) and scripts/wrap-test --real test all three items. T0 demo passes through the wrappers (6 UI tests). Provisional: D150. No new dependencies.
+  Not done: check-wrappers runs on demand only; it is not in the pre-commit hook (a guard file, owned by the user). bridge-errors.sh still runs `node --test` on one file bare (not in the scope of the check). scripts/review S1 cannot pass: S1 has no [ui] items, and review exits 2 for that.
+  Note: the simulator dshm-S1 did not exist; I created it (iPhone 17 Pro, iOS 26.4).
+  Next: coordinator merges; user confirms D150.
 
 ### S2 · Slice brief: scripts/brief <ID> replaces reading the docs
 
