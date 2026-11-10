@@ -291,7 +291,7 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 
 **Done when**
 - [x] [auto] A test fails when ARCHITECTURE.md, STORY.md, AGENTS.md or a README contains `\bD[0-9]+\b` or a milestones section — Evidence: cmd:scripts/check-docs-test cmd:scripts/check-docs
-- [ ] [auto] ARCHITECTURE.md is 10k tokens or fewer (test) — Evidence:
+- [x] [auto] ARCHITECTURE.md is 10k tokens or fewer (test) — Evidence: cmd:scripts/check-docs-test cmd:scripts/check-docs
 
 **Not**: Code (S5). WORKFLOW.md and DESIGN.md (S7, S4 remove them).
 
