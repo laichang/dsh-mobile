@@ -124,7 +124,7 @@ A tracer is one thin round trip that one session can finish without running out 
 
 **Done when**
 - [x] [auto] `scripts/plan dag --json` writes the graph of `plan/plan.json`; a cycle or an unknown need makes it fail — Evidence: cmd:scripts/plan-test · commit:7fa61e3
-- [ ] [auto] A hand edit that sets `passed` to true makes `scripts/check-plan` fail; `passed` follows only the verifier results for the head commit, and a new commit makes them stale — Evidence:
+- [x] [auto] A hand edit that sets `passed` to true makes `scripts/check-plan` fail; `passed` follows only the verifier results for the head commit, and a new commit makes them stale — Evidence: cmd:scripts/plan-test · commit:7fa61e3 · commit:47fdbf5
 
 **Not**: The Workflow and the brief (T1). Replacing PLAN.md (S7).
 
