@@ -415,6 +415,8 @@ Append-only, dated.
 
 - **2026-11-10 · T1 assigned.** Branch `claude/t1-workflow-round-trip`, simulator `dshm-T1`, DSHM_HOME `~/.dshm/home-t1`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D156–D158. `eval "$(scripts/slice-env T1)"` exports them.
 
+- **2026-11-10 · T0 merged by the user; T1 starts.** The user committed the T0 merge as e3daa5a (CHECK_PLAN_ALLOW=1, guard file scripts/check-plan; merge-time review of option A). Review: /tmp/dshm-review/T0-ab98dbc.txt PASS (first review c78da12 FAIL, repaired). Gaps handed to T1: no script does the merge-time verify rerun yet; a cmd: pointer can be a symlink to a file outside the commit; an uncommitted edit to plan/plan.json can point verify at another branch. T0's guard patches in /tmp/dshm-t0-patch2/ are not applied (option A).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
