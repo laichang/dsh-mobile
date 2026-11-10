@@ -12,7 +12,7 @@ import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { DshTasks } from '../src/dsh.ts'
 import { MessageMode, QueueAction, QueuePlacement } from '../src/gen/conversation_pb.ts'
 import { FrameSchema, TaskStatus, type Event, type Frame, type Response } from '../src/gen/frame_pb.ts'
-import { TaskState } from '../src/gen/s2_pb.ts'
+import { TaskState } from '../src/gen/durable_list_pb.ts'
 import { CONVERSATION_CAPABILITY, PLAINTEXT_PATH, QUEUE_CAPABILITY, startBridgeServer, type BridgeServer } from '../src/server.ts'
 import { FakeDSH, type FakeDSHOptions } from './fake-dsh.ts'
 

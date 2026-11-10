@@ -200,7 +200,7 @@ struct Transcript: Decodable, Sendable, CustomTestStringConvertible {
         let file = try JSONDecoder().decode(File.self, from: Data(contentsOf: noiseFixtures.appending(path: "transcripts.json")))
         let pair = try #require(Transcript.load().first { $0.name == "pair" })
         let offer = try PairingOffer(string: file.offerURL)
-        #expect(offer.hostName == "Mac mini")
+        #expect(offer.hostName == "Mac mini (S1)") // check-ids: keep (golden transcripts)
         #expect(offer.addresses.map(\.description) == ["192.168.1.5:47801", "[fd7a:115c:a1e0::1]:47801", "100.64.0.7:47801"])
         #expect(offer.hostKey == (try NoiseKeyPair(privateKey: b(pair.hostStatic))).publicKey)
         #expect(offer.offerID == b(pair.offerId!))
@@ -214,7 +214,7 @@ struct Transcript: Decodable, Sendable, CustomTestStringConvertible {
         #expect(throws: PairingOffer.ParseError.badField("a")) { try PairingOffer(string: Self.link(a: "nope")) }
         #expect(throws: PairingOffer.ParseError.notAPairingLink) { try PairingOffer(string: "https://example.com/pair?v=1") }
         // The old stub link is not an offer.
-        #expect(throws: PairingOffer.ParseError.self) { try PairingOffer(string: "dshm://pair?host=127.0.0.1&port=47801&secret=t0-stub") }
+        #expect(throws: PairingOffer.ParseError.self) { try PairingOffer(string: "dshm://pair?host=127.0.0.1&port=47801&secret=round-trip-stub") }
     }
 
     @Test func parsesAddresses() {

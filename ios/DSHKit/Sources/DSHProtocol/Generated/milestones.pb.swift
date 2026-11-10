@@ -8,10 +8,10 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-// S3 · Milestones (PLAN.md §5, ARCHITECTURE D11, D19). Capability "milestones.v1".
+// Milestones. Capability "milestones.v1".
 //
 // The bridge maps DSH's typed session events deterministically into milestones; no model ever
-// summarizes (D11). A milestone carries DSH's own words where there are any (a todo's content,
+// summarizes. A milestone carries DSH's own words where there are any (a todo's content,
 // an error message) and never invents text; the app labels each kind itself.
 
 import SwiftProtobuf

@@ -113,7 +113,7 @@ bootstrap: done. The T0 round trip runs on this Mac.
 每个功能都有可重复运行的演示脚本，例如：
 
 ```bash
-scripts/demo/s15.sh
+scripts/demo/all-tasks.sh
 ```
 
 ### 2. 接入你自己的 DSH

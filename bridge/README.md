@@ -83,13 +83,13 @@ On a paired phone, open **Devices and audit** under the host. The list marks the
 
 ## Local acceptance host (for development)
 
-`node scripts/dsh-up.mjs` starts DSH 0.2.2-rc.1 from `~/.dshm/runtime` with `DSH_HOME=~/.dshm/home`, enables this bridge, and points DSH at DSH's mock LLM server, so no API key is needed. The script header lists its environment variables. Unlike the defaults above, it binds the bridge to `127.0.0.1` with `devPlaintext` on, so the Simulator can use both the plaintext path and Noise; for a real iPhone run it with `DSHM_BRIDGE_HOST=0.0.0.0 DSHM_BRIDGE_DEV_PLAINTEXT=0`. The pairing demo is `scripts/demo/s1.sh`.
+`node scripts/dsh-up.mjs` starts DSH 0.2.2-rc.1 from `~/.dshm/runtime` with `DSH_HOME=~/.dshm/home`, enables this bridge, and points DSH at DSH's mock LLM server, so no API key is needed. The script header lists its environment variables. Unlike the defaults above, it binds the bridge to `127.0.0.1` with `devPlaintext` on, so the Simulator can use both the plaintext path and Noise; for a real iPhone run it with `DSHM_BRIDGE_HOST=0.0.0.0 DSHM_BRIDGE_DEV_PLAINTEXT=0`. The pairing demo is `scripts/demo/pairing.sh`.
 
 This is the development host on the maintainer's Mac:
 - DSH is installed with npm (`@deepseek-ai/dsh@0.2.2-rc.1` and `@deepseek-ai/dsh-llm-mock-server@0.2.2-rc.1`) into `~/.dshm/runtime`.
 - `~/.dshm/bin/pnpm` is a shim for `corepack pnpm@11.28.5`; put it on `PATH` for `dsh plugin`.
 - The default `~/.dsh` is left untouched.
-- The milestone demo uses `node scripts/demo/s3-host.mjs` instead: the same setup with `DSH_HOME=~/.dshm/home-s3`, web port 3285 and bridge port 47812 (written to the profile's `cordis.patch.yml`), and DSH's mock LLM scripted to keep a three-item todo list. `scripts/demo/s3.sh` runs it.
+- The milestone demo uses `node scripts/demo/milestones-host.mjs` instead: the same setup with `DSH_HOME=~/.dshm/home-s3`, web port 3285 and bridge port 47812 (written to the profile's `cordis.patch.yml`), and DSH's mock LLM scripted to keep a three-item todo list. `scripts/demo/milestones.sh` runs it.
 - Other worktrees use their own `DSH_HOME` and ports. For example, X1/X4 use `~/.dshm/home-x1x4`, web port 3282 and bridge ports 47803–47809.
 
 ## Development

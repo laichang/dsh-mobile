@@ -10,7 +10,7 @@
 #                                      testDeniedSpeechSaysHowToTurnItOnAndKeepsTheField, then
 #                                      testRealPermissionPromptsDoNotCrashTheApp (the real Speech
 #                                      framework's permission prompts, answered on the system's
-#                                      queue: allow speech, turn off the microphone; D146)
+#                                      queue: allow speech, turn off the microphone)
 #   scripts/demo/voice.sh --shots DIR  also write the screenshots (1/3 size) into DIR
 #   DSHM_RESUME=1                      skip the parts that passed for the same code (lib.sh demo_part)
 #

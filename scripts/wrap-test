@@ -89,14 +89,14 @@ EOF
   X="$W/xc-failing.log"
   cat > "$X" <<EOF
 Test Suite 'Selected tests' started at 2026-11-09 08:13:28.089.
-Test Case '-[dsh_mobileUITests.T0DemoUITests testDemoAgainstFakeBridge]' started.
-$ROOT/ios/dsh-mobileUITests/T0DemoUITests.swift:20: error: -[dsh_mobileUITests.T0DemoUITests testDemoAgainstFakeBridge] : XCTAssertTrue failed - the reply did not show
-Test Case '-[dsh_mobileUITests.T0DemoUITests testDemoAgainstFakeBridge]' failed (12.455 seconds).
-Test Case '-[dsh_mobileUITests.T1ShellUITests testShell]' passed (3.100 seconds).
+Test Case '-[dsh_mobileUITests.RoundTripUITests testDemoAgainstFakeBridge]' started.
+$ROOT/ios/dsh-mobileUITests/RoundTripUITests.swift:20: error: -[dsh_mobileUITests.RoundTripUITests testDemoAgainstFakeBridge] : XCTAssertTrue failed - the reply did not show
+Test Case '-[dsh_mobileUITests.RoundTripUITests testDemoAgainstFakeBridge]' failed (12.455 seconds).
+Test Case '-[dsh_mobileUITests.ShellUITests testShell]' passed (3.100 seconds).
 	 Executed 2 tests, with 1 failure (0 unexpected) in 15.555 (15.560) seconds
 
 Failing tests:
-	T0DemoUITests.testDemoAgainstFakeBridge()
+	RoundTripUITests.testDemoAgainstFakeBridge()
 
 ** TEST FAILED **
 EOF
@@ -141,8 +141,8 @@ else
   scripts/swift-test > "$W/real-swift.out" 2>&1; expect_pass_short "scripts/swift-test" "$W/real-swift.out" $?
   scripts/xc build > "$W/real-build.out" 2>&1; expect_pass_short "scripts/xc build" "$W/real-build.out" $?
   # One FakeBridge UI test: the round-trip demo without the real-DSH test.
-  scripts/xc test -only-testing:dsh-mobileUITests/T0DemoUITests \
-    -skip-testing:dsh-mobileUITests/T0DemoUITests/testDemoAgainstRealDSH > "$W/real-test.out" 2>&1
+  scripts/xc test -only-testing:dsh-mobileUITests/RoundTripUITests \
+    -skip-testing:dsh-mobileUITests/RoundTripUITests/testDemoAgainstRealDSH > "$W/real-test.out" 2>&1
   expect_pass_short "scripts/xc test" "$W/real-test.out" $?
 fi
 echo "failures: $FAILS"

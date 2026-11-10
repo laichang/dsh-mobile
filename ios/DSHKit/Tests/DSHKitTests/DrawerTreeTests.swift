@@ -36,8 +36,8 @@ import Testing
 
     /// The Swift half of the drawer golden fixtures: the same frames bridge/test/drawer.test.ts sends.
     @Test func goldenWebAndPhoneSessionsDecodeTheirWorkspace() async throws {
-        let phone = try Self.fixture("s14_phone_session_upserted_event")
-        let web = try Self.fixture("s14_web_session_upserted_event")
+        let phone = try Self.fixture("drawer_phone_session_upserted_event")
+        let web = try Self.fixture("drawer_web_session_upserted_event")
         #expect(phone.workspace == "/work/app" && phone.hasWorkspace)
         #expect(web.workspace == "/work/app" && web.externalSession)
         // Through a host, into the cache, into one workspace of the drawer.

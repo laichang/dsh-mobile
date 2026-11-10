@@ -1,7 +1,7 @@
 import { AttachmentKind } from '../gen/attachments_pb.ts'
-import { TaskState } from '../gen/s2_pb.ts'
+import { TaskState } from '../gen/durable_list_pb.ts'
 import { failureOf, isUserInterrupt } from '../milestones/mapper.ts'
-import type { TaskHub } from '../s2/task-hub.ts'
+import type { TaskHub } from '../tasks/task-hub.ts'
 
 interface Row {
   sessionId: string

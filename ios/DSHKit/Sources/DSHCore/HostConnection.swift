@@ -73,7 +73,7 @@ public enum TaskState: String, Sendable, Equatable, CaseIterable {
     public var isTerminal: Bool { self == .completed || self == .failed || self == .interrupted }
 }
 
-/// A task as the host reports it (`TaskSummary` in protocol/s2.proto).
+/// A task as the host reports it (`TaskSummary` in protocol/durable_list.proto).
 public struct TaskSnapshot: Sendable, Equatable {
     public var taskID: String
     public var title: String
@@ -131,7 +131,7 @@ public struct TaskSnapshot: Sendable, Equatable {
     }
 }
 
-/// The answer to `Resume` (protocol/s2.proto `Resumed`).
+/// The answer to `Resume` (protocol/durable_list.proto `Resumed`).
 public struct ResumeResult: Sendable, Equatable {
     public var logID: String
     public var headSeq: UInt64

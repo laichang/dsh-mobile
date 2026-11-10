@@ -34,7 +34,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47810}" DSHM_WEB_PORT="${DSHM_WEB_PORT:-3283}"
-export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-followup}" DSHM_SIM="${DSHM_SIM:-dshm-T0}"
+export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-followup}" DSHM_SIM="${DSHM_SIM:-dshm-followup}"
 export DSHM_DD="${DSHM_DD:-/tmp/dshm-followup-dd}"
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
@@ -112,13 +112,13 @@ scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobil
 rm -f "$DSHM_FOLLOWUP_SHOTS"/*.png
 if [ $STEER = 1 ]; then
   demo_part followup-ui-steer "$0" --part ui-steer
-  EVIDENCE=evidence/S15
+  EVIDENCE=${DSHM_EVIDENCE:-evidence/followup}
 elif [ $RUNNING = 1 ]; then
   demo_part followup-ui-running "$0" --part ui-running
-  EVIDENCE=evidence/S1
+  EVIDENCE=${DSHM_EVIDENCE:-evidence/followup}
 else
   demo_part followup-ui-real "$0" --part ui-real
-  EVIDENCE=evidence/T0
+  EVIDENCE=${DSHM_EVIDENCE:-evidence/followup}
 fi
 
 if [ $SHOTS = 1 ]; then

@@ -62,7 +62,7 @@ final class KeyboardMenusUITests: XCTestCase {
         XCTAssertEqual(prompt(app).value as? String, "draft", "the draft stays", file: file, line: line)
     }
 
-    // MARK: - Done when
+    // MARK: - Checks
 
     /// The reported bug: with the keyboard up on 01, the host menu opened over the keyboard.
     func testHostMenuPutsKeyboardAwayFirst() {

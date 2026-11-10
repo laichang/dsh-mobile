@@ -9,7 +9,7 @@ import Testing
 @MainActor
 @Suite(.serialized, .timeLimit(.minutes(2))) struct NoiseResumeTests {
     let storeURL = FileManager.default.temporaryDirectory
-        .appendingPathComponent("dshm-s1s2-\(UUID().uuidString).store")
+        .appendingPathComponent("dshm-noise-resume-\(UUID().uuidString).store")
     let keys = InMemoryDeviceKeyStore()
     let hosts = InMemoryPairedHostStore()
 

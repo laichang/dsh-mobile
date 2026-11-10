@@ -113,7 +113,7 @@ bootstrap: done. The T0 round trip runs on this Mac.
 Each feature has its own re-runnable demo, for example:
 
 ```bash
-scripts/demo/s15.sh
+scripts/demo/all-tasks.sh
 ```
 
 ### 2. Use it with your own DSH

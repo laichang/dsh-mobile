@@ -9,7 +9,7 @@ import Testing
 @MainActor
 @Suite(.serialized, .timeLimit(.minutes(2))) struct CachedMilestoneTests {
     let storeURL = FileManager.default.temporaryDirectory
-        .appendingPathComponent("dshm-s2s3-\(UUID().uuidString).store")
+        .appendingPathComponent("dshm-cached-milestones-\(UUID().uuidString).store")
 
     func launch(_ host: FakeHost) throws -> TaskListStore {
         let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)

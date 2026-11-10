@@ -351,7 +351,7 @@ public enum FakeHostError: Error, Equatable {
 }
 
 /// The fake bridge process: tasks, per-host event log, ListTasks and Resume, like
-/// `bridge/src/s2/`. Tests can make it unreachable, drop connections, or restart it.
+/// `bridge/src/tasks/`. Tests can make it unreachable, drop connections, or restart it.
 public final class FakeHost: Sendable {
     public let hostName: String
     private let incompatibleDsh: (installed: String, supported: String)?

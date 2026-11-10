@@ -8,7 +8,7 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-/// S5 · Interrupt a running task on its host. Capability "interrupt.v1".
+/// Interrupt a running task on its host. Capability "interrupt.v1".
 
 import SwiftProtobuf
 

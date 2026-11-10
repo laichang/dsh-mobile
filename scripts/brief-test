@@ -248,7 +248,7 @@ def largest_node():
             "files": areas[i:i + 5] + [f"scripts/new-tool-{i}", f"ios/dsh-mobile/Features/New{i}.swift"],
             "screens": [],
             "passed": False,
-            "evidence": ["cmd:scripts/plan-test", f"cmd:scripts/demo/t0.sh --part {i}",
+            "evidence": ["cmd:scripts/plan-test", f"cmd:scripts/demo/round-trip.sh --part {i}",
                          "cmd:scripts/new-tool-0 --check", "commit:693a17f"],
         })
     scope = {
@@ -344,7 +344,7 @@ def main():
         commit_plan(repo, "largest", *largest_node())
         briefs_of(repo, "largest")
         text = (tmp / "brief-largest-S98.md").read_text()
-        (ok if "scripts/demo/t0.sh" in text else bad)("a demo that the items name is in the commands")
+        (ok if "scripts/demo/round-trip.sh" in text else bad)("a demo that the items name is in the commands")
         (ok if "`scripts/new-tool-0 --check`: evidence of an item (new" in text else bad)(
             "an evidence command that the base does not have is marked new")
         (ok if "do not tick it" in text else bad)("a [human] item is the user's")

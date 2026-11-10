@@ -7,22 +7,22 @@
 #   DSHM_RESUME=1                 skip the parts that passed for the same code (lib.sh demo_part)
 #
 # Typing (the shared send/type helpers in UITestSupport.swift wait for keyboard focus):
-#   focus-s3  S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge
-#   focus-s2  S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge
-#   focus-t0  T0DemoUITests/testDemoAgainstRealDSH (real DSH + bridge from scripts/dsh-up.mjs)
+#   focus-s3  MilestonesUITests/testTodosTickOffOnCardWithFakeBridge
+#   focus-s2  DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge
+#   focus-t0  RoundTripUITests/testDemoAgainstRealDSH (real DSH + bridge from scripts/dsh-up.mjs)
 # Waits for the app to idle (these tests launch the app with UIKit view animations off):
-#   idle-s16  S16SessionPageUITests   idle-s15  S15AllTasksUITests
-#   idle-s19  S19OutcomesUITests      idle-s20  S20PickersUITests
+#   idle-s16  SessionPageUITests   idle-s15  AllTasksUITests
+#   idle-s19  OutcomesUITests      idle-s20  PickersUITests
 #
 # Each part prints the duration of each test and its longest "Wait for … to idle" step. A part
 # fails when a test fails or is skipped, when a step waits $IDLE_LIMIT s (60) or more for the app to
 # idle (or XCTest says "animations complete notification not received"), or when
-# S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls takes $S16_LIMIT s (120)
+# SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls takes $SESSION_PAGE_LIMIT s (120)
 # or more.
 #
 # Resources (WORKFLOW.md §6), read from the environment:
-#   DSHM_SIM dshm-S9   DSHM_DD (DerivedData) /tmp/dshm-s9-dd   DSHM_BRIDGE_PORT 47810
-#   DSHM_WEB_PORT 3283   DSHM_HOME ~/.dshm/home-s9 (the T0 part's DSH)
+#   DSHM_SIM dshm-ui-health   DSHM_DD (DerivedData) /tmp/dshm-ui-health-dd   DSHM_BRIDGE_PORT 47810
+#   DSHM_WEB_PORT 3283   DSHM_HOME ~/.dshm/home-ui-health (the round trip part's DSH)
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
@@ -34,9 +34,9 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-export DSHM_SIM="${DSHM_SIM:-dshm-S9}" DSHM_DD="${DSHM_DD:-/tmp/dshm-s9-dd}"
+export DSHM_SIM="${DSHM_SIM:-dshm-ui-health}" DSHM_DD="${DSHM_DD:-/tmp/dshm-ui-health-dd}"
 export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47810}" DSHM_WEB_PORT="${DSHM_WEB_PORT:-3283}"
-export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-s9}"
+export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-ui-health}"
 NODE24="$HOME/.nvm/versions/node/v24.14.0/bin"
 [ -d "$NODE24" ] && export PATH="$NODE24:$PATH"
 [ -d "$HOME/.dshm/bin" ] && export PATH="$HOME/.dshm/bin:$PATH"
@@ -46,8 +46,8 @@ LOGS="/tmp/dshm-ui-health-$DSHM_SIM"; mkdir -p "$LOGS"
 SIM="$DSHM_SIM"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 IDLE_LIMIT=60
-S16_LIMIT=120
-S16_SCROLL=S16SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls
+SESSION_PAGE_LIMIT=120
+SESSION_PAGE_SCROLL=SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls
 
 # Per test in LOG: the duration and the longest wait for the app to idle. A wait is the time from
 # its "Wait for … to idle" line to the next timed line (or to the end of the test). Fails on a
@@ -92,7 +92,7 @@ ui_test() { # part name, then Suite or Suite/test selectors
   if ! scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
       -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" --log "$log"; then
     grep -E "error:|Test Case.*(passed|failed)" "$log" || tail -30 "$log"
-    ui_waits "$log" "$S16_SCROLL=$S16_LIMIT" || true
+    ui_waits "$log" "$SESSION_PAGE_SCROLL=$SESSION_PAGE_LIMIT" || true
     echo "UI tests failed: $name" >&2
     return 1
   fi
@@ -100,12 +100,12 @@ ui_test() { # part name, then Suite or Suite/test selectors
   grep -E "Test Case.*(passed|failed|skipped)" "$log"
   demo_no_skipped_ui "$log"
   step "durations and idle waits: $name"
-  ui_waits "$log" "$S16_SCROLL=$S16_LIMIT" || { echo "UI tests too slow or not idle: $name" >&2; return 1; }
+  ui_waits "$log" "$SESSION_PAGE_SCROLL=$SESSION_PAGE_LIMIT" || { echo "UI tests too slow or not idle: $name" >&2; return 1; }
 }
 
 case "$PART" in
-  focus-s3) ui_test focus-s3 S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge; exit ;;
-  focus-s2) ui_test focus-s2 S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge; exit ;;
+  focus-s3) ui_test focus-s3 MilestonesUITests/testTodosTickOffOnCardWithFakeBridge; exit ;;
+  focus-s2) ui_test focus-s2 DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge; exit ;;
   focus-t0)
     DSH_PID=""
     cleanup() { [ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true; }
@@ -119,11 +119,11 @@ case "$PART" in
       lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null || { cat "$LOGS/dsh-up.log"; echo "bridge did not come up" >&2; exit 1; }
     fi
     export TEST_RUNNER_DSHM_REAL_DSH=1 TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT"
-    ui_test focus-t0 T0DemoUITests/testDemoAgainstRealDSH; exit ;;
-  idle-s16) ui_test idle-s16 S16SessionPageUITests; exit ;;
-  idle-s15) ui_test idle-s15 S15AllTasksUITests; exit ;;
-  idle-s19) ui_test idle-s19 S19OutcomesUITests; exit ;;
-  idle-s20) ui_test idle-s20 S20PickersUITests; exit ;;
+    ui_test focus-t0 RoundTripUITests/testDemoAgainstRealDSH; exit ;;
+  idle-s16) ui_test idle-s16 SessionPageUITests; exit ;;
+  idle-s15) ui_test idle-s15 AllTasksUITests; exit ;;
+  idle-s19) ui_test idle-s19 OutcomesUITests; exit ;;
+  idle-s20) ui_test idle-s20 PickersUITests; exit ;;
   "") ;;
   *) echo "unknown part $PART" >&2; exit 2 ;;
 esac

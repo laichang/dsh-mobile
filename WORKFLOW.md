@@ -144,7 +144,7 @@ To end a requirement, after the exit (§6 of the plan file) passes:
 3. Run `scripts/plan show <ID>`. It shows the §0 row and the section of your slice, together with its Log. Do not read all of the plan file.
 4. Read `git log` from the date of the last Log entry of your slice.
 5. Run `eval "$(scripts/slice-env <ID>)"`. It exports the resources of your slice (§6).
-6. Run `scripts/demo/t0.sh`. If it fails, repair it first.
+6. Run `scripts/demo/round-trip.sh`. If it fails, repair it first.
 7. Set your status title (§7).
 
 ### 4.2 Before you stop
@@ -268,7 +268,7 @@ Slices run tests at the same time. Each slice therefore gets its own resources:
 - Use only the decision numbers of your block (`DSHM_DECISIONS`). Then parallel slices do not use the same number. Do not use the unused numbers of a block for a different slice.
 - A slice uses only its own resources. All slices use the DSH install in `~/.dshm/runtime` read-only.
 - When a slice is merged, `scripts/plan merged` removes its resources (§10). Do not keep them for later use.
-- Port 47800 is for demos on `main`. Port 47801 is for `scripts/demo/t0.sh`.
+- Port 47800 is for demos on `main`. Port 47801 is for `scripts/demo/round-trip.sh`.
 - The slice demo script reads the resources from `DSHM_BRIDGE_PORT`, `DSHM_WEB_PORT`, `DSHM_SECOND_BRIDGE_PORT`, `DSHM_SECOND_WEB_PORT`, `DSHM_HOME`, and `DSHM_SIM`.
 
 ### 6.1 Simulator limit and free space
@@ -384,7 +384,7 @@ Rules for all agents:
 - If the result is `RESULT: FAIL`, the slice owner repairs the failure. Then run `scripts/review <ID> --resume` on the new commit.
 - A slice owner uses a maximum of 3 repair rounds for flaky tests of one slice. After that, do not repair more. Record each remaining flaky test in the Log and in §8.
 - Do not repair a flaky test that the slice did not add or change. Record it in §8 for a later slice.
-- A script that runs many parts (for example `scripts/demo/t1.sh --all`) wraps each part in `demo_part` from `scripts/demo/lib.sh`. Then a failure in one part does not run the other parts again.
+- A script that runs many parts (for example `scripts/demo/shell.sh --all`) wraps each part in `demo_part` from `scripts/demo/lib.sh`. Then a failure in one part does not run the other parts again.
 - At the start of a work session, run only the T0 demo (§4.1). Do not run the demos of other slices to prepare the Mac.
 
 ## 11. Decisions that stay with the user
@@ -447,7 +447,7 @@ If a tool has no function for a capability, use the fallback in this table. Then
 ### Change log
 
 - **2026-11-05**: First version. Moved the process rules from "How to use this file" in the plan file. Added the setup procedure, the long-horizon run, the resources, the status titles, and the tool support for Codex. Added the Codex hooks (`.codex/hooks.json`, `codex-guard`) and the Codex setup (§2.1).
-- **2026-11-06**: Added the recovery after an interruption (§5.4), the simulator limit (§6.1, enforced by the guard in `scripts/demo/lib.sh`), and the review run with the rules for flaky tests (§10.1, enforced by `scripts/review`). Added coordinator rules to §5.2: wait for completion events, read each event as the end of a turn and not of the slice, and do not add merge conditions. A `stopped` or `killed` job notification starts the recovery (§5.4). Reason: T1 stopped for many hours. An app restart stopped the background jobs. Six booted simulators made the UI tests flaky. A merge condition of "5 runs in a row" did not converge. Each failure in `t1.sh --all` started the full regression again. Added the heartbeat and keep-awake (§5.5): after an interruption, no event woke the coordinator.
+- **2026-11-06**: Added the recovery after an interruption (§5.4), the simulator limit (§6.1, enforced by the guard in `scripts/demo/lib.sh`), and the review run with the rules for flaky tests (§10.1, enforced by `scripts/review`). Added coordinator rules to §5.2: wait for completion events, read each event as the end of a turn and not of the slice, and do not add merge conditions. A `stopped` or `killed` job notification starts the recovery (§5.4). Reason: T1 stopped for many hours. An app restart stopped the background jobs. Six booted simulators made the UI tests flaky. A merge condition of "5 runs in a row" did not converge. Each failure in `shell.sh --all` started the full regression again. Added the heartbeat and keep-awake (§5.5): after an interruption, no event woke the coordinator.
 - **2026-11-06**: The guard (§6.1) now checks the CPU idle time, not the load average. It also stops the iOS background services in each `dshm-*` simulator.
 - **2026-11-06**: The shutdown by the guard (§6.1) now also occurs after a tool kills the script. The guard shuts down a `dshm-*` simulator whose owner is not running.
 - **2026-11-07**: Added the bookkeeping commands (§3.1, `scripts/plan`), the run status (`scripts/status`, in §5.4 and §5.5), and the resource registry with blocks of decision numbers (§6, `scripts/slice-env`, `scripts/resources.tsv`). The code key of the parts (§10.1) is now the content of the worktree, not the commit. Reason: a review of all sessions to 2026-11-07. About one quarter of all commits were hand edits of §0, §8, and §9. The user asked for the progress more than 15 times, and each answer was a set of hand-made commands. Parallel slices took the same `Dxx` number, and agents renumbered decisions 10 times. A commit with no code change made the review run the passed parts again.

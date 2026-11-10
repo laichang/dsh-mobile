@@ -2,7 +2,7 @@
 # Set up a Mac for dsh-mobile development, then prove the round trip runs (WORKFLOW.md §2).
 # Safe to run again: each step checks first and skips what is already in place.
 #
-#   scripts/bootstrap              set up, then run scripts/demo/t0.sh (real DSH + mock LLM)
+#   scripts/bootstrap              set up, then run scripts/demo/round-trip.sh (real DSH + mock LLM)
 #   scripts/bootstrap --no-demo    set up only
 #
 # What it installs or changes (all outside the repo live under ~/.dshm; ~/.dsh is not touched):
@@ -91,9 +91,9 @@ if command -v codex >/dev/null; then
 fi
 
 if [ $DEMO = 1 ]; then
-  step "T0 demo (scripts/demo/t0.sh): codegen check, tests, real DSH + mock LLM, XCUITests"
-  scripts/demo/t0.sh
-  printf '\nbootstrap: done. The T0 round trip runs on this Mac.\n'
+  step "Round-trip demo (scripts/demo/round-trip.sh): codegen check, tests, real DSH + mock LLM, XCUITests"
+  scripts/demo/round-trip.sh
+  printf '\nbootstrap: done. The round trip runs on this Mac.\n'
 else
-  printf '\nbootstrap: done (demo skipped). Run scripts/demo/t0.sh to prove the round trip.\n'
+  printf '\nbootstrap: done (demo skipped). Run scripts/demo/round-trip.sh to prove the round trip.\n'
 fi

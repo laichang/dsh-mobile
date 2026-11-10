@@ -77,7 +77,7 @@ function transcript(name: string, mode: Mode): Transcript {
 /** The pair transcript's offer as the QR's `dshm://pair?…` URL (parsed by PairingOffer.swift). */
 function offer(): string {
   return offerURL({
-    hostName: 'Mac mini (S1)',
+    hostName: 'Mac mini (S1)', // check-ids: keep (golden transcripts)
     addresses: ['192.168.1.5:47801', '[fd7a:115c:a1e0::1]:47801', '100.64.0.7:47801'],
     hostKey: keyPairFromSecret(fill(0x11)).publicKey,
     offerId: fill(0x55, 16),

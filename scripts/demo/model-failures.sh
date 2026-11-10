@@ -5,7 +5,7 @@
 #                                           swift test, and the real-DSH UI demo: a task on a provider
 #                                           with no balance fails in red with the reason; after the
 #                                           fake top-up, a new message in the same session continues it
-#   scripts/demo/model-failures.sh --shots  also refresh the screenshots in evidence/S3/ (1/3 size)
+#   scripts/demo/model-failures.sh --shots  also refresh the screenshots in evidence/model-failures/ (1/3 size)
 #   DSHM_RESUME=1                           skip the parts that passed for the same code (lib.sh demo_part)
 #
 # Resources (WORKFLOW.md §6), from the environment (`eval "$(scripts/slice-env <ID>)"`):
@@ -26,7 +26,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47810}" DSHM_WEB_PORT="${DSHM_WEB_PORT:-3283}"
-export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-model-failures}" DSHM_SIM="${DSHM_SIM:-dshm-T0}"
+export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-model-failures}" DSHM_SIM="${DSHM_SIM:-dshm-model-failures}"
 export DSHM_DD="${DSHM_DD:-/tmp/dshm-model-failures-dd}"
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
@@ -86,10 +86,10 @@ rm -f "$DSHM_FAILURE_SHOTS"/*.png
 demo_part model-failures-ui-real "$0" --part ui-real
 
 if [ $SHOTS = 1 ]; then
-  step "screenshots → evidence/S3 (1/3 size)"
-  mkdir -p evidence/S3
+  step "screenshots → ${DSHM_EVIDENCE:-evidence/model-failures} (1/3 size)"
+  mkdir -p ${DSHM_EVIDENCE:-evidence/model-failures}
   for f in "$DSHM_FAILURE_SHOTS"/model-failure-*.png; do
-    out="evidence/S3/$(basename "$f")"
+    out="${DSHM_EVIDENCE:-evidence/model-failures}/$(basename "$f")"
     sips --resampleWidth 402 "$f" --out "$out" >/dev/null
     echo "$out $(du -h "$out" | cut -f1)"
   done

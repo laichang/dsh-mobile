@@ -8,16 +8,16 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-// S17 · Structured transcript (PLAN.md §5, screen 04, ARCHITECTURE D61). Capability "transcript.v1".
+// Structured transcript (screen 04). Capability "transcript.v1".
 // Field numbers in frame.proto: 340–359.
 //
 // The bridge maps DSH's typed session data into blocks, deterministically: thinking from the
 // timed `reasoning-delta` chunks of the assistant stream, tool calls from the durable `tool/call`
-// and `tool/result` events. No model summarizes anything (the same rule as D11): a block carries
+// and `tool/result` events. No model summarizes anything (the same rule as for milestones): a block carries
 // DSH's own data (the tool's name, its target from the arguments, the lines in its diff, DSH's
 // timestamps), and the app words each row itself ("已思考 8 秒", "Edit TaskListStore.swift +12 −3").
 //
-// Blocks are logged host events (S2), so Resume replays them. They take their place in the
+// Blocks are logged host events, so Resume replays them. They take their place in the
 // transcript by order: a block sits after the AssistantChunks that came before it.
 
 import SwiftProtobuf

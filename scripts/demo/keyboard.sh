@@ -6,7 +6,7 @@
 #
 #   scripts/demo/keyboard.sh              KeyboardMenusUITests (testHostMenuPutsKeyboardAwayFirst,
 #                                         testAttachMenuPutsKeyboardAwayFirst), then the seam:
-#                                         S24KeyboardDismissUITests (drawer, edge drag, sheets)
+#                                         KeyboardDismissUITests (drawer, edge drag, sheets)
 #   scripts/demo/keyboard.sh --shots DIR  also write the screenshots (1/3 size) into DIR
 #   DSHM_RESUME=1                         skip the parts that passed for the same code (lib.sh demo_part)
 #
@@ -54,7 +54,7 @@ step "UI: keyboard up on 01, then the host menu and the + menu (log: $LOGS/ui-me
 ui keyboard-ui-menus "$LOGS/ui-menus.log" KeyboardMenusUITests
 
 step "UI: the seam: the drawer, an edge drag and the picker sheets (log: $LOGS/ui-shell.log)"
-ui keyboard-ui-shell "$LOGS/ui-shell.log" S24KeyboardDismissUITests
+ui keyboard-ui-shell "$LOGS/ui-shell.log" KeyboardDismissUITests
 
 if [ -n "$SHOTS" ]; then
   step "screenshots → $SHOTS (1/3 size)"

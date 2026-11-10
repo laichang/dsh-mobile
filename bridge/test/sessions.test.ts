@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { SessionDirectory, type SessionReader } from '../src/sessions/directory.ts'
-import { TaskHub } from '../src/s2/task-hub.ts'
-import { TaskState } from '../src/gen/s2_pb.ts'
+import { TaskHub } from '../src/tasks/task-hub.ts'
+import { TaskState } from '../src/gen/durable_list_pb.ts'
 import { AttachmentKind } from '../src/gen/attachments_pb.ts'
 
 // The journal's image and file blocks become the message's attachments, so a replay shows the chips.

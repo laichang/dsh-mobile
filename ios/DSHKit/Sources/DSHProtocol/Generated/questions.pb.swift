@@ -8,7 +8,7 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-/// Agent questions (ARCHITECTURE D18, D92): DSH's `ask_user_question` tool, held by the bridge
+/// Agent questions: DSH's `ask_user_question` tool, held by the bridge
 /// like an approval. Capability `questions.v1`. Frame fields 380–399; `TaskSummary` field 380.
 
 import SwiftProtobuf

@@ -1,16 +1,16 @@
 #!/bin/bash
-# Rich detail against a real DSH with a mock model (M1 S8, M2 S10 · #22): S8RichDetailUITests.
+# Rich detail against a real DSH with a mock model (#22): RichDetailUITests.
 # A short reply shows inline in 所有任务; a coding reply streams its fences (diff, console); then,
 # with the host stopped, the app opens again and shows the coding task from its cache, offline.
 #
 #   scripts/demo/rich-detail.sh                 bridge + DSHKit tests, then the three UI tests in order
 #   scripts/demo/rich-detail.sh --offline-only  only testCachedRichDetailAfterRelaunch, on the cache
 #                                               an earlier full run left in the simulator
-#   scripts/demo/rich-detail.sh --shots         also refresh the screenshots in evidence/S10/ (1/3 size)
+#   scripts/demo/rich-detail.sh --shots         also refresh the screenshots in evidence/rich-detail/ (1/3 size)
 #
-# Resources (WORKFLOW.md §6), read from the environment (eval "$(scripts/slice-env S10)"); the
-# defaults are S10's: DSHM_BRIDGE_PORT 47811, DSHM_WEB_PORT 3284, DSHM_HOME ~/.dshm/home-s10,
-# DSHM_SIM dshm-S10, DSHM_DD (DerivedData) /tmp/dshm-s10-dd. Fails on any failed or skipped test.
+# Resources (WORKFLOW.md §6), read from the environment (eval "$(scripts/slice-env <ID>)"); the
+# defaults: DSHM_BRIDGE_PORT 47811, DSHM_WEB_PORT 3284, DSHM_HOME ~/.dshm/home-rich-detail,
+# DSHM_SIM dshm-rich-detail, DSHM_DD (DerivedData) /tmp/dshm-rich-detail-dd. Fails on any failed or skipped test.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
@@ -18,9 +18,9 @@ SHOTS=0 OFFLINE_ONLY=0
 for arg in "$@"; do case "$arg" in --shots) SHOTS=1 ;; --offline-only) OFFLINE_ONLY=1 ;; *) echo "unknown arg $arg" >&2; exit 2 ;; esac; done
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47811}" DSHM_WEB_PORT="${DSHM_WEB_PORT:-3284}"
-export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-s10}"
-export DSHM_SIM="${DSHM_SIM:-dshm-S10}"
-DD="${DSHM_DD:-/tmp/dshm-s10-dd}"
+export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-rich-detail}"
+export DSHM_SIM="${DSHM_SIM:-dshm-rich-detail}"
+DD="${DSHM_DD:-/tmp/dshm-rich-detail-dd}"
 SIM="$DSHM_SIM"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 LOGS="/tmp/dshm-rich-detail-$SIM"
@@ -50,7 +50,7 @@ start_host() { # mock reply, ms per chunk
   if lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null; then
     echo "rich-detail needs its own host on port $DSHM_BRIDGE_PORT" >&2; exit 1
   fi
-  DSHM_MOCK_TEXT="$1" DSHM_MOCK_CHUNK_DELAY_MS="$2" node scripts/demo/s2-host.mjs > "$LOGS/host.log" 2>&1 &
+  DSHM_MOCK_TEXT="$1" DSHM_MOCK_CHUNK_DELAY_MS="$2" node scripts/demo/durable-list-host.mjs > "$LOGS/host.log" 2>&1 &
   host_pid=$!
   for _ in $(seq 1 240); do
     lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null && return
@@ -59,13 +59,13 @@ start_host() { # mock reply, ms per chunk
   done
   echo "bridge did not start" >&2; exit 1
 }
-run_ui() { # DSHM_S8_REPLY, test name
-  export TEST_RUNNER_DSHM_S8_REPLY="$1" TEST_RUNNER_DSHM_SHOT_DIR="$shot_dir" TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT"
+run_ui() { # DSHM_RICH_REPLY, test name
+  export TEST_RUNNER_DSHM_RICH_REPLY="$1" TEST_RUNNER_DSHM_SHOT_DIR="$shot_dir" TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT"
   local log="$LOGS/$1.log"
-  step "UI: S8RichDetailUITests/$2 (log: $log)"
+  step "UI: RichDetailUITests/$2 (log: $log)"
   scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
     -derivedDataPath "$DD" -parallel-testing-enabled NO \
-    -only-testing:"dsh-mobileUITests/S8RichDetailUITests/$2" --log "$log" || {
+    -only-testing:"dsh-mobileUITests/RichDetailUITests/$2" --log "$log" || {
       grep -E 'error:|Test Case' "$log"; echo "UI test failed: $2" >&2; exit 1;
     }
   grep -E "Test Case.*$2.*passed" "$log"
@@ -103,10 +103,10 @@ stop_host
 # The host is down: the app opens offline, from its cache.
 run_ui offline testCachedRichDetailAfterRelaunch
 if [ "$SHOTS" = 1 ]; then
-  step "screenshots → evidence/S10 (1/3 size)"
-  mkdir -p evidence/S10
-  for name in s8-inline-answer s8-rich-detail; do
-    sips --resampleWidth 402 "$shot_dir/$name.png" --out "evidence/S10/$name.png" >/dev/null
+  step "screenshots → ${DSHM_EVIDENCE:-evidence/rich-detail} (1/3 size)"
+  mkdir -p ${DSHM_EVIDENCE:-evidence/rich-detail}
+  for name in rich-detail-inline-answer rich-detail-rich-detail; do
+    sips --resampleWidth 402 "$shot_dir/$name.png" --out "${DSHM_EVIDENCE:-evidence/rich-detail}/$name.png" >/dev/null
   done
 fi
 step "rich-detail demo passed"

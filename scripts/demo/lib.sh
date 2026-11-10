@@ -43,7 +43,7 @@ demo_no_skipped_ui() {
 #   - When the top-level script exits (also on error or kill), shuts down its simulator if it is
 #     a dshm-* simulator or was not booted before. A simulator of the user stays as it was.
 #   - Boots a dshm-* simulator and stops the iOS services in DSHM_SIM_NOISE (dshm_quiet_sim).
-# A nested demo (t1.sh --all runs s1.sh … s13.sh) sees DSHM_GUARD_OWNER and skips the guard; the
+# A nested demo (shell.sh --all runs pairing.sh … session-visibility.sh) sees DSHM_GUARD_OWNER and skips the guard; the
 # top-level script owns the simulator. Env: DSHM_SIM_LIMIT (3), DSHM_GUARD_WAIT (seconds, 1800),
 # DSHM_MIN_FREE_GB (30). Bridge-only scripts (no simulator, also on CI runners) skip the guard.
 

@@ -76,7 +76,7 @@ try {
       .trim().split('\n').map(line => JSON.parse(line)).filter(entry => entry.id === pendingId)
     assert.equal(audit.length, 1)
     assert.equal(audit[0].device, winner === 'phone' ? 'dev loopback' : 'DSH client')
-    console.log('D17: one approval on both clients; ' + winner + ' answered first')
+    console.log('One approval on both clients; ' + winner + ' answered first')
   }
 } finally {
   await messages.return?.()

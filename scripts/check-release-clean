@@ -33,9 +33,9 @@ release_app=$(build Release)
 debug_app=$(build Debug)
 release=$(scan "$release_app")
 debug=$(scan "$debug_app")
-[ "$(ats "$release_app")" = "$(ats "$debug_app")" ] || { echo "check-release-clean: FAIL, NSAppTransportSecurity differs between Debug and Release (D88)" >&2; exit 1; }
+[ "$(ats "$release_app")" = "$(ats "$debug_app")" ] || { echo "check-release-clean: FAIL, NSAppTransportSecurity differs between Debug and Release" >&2; exit 1; }
 [ "$(plutil -extract NSAppTransportSecurity.NSAllowsArbitraryLoads raw -o - "$release_app/Info.plist" 2>/dev/null)" = true ] \
-  || { echo "check-release-clean: FAIL, Release lacks NSAllowsArbitraryLoads (D88)" >&2; exit 1; }
+  || { echo "check-release-clean: FAIL, Release lacks NSAllowsArbitraryLoads" >&2; exit 1; }
 echo "Debug carries:   ${debug:-<none>}"
 echo "Release carries: ${release:-<none>}"
 [ -n "$debug" ] || { echo "check-release-clean: Debug has no markers; the check is broken" >&2; exit 1; }

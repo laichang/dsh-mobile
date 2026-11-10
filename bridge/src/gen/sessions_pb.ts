@@ -63,7 +63,7 @@ export type SessionMessage = Message<"dshm.v1.SessionMessage"> & {
   text: string;
 
   /**
-   * A user message's images and files, from the DSH journal, in order (D107).
+   * A user message's images and files, from the DSH journal, in order.
    *
    * @generated from field: repeated dshm.v1.AttachmentRef attachments = 400;
    */

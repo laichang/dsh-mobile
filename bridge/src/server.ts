@@ -15,7 +15,7 @@ import type { ApprovalHolder } from './approvals/holder.ts'
 import type { QuestionHolder } from './questions/holder.ts'
 import { SUPPORTED_DSH, supportsDsh } from './compatibility.ts'
 import { ApprovalDecision } from './gen/approvals_pb.ts'
-import { TaskState } from './gen/s2_pb.ts'
+import { TaskState } from './gen/durable_list_pb.ts'
 import { deviceId } from './pairing/store.ts'
 import { CloseCode } from './pairing/wire.ts'
 import { auditPage, deviceList } from './devices/manage.ts'
@@ -28,11 +28,11 @@ import { DRAWER_CAPABILITY } from './drawer/workspace.ts'
 import { TRANSCRIPT_CAPABILITY } from './transcript/wire.ts'
 import { MessageMode, QueueAction } from './gen/conversation_pb.ts'
 import { HandshakeRejected, type NoiseResponder } from './pairing/handshake.ts'
-import type { LoggedEvent } from './s2/host-log.ts'
-import { TaskHub, type TaskStarter } from './s2/task-hub.ts'
+import type { LoggedEvent } from './tasks/host-log.ts'
+import { TaskHub, type TaskStarter } from './tasks/task-hub.ts'
 import { ATTACHMENTS_CAPABILITY, UploadError, UploadStaging, type StagedFile } from './attachments/staging.ts'
 
-export type { TaskStarter } from './s2/task-hub.ts'
+export type { TaskStarter } from './tasks/task-hub.ts'
 
 type ResponseBody = MessageInitShape<typeof ResponseSchema>['body']
 

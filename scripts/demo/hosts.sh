@@ -1,6 +1,6 @@
 #!/bin/bash
-# The hosts sheet (H) and the all-offline card (X3) on FakeBridge hosts (design screen H, X3;
-# ARCHITECTURE D134). `-DSHMFakeBridge hosts` has MacBook-Pro (online, with a model catalog),
+# The hosts sheet (H) and the all-offline card (X3) on FakeBridge hosts (design screen H, X3).
+# `-DSHMFakeBridge hosts` has MacBook-Pro (online, with a model catalog),
 # hk-1 (its DSH is too old) and 公司-PC; the UI tests stop and start them with Darwin
 # notifications (`FakeHostsSwitch`).
 #
@@ -8,7 +8,7 @@
 #                                  revoke tests, the offline FakeBridge card, the
 #                                  new-session page, and scripts/demo/bridge-errors.sh (the
 #                                  card and the row with each host's reason, on real DSH)
-#   scripts/demo/hosts.sh --shots  also refresh the screenshots in evidence/S11/ (1/3 size)
+#   scripts/demo/hosts.sh --shots  also refresh the screenshots in evidence/hosts/ (1/3 size)
 #   DSHM_RESUME=1                  skip the parts that passed for the same code (lib.sh demo_part)
 #
 # Resources (scripts/slice-env): DSHM_SIM, DSHM_DD; DSHM_BRIDGE_PORT, DSHM_WEB_PORT and DSHM_HOME
@@ -58,13 +58,13 @@ ui_part() { # name, then -only-testing selectors
   demo_no_skipped_ui "$LOGS/ui-$name.log"
 }
 
-ui_part hosts S21HostsUITests
+ui_part hosts HostsUITests
 
 ui_part hosts-seams \
-  S29RevokeUITests/testRevokedHostLeavesTheDrawerAndIsNotRetried \
-  S29RevokeUITests/testRevokedLastHostOpens08 \
-  S2DurableListUITests/testOfflineHostIsNamedWithFakeBridge \
-  T1ShellUITests/testKeyboardGoesAwayOnTapOrSwipeDown
+  RevokeUITests/testRevokedHostLeavesTheDrawerAndIsNotRetried \
+  RevokeUITests/testRevokedLastHostOpens08 \
+  DurableListUITests/testOfflineHostIsNamedWithFakeBridge \
+  ShellUITests/testKeyboardGoesAwayOnTapOrSwipeDown
 
 step "seam: scripts/demo/bridge-errors.sh (log: $LOGS/bridge-errors.log)"
 demo_part hosts-bridge-errors env DSHM_DD="$DSHM_DD" scripts/demo/bridge-errors.sh > "$LOGS/bridge-errors.log" 2>&1 \
@@ -73,11 +73,11 @@ grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/bridge-errors.log" || true
 tail -2 "$LOGS/bridge-errors.log"
 
 if [ $SHOTS = 1 ]; then
-  step "screenshots → evidence/S11 (1/3 size)"
-  mkdir -p evidence/S11
-  for f in "$SHOT_DIR"/s21-*.png; do
+  step "screenshots → ${DSHM_EVIDENCE:-evidence/hosts} (1/3 size)"
+  mkdir -p ${DSHM_EVIDENCE:-evidence/hosts}
+  for f in "$SHOT_DIR"/hosts-sheet-*.png; do
     [ -e "$f" ] || { echo "no new shots (the UI part was skipped)"; break; }
-    out="evidence/S11/$(basename "$f")"
+    out="${DSHM_EVIDENCE:-evidence/hosts}/$(basename "$f")"
     sips --resampleWidth 402 "$f" --out "$out" >/dev/null
     echo "$out $(du -h "$out" | cut -f1)"
   done

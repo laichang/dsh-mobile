@@ -25,9 +25,9 @@ import Testing
     /// The Swift half of the latest-turn golden fixture (bridge/test/drawer.test.ts); the drawer's fixture is the
     /// same session from an older bridge, without the field.
     @Test func goldenWebSessionCarriesItsLatestTurnStart() throws {
-        let web = try Self.fixture("s27_web_session_upserted_event")
+        let web = try Self.fixture("last_turn_web_session_upserted_event")
         #expect(web.hasTurnStartedAtMs && web.turnStartedAtMs == 1_793_000_000_000)
-        let old = try Self.fixture("s14_web_session_upserted_event")
+        let old = try Self.fixture("drawer_web_session_upserted_event")
         #expect(!old.hasTurnStartedAtMs)
     }
 

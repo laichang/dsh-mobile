@@ -8,7 +8,7 @@ public enum DSHProtocolInfo {
     public static let milestonesCapability = "milestones.v1"
     public static let approvalsCapability = "approvals.v1"
     public static let interruptCapability = "interrupt.v1"
-    /// ListTasks, Resume and `Event.host_seq` (protocol/s2.proto).
+    /// ListTasks, Resume and `Event.host_seq` (protocol/durable_list.proto).
     public static let resumeCapability = "resume.v1"
     /// The bridge sends `TranscriptBlock` events (protocol/transcript.proto).
     public static let transcriptCapability = "transcript.v1"
