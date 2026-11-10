@@ -534,6 +534,8 @@ Append-only, dated.
 
 - **2026-11-11 · S7 round 1 at b1b9093: plan/ format, import, WORKFLOW.md removed, AGENTS.md Process section. Not done: hook changes (.claude/hooks, .codex/hooks; classifier refused) and PLAN.md delete (plan-guard refused). A background agent drafts /tmp/dshm-s7-guard.patch in a scratch clone for the user to review and apply.**
 
+- **2026-11-11 · User decision: keep blocking guard-file changes in a slice merge into main; the user merges them with CHECK_PLAN_ALLOW. S7 restores the refusal in check-plan and fixes check-ids on refusal-test. Hook patch drafted: /tmp/dshm-s7-guard.patch.**
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
