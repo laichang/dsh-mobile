@@ -18,6 +18,9 @@ refused() { # refused <name> <command…>: exit non-zero, and the output names a
   elif ! printf '%s' "$out" | grep -qE "$NEXT"; then bad "$name: no next step"; printf '%s\n' "$out" | head -4 | sed 's/^/        /'
   else ok "$name"; fi
 }
+notty() { # notty <command…>: run the command with no controlling terminal (as an agent's shell)
+  python3 -c 'import os, sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "$@" </dev/null
+}
 hook() { # hook <name> <hook> <tool> <json tool_input>: the hook denies or asks, and names a next step
   local name=$1 h=$2 tool=$3 inp=$4
   local out; out=$(printf '{"tool_name": "%s", "tool_input": %s, "cwd": "%s"}' "$tool" "$inp" "$T/repo" \
@@ -35,6 +38,7 @@ cp "$SRC"/scripts/plan "$SRC"/scripts/slice-env "$SRC"/scripts/check-plan "$SRC"
 mkdir -p scripts/lib .githooks .claude/hooks
 cp "$SRC"/scripts/lib/dshm.py "$SRC"/scripts/lib/plandata.py "$SRC"/scripts/lib/plan.schema.json scripts/lib/
 cp "$SRC"/.githooks/* .githooks/; cp "$SRC"/.claude/hooks/plan-guard "$SRC"/.claude/hooks/git-guard .claude/hooks/
+mkdir -p .codex/hooks && cp "$SRC"/.codex/hooks/codex-guard .codex/hooks/
 sed '/^id[[:space:]]/q' "$SRC"/scripts/resources.tsv > scripts/resources.tsv
 git rm -rq --ignore-unmatch plan PLAN.md
 git config user.name test; git config user.email test@example.com
@@ -56,6 +60,13 @@ refused "a tracer with 4 items" scripts/plan add tracer "big" --why W --cuts C -
 refused "an unknown need" scripts/plan add slice "x" --why W --cuts C --done "[auto] a" --needs "S77"
 refused "a demo that is not a file" scripts/plan add slice "x" --why W --cuts C --done "[auto] a" --demo scripts/demo/none.sh
 refused "a non-[human] exit item" scripts/plan add exit "[auto] a"
+scripts/plan add exit "[human] It runs on a phone" --commit >/dev/null
+refused "accept from a shell with no terminal" notty scripts/plan accept exit 1 "iPhone"
+refused "passed with a base that is not a commit" scripts/plan passed T0 --base nosuchref
+refused "verify of a node with no branch" scripts/plan verify T0
+refused "verify of an unknown node" scripts/plan verify S42
+refused "merge into a branch that does not exist" scripts/plan merge S1 --into nosuch
+refused "merge of a node with no branch" scripts/plan merge T0 --into main
 refused "a branch that does not name the slice" scripts/plan assign S1 --branch claude/other
 refused "an owner command on main" scripts/plan slice-status S1 doing
 refused "merged with a commit that is not a merge" scripts/plan merged S1 HEAD
@@ -85,6 +96,9 @@ git checkout -q HEAD -- plan
 mkdir -p x/.build && echo x > x/.build/o && git add -f x/.build/o
 refused "build output staged" scripts/check-plan --staged
 git rm -q --cached x/.build/o; rm -rf x
+mkfile -n 5m big.bin 2>/dev/null || head -c 5242880 /dev/zero > big.bin; git add big.bin
+refused "a large file staged" scripts/check-plan --staged
+git rm -q --cached big.bin; rm -f big.bin
 git checkout -q main
 echo "// x" >> scripts/plan && git add scripts/plan
 refused "code on main" scripts/check-plan --staged
@@ -102,6 +116,7 @@ echo "# a guard change" >> .githooks/pre-merge-commit && git commit -qam "guard 
 git checkout -q main
 refused "the merge of a slice that changes a guard file" git merge -q --no-ff --no-edit claude/s1-a-slice
 git merge --abort 2>/dev/null; git checkout -q claude/s1-a-slice
+refused "the merge step of a slice that changes a guard file" scripts/plan merge S1 --into main
 
 echo "scripts/review"
 refused "review with no ID" scripts/review
@@ -112,6 +127,10 @@ refused "review of a [ui] item with no evidence" scripts/review S1
 echo "hooks"
 hook "git-guard: --no-verify" .claude/hooks/git-guard Bash '{"command": "git commit --no-verify -m x"}'
 hook "git-guard: core.hooksPath" .claude/hooks/git-guard Bash '{"command": "git config core.hooksPath /dev/null"}'
+hook "git-guard: the user's override" .claude/hooks/git-guard Bash '{"command": "CHECK_PLAN_ALLOW=1 git commit -m x"}'
+hook "codex-guard: a shell write to plan/" .codex/hooks/codex-guard Bash '{"command": "echo x > plan/S1.json"}'
+hook "codex-guard: a patch of a guard file" .codex/hooks/codex-guard apply_patch \
+  '{"command": "*** Begin Patch\n*** Update File: scripts/check-plan\n@@\n-import argparse\n+import os\n*** End Patch"}'
 hook "plan-guard: a shell write to plan/" .claude/hooks/plan-guard Bash '{"command": "echo x > plan/S1.json"}'
 hook "plan-guard: an edit of a guard file" .claude/hooks/plan-guard Edit '{"file_path": "'"$T"'/repo/scripts/check-plan", "old_string": "a", "new_string": "b"}'
 hook "plan-guard: a [human] record by an agent" .claude/hooks/plan-guard Edit \

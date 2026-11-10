@@ -83,8 +83,10 @@ Slice owner (on the slice branch):
   plan slice-log <ID> "<title>" [--body T|-]     add a dated entry to the log of the node
   plan slice-status <ID> <status>                the state of the node
 
-The user (not an agent; the Claude Code hook refuses it from an agent):
-  plan accept <ID>|exit <item number> "<device or note>"   record a [human] item as accepted
+The user (not an agent):
+  plan accept <ID>|exit <item number> "<device or note>"   record a [human] item as accepted.
+        It asks on the terminal (/dev/tty) and records only when the user types the ID back,
+        so a shell with no terminal (an agent's) cannot record it
 
 Exit 0 = OK, 1 = refused or check failed, 2 = usage.
 """
@@ -176,7 +178,8 @@ class Plan:
             r = subprocess.run(["git", "commit", "-q", "-m", message + TRAILER, "--", *files],
                                cwd=self.root, capture_output=True, text=True)
             if r.returncode != 0:
-                raise PlanError(f"git commit failed:\n{r.stdout}{r.stderr}")
+                raise PlanError(f"git commit failed:\n{r.stdout}{r.stderr}\nNext: read the hook message above, "
+                                f"repair what it names, and commit plan/ again")
             print(f"plan: committed {dshm.git('rev-parse', '--short', 'HEAD', cwd=self.root)} {message}")
         return 0
 
@@ -197,13 +200,13 @@ def check(root, before, after, agent=True):
         argv = [str(root / "scripts/check-plan"), "--base", str(Path(d, "base")), "--new", str(Path(d, "new"))]
         r = subprocess.run(argv + (["--agent"] if agent else []), cwd=root, capture_output=True, text=True)
     if r.returncode != 0:
-        raise PlanError("scripts/check-plan refused the change:\n" + r.stdout + r.stderr)
+        raise PlanError("scripts/check-plan refused the change (nothing written):\n" + r.stdout + r.stderr)
 
 
 def entry(title, body=""):
     title = " ".join(title.split()).rstrip(".")
     if not title:
-        raise PlanError("give the entry a title")
+        raise PlanError("the entry has no title. Next: give it a title")
     return {"date": dshm.today(), "title": title, "body": (body or "").strip("\n")}
 
 
@@ -345,7 +348,7 @@ def cmd_merge(p, a):
     root, say = p.root, (lambda m: print(f"plan: {m}", flush=True, file=sys.stderr))
     base = dshm.git("rev-parse", "-q", "--verify", f"refs/heads/{a.into}^{{commit}}", cwd=root, check=False)
     if not base:
-        raise PlanError(f"no branch {a.into}")
+        raise PlanError(f"no branch {a.into}. Next: give an existing target branch, for example --into main")
     here = Path(__file__).resolve().parent.parent
     if not plandata.same_as(root, base, here):
         # Not the copy of the tools at the tip of the target: run that copy instead.
@@ -378,7 +381,7 @@ def cmd_new(p, a):
                         "passes, the user removes plan/; then start the next one")
     title = " ".join(a.title.split())
     if not title:
-        raise PlanError("give the plan a title, for example \"M3 · Push and replies\"")
+        raise PlanError("the plan has no title. Next: give one, for example \"M3 · Push and replies\"")
     p.doc = {"title": title, "nodes": [], "exit": [], "log": [entry("Plan started", title)], "pending": []}
     return p.save(a, f"Plan: start {title}")
 
@@ -397,7 +400,7 @@ def add_node(p, kind, name, needs=None, why="", cuts="", demo="", done=(), not_=
     prefix, _, title_prefix = KINDS[kind]
     name = " ".join(name.split()).rstrip(".")
     if not name:
-        raise PlanError("give the node a name")
+        raise PlanError("the node has no name. Next: give it a name")
     if title_prefix and not name.startswith(title_prefix):
         name = title_prefix + name
     known = [n["id"] for n in doc["nodes"]]
@@ -558,7 +561,8 @@ def cmd_merged(p, a):
     # The merge commit skipped pre-commit: check its plan/ against the first parent.
     errs = plandata.change_errors(root, plandata.head_files(root, parents[0]), plandata.head_files(root, full))
     if errs:
-        raise PlanError("plan/ of the merge commit breaks the rules:\n" + "\n".join(errs))
+        raise PlanError("plan/ of the merge commit breaks the rules:\n" + "\n".join(errs)
+                        + "\nNext: ask the user; a merge that breaks plan/ needs their review")
     node = p.node(a.id)
     open_human = [it["text"] for it in p.items(a.id)["items"]
                   if it["tier"] == "human" and not any(e.startswith("human:") for e in it.get("evidence", []))]
@@ -754,6 +758,22 @@ def cmd_evidence(p, a):
     return p.save(a, f"Plan {a.id}: evidence for item {a.n}")
 
 
+def user_confirms(question, answer):
+    """Refuse unless the user types `answer` on the controlling terminal."""
+    try:
+        tty_in, tty_out = open("/dev/tty"), open("/dev/tty", "w")
+    except OSError:
+        raise PlanError("only the user records a [human] item, from a terminal. "
+                        "Next: the user runs this in their own terminal")
+    with tty_in, tty_out:
+        tty_out.write(f"{question}\nType {answer} to confirm: ")
+        tty_out.flush()
+        typed = tty_in.readline().strip()
+    if typed != answer:
+        raise PlanError(f"not confirmed (typed {typed!r}, not {answer!r}). "
+                        f"Next: the user runs it again and types {answer}")
+
+
 def cmd_accept(p, a):
     if a.id == "exit":
         items, where = p.doc.setdefault("exit", []), "exit"
@@ -764,6 +784,8 @@ def cmd_accept(p, a):
     if it["tier"] != "human":
         raise PlanError(f"item {a.n} of {where} is [{it['tier']}]: the verifier decides it. "
                         f"Next: add evidence with `scripts/plan evidence`")
+    if not a.dry_run:
+        user_confirms(f"Record item {a.n} of {where} as accepted by you: {it['text']}", where)
     it.setdefault("evidence", []).append(f"human:{dshm.today()} {' '.join(a.note.split())}")
     return p.save(a, f"Plan {where}: the user accepts item {a.n}", agent=False)
 

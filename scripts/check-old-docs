@@ -1,13 +1,15 @@
 #!/bin/bash
-# Fails when a living doc, a skill, a script or a hook names a removed process doc (the old
-# process file or the old plan template). plan/ (the history of a run) and spikes/ (working
-# notes) are not living docs. Exit 0 = none, 1 = found (each line names the file).
+# Fails when a living doc, a skill, a script or a hook names a removed process doc: the old
+# process file, the old plan template, or the old plan file (a link to it at the m1 tag is
+# history and passes). plan/ (the history of a run) and spikes/ (working notes) are not living
+# docs. The tests that remove the old plan file from their clone pass too. Exit 0 = none, 1 = found (each line names the file).
 #   scripts/check-old-docs
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
-OLD='WORKFLOW\.md|plan-template\.md'
+OLD='WORKFLOW\.md|plan-template\.md|PLAN\.md'
 hits=$(git ls-files -co --exclude-standard -- . ':!plan/' ':!spikes/' ':!evidence/' ':!scripts/check-old-docs' \
-  | while IFS= read -r f; do [ -f "$f" ] && grep -nIE "$OLD" "$f" /dev/null; done)
+  | while IFS= read -r f; do [ -f "$f" ] && grep -nIE "$OLD" "$f" /dev/null; done \
+  | grep -vE 'blob/m1/PLAN\.md|git rm -[a-z]* --ignore-unmatch [a-z ]*PLAN\.md')
 if [ -n "$hits" ]; then
   echo "check-old-docs: these files name a removed process doc. Next: point them at AGENTS.md \"Process\" or the script:"
   printf '%s\n' "$hits" | cut -c1-160 | sed 's/^/  /'

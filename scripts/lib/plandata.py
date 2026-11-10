@@ -23,6 +23,8 @@ scripts/review, scripts/slice-env and scripts/status.
 """
 
 import datetime
+import fnmatch
+import importlib.util
 import json
 import os
 import posixpath
@@ -33,6 +35,7 @@ import socket
 import subprocess
 import tempfile
 import time
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 PLAN_DIR = "plan"
@@ -179,7 +182,7 @@ def dag(plan):
     errs = check_against(plan, "plan", PLAN_FILE)
     errs = errs or graph_errors(plan)
     if errs:
-        raise DataError("\n".join(errs))
+        raise DataError("\n".join(errs) + "\nNext: repair plan/ with scripts/plan (`scripts/plan lint` lists each error)")
     pos = {n["id"]: i for i, n in enumerate(plan["nodes"])}
     left = {n["id"]: set(n["needs"]) for n in plan["nodes"]}
     order = []
@@ -262,10 +265,10 @@ def staged_errors(root):
 def load(root):
     files = worktree_files(root)
     if PLAN_FILE not in files:
-        raise DataError(f"{PLAN_FILE} does not exist")
+        raise DataError(NO_PLAN)
     errs = tree_errors(files)
     if errs:
-        raise DataError("\n".join(errs))
+        raise DataError("\n".join(errs) + "\nNext: repair plan/ with scripts/plan (`scripts/plan lint` lists each error)")
     plan = json.loads(files[PLAN_FILE])
     items = {n["id"]: json.loads(files[f"plan/{n['id']}.json"])["items"] for n in plan["nodes"]}
     return plan, items
@@ -274,18 +277,18 @@ def load(root):
 def load_plan(root):
     p = Path(root, PLAN_FILE)
     if not p.exists():
-        raise DataError(f"{PLAN_FILE} does not exist")
+        raise DataError(NO_PLAN)
     try:
         return json.loads(p.read_text())
     except json.JSONDecodeError as e:
-        raise DataError(f"{PLAN_FILE}: not JSON ({e})")
+        raise DataError(f"{PLAN_FILE}: not JSON ({e}). Next: `git checkout -- {PLAN_FILE}`, then change it with scripts/plan")
 
 
 def committed_files(root, ref):
     """The plan/ files of a commit (what is committed, never an uncommitted edit)."""
     r = _git(root, "ls-tree", "-z", "--name-only", f"{ref}^{{commit}}", "--", f"{PLAN_DIR}/")
     if r.returncode != 0:
-        raise DataError(f"{ref} is not a commit")
+        raise DataError(f"{ref} is not a commit. Next: give a branch name or a commit (`git log --oneline`)")
     return {p: _git(root, "show", f"{ref}:{p}", check=True).stdout for p in filter(None, r.stdout.split("\0"))}
 
 
@@ -293,10 +296,10 @@ def load_at(root, ref):
     """plan.json and the items of each node, as the commit ref has them (checked)."""
     files = committed_files(root, ref)
     if PLAN_FILE not in files:
-        raise DataError(f"{PLAN_FILE} does not exist at {ref}")
+        raise DataError(f"{PLAN_FILE} does not exist at {ref}. Next: give a commit that has the plan (`git log --oneline -- {PLAN_FILE}`)")
     errs = tree_errors(files)
     if errs:
-        raise DataError("\n".join(f"{e} (at {ref})" for e in errs))
+        raise DataError("\n".join(f"{e} (at {ref})" for e in errs) + f"\nNext: give a commit with a valid plan/, or repair plan/ at {ref} with scripts/plan")
     plan = json.loads(files[PLAN_FILE])
     items = {n["id"]: json.loads(files[f"plan/{n['id']}.json"])["items"] for n in plan["nodes"]}
     return plan, items
@@ -306,17 +309,17 @@ def node_at(root, ref, sid):
     """The node of sid in plan.json as committed at ref (its branch comes from there)."""
     r = _git(root, "show", f"{ref}:{PLAN_FILE}")
     if r.returncode != 0:
-        raise DataError(f"{PLAN_FILE} does not exist at {ref}")
+        raise DataError(f"{PLAN_FILE} does not exist at {ref}. Next: give a commit that has the plan (`git log --oneline -- {PLAN_FILE}`)")
     try:
         plan = json.loads(r.stdout)
     except json.JSONDecodeError as e:
-        raise DataError(f"{PLAN_FILE} at {ref}: not JSON ({e})")
+        raise DataError(f"{PLAN_FILE} at {ref}: not JSON ({e}). Next: give a commit with a valid plan/")
     errs = check_against(plan, "plan", f"{PLAN_FILE} at {ref}")
     if errs:
-        raise DataError("\n".join(errs))
+        raise DataError("\n".join(errs) + "\nNext: repair plan/ with scripts/plan (`scripts/plan lint` lists each error)")
     node = next((n for n in plan["nodes"] if n["id"] == sid), None)
     if node is None:
-        raise DataError(f"{sid} is not a node of {PLAN_FILE} at {ref}")
+        raise DataError(f"{sid} is not a node of {PLAN_FILE} at {ref}. Next: `scripts/plan dag` lists the IDs")
     return node
 
 
@@ -325,7 +328,7 @@ def node_at(root, ref, sid):
 def _git(root, *args, check=False, input=None):
     r = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, input=input)
     if check and r.returncode != 0:
-        raise DataError(f"git {' '.join(args)} failed: {r.stderr.strip()}")
+        raise DataError(f"git {' '.join(args)} failed: {r.stderr.strip()}. Next: repair the git state that the message names, then run it again")
     return r
 
 
@@ -468,11 +471,11 @@ def verify(root, sid, base="HEAD", say=print):
     node = node_at(root, base, sid)
     head = branch_head(root, node["branch"])
     if head is None:
-        raise DataError(f"{sid} has no branch with a commit ({node['branch']})")
+        raise DataError(f"{sid} has no branch with a commit ({node['branch']}). Next: the slice owner commits on that branch, or the coordinator runs `scripts/plan assign {sid} --branch <branch>`")
     with Checkout(root, head, f"verify-{sid.lower()}") as wt:
         _, items = load(wt)
         if sid not in items:
-            raise DataError(f"{sid} is not a node of {PLAN_FILE} at {head[:12]}")
+            raise DataError(f"{sid} is not a node of {PLAN_FILE} at {head[:12]}. Next: the slice owner merges main into the branch")
         out = run_items(sid, items[sid], wt, head, say)
     results = _results(sid, head, out)
     _store(root, head, sid, results)
@@ -485,7 +488,7 @@ def derive(root, sid, base="HEAD"):
     plan, items = load_at(root, base)
     node = next((n for n in plan["nodes"] if n["id"] == sid), None)
     if node is None:
-        raise DataError(f"{sid} is not a node of {PLAN_FILE} at {base}")
+        raise DataError(f"{sid} is not a node of {PLAN_FILE} at {base}. Next: `scripts/plan dag` lists the IDs")
     head = branch_head(root, node["branch"])
     if head:    # the items as the head commit has them: the ones that verify ran
         r = _git(root, "show", f"{head}:plan/{sid}.json")
@@ -493,7 +496,7 @@ def derive(root, sid, base="HEAD"):
             doc = json.loads(r.stdout)
             errs = check_against(doc, "slice", f"plan/{sid}.json at {head[:12]}")
             if errs:
-                raise DataError("\n".join(errs))
+                raise DataError("\n".join(errs) + "\nNext: repair plan/ with scripts/plan (`scripts/plan lint` lists each error)")
             items = {sid: doc["items"]}
     res = results_for(root, sid, head) if head else None
     by_item = {r["item"]: r for r in res["items"]} if res else {}
@@ -543,7 +546,8 @@ def merge_items(base_items, head_items):
     may not change them), the evidence of the base, then the pointers that the branch adds."""
     if _bare_items(base_items) != _bare_items(head_items):
         raise DataError("the branch changed the items (tier, text, files or screens); "
-                        "the merge step checks the items of the base")
+                        "the merge step checks the items of the base. Next: the slice owner restores the "
+                        "items and only adds evidence (scripts/plan evidence)")
     out = []
     for b, h in zip(base_items, head_items):
         ev = list(b.get("evidence", []))
@@ -629,6 +633,22 @@ def evidence_changes(root, items, base, head):
     return sorted(f for f in prot if tf.get(f) != th.get(f)), new
 
 
+def guard_patterns():
+    """PROTECTED of scripts/check-plan (the copy next to this file): the guard files."""
+    path = Path(__file__).resolve().parents[1] / "check-plan"
+    loader = SourceFileLoader("check_plan", str(path))
+    mod = importlib.util.module_from_spec(importlib.util.spec_from_loader("check_plan", loader))
+    loader.exec_module(mod)
+    return mod.PROTECTED
+
+
+def guard_changes(root, base, head):
+    """The guard files that head changes since its merge base with base."""
+    r = _git(root, "diff", "--name-only", f"{base}...{head}", check=True)
+    pats = guard_patterns()
+    return [f for f in r.stdout.splitlines() if any(fnmatch.fnmatch(f, p) for p in pats)]
+
+
 def merge(root, sid, into, dry=False, allow=(), say=print):
     """The merge step. Merge the branch of sid into `into`, only if the checks pass on the merge
     commit itself. Inputs are the ID and the target branch, nothing else: no report, no earlier
@@ -640,26 +660,32 @@ def merge(root, sid, into, dry=False, allow=(), say=print):
     the copy committed at the tip of `into`."""
     base = branch_head(root, into)
     if base is None:
-        raise DataError(f"no branch {into}")
+        raise DataError(f"no branch {into}. Next: give an existing target branch, for example --into main")
     node = node_at(root, base, sid)
     head = branch_head(root, node["branch"])
     if head is None:
-        raise DataError(f"{sid} has no branch with a commit ({node['branch']}, from {PLAN_FILE} at {into})")
+        raise DataError(f"{sid} has no branch with a commit ({node['branch']}, from {PLAN_FILE} at {into}). "
+                        f"Next: the slice owner commits on {node['branch']}, or the coordinator runs "
+                        f"`scripts/plan assign {sid} --branch <branch>`")
+    guards = guard_changes(root, base, head)
+    if guards:
+        raise DataError(f"the slice changes guard files: {', '.join(guards)}. Next: the user reviews "
+                        f"the guard diff and merges by hand with CHECK_PLAN_ALLOW=1")
     _, base_items = load_at(root, base)
     r = _git(root, "show", f"{head}:plan/{sid}.json")
     if r.returncode != 0:
-        raise DataError(f"plan/{sid}.json does not exist at the head of {node['branch']}")
+        raise DataError(f"plan/{sid}.json does not exist at the head of {node['branch']}. Next: the slice owner merges main into the branch")
     head_doc = json.loads(r.stdout)
     errs = check_against(head_doc, "slice", f"plan/{sid}.json at {head[:12]}")
     if errs:
-        raise DataError("\n".join(errs))
+        raise DataError("\n".join(errs) + "\nNext: repair plan/ with scripts/plan (`scripts/plan lint` lists each error)")
     items = merge_items(base_items[sid], head_doc["items"])
     changed, new = evidence_changes(root, items, base, head)
     blocked = [f for f in changed if f not in allow]
     if blocked:
         raise DataError("evidence changed by the slice: a reviewer or the user must look at it:\n"
                         + "".join(f"  {f}\n" for f in blocked)
-                        + "After a reviewer has read that diff, the coordinator may pass "
+                        + "Next: after a reviewer has read that diff, the coordinator may pass "
                         + " ".join(f"--allow-changed-evidence {f}" for f in blocked))
     used = [f for f in allow if f in changed]
     summary = {"slice": sid, "into": into, "base": base, "branch": node["branch"], "head": head,
@@ -674,10 +700,12 @@ def merge(root, sid, into, dry=False, allow=(), say=print):
         m = _git(wt, "merge", "--no-ff", "--no-edit", "-m", msg, head)
         if m.returncode != 0:
             _git(wt, "merge", "--abort")
-            raise DataError(f"the merge of {node['branch']} into {into} failed:\n{m.stdout}{m.stderr}")
+            raise DataError(f"the merge of {node['branch']} into {into} failed:\n{m.stdout}{m.stderr}\n"
+                            f"Next: the slice owner merges {into} into {node['branch']} and resolves the conflicts")
         commit = _git(wt, "rev-parse", "HEAD", check=True).stdout.strip()
         if _git(wt, "status", "--porcelain").stdout.strip():
-            raise DataError("the merge checkout is not clean after the merge")
+            raise DataError("the merge checkout is not clean after the merge. Next: check .gitignore for "
+                            "files that the merge writes, then run it again")
         out = run_items(sid, items, wt, commit, say)
     _store(root, commit, sid, _results(sid, commit, out))
     checked = [o for o, it in zip(out, items) if it["tier"] != "human"]
@@ -690,9 +718,10 @@ def merge(root, sid, into, dry=False, allow=(), say=print):
     wt = checked_out(root, into)
     if wt:
         if _git(wt, "status", "--porcelain", "--untracked-files=no").stdout.strip():
-            raise DataError(f"{wt} has {into} checked out with uncommitted changes; not merged")
+            raise DataError(f"{wt} has {into} checked out with uncommitted changes; not merged. "
+                            f"Next: commit or remove those changes, then run it again")
         if _git(wt, "rev-parse", "HEAD").stdout.strip() != base:
-            raise DataError(f"{into} moved during the merge step; not merged")
+            raise DataError(f"{into} moved during the merge step; not merged. Next: run the merge step again")
         _git(wt, "merge", "-q", "--ff-only", commit, check=True)
     else:
         _git(root, "update-ref", "-m", f"merge {sid}", f"refs/heads/{into}", commit, base, check=True)

@@ -40,6 +40,30 @@ I = lambda s: json.load(open(f"plan/{s}.json"))["items"]
 sys.exit(0 if eval(sys.argv[1]) else 1)' "$2" > "$T/py.err" 2>&1; then ok "$1"
   else bad "$1: $2"; head -3 "$T/py.err" | sed 's/^/        /'; fi
 }
+notty() { # notty <command…>: run the command with no controlling terminal (as an agent's shell)
+  python3 -c 'import os, sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "$@" </dev/null
+}
+typed() { # typed <answer> <command…>: run the command on a new pseudo-terminal and type <answer>
+  python3 - "$@" <<'PY'
+import os, pty, sys
+answer, argv = sys.argv[1], sys.argv[2:]
+pid, fd = pty.fork()
+if pid == 0:
+    os.execvp(argv[0], argv)
+os.write(fd, (answer + "\n").encode())
+out = b""
+while True:
+    try:
+        d = os.read(fd, 1024)
+    except OSError:
+        break
+    if not d:
+        break
+    out += d
+sys.stdout.write(out.decode(errors="replace"))
+sys.exit(os.waitstatus_to_exitcode(os.waitpid(pid, 0)[1]))
+PY
+}
 clean() { # clean <name> <path…>: nothing uncommitted under the paths
   local n=$1; shift
   [ -z "$(git status --porcelain -- "$@")" ] && ok "$n" || bad "$n: $(git status --porcelain -- "$@" | head -3)"
@@ -217,11 +241,13 @@ line "the same pointer again is no change" "$T/ev.out" "plan: no change"
 expect "slice log" 0 scripts/plan slice-log S90 "built, to review" --body $'- Done: a test.\n- Next: review.'
 pyok "log entry at the end of the S90 log" 'N["S90"]["log"][-1]["title"] == "built, to review" and N["S90"]["log"][-1]["body"].startswith("- Done: a test.")'
 pyok "slice-log does not touch the plan log" 'P["log"][-1]["title"] != "built, to review"'
-# The user's command (the Claude Code hook refuses it from an agent).
 refused "accept of an [auto] item is refused" scripts/plan accept S90 1 "iPhone 15"
-expect "accept a [human] item" 0 scripts/plan accept S90 2 "iPhone 15"
+refused "accept with no terminal (an agent's shell) is refused" notty scripts/plan accept S90 2 "iPhone 15"
+expect "accept with the wrong ID typed is refused" 1 typed S91 scripts/plan accept S90 2 "iPhone 15"
+pyok "a refused accept records nothing" '"evidence" not in I("S90")[1]'
+expect "accept a [human] item" 0 typed S90 scripts/plan accept S90 2 "iPhone 15"
 pyok "accept writes a dated human: pointer" "I('S90')[1]['evidence'] == ['human:$(date +%F) iPhone 15']"
-expect "accept an exit item" 0 scripts/plan accept exit 1 "iPhone 15"
+expect "accept an exit item" 0 typed exit scripts/plan accept exit 1 "iPhone 15"
 pyok "the exit item has a human: pointer" "P['exit'][0]['evidence'] == ['human:$(date +%F) iPhone 15']"
 git checkout -q -- plan   # the [human] item stays open, so the merge leaves S90 in review
 # A provisional choice in ARCHITECTURE.md, as ARCHITECTURE.md writes one, and a commit; then the merge.

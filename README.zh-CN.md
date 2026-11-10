@@ -186,7 +186,7 @@ protocol/       frame.proto + golden fixtures · 用 scripts/codegen 重新生�
 design/         画面（screens.json、screens/<id>.html → png、kit/）、App 图标
 spikes/         关键决策背后的 X1–X4 实验
 scripts/        bootstrap · demo/<feature>.sh · codegen · check-plan · review
-evidence/       PLAN.md 引用的截图
+evidence/       当前计划引用的截图（仅在需求进行中存在）
 ```
 
 ## 开发
