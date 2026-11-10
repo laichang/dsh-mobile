@@ -357,6 +357,8 @@ Append-only, dated.
 
 - **2026-11-10 · S1 merged; heartbeat restarted.** S1 merged as 3b960e8 (review: separate reviewer, /tmp/dshm-review/S1-d7c4462.txt, RESULT: PASS). The user's uncommitted AGENTS.md/ARCHITECTURE.md edits were stashed for the merge and reapplied without conflict (user's choice). Reviewer notes for later: check-wrappers is not in the pre-commit hook; bridge-errors.sh calls node --test directly; the xc failing case uses a recorded log. New heartbeat: CronCreate job 1a5c4ac0. T0 and S6 still wait for a shell-command approval by the user.
 
+- **2026-11-10 · Interruption: the Mac slept about 5.5 h.** Heartbeat 1a5c4ac0 did not fire from about 10:00 to 15:37 (the Mac or the app slept; the app restarted). Recovery (§5.4): T0 resumed by itself after the restart and runs plan-test. S6 finished at 87befa7 (with the user's TLS 1.3 next transport); a separate reviewer runs its review now (rule of §8 for slices with no [ui] item).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
