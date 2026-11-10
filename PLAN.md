@@ -375,6 +375,8 @@ Append-only, dated.
 
 - **2026-11-10 · All work waits for the user; heartbeat deleted.** T0 is blocked at 4cd16d1: item 2 needs the guard patch to scripts/check-plan (/tmp/dshm-t0-patch/scripts/check-plan), which only the user commits. All other open slices need T0. Heartbeat 1a5c4ac0 deleted (§5.5); a new one starts when work runs again.
 
+- **2026-11-10 · Guard patch committed by the user; T0 continues; heartbeat restarted.** The user approved and committed the scripts/check-plan patch on claude/t0-plan-graph as 47fdbf5 (CHECK_PLAN_ALLOW=1, by hand). T0 back to doing. New heartbeat: CronCreate job 1a6d2c25.
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
