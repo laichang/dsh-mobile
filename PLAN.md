@@ -191,6 +191,10 @@ A tracer is one thin round trip that one session can finish without running out 
   Not done: item 2 (the coordinator runs the Workflow tool; args are in the report).
 
   Provisional: the merge step makes and checks the merge commit, not only the slice head; the branch adds evidence, main keeps tier, text, files and screens; the evidence commands run from the merged tree (a branch can still change a check script: the reviewer sees that diff); the workflow logic stays in the workflow file, which the test evaluates, instead of a separate module.
+- **2026-11-10 · Item 2 done: real Workflow run merged the fake node.** Done: the coordinator ran the run-plan Workflow once on the fake plan. Run wf_5c566787-723 (task w7k1wtev3): 4 agents (brief, build, verify, merge), 0 errors, 81 s, status "merged". Args: {"slice": "S99", "round": 1, "into": "claude/fake-plan-base", "repo": "/tmp/dshm-fake-plan/base"}. The build agent's head was 62096c7 on claude/s99-fake-node. `scripts/plan merge` made the merge commit 77d9088 (parents bd7e365 and 62096c7), ran scripts/fixtures/fake-plan/check on it (exit 0, git note on 77d9088), and moved claude/fake-plan-base to it. Checked in this worktree.
+  Found: the Workflow tool does not load a scriptPath under /tmp. The coordinator passed the script inline (the same code). A later run can use the path of the file in a repo checkout.
+  Not done: nothing for T1. Keep claude/fake-plan-base, claude/s99-fake-node and /tmp/dshm-fake-plan until the review is done and T1 is merged (the commit: pointer). Then: scripts/fixtures/fake-plan/setup --remove.
+  Next: the review (separate reviewer).
 
 ## 4. Spikes
 
