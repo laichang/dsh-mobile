@@ -43,7 +43,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | T0 | done | merged `e3daa5a` | 2026-11-10 | — |
 | T1 | done | merged `15982e9` | 2026-11-10 | — |
 | S1 | done | merged `3b960e8` | 2026-11-10 | — (provisional D150 in §9) |
-| S2 | todo | — | 2026-11-10 | Assign it and start a session |
+| S2 | doing | `claude/s2-slice-brief` | 2026-11-10 | Slice owner builds (§8) |
 | S3 | todo | — | 2026-11-10 | Assign it and start a session |
 | S4 | todo | — | 2026-11-10 | Assign it and start a session |
 | S5 | todo | — | 2026-11-10 | Assign it and start a session |
@@ -450,6 +450,8 @@ Append-only, dated.
 - **2026-11-10 · T1 review PASS; waits for the user's merge approval; heartbeat deleted.** Third separate review at 80be885: RESULT: PASS. Known limits for S3: a helper reached through ../ outside the cmd: directory is not protected; scripts/plan passed (advisory) trusts a hand-written note. Under option A the user approves the scripts/lib/plandata.py diff before the merge. Heartbeat 1a6d2c25 deleted (§5.5).
 
 - **2026-11-10 · T1 merged.** Merged as `15982e9`; `scripts/check-plan` on the merge commit passed. `scripts/review T1` at `80be885`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/T1-80be885.txt`). No open `[human]` items, so T1 is `done`.
+
+- **2026-11-10 · S2 assigned.** Branch `claude/s2-slice-brief`, simulator `dshm-S2`, DSHM_HOME `~/.dshm/home-s2`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D159–D161. `eval "$(scripts/slice-env S2)"` exports them.
 
 ## 9. Pending user confirmation
 
