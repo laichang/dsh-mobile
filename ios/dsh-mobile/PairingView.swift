@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Where a pairing code lands: from the QR scanner, a pasted link, or (Debug) the `dshm://pair?…`
 /// deep link. Shows which host the code is for, pairs on tap, and reports the outcome.
-/// Accessibility identifiers (ARCHITECTURE D16): `pairing.view`, `pairing.status` (value
+/// Accessibility identifiers: `pairing.view`, `pairing.status` (value
 /// reviewing / pairing / paired / failed / invalid), `pairing.confirm`, `pairing.done`, `pairing.close`.
 struct PairingView: View {
     let route: AppModel.PairingRoute
@@ -49,7 +49,7 @@ private struct OfferPairingView: View {
     let model: PairingModel
     let close: () -> Void
 
-    // S22: in the DSH style of 08 (canvas, one card, a white primary button), not a grouped List.
+    // In the DSH style of 08 (canvas, one card, a white primary button), not a grouped List.
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {

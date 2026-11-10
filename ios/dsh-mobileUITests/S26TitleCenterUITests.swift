@@ -1,6 +1,6 @@
 import XCTest
 
-/// S26 · Fix: Page title centering (PLAN.md §5 S26). The user's bug on a real iPhone: the title
+/// Fix: Page title centering. The user's bug on a real iPhone: the title
 /// "新会话" (New session) was not centered on the screen. `PageBar` gave the drawer button a
 /// 40-pt slot on the left and nothing on the right (an `EmptyView` takes no width, also in a
 /// frame), so the title was centered in the space right of the button: 26 pt to the right.

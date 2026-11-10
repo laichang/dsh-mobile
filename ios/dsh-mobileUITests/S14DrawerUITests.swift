@@ -1,6 +1,6 @@
 import XCTest
 
-/// S14 · the workspace drawer (PLAN.md §5 S14, screen 02). The FakeBridge tests use
+/// The workspace drawer (screen 02). The FakeBridge tests use
 /// `-DSHMFakeBridge drawer…` (`FakeDrawer`: MacBook-Pro and Office-PC with sessions in
 /// workspaces). `testWebAndPhoneSessionsShareAWorkspaceWithRealDSH` needs scripts/demo/s14-web.mjs
 /// (real DSH Web + the bridge); scripts/demo/s14.sh runs all of them.

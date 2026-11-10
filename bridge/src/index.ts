@@ -20,11 +20,11 @@ import { startBridgeServer, type BridgeServer } from './server.ts'
 export const name = 'dsh-mobile-bridge'
 const dshVersion = runtimeDshVersion()
 const supported = supportsDsh(dshVersion)
-// `fileUploads` stages attachments (D95); DSH 0.2.2-rc.1 has it in every profile.
+// `fileUploads` stages attachments; DSH 0.2.2-rc.1 has it in every profile.
 export const inject = supported ? ['sessionController', 'workspaceController', 'workspaceRegistry', 'fileUploads'] : []
 
 export interface Config {
-  /** Listen address. Default 0.0.0.0: every payload is Noise-encrypted (ARCHITECTURE D21). */
+  /** Listen address. Default 0.0.0.0: every payload is Noise-encrypted. */
   host?: string
   port?: number
   /** Default workspace directory for tasks without an explicit choice. Default: DSH's default Workspace, else the home directory. */
@@ -51,7 +51,7 @@ export function resolveConfig(config: Config = {}, env: NodeJS.ProcessEnv = proc
   return {
     host: config.host ?? env.DSHM_BRIDGE_HOST ?? '0.0.0.0',
     port: config.port ?? (env.DSHM_BRIDGE_PORT ? Number(env.DSHM_BRIDGE_PORT) : DEFAULT_PORT),
-    /** Where `port` came from, so a listen failure names the setting to change (D125). */
+    /** Where `port` came from, so a listen failure names the setting to change. */
     portFrom,
     cwd: config.cwd,
     stateDir: config.stateDir ?? env.DSHM_BRIDGE_STATE_DIR ?? join(dshHome, 'dsh-mobile-bridge'),
@@ -103,7 +103,7 @@ export function apply(ctx: PluginContext, config: Config = {}) {
         stopSessions?.(); sessions?.close()
         unregister?.(); unregisterQuestions?.()
         approvals.close(); questions.close()
-        // D125: the phone cannot learn why, so this one line names the address, the cause and the
+        // The phone cannot learn why, so this one line names the address, the cause and the
         // setting to change. DSH keeps running without the listener. The terminal gets it on
         // stderr: `dsh web` (0.2.2-rc.1) gives the Cordis logger no console exporter, so a
         // logger line alone reaches only DSH's own exporters (startup diagnostics, inspectors).

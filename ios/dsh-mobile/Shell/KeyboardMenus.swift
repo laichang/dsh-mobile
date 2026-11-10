@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 extension View {
-    /// D67: a menu on the composer (`Picker` `.menu`, `Menu`) opens in place, not through the
+    /// A menu on the composer (`Picker` `.menu`, `Menu`) opens in place, not through the
     /// shell, so `ShellModel` does not see it, and SwiftUI gives a menu no open callback. UIKit
     /// does: SwiftUI draws these menus with a `UIControl` that shows its menu as its primary
     /// action, and the control sends `.menuActionTriggered` just before the menu shows. This puts

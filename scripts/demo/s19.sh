@@ -1,5 +1,5 @@
 #!/bin/bash
-# S19 demo and checks: done and failed (PLAN.md §5 S19, screens 06 and X1). Re-runnable evidence
+# S19 demo and checks: done and failed (screens 06 and X1). Re-runnable evidence
 # for S19's Done when items. Everything runs against the in-process FakeBridge; no DSH is needed.
 #
 #   scripts/demo/s19.sh          swift test (with the FakeBridge outcomes scenario), S19OutcomesUITests,

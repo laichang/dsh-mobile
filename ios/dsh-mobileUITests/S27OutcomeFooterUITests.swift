@@ -1,11 +1,11 @@
 import XCTest
 
-/// S27 · Fix: Outcome duration and marker (PLAN.md §5 S27, ARCHITECTURE D76). The user's bugs on a
+/// Fix: Outcome duration and marker. The user's bugs on a
 /// real iPhone (2026-11-07), on a Web session that they had used for several turns:
 /// - "用时2小时37分钟15秒"，离谱了: the done footer counted from the session's first message, so
 ///   it took in the idle time between turns. It now counts the latest turn only.
 /// - "停在这里·最终回答开头"，这是什么？: the user chose to remove the label. An unread finished
-///   session still opens at the start of its final answer (D60, D65), with nothing drawn there.
+///   session still opens at the start of its final answer, with nothing drawn there.
 ///
 /// Against the FakeBridge's `-DSHMFakeScenario turns` (`FakeTurns`): a done Web session whose first
 /// turn is 2 h 37 min 15 s before its end, and whose second turn took 1 min 24 s. The app runs in

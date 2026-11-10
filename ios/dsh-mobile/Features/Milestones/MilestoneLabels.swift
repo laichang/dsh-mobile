@@ -1,8 +1,8 @@
 import DSHCore
 import SwiftUI
 
-/// How the app names milestones (S3, ARCHITECTURE D19). The bridge sends a kind plus DSH's own
-/// words; the wording here is the app's, and nothing is summarized (D11).
+/// How the app names milestones. The bridge sends a kind plus DSH's own
+/// words; the wording here is the app's, and nothing is summarized.
 extension Milestone {
     /// Timeline row title.
     var title: LocalizedStringKey {

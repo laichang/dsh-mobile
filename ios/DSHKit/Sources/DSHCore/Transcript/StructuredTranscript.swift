@@ -1,7 +1,7 @@
 import DSHProtocol
 import Foundation
 
-/// S17 · one collapsed row of the transcript (PLAN.md §5 S17, screen 04, ARCHITECTURE D61): the
+/// One collapsed row of the transcript (screen 04): the
 /// model's thinking in one step, or one tool call. The bridge maps DSH's typed data into it
 /// (`transcript.v1`); nothing here is a model's summary. The app words each row itself.
 public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
@@ -13,7 +13,7 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
         /// `durationMs` is 0 while it runs. `text` is DSH's reasoning, cut by the bridge.
         case thinking(durationMs: UInt64, text: String, truncated: Bool)
         case tool(Tool)
-        /// D89: a message the user sent into the task after its first prompt (`conversation.v1`).
+        /// A message the user sent into the task after its first prompt (`conversation.v1`).
         case userMessage(text: String)
         /// An agent question, shown as a card (`questions.v1`, screen P1).
         case question(AgentQuestion)
@@ -49,7 +49,7 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
     public var time: Date
     /// Where the row sits: after this many UTF-8 bytes of the task's streamed transcript.
     public var offset: Int
-    /// D107: the files sent with a user message, in order; nil for other rows (and older caches).
+    /// The files sent with a user message, in order; nil for other rows (and older caches).
     public var attachments: [MessageAttachment]?
 
     public init(id: String, taskID: String, state: State, kind: Kind, time: Date, offset: Int = 0,
@@ -87,7 +87,7 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
     /// The row id of the follow-up message with the bridge's `message_id`.
     public static func userMessageID(_ messageID: String) -> String { messagePrefix + messageID }
 
-    /// D89: a follow-up message, placed like a row: after the text that streamed before it.
+    /// A follow-up message, placed like a row: after the text that streamed before it.
     public init(_ wire: Dshm_V1_UserMessage) {
         self.init(id: Self.userMessageID(wire.messageID), taskID: wire.taskID, state: .done, kind: .userMessage(text: wire.text),
                   time: Date(timeIntervalSince1970: TimeInterval(wire.timeMs) / 1000),
@@ -108,7 +108,7 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
-/// S17 · a task's rows in transcript order. A later block with the same id replaces the row and
+/// A task's rows in transcript order. A later block with the same id replaces the row and
 /// keeps its place (the bridge sends RUNNING, then DONE or FAILED).
 public struct StructuredTranscript: Codable, Equatable, Sendable {
     public private(set) var items: [TranscriptItem] = []
@@ -119,10 +119,10 @@ public struct StructuredTranscript: Codable, Equatable, Sendable {
 
     public var isEmpty: Bool { items.isEmpty }
 
-    /// D89: how many follow-up messages the task has (each one starts a turn).
+    /// How many follow-up messages the task has (each one starts a turn).
     public var followUpCount: Int { items.filter(\.isUserMessage).count }
 
-    /// D89: only the follow-up messages, for a host without `transcript.v1`.
+    /// Only the follow-up messages, for a host without `transcript.v1`.
     public var userMessagesOnly: StructuredTranscript { StructuredTranscript(items: items.filter(\.isUserMessage)) }
 
     /// Adds `item` at `offset`, or updates the row with its id. Returns whether anything changed.

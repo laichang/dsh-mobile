@@ -3,7 +3,7 @@ import DSHTestSupport
 import Foundation
 import Testing
 
-/// S29 · a host that refuses this device (WebSocket close 4003 device unknown, D21) revoked it.
+/// A host that refuses this device (WebSocket close 4003 device unknown) revoked it.
 /// That is final: the store drops the host and does not retry it. A host that is only offline
 /// is retried as before. The fake closes like the bridge: the revoke response first, then 4003,
 /// and a new connection is refused with 4003 (bridge/src/server.ts, pairing/handshake.ts).
@@ -14,7 +14,7 @@ import Testing
     static let mac = "fake:\(FakeHosts.macName)"
     static let office = "fake:\(FakeHosts.officeName)"
 
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ what: String, timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
         await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)

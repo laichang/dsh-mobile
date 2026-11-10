@@ -66,7 +66,7 @@ final class ActivityKitClient: LiveActivityClient {
         refreshSummary()
     }
 
-    /// Debug test launches that do not ask for Live Activities end the ones left (D129).
+    /// Debug test launches that do not ask for Live Activities end the ones left.
     func dismissAll() {
         for key in Array(activities.keys) { dismiss(key: key) }
     }

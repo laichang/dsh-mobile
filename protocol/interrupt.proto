@@ -1,4 +1,4 @@
-// S5 · Interrupt a running task on its host. Capability "interrupt.v1".
+// Interrupt a running task on its host. Capability "interrupt.v1".
 syntax = "proto3";
 package dshm.v1;
 

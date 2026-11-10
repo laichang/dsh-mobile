@@ -1,7 +1,7 @@
 import DSHProtocol
 import Foundation
 
-/// One item of the agent's todo list, as DSH holds it (S3, protocol/milestones.proto).
+/// One item of the agent's todo list, as DSH holds it (protocol/milestones.proto).
 public struct Todo: Sendable, Equatable, Hashable, Codable {
     public enum Status: String, Sendable, Equatable, Hashable, Codable {
         case pending, inProgress, completed
@@ -16,7 +16,7 @@ public struct Todo: Sendable, Equatable, Hashable, Codable {
     }
 }
 
-/// One step on a task's milestone timeline (ARCHITECTURE D11, D19). `text` is DSH's own words,
+/// One step on a task's milestone timeline. `text` is DSH's own words,
 /// or empty; the app labels each kind itself and never summarizes.
 public struct Milestone: Sendable, Equatable, Identifiable, Codable {
     public enum Kind: String, Sendable, Equatable, Codable {

@@ -1,4 +1,4 @@
-/** S17: a mapped `BlockOut` → the `TranscriptBlock` event body (protocol/transcript.proto). */
+/** A mapped `BlockOut` → the `TranscriptBlock` event body (protocol/transcript.proto). */
 import type { MessageInitShape } from '@bufbuild/protobuf'
 import { TranscriptBlockState, type TranscriptBlockSchema } from '../gen/transcript_pb.ts'
 import type { BlockOut, BlockStateName } from './mapper.ts'

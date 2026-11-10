@@ -1,5 +1,5 @@
 #!/bin/bash
-# S5: interrupt a streaming task on real DSH with S2's slow mock model.
+# Interrupt a streaming task on real DSH with S2's slow mock model.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"

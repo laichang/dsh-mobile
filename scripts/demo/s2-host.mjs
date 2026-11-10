@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * S2's local acceptance host: real DSH 0.2.2-rc.1 + this worktree's bridge, driven by DSH's mock
- * LLM (no API key), like scripts/dsh-up.mjs but on S2's own resources (PLAN.md §8, 2026-11-05)
+ * LLM (no API key), like scripts/dsh-up.mjs but on S2's own resources
  * and with a slow mock, so a task streams for several seconds and the app can be killed mid-task.
  * Runs in the foreground until SIGINT / SIGTERM.
  *

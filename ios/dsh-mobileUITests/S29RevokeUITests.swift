@@ -1,6 +1,6 @@
 import XCTest
 
-/// S29 · a host that revoked this phone (PLAN.md §5 S29, ARCHITECTURE D59, D82). FakeBridge only,
+/// A host that revoked this phone. FakeBridge only,
 /// with `FakeHosts` that close like the bridge: 4003 (device unknown) on this device's sockets
 /// after a revoke, and 4003 on every reconnect. The test revokes this phone "from another
 /// client" with the Darwin notification `hosts-revoke` (`FakeHostsSwitch`): the phone gets no

@@ -1,4 +1,4 @@
-// Model failures demo host (ARCHITECTURE D104, D110): real DSH Web with the bridge plugin, and
+// Model failures demo host: real DSH Web with the bridge plugin, and
 // DeepSeek replaced by a fake provider whose account has no balance (scripts/demo/fake-deepseek.mjs).
 // The phone's task fails with DSH's QUOTA. When the UI test has seen the red failure card, the
 // provider is "topped up"; the phone then sends a new message into the same session, and the task

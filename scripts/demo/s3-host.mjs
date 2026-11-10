@@ -15,7 +15,7 @@
  *   DSHM_STEP_DELAY_MS 1500 (pause before each model step, so todos tick visibly)
  * Needs Node >= 24.9 and a pnpm on PATH (DSH's `dsh plugin` calls it).
  *
- * The model script, per agent turn (one DSH session per task, D13):
+ * The model script, per agent turn (one DSH session per task):
  *   step 1..4  `todo_write` tool calls: the plan, then each todo ticking off
  *   step 5     a final text answer
  * The script is chosen by counting `tool_result` blocks in the request, so it is stateless and

@@ -1,7 +1,7 @@
 import CoreFoundation
 import XCTest
 
-/// S18 · the approval sheet in a session (PLAN.md §5 S18, design screen 05), against the
+/// The approval sheet in a session (design screen 05), against the
 /// in-process FakeBridge (`-DSHMFakeBridge approvals`): two hosts, and Home Mac starts with a task
 /// that waits on `rm -rf ~/Desktop/Q3/tmp`. With `-DSHMFakeAsk 'Clean up'`, a new task asks for
 /// the same command before its reply. The Web's answer is a Darwin notification that the fake

@@ -1,5 +1,5 @@
 /**
- * Golden Noise transcripts for the bridge's wire (ARCHITECTURE D6, D21): fixed keys in, exact
+ * Golden Noise transcripts for the bridge's wire: fixed keys in, exact
  * bytes out. `pnpm noise-fixtures` writes protocol/fixtures/noise/transcripts.json; the TS test
  * (test/pairing.test.ts) regenerates and compares it, and the Swift test
  * (ios/DSHKit/Tests/DSHKitTests/NoiseChannelTests.swift) replays the phone side against it, so the

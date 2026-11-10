@@ -1,5 +1,5 @@
 #!/bin/bash
-# Voice input demo and checks (ARCHITECTURE D116, D117): the mic key on the composer of 01 and of
+# Voice input demo and checks: the mic key on the composer of 01 and of
 # the session page, with the fake transcriber (-DSHMFakeSpeech) and the FakeBridge. App only: no
 # DSH and no bridge.
 #

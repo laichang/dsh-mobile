@@ -1,7 +1,7 @@
 import Foundation
 
 /// Waits for the one answer of a system callback API, such as
-/// `SFSpeechRecognizer.requestAuthorization(_:)` (ARCHITECTURE D146).
+/// `SFSpeechRecognizer.requestAuthorization(_:)`.
 ///
 /// Many Objective-C APIs call their handler on a queue of their own, and their handler type is
 /// not `@Sendable`. In the app target every declaration is on the main actor by default, so a

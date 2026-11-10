@@ -2,7 +2,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-/// D146 · an Objective-C API shaped like `SFSpeechRecognizer.requestAuthorization:`: its handler
+/// An Objective-C API shaped like `SFSpeechRecognizer.requestAuthorization:`: its handler
 /// is not `NS_SWIFT_SENDABLE` and runs on a global queue, never on the main queue. Swift imports
 /// it the same way, so a test can call it like the app calls the Speech framework, without a
 /// permission prompt.

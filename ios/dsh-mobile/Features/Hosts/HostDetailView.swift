@@ -2,10 +2,10 @@ import DSHCore
 import DSHProtocol
 import SwiftUI
 
-/// S21 · one host (screen X2), pushed in the hosts sheet: its paired devices (this device is
+/// One host (screen X2), pushed in the hosts sheet: its paired devices (this device is
 /// marked), revoke with a confirmation, and its audit records with "load older" (STORY §9).
 /// A revoke of this device ends its access to the host: the app forgets the host, and with no
-/// host left it shows 08 (ARCHITECTURE D59).
+/// host left it shows 08.
 ///
 /// Accessibility contract: `host.detail` (label: the host name), `device.current` (label: this
 /// device's id), `device.id.<id>`, `device.revoke.<id>`, `device.revoke.confirm`,
@@ -57,7 +57,7 @@ struct HostDetailView: View {
             Button(role: .cancel) {} label: { Text("Cancel", tableName: "Hosts") }
         } message: { device in
             if device.id == list?.currentDeviceID {
-                // S29: say what happens; the host leaves the drawer and is not retried (D82).
+                // Say what happens; the host leaves the drawer and is not retried.
                 Text(Self.revokeThisDeviceMessage(host?.name ?? ""))
             } else {
                 Text("Device \(device.id) will lose access to \(host?.name ?? ""). It must pair again to reconnect.", tableName: "Hosts")
@@ -65,7 +65,7 @@ struct HostDetailView: View {
         }
     }
 
-    /// S29: the message of the alert before a revoke of this device (X2 and the drawer's
+    /// The message of the alert before a revoke of this device (X2 and the drawer's
     /// "Devices and audit").
     static func revokeThisDeviceMessage(_ host: String) -> String {
         String(localized: "This phone will be removed from \(host). \(host) will leave the drawer, with nothing left to tap, and the phone will not reconnect to it. To use it again, pair again.", table: "Hosts")
@@ -170,14 +170,14 @@ struct HostDetailView: View {
                 list = try await connection.revokeDevice(device.id)
                 error = nil
                 if isCurrent {
-                    // This phone has no access to the host any more (D59).
+                    // This phone has no access to the host any more.
                     shell.sheet = nil
                     actions.forget(hostKey)
                 } else {
                     await load()
                 }
             } catch where isCurrent && HostConnection.isDeviceRefusal(error) {
-                // S29: the close 4003 came before the response; the revoke took effect.
+                // The close 4003 came before the response; the revoke took effect.
                 shell.sheet = nil
                 actions.forget(hostKey)
             } catch { self.error = String(describing: error) }

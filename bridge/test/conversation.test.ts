@@ -1,5 +1,5 @@
 /**
- * Conversation (ARCHITECTURE D18, D89): a follow-up message into the DSH session of a finished
+ * Conversation: a follow-up message into the DSH session of a finished
  * task. The new turn streams under the same task ID, and Resume replays the whole conversation.
  * All against FakeDSH.
  */
@@ -94,7 +94,7 @@ describe('FollowUpAgainstFakeDSH', () => {
     assert.equal(accepted.body.value.taskId, taskId)
     await client.until((fs) => ended(fs) === 2)
 
-    // The same DSH session, prompted twice; the follow-up steers into the idle session (D18).
+    // The same DSH session, prompted twice; the follow-up steers into the idle session.
     assert.deepEqual(dsh.prompts.map((p, i) => [p.sessionId, p.text, dsh.promptOptions[i].mode]),
       [[taskId, 'Say hello', 'queue'], [taskId, 'And again?', 'steer']])
     assert.equal(dsh.promptOptions[1].requestId, accepted.body.value.messageId)
@@ -153,7 +153,7 @@ describe('FollowUpAgainstFakeDSH', () => {
     const unknown = await client.call({ case: 'sendMessage', value: { taskId: 'nope', text: 'Hi' } })
     assert.ok(unknown.body.case === 'error' && unknown.body.value.code === 'message/refused')
     await client.until((fs) => ended(fs) === 1)
-    // D110: a failed task takes a new message into the same session (the user fixed the cause).
+    // A failed task takes a new message into the same session (the user fixed the cause).
     const failed = await client.call({ case: 'sendMessage', value: { taskId, text: 'Again?' } })
     assert.equal(failed.body.case, 'messageAccepted')
     await client.until((fs) => ended(fs) === 2)
@@ -252,8 +252,8 @@ describe('FollowUpQueueAgainstFakeDSH', () => {
   })
 
   test('sendNowDuringALongToolStepIsSteeringUntilTheStepEndsThenTaken', async () => {
-    // S15: real DSH gives a steered message to the agent only when the step ends (a tool call that
-    // waits, as for subagents). Until then the app has only the STEERING event to draw (D143).
+    // Real DSH gives a steered message to the agent only when the step ends (a tool call that
+    // waits, as for subagents). Until then the app has only the STEERING event to draw.
     const { server } = await bridgeWith({ toolStepMs: 400, reply: ['Stopped', ' here.'], chunkDelayMs: 20 })
     const { client } = await connect(server.port, queueCaps)
     const created = await client.call({ case: 'createTask', value: { prompt: 'Summarize every file' } })

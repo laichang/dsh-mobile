@@ -3,7 +3,7 @@ import CoreFoundation
 import DSHTestSupport
 import Synchronization
 
-/// S21 · stops and starts the `FakeHosts` of `-DSHMFakeBridge hosts…` from a UI test. Debug only.
+/// Stops and starts the `FakeHosts` of `-DSHMFakeBridge hosts…` from a UI test. Debug only.
 ///
 /// A UI test posts the Darwin notification `FakeHosts.hostsDown` (every host that can be
 /// reached becomes unreachable, as when the phone leaves the Wi-Fi) or `FakeHosts.hostsUp`
@@ -29,7 +29,7 @@ enum FakeHostsSwitch {
                 FakeHostsSwitch.set(up: name?.rawValue as String? == FakeHosts.hostsUp)
             }, name as CFString, nil, .deliverImmediately)
         }
-        // S29: MacBook-Pro closes this phone's sockets with 4003 and refuses it from now on.
+        // MacBook-Pro closes this phone's sockets with 4003 and refuses it from now on.
         CFNotificationCenterAddObserver(center, nil, { _, _, _, _, _ in
             FakeHostsSwitch.hosts.withLock { $0 }.first?.revokeThisDevice()
         }, FakeHosts.hostsRevoke as CFString, nil, .deliverImmediately)

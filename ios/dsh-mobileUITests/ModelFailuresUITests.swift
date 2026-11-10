@@ -1,6 +1,6 @@
 import XCTest
 
-/// Model failures (ARCHITECTURE D104, D110, screens X1 and X4), against real DSH whose DeepSeek
+/// Model failures (screens X1 and X4), against real DSH whose DeepSeek
 /// provider has no balance. Needs scripts/demo/model-failures-host.mjs (DSH Web + the bridge + a
 /// fake DeepSeek); scripts/demo/model-failures.sh runs it. The host tops the account up when this
 /// test says the failure is on screen, and checks DSH's session afterwards.
@@ -35,7 +35,7 @@ final class ModelFailuresUITests: XCTestCase {
         let card = any(app, "outcome.card").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertEqual(card.value as? String, "failed")
-        // The app's own words for QUOTA (D104), not the provider's English text; the class beside it.
+        // The app's own words for QUOTA, not the provider's English text; the class beside it.
         let error = any(app, "outcome.error").firstMatch
         XCTAssertTrue(error.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(["当前请求的额度已用尽", "Request quota exhausted"].contains(error.label), error.label)

@@ -2,7 +2,7 @@ import DSHCore
 import SwiftUI
 import UIKit
 
-/// T1 · the navigation state of the shell (design/screens.json nav and rules): which page shows, which
+/// The navigation state of the shell (design/screens.json nav and rules): which page shows, which
 /// bottom sheet is up, and whether the workspace drawer is open. There is no navigation stack:
 /// the left edge belongs to the drawer, and details open as sheets.
 ///
@@ -13,24 +13,24 @@ import UIKit
 @Observable
 final class ShellModel {
     /// The app opens on a blank new session (STORY §3), never on the last place.
-    /// S24 (D67): each change of page, sheet or drawer puts the keyboard away first. Typing and
+    /// Each change of page, sheet or drawer puts the keyboard away first. Typing and
     /// the send key do not come here; every other action that moves the shell does.
     var page: ShellPage = .newSession { didSet { if page != oldValue { Keyboard.dismiss() } } }
     var sheet: SheetRoute? { didSet { if sheet != nil { Keyboard.dismiss() } } }
     var drawerOpen = false { didSet { if drawerOpen { Keyboard.dismiss() } } }
-    /// S23: true from a tap in the drawer until the page fills the screen (F1–F4). A pending
+    /// True from a tap in the drawer until the page fills the screen (F1–F4). A pending
     /// approval's sheet waits for it.
     private(set) var moving = false
-    /// S23: one more for each tap that opens a page from the drawer; the light haptic follows it.
+    /// One more for each tap that opens a page from the drawer; the light haptic follows it.
     private(set) var taps = 0
-    /// S23: true while the page cross-fades (F2); `ShellView` animates the page change then.
+    /// True while the page cross-fades (F2); `ShellView` animates the page change then.
     private(set) var fading = false
-    /// S23: the last scroll position, per session, that the user scrolled to (D65). Not observed:
+    /// The last scroll position, per session, that the user scrolled to. Not observed:
     /// it changes on each scroll frame, and only a new page reads it.
     @ObservationIgnored var lastPositions: [String: CGFloat] = [:]
     @ObservationIgnored private var motion: Task<Void, Never>?
 
-    /// Shows a page. With the drawer open, it moves like design screens F1–F4 (S23, `DrawerMotion`):
+    /// Shows a page. With the drawer open, it moves like design screens F1–F4 (`DrawerMotion`):
     /// the peeking edge cross-fades to the page (0–120 ms), then the page slides in with a spring
     /// and pushes the drawer away (120–350 ms). Without the drawer (the composer's first message,
     /// a card in 03), the page cross-fades in place.
@@ -57,7 +57,7 @@ final class ShellModel {
     }
 
     /// Shows a page at once, with no motion: the first message turns the new session into the
-    /// session page on the same page (ARCHITECTURE D51).
+    /// session page on the same page.
     func show(_ page: ShellPage) {
         motion?.cancel()
         moving = false
@@ -66,7 +66,7 @@ final class ShellModel {
         drawerOpen = false
     }
 
-    /// Opens or closes the drawer with the same spring as the slide (S23).
+    /// Opens or closes the drawer with the same spring as the slide.
     func setDrawer(open: Bool) {
         withAnimation(DrawerMotion.slide) { drawerOpen = open }
     }
@@ -74,7 +74,7 @@ final class ShellModel {
     func present(_ route: SheetRoute) { sheet = route }
 }
 
-/// S24 (D67): puts the keyboard away, wherever the focus is (the composer's prompt, a sheet's
+/// Puts the keyboard away, wherever the focus is (the composer's prompt, a sheet's
 /// field). The shell calls it on each move; `NewSessionBody` on a tap or a swipe down; a menu on
 /// the composer just before it shows (`dismissesKeyboardBeforeMenu`).
 @MainActor
@@ -86,7 +86,7 @@ enum Keyboard {
 
 /// The pages of the shell. Each is a full page beside the drawer, not a pushed view.
 enum ShellPage: Hashable {
-    /// The blank new session (01). The first message turns it into `.session` (ARCHITECTURE D51).
+    /// The blank new session (01). The first message turns it into `.session`.
     case newSession
     /// One session (04), by `TaskListStore.TaskRow.key`.
     case session(String)
@@ -96,21 +96,21 @@ enum ShellPage: Hashable {
 
 /// Every bottom sheet of the shell (design/screens.json: details open as bottom sheets).
 enum SheetRoute: Identifiable, Hashable {
-    /// A task's whole milestone timeline (S3).
+    /// A task's whole milestone timeline.
     case milestones(taskKey: String)
-    /// The workspace picker for the composer's host (S7).
+    /// The workspace picker for the composer's host.
     case workspace(hostKey: String)
-    /// The model and effort picker: for the composer (`taskKey` nil) or for a running task (S6).
+    /// The model and effort picker: for the composer (`taskKey` nil) or for a running task.
     case model(hostKey: String, taskKey: String?)
-    /// Paired devices and the audit history of one host (S10).
+    /// Paired devices and the audit history of one host.
     case devices(hostKey: String)
-    /// The pending approval of a session (S18, screen 05).
+    /// The pending approval of a session (screen 05).
     case approval(taskKey: String)
-    /// Settings, from the bottom of the drawer (S14).
+    /// Settings, from the bottom of the drawer.
     case settings
-    /// The hosts sheet (H), from the "2 / 3" pill in the drawer (S21).
+    /// The hosts sheet (H), from the "2 / 3" pill in the drawer.
     case hosts
-    /// One thinking or tool-call row of a session (S17).
+    /// One thinking or tool-call row of a session.
     case transcriptBlock(taskKey: String, blockID: String)
 
     var id: Self { self }

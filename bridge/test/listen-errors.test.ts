@@ -1,5 +1,5 @@
 /**
- * A bridge that cannot listen says why in one line of DSH's log (ARCHITECTURE D125): the address,
+ * A bridge that cannot listen says why in one line of DSH's log: the address,
  * the cause and the setting to change. The plugin's `apply` keeps DSH running: no throw, no
  * unhandled rejection, and a clean dispose.
  */

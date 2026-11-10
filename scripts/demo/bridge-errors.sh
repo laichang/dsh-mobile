@@ -1,7 +1,7 @@
 #!/bin/bash
 # The bridge cannot listen because another program holds its port: the bridge says why in DSH's
 # log, and the phone says why on the host row (H) and the offline card (X3). Real DSH and an iOS
-# Simulator (ARCHITECTURE D125).
+# Simulator.
 #
 # 1. DSH and its bridge run on DSHM_BRIDGE_PORT; the app pairs with them.
 # 2. The script stops DSH, starts another program on that port (scripts/demo/port-holder.mjs, an

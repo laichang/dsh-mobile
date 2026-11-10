@@ -1,11 +1,11 @@
 #!/bin/bash
-# S2 demo and checks, end to end (PLAN.md §5 S2). Re-runnable evidence for S2's Done when items.
+# S2 demo and checks, end to end. Re-runnable evidence for S2's Done when items.
 #
 #   scripts/demo/s2.sh             all checks + UI tests, including kill/reopen against real DSH
 #   scripts/demo/s2.sh --fake-only skip anything that needs DSH (CI-like)
 #   scripts/demo/s2.sh --shots     also refresh the screenshots in evidence/S2/
 #
-# Env (defaults are S2's resources, PLAN.md §8 2026-11-05):
+# Env (defaults are S2's resources):
 #   DSHM_BRIDGE_PORT (47811)  DSHM_WEB_PORT (3284)  DSHM_HOME (~/.dshm/home-s2)
 #   DSHM_SIM (Simulator name or UDID, default "dshm-S2")  DSHM_DD (DerivedData, /tmp/dshm-s2-dd)
 # Fails on any failed or skipped test; with --fake-only the real-DSH tests are left out.

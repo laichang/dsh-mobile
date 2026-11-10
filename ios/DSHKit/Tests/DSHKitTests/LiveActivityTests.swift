@@ -60,7 +60,7 @@ final class FakeActivitySystem: LiveActivityClient {
     }
 }
 
-/// The Live Activity of a task follows it (screen L, ARCHITECTURE D119): it starts when the task
+/// The Live Activity of a task follows it (screen L): it starts when the task
 /// runs, shows the latest step on each milestone, and ends with done, failed or waiting; one
 /// activity for each task, also after a relaunch. Against `FakeHost` and `FakeActivitySystem`.
 @MainActor

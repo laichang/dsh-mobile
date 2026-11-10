@@ -1,6 +1,6 @@
 import XCTest
 
-/// S17 · the structured transcript (PLAN.md §5 S17, screen 04), against the in-process FakeBridge's
+/// The structured transcript (screen 04), against the in-process FakeBridge's
 /// transcript task (`-DSHMFakeScenario transcript`): thinking for 8 s, then Read, Edit (+12 −3) and
 /// Bash rows among the reply. `transcript-v0` sends the same blocks from a host without
 /// `transcript.v1`. scripts/demo/s17.sh runs these; set TEST_RUNNER_DSHM_SHOT_DIR to save the

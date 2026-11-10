@@ -1,6 +1,6 @@
 import XCTest
 
-/// S15 · 所有任务 (PLAN.md §5 S15, design screen 03), against the in-process FakeBridge with
+/// 所有任务 (design screen 03), against the in-process FakeBridge with
 /// two hosts that each start with a task waiting on an approval (`-DSHMFakeBridge approvals`).
 /// The app runs in Chinese, like the design screens; the checks use identifiers and host names.
 /// scripts/demo/s15.sh runs these; TEST_RUNNER_DSHM_SHOT_DIR keeps the screenshots.
@@ -20,7 +20,7 @@ final class S15AllTasksUITests: XCTestCase {
                                "-DSHMFakeBridge", scenario]
         if reset { app.launchArguments += ["-DSHMResetStore", "YES"] }
         if let hold { app.launchArguments += ["-DSHMFakeHold", hold] }
-        app.launchArguments += noUIKitAnimations // D128
+        app.launchArguments += noUIKitAnimations
         app.launch()
         return app
     }
@@ -99,7 +99,7 @@ final class S15AllTasksUITests: XCTestCase {
         XCTAssertTrue(arguments.label.contains("\"timeout\""), arguments.label)
         saveShot("s15-tool-arguments")
         home.buttons["tasklist.row"].tap()
-        // S18: the session opens with its approval sheet up (05).
+        // The session opens with its approval sheet up (05).
         closeApprovalSheet(app)
         XCTAssertTrue(status.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertEqual(app.staticTexts["page.title"].label, Self.homeTask)

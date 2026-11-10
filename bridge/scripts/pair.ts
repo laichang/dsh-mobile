@@ -1,5 +1,5 @@
 /**
- * Prints a new single-use pairing QR for a running bridge (terminal-first pairing, PLAN S1).
+ * Prints a new single-use pairing QR for a running bridge (terminal-first pairing).
  *   DSH_HOME=~/.dsh node lib/scripts/pair.js [--state-dir DIR] [--ttl-minutes 10] [--url-only]
  * The state dir defaults to the bridge's: $DSHM_BRIDGE_STATE_DIR, else $DSH_HOME/dsh-mobile-bridge.
  * --url-only prints just the dshm://pair link (scripts/demo/s1.sh feeds it to the Simulator).

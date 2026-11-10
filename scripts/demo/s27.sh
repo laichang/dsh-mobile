@@ -1,5 +1,5 @@
 #!/bin/bash
-# S27 demo and checks: Outcome duration and marker (PLAN.md §5 S27, ARCHITECTURE D76). The done
+# S27 demo and checks: Outcome duration and marker. The done
 # footer's 用时 counts the latest turn only (the bridge's `turn_started_at_ms`), and an unread done
 # session opens at the start of its final answer with no label there. The UI tests run against the
 # in-process FakeBridge (scenarios `turns` and `outcomes`); no DSH is needed.

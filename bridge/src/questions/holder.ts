@@ -1,8 +1,8 @@
 /**
- * Agent questions (ARCHITECTURE D18, D92). DSH's `ask_user_question` tool dispatches the
+ * Agent questions. DSH's `ask_user_question` tool dispatches the
  * `user-questions/request` waterfall. The bridge answers first (`prepend`), holds the request for a
  * paired phone, and fans a copy out to the rest of the chain (the DSH Web/desktop forwarder), as
- * the approval holder does (D17). The first answer wins; the other copy is withdrawn. The holder
+ * the approval holder does. The first answer wins; the other copy is withdrawn. The holder
  * never answers by itself: the task waits until a person answers or the turn ends. An answer names
  * offered options, or is typed text (DSH's free-text `custom` answer), or both when multi-select.
  */

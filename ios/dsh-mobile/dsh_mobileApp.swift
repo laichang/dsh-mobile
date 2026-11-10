@@ -10,11 +10,11 @@ struct dsh_mobileApp: App {
     var body: some Scene {
         WindowGroup {
             root
-                // the DSHTheme visual language: the app always uses dark mode (T1).
+                // the DSHTheme visual language: the app always uses dark mode.
                 .preferredColorScheme(.dark)
                 .environment(\.hostActions, HostActions(pair: { app.startPairing() }, forget: { app.forgetHost($0) }))
                 .environment(\.transcriber, app.transcriber)
-                // S29 (D82): a host revoked this phone; the app forgot it. Said once.
+                // A host revoked this phone; the app forgot it. Said once.
                 .alert(Text("Access removed", tableName: "Hosts"), isPresented: Binding(
                     get: { app.revokedNotice != nil }, set: { if !$0 { app.revokedNotice = nil } })) {
                     Button(role: .cancel) {} label: { Text("OK", tableName: "Hosts") }
@@ -25,7 +25,7 @@ struct dsh_mobileApp: App {
                     ScannerView(mode: app.scannerMode, found: { app.openPairingCode($0) }, cancel: { app.showingScanner = false })
                 }
                 #if DEBUG
-                // D121: the Live Activities as ActivityKit has them, for UI tests.
+                // The Live Activities as ActivityKit has them, for UI tests.
                 .overlay(alignment: .topLeading) {
                     if ProcessInfo.processInfo.arguments.contains("-DSHMLiveActivityProbe") {
                         Text(verbatim: "·").font(.system(size: 2)).opacity(0.02).allowsHitTesting(false)
@@ -33,13 +33,13 @@ struct dsh_mobileApp: App {
                             .accessibilityValue(app.activityClient.summary)
                     }
                 }
-                // dshm:// is registered only in the Debug Info.plist (ARCHITECTURE D16).
+                // dshm:// is registered only in the Debug Info.plist.
                 .onOpenURL { url in
                     if DebugDeepLink.route(url) != nil { app.openPairingCode(url.absoluteString) }
                 }
                 #endif
         }
-        // S2: refresh on foreground (resume from the cursor); iOS drops sockets in the background.
+        // Refresh on foreground (resume from the cursor); iOS drops sockets in the background.
         .onChange(of: scenePhase, initial: true) { _, phase in
             switch phase {
             case .active: app.store?.foreground()
@@ -57,7 +57,7 @@ struct dsh_mobileApp: App {
                 let wasUnpaired = !app.hasSavedHosts
                 app.closePairing()
                 showFirstTask = wasUnpaired && app.hasSavedHosts
-                // S22 (D63): after the first pairing, 01 opens with the first task in the composer.
+                // After the first pairing, 01 opens with the first task in the composer.
                 if showFirstTask, let store = app.store, store.prompt.isEmpty { store.prompt = FirstRun.suggestion }
             }
         } else if let store = app.store {

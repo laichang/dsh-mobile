@@ -1,5 +1,5 @@
 #!/bin/bash
-# S9: two FakeBridge hosts for offline behavior, two real Noise hosts for S8/S10 integration.
+# Two FakeBridge hosts for offline behavior, two real Noise hosts for S8/S10 integration.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"

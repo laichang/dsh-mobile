@@ -1,5 +1,5 @@
 #!/bin/bash
-# S29 demo and checks: a host that revoked this phone (PLAN.md §5 S29, ARCHITECTURE D59, D82).
+# S29 demo and checks: a host that revoked this phone.
 # The bug (2026-11-08, real iPhone): after a revoke, the host stayed in the drawer and showed
 # "connecting" every few seconds. Now a close 4003 (device unknown) is final: the app forgets
 # the host, says so once, and shows 08 (no host left) or 01 with the other hosts.

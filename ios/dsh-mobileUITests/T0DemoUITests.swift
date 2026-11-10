@@ -1,6 +1,6 @@
 import XCTest
 
-/// T0 demo in the Simulator, driven by accessibility identifiers (ARCHITECTURE D16).
+/// T0 demo in the Simulator, driven by accessibility identifiers.
 /// - `testDemoWithFakeBridge` needs nothing else running.
 /// - `testDemoAgainstRealDSH` needs `node scripts/dsh-up.mjs` (real DSH + bridge on 47801) and
 ///   runs only with TEST_RUNNER_DSHM_REAL_DSH=1; scripts/demo/t0.sh sets that up.

@@ -7,7 +7,7 @@ let package = Package(
     platforms: [.iOS(.v26), .macOS(.v15)],
     products: [
         .library(name: "DSHKit", targets: ["DSHProtocol", "DSHCore", "DSHTestSupport", "DSHActivity"]),
-        // The Live Activity's data, shared by the app and its widget extension (D119). No dependencies,
+        // The Live Activity's data, shared by the app and its widget extension. No dependencies,
         // so the extension stays small.
         .library(name: "DSHActivity", targets: ["DSHActivity"]),
     ],
@@ -27,7 +27,7 @@ let package = Package(
         // FakeBridge and other debug-only test doubles. Compiled out of Release (#if DEBUG).
         .target(name: "DSHTestSupport", dependencies: ["DSHCore", "DSHProtocol"]),
         // Test only: an Objective-C API that calls its handler on a queue of its own, like the
-        // Speech framework's permission request (D146). In no product.
+        // Speech framework's permission request. In no product.
         .target(name: "SystemCallbackDoubles", path: "Tests/SystemCallbackDoubles"),
         .testTarget(
             name: "DSHKitTests",

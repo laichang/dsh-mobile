@@ -1,6 +1,6 @@
 import XCTest
 
-/// S24 · Fix: Keyboard dismiss (PLAN.md §5 S24, ARCHITECTURE D67). The user's bug on a real
+/// Fix: Keyboard dismiss. The user's bug on a real
 /// iPhone: with the keyboard up, a tap on the drawer button opened the drawer and the keyboard
 /// stayed. Any action other than typing puts the keyboard away first.
 ///

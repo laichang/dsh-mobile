@@ -4,7 +4,7 @@
      (ARCHITECTURE D16); the ATS key is the same as in Debug-Info.plist (D88). -->
 <plist version="1.0">
 <dict>
-	<!-- ARCHITECTURE D88 (S31): the bridge is reached by plain ws:// at the IP addresses in the
+	<!-- The bridge is reached by plain ws:// at the IP addresses in the
 	     pairing QR (LAN, Tailscale 100.x, any other interface of the Mac). ATS refuses cleartext to
 	     IPs outside the local ranges, and NSExceptionDomains cannot name IP addresses. Every frame is
 	     Noise-encrypted (D6, D21), and the app talks to no other server. Same key in Debug and

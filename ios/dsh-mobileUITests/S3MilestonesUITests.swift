@@ -1,6 +1,6 @@
 import XCTest
 
-/// S3 demo in the Simulator (PLAN.md §5 S3): a multi-step task's todos tick off on the task card,
+/// S3 demo in the Simulator: a multi-step task's todos tick off on the task card,
 /// and the detail view shows the milestone timeline.
 /// - `testTodosTickOffOnCardWithFakeBridge`, `testTimelineWithFakeBridge` need nothing else running
 ///   (`-DSHMFakeBridge YES -DSHMFakeMilestones YES`).
@@ -80,7 +80,7 @@ final class S3MilestonesUITests: XCTestCase {
         card.tap()
         let timeline = app.descendants(matching: .any)["milestone.timeline"]
         XCTAssertTrue(timeline.waitForExistence(timeout: 5), app.debugDescription)
-        // The todos are on top. Check them first: the timeline is a sheet (T1), and a swipe
+        // The todos are on top. Check them first: the timeline is a sheet, and a swipe
         // down at the top of it would close it.
         for i in Self.todos.indices {
             let todo = app.descendants(matching: .any)["milestone.todo.\(i)"]

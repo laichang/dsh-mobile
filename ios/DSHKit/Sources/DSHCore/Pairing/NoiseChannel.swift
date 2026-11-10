@@ -8,7 +8,7 @@ public enum NoiseChannelError: Error, Equatable, CustomStringConvertible {
     case deviceUnknown
     /// The handshake failed: wrong host key, tampering, or a protocol mismatch.
     case handshakeFailed(String)
-    /// D125: the peer took the WebSocket but is no DSH bridge: it closed with a code that no
+    /// The peer took the WebSocket but is no DSH bridge: it closed with a code that no
     /// bridge sends, sent text, or replied with something that is not Noise message 2.
     case notABridge(String)
 
@@ -22,7 +22,7 @@ public enum NoiseChannelError: Error, Equatable, CustomStringConvertible {
     }
 }
 
-/// The app's Noise channel to a bridge (ARCHITECTURE D6, D21): the initiator side of
+/// The app's Noise channel to a bridge: the initiator side of
 /// bridge/src/pairing/handshake.ts.
 /// - `.pair`: `Noise_IKpsk1_25519_ChaChaPoly_SHA256`, psk = the QR's one-time secret.
 /// - `.reconnect`: `Noise_IK_25519_ChaChaPoly_SHA256` with the host key saved at pairing.
@@ -81,7 +81,7 @@ public struct NoiseChannel: SecureChannel {
     static func finish(_ state: NoiseHandshakeState, reply: [UInt8]) throws -> NoiseFrameCipher {
         var hs = state
         let payload: [UInt8]
-        // D125: a bridge with another key refuses message 1 with a close 4002; a reply that does not
+        // A bridge with another key refuses message 1 with a close 4002; a reply that does not
         // read as message 2 comes from a peer that is not a bridge (an echo, another protocol).
         do {
             payload = try hs.readMessage(reply)

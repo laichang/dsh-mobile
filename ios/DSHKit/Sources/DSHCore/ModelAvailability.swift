@@ -1,7 +1,7 @@
 import DSHProtocol
 import Foundation
 
-/// S20 · the rules of the model sheet (screens M and X4, STORY §8): the user picks the model, and
+/// The rules of the model sheet (screens M and X4, STORY §8): the user picks the model, and
 /// the app never swaps it silently. A selection the host can no longer run is named, nothing else
 /// is selected in its place, and 应用 stays off until the user picks a model that is available.
 public extension ModelCatalog {

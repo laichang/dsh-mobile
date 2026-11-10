@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// T1 · the navigation shell (design/screens.json nav and rules): one page at a time, and the workspace
+/// The navigation shell (design/screens.json nav and rules): one page at a time, and the workspace
 /// drawer on its left. The drawer pushes the page (it doesn't cover it). A drag from the left
 /// edge moves the drawer and the page with the finger; on release, the position and the velocity
 /// decide if it opens or goes back. There is no `NavigationStack` and no back button: details
@@ -69,7 +69,7 @@ struct ShellView: View {
             SessionPage(store: store, taskKey: nil, showFirstTask: $showFirstTask)
         case .session(let key):
             SessionPage(store: store, taskKey: key, showFirstTask: $showFirstTask,
-                        lastPosition: shell.lastPositions[key]) // S23: read once, when the page is made
+                        lastPosition: shell.lastPositions[key]) // Read once, when the page is made
                 .id(key)
         case .allTasks:
             AllTasksPage(store: store)
@@ -88,7 +88,7 @@ struct ShellView: View {
                 if dragOffset == nil {
                     let horizontal = abs(value.translation.width) > abs(value.translation.height)
                     guard horizontal, shell.drawerOpen || value.startLocation.x <= Self.edgeWidth else { return }
-                    // S24 (D67): the keyboard goes when the drag starts, not when the drawer settles.
+                    // The keyboard goes when the drag starts, not when the drawer settles.
                     Keyboard.dismiss()
                 }
                 dragOffset = min(max(base + value.translation.width, 0), width)
@@ -149,7 +149,7 @@ struct PageBar<Trailing: View>: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            // S26: the trailing slot is always as wide as the drawer button, so the title is
+            // The trailing slot is always as wide as the drawer button, so the title is
             // centered on the screen, not in the space right of the button. `EmptyView` takes no
             // width, also in a frame; `Color.clear` does. A trailing view sits in the slot.
             Color.clear

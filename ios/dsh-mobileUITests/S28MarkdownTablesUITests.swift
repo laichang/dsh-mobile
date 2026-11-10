@@ -1,6 +1,6 @@
 import XCTest
 
-/// S28 · Markdown tables (PLAN.md §5 S28, screen 04, D79): a GFM table in the agent's reply shows as
+/// Markdown tables (screen 04): a GFM table in the agent's reply shows as
 /// a table, not as its Markdown source. Against the in-process FakeBridge's coding task
 /// (`-DSHMFakeScenario coding`), whose reply has a table, and its wide-table variant
 /// (`FakeBridge.tablesPrompt`). scripts/demo/s28.sh runs these; set TEST_RUNNER_DSHM_SHOT_DIR to save

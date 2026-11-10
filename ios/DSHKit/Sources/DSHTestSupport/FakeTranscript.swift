@@ -3,7 +3,7 @@ import DSHCore
 import DSHProtocol
 import Foundation
 
-/// S17 · a coding task with thinking and tool calls (`-DSHMFakeScenario transcript`, PLAN.md S17
+/// A coding task with thinking and tool calls (`-DSHMFakeScenario transcript`, PLAN.md
 /// Demo): "已思考 8 秒 ›", "Read TaskListStore.swift" and "Edit TaskListStore.swift +12 −3", with the
 /// blocks a bridge with `transcript.v1` sends (bridge/src/transcript/mapper.ts).
 public enum FakeTranscript {

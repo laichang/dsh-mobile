@@ -1,6 +1,6 @@
 import XCTest
 
-/// T1 · the new UI shell (PLAN.md §5 T1, design/screens.json nav and rules), against the in-process
+/// The new UI shell (design/screens.json nav and rules), against the in-process
 /// FakeBridge: nothing else needs to run. scripts/demo/t1.sh runs these; set
 /// TEST_RUNNER_DSHM_SHOT_DIR to save the screenshots there. Helpers: UITestSupport.swift.
 @MainActor
@@ -63,7 +63,7 @@ final class T1ShellUITests: XCTestCase {
     }
 
     /// The first message creates the session, and the same page shows the reply: no list routing
-    /// and no grace period (ARCHITECTURE D51, which supersedes D34).
+    /// and no grace period (which supersedes D34).
     func testFirstMessageCreatesSessionOnSamePage() {
         let app = launch(["-DSHMFakeBridge", "YES"])
         assertNewSession(app)

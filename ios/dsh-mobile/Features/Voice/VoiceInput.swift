@@ -3,12 +3,12 @@ import SwiftUI
 import UIKit
 
 extension EnvironmentValues {
-    /// D116: the transcriber of the mic key. The app sets it at the root (`AppModel`): the Speech
+    /// The transcriber of the mic key. The app sets it at the root (`AppModel`): the Speech
     /// framework, or in Debug the fake of `-DSHMFakeSpeech`.
     @Entry var transcriber: TranscriberFactory = SpeechFrameworkTranscriber.factory
 }
 
-/// The mic key on a composer (STORY §7, voice; ARCHITECTURE D117): a tap starts to listen and the
+/// The mic key on a composer (STORY §7, voice): a tap starts to listen and the
 /// words go into the field as the user speaks; a second tap stops. It never sends.
 struct MicKey: View {
     let dictation: Dictation
@@ -45,7 +45,7 @@ struct MicKey: View {
     }
 }
 
-/// The line above the field (D117): "listening", or why dictation can't start and how to turn it
+/// The line above the field: "listening", or why dictation can't start and how to turn it
 /// on. When it is not allowed, the field stays as it was.
 struct DictationNotice: View {
     let dictation: Dictation

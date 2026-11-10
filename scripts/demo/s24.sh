@@ -1,5 +1,5 @@
 #!/bin/bash
-# S24 demo and checks: keyboard dismiss (PLAN.md §5 S24, ARCHITECTURE D67). With the keyboard up,
+# S24 demo and checks: keyboard dismiss. With the keyboard up,
 # every action other than typing puts it away first: the drawer button, an edge drag, a sheet.
 # Everything runs against the in-process FakeBridge (scenarios `YES` and `pickers`); no DSH is needed.
 #

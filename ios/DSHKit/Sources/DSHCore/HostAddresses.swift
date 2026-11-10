@@ -1,15 +1,15 @@
 import Foundation
 
-/// Why one address of a host could not be used, the last time it was tried (D98).
+/// Why one address of a host could not be used, the last time it was tried.
 public struct AddressFailure: Sendable, Equatable, CustomStringConvertible {
     public var endpoint: HostEndpoint
     /// A short reason (`AddressFailure.reason(for:)`), e.g. "URL error -1004, connection refused".
     public var reason: String
-    /// What the failure says about the bridge's port, when that is clear (D125); nil for other
+    /// What the failure says about the bridge's port, when that is clear; nil for other
     /// failures (App Transport Security, no network, the bridge's own refusals, ...).
     public var kind: Kind?
 
-    /// The three reasons a bridge does not answer at an address (D125).
+    /// The three reasons a bridge does not answer at an address.
     public enum Kind: String, Sendable, Equatable, CaseIterable {
         /// The computer answered and refused the connection: nothing listens on the port. DSH, or
         /// its bridge, is not running.
@@ -54,7 +54,7 @@ public struct AddressFailure: Sendable, Equatable, CustomStringConvertible {
         return name.map { "URL error \(ns.code), \($0)" } ?? "URL error \(ns.code)"
     }
 
-    /// D125: which of the three reasons a failed try shows, if any.
+    /// Which of the three reasons a failed try shows, if any.
     /// - Refused (`NSURLErrorCannotConnectToHost`): nothing listens.
     /// - An HTTP answer without the upgrade (`NSURLErrorBadServerResponse`), a connection that the
     ///   peer drops during the handshake (`NSURLErrorNetworkConnectionLost`), or a WebSocket peer
@@ -93,10 +93,10 @@ public struct AddressFailure: Sendable, Equatable, CustomStringConvertible {
     }
 }
 
-/// One address gave no answer within `HostConnection.attemptTimeout` (D98).
+/// One address gave no answer within `HostConnection.attemptTimeout`.
 public struct AddressTimeout: Error, Equatable, CustomStringConvertible {
     public var after: Duration
-    /// D125: what a plain TCP connect to the address found after the timeout; nil when not probed.
+    /// What a plain TCP connect to the address found after the timeout; nil when not probed.
     public var port: PortProbeResult?
 
     public init(after: Duration, port: PortProbeResult? = nil) {

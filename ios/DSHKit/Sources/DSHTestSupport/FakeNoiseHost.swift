@@ -39,7 +39,7 @@ public actor FakeNoiseHost {
     }
 
     /// Every connection reaches the same `FakeHost`: its tasks and event log outlive connections,
-    /// so reconnecting over Noise (IK) can resume from the cursor (S1 x S2 seam).
+    /// so reconnecting over Noise (IK) can resume from the cursor.
     public nonisolated func factory(host inner: FakeHost) -> BridgeTransportFactory {
         { _ in FakeNoiseConnection(host: self, inner: try inner.connection()) }
     }

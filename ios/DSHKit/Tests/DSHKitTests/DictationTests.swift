@@ -3,7 +3,7 @@ import DSHTestSupport
 import Foundation
 import Testing
 
-/// D116, D117 · voice input with the fake transcriber: partial and final results replace the
+/// Voice input with the fake transcriber: partial and final results replace the
 /// dictated range in the field and keep the typed text; a denied permission leaves the field as
 /// it was; nothing is sent.
 @MainActor

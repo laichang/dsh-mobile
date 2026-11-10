@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// T1 · the thin workspace drawer (02): 新建会话, 所有任务, and the sessions in groups by host.
+/// The thin workspace drawer (02): 新建会话, 所有任务, and the sessions in groups by host.
 /// Each host group starts with the host's status, its channel and its device management (S1, S2,
 /// S10), so a host's state shows where its sessions are.
 ///

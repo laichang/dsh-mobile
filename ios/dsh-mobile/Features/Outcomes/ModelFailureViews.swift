@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// Model failures on the X1 card (STORY §8, ARCHITECTURE D104, D110). A model that fails ends the
+/// Model failures on the X1 card (STORY §8). A model that fails ends the
 /// task in red: the card says why in DSH's words, or in the app's own words for a key that is not
 /// valid and a quota that is used up (as DSH Web does), with DSH's failure class as a small tag.
 /// A new message in the composer continues the same session.
@@ -47,7 +47,7 @@ struct FailureCodeTag: View {
     }
 }
 
-/// "在下面发条消息，就在这个会话里接着做。": when the composer can continue the failed task (D110).
+/// "在下面发条消息，就在这个会话里接着做。": when the composer can continue the failed task.
 struct FailureContinueHint: View {
     let store: TaskListStore
     let row: TaskListStore.TaskRow

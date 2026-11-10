@@ -1,6 +1,6 @@
 import XCTest
 
-/// S31 · pair over Tailscale (PLAN.md §5 S31, ARCHITECTURE D88). The bug (2026-11-08, real
+/// Pair over Tailscale. The bug (2026-11-08, real
 /// iPhone 17 Pro): "couldn't reach the host at 30.34.227.222:47801, 100.79.171.34:47801". The
 /// phone and the Mac were on one tailnet and Safari on the phone reached the bridge, but the app
 /// sent no packet: App Transport Security refused cleartext `ws://` to an IP address outside the

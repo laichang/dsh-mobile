@@ -1,5 +1,5 @@
 # Used by scripts/codegen. Plugins come from bridge/node_modules/.bin (protoc-gen-es)
-# and ios/DSHKit/.build (protoc-gen-swift); see ARCHITECTURE.md D15.
+# and ios/DSHKit/.build (protoc-gen-swift); see ARCHITECTURE.md.
 version: v2
 clean: true
 plugins:

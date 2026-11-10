@@ -2,10 +2,10 @@ import DSHCore
 import DSHProtocol
 import SwiftUI
 
-/// S21 · the hosts sheet (screen H), from the "2 / 3" pill in the drawer. Every host is a row of
+/// The hosts sheet (screen H), from the "2 / 3" pill in the drawer. Every host is a row of
 /// the same shape (STORY §2): online with its channel, default model and the address in use; an
 /// unsupported DSH with the installed and supported versions; offline with its last connection,
-/// the last error of each address, and what waits on it (STORY §3, D98). A row opens the host's devices and audit records (X2, `HostDetailView`).
+/// the last error of each address, and what waits on it (STORY §3). A row opens the host's devices and audit records (X2, `HostDetailView`).
 ///
 /// Accessibility contract: `hosts.sheet`, `hosts.summary` (value "online/total"), `hosts.row`
 /// (label: name and state, value: `Reachability.token`), `hosts.pair`.
@@ -130,7 +130,7 @@ private struct HostRow: View {
                             .lineLimit(1)
                     }
                 }
-                // D98: which of the host's addresses this phone uses (LAN, Tailscale, ...).
+                // Which of the host's addresses this phone uses (LAN, Tailscale,...).
                 if let address = host.address {
                     Text("Via \(address.description)", tableName: "Hosts")
                         .font(.subheadline.monospacedDigit())
@@ -152,7 +152,7 @@ private struct HostRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HostLastConnection(date: host.lastConnectedAt)
                     .foregroundStyle(DSHTheme.textSecondary)
-                // D98: every address was tried; the last error of each. D125: in words when it
+                // Every address was tried; the last error of each. D125: in words when it
                 // says why the bridge does not answer, with the error after it.
                 ForEach(host.addressFailures, id: \.endpoint.description) { failure in
                     if let kind = failure.kind {

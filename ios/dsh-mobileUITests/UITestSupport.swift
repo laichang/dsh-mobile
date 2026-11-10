@@ -1,16 +1,16 @@
 import XCTest
 
-/// Shared by the slice UI tests (T0, S1, …): drive the composer and the T1 shell, open deep links, save shots.
+/// Shared by the slice UI tests (…): drive the composer and the T1 shell, open deep links, save shots.
 @MainActor
 extension XCTestCase {
     var env: [String: String] { ProcessInfo.processInfo.environment }
 
-    /// Launch arguments that turn off UIKit's view animations in the app (ARCHITECTURE D128).
+    /// Launch arguments that turn off UIKit's view animations in the app.
     /// Before each step XCUITest waits until they end; under load it could wait 60 s per step.
     var noUIKitAnimations: [String] { ["-DSHMUIKitAnimations", "NO"] }
 
     /// Types the prompt in a new session, taps send, waits for the task to finish; returns the
-    /// transcript. The first message turns the new session into the session page (T1, D51).
+    /// transcript. The first message turns the new session into the session page.
     func runDemo(_ app: XCUIApplication, prompt: String, timeout: TimeInterval) -> String {
         let field = app.textFields["composer.prompt"]
         let elsewhere = app.otherElements["drawer"].exists || app.descendants(matching: .any)["task.status"].exists ||
@@ -120,7 +120,7 @@ extension XCTestCase {
         XCTAssertTrue(app.textFields["composer.prompt"].waitForExistence(timeout: 5), app.debugDescription, file: file, line: line)
     }
 
-    /// S18: swipes the approval sheet (05) of the open session down, if it is up. The page then
+    /// Swipes the approval sheet (05) of the open session down, if it is up. The page then
     /// shows `approval.pending`, which opens it again.
     func closeApprovalSheet(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let sheet = app.descendants(matching: .any).matching(identifier: "approval.sheet").firstMatch
@@ -132,7 +132,7 @@ extension XCTestCase {
         XCTAssertTrue(sheet.waitForNonExistence(timeout: 15), app.debugDescription, file: file, line: line)
     }
 
-    /// S18: opens the approval sheet again from the session page's `approval.pending` bar.
+    /// Opens the approval sheet again from the session page's `approval.pending` bar.
     func reopenApprovalSheet(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let bar = app.buttons["approval.pending"]
         XCTAssertTrue(bar.waitForExistence(timeout: 15), app.debugDescription, file: file, line: line)

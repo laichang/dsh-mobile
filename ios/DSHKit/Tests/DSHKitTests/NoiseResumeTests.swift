@@ -4,7 +4,7 @@ import Foundation
 import SwiftData
 import Testing
 
-/// S1 × S2 seam (S1 landed second, PLAN.md §5 S1): the durable list over `NoiseChannel`. After
+/// S1 × S2 seam (S1 landed second): the durable list over `NoiseChannel`. After
 /// kill/reopen the app reconnects with a fresh IK handshake and resumes from its cached cursor.
 @MainActor
 @Suite(.serialized, .timeLimit(.minutes(2))) struct NoiseResumeTests {
@@ -23,8 +23,8 @@ import Testing
             hosts: [.init(key: "noise:\(paired.id)", connection: connection)], prompt: "Count to five.")
         store.backoff = (.milliseconds(20), .milliseconds(100))
         // send() returns as soon as the host is online; under load the first connect can take
-        // longer than 500 ms, and then send() gave nil (S20 review, 2026-11-07). The 30 s
-        // are only a deadline for a busy machine (S12).
+        // longer than 500 ms, and then send() gave nil. The 30 s
+        // are only a deadline for a busy machine.
         store.sendWaitsFor = .seconds(30)
         return store
     }

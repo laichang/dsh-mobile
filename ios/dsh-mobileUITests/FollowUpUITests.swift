@@ -1,6 +1,6 @@
 import XCTest
 
-/// A follow-up in a finished session (ARCHITECTURE D89, screen 04), against real DSH with its
+/// A follow-up in a finished session (screen 04), against real DSH with its
 /// mock LLM. Needs scripts/demo/followup-host.mjs (DSH Web + the bridge); scripts/demo/followup.sh
 /// runs it. The host checks afterwards that DSH has both messages in one session.
 @MainActor

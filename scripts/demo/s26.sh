@@ -1,5 +1,5 @@
 #!/bin/bash
-# S26 demo and checks: page title centering (PLAN.md §5 S26). The title and the subtitle of the
+# S26 demo and checks: page title centering. The title and the subtitle of the
 # page bar are centered on the screen on each page: new session, a session page, 所有任务. A long
 # title truncates clear of the drawer button.
 # Everything runs against the in-process FakeBridge (scenario `YES`); no DSH is needed.

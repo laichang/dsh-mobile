@@ -1,10 +1,10 @@
 #!/bin/bash
-# S20 demo and checks: the workspace sheet (07) and the model sheet (M, X4) (PLAN.md §5 S20).
+# S20 demo and checks: the workspace sheet (07) and the model sheet (M, X4).
 # Re-runnable evidence for S20's Done when items. FakeBridge: two in-process hosts with models
 # and workspaces (`-DSHMFakeBridge pickers`); no DSH and no port is needed for the S20 tests.
 #
 #   scripts/demo/s20.sh            swift test, S20PickersUITests, and the FakeBridge UI tests of
-#                                  earlier slices that use the "host · workspace" line (T1, S9)
+#                                  earlier slices that use the "host · workspace" line
 #   scripts/demo/s20.sh --shots    also refresh the screenshots in evidence/S20/ (1/3 size)
 #   scripts/demo/s20.sh --regress  also run s6.sh and s7.sh (real DSH: the model and workspace
 #                                  sheets against the real bridge), with the S20 resources

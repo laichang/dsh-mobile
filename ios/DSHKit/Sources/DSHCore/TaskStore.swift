@@ -30,7 +30,7 @@ public final class TaskStore {
     public var prompt: String
     public private(set) var transcript = ""
     public private(set) var status: Status = .idle
-    /// S3: the current task's milestones (card + timeline).
+    /// The current task's milestones (card + timeline).
     public private(set) var milestones = MilestoneTimeline()
 
     private let connection: HostConnection

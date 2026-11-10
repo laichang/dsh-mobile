@@ -1,6 +1,6 @@
 import XCTest
 
-/// S1 · Pair + encrypt in the Simulator (PLAN §5 S1), against the real bridge inside a real DSH
+/// Pair + encrypt in the Simulator, against the real bridge inside a real DSH
 /// (scripts/demo/s1.sh starts it and mints the pairing links). Needs:
 /// - TEST_RUNNER_DSHM_PAIR_URL: a fresh single-use `dshm://pair?…` from `bridge/lib/scripts/pair.js --url-only`;
 /// - TEST_RUNNER_DSHM_EXPIRED_PAIR_URL (optional): one that has already expired.
@@ -19,7 +19,7 @@ final class S1PairingUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMResetPairing", "YES", "-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47801"]
         app.launch()
-        // Unpaired Debug build: T0's plaintext dev path. Host rows are in the drawer (T1).
+        // Unpaired Debug build: T0's plaintext dev path. Host rows are in the drawer.
         openDrawer(app)
         let channel = app.descendants(matching: .any)["host.channel"]
         XCTAssertTrue(channel.waitForExistence(timeout: 10))

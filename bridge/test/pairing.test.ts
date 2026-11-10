@@ -1,5 +1,5 @@
 /**
- * S1 · Pair + encrypt, bridge side: Noise vectors, golden transcripts, the pairing offer, and the
+ * Pair + encrypt, bridge side: Noise vectors, golden transcripts, the pairing offer, and the
  * Noise listener end to end against FakeDSH (pairing, reconnect, and every refusal).
  */
 import assert from 'node:assert/strict'

@@ -4,7 +4,7 @@ import Foundation
 import SwiftData
 import Testing
 
-/// S2 × S3 seam (S2 landed second, PLAN.md §5 S2): a task's milestones are cached with it, so the
+/// S2 × S3 seam (S2 landed second): a task's milestones are cached with it, so the
 /// card survives kill/reopen, and the gap is replayed by Resume exactly once.
 @MainActor
 @Suite(.serialized, .timeLimit(.minutes(2))) struct CachedMilestoneTests {
@@ -18,8 +18,8 @@ import Testing
             hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Three steps.")
         store.backoff = (.milliseconds(20), .milliseconds(100))
         // send() returns as soon as the host is online; under load the first connect can take
-        // longer than 500 ms, and then send() gave nil (S20 review, 2026-11-07). The 30 s
-        // are only a deadline for a busy machine (S12).
+        // longer than 500 ms, and then send() gave nil. The 30 s
+        // are only a deadline for a busy machine.
         store.sendWaitsFor = .seconds(30)
         return store
     }

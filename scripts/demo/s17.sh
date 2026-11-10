@@ -1,5 +1,5 @@
 #!/bin/bash
-# S17 demo and checks: the structured transcript (PLAN.md §5 S17, screen 04). Re-runnable evidence
+# S17 demo and checks: the structured transcript (screen 04). Re-runnable evidence
 # for S17's Done when items. The UI runs against the in-process FakeBridge; no DSH is needed.
 #
 #   scripts/demo/s17.sh          codegen check, bridge tests (FakeDSH, transcript fixtures),
@@ -76,7 +76,7 @@ copy_shots() {
 
 ui_part s17 S17TranscriptUITests
 copy_shots
-# The page S17 adds its rows to (S16): its layout and its stop key still work.
+# The page S17 adds its rows to: its layout and its stop key still work.
 ui_part s16 S16SessionPageUITests
 
 step "S17 demo passed"

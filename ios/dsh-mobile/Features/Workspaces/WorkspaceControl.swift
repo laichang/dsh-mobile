@@ -51,7 +51,7 @@ enum WorkspacePath {
     }
 }
 
-/// S20 · the workspace sheet (screen 07, STORY §3): the host switch at the top, the host default,
+/// The workspace sheet (screen 07, STORY §3): the host switch at the top, the host default,
 /// recent workspaces, and an absolute path on this host.
 struct WorkspacePicker: View {
     let store: TaskListStore

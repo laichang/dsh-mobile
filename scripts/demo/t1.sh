@@ -1,5 +1,5 @@
 #!/bin/bash
-# T1 demo and checks: the new UI shell (PLAN.md §5 T1). Re-runnable evidence for T1's Done when items.
+# T1 demo and checks: the new UI shell. Re-runnable evidence for T1's Done when items.
 #
 #   scripts/demo/t1.sh          T1ShellUITests + every FakeBridge UI test of the M1 slices, on the new shell
 #   scripts/demo/t1.sh --all    also bridge tests, swift test, and every slice demo (t0.sh, s1.sh … s13.sh),
@@ -8,7 +8,7 @@
 #   scripts/demo/t1.sh --shots  also refresh the screenshots in evidence/T1/ (1/3 size)
 #
 # Resources (WORKFLOW.md §6), read from the environment:
-#   DSHM_BRIDGE_PORT 47810   DSHM_WEB_PORT 3283   DSHM_HOME ~/.dshm/home-t1   DSHM_SIM dshm-T1
+#   DSHM_BRIDGE_PORT 47810   DSHM_WEB_PORT 3283   DSHM_HOME ~/.dshm/home-t1   DSHM_SIM dshm
 #   DSHM_DD (DerivedData) /tmp/dshm-t1-dd
 #   S9 needs a second host: DSHM_SECOND_BRIDGE_PORT 47830, DSHM_SECOND_WEB_PORT 3303.
 # Several slice demos refresh their own evidence/<slice>/ shots as a side effect. With --all, this

@@ -1,12 +1,12 @@
 import CoreFoundation
 import XCTest
 
-/// S23 · drawer motion and landing positions (PLAN.md §5 S23, design/screens.json nav and rules, F1–F4), against
+/// Drawer motion and landing positions (design/screens.json nav and rules, F1–F4), against
 /// the in-process FakeBridge:
-/// - `-DSHMFakeScenario outcomes` (S19): "… open a PR" asks to run `git push`, and after the Web
+/// - `-DSHMFakeScenario outcomes`: "… open a PR" asks to run `git push`, and after the Web
 ///   allows it, gives a final answer longer than the screen and ends done;
-/// - `-DSHMFakeScenario coding` (S16): a reply longer than the screen, then it keeps running.
-/// Where a session lands (ARCHITECTURE D65): done and not read → the start of the final answer;
+/// - `-DSHMFakeScenario coding`: a reply longer than the screen, then it keeps running.
+/// Where a session lands: done and not read → the start of the final answer;
 /// running → the bottom; already read → the last position the user scrolled to.
 /// scripts/demo/s23.sh runs these; TEST_RUNNER_DSHM_SHOT_DIR keeps the shots.
 ///

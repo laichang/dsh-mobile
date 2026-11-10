@@ -1,5 +1,5 @@
 #!/bin/bash
-# S31 demo and checks: pair over Tailscale (PLAN.md §5 S31, ARCHITECTURE D88).
+# S31 demo and checks: pair over Tailscale.
 # The bug (2026-11-08, real iPhone 17 Pro): "couldn't reach the host at 30.34.227.222:47801,
 # 100.79.171.34:47801". App Transport Security refused cleartext ws:// to IP addresses outside
 # the local ranges (Tailscale 100.64/10, a public 30.x) before any packet left the phone.

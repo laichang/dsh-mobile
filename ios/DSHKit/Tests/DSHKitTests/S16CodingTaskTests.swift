@@ -5,7 +5,7 @@ import Foundation
 import SwiftData
 import Testing
 
-/// S16 · the FakeBridge coding task behind the session-page UI tests: it stops at "3 / 5" with
+/// The FakeBridge coding task behind the session-page UI tests: it stops at "3 / 5" with
 /// its whole reply, keeps running, and stops like the real bridge when it is interrupted.
 @MainActor
 @Suite(.serialized) struct S16CodingTaskTests {
@@ -19,8 +19,8 @@ import Testing
             hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Fix the failing test.")
         store.backoff = (.milliseconds(20), .milliseconds(100))
         // send() returns as soon as the host is online; under load the first connect can take
-        // longer than 500 ms, and then send() gave nil (S20 review, 2026-11-07). The 30 s
-        // are only a deadline for a busy machine (S12).
+        // longer than 500 ms, and then send() gave nil. The 30 s
+        // are only a deadline for a busy machine.
         store.sendWaitsFor = .seconds(30)
         return store
     }
@@ -41,7 +41,7 @@ import Testing
         #expect(store.hosts.first?.capabilities.contains(DSHProtocolInfo.interruptCapability) == true)
 
         // It stays running until the stop: it ends interrupted, not completed, and its timeline
-        // has no closing milestone (no fixed sleep to watch it stay running, S12).
+        // has no closing milestone (no fixed sleep to watch it stay running).
         try await store.interrupt(running)
         await waitForStore("interrupted") { store.task(key)?.state == .interrupted }
         await waitForStore("interrupted milestone") { store.task(key)?.milestones.current?.kind == .interrupted }

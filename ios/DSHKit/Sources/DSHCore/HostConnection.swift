@@ -7,23 +7,23 @@ import Synchronization
 /// `conversation.v1` a `.userMessage` can start another turn after it.
 public enum TaskEvent: Sendable, Equatable {
     case chunk(taskID: String, seq: UInt64, text: String)
-    /// `code`: DSH's failure class for a model failure (`QUOTA`, `AUTH`, …, D104); empty otherwise.
+    /// `code`: DSH's failure class for a model failure (`QUOTA`, `AUTH`, …); empty otherwise.
     case ended(taskID: String, status: TaskEndStatus, message: String, code: String = "")
-    /// S3: the next step on the task's milestone timeline. Arrives before `.ended`.
+    /// The next step on the task's milestone timeline. Arrives before `.ended`.
     case milestone(Milestone)
     case modelSelected(taskID: String, selection: ModelSelection)
-    /// S2: a task was created or changed state.
+    /// A task was created or changed state.
     case upserted(TaskSnapshot)
     case approvalPending(Approval)
     case approvalResolved(taskID: String, id: String)
-    /// S2: the app's resume cursor didn't apply; a replay of log `logID` from its start follows.
+    /// The app's resume cursor didn't apply; a replay of log `logID` from its start follows.
     case logReset(logID: String)
-    /// S17: a thinking or tool-call row was added or changed (`transcript.v1`).
+    /// A thinking or tool-call row was added or changed (`transcript.v1`).
     case transcriptBlock(TranscriptItem)
-    /// D89: the user sent one more message into the task (`conversation.v1`). Its turn follows.
-    /// D101: for a message that waited, this is where DSH took it.
+    /// The user sent one more message into the task (`conversation.v1`). Its turn follows.
+    /// For a message that waited, this is where DSH took it.
     case userMessage(TranscriptItem)
-    /// D101: a follow-up waits while the task runs, moved, or stopped waiting (`conversation.v2`).
+    /// A follow-up waits while the task runs, moved, or stopped waiting (`conversation.v2`).
     case queuedMessage(QueuedMessage)
     /// An agent question waits for an answer (`questions.v1`): its card as a transcript row.
     case questionPending(TranscriptItem)
@@ -50,7 +50,7 @@ public enum TaskEndStatus: Sendable, Equatable {
     }
 }
 
-/// One event from a host, with its place in the host's event log (S2, ARCHITECTURE D20).
+/// One event from a host, with its place in the host's event log.
 public struct HostEvent: Sendable, Equatable {
     /// Per-host monotonic sequence number; 0 when the event isn't logged (`.logReset`).
     public var hostSeq: UInt64
@@ -81,7 +81,7 @@ public struct TaskSnapshot: Sendable, Equatable {
     public var createdAt: Date
     public var updatedAt: Date
     public var message: String
-    /// D104: DSH's failure class when the task failed on its model (`QUOTA`, `AUTH`, …); empty otherwise.
+    /// DSH's failure class when the task failed on its model (`QUOTA`, `AUTH`, …); empty otherwise.
     public var failureCode = ""
     public var approvals: [Approval] = []
     public var approvalOnly = false
@@ -91,9 +91,9 @@ public struct TaskSnapshot: Sendable, Equatable {
     public var latestReply: String?
     /// S14 (`drawer.v1`): the session's workspace directory on the host.
     public var workspace: String?
-    /// S27: when the latest turn started; nil from an older bridge (then `createdAt` stands in).
+    /// When the latest turn started; nil from an older bridge (then `createdAt` stands in).
     public var turnStartedAt: Date?
-    /// Agent questions the task waits on (`pending_questions`, D92), as card rows.
+    /// Agent questions the task waits on (`pending_questions`), as card rows.
     public var questions: [TranscriptItem] = []
 
     public init(taskID: String, title: String, state: TaskState, createdAt: Date, updatedAt: Date, message: String = "") {
@@ -153,10 +153,10 @@ public enum HostConnectionError: Error, Equatable, CustomStringConvertible {
     case bridgeUpdateRequired(version: String, supported: String)
     case unexpectedResponse
     case disconnected
-    /// S29: the host refused this device with close 4003 (device unknown, D21): it was revoked
-    /// (or never paired), on a live connection. Final: retrying cannot succeed (D82).
+    /// The host refused this device with close 4003 (device unknown): it was revoked
+    /// (or never paired), on a live connection. Final: retrying cannot succeed.
     case deviceRevoked
-    /// D98: no address of the host worked; the last error of each address, in the order tried.
+    /// No address of the host worked; the last error of each address, in the order tried.
     case unreachable([AddressFailure])
 
     public var description: String {
@@ -172,7 +172,7 @@ public enum HostConnectionError: Error, Equatable, CustomStringConvertible {
     }
 }
 
-/// The transport of one address try, so a timeout can close it (D98).
+/// The transport of one address try, so a timeout can close it.
 private final class OpenedTransport: Sendable {
     private let transport = Mutex<(any BridgeTransport)?>(nil)
 
@@ -182,16 +182,16 @@ private final class OpenedTransport: Sendable {
 
 /// One connection to one host's bridge (ARCHITECTURE §4). Owns the transport, runs the
 /// channel's handshake, correlates requests with responses, and publishes events. Frames are
-/// sealed and sent in order from one outbox, so Noise nonces never go out of order (S1). It can
+/// sealed and sent in order from one outbox, so Noise nonces never go out of order. It can
 /// be connected again after it drops; reconnect policy and the resume cursor live in
-/// `TaskListStore` (S2). Each connect runs a fresh handshake (over Noise: IK reconnect).
+/// `TaskListStore`. Each connect runs a fresh handshake (over Noise: IK reconnect).
 ///
-/// A host can have more than one address (LAN, Tailscale, D21). Each connect tries them one at a
-/// time, the address that worked last first, each with `attemptTimeout` (D98).
+/// A host can have more than one address (LAN, Tailscale). Each connect tries them one at a
+/// time, the address that worked last first, each with `attemptTimeout`.
 public actor HostConnection {
-    /// How long one address may take to open and finish the handshake (D98).
+    /// How long one address may take to open and finish the handshake.
     public static let defaultAttemptTimeout: Duration = .seconds(5)
-    /// D125: how long the TCP probe after a timeout may take. A computer that is reachable
+    /// How long the TCP probe after a timeout may take. A computer that is reachable
     /// answers a TCP connect within one round trip.
     public static let probeTimeout: Duration = .seconds(1)
 
@@ -202,12 +202,12 @@ public actor HostConnection {
     public nonisolated let channelName: String
     public nonisolated let attemptTimeout: Duration
     private let channel: any SecureChannel
-    /// D125: asked after an address gave no answer in `attemptTimeout`; nil: no probe.
+    /// Asked after an address gave no answer in `attemptTimeout`; nil: no probe.
     private let probe: PortProbe?
     private let makeTransport: BridgeTransportFactory
     private let onAddressesChange: (@Sendable ([HostEndpoint]) -> Void)?
 
-    /// The order the next connect tries: the address that worked last first (D98).
+    /// The order the next connect tries: the address that worked last first.
     public private(set) var addresses: [HostEndpoint]
     /// The address of the live connection, or of the last one that worked.
     public private(set) var currentEndpoint: HostEndpoint?
@@ -231,12 +231,12 @@ public actor HostConnection {
     public nonisolated let events: AsyncStream<HostEvent>
     /// Capabilities from the bridge's Hello; empty until connected.
     public private(set) var capabilities: [String] = []
-    /// S29 (D82): the host refused this device with close 4003 (device unknown), on a live
+    /// The host refused this device with close 4003 (device unknown), on a live
     /// connection (the close after a revoke) or on a reconnect (the Noise handshake). A revoked
     /// device stays refused, so `TaskListStore` does not retry it. Cleared by a connect that works.
     public private(set) var deviceRevoked = false
 
-    /// S29: whether `error` is the host's refusal of this device (close 4003 device unknown).
+    /// Whether `error` is the host's refusal of this device (close 4003 device unknown).
     public static func isDeviceRefusal(_ error: any Error) -> Bool {
         switch error {
         case NoiseChannelError.deviceUnknown, HostConnectionError.deviceRevoked: true
@@ -285,7 +285,7 @@ public actor HostConnection {
         try await attempt.value
     }
 
-    /// D98: tries each address, the one that worked last first, until one connects. Throws
+    /// Tries each address, the one that worked last first, until one connects. Throws
     /// `.unreachable` with the error of each address when none does.
     private func open() async throws {
         // Before any socket opens: a channel that may not reach one of the addresses (Debug's
@@ -316,7 +316,7 @@ public actor HostConnection {
         throw HostConnectionError.unreachable(failures)
     }
 
-    /// D98: the host answered at this address, so another address would get the same answer: it
+    /// The host answered at this address, so another address would get the same answer: it
     /// revoked this device (4003), refused the pairing code (4001), or needs a DSH update. Or the
     /// caller gave up (cancelled).
     static func endsTheSearch(_ error: any Error) -> Bool {
@@ -351,7 +351,7 @@ public actor HostConnection {
             if let established = first { return established }
             // No answer in time: closing the transport ends the handshake's wait for a reply.
             await opened.close()
-            // D125: does anything take TCP connections there? Another program, or no computer.
+            // Does anything take TCP connections there? Another program, or no computer.
             throw AddressTimeout(after: timeout, port: await probe?(endpoint, Self.probeTimeout))
         }
     }
@@ -395,7 +395,7 @@ public actor HostConnection {
         }
     }
 
-    /// Records a refusal of this device (S29); returns the error unchanged.
+    /// Records a refusal of this device; returns the error unchanged.
     private func refusal(_ error: any Error) -> any Error {
         if Self.isDeviceRefusal(error) { deviceRevoked = true }
         return error
@@ -424,7 +424,7 @@ public actor HostConnection {
         return created.taskID
     }
 
-    /// Sends a file to the host in parts (D95, D107) and returns its upload id for `createTask`
+    /// Sends a file to the host in parts and returns its upload id for `createTask`
     /// or `sendMessage`. A file over `Attachments.maxBytes` is refused here, before any frame.
     /// The host checks the size and the SHA-256; a refusal throws `HostConnectionError.bridge`.
     /// `progress` gets the fraction sent after each part the host acknowledged.
@@ -498,7 +498,7 @@ public actor HostConnection {
         guard case .interruptAccepted? = response.body else { throw HostConnectionError.unexpectedResponse }
     }
 
-    /// D89: one more message into the DSH session of `taskID`. Returns the message's ID once DSH
+    /// One more message into the DSH session of `taskID`. Returns the message's ID once DSH
     /// accepted it; its `.userMessage` event and the new turn's events follow.
     @discardableResult
     public func sendMessage(taskID: String, text: String, mode: Dshm_V1_MessageMode = .steer,
@@ -507,13 +507,13 @@ public actor HostConnection {
         message.taskID = taskID
         message.text = text
         message.mode = mode
-        message.uploadIds = uploadIDs // D107: staged files, after the text
+        message.uploadIds = uploadIDs // Staged files, after the text
         let response = try await request(.sendMessage(message))
         guard case .messageAccepted(let accepted)? = response.body else { throw HostConnectionError.unexpectedResponse }
         return accepted.messageID
     }
 
-    /// D101: moves a waiting follow-up into the running turn (`.steer`), or takes it out
+    /// Moves a waiting follow-up into the running turn (`.steer`), or takes it out
     /// (`.remove`). Returns where it waits now; its `.queuedMessage` event follows.
     @discardableResult
     public func editQueue(taskID: String, messageID: String, action: Dshm_V1_QueueAction) async throws -> QueuedMessage.Placement {
@@ -591,14 +591,14 @@ public actor HostConnection {
         return result
     }
 
-    /// S2: every task the host knows, newest first.
+    /// Every task the host knows, newest first.
     public func listTasks() async throws -> TaskListing {
         let response = try await request(.listTasks(Dshm_V1_ListTasks()))
         guard case .taskList(let list)? = response.body else { throw HostConnectionError.unexpectedResponse }
         return TaskListing(tasks: list.tasks.map(TaskSnapshot.init), logID: list.logID, hostName: list.hostName)
     }
 
-    /// S2: asks for every logged event after `afterSeq` of log `logID`, then live events. The
+    /// Asks for every logged event after `afterSeq` of log `logID`, then live events. The
     /// replayed events reach `events` before this returns.
     public func resume(logID: String, afterSeq: UInt64) async throws -> ResumeResult {
         var resume = Dshm_V1_Resume()
@@ -673,7 +673,7 @@ public actor HostConnection {
                 let bytes = try cipher.open(try await transport.receive())
                 frame = try Dshm_V1_Frame(serializedBytes: bytes)
             } catch {
-                // S29: a close 4003 here is the host revoking this device (bridge/src/server.ts).
+                // A close 4003 here is the host revoking this device (bridge/src/server.ts).
                 if gen == generation, Self.isDeviceRefusal(error) { deviceRevoked = true }
                 break
             }

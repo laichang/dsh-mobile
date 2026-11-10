@@ -25,7 +25,7 @@ public struct Pairing: Sendable {
     public let keys: any DeviceKeyStore
     public let hosts: any PairedHostStore
     public let transport: BridgeTransportFactory
-    /// D125: the TCP probe after an address gave no answer (`TCPPortProbe.probe` in the app);
+    /// The TCP probe after an address gave no answer (`TCPPortProbe.probe` in the app);
     /// nil in tests and with Debug's fake bridge, whose addresses are not real.
     public let probe: PortProbe?
     public let now: @Sendable () -> Date
@@ -43,7 +43,7 @@ public struct Pairing: Sendable {
         // The bridge enforces expiry too; refusing early keeps a stale QR off the network.
         guard !offer.isExpired(at: now()) else { throw PairingError.expired }
         let channel = NoiseChannel.pair(offer, identity: try keys.identity())
-        // D98: the same loop over the addresses as a reconnect, each with its own timeout. A
+        // The same loop over the addresses as a reconnect, each with its own timeout. A
         // refused pairing code (the bridge answered and said no) ends it: another address won't
         // change that.
         let connection = HostConnection(endpoints: offer.addresses, channel: channel, transport: transport, probe: probe)
@@ -65,7 +65,7 @@ public struct Pairing: Sendable {
         NoiseChannel(identity: try keys.identity(), hostKey: host.hostKey, mode: .reconnect)
     }
 
-    /// The connection to a paired host (D98): IK over each saved address, the one that worked
+    /// The connection to a paired host: IK over each saved address, the one that worked
     /// last first. When a different address works, it is saved first, so the next launch tries
     /// it first too.
     public func connection(to host: PairedHost, attemptTimeout: Duration = HostConnection.defaultAttemptTimeout) throws -> HostConnection {

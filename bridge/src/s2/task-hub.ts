@@ -1,5 +1,5 @@
 /**
- * S2: tasks belong to the host, not to the connection that created them (STORY principle 4:
+ * Tasks belong to the host, not to the connection that created them (STORY principle 4:
  * nothing is lost across disconnects). The hub starts each task, follows its output for as
  * long as the bridge runs, keeps a summary per task for `ListTasks`, and writes every event
  * into the `HostLog` that `Resume` replays from.
@@ -23,9 +23,9 @@ import type { Failure } from '../milestones/mapper.ts'
 export interface TaskStarter {
   interrupt(taskId: string): void
   listWorkspaces?: DshTasks['listWorkspaces']
-  /** D89: more messages into a task's DSH session (`conversation.v1`). */
+  /** More messages into a task's DSH session (`conversation.v1`). */
   followUp?: DshTasks['followUp']
-  /** D101: the queue while a task runs (`conversation.v2`). */
+  /** The queue while a task runs (`conversation.v2`). */
   prompt?: DshTasks['prompt']
   editQueue?: DshTasks['editQueue']
   inbox?: DshTasks['inbox']
@@ -33,11 +33,11 @@ export interface TaskStarter {
   selectModel?: DshTasks['selectModel']
   start(prompt: string, signal: AbortSignal, selection?: Selection, workspace?: string, files?: readonly StagedFile[],
         continues?: Continues): Promise<StartedTask>
-  /** Attachments (D95, D107): the starter takes `files`, and `followUp` takes `options.files`. */
+  /** Attachments: the starter takes `files`, and `followUp` takes `options.files`. */
   readonly attachments?: boolean
 }
 
-/** D101: a message sent while its task runs, until DSH takes it into a turn. */
+/** A message sent while its task runs, until DSH takes it into a turn. */
 interface Waiting {
   taskId: string
   text: string
@@ -51,21 +51,21 @@ type Summary = Omit<TaskSummary, '$typeName' | '$unknown' | 'pendingApprovals' |
 export class TaskHub {
   private readonly summaries = new Map<string, Summary>()
   private readonly pending = new Map<string, Pending>()
-  /** Agent questions that wait for an answer, by request ID (D92). */
+  /** Agent questions that wait for an answer, by request ID. */
   private readonly questions = new Map<string, Questions.Pending>()
   private readonly abort = new AbortController()
   private readonly running = new Set<Promise<void>>()
   /** Per task: the last chunk and milestone seq, and the latest DSH turn. A later turn continues them. */
   private readonly cursors = new Map<string, { chunk: bigint; milestone: bigint; turn?: number }>()
-  /** D89: tasks whose follow-up DSH has not accepted yet; a second send waits for the first. */
+  /** Tasks whose follow-up DSH has not accepted yet; a second send waits for the first. */
   private readonly sending = new Set<string>()
-  /** D101: by message ID, the messages that wait in a running task's DSH inbox. */
+  /** By message ID, the messages that wait in a running task's DSH inbox. */
   private readonly waiting = new Map<string, Waiting>()
-  /** D101: per task, a message to the running turn that DSH has not accepted yet. */
+  /** Per task, a message to the running turn that DSH has not accepted yet. */
   private readonly inflight = new Map<string, Promise<unknown>>()
-  /** D101: tasks whose DSH session the hub follows now (a pump runs). */
+  /** Tasks whose DSH session the hub follows now (a pump runs). */
   private readonly following = new Set<string>()
-  /** D89: messages whose UserMessage is logged already (a follow-up to an idle task, on acceptance). */
+  /** Messages whose UserMessage is logged already (a follow-up to an idle task, on acceptance). */
   private readonly logged = new Set<string>()
 
   constructor(
@@ -112,11 +112,11 @@ export class TaskHub {
    * Sends one more message into the DSH session of a task. `onAccepted` runs once DSH accepted
    * the message, before the task's new events.
    *
-   * - D89: a task that is done (completed, or stopped by the user) runs again: the new turn streams
+   * - A task that is done (completed, or stopped by the user) runs again: the new turn streams
    *   under the same task ID, the chunk seq goes on, the task is RUNNING again, and TaskEnded ends it.
-   * - D110: so does a task that failed (a model failure leaves the session usable: the user tops up,
+   * - So does a task that failed (a model failure leaves the session usable: the user tops up,
    *   then goes on). That turn adds milestones, so the timeline goes on past the failure.
-   * - D101: while the task runs, the message waits in DSH's inbox: `queue` for the next turn, `steer`
+   * - While the task runs, the message waits in DSH's inbox: `queue` for the next turn, `steer`
    *   for the next step of this one. A QueuedMessage says so; the UserMessage follows where DSH takes it.
    */
   async sendMessage(taskId: string, text: string, mode: PromptMode,
@@ -125,7 +125,7 @@ export class TaskHub {
     if (!this.starter.followUp) throw new Error('This host cannot take follow-up messages.')
     if (!summary || summary.approvalOnly || summary.externalSession) throw new Error('Unknown bridge task')
     if (this.following.has(taskId) && this.isActive(taskId)) {
-      // D107: attachments go with a follow-up once the task is done, not into its queue.
+      // Attachments go with a follow-up once the task is done, not into its queue.
       if (files.length) throw new Error('Attach files when the task is done.')
       return this.sendWhileRunning(taskId, text, mode, onAccepted)
     }
@@ -150,7 +150,7 @@ export class TaskHub {
     const at = this.now()
     onAccepted(messageId)
     this.logged.add(messageId)
-    // D107: the message's files as chips, so a replay shows them; the host keeps the bytes.
+    // The message's files as chips, so a replay shows them; the host keeps the bytes.
     const attachments = files.map(file => ({
       kind: file.kind === 'image' ? AttachmentKind.IMAGE : AttachmentKind.FILE,
       name: file.name, size: BigInt(file.data.length), mediaType: file.mediaType,
@@ -163,7 +163,7 @@ export class TaskHub {
     return messageId
   }
 
-  /** D101: the message waits in DSH's inbox of the running task until DSH takes it. */
+  /** The message waits in DSH's inbox of the running task until DSH takes it. */
   private async sendWhileRunning(taskId: string, text: string, mode: PromptMode,
     onAccepted: (messageId: string) => void): Promise<string> {
     if (!this.starter.prompt) throw new Error('This host takes follow-ups only when the task is done.')
@@ -186,7 +186,7 @@ export class TaskHub {
   }
 
   /**
-   * D101: moves a waiting message into the running turn (`steer`), or takes it out (`remove`).
+   * Moves a waiting message into the running turn (`steer`), or takes it out (`remove`).
    * Returns its place afterwards: STEERING, REMOVED, or QUEUED when DSH could no longer steer
    * into the ending turn (the message then runs as the next turn).
    */
@@ -210,7 +210,7 @@ export class TaskHub {
   }
 
   /**
-   * D101: asked when a turn of the task completes. True when a message of this phone still waits
+   * Asked when a turn of the task completes. True when a message of this phone still waits
    * in DSH's inbox: DSH runs it as the next turn, and the hub follows that turn too. A message
    * that no longer waits there (another client removed it) is logged as removed.
    */
@@ -291,7 +291,7 @@ export class TaskHub {
   }
 
   /**
-   * Agent questions (D92), as approvals (D25): each change is logged, so a phone that resumes gets
+   * Agent questions, as approvals: each change is logged, so a phone that resumes gets
    * the card, and the summary lists every question the task waits on, so a phone also gets it
    * after the log was trimmed. While a question waits, the task is WAITING_ON_USER (等我处理).
    */
@@ -382,7 +382,7 @@ export class TaskHub {
       for await (const out of task.output) {
         if (out.kind === 'turn') {
           cursor.turn = out.turn
-          // D101: a queued message's turn, in the same follow: the task stays RUNNING, with a new 用时.
+          // A queued message's turn, in the same follow: the task stays RUNNING, with a new 用时.
           if (turns++ > 0) this.turnStarted(summary, this.now())
         } else if (out.kind === 'user') {
           this.userMessage(task.taskId, out)
@@ -393,10 +393,10 @@ export class TaskHub {
           summary.updatedAtMs = BigInt(this.now())
           this.log.append(task.taskId, { case: 'modelSelected', value: { taskId: task.taskId, selection: out.selection } })
         } else if (out.kind === 'milestone') {
-          // S3: milestones are logged like any other event, so Resume replays them (S2 × S3 seam).
+          // Milestones are logged like any other event, so Resume replays them.
           this.log.append(task.taskId, { case: 'milestoneAdded', value: milestoneAdded(task.taskId, ++cursor.milestone, out.milestone) })
         } else if (out.kind === 'block') {
-          // S17: blocks are logged too, so Resume replays them in their place among the chunks.
+          // Blocks are logged too, so Resume replays them in their place among the chunks.
           this.log.append(task.taskId, { case: 'transcriptBlock', value: transcriptBlock(task.taskId, out.block) })
         } else {
           ended = true
@@ -414,8 +414,8 @@ export class TaskHub {
   }
 
   /**
-   * D101: DSH took a user message into the task's turn. A message that waited ends its wait and
-   * sits here in the transcript. A follow-up logged on acceptance (D89) is not logged again; a
+   * DSH took a user message into the task's turn. A message that waited ends its wait and
+   * sits here in the transcript. A follow-up logged on acceptance is not logged again; a
    * message from another client into this task is logged too.
    */
   private userMessage(taskId: string, out: Extract<TaskOutput, { kind: 'user' }>) {
@@ -434,7 +434,7 @@ export class TaskHub {
       interrupted: [TaskState.INTERRUPTED, TaskStatus.INTERRUPTED],
     } as const
     const [state, status] = states[end.status]
-    // D101: messages that still wait do not run after a stop: out of DSH's inbox, back to the composer.
+    // Messages that still wait do not run after a stop: out of DSH's inbox, back to the composer.
     for (const [messageId, waiting] of [...this.waiting].filter(([, w]) => w.taskId === summary.taskId)) {
       this.waiting.delete(messageId)
       this.queued(messageId, waiting, QueuePlacement.RETURNED)

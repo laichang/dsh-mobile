@@ -1,5 +1,5 @@
 #!/bin/bash
-# T0 demo and checks, end to end (PLAN.md §3). Re-runnable evidence for T0's Done when items.
+# T0 demo and checks, end to end. Re-runnable evidence for T0's Done when items.
 #
 #   scripts/demo/t0.sh             all checks + UI tests, including the real-DSH demo
 #   scripts/demo/t0.sh --fake-only skip anything that needs DSH (CI-like)

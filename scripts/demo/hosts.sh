@@ -5,8 +5,8 @@
 # notifications (`FakeHostsSwitch`).
 #
 #   scripts/demo/hosts.sh          swift test, the hosts UI tests, and the seams: the FakeHosts
-#                                  revoke tests (S29), the offline FakeBridge card (S2), the
-#                                  new-session page (T1), and scripts/demo/bridge-errors.sh (the
+#                                  revoke tests, the offline FakeBridge card, the
+#                                  new-session page, and scripts/demo/bridge-errors.sh (the
 #                                  card and the row with each host's reason, on real DSH)
 #   scripts/demo/hosts.sh --shots  also refresh the screenshots in evidence/S11/ (1/3 size)
 #   DSHM_RESUME=1                  skip the parts that passed for the same code (lib.sh demo_part)

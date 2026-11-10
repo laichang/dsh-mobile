@@ -3,14 +3,14 @@ import DSHTestSupport
 import Foundation
 import Testing
 
-/// S21 · hosts and control: the all-offline state of 01 (X3), and the devices, audit records and
+/// Hosts and control: the all-offline state of 01 (X3), and the devices, audit records and
 /// revoke of one host (X2) against `FakeHosts`.
 @MainActor
 @Suite(.serialized) struct HostsControlTests {
     let storeURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("dshm-s21-\(UUID().uuidString).store")
 
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ what: String, timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
         await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)
@@ -32,7 +32,7 @@ import Testing
         }
         #expect(!store.allHostsOffline)
         #expect(store.hosts.first?.capabilities.contains(FakeDevices.capability) == true)
-        // D59: MacBook-Pro sends its model catalog; screen H shows the default model.
+        // MacBook-Pro sends its model catalog; screen H shows the default model.
         let mac = "fake:\(FakeHosts.macName)"
         try await waitUntil("MacBook-Pro's catalog") { store.catalogs[mac] != nil }
         let catalog = try #require(store.catalogs[mac])
@@ -79,7 +79,7 @@ import Testing
 
         let afterSelf = try await connection.revokeDevice(FakeHosts.thisDevice)
         #expect(afterSelf.devices.isEmpty)
-        // S29: the host closes with 4003 and refuses this device; the store drops it for good.
+        // The host closes with 4003 and refuses this device; the store drops it for good.
         try await waitUntil("refused and dropped") { store.hosts.isEmpty }
         #expect(store.revokedHosts.map(\.name) == [FakeHosts.macName])
         // A revoked device cannot connect again, even when the host is reachable.

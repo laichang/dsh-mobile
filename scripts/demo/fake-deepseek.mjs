@@ -1,4 +1,4 @@
-// A fake DeepSeek provider for demos (ARCHITECTURE D104, D110). DSH 0.2.2-rc.1's DeepSeek route
+// A fake DeepSeek provider for demos. DSH 0.2.2-rc.1's DeepSeek route
 // speaks the Anthropic Messages wire format (`POST {DEEPSEEK_BASE_URL}/messages`). While the
 // account has no balance, every Messages request gets DeepSeek's 402 answer; after `topUp()`,
 // every request goes to DSH's own mock LLM server, which streams a normal reply.

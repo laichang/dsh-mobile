@@ -1,6 +1,6 @@
 import XCTest
 
-/// Attachments (ARCHITECTURE D95, D107) against real DSH with the mock model: the composer's "+"
+/// Attachments against real DSH with the mock model: the composer's "+"
 /// menu attaches a photo (system photo picker) and files (system document picker), on a new
 /// session (01) and on a follow-up (04). Run by scripts/demo/attachments.sh, which adds the golden
 /// photo to the simulator's library and notes.txt and report.pdf to Files (On My iPhone), and then
@@ -98,7 +98,7 @@ final class AttachmentsUITests: XCTestCase {
         saveShot("attachments-session")
     }
 
-    /// D107: a photo, a .txt and a .pdf on composer 01; the .txt is removed; the bubble shows the
+    /// A photo, a.txt and a.pdf on composer 01; the.txt is removed; the bubble shows the
     /// other two, and the demo then checks that the DSH session has the image and the PDF.
     func testAttachPhotoTextAndPDFRemoveOneAndSend() throws {
         let app = try launch(prompt: "Read these files.")
@@ -124,7 +124,7 @@ final class AttachmentsUITests: XCTestCase {
         saveShot("attachments-files-session")
     }
 
-    /// D107: a file on the follow-up composer of a completed session goes into the same DSH session
+    /// A file on the follow-up composer of a completed session goes into the same DSH session
     /// (the demo checks the session log); the follow-up bubble shows it.
     func testAttachFileToFollowUp() throws {
         let app = try launch(prompt: "Say hello.")

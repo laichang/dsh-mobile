@@ -1,5 +1,5 @@
 #!/bin/bash
-# S7: real DSH reads one relative file from two git workspaces selected on the phone.
+# Real DSH reads one relative file from two git workspaces selected on the phone.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"

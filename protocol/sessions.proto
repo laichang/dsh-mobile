@@ -13,7 +13,7 @@ message SessionMessage {
   uint64 seq = 1;
   bool from_user = 2;
   string text = 3;
-  // A user message's images and files, from the DSH journal, in order (D107).
+  // A user message's images and files, from the DSH journal, in order.
   repeated AttachmentRef attachments = 400;
 }
 message SessionPage {

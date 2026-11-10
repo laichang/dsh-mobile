@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// S2 · the app's local cache (ARCHITECTURE D9, D20). The host is the source of truth; this is
+/// The app's local cache. The host is the source of truth; this is
 /// what the app shows while a host is away, and the resume cursor that fills the gap later.
 
 /// One host as last seen, plus its resume cursor: `(logID, lastSeq)` of the host's event log.
@@ -34,7 +34,7 @@ public final class CachedTask {
     public var title: String
     public var stateRaw: String
     public var message: String
-    /// D104: DSH's failure class when the task failed on its model; empty otherwise.
+    /// DSH's failure class when the task failed on its model; empty otherwise.
     public var failureCode: String = ""
     public var createdAt: Date
     public var updatedAt: Date
@@ -50,31 +50,31 @@ public final class CachedTask {
     public var logID: String
     public var approvalOnly: Bool = false
     public var approvalData: Data = Data()
-    /// The task's milestone timeline (S3), a JSON-encoded `MilestoneTimeline`; empty when it has
+    /// The task's milestone timeline, a JSON-encoded `MilestoneTimeline`; empty when it has
     /// none. Each `MilestoneAdded` carries the whole todo list, so the card needs only the latest;
-    /// the whole timeline is kept for the detail view (S2 x S3 seam, D23).
+    /// the whole timeline is kept for the detail view.
     public var milestonesData: Data = Data()
-    /// S14: the session's workspace directory on the host, when the bridge has `drawer.v1`.
+    /// The session's workspace directory on the host, when the bridge has `drawer.v1`.
     public var workspace: String?
-    /// S14: the `updatedAt` the user last saw on the session page. A finished session with a
+    /// The `updatedAt` the user last saw on the session page. A finished session with a
     /// newer `updatedAt` is "done and not read" (the drawer's blue dot). Local to this phone.
     public var readThrough: Date?
-    /// S19: approvals of this task that were answered (here or on another client), from the
+    /// Approvals of this task that were answered (here or on another client), from the
     /// host's `ApprovalResolved` events. The done page says "M 次审批".
     public var approvalsAnswered: Int = 0
-    /// S17: the task's thinking and tool-call rows, a JSON-encoded `StructuredTranscript`; empty
+    /// The task's thinking and tool-call rows, a JSON-encoded `StructuredTranscript`; empty
     /// when it has none. Each row keeps its place in `transcript` (`TranscriptItem.offset`).
     public var transcriptBlocksData: Data = Data()
-    /// S27: when the session's latest turn started, from the bridge (`turn_started_at_ms`); nil
+    /// When the session's latest turn started, from the bridge (`turn_started_at_ms`); nil
     /// from an older bridge. The done footer's 用时 counts from here.
     public var turnStartedAt: Date?
-    /// D101: the follow-ups that wait while the task runs, a JSON-encoded `FollowUpQueue`; empty
+    /// The follow-ups that wait while the task runs, a JSON-encoded `FollowUpQueue`; empty
     /// when none waits. From the host's `QueuedMessage` events, so a replay rebuilds it.
     public var queueData: Data = Data()
-    /// The thumbnail of the photo sent with the first message (D95), a small JPEG; nil without one.
+    /// The thumbnail of the photo sent with the first message, a small JPEG; nil without one.
     /// Local to this phone: the host has the photo itself. Read through `sentAttachments`.
     public var photoThumbnail: Data?
-    /// D107: the files sent with the first message from this phone, a JSON-encoded
+    /// The files sent with the first message from this phone, a JSON-encoded
     /// `[MessageAttachment]` with the thumbnails of images; empty without any.
     public var sentAttachmentsData: Data = Data()
 

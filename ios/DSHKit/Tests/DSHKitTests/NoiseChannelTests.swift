@@ -200,7 +200,7 @@ struct Transcript: Decodable, Sendable, CustomTestStringConvertible {
         let file = try JSONDecoder().decode(File.self, from: Data(contentsOf: noiseFixtures.appending(path: "transcripts.json")))
         let pair = try #require(Transcript.load().first { $0.name == "pair" })
         let offer = try PairingOffer(string: file.offerURL)
-        #expect(offer.hostName == "Mac mini (S1)")
+        #expect(offer.hostName == "Mac mini")
         #expect(offer.addresses.map(\.description) == ["192.168.1.5:47801", "[fd7a:115c:a1e0::1]:47801", "100.64.0.7:47801"])
         #expect(offer.hostKey == (try NoiseKeyPair(privateKey: b(pair.hostStatic))).publicKey)
         #expect(offer.offerID == b(pair.offerId!))
@@ -237,7 +237,7 @@ final class Clock: @unchecked Sendable {
 
 @MainActor
 @Suite struct PairingTests {
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ condition: () -> Bool, timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation) async throws {
         await waitForStore("", timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)
@@ -331,7 +331,7 @@ final class Clock: @unchecked Sendable {
         #expect(paired.addresses.first == HostEndpoint(host: "192.0.2.2", port: 2))
     }
 
-    /// S31: the failure names why each address failed; the bare "couldn't reach" hid an ATS refusal.
+    /// The failure names why each address failed; the bare "couldn't reach" hid an ATS refusal.
     @Test func unreachableNamesTheReasonForEachAddress() async throws {
         let host = FakeNoiseHost(now: { [clock] in clock.now })
         let offer = await host.makeOffer(addresses: [HostEndpoint(host: "100.79.171.34", port: 47801), HostEndpoint(host: "192.0.2.2", port: 2)])

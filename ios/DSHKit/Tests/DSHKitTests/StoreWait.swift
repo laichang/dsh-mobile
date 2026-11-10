@@ -2,7 +2,7 @@ import Observation
 import Synchronization
 import Testing
 
-/// Waits until `condition` is true, with no polling and no fixed sleep (S12, #26). `condition`
+/// Waits until `condition` is true, with no polling and no fixed sleep (#26). `condition`
 /// must read only `@Observable` state (`TaskStore`, `TaskListStore`): it runs again only after one
 /// of the properties it read changes. The deadline is generous, so a busy machine makes a test
 /// slower, not red. A sleep loop with a short timeout failed under load (load average 75–190).

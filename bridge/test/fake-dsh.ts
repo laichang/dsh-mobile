@@ -3,20 +3,20 @@
  * (`workspaceController`, `sessionController`). It replays the frame shapes real DSH emits on
  * `sessionController.follow`: snapshot, `turn/start`, assistant-stream start/chunk(text-delta)/end,
  * `assistant/message`, `turn/end`. No network, no model.
- * S3: `events` adds durable projection events (`todo/write`, `plan/mode`, `llm/retry`, …) to every
+ * `events` adds durable projection events (`todo/write`, `plan/mode`, `llm/retry`, …) to every
  * turn, between `turn/start` and the reply, each with its own `seq` and `time`.
- * S17: `reasoning` streams timed `reasoning-delta` chunks before the reply, and `tools` adds a
+ * `reasoning` streams timed `reasoning-delta` chunks before the reply, and `tools` adds a
  * durable `tool/call` and `tool/result` pair for each call after it.
- * Model failures (D104): `recorded` replays the follow frames that real DSH emitted for a turn
+ * Model failures: `recorded` replays the follow frames that real DSH emitted for a turn
  * (`test/fixtures/model-failures/`) instead of the scripted turn: unchanged, except that the
  * user's message carries this prompt's `requestId`, as it would in a live run.
- * D101: the session's inbox, as real DSH keeps it (measured against DSH 0.2.2-rc.1): a prompt to an
+ * The session's inbox, as real DSH keeps it (measured against DSH 0.2.2-rc.1): a prompt to an
  * idle session starts a turn; while a turn runs, `queue` waits for the next turn (one turn per
  * message, in order) and `steer` for the next step of this turn (after the reply streams). Each
  * message enters the turn as a `user/message` with its `requestId` as `source.rpcId` (and no
  * `turn` field, as in real DSH). `state()` lists what waits; `updateQueue` steers or removes an
  * item. A cancel keeps the inbox, and nothing then runs by itself.
- * S15: `toolStepMs` starts the turn with one slow tool step (a `bash` call that takes that long), as
+ * `toolStepMs` starts the turn with one slow tool step (a `bash` call that takes that long), as
  * a real agent that waits for its subagents. Real DSH gives a steered message to the agent only when
  * a step ends: `step/end`, `agent/inbox/spliced` (the inbox empties), `step/start`, then the
  * `user/message` (measured against DSH 0.2.2-rc.1; in the reported session 56 s after the steer).
@@ -32,9 +32,9 @@ export interface FakeDSHOptions {
   reply?: string[]
   /** Per turn of a session (1 = the first prompt): the deltas of that turn, instead of `reply`. */
   replies?: Record<number, string[]>
-  /** D101: the deltas of a step that steered messages start (default: the turn's reply). */
+  /** The deltas of a step that steered messages start (default: the turn's reply). */
   stepReply?: string[]
-  /** S15: the turn's first step is a tool call that takes this long; a steer waits for its end. */
+  /** The turn's first step is a tool call that takes this long; a steer waits for its end. */
   toolStepMs?: number
   /** End the turn with this reason instead of `completed`. */
   failWith?: { kind: string; error?: { message: string; code?: string } }
@@ -42,14 +42,14 @@ export interface FakeDSHOptions {
   recorded?: Record<number, FollowFrame[]>
   /** Make `sessionController.create` reject. */
   createError?: string
-  /** Durable events the agent appends during the turn, in order (S3). `turn` is added to `data`. */
+  /** Durable events the agent appends during the turn, in order. `turn` is added to `data`. */
   events?: { type: string; data: Record<string, unknown> }[]
   /** Wait this long before each text delta (default 0: the whole turn runs at once). */
   chunkDelayMs?: number
-  /** S17: reasoning deltas streamed before the reply; chunk `time`s are `reasoningStepMs` apart (default 1000). */
+  /** Reasoning deltas streamed before the reply; chunk `time`s are `reasoningStepMs` apart (default 1000). */
   reasoning?: string[]
   reasoningStepMs?: number
-  /** S17: tool calls after the reply, each a durable `tool/call` then its `tool/result`. */
+  /** Tool calls after the reply, each a durable `tool/call` then its `tool/result`. */
   tools?: FakeToolCall[]
   /**
    * Agent questions: the turn calls `ask_user_question` with these items first, through the
@@ -59,7 +59,7 @@ export interface FakeDSHOptions {
   ask?: AskItem[]
 }
 
-/** S17: one tool call and its result, as dsh-tool-fs and dsh-tool-bash record them. */
+/** One tool call and its result, as dsh-tool-fs and dsh-tool-bash record them. */
 export interface FakeToolCall {
   callId: string
   name: string
@@ -70,7 +70,7 @@ export interface FakeToolCall {
   reason?: string
 }
 
-/** D101: one message in a session's inbox. */
+/** One message in a session's inbox. */
 interface InboxItem { id: string; rpcId?: string; text: string }
 
 interface FakeSession {
@@ -79,9 +79,9 @@ interface FakeSession {
   /** The latest turn that started. */
   turn: number
   abort?: AbortController
-  /** D101: a turn runs now. */
+  /** A turn runs now. */
   running: boolean
-  /** D101: messages for the next step of the running turn, and for the next turns. */
+  /** Messages for the next step of the running turn, and for the next turns. */
   nextStep: InboxItem[]
   nextTurn: InboxItem[]
   /** Turns a cancel stopped: they emit nothing more. */
@@ -128,17 +128,17 @@ export class FakeDSH implements DshServices {
     list: () => this.workspaces.map((path, index) => ({ path, title: path.split('/').at(-1), updatedAt: new Date(index).toISOString() })),
   }
   readonly prompts: { sessionId: string; text: string }[] = []
-  /** D95: every prompt's content parts, in order (text and staged files). */
+  /** Every prompt's content parts, in order (text and staged files). */
   readonly promptParts: { sessionId: string; parts: readonly PromptPart[] }[] = []
-  /** D95: images staged through `fileUploads.uploadImageStream`, by receipt. */
+  /** Images staged through `fileUploads.uploadImageStream`, by receipt. */
   readonly stagedImages: { sessionId: string; receiptId: string; mediaType: string; name?: string; data: Uint8Array }[] = []
-  /** D107: other files staged through `fileUploads.uploadStream`, by receipt. */
+  /** Other files staged through `fileUploads.uploadStream`, by receipt. */
   readonly stagedFiles: { sessionId: string; receiptId: string; name?: string; data: Uint8Array }[] = []
   /** Every receipt in the order it was staged, images and files. */
   private readonly receipts: { sessionId: string; receiptId: string }[] = []
   /** The `mode` and `requestId` of each prompt, in the order of `prompts`. */
   readonly promptOptions: { mode?: string; requestId?: string }[] = []
-  /** D101: every `updateQueue` call, in order. */
+  /** Every `updateQueue` call, in order. */
   readonly queueEdits: { sessionId: string; itemId: string; action: string }[] = []
   private sessions = new Map<string, FakeSession>()
   private nextItem = 1
@@ -245,7 +245,7 @@ export class FakeDSH implements DshServices {
       this.promptOptions.push({ mode: request.mode, requestId: request.requestId })
       const item: InboxItem = { id: `item-${this.nextItem++}`, rpcId: request.requestId, text }
       if (s.running) {
-        // D101: a running turn takes a steer at its next step; a queued message waits for its own turn.
+        // A running turn takes a steer at its next step; a queued message waits for its own turn.
         if (request.mode === 'steer') s.nextStep.push(item); else s.nextTurn.push(item)
       } else {
         this.startTurn(request.sessionId, item)
@@ -306,7 +306,7 @@ export class FakeDSH implements DshServices {
     for (const ch of s.followers) ch.push(f)
   }
 
-  /** D101: an idle session takes `item` as a new turn, asynchronously, like the real agent loop. */
+  /** An idle session takes `item` as a new turn, asynchronously, like the real agent loop. */
   private startTurn(sessionId: string, item: InboxItem) {
     const s = this.session(sessionId)
     s.running = true
@@ -364,7 +364,7 @@ export class FakeDSH implements DshServices {
       this.emitEvent(sessionId, 'tool/result', { turn, step: 0, message: { role: 'tool', toolCallId: callId, content: [] } })
     }
     if (this.options.toolStepMs !== undefined) {
-      // S15: one slow tool step; DSH gives what was steered meanwhile to the agent only after it.
+      // One slow tool step; DSH gives what was steered meanwhile to the agent only after it.
       const callId = `call_wait_${turn}`
       this.emitEvent(sessionId, 'step/start', { turn, step: 1 })
       this.emitEvent(sessionId, 'tool/call', { turn, step: 1, callId, name: 'bash', arguments: JSON.stringify({ command: 'sleep 90' }) })
@@ -398,7 +398,7 @@ export class FakeDSH implements DshServices {
       type: 'event',
       event: { type: 'assistant/message', seq, data: { turn, step: 0, message: { content: [{ type: 'text', text: reply.join('') }] } } },
     }))
-    // D101: steered messages go in at the next step of this turn, and the agent answers them there.
+    // Steered messages go in at the next step of this turn, and the agent answers them there.
     for (let next = 1; s.nextStep.length; next++) {
       for (const steered of s.nextStep.splice(0)) this.userMessage(sessionId, steered)
       if (!await this.stream(sessionId, turn, next, this.options.stepReply ?? reply)) return
@@ -415,7 +415,7 @@ export class FakeDSH implements DshServices {
     const reason = this.options.failWith ?? { kind: 'completed' }
     s.running = false
     this.emitEvent(sessionId, 'turn/end', { turn, reason })
-    // D101: the next queued message runs as its own turn.
+    // The next queued message runs as its own turn.
     const queued = s.nextTurn.shift()
     if (queued && reason.kind === 'completed') this.startTurn(sessionId, queued)
     else if (queued) s.nextTurn.unshift(queued)

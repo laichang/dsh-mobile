@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// S17 · the details of one collapsed row, in a bottom sheet (design/screens.json: details open as sheets).
+/// The details of one collapsed row, in a bottom sheet (design/screens.json: details open as sheets).
 /// Tool call: verb and the whole target, DSH's tool name, the state, the lines added and removed,
 /// DSH's error, and the raw arguments. Thinking: how long, and DSH's reasoning text. A full diff
 /// view is not part of S17 (PLAN.md S17 "Not").
@@ -41,7 +41,7 @@ struct TranscriptBlockSheet: View {
                                 section("Arguments", text: tool.arguments, truncated: tool.argumentsTruncated, mono: true)
                             }
                         case .userMessage(let text):
-                            Text(verbatim: text).textSelection(.enabled) // D89: a bubble, no sheet; shown as is
+                            Text(verbatim: text).textSelection(.enabled) // A bubble, no sheet; shown as is
                         }
                     }
                     .foregroundStyle(DSHTheme.textPrimary)

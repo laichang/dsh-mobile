@@ -3,14 +3,14 @@ import DSHProtocol
 import SwiftUI
 import UIKit
 
-/// T1 · one page for a new session (01) and a session (04). The app opens on it with no task:
+/// One page for a new session (01) and a session (04). The app opens on it with no task:
 /// a blank new session with the default host and workspace (STORY §3). The first message creates
-/// the session, and this same page becomes the session page (ARCHITECTURE D51): no list routing.
+/// the session, and this same page becomes the session page: no list routing.
 struct SessionPage: View {
     let store: TaskListStore
     let taskKey: String?
     @Binding var showFirstTask: Bool
-    /// S23: where the user last scrolled this session to, on this phone (`SessionLanding`).
+    /// Where the user last scrolled this session to, on this phone (`SessionLanding`).
     var lastPosition: CGFloat? = nil
     @Environment(ShellModel.self) private var shell
 
@@ -40,7 +40,7 @@ struct SessionPage: View {
     }
 }
 
-/// The empty middle of a new session; on the first run, a suggested first task (S11, S22).
+/// The empty middle of a new session; on the first run, a suggested first task.
 private struct NewSessionBody: View {
     let store: TaskListStore
     let showFirstTask: Bool
@@ -68,7 +68,7 @@ private struct NewSessionBody: View {
                         Text("You can edit the suggestion before sending it.")
                             .font(.footnote).foregroundStyle(DSHTheme.textTertiary)
                     } else if showFirstTask {
-                        // S22 (D63): after the first pairing the first task is already in the composer.
+                        // After the first pairing the first task is already in the composer.
                         Text("Your first task is ready below. Edit it if you like, then send it.", tableName: "FirstRun")
                             .multilineTextAlignment(.center)
                             .foregroundStyle(DSHTheme.textSecondary)
@@ -102,7 +102,7 @@ private struct NewSessionBody: View {
     private func endEditing() { Keyboard.dismiss() }
 }
 
-/// The accessibility container `newSession.body`, except while the all-offline card shows (D134):
+/// The accessibility container `newSession.body`, except while the all-offline card shows:
 /// with the card as its only child, SwiftUI drops the card's own container, and with it the
 /// `hosts.offlineCard` identifier. Then the card is the container of the page's middle.
 private struct NewSessionBodyContainer: ViewModifier {
@@ -129,16 +129,16 @@ private struct SessionTranscript: View {
     @State private var history: Dshm_V1_SessionPage?
     @State private var historyError: String?
     @State private var retry = 0
-    /// S19: finished and not read when the page opened: it opens at the start of the final answer.
+    /// Finished and not read when the page opened: it opens at the start of the final answer.
     @State private var opensAtAnswer: Bool
-    /// S23: where the page lands when it opens (D65): the answer's start, the bottom, or the last
+    /// Where the page lands when it opens: the answer's start, the bottom, or the last
     /// position. Decided once, when the page is made.
     @State private var landing: SessionLanding
-    /// S19, S23: false once the user scrolls; then the page stops going back to where it landed.
+    /// False once the user scrolls; then the page stops going back to where it landed.
     @State private var followsLanding = true
-    /// S23: scrolls a read session back to its last position.
+    /// Scrolls a read session back to its last position.
     @State private var position = ScrollPosition()
-    /// S23: the height of S19's rows before the final answer. A saved position counts from below
+    /// The height of S19's rows before the final answer. A saved position counts from below
     /// them, so the same text comes back to the same place (S27, D76: the rows are now the same on
     /// every visit, because the marker of the unread visit is gone).
     @State private var leadHeight: CGFloat = 0
@@ -162,14 +162,14 @@ private struct SessionTranscript: View {
         let row = store.task(taskKey)
         let host = store.hosts.first { $0.key == row?.hostKey }
         VStack(spacing: 0) {
-            // S16: the milestone bar and the status line sit above the scroll view, so they stay
+            // The milestone bar and the status line sit above the scroll view, so they stay
             // at the top while the transcript scrolls (ARCHITECTURE D23 (b)).
             // P1: an agent question waits: the bar says 等你回答, also before the first milestone.
             let asking = row?.blocks.pendingQuestion != nil
             if let timeline = row?.milestones, !timeline.isEmpty || asking {
-                // S19: red, with the step, when the task failed (screen X1).
+                // Red, with the step, when the task failed (screen X1).
                 let alert = row.flatMap(TaskOutcome.init)?.barAlert
-                // S3: milestone summary by default; the timeline on demand, in a sheet.
+                // Milestone summary by default; the timeline on demand, in a sheet.
                 Button { shell.present(.milestones(taskKey: taskKey)) } label: {
                     MilestoneBar(timeline: timeline, state: row?.state, alert: alert, asking: asking)
                 }
@@ -188,22 +188,22 @@ private struct SessionTranscript: View {
             ScrollViewReader { proxy in
             ScrollView {
                 if let row {
-                    let outcome = TaskOutcome(row) // S19: nil while the task runs or waits
+                    let outcome = TaskOutcome(row) // Nil while the task runs or waits
                     VStack(alignment: .leading, spacing: 12) {
                         PendingApprovalBar(store: store, row: row)
                         let messages = history?.messages ?? []
-                        // D89: follow-ups sent from this phone sit in the streamed transcript; the
+                        // Follow-ups sent from this phone sit in the streamed transcript; the
                         // journal takes over only for messages that another client sent.
                         let showJournal = row.externalSession
                             || messages.filter(\.fromUser).count > 1 + row.blocks.followUpCount
-                        // S19: the final answer of a finished session with a journal.
+                        // The final answer of a finished session with a journal.
                         let finalSeq = showJournal && outcome != nil ? messages.last(where: { !$0.fromUser })?.seq : nil
                         let firstUserSeq = messages.first(where: \.fromUser)?.seq
                         if firstUserSeq == nil && !row.title.isEmpty {
                             UserBubble(text: row.title, attachments: row.attachments)
                         }
                         // Without the journal: only the first prompt on top; the streamed transcript
-                        // below holds the answers and this phone's follow-ups (D89).
+                        // below holds the answers and this phone's follow-ups.
                         let shown = showJournal ? messages : Array(messages.filter(\.fromUser).prefix(1))
                         ForEach(shown, id: \.seq) { message in
                             if message.fromUser {
@@ -246,8 +246,8 @@ private struct SessionTranscript: View {
                 }
             }
             // Follow the stream at the bottom, but start a short transcript at the top.
-            // S19: a finished session that is not read opens at the start of its final answer.
-            // S23: a read one opens at its last position (D65).
+            // A finished session that is not read opens at the start of its final answer.
+            // A read one opens at its last position.
             .defaultScrollAnchor(landing.anchor)
             .defaultScrollAnchor(.top, for: .alignment)
             .scrollPosition($position)
@@ -258,7 +258,7 @@ private struct SessionTranscript: View {
                 if phase == .interacting { followsLanding = false }
             }
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, y in
-                // S23: remember where the user scrolled to, for the next time this page opens.
+                // Remember where the user scrolled to, for the next time this page opens.
                 // `ScrollPosition.scrollTo(y:)` takes the same content offset back.
                 if !followsLanding { shell.lastPositions[taskKey] = y - leadHeight }
             }
@@ -294,7 +294,7 @@ private struct SessionTranscript: View {
         }
     }
 
-    /// D107: a journal message's files; the first message also gets this phone's thumbnails.
+    /// A journal message's files; the first message also gets this phone's thumbnails.
     static func attachments(of message: Dshm_V1_SessionMessage, first: Bool, row: TaskListStore.TaskRow) -> [MessageAttachment] {
         let host = message.attachments.map(MessageAttachment.init)
         guard first else { return host }
@@ -344,7 +344,7 @@ private struct SessionTranscript: View {
 }
 
 /// The user's message: a bubble on the right (DSHTheme.bubble).
-/// The files sent with it (D95, D107) show above it. D143: a message sent now ("立即发送") shows
+/// The files sent with it show above it. D143: a message sent now ("立即发送") shows
 /// at once, `pending` until DSH gives it to the agent at its next step.
 struct UserBubble: View {
     let text: String
@@ -380,11 +380,11 @@ struct UserBubble: View {
 }
 
 /// The composer on a session page. A completed task on a host with `conversation.v1` takes a
-/// follow-up (D89): its reply streams into this page. With `conversation.v2` (D101) it also takes
+/// follow-up: its reply streams into this page. With `conversation.v2` it also takes
 /// one while the task runs: the message waits above the field (`FollowUpQueueView`) and runs as
 /// the next turn, unless the user sends it now; and one after a stop, which continues the task.
-/// Otherwise the field is off. The model pill changes a running task's model (S6). While it runs,
-/// the send key is the stop key (S5), and the send key again while the field has text.
+/// Otherwise the field is off. The model pill changes a running task's model. While it runs,
+/// the send key is the stop key, and the send key again while the field has text.
 private struct SessionComposer: View {
     let store: TaskListStore
     let taskKey: String
@@ -393,14 +393,14 @@ private struct SessionComposer: View {
     @State private var draft = ""
     @State private var sending = false
     @State private var sendError: String?
-    @State private var dictation = Dictation() // D117
+    @State private var dictation = Dictation()
     @FocusState private var editing: Bool
 
     var body: some View {
         let row = store.task(taskKey)
         let host = store.hosts.first { $0.key == row?.hostKey }
         let followUp = row.map(store.canFollowUp) ?? false
-        // P1 (D113): while an agent question waits, the field answers it; it is not a follow-up.
+        // P1: while an agent question waits, the field answers it; it is not a follow-up.
         let question = host?.capabilities.contains(DSHProtocolInfo.questionsCapability) == true ? row?.blocks.pendingQuestion : nil
         let typed = !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         VStack(alignment: .leading, spacing: 10) {
@@ -414,10 +414,10 @@ private struct SessionComposer: View {
                     .accessibilityIdentifier("session.followUpError")
             }
             if followUp || question != nil {
-                if question == nil { // D107: an answer to a question takes no attachment
+                if question == nil { // An answer to a question takes no attachment
                     AttachmentChips(store: store, target: .followUp(taskKey: taskKey), disabled: sending)
                 }
-                DictationNotice(dictation: dictation) // D117
+                DictationNotice(dictation: dictation)
                 TextField(question != nil ? "Answer the agent…"
                             : row?.state.isTerminal == false ? "Add a message for the next turn" : "Reply to your agent",
                           text: $draft, axis: .vertical)
@@ -436,7 +436,7 @@ private struct SessionComposer: View {
             }
             HStack(spacing: 8) {
                 if followUp, question == nil, let row, store.canAttach(to: row) {
-                    AttachMenu(store: store, target: .followUp(taskKey: row.key), disabled: sending) // D107
+                    AttachMenu(store: store, target: .followUp(taskKey: row.key), disabled: sending)
                 }
                 if let row, !row.state.isTerminal, store.modelHosts.contains(row.hostKey) {
                     ModelControl(store: store, hostKey: row.hostKey, task: row)
@@ -446,7 +446,7 @@ private struct SessionComposer: View {
                 Spacer()
                 if followUp || question != nil {
                     MicKey(dictation: dictation, identifier: "session.mic", disabled: sending,
-                           read: { draft }, write: { draft = $0 }) // D117
+                           read: { draft }, write: { draft = $0 })
                 }
                 if let row, !row.state.isTerminal, let host, !((followUp || question != nil) && (typed || sending)),
                    host.reachability == .online, host.capabilities.contains(DSHProtocolInfo.interruptCapability) {
@@ -484,7 +484,7 @@ private struct SessionComposer: View {
         .composerChrome()
         .onChange(of: taskKey) { dictation.cancel(); draft = ""; sendError = nil }
         .onDisappear { dictation.cancel() }
-        // D101: follow-ups that a stop gave back come back into the field, to send again or not.
+        // Follow-ups that a stop gave back come back into the field, to send again or not.
         .task(id: "\(taskKey)/\(store.returnedDrafts[taskKey]?.count ?? 0)") {
             let returned = store.takeReturnedDrafts(for: taskKey)
             guard !returned.isEmpty else { return }
@@ -499,9 +499,9 @@ private struct SessionComposer: View {
 }
 
 extension SessionComposer {
-    /// D89: the message goes to the host; the page shows it when the host logs it.
+    /// The message goes to the host; the page shows it when the host logs it.
     private func send(_ row: TaskListStore.TaskRow) {
-        dictation.cancel() // D117: the field as it is now is what goes
+        dictation.cancel() // The field as it is now is what goes
         let text = draft
         sending = true
         sendError = nil
@@ -517,10 +517,10 @@ extension SessionComposer {
         }
     }
 
-    /// P1 (D113): the typed text answers the waiting question; the card shows it when the host
+    /// P1: the typed text answers the waiting question; the card shows it when the host
     /// resolves the question, and the task continues.
     private func answer(_ question: AgentQuestion, for row: TaskListStore.TaskRow) {
-        dictation.cancel() // D117
+        dictation.cancel()
         let text = draft
         sending = true
         sendError = nil
@@ -542,7 +542,7 @@ extension SessionComposer {
 struct ComposerView: View {
     @Bindable var store: TaskListStore
     let opened: (String) -> Void
-    @State private var dictation = Dictation() // D117
+    @State private var dictation = Dictation()
     @FocusState private var editingPrompt: Bool
 
     var body: some View {
@@ -556,8 +556,8 @@ struct ComposerView: View {
                     .foregroundStyle(DSHTheme.amber)
                     .accessibilityIdentifier("composer.error")
             }
-            AttachmentChips(store: store, target: .composer, disabled: store.isSending) // D107
-            DictationNotice(dictation: dictation) // D117
+            AttachmentChips(store: store, target: .composer, disabled: store.isSending)
+            DictationNotice(dictation: dictation)
             TextField("One sentence for your agent", text: $store.prompt, axis: .vertical)
                 .lineLimit(1...5)
                 .focused($editingPrompt)
@@ -573,7 +573,7 @@ struct ComposerView: View {
                 }
                 Spacer()
                 MicKey(dictation: dictation, identifier: "composer.mic", disabled: store.isSending,
-                       read: { store.prompt }, write: { store.prompt = $0 }) // D117
+                       read: { store.prompt }, write: { store.prompt = $0 })
                 SendKey(enabled: store.canSend, sending: store.isSending, action: send)
                     .accessibilityLabel("Send")
                     .accessibilityIdentifier("composer.send")
@@ -600,7 +600,7 @@ struct ComposerView: View {
                 }
                 .pickerStyle(.menu)
                 .tint(DSHTheme.textSecondary)
-                .dismissesKeyboardBeforeMenu() // D67
+                .dismissesKeyboardBeforeMenu()
                 .accessibilityIdentifier("composer.host")
                 .disabled(store.isSending)
             } else if let host {
@@ -642,7 +642,7 @@ struct ComposerView: View {
     }
 
     private func send() {
-        dictation.cancel() // D117: the field as it is now is what goes
+        dictation.cancel() // The field as it is now is what goes
         Task {
             if let key = await store.send() {
                 editingPrompt = false
@@ -684,7 +684,7 @@ private extension View {
 }
 
 extension TaskState {
-    /// Stable token for UI tests (`task.status` accessibility value; T0's tokens for its states).
+    /// Stable token for UI tests (`task.status` accessibility value, T0's tokens for its states).
     var token: String {
         switch self {
         case .running: "running"

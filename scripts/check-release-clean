@@ -1,8 +1,8 @@
 #!/bin/bash
 # Proves a Release build carries none of the debug-only testability entry points
-# (ARCHITECTURE D16): FakeBridge, the -DSHM* launch arguments, and the dshm://pair deep link;
+#: FakeBridge, the -DSHM* launch arguments, and the dshm://pair deep link;
 # and, since S1, no PlaintextChannel: Release talks to a bridge only over Noise.
-# And both builds carry the same ATS keys (D88).
+# And both builds carry the same ATS keys.
 # Also checks the Debug build *does* carry them, so a passing result means something.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -27,7 +27,7 @@ scan() { # app → prints markers found in any Mach-O inside, and URL schemes
   echo "${found[*]:-}"
 }
 
-# D88 (S31): ATS behaves the same in both: the phone reaches the bridge at any IP in the QR.
+# ATS behaves the same in both: the phone reaches the bridge at any IP in the QR.
 ats() { plutil -extract NSAppTransportSecurity xml1 -o - "$1/Info.plist" 2>/dev/null || echo none; }
 release_app=$(build Release)
 debug_app=$(build Debug)

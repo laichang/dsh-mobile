@@ -1,6 +1,6 @@
 import XCTest
 
-/// S16 · the session page (PLAN.md §5 S16, screen 04), against the in-process FakeBridge's coding
+/// The session page (screen 04), against the in-process FakeBridge's coding
 /// task (`-DSHMFakeScenario coding`): five steps, three done ("3 / 5"), a reply longer than the
 /// screen, and the task keeps running until the user taps stop. scripts/demo/s16.sh runs these;
 /// set TEST_RUNNER_DSHM_SHOT_DIR to save the screenshots there. Helpers: UITestSupport.swift.
@@ -18,7 +18,7 @@ final class S16SessionPageUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-DSHMResetPairing", "YES",
                                "-DSHMResetStore", "YES", "-DSHMFakeBridge", "YES", "-DSHMFakeScenario", "coding"]
-        app.launchArguments += noUIKitAnimations // D128
+        app.launchArguments += noUIKitAnimations
         app.launch()
         return app
     }

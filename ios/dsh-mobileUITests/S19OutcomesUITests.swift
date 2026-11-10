@@ -1,7 +1,7 @@
 import CoreFoundation
 import XCTest
 
-/// S19 · done and failed (PLAN.md §5 S19, design screen 06 and X1), against the in-process
+/// Done and failed (design screen 06 and X1), against the in-process
 /// FakeBridge's outcomes scenario (`-DSHMFakeScenario outcomes`, `FakeBridge.Script.outcomes`):
 /// - "… open a PR": five todos; after four it asks to run `git push`, then gives a final answer
 ///   longer than the screen and ends done;
@@ -27,7 +27,7 @@ final class S19OutcomesUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN",
                                "-DSHMResetPairing", "YES", "-DSHMResetStore", "YES",
                                "-DSHMFakeBridge", "YES", "-DSHMFakeScenario", "outcomes"]
-        app.launchArguments += noUIKitAnimations // D128
+        app.launchArguments += noUIKitAnimations
         app.launch()
         return app
     }
@@ -61,7 +61,7 @@ final class S19OutcomesUITests: XCTestCase {
     }
 
     /// A done session that this phone has not shown opens at the start of its final answer, right
-    /// under the process row, with no marker (S27, D76). Once read, it opens at the end, as before.
+    /// under the process row, with no marker. Once read, it opens at the end, as before.
     func testDoneSessionNotReadOpensAtTheStartOfTheFinalAnswer() {
         let app = launch()
         startTask(app, Self.donePrompt)

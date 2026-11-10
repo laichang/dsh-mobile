@@ -4,7 +4,7 @@ import DSHTestSupport
 import Foundation
 import Testing
 
-/// Agent questions after the first card (screen P1, ARCHITECTURE D92, D113–D115), against
+/// Agent questions after the first card (screen P1, D113–D115), against
 /// `FakeHost`: a question counts in 等我处理 and comes back from the host's summary (as D25 does for
 /// approvals), also after a relaunch; a typed and a multi-select answer reach DSH as given; an
 /// answer from another client withdraws the card.

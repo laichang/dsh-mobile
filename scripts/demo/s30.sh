@@ -1,5 +1,5 @@
 #!/bin/bash
-# S30 demo and checks: pair the same host again after a revoke (PLAN.md §5 S30, D59, D82, D85).
+# S30 demo and checks: pair the same host again after a revoke.
 # The bug (2026-11-08, real iPhone): after a revoke of this phone, 08 asked to pair again; the
 # user scanned a fresh QR from the same Mac, pairing succeeded, and then the root showed
 # "Couldn't open your paired computers". The app kept the forgotten host's key in memory and

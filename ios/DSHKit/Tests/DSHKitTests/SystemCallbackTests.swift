@@ -3,7 +3,7 @@ import Foundation
 import SystemCallbackDoubles
 import Testing
 
-/// D146 · the mic key crashed on a real iPhone: the speech permission handler was a closure
+/// The mic key crashed on a real iPhone: the speech permission handler was a closure
 /// written on the main actor, and the Speech framework called it on its own queue, where Swift 6
 /// stops the app (`dispatch_assert_queue`). `DSHBackgroundAuthorizer` is an Objective-C API of
 /// the same shape (handler not `NS_SWIFT_SENDABLE`, called on a global queue). Through

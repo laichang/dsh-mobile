@@ -1,5 +1,5 @@
 #!/bin/bash
-# Generate Swift + TS code from protocol/*.proto (ARCHITECTURE.md D15).
+# Generate Swift + TS code from protocol/*.proto.
 #   scripts/codegen          regenerate into the committed locations
 #   scripts/codegen --check  fail if regenerating would change anything
 set -euo pipefail

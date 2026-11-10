@@ -2,7 +2,7 @@ import DSHCore
 import Foundation
 import Testing
 
-/// S14 · bold text in phone replies (ARCHITECTURE D140): emphasis next to CJK text, as DSH Web shows it.
+/// Bold text in phone replies: emphasis next to CJK text, as DSH Web shows it.
 @Suite struct TranscriptEmphasisTests {
     /// The text of each run with `intent`, in order.
     private func spans(_ text: AttributedString, _ intent: InlinePresentationIntent = .stronglyEmphasized) -> [String] {

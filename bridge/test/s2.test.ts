@@ -1,5 +1,5 @@
 /**
- * S2 · Durable list + resume (PLAN.md §5): the host event log, Resume, ListTasks, and tasks
+ * Durable list + resume: the host event log, Resume, ListTasks, and tasks
  * that outlive the connection that created them. All against FakeDSH.
  */
 import assert from 'node:assert/strict'

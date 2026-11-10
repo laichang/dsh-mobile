@@ -38,7 +38,7 @@ final class S8RichDetailUITests: XCTestCase {
         try XCTSkipUnless(env["DSHM_S8_REPLY"] == "translation", "run scripts/demo/rich-detail.sh")
         let app = launch(prompt: translation)
         app.buttons["composer.send"].tap()
-        // T1 (D51): the first message turns the new session into the session page, with the reply.
+        // The first message turns the new session into the session page, with the reply.
         let status = app.descendants(matching: .any)["task.status"]
         XCTAssertTrue(status.waitForExistence(timeout: 5), app.debugDescription)
         waitForValue(status, in: ["completed"], timeout: 12)
@@ -74,7 +74,7 @@ final class S8RichDetailUITests: XCTestCase {
         openDrawer(app)
         waitForValue(app.descendants(matching: .any)["host.status"], in: ["offline"], timeout: 20)
         app.buttons["drawer.allTasks"].tap()
-        // #22: the row shows the task's title, not its prompt (D50): DSH's session title once it
+        // #22: the row shows the task's title, not its prompt: DSH's session title once it
         // has one, which DSH's mock model makes from the reply ("## Patch"), else the prompt. Both
         // have "patch"; the other tasks of the demo's DSH home do not. A coding task of an earlier
         // run has the same reply, so any match will do.

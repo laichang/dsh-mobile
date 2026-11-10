@@ -1,5 +1,5 @@
 /**
- * S17 · structured transcript (PLAN.md §5 S17, ARCHITECTURE D61): a deterministic fold over one
+ * Structured transcript: a deterministic fold over one
  * DSH session's follow stream into transcript blocks. No model, no invented text (the same rule
  * as D11): a block carries DSH's own data, and the app words each row itself.
  *
@@ -44,7 +44,7 @@ export interface BlockOut {
 export const THINKING_TEXT_LIMIT = 8000
 export const ARGUMENTS_LIMIT = 4000
 
-/** DSH's agent question tool; its call shows as the question card instead (D92). */
+/** DSH's agent question tool; its call shows as the question card instead. */
 export const QUESTION_TOOL = 'ask_user_question'
 
 /** Argument keys that name what a call acts on, in order of preference. */

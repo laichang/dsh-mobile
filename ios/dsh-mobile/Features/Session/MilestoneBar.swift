@@ -1,14 +1,14 @@
 import DSHCore
 import SwiftUI
 
-/// S16 · the milestone bar of a session page (screen 04, ARCHITECTURE D23 (b)): one line with the
+/// The milestone bar of a session page (screen 04, ARCHITECTURE D23 (b)): one line with the
 /// step being worked on and "done / total", and a thin progress line under it. It sits above the
 /// scrolling transcript, so it stays at the top while the transcript scrolls. A tap opens all the
 /// steps in a sheet (`SheetRoute.milestones`). Details on demand (STORY §4).
 struct MilestoneBar: View {
     let timeline: MilestoneTimeline
     let state: TaskState?
-    /// S19: when the task failed, the line that replaces the headline ("失败 · 第 3 步"); the
+    /// When the task failed, the line that replaces the headline ("失败 · 第 3 步"); the
     /// bar then has a red border (screen X1).
     var alert: String? = nil
     /// P1: an agent question waits for the user: "等你回答", with an amber border.
@@ -45,7 +45,7 @@ struct MilestoneBar: View {
         .contentShape(.rect)
     }
 
-    /// The bar's one line. After a stop or a finish, a follow-up continues the task (D89, D101),
+    /// The bar's one line. After a stop or a finish, a follow-up continues the task,
     /// and its turns add no milestones: the last milestone is history then, so the line says what
     /// the task does now.
     static func line(_ timeline: MilestoneTimeline, state: TaskState?, alert: String?, asking: Bool = false) -> String {

@@ -1,6 +1,6 @@
 import XCTest
 
-/// S20 · the workspace sheet (07) and the model sheet (M, X4) (PLAN.md §5 S20), against two
+/// The workspace sheet (07) and the model sheet (M, X4), against two
 /// in-process FakeBridge hosts with models and workspaces (`-DSHMFakeBridge pickers`).
 /// MacBook-Pro is the default host; its DeepSeek-V41-Pro leaves the catalog once a task uses it.
 /// The app runs in Chinese, like the design screens; the checks use identifiers, values and paths.
@@ -25,7 +25,7 @@ final class S20PickersUITests: XCTestCase {
                                "-DSHMFakeBridge", "pickers"]
         if reset { app.launchArguments += ["-DSHMResetStore", "YES"] }
         if let hold { app.launchArguments += ["-DSHMFakeHold", hold] }
-        app.launchArguments += noUIKitAnimations // D128
+        app.launchArguments += noUIKitAnimations
         app.launch()
         return app
     }

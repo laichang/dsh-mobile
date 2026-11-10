@@ -4,7 +4,7 @@ import DSHTestSupport
 import Foundation
 import Testing
 
-/// D101 · follow-ups while a task runs, against `FakeHost` (`conversation.v2`): a follow-up waits
+/// Follow-ups while a task runs, against `FakeHost` (`conversation.v2`): a follow-up waits
 /// in the queue and runs as the next turn; "立即发送" moves it into the running turn; remove takes
 /// it out; the queue stays the same after a reconnect; after a stop, a new message continues.
 @MainActor
@@ -73,7 +73,7 @@ import Testing
         let row = try #require(store.task(key))
         try await store.sendNow(row.queue[1], for: row)
         try await store.removeQueued(row.queue[0], for: row)
-        // D143: sent now, it leaves the queue for the transcript at once, where the user sent it.
+        // Sent now, it leaves the queue for the transcript at once, where the user sent it.
         await waitForStore("edited") { Self.queue(store.task(key)).isEmpty && store.task(key)?.blocks.followUpCount == 1 }
         #expect(host.queueEdits == ["steer Now this.", "remove Not this."])
 
@@ -125,7 +125,7 @@ import Testing
         #expect(fresh.task(key)?.queue.isEmpty == true)
     }
 
-    /// D143: a stop before DSH took a message sent now takes it out of the transcript, and its
+    /// A stop before DSH took a message sent now takes it out of the transcript, and its
     /// text goes back to the composer, as for a queued one.
     @Test func aStopBeforeDSHTookAMessageSentNowGivesItBack() async throws {
         let (pause, release) = AsyncStream<Void>.makeStream()

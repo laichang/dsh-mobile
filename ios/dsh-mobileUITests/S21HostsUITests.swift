@@ -1,6 +1,6 @@
 import XCTest
 
-/// S21 · hosts and control (PLAN.md §5 S21, screens H, X2, X3). FakeBridge only:
+/// Hosts and control (screens H, X2, X3). FakeBridge only:
 /// `-DSHMFakeBridge hosts` has MacBook-Pro (online, with a model catalog, devices and audit
 /// records), hk-1 (its DSH is too old) and 公司-PC (a session waits on the user); `hosts-one` has
 /// only MacBook-Pro.
@@ -127,7 +127,7 @@ final class S21HostsUITests: XCTestCase {
         saveShot("s21-hosts-sheet")
     }
 
-    /// H (D59): an online host names its default model, as the host's catalog names it
+    /// H: an online host names its default model, as the host's catalog names it
     /// ("默认 DeepSeek-V41-Flash"). A host that sent no catalog shows no model.
     func testHostsSheetShowsTheDefaultModelOfTheCatalog() {
         let app = launch("hosts")

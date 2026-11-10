@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// D125 · screens H and X3: why a host's bridge does not answer, in the user's words. DSHKit
+/// Screens H and X3: why a host's bridge does not answer, in the user's words. DSHKit
 /// sorts each failed address into a reason (`AddressFailure.Kind`); these are its words.
 extension AddressFailure.Kind {
     /// After the address on the host row (H): "127.0.0.1:47801 · <sentence> (<error>)".

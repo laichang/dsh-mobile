@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// S21 · screen X3: when no host can take a task (`TaskListStore.allHostsOffline`), the blank
+/// Screen X3: when no host can take a task (`TaskListStore.allHostsOffline`), the blank
 /// new session (01) names each host and its last connection (STORY §3). The send key is off
 /// (`canSend`), and history still opens from the drawer. When one host is back, the card goes.
 ///
@@ -38,7 +38,7 @@ struct AllHostsOfflineCard: View {
         .accessibilityIdentifier("hosts.offlineCard")
     }
 
-    /// D125: when every computer answered but its bridge did not, the network is fine: say so.
+    /// When every computer answered but its bridge did not, the network is fine: say so.
     private var hint: Text {
         let computersAnswer = !store.hosts.isEmpty && store.hosts.allSatisfy { $0.offlineReason?.kind?.computerAnswers == true }
         return computersAnswer
@@ -50,7 +50,7 @@ struct AllHostsOfflineCard: View {
 }
 
 /// "○ MacBook-Pro            10 minutes ago", and under the name why its bridge does not
-/// answer (D125): "Another program uses port 47801".
+/// answer: "Another program uses port 47801".
 private struct OfflineHostLine: View {
     let host: TaskListStore.HostStatus
 

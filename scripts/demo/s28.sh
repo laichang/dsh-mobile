@@ -1,5 +1,5 @@
 #!/bin/bash
-# S28 demo and checks: Markdown tables (PLAN.md §5 S28, screen 04, ARCHITECTURE D79). A GFM table in
+# S28 demo and checks: Markdown tables (screen 04). A GFM table in
 # the agent's reply shows as a native table, not as its `| a | b |` source.
 #
 #   scripts/demo/s28.sh          DSHKit tests (swift test: TranscriptBlocks tables), S28MarkdownTablesUITests

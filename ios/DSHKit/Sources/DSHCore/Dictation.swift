@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// What the user and the device allow for speech to text (STORY §7, voice; ARCHITECTURE D116).
+/// What the user and the device allow for speech to text (STORY §7, voice).
 public enum DictationPermission: Sendable, Equatable {
     case granted
     /// The user turned off the microphone or speech recognition for this app.
@@ -13,7 +13,7 @@ public enum DictationPermission: Sendable, Equatable {
 }
 
 /// One result of a transcriber: the whole text of this dictation so far. A later result can
-/// change words of an earlier one (D117).
+/// change words of an earlier one.
 public struct DictationResult: Sendable, Equatable {
     public var text: String
     public var isFinal: Bool
@@ -24,7 +24,7 @@ public struct DictationResult: Sendable, Equatable {
     }
 }
 
-/// On-device speech to text (D116). The app uses the Speech framework (`SpeechTranscriberAdapter`);
+/// On-device speech to text. The app uses the Speech framework (`SpeechTranscriberAdapter`);
 /// tests and the Debug launch argument `-DSHMFakeSpeech` use `FakeTranscriber`.
 @MainActor
 public protocol Transcriber: AnyObject {
@@ -46,7 +46,7 @@ public struct TranscriberFactory: Sendable {
     }
 }
 
-/// Where the dictated words are in the field (D117). Dictation starts at the end of the text
+/// Where the dictated words are in the field. Dictation starts at the end of the text
 /// that is already there; each result replaces the words of the result before it, and the text
 /// around them stays as the user typed it, also text typed while the user speaks.
 public struct DictationSplice: Equatable, Sendable {
@@ -110,7 +110,7 @@ extension Character {
     }
 }
 
-/// One composer's dictation (D117): the mic key starts and stops it, and the results go into the
+/// One composer's dictation: the mic key starts and stops it, and the results go into the
 /// field through `read` and `write`. Nothing is sent: the user edits the text and taps send.
 @MainActor
 @Observable

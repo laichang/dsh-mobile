@@ -1,6 +1,6 @@
 // S14 demo peer: real DSH Web with the bridge plugin and DSH's mock LLM. It makes one Web session in
 // DSH's default workspace, then tells the Simulator that workspace. The phone sends its own task
-// there, and the drawer must show both sessions under that one workspace (PLAN.md §5 S14).
+// there, and the drawer must show both sessions under that one workspace.
 import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs'

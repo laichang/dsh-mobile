@@ -5,7 +5,7 @@ import Foundation
 import SwiftData
 import Testing
 
-/// S17 · the Swift half of the transcript fixtures (the TS half: bridge/test/transcript.test.ts,
+/// The Swift half of the transcript fixtures (the TS half: bridge/test/transcript.test.ts,
 /// `S17TranscriptFixtures`): thinking and tool blocks decode the same on both sides.
 @Suite struct S17TranscriptFixtures {
     func block(_ name: String) throws -> Dshm_V1_TranscriptBlock {
@@ -48,7 +48,7 @@ import Testing
     }
 }
 
-/// S17 · rows keep their place in the transcript, and updates replace them.
+/// Rows keep their place in the transcript, and updates replace them.
 @Suite struct S17StructuredTranscript {
     func tool(_ id: String, _ state: TranscriptItem.State, added: Int = 0) -> TranscriptItem {
         TranscriptItem(id: id, taskID: "t", state: state, kind: .tool(.init(name: "edit", target: "a/b.swift", linesAdded: added)),
@@ -81,14 +81,14 @@ import Testing
     }
 }
 
-/// S17 · the FakeBridge transcript task through the real store: blocks arrive in their place,
+/// The FakeBridge transcript task through the real store: blocks arrive in their place,
 /// survive the cache, and a host without `transcript.v1` shows none.
 @MainActor
 @Suite(.serialized) struct S17TranscriptStoreTests {
     let storeURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("dshm-s17-\(UUID().uuidString).store")
 
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ what: String = "", timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
         await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)

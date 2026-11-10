@@ -1,7 +1,7 @@
 import DSHCore
 import SwiftUI
 
-/// S23 · drawer motion (design/screens.json nav and rules, screens F1–F4). A tap on a session in the drawer
+/// Drawer motion (design/screens.json nav and rules, screens F1–F4). A tap on a session in the drawer
 /// (or on 所有任务, or on an approval card in 03) moves in three steps:
 /// - F1, 0 ms: the row is highlighted (`DrawerPressStyle`) with a light haptic (`ShellModel.taps`);
 /// - F2, 0–120 ms: the peeking edge cross-fades to the target page, from the cache; the drawer
@@ -10,7 +10,7 @@ import SwiftUI
 ///   as a released drag (`DrawerMotion.slide`);
 /// - F4, 350 ms: the page fills the screen and lands (`SessionLanding`). A pending approval's sheet
 ///   (05) comes up only now (`ShellModel.moving`).
-/// ARCHITECTURE D65.
+///.
 enum DrawerMotion {
     /// F2: the cross-fade of the peeking edge.
     static let fade = Duration.milliseconds(120)
@@ -33,8 +33,8 @@ extension ButtonStyle where Self == DrawerPressStyle {
     static var drawerPress: DrawerPressStyle { DrawerPressStyle() }
 }
 
-/// F4 · where a session page lands when it opens (ARCHITECTURE D65, on top of D60):
-/// - done (or failed, or stopped) and not read: at the start of the final answer (S19's scroll; no marker since S27, D76);
+/// F4 · where a session page lands when it opens (on top of D60):
+/// - done (or failed, or stopped) and not read: at the start of the final answer (S19's scroll, no marker since S27);
 /// - running or waiting: at the bottom, and it follows the stream;
 /// - already read: at the last position the user scrolled to on this phone; with none, at the end.
 enum SessionLanding: Equatable {

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Model failures (ARCHITECTURE D104, D110, screens X1 and X4): demo and checks.
+# Model failures (screens X1 and X4): demo and checks.
 #
 #   scripts/demo/model-failures.sh          bridge tests (the recorded DSH failures through FakeDSH),
 #                                           swift test, and the real-DSH UI demo: a task on a provider

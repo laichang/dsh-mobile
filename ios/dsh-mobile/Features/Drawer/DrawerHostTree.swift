@@ -1,9 +1,9 @@
 import DSHCore
 import SwiftUI
 
-/// S14 · one host in the workspace drawer (screen 02): host › workspace › session, like the DSH
-/// desktop sidebar (ARCHITECTURE D54). Sessions from the Web and the desktop app show here too
-/// (S13). Each session row ends in its status mark: amber dot = waiting on you, spinner =
+/// One host in the workspace drawer (screen 02): host › workspace › session, like the DSH
+/// desktop sidebar. Sessions from the Web and the desktop app show here too
+///. Each session row ends in its status mark: amber dot = waiting on you, spinner =
 /// running, blue dot = done and not read (red when it failed). An offline host is grey, and its
 /// cached sessions still open. Without `drawer.v1` the host shows host › session (`DrawerTree`).
 ///
@@ -242,7 +242,7 @@ private struct DrawerMarkView: View {
     }
 }
 
-/// S14 · "●●○ 2 / 3" at the top of the drawer: how many paired hosts are online now.
+/// "●●○ 2 / 3" at the top of the drawer: how many paired hosts are online now.
 /// S21 makes it open the hosts sheet.
 struct DrawerHostsOnline: View {
     let hosts: [TaskListStore.HostStatus]
@@ -273,7 +273,7 @@ struct DrawerHostsOnline: View {
     }
 }
 
-/// S14 · the amber badge on the drawer button: how many items wait in 等我处理 (所有任务).
+/// The amber badge on the drawer button: how many items wait in 等我处理 (所有任务).
 struct DrawerButtonBadge: View {
     @Environment(TaskListStore.self) private var store: TaskListStore?
 
@@ -296,8 +296,8 @@ struct DrawerButtonBadge: View {
     }
 }
 
-/// S14 · marks the session that shows now as read: when it opens, and when it changes while it
-/// shows (ARCHITECTURE D54). The read state stays in the cache, on this phone only.
+/// Marks the session that shows now as read: when it opens, and when it changes while it
+/// shows. The read state stays in the cache, on this phone only.
 struct DrawerReadTracker: ViewModifier {
     let store: TaskListStore
     let shell: ShellModel

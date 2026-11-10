@@ -1,5 +1,5 @@
 #!/bin/bash
-# S16 demo and checks: the session page (PLAN.md §5 S16, screen 04). Re-runnable evidence for
+# S16 demo and checks: the session page (screen 04). Re-runnable evidence for
 # S16's Done when items. Everything runs against the in-process FakeBridge; no DSH is needed.
 #
 #   scripts/demo/s16.sh          swift test (with the FakeBridge coding task), S16SessionPageUITests,

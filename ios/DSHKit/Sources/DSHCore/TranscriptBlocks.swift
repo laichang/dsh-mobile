@@ -9,7 +9,7 @@ public struct TranscriptBlocks {
         case table(Table)
     }
 
-    /// S28 · a GFM pipe table (D79). Every row has one cell per header cell.
+    /// A GFM pipe table. Every row has one cell per header cell.
     public struct Table: Equatable {
         public enum Alignment: Equatable, Sendable { case leading, center, trailing }
         public var alignments: [Alignment]
@@ -114,7 +114,7 @@ public struct TranscriptBlocks {
         table = nil
     }
 
-    /// Inline Markdown. S14 (D140): `*` and `**` next to CJK text also emphasize, as in DSH Web.
+    /// Inline Markdown. S14: `*` and `**` next to CJK text also emphasize, as in DSH Web.
     public static func markdown(_ text: String) -> AttributedString {
         CJKEmphasis.markdown(text) { source in
             (try? AttributedString(markdown: source, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))

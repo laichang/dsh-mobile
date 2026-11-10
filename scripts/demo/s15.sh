@@ -1,10 +1,10 @@
 #!/bin/bash
-# S15 demo and checks: 所有任务 (PLAN.md §5 S15, design screen 03). Re-runnable evidence for
+# S15 demo and checks: 所有任务 (design screen 03). Re-runnable evidence for
 # S15's Done when items. FakeBridge only: two in-process hosts, each with a task that waits on an
 # approval (`-DSHMFakeBridge approvals`); no DSH and no port is needed.
 #
 #   scripts/demo/s15.sh          swift test, S15AllTasksUITests, and the FakeBridge UI tests of
-#                                earlier slices that look at 所有任务 (T1, S2, S3, S9)
+#                                earlier slices that look at 所有任务
 #   scripts/demo/s15.sh --shots  also refresh the screenshots in evidence/S15/ (1/3 size)
 #
 # Resources (WORKFLOW.md §6), read from the environment:

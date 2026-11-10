@@ -1,6 +1,6 @@
 import XCTest
 
-/// S2 · Durable list + resume in the Simulator (PLAN.md §5), driven by accessibility identifiers.
+/// Durable list + resume in the Simulator, driven by accessibility identifiers.
 /// - `testOfflineHostIsNamedWithFakeBridge` needs nothing else running.
 /// - `testKillAndReopenAgainstRealDSH` needs `scripts/demo/s2-host.mjs` (real DSH + bridge on
 ///   DSHM_BRIDGE_PORT, slow mock LLM); runs only with TEST_RUNNER_DSHM_REAL_DSH=1.

@@ -1,5 +1,5 @@
 #!/bin/bash
-# S14 demo and checks: the workspace drawer (PLAN.md §5 S14). Re-runnable evidence for S14's Done when.
+# S14 demo and checks: the workspace drawer. Re-runnable evidence for S14's Done when.
 #
 #   scripts/demo/s14.sh            bridge tests, swift test, the FakeBridge drawer UI tests, and the
 #                                  real-DSH demo (a Web session and a phone session in one workspace)
@@ -7,7 +7,7 @@
 #   DSHM_RESUME=1                  skip the parts that passed for the same code (lib.sh demo_part)
 #
 # Resources (WORKFLOW.md §6), read from the environment:
-#   DSHM_BRIDGE_PORT 47811   DSHM_WEB_PORT 3284   DSHM_HOME ~/.dshm/home-s14   DSHM_SIM dshm-S14
+#   DSHM_BRIDGE_PORT 47811   DSHM_WEB_PORT 3284   DSHM_HOME ~/.dshm/home-s14   DSHM_SIM dshm
 #   DSHM_DD (DerivedData) /tmp/dshm-s14-dd
 # The FakeBridge part needs nothing else. The real part runs scripts/demo/s14-web.mjs: DSH Web with
 # the bridge plugin and DSH's mock LLM, in a fresh DSH home under DSHM_HOME. Fails on any failed or

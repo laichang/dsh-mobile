@@ -103,7 +103,7 @@ final class S4ApprovalUITests: XCTestCase {
         app.buttons["model.apply"].tap()
         send(app)
         checkCommand(app, expected: command)
-        // S18: the approval is a sheet over the session; the model pill is under it.
+        // The approval is a sheet over the session; the model pill is under it.
         closeApprovalSheet(app)
 
         picker.tap()

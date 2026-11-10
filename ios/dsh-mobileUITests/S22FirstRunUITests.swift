@@ -1,9 +1,9 @@
 import XCTest
 
-/// S22 · First run (PLAN §5 S22, DESIGN screen 08, STORY §6). A fresh Release install with no
+/// First run (DESIGN screen 08, STORY §6). A fresh Release install with no
 /// paired computer, in Chinese: 08 says what the app is and what it needs (with the network
 /// requirement), "粘贴配对链接" opens the link field, pairing succeeds against a real DSH + bridge, and
-/// 01 opens with the first task in the composer, which the user edits and sends (ARCHITECTURE D49, D63).
+/// 01 opens with the first task in the composer, which the user edits and sends.
 /// Needs TEST_RUNNER_DSHM_PAIR_URL from scripts/demo/s22.sh; skipped without it.
 @MainActor
 final class S22FirstRunUITests: XCTestCase {

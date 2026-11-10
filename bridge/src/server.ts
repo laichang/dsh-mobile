@@ -1,9 +1,9 @@
 /**
  * The bridge's own WebSocket listener (ARCHITECTURE §5.1). One binary WebSocket message carries
  * one `Frame` through the connection's channel. T0 serves Hello and CreateTask; S2 adds ListTasks
- * and Resume, and tasks now belong to the host's `TaskHub`, not to the connection (D20).
+ * and Resume, and tasks now belong to the host's `TaskHub`, not to the connection.
  *
- * Channels (S1, ARCHITECTURE D6/D21):
+ * Channels:
  * - Noise on every path except `PLAINTEXT_PATH`: the first message is the handshake
  *   (src/pairing/wire.ts), then each message is one Noise transport message.
  * - Plaintext on `PLAINTEXT_PATH`, only when a PlaintextChannel is configured, which in turn
@@ -37,15 +37,15 @@ export type { TaskStarter } from './s2/task-hub.ts'
 type ResponseBody = MessageInitShape<typeof ResponseSchema>['body']
 
 export const PROTOCOL_VERSION = 1
-/** `resume.v1`: ListTasks, Resume and `Event.host_seq` (S2). `milestones.v1`: MilestoneAdded (S3). */
-/** Agent questions (protocol/questions.proto, D92). */
+/** `resume.v1`: ListTasks, Resume and `Event.host_seq`. `milestones.v1`: MilestoneAdded. */
+/** Agent questions (protocol/questions.proto). */
 export const QUESTIONS_CAPABILITY = 'questions.v1'
 export const CAPABILITIES = ['tasks.v1', MILESTONES_CAPABILITY, 'resume.v1', 'interrupt.v1', TRANSCRIPT_CAPABILITY] as const
-/** D89: SendMessage, MessageAccepted and UserMessage (protocol/conversation.proto). */
+/** SendMessage, MessageAccepted and UserMessage (protocol/conversation.proto). */
 export const CONVERSATION_CAPABILITY = 'conversation.v1'
-/** D101: follow-ups while the task runs: QueuedMessage, EditQueue and QueueEdited. */
+/** Follow-ups while the task runs: QueuedMessage, EditQueue and QueueEdited. */
 export const QUEUE_CAPABILITY = 'conversation.v2'
-/** D104, D110: TaskEnded / TaskSummary carry `failure_code`, and a failed task takes a follow-up. */
+/** TaskEnded / TaskSummary carry `failure_code`, and a failed task takes a follow-up. */
 export const FAILURES_CAPABILITY = 'failures.v1'
 /** Where the dev-only plaintext channel is served. */
 export const PLAINTEXT_PATH = '/plaintext'
@@ -66,7 +66,7 @@ export interface BridgeServerOptions {
   hub?: TaskHub
   sessions?: SessionDirectory
   approvals?: ApprovalHolder
-  /** Agent questions (`questions.v1`, D92). */
+  /** Agent questions (`questions.v1`). */
   questions?: QuestionHolder
   log?: (message: string) => void
 }
@@ -110,7 +110,7 @@ export async function startBridgeServer(options: BridgeServerOptions): Promise<B
 
 /**
  * A task as an app without `questions.v1` sees it: it cannot answer, so a task that waits only
- * on a question stays RUNNING for it, as before the question (D92).
+ * on a question stays RUNNING for it, as before the question.
  */
 function withoutQuestions<T extends { state?: TaskState; pendingApprovals?: readonly unknown[]; pendingQuestions?: readonly unknown[] }>(task: T): T {
   if (!task.pendingQuestions?.length) return task
@@ -130,7 +130,7 @@ function serveConnection(
 ) {
   const { hub, hostName } = host
   const supported = supportsDsh(options.dshVersion)
-  // D101: the host can queue follow-ups while a task runs, and edit the queue.
+  // The host can queue follow-ups while a task runs, and edit the queue.
   const queues = !!(options.tasks.followUp && options.tasks.prompt && options.tasks.editQueue)
   let device = 'dev loopback'
   let helloDone = false
@@ -141,7 +141,7 @@ function serveConnection(
   let clientQueue = false
   let clientQuestions = false
   let codec: FrameCodec | undefined
-  const uploads = new UploadStaging() // D95: this connection's attachments
+  const uploads = new UploadStaging() // This connection's attachments
 
   const path = new URL(url, 'ws://bridge').pathname
   if (path === PLAINTEXT_PATH) {
@@ -173,11 +173,11 @@ function serveConnection(
       } } } } })
       return
     }
-    // S17: only apps that read transcript blocks get them.
+    // Only apps that read transcript blocks get them.
     if (!clientTranscript && event.body?.case === 'transcriptBlock') return
-    // D89: only apps that send follow-ups read them back.
+    // Only apps that send follow-ups read them back.
     if (!clientConversation && event.body?.case === 'userMessage') return
-    // D101: only apps that show the queue get its changes.
+    // Only apps that show the queue get its changes.
     if (!clientQueue && event.body?.case === 'queuedMessage') return
     // Apps without `questions.v1` cannot answer, so they get no card.
     if (!clientQuestions && (event.body?.case === 'questionPending' || event.body?.case === 'questionResolved')) return
@@ -299,7 +299,7 @@ function serveConnection(
         if (!resumed) { ownTasks.add(taskId); subscribeOwnTasks() }
         let files: StagedFile[] = []
         try {
-          // D107: the files are used up by this message, also when DSH refuses it.
+          // The files are used up by this message, also when DSH refuses it.
           files = uploadIds.length ? uploads.take(uploadIds) : []
         } catch (error) {
           if (error instanceof UploadError) return fail(id, error.code, error.message)

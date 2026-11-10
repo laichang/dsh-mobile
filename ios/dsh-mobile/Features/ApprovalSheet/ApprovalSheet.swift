@@ -2,11 +2,11 @@ import DSHCore
 import Foundation
 import SwiftUI
 
-/// S18 · the approval sheet in a session (05). It says what will happen (STORY §5): the tool,
+/// The approval sheet in a session (05). It says what will happen (STORY §5): the tool,
 /// the full command (or the file, or the raw arguments), the agent's reason, and the full tool
 /// arguments on request. Two answers only: 拒绝 / 允许一次; there is no "always allow". The footer
 /// says that the task stays paused and that every client can see the approval: nothing is
-/// allowed by default (ARCHITECTURE D57).
+/// allowed by default.
 ///
 /// The sheet shows the first pending approval of the task. When the task has none left (answered
 /// here, or on the Web or the desktop), the sheet closes (`PendingApprovalBar`).
@@ -253,7 +253,7 @@ private struct SheetCommandBlock: View {
     }
 }
 
-/// S18 · the session page's side of the approval sheet. When the open session has a pending
+/// The session page's side of the approval sheet. When the open session has a pending
 /// approval, the sheet comes up: when the session opens, and when a new approval arrives. When
 /// no approval is left (answered here or on another client), the sheet closes. A sheet that the
 /// user swipes away stays down for that approval; this bar then opens it again.
@@ -283,7 +283,7 @@ struct PendingApprovalBar: View {
         .onAppear(perform: sync)
         .onChange(of: row.approvals.map(\.id)) { sync() }
         .onChange(of: shell.drawerOpen) { sync() }
-        .onChange(of: shell.moving) { sync() } // S23: after the page fills the screen (F4)
+        .onChange(of: shell.moving) { sync() } // After the page fills the screen (F4)
         .onChange(of: shell.sheet) { old, new in
             if old == route, new == nil, let id = row.approvals.first?.id { dismissed.insert(id) }
             if new == nil { sync() }

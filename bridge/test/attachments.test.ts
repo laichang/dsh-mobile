@@ -1,5 +1,5 @@
 /**
- * Attachments (ARCHITECTURE D95, D107) against FakeDSH, over the Noise listener: the golden photo
+ * Attachments against FakeDSH, over the Noise listener: the golden photo
  * (protocol/fixtures/attachments, also read by the Swift tests) goes up in several Noise
  * messages, arrives byte-identical, is staged through `fileUploads`, and enters the first prompt
  * as an image part. Text, PDF and other files enter as file parts with their names, in order, in
@@ -28,7 +28,7 @@ import { startBridgeServer, type BridgeServer } from '../src/server.ts'
 import { FakeDSH } from './fake-dsh.ts'
 import { FIXTURES_DIR } from './fixtures.ts'
 
-/** Noise caps one transport message at 65535 bytes, 16 of them the tag (D21). */
+/** Noise caps one transport message at 65535 bytes, 16 of them the tag. */
 const NOISE_MAX_PLAINTEXT = 65535 - 16
 
 interface UploadFixture {
@@ -224,7 +224,7 @@ describe('Attachments', () => {
       { code: 'upload/too-large' })
     assert.throws(() => s.begin({ uploadId: 'b', mediaType: 'application/zip', name: '', size: BigInt(MAX_UPLOAD_BYTES + 1), sha256: hash }),
       { code: 'upload/too-large' })
-    // D107: any media type is taken; a type DSH does not take as an image goes as a file.
+    // Any media type is taken; a type DSH does not take as an image goes as a file.
     for (let i = 0; i < MAX_UPLOADS_PER_CONNECTION; i++) {
       s.begin({ uploadId: `ok-${i}`, mediaType: 'image/heic', name: '', size: 10n, sha256: hash })
     }

@@ -4,7 +4,7 @@ import Testing
 
 @MainActor
 @Suite struct TaskStoreTests {
-    /// Waits on the store with no polling (S12): `waitForStore` in StoreWait.swift. A short
+    /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
     /// timeout here is raised to its 30 s, so a busy machine makes the test slower, not red.
     func waitUntil(_ condition: () -> Bool, timeout: Duration = .seconds(5), sourceLocation: SourceLocation = #_sourceLocation) async throws {
         await waitForStore("", timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)

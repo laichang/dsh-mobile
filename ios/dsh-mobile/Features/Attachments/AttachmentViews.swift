@@ -4,7 +4,7 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
-/// The "+" key on a composer (STORY §7, phone as context; ARCHITECTURE D95, D107), as in the
+/// The "+" key on a composer (STORY §7, phone as context), as in the
 /// Claude and Codex apps: a menu with the photo library, the camera and files. Each pick adds one
 /// chip at the end; a composer holds at most `Attachments.maxCount` files.
 struct AttachMenu: View {
@@ -39,7 +39,7 @@ struct AttachMenu: View {
             .background(Color.white.opacity(0.08), in: .circle)
         }
         .disabled(disabled || full || loading)
-        .dismissesKeyboardBeforeMenu() // D67
+        .dismissesKeyboardBeforeMenu()
         .accessibilityLabel("Attach")
         .accessibilityIdentifier(target == .composer ? "composer.attach" : "session.attach")
         .photosPicker(isPresented: $choosingPhoto, selection: $photo, matching: .images, photoLibrary: .shared())
@@ -202,7 +202,7 @@ struct FileCard: View {
 }
 
 /// The files of a sent message, above its bubble: images as thumbnails (on the phone that sent
-/// them), other files as cards with their name and size (D107).
+/// them), other files as cards with their name and size.
 struct MessageAttachmentsView: View {
     let attachments: [MessageAttachment]
 
@@ -254,7 +254,7 @@ struct PhotoThumbnail: View {
 }
 
 /// Turns any photo (HEIC, PNG, …, from the library, the camera or Files) into what the host takes
-/// (D95): a JPEG, at most `maxSide` pixels on its long side, and a small thumbnail JPEG.
+///: a JPEG, at most `maxSide` pixels on its long side, and a small thumbnail JPEG.
 enum PhotoTranscoder {
     static let maxSide: CGFloat = 2048
     static let thumbnailSide: CGFloat = 240
@@ -276,7 +276,7 @@ enum PhotoTranscoder {
     }
 }
 
-/// Reads a file the user picked in Files (D107). An image goes as a photo (`PhotoTranscoder`);
+/// Reads a file the user picked in Files. An image goes as a photo (`PhotoTranscoder`);
 /// any other file goes as its bytes, with its media type from the extension. A file over the
 /// limit is not read: its chip says it is too large.
 enum AttachmentReader {

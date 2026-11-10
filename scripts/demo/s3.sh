@@ -1,5 +1,5 @@
 #!/bin/bash
-# S3 · Milestones demo and checks, end to end (PLAN.md §5 S3). Re-runnable evidence for S3's
+# Milestones demo and checks, end to end. Re-runnable evidence for S3's
 # Done when items.
 #
 #   scripts/demo/s3.sh             all checks + S3 UI tests, including the real-DSH demo
@@ -9,8 +9,8 @@
 # Real DSH: uses a bridge already listening on 127.0.0.1:$DSHM_BRIDGE_PORT, or starts
 # `node scripts/demo/s3-host.mjs` (DSH 0.2.2-rc.1 + DSH's mock LLM scripted to call todo_write,
 # no API key) and stops it afterwards. That bridge must be S3's (the scripted three-todo model).
-# Env (defaults are S3's resources, PLAN.md §8):
-#   DSHM_BRIDGE_PORT 47812   DSHM_WEB_PORT 3285   DSHM_HOME ~/.dshm/home-s3   DSHM_SIM dshm-S3
+# Env (defaults are S3's resources):
+#   DSHM_BRIDGE_PORT 47812   DSHM_WEB_PORT 3285   DSHM_HOME ~/.dshm/home-s3   DSHM_SIM dshm
 #   DSHM_DD (DerivedData) /tmp/dshm-s3-dd
 # Node 24 from ~/.nvm and the pnpm shim from ~/.dshm/bin if present. Fails on any failed or
 # skipped test; with --fake-only the real-DSH test is left out rather than skipped.

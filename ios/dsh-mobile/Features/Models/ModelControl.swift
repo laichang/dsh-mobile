@@ -2,7 +2,7 @@ import DSHCore
 import DSHProtocol
 import SwiftUI
 
-/// The model pill (S6, restyled in S20 to screen 01): the composer's choice, or a running task's.
+/// The model pill (restyled in S20 to screen 01): the composer's choice, or a running task's.
 /// It opens `ModelPicker` as a sheet (`SheetRoute.model`).
 struct ModelControl: View {
     let store: TaskListStore
@@ -52,10 +52,10 @@ struct ModelControl: View {
     }
 }
 
-/// S20 · the model sheet (screens M and X4, STORY §8). Groups by provider with the provider's own
+/// The model sheet (screens M and X4, STORY §8). Groups by provider with the provider's own
 /// model names, reasoning effort as its own group. A selection the host can no longer run is
 /// named in an amber note; nothing else is selected in its place, and 应用 stays off until the
-/// user picks a model (ARCHITECTURE D58). A provider whose list failed is one row with 重试.
+/// user picks a model. A provider whose list failed is one row with 重试.
 struct ModelPicker: View {
     let store: TaskListStore
     let hostKey: String

@@ -1,8 +1,8 @@
 #!/bin/bash
-# S1 · Pair + encrypt demo and checks, end to end (PLAN.md §5 S1). Re-runnable evidence for
+# Pair + encrypt demo and checks, end to end. Re-runnable evidence for
 # S1's Done when items.
 #
-#   scripts/demo/s1.sh                  all checks, CLI pairing, UI tests (S1 + T0) in the Simulator
+#   scripts/demo/s1.sh                  all checks, CLI pairing, UI tests in the Simulator
 #   scripts/demo/s1.sh --shots          also refresh the screenshots in evidence/S1/
 #   scripts/demo/s1.sh --no-release     skip scripts/check-release-clean (two extra builds)
 #

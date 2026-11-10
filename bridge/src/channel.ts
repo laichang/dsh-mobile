@@ -1,5 +1,5 @@
 /**
- * Transport security seam (ARCHITECTURE D6). T0 has only PlaintextChannel, which refuses any
+ * Transport security seam. T0 has only PlaintextChannel, which refuses any
  * non-loopback address; S1 adds a Noise channel behind the same interface.
  */
 import { isIP } from 'node:net'

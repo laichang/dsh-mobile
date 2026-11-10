@@ -51,10 +51,10 @@ public protocol FrameCipher: Sendable {
     func open(_ ciphertext: Data) throws -> Data
 }
 
-/// Transport security seam (ARCHITECTURE D6). `HostConnection` validates the endpoint, opens a
+/// Transport security seam. `HostConnection` validates the endpoint, opens a
 /// transport to `path`, lets the channel run its handshake, then passes every frame through the
 /// returned `FrameCipher`. Release builds have only `NoiseChannel`; `PlaintextChannel` is
-/// Debug-only and loopback-only (PLAN S1).
+/// Debug-only and loopback-only.
 public protocol SecureChannel: Sendable {
     var name: String { get }
     /// The WebSocket path on the bridge for this channel.

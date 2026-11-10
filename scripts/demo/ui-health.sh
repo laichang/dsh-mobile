@@ -10,7 +10,7 @@
 #   focus-s3  S3MilestonesUITests/testTodosTickOffOnCardWithFakeBridge
 #   focus-s2  S2DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge
 #   focus-t0  T0DemoUITests/testDemoAgainstRealDSH (real DSH + bridge from scripts/dsh-up.mjs)
-# Waits for the app to idle (these tests launch the app with UIKit view animations off, ARCHITECTURE D128):
+# Waits for the app to idle (these tests launch the app with UIKit view animations off):
 #   idle-s16  S16SessionPageUITests   idle-s15  S15AllTasksUITests
 #   idle-s19  S19OutcomesUITests      idle-s20  S20PickersUITests
 #
@@ -87,7 +87,7 @@ ui_test() { # part name, then Suite or Suite/test selectors
   step "UI: $name ($*) (log: $log)"
   # A new install of the app over the old one can race with a launch by liveactivitiesd (a Live
   # Activity left by an earlier run): the first test then got an app without its launch arguments
-  # (ARCHITECTURE D129). Remove the app first; xcodebuild installs it again.
+  #. Remove the app first; xcodebuild installs it again.
   xcrun simctl uninstall "$SIM" chang.dsh-mobile >/dev/null 2>&1 || true
   if ! scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
       -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" --log "$log"; then

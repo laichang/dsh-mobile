@@ -1,5 +1,5 @@
 #!/bin/bash
-# S22 demo and checks: first run (PLAN.md §5 S22, design screen 08, STORY §6).
+# S22 demo and checks: first run (design screen 08, STORY §6).
 # A fresh Release install on the slice simulator, a real DSH with the bridge (scripts/dsh-up.mjs,
 # Noise only), and a pairing link from bridge/lib/scripts/pair.js. The UI test pastes the link on
 # 08, pairs, and checks that 01 opens with the first task in the composer, edits it, and sends it.

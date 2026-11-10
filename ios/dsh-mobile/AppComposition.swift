@@ -29,44 +29,44 @@ final class AppModel {
     private static let preferredHostKey = "dshm.composerHostKey"
     var pairingRoute: PairingRoute?
     var showingScanner = false
-    /// S22: 08 opens the scanner to scan, or to paste a link.
+    /// 08 opens the scanner to scan, or to paste a link.
     private(set) var scannerMode: ScannerView.Mode = .scan
 
     let pairing: Pairing
-    /// The Live Activity of each running task (screen L, D119). One for the app: each store uses it.
+    /// The Live Activity of each running task (screen L). One for the app: each store uses it.
     let activityClient = ActivityKitClient()
     @ObservationIgnored private lazy var liveActivities = LiveActivities(client: activityClient) { row in
         MilestoneBar.line(row.milestones, state: row.state, alert: nil)
     }
-    /// D129: false for a Debug test launch that does not ask for Live Activities.
+    /// False for a Debug test launch that does not ask for Live Activities.
     @ObservationIgnored private var liveActivitiesOn = true
-    /// D116: the mic key's speech to text: the Speech framework, or in Debug `-DSHMFakeSpeech`.
+    /// The mic key's speech to text: the Speech framework, or in Debug `-DSHMFakeSpeech`.
     let transcriber: TranscriberFactory
     @ObservationIgnored private let container: ModelContainer
     @ObservationIgnored private var presetPrompt = ""
     @ObservationIgnored private var connectDelay: Duration = .zero
-    /// S21: hosts this device lost its access to (a revoke of this device, D59), until they are
-    /// paired again (S30, D85). A paired host also leaves the file; this set keeps a fake host
-    /// out of the store, says each revoke once (D82), and keeps the Debug loopback away from 08.
+    /// Hosts this device lost its access to (a revoke of this device), until they are
+    /// paired again. A paired host also leaves the file; this set keeps a fake host
+    /// out of the store, says each revoke once, and keeps the Debug loopback away from 08.
     @ObservationIgnored private var forgottenHostKeys: Set<String> = []
-    /// S29: the host that revoked this phone without a revoke from this phone's hosts sheet
-    /// (another client, or the close came first). The root says so once (D82).
+    /// The host that revoked this phone without a revoke from this phone's hosts sheet
+    /// (another client, or the close came first). The root says so once.
     var revokedNotice: String?
 
     init() {
         let keys = KeychainDeviceKeyStore()
         let hosts = FilePairedHostStore()
         var transport: BridgeTransportFactory = WebSocketTransport.factory
-        // D125: after a timeout, a TCP connect tells another program on the port from no computer.
+        // After a timeout, a TCP connect tells another program on the port from no computer.
         var probe: PortProbe? = TCPPortProbe.probe
         var transcriber = SpeechFrameworkTranscriber.factory
         container = Self.makeContainer()
         #if DEBUG
         let options = DebugLaunchOptions.parse(ProcessInfo.processInfo.arguments)
-        // D128: XCUITest waits before each step until UIKit's view animations end; under load it
+        // XCUITest waits before each step until UIKit's view animations end; under load it
         // could wait 60 s per step for one whose end it did not see.
         if !options.uikitAnimations { UIView.setAnimationsEnabled(false) }
-        // D129: a test launch starts no Live Activities unless it asks, and ends the ones left.
+        // A test launch starts no Live Activities unless it asks, and ends the ones left.
         liveActivitiesOn = DebugLaunchOptions.liveActivitiesOn(ProcessInfo.processInfo.arguments)
         if options.resetPairing {
             try? hosts.removeAll()
@@ -99,8 +99,8 @@ final class AppModel {
         return store
     }
 
-    /// S29 (D82): a host refused this device with close 4003, so it was revoked. Forget it as
-    /// after a revoke from the hosts sheet (D59), and say so once.
+    /// A host refused this device with close 4003, so it was revoked. Forget it as
+    /// after a revoke from the hosts sheet, and say so once.
     private func hostRevoked(_ host: TaskListStore.HostStatus) {
         guard !forgottenHostKeys.contains(host.key) else { return }
         revokedNotice = host.name
@@ -113,7 +113,7 @@ final class AppModel {
     }
 
     private func pairedConfig(_ host: PairedHost) -> TaskListStore.HostConfig? {
-        // D98: every saved address, the one that worked last first; a new working one is saved first.
+        // Every saved address, the one that worked last first; a new working one is saved first.
         guard let endpoint = host.addresses.first, let connection = try? pairing.connection(to: host) else { return nil }
         return .init(key: "noise:\(host.id)", connection: connection, name: host.name.isEmpty ? endpoint.description : host.name)
     }
@@ -142,16 +142,16 @@ final class AppModel {
         if options.useFakeBridge {
             let endpoint = HostEndpoint.localBridge()
             var script: FakeBridge.Script = options.fakeMilestones ? .threeTodos() : .init()
-            if options.fakeScenario == "coding" { script = .codingTask() } // S16
-            if options.fakeScenario == "outcomes" { script = .outcomes() } // S19
-            if options.fakeScenario?.hasPrefix("transcript") == true { script = FakeTranscript.script() } // S17
-            if options.fakeScenario == "live-activity" { script = .threeTodos(delay: .seconds(5)) } // D121: time to lock the screen
-            if options.fakeScenario == "conversation" { script.followUpReply = ["Got it", ", ", "on it", "."] } // D117
+            if options.fakeScenario == "coding" { script = .codingTask() }
+            if options.fakeScenario == "outcomes" { script = .outcomes() }
+            if options.fakeScenario?.hasPrefix("transcript") == true { script = FakeTranscript.script() }
+            if options.fakeScenario == "live-activity" { script = .threeTodos(delay: .seconds(5)) } // Time to lock the screen
+            if options.fakeScenario == "conversation" { script.followUpReply = ["Got it", ", ", "on it", "."] }
             script.holdPrompt = options.fakeHold ?? script.holdPrompt
-            let fake = options.fakeScenario == "turns" ? FakeTurns.host() // S27
+            let fake = options.fakeScenario == "turns" ? FakeTurns.host()
                 : FakeHost(script: script, reachable: !options.fakeBridgeOffline,
                            extraCapabilities: options.fakeScenario == "transcript" ? [FakeTranscript.capability] : [])
-            if options.fakeScenario == "outcomes" { FakeApprovalSheet.watchWebAnswers(fake) } // S19
+            if options.fakeScenario == "outcomes" { FakeApprovalSheet.watchWebAnswers(fake) }
             return [.init(key: "fake:\(endpoint)",
                           connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: fake.factory))]
         }
@@ -170,10 +170,10 @@ final class AppModel {
         #endif
     }
 
-    /// S21 · this device lost its access to the host (it revoked itself, D59): forget the pairing
+    /// This device lost its access to the host (it revoked itself): forget the pairing
     /// and rebuild the store without it. With no host left, the root shows 08 (`WelcomeView`).
     func forgetHost(_ key: String) {
-        // S29: once per host; the revoke response and the close 4003 can both report it.
+        // Once per host; the revoke response and the close 4003 can both report it.
         guard forgottenHostKeys.insert(key).inserted else { return }
         if key.hasPrefix("noise:") {
             let id = String(key.dropFirst("noise:".count))
@@ -211,7 +211,7 @@ final class AppModel {
 
     func closePairing() {
         if case .offer(let model)? = pairingRoute, case .paired(let paired) = model.state {
-            // S30 (D85): the same Mac paired again after a revoke has the same key (the id comes
+            // The same Mac paired again after a revoke has the same key (the id comes
             // from the host key). It is a new pairing: keep it, and let a later revoke forget it again.
             forgottenHostKeys.remove("noise:\(paired.id)")
             if let store, store.hosts.contains(where: { $0.channelName == "noise" }), let config = pairedConfig(paired) {
@@ -226,7 +226,7 @@ final class AppModel {
     }
 
     /// The cache on disk; if it can't be opened (e.g. an incompatible schema in a dev build),
-    /// start from an empty one rather than not at all. The host is the source of truth (D9).
+    /// start from an empty one rather than not at all. The host is the source of truth.
     private static func makeContainer() -> ModelContainer {
         if let container = try? TaskCache.container() { return container }
         let url = URL.applicationSupportDirectory.appending(path: "default.store")

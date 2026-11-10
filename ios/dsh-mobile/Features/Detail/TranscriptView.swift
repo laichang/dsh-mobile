@@ -73,12 +73,12 @@ struct TranscriptView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
-            // S16 · DSH style (screen 04): a block a shade below the canvas, under a hairline.
+            // DSH style (screen 04): a block a shade below the canvas, under a hairline.
             .background(DSHTheme.codeFill, in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(DSHTheme.hairline))
             .accessibilityIdentifier("transcript.fence." + language)
         case .table(let table):
-            TranscriptTableView(table: table) // S28
+            TranscriptTableView(table: table)
         }
     }
 
@@ -89,7 +89,7 @@ struct TranscriptView: View {
         return .clear
     }
 
-    /// S16 · inline Markdown in the DSH style: `code` in SF Mono on the bubble color, links in blue.
+    /// Inline Markdown in the DSH style: `code` in SF Mono on the bubble color, links in blue.
     static func dshStyled(_ text: AttributedString, code: Font.TextStyle = .callout) -> AttributedString {
         var styled = text
         for run in text.runs {

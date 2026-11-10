@@ -1,5 +1,5 @@
 /**
- * S2: the bridge's per-host event log (ARCHITECTURE D20). DSH has no server-side resume cursor,
+ * The bridge's per-host event log. DSH has no server-side resume cursor,
  * so the bridge numbers every event it forwards with a monotonic `host_seq` and keeps the most
  * recent ones, so an app that was away can `Resume { after_seq }` and receive exactly the gap.
  *

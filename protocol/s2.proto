@@ -1,4 +1,4 @@
-// S2 · Durable list + resume (PLAN.md §5, ARCHITECTURE D9, D20).
+// Durable list + resume.
 // Field numbers 40–59 in Request / Response / Event are S2's; frame.proto only registers them.
 //
 // The bridge numbers every Event it logs with a per-host monotonic `Event.host_seq` inside one
@@ -33,9 +33,9 @@ message TaskSummary {
   int64 updated_at_ms = 5;
   // Why it failed, when state is FAILED.
   string message = 6;
-  // When state is FAILED: DSH's failure class, as TaskEnded.failure_code (D104).
+  // When state is FAILED: DSH's failure class, as TaskEnded.failure_code.
   string failure_code = 420;
-  // S4: current requests, including any older than the retained log.
+  // Current requests, including any older than the retained log.
   repeated ApprovalPending pending_approvals = 80;
   // A session started on another client appears only while it needs a decision.
   bool approval_only = 81;

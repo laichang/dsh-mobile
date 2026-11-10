@@ -1,6 +1,6 @@
 import XCTest
 
-/// ARCHITECTURE D67: the keyboard goes away before any action that is not typing. The menus on
+/// The keyboard goes away before any action that is not typing. The menus on
 /// the composer of 01 open in place, not through the shell: the host menu (shown with 2 or more
 /// hosts) and the "+" attach menu. With the keyboard up, a tap on either puts the keyboard away
 /// first; then the menu shows.

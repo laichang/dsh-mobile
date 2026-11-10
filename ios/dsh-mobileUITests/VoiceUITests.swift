@@ -1,6 +1,6 @@
 import XCTest
 
-/// Voice input (ARCHITECTURE D116, D117) with the fake transcriber (`-DSHMFakeSpeech`) and the
+/// Voice input with the fake transcriber (`-DSHMFakeSpeech`) and the
 /// FakeBridge: the mic key on 01 and on the session page writes what it hears into the field,
 /// and nothing goes until the user taps send. With speech permission denied, the mic says how to
 /// turn it on and the field does not change. Run by scripts/demo/voice.sh.
@@ -108,7 +108,7 @@ final class VoiceUITests: XCTestCase {
 
     /// The real Speech framework path (no `-DSHMFakeSpeech`): a tap on the mic asks the system for
     /// speech recognition and the microphone. The system answers on a queue of its own; a
-    /// main-actor callback crashed the app there on a real iPhone (ARCHITECTURE D146). The test
+    /// main-actor callback crashed the app there on a real iPhone. The test
     /// allows speech recognition and turns off the microphone, so the engine never starts (no
     /// microphone prompt on the Mac), and the app must stay up and say voice input is off.
     func testRealPermissionPromptsDoNotCrashTheApp() throws {

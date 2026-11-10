@@ -1,5 +1,5 @@
 #!/bin/bash
-# S23 demo and checks: drawer motion and landing positions (PLAN.md §5 S23, design screens F1–F4).
+# S23 demo and checks: drawer motion and landing positions (design screens F1–F4).
 # Re-runnable evidence for S23's Done when items. Everything runs against the in-process
 # FakeBridge (scenarios `outcomes` and `coding`); no DSH is needed.
 #
@@ -69,14 +69,14 @@ copy_shots() {
 
 ui_part s23 S23DrawerMotionUITests
 copy_shots
-# The seams (this slice lands after S14, S16 and S19): the same drawer and session page.
+# The seams (this slice lands after S14): the same drawer and session page.
 ui_part s19-seam S19OutcomesUITests
 ui_part s16-seam S16SessionPageUITests
 ui_part s14-seam S14DrawerUITests/testDrawerGroupsByHostAndWorkspaceWithStatusMarks \
   S14DrawerUITests/testBadgeCountMatchesWaitingOnMe S14DrawerUITests/testOfflineHostSessionsOpenFromTheCache \
   S14DrawerUITests/testWithoutDrawerCapabilityShowsHostAndSession
 ui_part t1-seam T1ShellUITests
-# 05 waits for the motion (S18's PendingApprovalBar); the 03 approval card opens its session (S15).
+# 05 waits for the motion (S18's PendingApprovalBar); the 03 approval card opens its session.
 ui_part s18-seam S18ApprovalSheetUITests
 ui_part s15-seam S15AllTasksUITests
 

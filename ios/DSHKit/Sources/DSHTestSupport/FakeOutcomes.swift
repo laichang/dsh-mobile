@@ -2,7 +2,7 @@
 import DSHCore
 import Foundation
 
-/// S19 · done and failed (screens 06 and X1), `-DSHMFakeScenario outcomes`. Debug only.
+/// Done and failed (screens 06 and X1), `-DSHMFakeScenario outcomes`. Debug only.
 ///
 /// - A prompt that contains `FakeBridge.outcomeDonePrompt` ("open a PR"): five todos. After four,
 ///   the task asks to run `git push` (the approval), then streams a final answer longer than the

@@ -1,6 +1,6 @@
 import XCTest
 
-/// S30 · pair again after a revoke (PLAN.md §5 S30, ARCHITECTURE D59, D82, D85). The bug
+/// Pair again after a revoke. The bug
 /// (2026-11-08, real iPhone): the user had revoked this phone; 08 asked to pair again; they
 /// scanned a fresh QR from the same Mac, pairing succeeded, and then the root showed "Couldn't
 /// open your paired computers". The app kept the forgotten host's key (`noise:<host id>`, from

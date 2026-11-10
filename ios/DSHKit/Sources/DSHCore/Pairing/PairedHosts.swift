@@ -7,7 +7,7 @@ public struct PairedHost: Sendable, Equatable, Codable, Identifiable {
     /// Hex of the first 8 bytes of the host key; stable across address changes.
     public var id: String
     public var name: String
-    /// The address that worked last first (pairing, then each reconnect, D98), then the others from the QR.
+    /// The address that worked last first (pairing, then each reconnect), then the others from the QR.
     public var addresses: [HostEndpoint]
     public var hostKey: [UInt8]
     public var pairedAt: Date

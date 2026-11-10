@@ -5,7 +5,7 @@ import VisionKit
 /// Scans the host's pairing QR with the camera (VisionKit's DataScanner). Where the camera
 /// isn't available (Simulator, no permission) it falls back to pasting the `dshm://pair?…`
 /// link the host's terminal prints next to the QR.
-/// S22: 08 opens it for scanning or for pasting (`Mode.paste`: no camera, the link field has focus).
+/// 08 opens it for scanning or for pasting (`Mode.paste`: no camera, the link field has focus).
 struct ScannerView: View {
     enum Mode { case scan, paste }
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Follow-ups in a session (ARCHITECTURE D89, D101; screen 04, X1): demo and checks.
+# Follow-ups in a session (screen 04, X1): demo and checks.
 #
 #   scripts/demo/followup.sh           bridge tests, swift test, and the real-DSH UI demo: finish a
 #                                      task, send a follow-up from its page, see the second reply

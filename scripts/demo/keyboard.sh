@@ -1,5 +1,5 @@
 #!/bin/bash
-# Keyboard demo and checks (ARCHITECTURE D67): the keyboard goes away before any action that is
+# Keyboard demo and checks: the keyboard goes away before any action that is
 # not typing. With the keyboard up on 01 and two hosts, the host menu and the "+" menu put it away
 # first, then show. App only: two in-process FakeBridge hosts (-DSHMFakeBridge multi
 # -DSHMFakeScenario attachments); no DSH and no bridge.
