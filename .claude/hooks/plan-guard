@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Claude Code PreToolUse hook (Edit|Write|MultiEdit and Bash) guarding PLAN.md and the guards.
+"""Claude Code PreToolUse hook (Edit|Write|MultiEdit and Bash) guarding plan/*.json and the guards.
 
 Paths count in the checkout that holds them: the main checkout or any worktree of this repo
 (a checkout with scripts/check-plan). So a session in main that edits a file under
@@ -9,15 +9,15 @@ Edit, Write, MultiEdit:
   * guard files (PROTECTED: scripts/check-plan, .githooks/*, .claude/hooks/*,
     .claude/settings.json, .codex/hooks.json, .codex/hooks/*) -> ask: an agent blocked by a
     check must not quietly change the check.
-  * PLAN.md: computes the file as it would be after the tool call and runs check-plan --agent
-    against the current on-disk version (so it judges this edit, not earlier ones; the git
-    pre-commit hook judges the cumulative change against HEAD).
-      ticking a [human] item          -> deny (only the user ticks those)
+  * plan/<name>.json: computes the file as it would be after the tool call and judges it with
+    check-plan --agent against the plan/ on disk (so it judges this edit, not earlier ones; the
+    git pre-commit hook judges the cumulative change against HEAD).
+      recording a [human] item        -> deny (only the user records those)
       any other check-plan violation  -> NON_HUMAN_DECISION
 Bash (it parses the command with the parser of git-guard):
-  * a write to PLAN.md (redirection, tee, sed -i, cp/mv onto it, rm, or program code that
-    names PLAN.md and writes files) -> deny: use scripts/plan, or the Edit tool, which this hook
-    checks (WORKFLOW.md §3.1).
+  * a write to plan/<name>.json (redirection, tee, sed -i, cp/mv onto it, rm, or program code
+    that names it and writes files) -> deny: use scripts/plan, or the Edit tool, which this hook
+    checks.
   * a write to a guard file -> ask, as for Edit.
 Other hooks (codex-guard) call bash_writes() and edit_decision().
 """
@@ -32,7 +32,7 @@ from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 # "ask" pops a confirmation dialog for the user; verified on 2026-11-04 that it
-# still does in bypass-permissions mode (see PLAN.md §8 Plan log).
+# still does in bypass-permissions mode.
 NON_HUMAN_DECISION = "ask"
 
 HERE = Path(__file__).resolve().parent
@@ -42,7 +42,8 @@ PROTECTED = ["scripts/check-plan", ".githooks/*", ".claude/hooks/*", ".claude/se
              ".codex/hooks.json", ".codex/hooks/*"]
 GUARD_TEXT = re.compile(r"scripts/check-plan|\.githooks/|\.claude/hooks/|\.claude/settings\.json|"
                         r"\.codex/hooks")
-PLAN_TEXT = re.compile(r"""['"]([^'"\n]*PLAN\.md)['"]""")
+PLAN_PATH = re.compile(r"^plan/[^/]+\.json$")
+PLAN_TEXT = re.compile(r"""['"]([^'"\n]*plan/[^'"\n]*\.json)['"]""")
 CODE_WRITES = re.compile(r"write_text|write_bytes|\.write\(|open\([^)\n]*,\s*['\"][^'\"]*[wax+]|"
                          r"writeFileSync|appendFileSync|createWriteStream|os\.replace|os\.rename|"
                          r"shutil\.(copy|move)|os\.remove|unlink\(|truncate\(")
@@ -51,12 +52,13 @@ COPIERS = {"cp", "mv", "install", "rsync", "ditto", "ln"}
 REMOVERS = {"rm", "unlink", "truncate", "shred"}
 IN_PLACE = {"sed", "gsed", "perl"}
 
-PLAN_REASON = ("PLAN.md: do not write the plan file from a shell command. Use scripts/plan "
-               "(WORKFLOW.md §3.1: row, log, pending, assign, merged, tick, slice-log, "
-               "slice-status), or the Edit tool, which this hook checks with check-plan.")
-GUARD_REASON = ("{rel} is a guard file: it enforces the PLAN.md and git hook rules. Approve "
-                "only if you asked for this change to the guard itself in the conversation; "
-                "an agent blocked by a check must not change the check instead.")
+PLAN_REASON = ("plan/: do not write a plan file from a shell command. Next: use scripts/plan "
+               "(row, log, pending, assign, merged, evidence, slice-log, slice-status), or the "
+               "Edit tool, which this hook checks with check-plan.")
+GUARD_REASON = ("{rel} is a guard file: it enforces the plan/ and git hook rules. Approve only "
+                "if you asked for this change to the guard itself in the conversation; an agent "
+                "blocked by a check must not change the check instead. Next: tell the user the "
+                "change and the reason, and let the user make it.")
 
 
 def decide(decision, reason):
@@ -90,7 +92,7 @@ def kind_of(path, cwd=None):
     if not hit:
         return None, None
     root, rel = hit
-    if rel == "PLAN.md":
+    if PLAN_PATH.match(rel):
         return "plan", rel
     if any(fnmatch.fnmatch(rel, pat) for pat in PROTECTED):
         return "guard", rel
@@ -120,10 +122,6 @@ def load_check_plan(root):
     return mod
 
 
-def plan_errors(root, current, new):
-    return load_check_plan(root).check(current, new, agent=True)
-
-
 def edit_decision(tool, inp):
     """(decision, reason) for an Edit/Write/MultiEdit, or None."""
     hit = repo_path(inp.get("file_path") or "")
@@ -132,28 +130,27 @@ def edit_decision(tool, inp):
     root, rel = hit
     if any(fnmatch.fnmatch(rel, pat) for pat in PROTECTED):
         return "ask", GUARD_REASON.format(rel=rel)
-    if rel != "PLAN.md":
+    if not PLAN_PATH.match(rel):
         return None
-    plan = root / "PLAN.md"
+    plan = root / rel
     current = plan.read_text() if plan.exists() else ""
     new = proposed(tool, inp, current)
     if new is None:
         return None
-    errors = plan_errors(root, current, new)
+    errors = load_check_plan(root).edit_errors(rel, new)
     if not errors:
         return None
     body = "\n".join(errors)
-    if any(e.startswith("HUMAN ITEM TICKED BY AGENT") for e in errors):
-        return "deny", ("PLAN.md: only the user ticks [human] items. Tell the user what you "
-                        "verified and let them tick it themselves.\n\n" + body)
+    if any(e.startswith("HUMAN ITEM") for e in errors):
+        return "deny", (f"{rel}: only the user records a [human] item. Next: tell the user what "
+                        "you verified and let them record it.\n\n" + body)
     if NON_HUMAN_DECISION == "ask":
-        return "ask", ("PLAN.md Done when items may only be ticked (with valid evidence pointers) "
-                       "or added unticked. This edit breaks that; approve only if you agreed to "
-                       "it in the conversation.\n\n" + body)
-    return "deny", ("PLAN.md Done when items may only be ticked (with valid evidence pointers) or "
-                    "added unticked. Don't retry: ask the user in the conversation, showing the "
-                    "original text, the new text and the reason, and let the user make the "
-                    "edit.\n\n" + body)
+        return "ask", (f"{rel}: items keep their text and only gain evidence that resolves. This "
+                       "edit breaks that; approve only if you agreed to it in the conversation. "
+                       "Next: see each error below.\n\n" + body)
+    return "deny", (f"{rel}: items keep their text and only gain evidence that resolves. Next: "
+                    "don't retry; tell the user the original text, the new text and the reason, "
+                    "and let the user make the edit.\n\n" + body)
 
 
 # ------------------------------------------------------------------------------- Bash
@@ -167,7 +164,7 @@ def git_guard():
 
 
 def bash_writes(cmd, cwd=None, depth=0, gg=None):
-    """[(kind, rel)] for each write to PLAN.md ('plan') or a guard file ('guard')."""
+    """[(kind, rel)] for each write to plan/<name>.json ('plan') or a guard file ('guard')."""
     gg = gg or git_guard()
     cwd = cwd or os.getcwd()
     hits = []
@@ -233,7 +230,7 @@ def bash_writes(cmd, cwd=None, depth=0, gg=None):
 
 
 def bash_decision(cmd, cwd=None):
-    if "PLAN.md" not in cmd and not GUARD_TEXT.search(cmd):
+    if "plan/" not in cmd and not GUARD_TEXT.search(cmd):
         return None
     hits = bash_writes(cmd, cwd)
     if any(k == "plan" for k, _ in hits):

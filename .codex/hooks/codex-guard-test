@@ -1,23 +1,26 @@
 #!/usr/bin/env python3
 """Feeds codex-guard synthetic Codex hook inputs and checks each decision. Run: .codex/hooks/codex-guard-test"""
 
-import json, os, shutil, subprocess, tempfile
+import importlib.util, json, os, shutil, subprocess, tempfile
 import pathlib
+from importlib.machinery import SourceFileLoader
 HERE = pathlib.Path(__file__).resolve()
 REPO = HERE.parents[2]
-# The tests do not depend on the state of the live PLAN.md (it can have no open items).
-# They run a copy of the guards in a temporary root, with this slice added to a copy of PLAN.md.
-human = "- [ ] [human] The guard test fixture reads well — Evidence:"
-auto_unt = "- [ ] [auto] The guard test fixture runs — Evidence:"
-FIXTURE = f"\n### S99 · Guard test fixture\n\n{auto_unt}\n{human}\n"
+# The tests do not depend on the live plan/ (there is none while no requirement is in progress).
+# They run a copy of the guards in a temporary root, with the plan of .claude/hooks/guard-test.
 TMP = tempfile.TemporaryDirectory()
 R = os.path.realpath(TMP.name)
-for f in [".codex/hooks/codex-guard", ".claude/hooks/git-guard", ".claude/hooks/plan-guard", "scripts/check-plan"]:
+for f in [".codex/hooks/codex-guard", ".claude/hooks/git-guard", ".claude/hooks/plan-guard", "scripts/check-plan",
+          "scripts/lib/plandata.py", "scripts/lib/plan.schema.json"]:
     (pathlib.Path(R) / f).parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(REPO / f, pathlib.Path(R) / f)
 (pathlib.Path(R) / ".git").mkdir()
-LIVE = REPO / "PLAN.md"   # no PLAN.md while no requirement is in progress
-(pathlib.Path(R) / "PLAN.md").write_text((LIVE.read_text() if LIVE.exists() else "# PLAN · guard test\n") + FIXTURE)
+_loader = SourceFileLoader("guard_test", str(REPO / ".claude/hooks/guard-test"))
+_gt = importlib.util.module_from_spec(importlib.util.spec_from_loader("guard_test", _loader))
+_loader.exec_module(_gt)
+_gt.write_fixture(R)
+human, auto_unt = _gt.FIX_HUMAN, _gt.FIX_AUTO
+ITEMS = "plan/S99.json"
 G = R + "/.codex/hooks/codex-guard"
 ENV = {k: v for k, v in os.environ.items() if k != "CLAUDE_PROJECT_DIR"}
 ESC = "CHECK_PLAN" + "_ALLOW"
@@ -43,16 +46,16 @@ cases = [
     ("bash skip-hooks flag", "Bash", f"git commit {NOV} -m x", "deny"),
     ("bash hooks path", "Bash", f"git config {HP} /tmp", "deny"),
     ("bash escape var", "Bash", ESC + "=1 git commit -m x", "deny"),
-    ("bash grep for the flag", "Bash", f'grep -n "{NOV}" WORKFLOW.md', "allow"),
-    ("bash writes PLAN", "Bash", "echo x >> PLAN.md", "deny"),
+    ("bash grep for the flag", "Bash", f'grep -n "{NOV}" AGENTS.md', "allow"),
+    ("bash writes plan/", "Bash", "echo x >> plan/S99.json", "deny"),
     ("bash writes a guard", "Bash", "cp /tmp/x scripts/check-plan", "deny"),
     ("bash plan script", "Bash", 'scripts/plan log "x"', "allow"),
-    ("tick human (rel)", "apply_patch", patch("PLAN.md", human, human.replace("- [ ]", "- [x]") + " human:2026-11-05 x"), "deny"),
-    ("tick human (abs)", "apply_patch", patch(R + "/PLAN.md", human, human.replace("- [ ]", "- [x]") + " human:2026-11-05 x"), "deny"),
-    ("reword item", "apply_patch", patch("PLAN.md", auto_unt, auto_unt.replace("[auto] ", "[auto] Reworded: ", 1)), "deny"),
-    ("tick auto no evidence", "apply_patch", patch("PLAN.md", auto_unt, auto_unt.replace("- [ ]", "- [x]")), "deny"),
-    ("delete PLAN", "apply_patch", "*** Begin Patch\n*** Delete File: PLAN.md\n*** End Patch", "deny"),
-    ("harmless PLAN edit", "apply_patch", patch("PLAN.md", "# PLAN", "# PLAN"), "allow"),
+    ("record human (rel)", "apply_patch", patch(ITEMS, "      " + human, f'      {human} "evidence": ["human:2026-11-05 x"],'), "deny"),
+    ("record human (abs)", "apply_patch", patch(f"{R}/{ITEMS}", "      " + human, f'      {human} "evidence": ["human:2026-11-05 x"],'), "deny"),
+    ("reword item", "apply_patch", patch(ITEMS, "      " + auto_unt, "      " + auto_unt.replace("runs", "runs, reworded")), "deny"),
+    ("set passed", "apply_patch", patch(ITEMS, '      "passed": false', '      "passed": true'), "deny"),
+    ("delete plan.json", "apply_patch", "*** Begin Patch\n*** Delete File: plan/plan.json\n*** End Patch", "deny"),
+    ("harmless plan/ edit", "apply_patch", patch(ITEMS, '  "id": "S99",', '  "id": "S99",'), "allow"),
     ("edit check-plan", "apply_patch", patch("scripts/check-plan", "x", "y"), "deny"),
     ("edit codex hooks.json", "apply_patch", patch(".codex/hooks.json", "x", "y"), "deny"),
     ("edit claude hook from subdir", "apply_patch", patch("../.claude/hooks/git-guard", "x", "y"), "deny"),

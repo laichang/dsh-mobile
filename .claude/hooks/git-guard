@@ -3,7 +3,7 @@
 
 It parses the shell command (lines, heredocs, pipelines, `sh -c`, `eval`) and judges what the
 command does, not the words in it. A read-only command that only mentions a blocked word
-(`grep -n "--no-verify" WORKFLOW.md`, a commit message, a heredoc into `cat > file`) passes.
+(`grep -n "--no-verify" AGENTS.md`, a commit message, a heredoc into `cat > file`) passes.
 
 Denies:
   * --no-verify as an argument of git, and `git commit -n` (its short form)
