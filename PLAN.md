@@ -320,14 +320,18 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 **Demo**: —
 
 **Done when**
-- [ ] [auto] `scripts/check-design` passes on main, and fixtures make it fail for a STORY section without a screen, a cycle, and a rule whose XCUITest does not exist — Evidence:
-- [ ] [auto] A check fails when a DSHTheme file or token name contains a slice ID (`S14`, `s19`, …) — Evidence:
-- [ ] [auto] `scripts/brief <ID>` includes the screens of the slice from `design/screens.json`, and the 3k token test still passes — Evidence:
-- [ ] [ui] `scripts/render-design` renders each `design/screens/<id>.html` to its png — Evidence:
+- [x] [auto] `scripts/check-design` passes on main, and fixtures make it fail for a STORY section without a screen, a cycle, and a rule whose XCUITest does not exist — Evidence: cmd:scripts/check-design cmd:scripts/check-design-test design commit:e751ce2
+- [x] [auto] A check fails when a DSHTheme file or token name contains a slice ID (`S14`, `s19`, …) — Evidence: cmd:scripts/check-design-test theme cmd:scripts/check-design commit:e751ce2
+- [x] [auto] `scripts/brief <ID>` includes the screens of the slice from `design/screens.json`, and the 3k token test still passes — Evidence: cmd:scripts/check-design-test brief cmd:scripts/brief-test commit:e751ce2
+- [x] [ui] `scripts/render-design` renders each `design/screens/<id>.html` to its png — Evidence: cmd:scripts/render-design cmd:scripts/check-design commit:e751ce2
 
 **Not**: New screens or UI changes.
 
 **Log**: —
+- **2026-11-10 · Design as data; all items ticked.** Done (e751ce2): design/screens.json (7 components = the shared parts of design/kit/kit.js, 26 screens; needs, nav, story, 62 rules each with its XCUITest method name). design/screens/<id>.html per screen on design/kit/ (kit.css, kit.js); scripts/render-design renders each to its png and checks 882x1800 (pngs byte-identical to the board renders). scripts/check-design: graph, needs cycle, STORY coverage, XCUITest names (unique func in ios/dsh-mobileUITests), html and png per screen, and no slice ID in a DSHTheme file or token name; scripts/check-design-test (design, theme, brief). Theme files and tokens renamed for their features (Theme+Drawer, +Outcomes, …; s19*/s16*/s28* to failFill, codeFill, tableHeaderFill, …). scripts/brief adds a Screens section in what the rest of the brief leaves of 3k tokens. DESIGN.md and design/board.* removed; visual language in DSHTheme.swift, icon notes in design/icon.svg; docs and code comments point to design/screens.json.
+  Provisional: design as data (ARCHITECTURE §5.1); rule tests as method names only (no class, so no slice ID); the Screens budget in the brief.
+  Not done: known gaps not opened as issues (no permission to post): 08 pairing waits for an upstream pairing entry; share sheet and iPad not drawn; L draws push notifications and L, X1, P1 captions call push later work, but STORY now has no push. Captions still cite decision and slice IDs (S5). UI tests not run (comments only changed); scripts/xc build passes. Simulator dshm-S4 does not exist (DSHM_SIM unset).
+  Next: separate reviewer; coordinator merges.
 
 ### S5 · Remove Dxx and slice IDs from code
 
