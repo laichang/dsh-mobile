@@ -17,7 +17,8 @@ each of which must resolve:
   shot:<path>           file exists under evidence/<slice ID>/
   human:<YYYY-MM-DD> <device or note>   [human] items only
 
-With --staged it also fails when guard files (PROTECTED below) are staged;
+With --staged it also checks the staged files in plan/ (scripts/lib/plandata.py: the schema,
+the graph, and `passed`, which a file always has as false), and it fails when guard files (PROTECTED below) are staged;
 only the user commits those, by hand. It also fails on staged build output
 (.build/, node_modules/, DerivedData/, *.xcresult) and on staged files larger
 than MAX_FILE_MB. On main, it fails on a commit that is not a merge and changes
@@ -337,6 +338,16 @@ def staged_problems(trusted=None):
     return errors
 
 
+def plan_dir_errors():
+    """The staged plan/ files (schema, graph, passed false), when this tree has plandata.py."""
+    lib = ROOT / "scripts" / "lib"
+    if not (lib / "plandata.py").exists():
+        return []
+    sys.path.insert(0, str(lib))
+    import plandata
+    return [f"PLAN DATA: {e}" for e in plandata.staged_errors(ROOT)]
+
+
 def code_on_main():
     """Code in the index of a commit on main that is not a merge (WORKFLOW.md §3, §5.2)."""
     if git_run("symbolic-ref", "-q", "--short", "HEAD").stdout.strip() != "main":
@@ -384,6 +395,7 @@ def main(argv=None):
                    for f in protected_staged(trusted)]
         errors += staged_problems(trusted)
         errors += code_on_main()
+        errors += plan_dir_errors()
         new = git_show(f":{PLAN}")  # None if PLAN.md isn't in the index
         if new is None and git_show(f"HEAD:{PLAN}") is not None:
             errors.append(f"PLAN FILE REMOVED: {PLAN} (archiving or deleting the plan is the user's step, by hand)")
