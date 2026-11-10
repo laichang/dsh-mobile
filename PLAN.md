@@ -296,6 +296,11 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 **Not**: Code (S5). WORKFLOW.md and DESIGN.md (S7, S4 remove them).
 
 **Log**: —
+- **2026-11-10 · Items ticked; review next.** Done: ARCHITECTURE.md written again as the current state (no Dxx, no §7 milestones; about 9.8k tokens by the scripts/check-docs estimate, was about 37k). STORY.md: no APNs push, no relay (direct LAN or Tailscale), no host guess; X4 as a red failure was already in §8. README.md, README.zh-CN.md: Roadmap replaced by a short Status, D1–D55 reference gone, relay and push in Out of scope. bridge/README.md and the five spike READMEs: Dxx references replaced. AGENTS.md: the ARCHITECTURE.md entry and scripts/check-docs. New scripts/check-docs and scripts/check-docs-test (failures: 0). T0 demo passed (§4.1).
+  Provisional: the retained-block Markdown rendering stays provisional in ARCHITECTURE.md §5.4 (real-device timing open), as #35 allows. The token count is an estimate (ASCII/3.7 + one per other character; the old file gives 37.3k), not a real tokenizer.
+  Not done (other slices): code comments still cite "ARCHITECTURE §4 Keys" and Dxx numbers (S5); old section numbers in code comments will be wrong after this rewrite (S5). DESIGN.md and design/board.html still show push and relay as later work and the host guess as "later" (S4). check-docs is not in the pre-commit hook (a guard file; the user decides).
+  Setup: dshm-S6 did not exist; created with xcrun simctl create dshm-S6 "iPhone 17 Pro". SwiftPM could not clone swift-protobuf (network reset); copied the cached bare repo from the main checkout's ios/DSHKit/.build into this worktree's .build.
+  Next: scripts/review S6 by a reviewer subagent.
 
 ### S7 · Remove WORKFLOW.md and use only the new plan format
 
