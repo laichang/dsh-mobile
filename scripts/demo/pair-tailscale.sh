@@ -14,7 +14,7 @@
 # Needs one non-local IPv4 address on this Mac (Tailscale's 100.x, or a public LAN address).
 # Without one the demo fails: it cannot show the bug. The Simulator uses the Mac's network.
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-pair-tailscale   DSHM_DD (DerivedData) /tmp/dshm-pair-tailscale-dd
 #   DSHM_BRIDGE_PORT 47810, DSHM_WEB_PORT 3283, DSHM_HOME ~/.dshm/home-pair-tailscale
 # Fails on any failed or skipped test.

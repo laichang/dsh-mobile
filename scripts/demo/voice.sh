@@ -14,7 +14,7 @@
 #   scripts/demo/voice.sh --shots DIR  also write the screenshots (1/3 size) into DIR
 #   DSHM_RESUME=1                      skip the parts that passed for the same code (lib.sh demo_part)
 #
-# Resources (WORKFLOW.md §6), read from the environment (scripts/slice-env): DSHM_SIM, DSHM_DD
+# Resources, read from the environment (scripts/slice-env): DSHM_SIM, DSHM_DD
 # (DerivedData, default /tmp/dshm-voice-dd). Fails on any failed or skipped test.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

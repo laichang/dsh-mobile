@@ -1,0 +1,115 @@
+#!/bin/bash
+# Each refusal of scripts/plan, scripts/check-plan, scripts/review and the hooks names a next step.
+# Runs in a temporary clone (the repo is not touched). A refusal must exit non-zero (a hook: deny
+# or ask) and its message must name the next step: "Next", or "ask/tell the user".
+#   scripts/refusal-test        ends with "failures: 0"
+set -uo pipefail
+SRC="$(git rev-parse --show-toplevel)"
+T=$(cd "$(mktemp -d "${TMPDIR:-/tmp}/dshm-refusal-test.XXXXXX")" && pwd -P)
+trap 'rm -rf "$T"' EXIT
+FAIL=0
+NEXT='Next|[Aa]sk the user|[Tt]ell the user'
+ok()  { printf '  ok    %s\n' "$1"; }
+bad() { printf '  FAIL  %s\n' "$1"; FAIL=$((FAIL + 1)); }
+refused() { # refused <name> <command…>: exit non-zero, and the output names a next step
+  local name=$1; shift
+  local out; out=$("$@" 2>&1); local rc=$?
+  if [ $rc = 0 ]; then bad "$name (exit 0)"; printf '%s\n' "$out" | head -4 | sed 's/^/        /'
+  elif ! printf '%s' "$out" | grep -qE "$NEXT"; then bad "$name: no next step"; printf '%s\n' "$out" | head -4 | sed 's/^/        /'
+  else ok "$name"; fi
+}
+hook() { # hook <name> <hook> <tool> <json tool_input>: the hook denies or asks, and names a next step
+  local name=$1 h=$2 tool=$3 inp=$4
+  local out; out=$(printf '{"tool_name": "%s", "tool_input": %s, "cwd": "%s"}' "$tool" "$inp" "$T/repo" \
+    | CLAUDE_PROJECT_DIR="$T/repo" "$h" 2>&1)
+  if ! printf '%s' "$out" | grep -qE '"permissionDecision": "(deny|ask)"'; then bad "$name: not refused"; printf '%s\n' "$out" | head -3 | sed 's/^/        /'
+  elif ! printf '%s' "$out" | grep -qE "$NEXT"; then bad "$name: no next step"; printf '%s\n' "$out" | head -3 | sed 's/^/        /'
+  else ok "$name"; fi
+}
+
+git clone -q "$SRC" "$T/repo"
+cd "$T/repo"
+git checkout -q -B main HEAD
+# The working copy of the tools and hooks under test (they may be uncommitted in $SRC).
+cp "$SRC"/scripts/plan "$SRC"/scripts/slice-env "$SRC"/scripts/check-plan "$SRC"/scripts/check-ids "$SRC"/scripts/review scripts/
+mkdir -p scripts/lib .githooks .claude/hooks
+cp "$SRC"/scripts/lib/dshm.py "$SRC"/scripts/lib/plandata.py "$SRC"/scripts/lib/plan.schema.json scripts/lib/
+cp "$SRC"/.githooks/* .githooks/; cp "$SRC"/.claude/hooks/plan-guard "$SRC"/.claude/hooks/git-guard .claude/hooks/
+sed '/^id[[:space:]]/q' "$SRC"/scripts/resources.tsv > scripts/resources.tsv
+git rm -rq --ignore-unmatch plan PLAN.md
+git config user.name test; git config user.email test@example.com
+git add -A && git commit -q -m "tools under test" --allow-empty
+git config core.hooksPath .githooks
+NOPLAN=$(git rev-parse HEAD)
+
+echo "scripts/plan"
+refused "no plan" scripts/plan show S1
+scripts/plan new "Test · refusal-test" --commit >/dev/null
+scripts/plan add tracer "thin path" --why W --cuts C --done "[auto] The path works" --commit >/dev/null
+scripts/plan add slice "a slice" --why W --cuts C --done "[auto] It works" --done "[ui] It shows" --commit >/dev/null
+refused "new when a plan exists" scripts/plan new "Another"
+refused "unknown ID" scripts/plan show S42
+refused "bad status" scripts/plan row S1 finished
+refused "a node with no item" scripts/plan add slice "empty" --why W --cuts C
+refused "an item with no tier" scripts/plan add slice "x" --why W --cuts C --done "No tier"
+refused "a tracer with 4 items" scripts/plan add tracer "big" --why W --cuts C --done "[auto] a" --done "[auto] b" --done "[auto] c" --done "[auto] d"
+refused "an unknown need" scripts/plan add slice "x" --why W --cuts C --done "[auto] a" --needs "S77"
+refused "a demo that is not a file" scripts/plan add slice "x" --why W --cuts C --done "[auto] a" --demo scripts/demo/none.sh
+refused "a non-[human] exit item" scripts/plan add exit "[auto] a"
+refused "a branch that does not name the slice" scripts/plan assign S1 --branch claude/other
+refused "an owner command on main" scripts/plan slice-status S1 doing
+refused "merged with a commit that is not a merge" scripts/plan merged S1 HEAD
+refused "cleanup of a node that is not merged" scripts/plan cleanup S1
+scripts/plan assign S1 --branch claude/s1-a-slice --commit >/dev/null 2>&1
+git checkout -q -b claude/s1-a-slice
+refused "a coordinator command on a slice branch" scripts/plan row S1 doing
+refused "a command for another slice" scripts/plan slice-status T0 doing
+refused "evidence that does not resolve" scripts/plan evidence S1 1 "cmd:no/such.sh"
+refused "an item that does not exist" scripts/plan evidence S1 9 "cmd:scripts/plan"
+refused "a human: pointer from the owner" scripts/plan evidence S1 1 "human:2026-11-10 x"
+
+echo "scripts/check-plan"
+python3 - <<'PY'
+import json; p = "plan/S1.json"; d = json.load(open(p)); d["items"][0]["passed"] = True
+open(p, "w").write(json.dumps(d, indent=2) + "\n")
+PY
+git add plan; refused "passed set by hand" scripts/check-plan --staged
+git checkout -q HEAD -- plan
+python3 - <<'PY'
+import json; p = "plan/S1.json"; d = json.load(open(p)); d["items"][0]["text"] = "Reworded"
+open(p, "w").write(json.dumps(d, indent=2) + "\n")
+PY
+git add plan; refused "an item text changed" scripts/check-plan --staged
+refused "the pre-commit hook" git commit -q -m "reword"
+git checkout -q HEAD -- plan
+mkdir -p x/.build && echo x > x/.build/o && git add -f x/.build/o
+refused "build output staged" scripts/check-plan --staged
+git rm -q --cached x/.build/o; rm -rf x
+git checkout -q main
+echo "// x" >> scripts/plan && git add scripts/plan
+refused "code on main" scripts/check-plan --staged
+git checkout -q HEAD -- scripts/plan
+refused "an empty plan/ tree" scripts/check-plan --tree "$NOPLAN"
+
+echo "scripts/check-ids (pre-commit)"
+git checkout -q claude/s1-a-slice
+mkdir -p ios && printf '// See D123 for the reason.\nlet x = 1\n' > ios/IdTest.swift && git add ios/IdTest.swift
+refused "a decision ID in code" git commit -q -m "id"
+git rm -q --cached ios/IdTest.swift; rm -f ios/IdTest.swift
+
+echo "scripts/review"
+refused "review with no ID" scripts/review
+refused "review with an unknown arg" scripts/review S1 --bad
+refused "review of a node with no [ui] items" scripts/review T0
+refused "review of a [ui] item with no evidence" scripts/review S1
+
+echo "hooks"
+hook "git-guard: --no-verify" .claude/hooks/git-guard Bash '{"command": "git commit --no-verify -m x"}'
+hook "git-guard: core.hooksPath" .claude/hooks/git-guard Bash '{"command": "git config core.hooksPath /dev/null"}'
+hook "plan-guard: a shell write to plan/" .claude/hooks/plan-guard Bash '{"command": "echo x > plan/S1.json"}'
+hook "plan-guard: an edit of a guard file" .claude/hooks/plan-guard Edit '{"file_path": "'"$T"'/repo/scripts/check-plan", "old_string": "a", "new_string": "b"}'
+hook "plan-guard: a [human] record by an agent" .claude/hooks/plan-guard Edit \
+  '{"file_path": "'"$T"'/repo/plan/S1.json", "old_string": "\"passed\": false", "new_string": "\"evidence\": [\"human:2026-11-10 x\"], \"passed\": false"}'
+
+echo "failures: $FAIL"
+[ $FAIL = 0 ]

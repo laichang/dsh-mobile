@@ -7,7 +7,7 @@
 # With no -project, it adds the project, the scheme and the resolved package versions. With no
 # -destination, it uses $DSHM_SIM (a build with no DSHM_SIM uses a generic destination).
 # $DSHM_DD sets -derivedDataPath. A test action outside a demo script loads the machine guard of
-# scripts/demo/lib.sh (WORKFLOW.md §6.1). Summary format: scripts/lib/wrap.py.
+# scripts/demo/lib.sh (the machine guard). Summary format: scripts/lib/wrap.py.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 case "${1:-}" in

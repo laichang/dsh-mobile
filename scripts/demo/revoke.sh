@@ -16,7 +16,7 @@
 #   scripts/demo/revoke.sh --shots  also refresh the screenshots in evidence/revoke/ (1/3 size)
 #   DSHM_RESUME=1               skip the parts that passed for the same code (lib.sh demo_part)
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-revoke   DSHM_DD (DerivedData) /tmp/dshm-revoke-dd
 #   DSHM_BRIDGE_PORT 47812, DSHM_WEB_PORT 3285, DSHM_HOME ~/.dshm/home-revoke: the real host
 #   DSHM_SECOND_BRIDGE_PORT 47842, DSHM_SECOND_WEB_PORT 3315: the devices seam's host

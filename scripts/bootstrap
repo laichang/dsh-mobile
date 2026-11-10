@@ -1,5 +1,5 @@
 #!/bin/bash
-# Set up a Mac for dsh-mobile development, then prove the round trip runs (WORKFLOW.md §2).
+# Set up a Mac for dsh-mobile development, then prove the round trip runs.
 # Safe to run again: each step checks first and skips what is already in place.
 #
 #   scripts/bootstrap              set up, then run scripts/demo/round-trip.sh (real DSH + mock LLM)
@@ -85,7 +85,7 @@ step "bridge: install and build"
 ok "bridge/lib built"
 
 if command -v codex >/dev/null; then
-  step "Codex (manual steps, WORKFLOW.md §2.1)"
+  step "Codex (manual steps)"
   echo "   Codex is installed. Run codex update, trust this project, then /hooks to trust codex-guard."
   echo "   Then run .codex/hooks/codex-guard-test."
 fi

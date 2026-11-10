@@ -8,7 +8,7 @@
 #                                drawer, the page bar's drawer button)
 #   DSHM_RESUME=1               skip the parts that passed for the same code (lib.sh demo_part)
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-title-center   DSHM_DD (DerivedData) /tmp/dshm-title-center-dd
 #   (DSHM_BRIDGE_PORT 47810, DSHM_WEB_PORT 3283, DSHM_HOME ~/.dshm/home-title-center are unused here.)
 # Screenshots go to evidence/title-center/ (title-center-*.png).

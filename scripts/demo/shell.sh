@@ -7,7 +7,7 @@
 #   DSHM_RESUME=1 with --all   skip the slice demos that passed for the same code (lib.sh demo_part)
 #   scripts/demo/shell.sh --shots  also refresh the screenshots in evidence/shell/ (1/3 size)
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_BRIDGE_PORT 47810   DSHM_WEB_PORT 3283   DSHM_HOME ~/.dshm/home-shell   DSHM_SIM dshm
 #   DSHM_DD (DerivedData) /tmp/dshm-shell-dd
 #   multi-host needs a second host: DSHM_SECOND_BRIDGE_PORT 47830, DSHM_SECOND_WEB_PORT 3303.

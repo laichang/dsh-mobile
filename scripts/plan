@@ -527,17 +527,21 @@ def review_line(sid, short):
     return f"`scripts/review {sid}` at `{commit}`: `RESULT: {result}`{flaky} (`{f}`)."
 
 
-PROVISIONAL_RE = re.compile(r"\*\*(.+?)\*\*.*provisional, pending user confirmation", re.I)
+PROVISIONAL = re.compile(r"\(?provisional, pending user confirmation\)?", re.I)
+BOLD_LEAD = re.compile(r"\*\*(.+?)\*\*:?\s*(.*)")
 
 
 def provisional(text):
-    """The summaries of the provisional choices of an ARCHITECTURE.md text (the bold lead of each
-    line that says 'provisional, pending user confirmation')."""
+    """The summaries of the provisional choices of an ARCHITECTURE.md text: the bold lead of each
+    line that says 'provisional, pending user confirmation' (in the lead or after it), without
+    that phrase; when the lead is only the phrase, the start of the text after it."""
     out = []
     for line in (text or "").splitlines():
-        m = PROVISIONAL_RE.search(line)
-        if m:
-            out.append(m.group(1).strip().rstrip(".:("))
+        m = BOLD_LEAD.search(line)
+        if not m or not PROVISIONAL.search(line):
+            continue
+        lead = PROVISIONAL.sub("", m.group(1)).strip().rstrip(".:(, ")
+        out.append(lead or m.group(2).split(". ")[0].strip()[:80])
     return out
 
 

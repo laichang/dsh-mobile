@@ -24,7 +24,7 @@ AREAS = ('ios', 'bridge', 'protocol', 'scripts', 'design')
 SKIP = re.compile(r'''^(
     scripts/(plan|plan-test|brief|brief-test|slice-env|resources\.tsv|status|review|run-plan-args|run-plan-test
             |check-plan|check-ids|check-ids-test|check-design|check-design-test|check-docs|check-docs-test)$
-  | scripts/lib/(dshm\.py|plandata\.py|plan-template\.md)$
+  | scripts/lib/(dshm\.py|plandata\.py)$
   | scripts/test/run-plan\.test\.mjs$
   | scripts/fixtures/fake-plan/
   | protocol/fixtures/

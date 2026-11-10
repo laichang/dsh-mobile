@@ -7,7 +7,7 @@
 #                                earlier slices that look at 所有任务
 #   scripts/demo/all-tasks.sh --shots  also refresh the screenshots in evidence/all-tasks/ (1/3 size)
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-all-tasks   DSHM_DD (DerivedData) /tmp/dshm-all-tasks-dd
 # The bridge and web ports (47812, 3285) are not used: the hosts are in-process fakes.
 # Fails on any failed or skipped test.

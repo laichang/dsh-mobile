@@ -1,8 +1,9 @@
 #!/bin/bash
-# Tests for scripts/plan (with the cleanup after a merge; the plan/ graph and verifier results), scripts/slice-env, scripts/status (disk
-# lines), and dshm_code_key and the free-space floor (scripts/demo/lib.sh), in a temporary clone
-# (the repo is not touched). The cleanup tests use a fake xcrun, HOME and /tmp under the temporary
-# directory: no real simulator, worktree, branch or directory is deleted.
+# Tests for scripts/plan (bookkeeping in plan/, the cleanup after a merge, the plan/ graph and
+# verifier results), scripts/slice-env, scripts/status (disk lines), and dshm_code_key and the
+# free-space floor (scripts/demo/lib.sh), in a temporary clone (the repo is not touched). The
+# cleanup tests use a fake xcrun, HOME and /tmp under the temporary directory: no real simulator,
+# worktree, branch or directory is deleted.
 #   scripts/plan-test        ends with "failures: 0"
 set -uo pipefail
 SRC="$(git rev-parse --show-toplevel)"
@@ -17,6 +18,12 @@ expect() { # expect <name> <0|1> <command…>: exit code 0 = success, 1 = refuse
   if { [ "$want" = 0 ] && [ $rc = 0 ]; } || { [ "$want" = 1 ] && [ $rc != 0 ]; }; then ok "$name"
   else bad "$name (exit $rc)"; printf '%s\n' "$out" | head -8 | sed 's/^/        /'; fi
 }
+refused() { # refused <name> <command…>: the command fails and its output names the next step
+  local name=$1; shift
+  local out; out=$("$@" 2>&1); local rc=$?
+  if [ $rc != 0 ] && grep -qF "Next" <<<"$out"; then ok "$name"
+  else bad "$name (exit $rc, or no \"Next\")"; printf '%s\n' "$out" | head -8 | sed 's/^/        /'; fi
+}
 has() { # has <name> <file> <fixed string>
   if grep -qF -- "$3" "$2"; then ok "$1"; else bad "$1: no '$3' in $2"; fi
 }
@@ -26,6 +33,17 @@ lacks() { # lacks <name> <file> <fixed string>
 line() { # line <name> <file> <whole line>
   if grep -qxF -- "$3" "$2"; then ok "$1"; else bad "$1: no line '$3' in $2"; sed 's/^/        /' "$2" | head -20; fi
 }
+pyok() { # pyok <name> <Python expression>: P = plan/plan.json, N = its nodes by ID, I("S1") = items of S1
+  if python3 -c 'import json, sys
+P = json.load(open("plan/plan.json")); N = {n["id"]: n for n in P["nodes"]}
+I = lambda s: json.load(open(f"plan/{s}.json"))["items"]
+sys.exit(0 if eval(sys.argv[1]) else 1)' "$2" > "$T/py.err" 2>&1; then ok "$1"
+  else bad "$1: $2"; head -3 "$T/py.err" | sed 's/^/        /'; fi
+}
+clean() { # clean <name> <path…>: nothing uncommitted under the paths
+  local n=$1; shift
+  [ -z "$(git status --porcelain -- "$@")" ] && ok "$n" || bad "$n: $(git status --porcelain -- "$@" | head -3)"
+}
 
 git clone -q "$SRC" "$T/repo"
 cd "$T/repo"
@@ -33,12 +51,11 @@ git checkout -q -B main HEAD
 # The working copy of the tools under test (they may be uncommitted in $SRC).
 cp "$SRC"/scripts/plan "$SRC"/scripts/slice-env "$SRC"/scripts/check-plan "$SRC"/scripts/status "$SRC"/scripts/review scripts/
 cp "$SRC"/scripts/demo/lib.sh scripts/demo/lib.sh
-mkdir -p scripts/lib && cp "$SRC"/scripts/lib/dshm.py "$SRC"/scripts/lib/plangen.py "$SRC"/scripts/lib/plan-template.md \
-  "$SRC"/scripts/lib/plandata.py "$SRC"/scripts/lib/plan.schema.json scripts/lib/
+mkdir -p scripts/lib && cp "$SRC"/scripts/lib/dshm.py "$SRC"/scripts/lib/plandata.py "$SRC"/scripts/lib/plan.schema.json scripts/lib/
 # The registry header only: the rows of a live run must not change the tests.
 sed '/^id[[:space:]]/q' "$SRC"/scripts/resources.tsv > scripts/resources.tsv
 # The tests make their own plan: they do not depend on a live plan, or on whether one exists.
-git rm -q --ignore-unmatch PLAN.md
+git rm -rq --ignore-unmatch plan PLAN.md
 git add -A scripts && git commit -q -m "tools under test" --allow-empty
 git config user.name test; git config user.email test@example.com
 
@@ -46,6 +63,8 @@ echo "no plan"
 expect "show with no plan is refused" 1 scripts/plan show S1
 scripts/plan log x > "$T/noplan.out" 2>&1
 has "the refusal says that no requirement is in progress" "$T/noplan.out" "no requirement is in progress"
+has "the refusal names the next step" "$T/noplan.out" "Next:"
+expect "lint with no plan fails" 1 scripts/plan lint
 expect "slice-env --list with no plan" 0 scripts/slice-env --list
 expect "assign with no plan is refused" 1 scripts/slice-env --assign S1 --branch claude/s1-x
 lacks "a refused assign writes no registry row" scripts/resources.tsv "claude/s1-x"
@@ -56,89 +75,88 @@ has "status says there is no plan" "$T/noplan-status.out" "🎛 Coordinator · n
 
 echo "plan new, add, lint"
 git checkout -q -b claude/s1-x
-expect "new on a slice branch is refused" 1 scripts/plan new "Test · plan-test"
+refused "new on a slice branch is refused" scripts/plan new "Test · plan-test"
+[ ! -e plan ] && ok "a refused new writes nothing" || bad "plan/ exists after a refused new"
 git checkout -q main && git branch -q -D claude/s1-x
 expect "new" 0 scripts/plan new "Test · plan-test" --commit
-line "the header names the requirement" PLAN.md "# PLAN · Test · plan-test"
-expect "new when a plan exists is refused" 1 scripts/plan new "Another"
+pyok "plan.json names the requirement and has no nodes" 'P["title"] == "Test · plan-test" and P["nodes"] == [] and P["exit"] == [] and P["pending"] == []'
+pyok "the plan log starts" 'P["log"][0]["title"] == "Plan started"'
+clean "new --commit commits plan/" plan
+refused "new when a plan exists is refused" scripts/plan new "Another"
 expect "lint of a new plan" 0 scripts/plan lint
 expect "add tracer" 0 scripts/plan add tracer "thin path" --why "Why." --cuts "Cuts." --done "[auto] The path works"
-line "the first tracer is T0" PLAN.md "### T0 · Tracer bullet: thin path"
-expect "a tracer with 4 Done when items is refused" 1 scripts/plan add tracer "too big" --why W --cuts C \
+pyok "the first tracer is T0, todo" 'N["T0"]["kind"] == "tracer" and N["T0"]["title"] == "Tracer bullet: thin path" and N["T0"]["status"] == "todo" and N["T0"]["branch"] is None'
+pyok "the items of T0 are in plan/T0.json, not passed" 'I("T0") == [{"tier": "auto", "text": "The path works", "files": [], "screens": [], "passed": False}]'
+refused "a tracer with 4 items is refused" scripts/plan add tracer "too big" --why W --cuts C \
   --done "[auto] a" --done "[auto] b" --done "[ui] c" --done "[human] d"
-lacks "a refused tracer adds nothing" PLAN.md "too big"
+lacks "a refused tracer adds nothing" plan/plan.json "too big"
+[ ! -e plan/T1.json ] && ok "a refused tracer writes no items file" || bad "plan/T1.json exists"
 expect "add spike" 0 scripts/plan add spike "a question" --why "Why." --cuts "Cuts." --done "[human] The conclusion is written"
-line "the first spike is X1" PLAN.md "### X1 · Spike: a question"
+pyok "the first spike is X1" 'N["X1"]["kind"] == "spike" and N["X1"]["title"] == "Spike: a question" and N["X1"]["needs"] == []'
 expect "add slice" 0 scripts/plan add slice "Feature" --why "Why." --cuts $'- one\n- two' --done "[ui] It shows" --needs "T0, X1"
-line "the first slice is S1" PLAN.md "### S1 · Feature"
-line "Needs as given" PLAN.md "**Status** todo · **Needs** T0, X1 · **Branch** —"
-line "a multi-line value goes under the field name" PLAN.md "**Cuts**"
-has "§0 row of the new slice" PLAN.md "| S1 | todo | — |"
-line "map: the tracer node" PLAN.md '    T0(["T0 · Tracer bullet: thin path"])'
-line "map: a spike edge is dotted" PLAN.md "    X1 -.-> S1"
-line "map: a needs edge" PLAN.md "    T0 --> S1"
-expect "a slice with no Done when item is refused" 1 scripts/plan add slice "Bad" --why W --cuts C
-expect "a Done when item with no tier is refused" 1 scripts/plan add slice "Bad" --why W --cuts C --done "no tier"
-expect "Needs an ID the plan does not have is refused" 1 scripts/plan add slice "Bad" --why W --cuts C --done "[auto] x" --needs S9
-expect "a slice with 6 Done when items is refused" 1 scripts/plan add slice "Too big" --why W --cuts C \
+pyok "the first slice is S1, with Needs as given" 'N["S1"]["title"] == "Feature" and N["S1"]["needs"] == ["T0", "X1"]'
+pyok "a multi-line value stays as it is" 'N["S1"]["cuts"] == "- one\n- two"'
+scripts/plan dag --json > "$T/dag0.json" 2>&1
+python3 -c 'import json,sys; g=json.load(open(sys.argv[1])); assert g["order"].index("S1") > max(g["order"].index("T0"), g["order"].index("X1")); assert {"from":"X1","to":"S1"} in g["edges"]' "$T/dag0.json" \
+  && ok "dag: S1 comes after its needs" || bad "dag: $(head -5 "$T/dag0.json")"
+refused "a slice with no item is refused" scripts/plan add slice "Bad" --why W --cuts C
+refused "an item with no tier is refused" scripts/plan add slice "Bad" --why W --cuts C --done "no tier"
+refused "Needs an ID the plan does not have is refused" scripts/plan add slice "Bad" --why W --cuts C --done "[auto] x" --needs S9
+refused "a slice with 6 items is refused" scripts/plan add slice "Too big" --why W --cuts C \
   --done "[auto] a" --done "[auto] b" --done "[auto] c" --done "[ui] d" --done "[ui] e" --done "[human] f"
-lacks "a refused slice adds nothing" PLAN.md "Too big"
+refused "a --demo that is not a file is refused" scripts/plan add slice "Bad" --why W --cuts C --done "[auto] x" --demo no/such.sh
+lacks "a refused slice adds nothing" plan/plan.json "Too big"
+lacks "a refused slice adds nothing (2)" plan/plan.json "Bad"
 expect "add a slice with the default Needs" 0 scripts/plan add slice "Second" --why W --cuts C --done "[auto] It works"
-line "a slice needs the first tracer by default" PLAN.md "**Status** todo · **Needs** T0 · **Branch** —"
+pyok "a slice needs the first tracer by default" 'N["S2"]["needs"] == ["T0"]'
 expect "fix slice" 0 scripts/plan fix "Keyboard" --bug "it covers the button"
-line "the fix slice is the next S" PLAN.md "### S3 · Fix: Keyboard"
+pyok "the fix slice is the next S" 'N["S3"]["title"] == "Fix: Keyboard"'
 expect "exit item" 0 scripts/plan add exit "A check on a real iPhone"
-line "the exit item is [human]" PLAN.md "- [ ] [human] A check on a real iPhone — Evidence:"
-expect "an exit item that is not [human] is refused" 1 scripts/plan add exit "[auto] No"
+pyok "the exit item is [human]" 'P["exit"] == [{"tier": "human", "text": "A check on a real iPhone", "files": [], "screens": [], "passed": False}]'
+refused "an exit item that is not [human] is refused" scripts/plan add exit "[auto] No"
 expect "lint after the adds" 0 scripts/plan lint
-git commit -qam "plan fixture"
+git add -A plan && git commit -qm "plan fixture"
 python3 - <<'PY'
-s = open("PLAN.md").read()
-open("PLAN.md", "w").write(s.replace("## 8. Plan log", "- an idea\n\n## 8. Plan log"))
+import json; p = json.load(open("plan/plan.json")); p["nodes"][0]["extra"] = 1
+open("plan/plan.json", "w").write(json.dumps(p))
 PY
-expect "lint: a list in §7 is refused" 1 scripts/plan lint
-expect "a write to a plan that fails lint is refused" 1 scripts/plan log "x"
-git checkout -q -- PLAN.md
-python3 - <<'PY'
-s = open("PLAN.md").read()
-open("PLAN.md", "w").write(s.replace("**Cuts**: C", "**Demo**: x\n\n**Cuts**: C", 1))
-PY
-expect "lint: a field two times is refused" 1 scripts/plan lint
-git checkout -q -- PLAN.md
-python3 - <<'PY'
-s = open("PLAN.md").read()
-i = "- [ ] [auto] The path works — Evidence:"
-open("PLAN.md", "w").write(s.replace(i, i + "".join(f"\n- [ ] [auto] Extra {n} — Evidence:" for n in range(3)), 1))
-PY
-expect "lint: a tracer with 4 Done when items is refused" 1 scripts/plan lint
-git checkout -q -- PLAN.md
-grep -v '^| S2 |' PLAN.md > "$T/p" && cat "$T/p" > PLAN.md
-expect "lint: a section with no §0 row is refused" 1 scripts/plan lint
-git checkout -q -- PLAN.md
+expect "lint: an unknown field is refused" 1 scripts/plan lint
+refused "a write to a plan that fails lint is refused" scripts/plan log "x"
+git checkout -q -- plan
+rm plan/S2.json
+scripts/plan lint > "$T/lint.out" 2>&1 && bad "lint: a node with no items file passes" || ok "lint: a node with no items file is refused"
+has "lint names the missing file" "$T/lint.out" "plan/S2.json is missing"
+git checkout -q -- plan
+echo '{"id": "S8", "items": []}' > plan/S8.json
+expect "lint: an items file of no node is refused" 1 scripts/plan lint
+rm plan/S8.json
 
-# Two open fixture slices, S90 and S91, at the end of the slices.
+# Two open fixture slices, S90 (with an open [human] item) and S91.
 python3 - <<'PY'
-import re
-s = open("PLAN.md").read().split("\n")
-s0, s1 = s.index("## 0. Status"), next(i for i, l in enumerate(s) if l.startswith("## 1."))
-rows = [i for i in range(s0, s1) if re.match(r"\| [TXSM]\d+ \|", s[i])]
-s[rows[-1] + 1:rows[-1] + 1] = [f"| {i} | todo | — | 2026-11-07 | Test fixture |" for i in ("S90", "S91")]
-end = next(i for i, l in enumerate(s) if l.startswith("## 6."))
-fix = []
+import json
+p = json.load(open("plan/plan.json"))
 for i in ("S90", "S91"):
-    fix += [f"### {i} · Test fixture", "", "**Status** todo · **Needs** — · **Branch** —", "",
-            "**Why**: Test.", "", "**Cuts**: Test.", "", "**Demo**: —", "", "**Done when**",
-            f"- [ ] [auto] The {i} fixture works — Evidence:", "", "**Not**: —", "", "**Log**: —", ""]
-s[end:end] = fix
-open("PLAN.md", "w").write("\n".join(s))
+    p["nodes"].append({"id": i, "kind": "slice", "title": "Test fixture", "needs": [], "branch": None,
+                       "status": "todo", "updated": "2026-11-07", "next": "Test fixture", "merge": None,
+                       "why": "Test.", "cuts": "Test.", "not": "", "demo": None, "log": []})
+    items = [{"tier": "auto", "text": f"The {i} fixture works", "files": [], "screens": [], "passed": False}]
+    if i == "S90":
+        items.append({"tier": "human", "text": "A test check on a real iPhone", "files": [], "screens": [], "passed": False})
+    open(f"plan/{i}.json", "w").write(json.dumps({"id": i, "items": items}, indent=2) + "\n")
+open("plan/plan.json", "w").write(json.dumps(p, indent=2, ensure_ascii=False) + "\n")
 PY
-git commit -qam "fixture slices S90, S91"
+expect "lint of the fixture slices" 0 scripts/plan lint
+git add -A plan && git commit -qm "fixture slices S90, S91"
+human="A test check on a real iPhone"
 
 echo "read-only"
 expect "title" 0 scripts/plan title
 scripts/plan title > "$T/title.out" 2>&1
 line "the title names the requirement" "$T/title.out" "🎛 Coordinator · Test · ✅0 👀0 🔨0 ⏸0"
-expect "show S90" 0 scripts/plan show S90
+scripts/plan show S90 > "$T/show.out" 2>&1 && ok "show S90" || bad "show S90 failed: $(head -3 "$T/show.out")"
+has "show names the node" "$T/show.out" "S90 · Test fixture  [slice]  todo"
+has "show lists the items" "$T/show.out" "  2. [human] $human"
+refused "show of an ID that is not a node is refused" scripts/plan show S99
 expect "slice-env of an unassigned slice is refused" 1 scripts/slice-env S90
 expect "bad ID is refused" 1 scripts/plan show Q9
 
@@ -146,86 +164,72 @@ echo "coordinator on main"
 # The highest decision number so far: in ARCHITECTURE.md or in a registry row.
 prev=$( { grep -oE '^\| D[0-9]+ \|' ARCHITECTURE.md | grep -oE '[0-9]+'
           awk -F'\t' '$1!="id" && $1!~/^#/ && NF>9 {n=$10; sub(/.*D/, "", n); print n+0}' scripts/resources.tsv; } | sort -n | tail -1)
+refused "assign with a branch that does not name the slice is refused" scripts/plan assign S90 --branch claude/other
+lacks "a refused assign writes no registry row" scripts/resources.tsv "claude/other"
 expect "assign S90" 0 scripts/plan assign S90 --branch claude/s90-test --worktree .claude/worktrees/s90 --from abc1234 --commit
 has "registry row for S90" scripts/resources.tsv "S90	claude/s90-test	"
 s90d=$(awk -F'\t' '$1=="S90"{print $10}' scripts/resources.tsv)
 [ "$s90d" = "D$((prev + 1))-D$((prev + 3))" ] && ok "S90 got the next decision block ($s90d)" || bad "S90 decisions $s90d, highest before $prev"
-has "§0 row of S90 is doing" PLAN.md '| S90 | doing | `claude/s90-test` |'
-has "§8 entry for the assignment" PLAN.md "· S90 assigned.** Branch \`claude/s90-test\`, worktree"
+pyok "plan.json: S90 is doing on its branch" 'N["S90"]["status"] == "doing" and N["S90"]["branch"] == "claude/s90-test"'
+pyok "plan log entry for the assignment" 'P["log"][-1]["title"] == "S90 assigned" and P["log"][-1]["body"].startswith("Branch `claude/s90-test`, worktree `.claude/worktrees/s90` (from `abc1234`)")'
+clean "assign --commit commits plan/ and the registry" plan scripts/resources.tsv
 eval "$(scripts/slice-env S90)"
 [ "$DSHM_SIM" = dshm-S90 ] && ok "slice-env exports the simulator" || bad "slice-env DSHM_SIM=$DSHM_SIM"
 slot=$(awk -F'\t' '$1=="S90"{print $3}' scripts/resources.tsv)
 case "$slot" in 3|5|6) bad "S90 took a slot held by an active slice ($slot)";; *) ok "S90 slot $slot is not held";; esac
 expect "assign S90 again keeps its row" 0 scripts/plan assign S90 --branch claude/s90-test
 [ "$(grep -c '^S90	' scripts/resources.tsv)" = 1 ] && ok "still one S90 row" || bad "two S90 rows"
+pyok "assign again says: same resources" 'P["log"][-1]["body"].endswith("Same resources as before.")'
 expect "assign S91 (next block)" 0 scripts/plan assign S91 --branch claude/s91-test
 s91d=$(awk -F'\t' '$1=="S91"{print $10}' scripts/resources.tsv)
 [ "$s91d" = "D$((prev + 4))-D$((prev + 6))" ] && ok "S91 block follows S90 ($s91d)" || bad "S91 decisions $s91d"
-git checkout -q -- PLAN.md scripts/resources.tsv
+git checkout -q -- plan scripts/resources.tsv
 expect "row S90 blocked" 0 scripts/plan row S90 blocked --next "Waits for the user"
-has "§0 row changed" PLAN.md '| S90 | blocked | `claude/s90-test` |'
-expect "row with a bad status is refused" 1 scripts/plan row S90 finished
-expect "row of a slice not in §0 is refused" 1 scripts/plan row S99 doing
+pyok "row changes the state and the next step" 'N["S90"]["status"] == "blocked" and N["S90"]["next"] == "Waits for the user"'
+refused "row with a bad status is refused" scripts/plan row S90 finished
+refused "row of an ID that is not a node is refused" scripts/plan row S99 doing
 expect "log entry" 0 scripts/plan log "Test entry" --body $'First line.\n- a sub-item'
-has "§8 entry title" PLAN.md "· Test entry.** First line."
-has "§8 sub-item indented" PLAN.md "  - a sub-item"
-# An empty §9 table, as after the user confirms each row: the new number follows the highest one
-# that §8 names ("§9 rows 63, 64"), so a number is not used two times.
-python3 - <<'PY'
-import re
-s = open("PLAN.md").read().split("\n")
-a = s.index("## 9. Pending user confirmation"); b = next((i for i in range(a + 1, len(s)) if s[i].startswith("## ")), len(s))
-s[a:b] = [l for l in s[a:b] if not re.match(r"\| \d+ \|", l)]
-open("PLAN.md", "w").write("\n".join(s))
-PY
-hi=$(grep -oE '§9 rows? [0-9][0-9, and-]*' PLAN.md | grep -oE '[0-9]+' | sort -n | tail -1)
-expect "pending row" 0 scripts/plan pending "S90 × S16" decision "A test | item" --commit-ref abc1234
-has "§9 row with escaped pipe" PLAN.md ' | S90 × S16 | decision | A test \| item | `main` | `abc1234` |'
-n9=$(grep -F '| S90 × S16 | decision |' PLAN.md | cut -d'|' -f2 | tr -d ' ')
-[ "$n9" -gt "${hi:-0}" ] && ok "row $n9 in an empty §9 follows the numbers in §8 (${hi:-none})" || bad "§9 row number $n9, highest in §8 ${hi:-none}"
-expect "dry run changes nothing" 0 scripts/plan row S90 doing --dry-run
-has "dry run left blocked" PLAN.md '| S90 | blocked |'
-git checkout -q -- PLAN.md
-expect "owner command on main is refused" 1 scripts/plan tick S90 "anything" --evidence "cmd:scripts/plan"
+pyok "plan log entry with its body" 'P["log"][-1]["title"] == "Test entry" and P["log"][-1]["body"] == "First line.\n- a sub-item"'
+n0=$(python3 -c 'import json; print(max([r["n"] for r in json.load(open("plan/plan.json"))["pending"]] or [0]))')
+expect "pending entry" 0 scripts/plan pending "S90 × S16" decision "A test | item" --commit-ref abc1234
+pyok "pending entry as given, with the next number" "P['pending'][-1] == {'n': $((n0 + 1)), 'slice': 'S90 × S16', 'kind': 'decision', 'item': 'A test | item', 'branch': 'main', 'ref': 'abc1234'}"
+scripts/plan row S90 doing --dry-run > "$T/dry.out" 2>&1 && ok "dry run" || bad "dry run failed: $(head -3 "$T/dry.out")"
+has "dry run prints the diff" "$T/dry.out" '+      "status": "doing",'
+pyok "dry run changes nothing" 'N["S90"]["status"] == "blocked"'
+git checkout -q -- plan
+refused "owner command on main is refused" scripts/plan slice-status S90 doing
+refused "evidence on main is refused" scripts/plan evidence S90 1 "cmd:scripts/plan"
+clean "refused commands change nothing" plan
 
 echo "slice owner on its branch"
 git checkout -q -b claude/s90-test
-expect "coordinator command on a slice branch is refused" 1 scripts/plan row S90 doing
-expect "owner of another slice is refused" 1 scripts/plan slice-status S21 doing
+refused "coordinator command on a slice branch is refused" scripts/plan row S90 doing
+refused "owner of another slice is refused" scripts/plan slice-status S91 doing
 expect "slice-status S90 doing" 0 scripts/plan slice-status S90 doing
-item=$(awk '/^### S90 /{f=1;next} /^### /{f=0} f && /^- \[ \] \[(auto|ui)\]/{print; exit}' PLAN.md \
-  | sed -E 's/^- \[ \] \[[a-z]+\] //; s/ — Evidence:.*//' | cut -c1-30)
-human=$(awk '/^### S90 /{f=1;next} /^### /{f=0} f && /^- \[ \] \[human\]/{print; exit}' PLAN.md \
-  | sed -E 's/^- \[ \] \[human\] //; s/ — Evidence:.*//' | cut -c1-30)
-expect "tick with evidence that does not resolve is refused" 1 scripts/plan tick S90 "$item" --evidence "test:NoSuchTestAnywhere"
-expect "tick with no match is refused" 1 scripts/plan tick S90 "zzz no such item" --evidence "cmd:scripts/plan"
-expect "tick one item" 0 scripts/plan tick S90 "$item" --evidence "cmd:scripts/plan"
-has "item ticked with evidence" PLAN.md "$item"
-if [ -n "$human" ]; then expect "tick a [human] item is refused" 1 scripts/plan tick S90 "$human" --evidence "cmd:scripts/plan"; fi
+refused "evidence that does not resolve is refused" scripts/plan evidence S90 1 "cmd:no/such.sh"
+refused "evidence for an item that does not exist is refused" scripts/plan evidence S90 5 "cmd:scripts/plan"
+refused "evidence for a [human] item is refused" scripts/plan evidence S90 2 "cmd:scripts/plan"
+refused "a human: pointer on an [auto] item is refused" scripts/plan evidence S90 1 "human:2026-11-10 iPhone"
+expect "evidence for item 1" 0 scripts/plan evidence S90 1 "cmd:scripts/plan"
+pyok "the pointer is on item 1; passed stays false" 'I("S90")[0]["evidence"] == ["cmd:scripts/plan"] and not I("S90")[0]["passed"]'
+scripts/plan evidence S90 1 "cmd:scripts/plan" > "$T/ev.out" 2>&1
+line "the same pointer again is no change" "$T/ev.out" "plan: no change"
 expect "slice log" 0 scripts/plan slice-log S90 "built, to review" --body $'- Done: a test.\n- Next: review.'
-s90=$(awk '/^### S90 /{f=1} /^### S91 /{f=0} f' PLAN.md)
-printf '%s\n' "$s90" | tail -4 | grep -qF "· built, to review.**" && ok "Log entry at the end of S90" || bad "Log entry not at the end of S90"
-# A provisional decision and a commit, then the merge.
-first=$(awk -F'\t' '$1=="S90"{print $10}' scripts/resources.tsv | sed -E 's/^D([0-9]+).*/\1/')
-# After the D57 row, or at the end when ARCHITECTURE.md has no decision table.
-awk -v n="$first" 'function row(){print "| D" n " | *Provisional, pending user confirmation (S90, test).* **A test decision.** Text. | Why. |"; done=1}
-  {print} /^\| D57 \|/{row()} END{if(!done){print ""; print "| # | Decision | Why |"; print "|---|---|---|"; row()}}' \
-  ARCHITECTURE.md > ARCHITECTURE.md.new && mv ARCHITECTURE.md.new ARCHITECTURE.md
-# An open [human] item, so the merge leaves S90 in review.
-python3 - <<'PY'
-import re
-s = open("PLAN.md").read()
-i = s.index("### S90 ·"); j = s.index("**Done when**", i)
-k = s.index("\n", j) + 1
-s = s[:k] + "- [ ] [human] A test check on a real iPhone — Evidence:\n" + s[k:]
-open("PLAN.md", "w").write(s)
-PY
-human="A test check on a real iPhone"
-expect "tick a [human] item is refused" 1 scripts/plan tick S90 "$human" --evidence "cmd:scripts/plan"
+pyok "log entry at the end of the S90 log" 'N["S90"]["log"][-1]["title"] == "built, to review" and N["S90"]["log"][-1]["body"].startswith("- Done: a test.")'
+pyok "slice-log does not touch the plan log" 'P["log"][-1]["title"] != "built, to review"'
+# The user's command (the Claude Code hook refuses it from an agent).
+refused "accept of an [auto] item is refused" scripts/plan accept S90 1 "iPhone 15"
+expect "accept a [human] item" 0 scripts/plan accept S90 2 "iPhone 15"
+pyok "accept writes a dated human: pointer" "I('S90')[1]['evidence'] == ['human:$(date +%F) iPhone 15']"
+expect "accept an exit item" 0 scripts/plan accept exit 1 "iPhone 15"
+pyok "the exit item has a human: pointer" "P['exit'][0]['evidence'] == ['human:$(date +%F) iPhone 15']"
+git checkout -q -- plan   # the [human] item stays open, so the merge leaves S90 in review
+# A provisional choice in ARCHITECTURE.md, as ARCHITECTURE.md writes one, and a commit; then the merge.
+printf '%s\n' "- **A test decision (provisional, pending user confirmation):** Text." >> ARCHITECTURE.md
 git commit -qam "S90 work"
 git checkout -q main
 git merge -q --no-ff --no-edit claude/s90-test
-M=$(git rev-parse --short HEAD)
+M=$(git rev-parse HEAD | cut -c1-7)
 
 # What a slice leaves on the Mac, all under $T: a simulator (fake xcrun), /tmp/dshm-* paths,
 # worktrees, branches and DSHM_HOME. claude/s90-dirty is merged but has an untracked file;
@@ -269,16 +273,12 @@ echo "merge bookkeeping on main"
 mkdir -p "$T/review"; printf 'review S90 at x\nRESULT: PASS\n' > "$T/review/S90-1234567.txt"
 "${SBX[@]}" DSHM_CLEANUP_DRY=1 scripts/plan merged S90 "$M" --commit > "$T/merged.out" 2>&1 \
   && ok "merged S90 (cleanup in dry mode)" || { bad "merged S90"; sed 's/^/        /' "$T/merged.out" | head -20; }
-if [ -n "$human" ]; then
-  has "S90 is review (open [human] items)" PLAN.md "| S90 | review | merged \`$M\` |"
-  has "§9 row for the open [human] item" PLAN.md "| S90 | \`[human]\` | $human"
-else
-  has "S90 is done" PLAN.md "| S90 | done | merged \`$M\` |"
-fi
-has "§9 row for the provisional decision" PLAN.md "ARCHITECTURE D$first, *provisional*: A test decision"
-has "§8 merge entry with the review result" PLAN.md "· S90 merged.** Merged as \`$M\`; \`scripts/check-plan\` on the merge commit passed. \`scripts/review S90\` at \`1234567\`: \`RESULT: PASS\`"
-[ -z "$(git status --porcelain -- PLAN.md)" ] && ok "merge bookkeeping is committed" || bad "PLAN.md not committed"
-expect "merged on a commit that is not a merge is refused" 1 "${SBX[@]}" scripts/plan merged S90 HEAD
+pyok "S90 is review (an open [human] item), with the merge commit" "N['S90']['status'] == 'review' and N['S90']['merge'] == '$M'"
+pyok "pending entry for the open [human] item" "any(r['slice'] == 'S90' and r['kind'] == '[human]' and r['item'] == '$human' and r['ref'] == '$M' for r in P['pending'])"
+pyok "pending entry for the provisional choice" "any(r['slice'] == 'S90' and r['kind'] == 'provisional' and 'A test decision' in r['item'] and r['branch'] == 'claude/s90-test' for r in P['pending'])"
+pyok "plan log merge entry with the review result" "P['log'][-1]['title'] == 'S90 merged' and P['log'][-1]['body'].startswith('Merged as \`$M\`; the plan/ rules hold on the merge commit. \`scripts/review S90\` at \`1234567\`: \`RESULT: PASS\`')"
+clean "merge bookkeeping is committed" plan
+refused "merged on a commit that is not a merge is refused" "${SBX[@]}" scripts/plan merged S90 HEAD
 
 echo "cleanup after the merge"
 o="$T/merged.out"; P="plan: cleanup:"
@@ -297,12 +297,13 @@ line "a worktree with an untracked file stays" "$o" "$P left worktree $T/wt-s90-
 has "a branch that is not merged stays, with its worktree" "$o" "$P left branch claude/s90-extra and worktree $T/wt-s90-extra: "
 lacks "dry: not the dirty branch" "$o" "would remove branch claude/s90-dirty"
 still "dry mode removes nothing"
-"${SBX[@]}" scripts/plan merged S90 "$M" --keep > "$T/keep.out" 2>&1; git checkout -q -- PLAN.md
-has "--keep does the bookkeeping" "$T/keep.out" "plan: PLAN.md changed"
+"${SBX[@]}" scripts/plan merged S90 "$M" --keep > "$T/keep.out" 2>&1; git checkout -q -- plan
+has "--keep does the bookkeeping" "$T/keep.out" "plan: plan/plan.json changed"
 lacks "--keep skips the cleanup" "$T/keep.out" "cleanup"
 still "--keep removes nothing"
 "${SBX[@]}" scripts/plan merged S90 "$M" --dry-run > "$T/dry-run.out" 2>&1
 line "--dry-run also makes the cleanup dry" "$T/dry-run.out" "$P would remove branch claude/s90-test"
+clean "--dry-run changes no plan file" plan
 still "--dry-run removes nothing"
 bash -c 'exec -a "xcodebuild -derivedDataPath $1/tmp/dshm-s90-dd" sleep 60' _ "$T" & busy=$!
 for _ in 1 2 3 4 5 6 7 8 9 10; do ps -axo command= | grep -q "^xcodebuild -derivedDataPath $T/tmp/dshm-s90-dd" && break; sleep 0.2; done
@@ -361,35 +362,36 @@ elif busy "$slot"; then ok "S91 skips slot $slot (a process listens on its ports
 else bad "S91 got slot $s91, expected $slot"; fi
 
 echo "fix slice (a bug that the user reports)"
-last=$(grep -oE '^### S[0-9]+ ·' PLAN.md | grep -oE '[0-9]+' | sort -n | tail -1)
+last=$(python3 -c 'import json; print(max(int(n["id"][1:]) for n in json.load(open("plan/plan.json"))["nodes"] if n["id"][0] == "S"))')
 fid="S$((last + 1))"; fbranch="claude/$(echo "$fid" | tr 'S' 's')-keyboard"
 git checkout -q -b claude/s90-fixtry
-expect "fix on a slice branch is refused" 1 scripts/plan fix "Keyboard stays up" --bug "x"
+refused "fix on a slice branch is refused" scripts/plan fix "Keyboard stays up" --bug "x"
 git checkout -q main
 expect "fix adds a slice" 0 scripts/plan fix "Keyboard stays up" --bug "The keyboard stays up | after a tap outside" --commit
-has "§0 row of the fix slice" PLAN.md "| $fid | todo | — |"
-has "section of the fix slice" PLAN.md "### $fid · Fix: Keyboard stays up"
-has "the user's report in Why" PLAN.md "**Why**: The user reported a bug on $(date +%F): The keyboard stays up | after a tap outside."
-has "regression test item" PLAN.md "- [ ] [auto] A test reproduces the reported bug and passes with the fix — Evidence:"
-[ -z "$(git status --porcelain -- PLAN.md)" ] && ok "fix slice is committed" || bad "PLAN.md not committed"
+pyok "the fix slice is todo, with its title" "N['$fid']['status'] == 'todo' and N['$fid']['title'] == 'Fix: Keyboard stays up'"
+pyok "the user's report in Why" "N['$fid']['why'] == 'The user reported a bug on $(date +%F): The keyboard stays up | after a tap outside.'"
+pyok "regression test item and a [human] item" "[(i['tier'], i['text']) for i in I('$fid')] == [('auto', 'A test reproduces the reported bug and passes with the fix'), ('human', 'The user no longer sees the bug')]"
+clean "fix slice is committed" plan
 expect "assign the fix slice" 0 scripts/plan assign "$fid" --branch "$fbranch" --commit
-has "fix slice is doing" PLAN.md "| $fid | doing | \`$fbranch\` |"
+pyok "fix slice is doing" "N['$fid']['status'] == 'doing' and N['$fid']['branch'] == '$fbranch'"
 expect "a second fix" 0 scripts/plan fix "Title differs from Web" --bug "y"
-has "second fix takes the next number" PLAN.md "### S$((last + 2)) · Fix: Title differs from Web"
-git checkout -q -- PLAN.md
+pyok "second fix takes the next number" "N['S$((last + 2))']['title'] == 'Fix: Title differs from Web'"
+git checkout -q -- plan; git clean -fdq plan
 
 echo "code key (scripts/demo/lib.sh)"
 cp "$SRC"/scripts/demo/lib.sh scripts/demo/lib.sh
 key() { bash -c 'eval "$(sed -n "/^dshm_code_key()/,/^}/p" scripts/demo/lib.sh)"; dshm_code_key'; }
 k0=$(key); echo "// test" >> ios/DSHKit/Package.swift; k1=$(key)
 git commit -qam "code"; k2=$(key)
-echo "note" >> PLAN.md; mkdir -p evidence/S90; echo x > evidence/S90/t.png; k3=$(key)
+echo "note" >> ARCHITECTURE.md; echo '{}' > plan/S99.json; echo " " >> plan/plan.json
+mkdir -p evidence/S90; echo x > evidence/S90/t.png; k3=$(key)
 echo "x" > untracked-test.swift; k4=$(key); rm -f untracked-test.swift
 [ "$k0" != "$k1" ] && ok "a code change makes a new key" || bad "code change kept the key"
 [ "$k1" = "$k2" ] && ok "a commit of the same content keeps the key" || bad "commit changed the key"
-[ "$k2" = "$k3" ] && ok "PLAN.md and evidence/ do not change the key" || bad "PLAN.md or evidence changed the key"
+[ "$k2" = "$k3" ] && ok "plan/, *.md and evidence/ do not change the key" || bad "plan/, *.md or evidence changed the key"
 [ "$k3" != "$k4" ] && ok "an untracked source file changes the key" || bad "untracked file ignored"
 git diff --cached --quiet && ok "the real index is not touched" || bad "index changed"
+git checkout -q -- ARCHITECTURE.md plan; rm -rf plan/S99.json evidence
 
 echo "plan/ graph (dag) and passed from the verifier results"
 git checkout -q main
@@ -407,7 +409,7 @@ items() { # items <ID> <passed of item 0>
   printf '{"id": "%s", "items": [%s, %s]}\n' "$1" "$(item auto "$1 works" "$2")" "$(item ui "$1 shows")" > "plan/$1.json"
 }
 planjson '["T0", "X1"]'; items T0 false; items S1 false; items X1 false
-expect "dag --json with no PLAN.md" 0 scripts/plan dag --json
+expect "dag --json of a plan/ fixture" 0 scripts/plan dag --json
 scripts/plan dag --json > "$T/dag.json" 2>&1
 python3 -c 'import json,sys; g=json.load(open(sys.argv[1])); assert g["order"]==["T0","X1","S1"], g["order"]; assert {"from":"X1","to":"S1"} in g["edges"]; assert len(g["nodes"])==3' "$T/dag.json" \
   && ok "dag: the order puts each need first, and the edges go from need to node" || bad "dag output: $(head -5 "$T/dag.json")"
@@ -614,22 +616,22 @@ git log -1 --format=%B main | grep -qxF "allow-changed-evidence: s5-check.sh" &&
 # Case (a4): the check calls a helper as "$(dirname "$0")/helper", which no name scan finds. The
 # directory of each cmd: file, and scripts/lib/, are protected as a whole.
 printf 'exit 0\n' > "$T/wt-s5/tools/s5-helper"
-mkdir -p "$T/wt-s5/scripts/lib" && echo "# changed" >> "$T/wt-s5/scripts/lib/plangen.py"
+mkdir -p "$T/wt-s5/scripts/lib" && echo "# changed" >> "$T/wt-s5/scripts/lib/dshm.py"
 git -C "$T/wt-s5" commit -q -am "s5: the helper passes"
 M3=$(git rev-parse main)
 scripts/plan merge S5 --into main > "$T/m8.out" 2>&1 && bad "merge passed with a changed dirname helper (a4)" || ok "merge: a changed helper in the directory of a check refuses (a4)"
 has "the refusal names the helper" "$T/m8.out" "  tools/s5-helper"
-has "the refusal names a changed file of scripts/lib/" "$T/m8.out" "  scripts/lib/plangen.py"
+has "the refusal names a changed file of scripts/lib/" "$T/m8.out" "  scripts/lib/dshm.py"
 expect "merge: a flag for only one of the two still refuses" 1 scripts/plan merge S5 --into main --allow-changed-evidence tools/s5-helper
 [ "$(git rev-parse main)" = "$M3" ] && ok "merge: the target did not move" || bad "main moved"
 expect "merge: (a4) with a flag for each file merges" 0 scripts/plan merge S5 --into main \
-  --allow-changed-evidence tools/s5-helper --allow-changed-evidence scripts/lib/plangen.py
+  --allow-changed-evidence tools/s5-helper --allow-changed-evidence scripts/lib/dshm.py
 git log -1 --format=%B main > "$T/m9.out"
 line "the merge commit records the helper" "$T/m9.out" "allow-changed-evidence: tools/s5-helper"
-line "the merge commit records the scripts/lib/ file" "$T/m9.out" "allow-changed-evidence: scripts/lib/plangen.py"
+line "the merge commit records the scripts/lib/ file" "$T/m9.out" "allow-changed-evidence: scripts/lib/dshm.py"
 git worktree remove --force "$T/wt-s5"
 unset DSHM_VERIFY_LOGS
-git rm -rq plan s5-check.sh s5.txt checks tools new-check.sh && git checkout -q "$BASE" -- scripts/lib/plangen.py && git commit -q -m "remove merge fixtures"
+git rm -rq plan s5-check.sh s5.txt checks tools new-check.sh && git checkout -q "$BASE" -- scripts/lib/dshm.py && git commit -q -m "remove merge fixtures"
 
 echo "free-space floor (scripts/demo/lib.sh guard, fake xcrun)"
 guard() { # guard <env…>: source lib.sh as a demo does, with the simulator plan-test-sim

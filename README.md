@@ -172,10 +172,10 @@ This repo was planned, built and reviewed by AI coding agents (Claude Code and C
 
 - **[STORY.md](STORY.md)**: product vision and the nine design principles (in Chinese). Every principle maps to a screen in **[design/screens.json](design/screens.json)**.
 - **The plan** ([M1's, at tag `m1`](https://github.com/laichang/dsh-mobile/blob/m1/PLAN.md)): a tracer bullet first, then vertical slices. Each "Done when" item has a tier (`[auto]`, `[ui]`, `[human]`) and evidence that must resolve, checked by a pre-commit hook. A plan file exists only while a requirement is in progress; everything else is a [GitHub issue](https://github.com/laichang/dsh-mobile/issues).
-- **[WORKFLOW.md](WORKFLOW.md)**: how a coordinator session runs slice sessions in git worktrees, how independent reviewers rerun every UI check, and which decisions stay with the human.
+- **The process** ([AGENTS.md "Process"](AGENTS.md#process), the plan data in `plan/`, `scripts/`, the [run-plan Workflow](.claude/workflows/run-plan.js)): a coordinator runs each node through a fresh build agent, a separate verifier and a merge step that reruns the evidence on the merge commit; the scripts and hooks hold the rules, and some decisions stay with the human.
 - **[`evidence/`](https://github.com/laichang/dsh-mobile/tree/m1/evidence)** (at tag `m1`): the screenshots behind each completed M1 slice.
 
-If you're curious how far long-horizon agentic development can go on a real native app, start with WORKFLOW.md.
+If you're curious how far long-horizon agentic development can go on a real native app, start with AGENTS.md "Process" and `scripts/plan`.
 
 ## Project layout
 

@@ -7,7 +7,7 @@
 #   scripts/demo/outcomes.sh --shots  also refresh the screenshots in evidence/outcomes/ (1/3 size)
 #   DSHM_RESUME=1               skip the parts that passed for the same code (lib.sh demo_part)
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-outcomes   DSHM_DD (DerivedData) /tmp/dshm-outcomes-dd
 #   (DSHM_BRIDGE_PORT 47817, DSHM_WEB_PORT 3290, DSHM_HOME ~/.dshm/home-outcomes are unused here.)
 # Fails on any failed or skipped test.

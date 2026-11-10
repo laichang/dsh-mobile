@@ -133,6 +133,18 @@ def dir_files(d):
     return {f"{plandata.PLAN_DIR}/{p.name}": p.read_text() for p in sorted(d.iterdir()) if p.is_file()}
 
 
+def edit_errors(rel, new_text):
+    """The errors of one changed file of plan/ (None = deleted), judged with --agent against the
+    plan/ on disk. The Claude Code and Codex hooks call it before an edit is made."""
+    base = dir_files(ROOT / plandata.PLAN_DIR)
+    new = dict(base)
+    if new_text is None:
+        new.pop(rel, None)
+    else:
+        new[rel] = new_text
+    return plandata.change_errors(ROOT, base, new, agent=True)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     src = ap.add_mutually_exclusive_group()

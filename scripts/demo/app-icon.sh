@@ -10,7 +10,7 @@
 #   scripts/demo/app-icon.sh --shots  also install the app and save Home Screen screenshots in light and
 #                                dark mode to evidence/app-icon/ (1/2 size)
 #
-# Resources (WORKFLOW.md §6), from the environment (`eval "$(scripts/slice-env <ID>)"`):
+# Resources, from the environment (`eval "$(scripts/slice-env <ID>)"`):
 #   DSHM_SIM dshm-app-icon   DSHM_DD (DerivedData) /tmp/dshm-app-icon-dd
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

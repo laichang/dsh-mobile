@@ -9,7 +9,7 @@
 #                                (its session now opens with the sheet up: the 所有任务 seam)
 #   scripts/demo/approval-sheet.sh --shots  also refresh the screenshots in evidence/approval-sheet/ (1/3 size)
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-approval-sheet   DSHM_DD (DerivedData) /tmp/dshm-approval-sheet-dd
 # The bridge and web ports (47814, 3287) are not used: the hosts are in-process fakes.
 # The approvals seam (ApprovalUITests close the sheet) needs real DSH: scripts/demo/approvals.sh.

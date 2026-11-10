@@ -8,7 +8,7 @@
 #                                               an earlier full run left in the simulator
 #   scripts/demo/rich-detail.sh --shots         also refresh the screenshots in evidence/rich-detail/ (1/3 size)
 #
-# Resources (WORKFLOW.md §6), read from the environment (eval "$(scripts/slice-env <ID>)"); the
+# Resources, read from the environment (eval "$(scripts/slice-env <ID>)"); the
 # defaults: DSHM_BRIDGE_PORT 47811, DSHM_WEB_PORT 3284, DSHM_HOME ~/.dshm/home-rich-detail,
 # DSHM_SIM dshm-rich-detail, DSHM_DD (DerivedData) /tmp/dshm-rich-detail-dd. Fails on any failed or skipped test.
 set -euo pipefail

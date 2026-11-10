@@ -14,7 +14,7 @@
 #   scripts/demo/pair-again.sh --shots  also refresh the screenshots in evidence/pair-again/ (1/3 size)
 #   DSHM_RESUME=1               skip the parts that passed for the same code (lib.sh demo_part)
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-pair-again   DSHM_DD (DerivedData) /tmp/dshm-pair-again-dd
 #   DSHM_BRIDGE_PORT 47810, DSHM_WEB_PORT 3283, DSHM_HOME ~/.dshm/home-pair-again: its real host
 #   DSHM_SECOND_BRIDGE_PORT 47840, DSHM_SECOND_WEB_PORT 3313: the host of the revoke real-bridge tests
