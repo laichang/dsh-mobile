@@ -524,6 +524,8 @@ Append-only, dated.
 
 - **2026-11-10 · S7 assigned.** Branch `claude/s7-plan-dir`, simulator `dshm-S7`, DSHM_HOME `~/.dshm/home-s7`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D171–D173. `eval "$(scripts/slice-env S7)"` exports them.
 
+- **2026-11-10 · S7 assigned (claude/s7-plan-dir); session start refused (turn not from the user), so a background agent builds it from /tmp/dshm-brief/S7-r1.md. Brief note: S7 may change guard files; the user reviews that diff at merge (option A).**
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
