@@ -41,7 +41,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
 | T0 | done | merged `e3daa5a` | 2026-11-10 | — |
-| T1 | doing | `claude/t1-workflow-round-trip` | 2026-11-10 | Review PASS at 80be885 (/tmp/dshm-review/T1-80be885.txt); user approves the plandata.py diff (option A), then the coordinator merges |
+| T1 | done | merged `15982e9` | 2026-11-10 | — |
 | S1 | done | merged `3b960e8` | 2026-11-10 | — (provisional D150 in §9) |
 | S2 | todo | — | 2026-11-10 | Assign it and start a session |
 | S3 | todo | — | 2026-11-10 | Assign it and start a session |
@@ -448,6 +448,8 @@ Append-only, dated.
 - **2026-11-10 · T1 review 2 FAIL: changed helper via dirname $0.** Separate review at f5c3925: RESULT: FAIL (/tmp/dshm-review/T1-f5c3925.txt), only case (a4): a helper called as "$(dirname "$0")/helper" can be set to exit 0 by the branch and merges silently. Coordinator rule sent (round 3, provisional): protected evidence set = each cmd: file on the target, every existing file in its directory and below, and scripts/lib/; any change needs --allow-changed-evidence per file after a reviewer read it. Also: scripts/xc build fails when DSHM_SIM names a missing simulator (note for S2/S3).
 
 - **2026-11-10 · T1 review PASS; waits for the user's merge approval; heartbeat deleted.** Third separate review at 80be885: RESULT: PASS. Known limits for S3: a helper reached through ../ outside the cmd: directory is not protected; scripts/plan passed (advisory) trusts a hand-written note. Under option A the user approves the scripts/lib/plandata.py diff before the merge. Heartbeat 1a6d2c25 deleted (§5.5).
+
+- **2026-11-10 · T1 merged.** Merged as `15982e9`; `scripts/check-plan` on the merge commit passed. `scripts/review T1` at `80be885`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/T1-80be885.txt`). No open `[human]` items, so T1 is `done`.
 
 ## 9. Pending user confirmation
 
