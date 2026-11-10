@@ -4,9 +4,15 @@
     {
       "tier": "auto",
       "text": "With a fake agent, a test takes one node from brief to merge; the merge step runs the verifier again on the merge commit and ignores the agent's report",
-      "files": [],
+      "files": [
+        ".claude/workflows/run-plan.js",
+        "scripts/test/run-plan.test.mjs"
+      ],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/run-plan-test"
+      ]
     },
     {
       "tier": "auto",
