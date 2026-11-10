@@ -27,6 +27,7 @@ Read on demand, not all at once:
 - `scripts/check-plan`: guards the Done when items of PLAN.md (WORKFLOW.md §12)
 - `scripts/review <ID>`: the review run of one slice; `scripts/demo/lib.sh` also holds the machine guard (WORKFLOW.md §6.1, §10.1)
 - `scripts/plan`: writes and keeps PLAN.md without hand edits (`new`, `add`, `lint`, §0, §8, §9, ticks, Logs; format in `scripts/lib/plan-template.md`, WORKFLOW.md §3.1); `scripts/status`: the run in one screen; `scripts/slice-env <ID>`: the resources of a slice, from `scripts/resources.tsv` (WORKFLOW.md §5, §6). Tests: `scripts/plan-test`
+- `scripts/brief <ID>`: the one packet a build agent reads instead of these docs (test: `scripts/brief-test`)
 - `.agents/skills/`: skills for all agents: `/start-requirement <milestone>`, `/run-plan` (WORKFLOW.md §3.2, §5.1). `.claude/skills/<name>` links to each one
 - `.githooks/`: git hooks; `.claude/`: Claude Code hooks; `.codex/`: Codex hooks (WORKFLOW.md §12)
 

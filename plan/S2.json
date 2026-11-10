@@ -6,14 +6,22 @@
       "text": "A test makes sure that the brief of each node in the `plan/` fixtures is 3k tokens or fewer",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/brief-test",
+        "commit:8dcbe97"
+      ]
     },
     {
       "tier": "auto",
       "text": "Each file and command that a brief names exists (test)",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/brief-test",
+        "commit:8dcbe97"
+      ]
     }
   ]
 }

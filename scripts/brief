@@ -1,76 +1,353 @@
 #!/usr/bin/env python3
-"""The brief of one slice for a fresh agent: what to build and where, from the plan data.
+"""The brief of one plan node: the one packet a slice agent reads instead of the docs.
 
-  scripts/brief <ID> [--round N] [--base REF] [--out PATH]
+  scripts/brief <ID> [--round N] [--base REF] [--out PATH] [--preview]
 
-It reads plan/plan.json and plan/<ID>.json as committed at REF (default HEAD; the merge target),
-never an uncommitted edit, and writes the brief to PATH (default /tmp/dshm-brief/<ID>-r<N>.md).
-It prints the path. A stub: the slice, its branch and worktree, its items with their evidence, and
-the rules of the merge step. The full brief (what to read, the resources) comes later.
+It reads plan/plan.json and plan/<ID>.json, and the short facts it quotes from AGENTS.md and
+ARCHITECTURE.md, as committed at REF (default HEAD; the merge target), never an uncommitted edit.
+It writes the brief to PATH (default /tmp/dshm-brief/<ID>-r<N>.md) and prints the path.
 
-Exit 0 = written, 1 = refused (unknown ID, no plan data), 2 = usage.
+The brief has: the node, its branch and worktree; its Why, Cuts and Not (from the node's section of
+the plan file at REF: plan/<ID>.json has no such fields yet); its items with tier and evidence; the
+files of the items and of the Cuts (marked "new" when REF does not have them); the commands to run
+(the evidence, the checks, the output wrappers for the areas the files touch, a demo that the items
+name); the facts of those areas, a bullet or a paragraph of ARCHITECTURE.md, and the repo layout of
+AGENTS.md when the node names no files; and the rules for a slice agent. Screens are not in the brief yet. scripts/brief-test keeps each brief at 3k tokens or
+fewer and checks that each file and command it names exists.
+
+--preview writes the brief of a node that has no branch yet (the branch line says so). Without it,
+such a node is refused: the run-plan Workflow needs a branch to build on.
+
+Exit 0 = written, 1 = refused (unknown ID, no branch, no plan data), 2 = usage.
 """
 
 import argparse
+import fnmatch
+import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import dshm  # noqa: E402
 import plandata  # noqa: E402
+import plangen  # noqa: E402
+
+# Areas of the repo: the files of a node select the areas, and each area its commands and facts.
+# A fact is (doc, heading, first words of a bullet or paragraph); None = the first paragraph.
+AREAS = {
+    "ios": {
+        "prefixes": ("ios/",),
+        "commands": [
+            ("scripts/swift-test", "after a change in `ios/DSHKit`"),
+            ("scripts/xc build", "after a change in the app target; UI tests run only through a demo script"),
+        ],
+        "facts": [
+            ("ARCHITECTURE.md", "### Toolchain", "Swift:"),
+            ("ARCHITECTURE.md", "## 7. Testing", "**UI tests**"),
+        ],
+    },
+    "bridge": {
+        "prefixes": ("bridge/",),
+        "commands": [("scripts/pnpm-test", "after a change in `bridge/`")],
+        "facts": [
+            ("ARCHITECTURE.md", "## 4. Bridge plugin", None),
+            ("ARCHITECTURE.md", "### Toolchain", "Bridge:"),
+        ],
+    },
+    "protocol": {
+        "prefixes": ("protocol/",),
+        "commands": [("scripts/codegen --check", "after a change in `protocol/`")],
+        "facts": [
+            ("ARCHITECTURE.md", "### Toolchain", "Codegen:"),
+            ("ARCHITECTURE.md", "## 6. Protocol", "**Evolution**"),
+        ],
+    },
+    "process": {
+        "prefixes": ("scripts/", "plan/", ".claude/", ".agents/", "AGENTS.md", "WORKFLOW.md", "ARCHITECTURE.md"),
+        "commands": [("scripts/run-plan-test", "after a change to the Workflow or the plan tools")],
+        "facts": [
+            ("ARCHITECTURE.md", "## 7. Testing", "**Output wrappers"),
+            ("ARCHITECTURE.md", "## 7. Testing", "**Plan data"),
+            ("ARCHITECTURE.md", "## 7. Testing", "**Slice brief"),
+        ],
+    },
+}
+
+# Each brief: the checks that every slice keeps green.
+ALWAYS = [
+    ("scripts/plan-test", "the plan tools; ends with `failures: 0`"),
+    ("scripts/check-docs", "no decision IDs, ARCHITECTURE.md at most 10k tokens"),
+    ("scripts/check-wrappers", "demo scripts call only the wrappers"),
+]
+
+RULES = [
+    "Read this brief, not AGENTS/WORKFLOW/ARCHITECTURE/STORY/DESIGN. Open one section of a doc only when you need it.",
+    "Commit only on the branch above. Do not merge, push or rebase, and do not touch `main`.",
+    "Never `git commit --no-verify`/`-n`, never change `core.hooksPath`, never set `CHECK_PLAN_ALLOW`.",
+    "Do not edit guard files: `scripts/check-plan`, `.githooks/`, `.claude/hooks/`, `.claude/settings.json`, `.codex/`.",
+    "Use the wrappers above; never bare `xcodebuild`, `swift test` or `pnpm test`.",
+    "Docs tell the current state. No decision IDs (D<number>) and no slice IDs in docs or code. "
+    "ARCHITECTURE.md stays short (`scripts/check-docs`).",
+    "Do not wait for the user. At a choice, take your recommendation, write it in ARCHITECTURE.md as current state "
+    "marked **provisional, pending user confirmation** with the alternatives, and list it in your report. "
+    "Pin each new dependency to an exact version.",
+    "In `plan/{sid}.json` only add evidence pointers (`cmd:<repo-relative executable> <args>`, `commit:<sha>`) "
+    "to an item. Do not change a tier, a text, or `passed`: it stays false. Only the verifier sets it.",
+    "The merge step runs the evidence again on the merge commit, with the items and tools of the merge target. "
+    "It ignores your report.",
+    "A change to a file that existing evidence runs (its command, its directory, `scripts/lib/`) stops the merge "
+    "until a reviewer allows it. Add a new test file rather than change one that evidence names.",
+    "Do not run `scripts/plan verify` or `scripts/plan merge`: the coordinator does that.",
+    "Out of scope (another node's files, a bug elsewhere): do not fix it; name it in your report.",
+    "End with a short report: the head commit, what is done, what is not, each provisional item.",
+]
+
+PLAN_MD = "PLAN" + ".md"
+MAX_FILES = 30      # files listed in a brief; more are counted, not listed
+MAX_GLOB = 5        # a glob in the Cuts with more matches is listed as the glob
 
 
-def brief(root, sid, rnd, base):
+def doc_lines(root, base, doc):
+    r = plandata._git(root, "show", f"{base}:{doc}")
+    return r.stdout.splitlines() if r.returncode == 0 else []
+
+
+def fact(lines, heading, start):
+    """The bullet (one line) under heading that starts with start, or the first paragraph under
+    heading when start is None. None when it is not there."""
+    level = heading.split(" ")[0]
+    inside = False
+    para = []
+    for line in lines:
+        if line.startswith("#"):
+            if inside and (start is not None or para):
+                break
+            if line.startswith(heading):
+                inside = True
+                continue
+            if inside and len(line.split(" ")[0]) <= len(level):
+                break
+            continue
+        if not inside:
+            continue
+        if start is None:
+            if line.strip():
+                para.append(line.strip())
+            elif para:
+                break
+        elif line.lstrip("- ").startswith(start):
+            return line.lstrip("- ").strip()
+    return " ".join(para) or None
+
+
+def tree_modes(root, base):
+    """{path: mode} of every file at base."""
+    return {p: m for p, (m, _) in plandata._tree(root, base).items()}
+
+
+def node_files(items, cuts, modes):
+    """The files of the items, then each file that the Cuts name: a repo path, a glob of repo paths
+    (`design/board.*`), or a file name that one file of the base has (`Theme+S14.swift`)."""
+    out = []
+    for it in items:
+        for f in it.get("files", []):
+            if f not in out:
+                out.append(f)
+    for tok in re.findall(r"`([^`\s]+)`", "\n".join(cuts)):
+        if "<" in tok or tok.startswith(("/", "claude/")) or not ("/" in tok or "." in tok[1:]):
+            continue
+        if any(c in tok for c in "*?["):
+            found = sorted(p for p in modes if fnmatch.fnmatch(p, tok))
+            found = found if len(found) <= MAX_GLOB else [tok]     # many: the glob itself
+        elif "/" in tok:
+            found = [tok]
+        else:
+            found = [p for p in modes if p.rsplit("/", 1)[-1] == tok]
+            found = found if len(found) == 1 else []
+        out += [f for f in found if f not in out]
+    for word in re.findall(r"[A-Za-z0-9_.][A-Za-z0-9_./+-]*", "\n".join(cuts)):   # DESIGN.md, AGENTS.md
+        if word in modes and word not in out:
+            out.append(word)
+    return out
+
+
+def exists(f, modes):
+    d = f.rstrip("/") + "/"
+    return f in modes or any(p.startswith(d) or fnmatch.fnmatch(p, f) for p in modes)
+
+
+def scope(root, base, sid):
+    """{Why, Cuts, Not}: the lines of each field of the node's section of the plan file at base, or
+    None. plan/<ID>.json has no such fields yet; the plan file is their source until plan/ holds them."""
+    lines = doc_lines(root, base, PLAN_MD)
+    sec = next(((a, b) for a, b, i, _ in plangen.sections(lines) if i == sid), None)
+    if sec is None:
+        return None
+    out, cur = {}, None
+    for line in lines[sec[0] + 1:sec[1]]:
+        m = re.match(r"^\*\*(Status|Why|Cuts|Demo|Done when|Not|Log)\*\*:?\s*(.*)$", line)
+        if m:
+            cur = m.group(1) if m.group(1) in ("Why", "Cuts", "Not") else None
+            if cur:
+                out[cur] = [m.group(2)] if m.group(2) else []
+        elif cur and line.strip():
+            out[cur].append(line.rstrip())
+    return out
+
+
+def areas_of(files):
+    if not files:
+        return list(AREAS)       # unknown: every area, so the agent has the facts it may need
+    return [a for a, spec in AREAS.items() if any(f.startswith(spec["prefixes"]) for f in files)]
+
+
+def demos_of(items, modes):
+    """Each scripts/demo/*.sh that the items name in their files or evidence and that exists."""
+    seen = []
+    for it in items:
+        words = list(it.get("files", []))
+        for p in it.get("evidence", []):
+            words += p.split(":", 1)[-1].split()
+        for w in words:
+            if re.fullmatch(r"scripts/demo/[\w.-]+\.sh", w) and w in modes and w not in seen:
+                seen.append(w)
+    return seen
+
+
+def brief(root, sid, rnd, base, preview=False):
     plan, items = plandata.load_at(root, base)
     node = next((n for n in plan["nodes"] if n["id"] == sid), None)
     if node is None:
         raise plandata.DataError(f"{sid} is not a node of {plandata.PLAN_FILE} at {base}")
-    if not node["branch"]:
+    if not node["branch"] and not preview:
         raise plandata.DataError(f"{sid} has no branch yet (the coordinator assigns one)")
     tip = dshm.git("rev-parse", "--verify", f"{base}^{{commit}}", cwd=root)
-    wt = plandata.checked_out(root, node["branch"])
-    where = (f"`{wt}` (it has the branch checked out)" if wt else
-             f"none yet: `git -C {root} worktree add /tmp/dshm-{sid.lower()}-wt {node['branch']}`")
+    modes = tree_modes(root, tip)
+    its = items[sid]
+    if node["branch"]:
+        wt = plandata.checked_out(root, node["branch"])
+        where = (f"`{wt}` (it has the branch checked out)" if wt else
+                 f"none yet: `git -C {root} worktree add /tmp/dshm-{sid.lower()}-wt {node['branch']}`")
+        branch = f"- Branch: `{node['branch']}` (commit only there)"
+    else:
+        where, branch = "none yet", "- Branch: none yet (the coordinator assigns one)"
+    sc = scope(root, tip, sid)
     lines = [
         f"# Brief: {sid} · {node['title']} · round {rnd}",
         "",
         f"- Kind: {node['kind']}; needs: {', '.join(node['needs']) or 'nothing'}",
-        f"- Branch: `{node['branch']}` (commit only there)",
+        branch,
         f"- Worktree: {where}",
         f"- Plan data: `plan/{sid}.json` at `{base}` ({tip[:12]})",
+        "",
+        "## Scope",
+        "",
+    ]
+    if sc is None:
+        lines.append(f"The plan file at the base has no section for {sid}: the items are the whole scope.")
+    else:
+        for name in ("Why", "Cuts", "Not"):
+            body = sc.get(name) or ["—"]
+            if len(body) == 1 and not body[0].startswith("- "):
+                lines.append(f"**{name}**: {body[0]}")
+            else:
+                lines += [f"**{name}**:"] + body
+    lines += [
         "",
         "## Items",
         "",
     ]
-    for i, it in enumerate(items[sid]):
+    for i, it in enumerate(its):
         lines.append(f"{i + 1}. [{it['tier']}] {it['text']}")
         for p in it.get("evidence", []):
-            lines.append(f"   - evidence: `{p}`")
-    lines += [
-        "",
-        "## Rules",
-        "",
-        "- Make each `[auto]` and `[ui]` item true on the branch, and commit. Do not merge, push or rebase.",
-        f"- In `plan/{sid}.json` you may only add evidence pointers (`cmd:<repo-relative executable> <args>`) "
-        "to an item. Do not change a tier, a text, or `passed` (it stays false).",
-        "- The merge step runs the evidence again itself, on the merge commit, with the items of the "
-        "merge target. It does not read your report.",
-        "- End with a short report: the head commit and what you did.",
-    ]
+            exe = p[4:].split()[0] if p.startswith("cmd:") and p[4:].split() else None
+            lines.append(f"   - evidence: `{p}`" + (" (new: not at the base yet)" if exe and exe not in modes else ""))
+    if any(it["tier"] == "human" for it in its):
+        lines += ["", "A `[human]` item is the user's: do not tick it or claim it."]
+
+    files = node_files(its, (sc or {}).get("Cuts", []), modes)
+    lines += ["", "## Files", ""]
+    if not files:
+        lines.append("The items and Cuts name no files: find them from the scope and the facts below.")
+    for f in files[:MAX_FILES]:
+        lines.append(f"- `{f}`" + ("" if exists(f, modes) else " (new)"))
+    if len(files) > MAX_FILES:
+        lines.append(f"- and {len(files) - MAX_FILES} more in `plan/{sid}.json`")
+
+    areas = areas_of(files)
+    lines += ["", "## Commands", "",
+              "Run from the worktree, after `eval \"$(scripts/slice-env " + sid + ")\"` (the ports, "
+              "`DSHM_HOME` and simulator of the node). Each prints a short summary; the full log is in `/tmp/dshm-*`.", ""]
+    evid = []
+    for it in its:
+        for p in it.get("evidence", []):
+            if p.startswith("cmd:") and p[4:].strip() not in evid:
+                evid.append(p[4:].strip())
+    for c in evid:
+        new = "" if c.split()[0] in modes else " (new: not at the base yet)"
+        lines.append(f"- `{c}`: evidence of an item{new}")
+    for c in demos_of(its, modes):
+        if c not in evid:
+            lines.append(f"- `{c}`: the demo of the node")
+    for c, why in ALWAYS:
+        lines.append(f"- `{c}`: {why}")
+    for a in areas:
+        for c, why in AREAS[a]["commands"]:
+            lines.append(f"- `{c}`: {why}")
+
+    docs = {}
+    lines += ["", "## Facts", ""]
+    for a in areas:
+        for doc, heading, start in AREAS[a]["facts"]:
+            text = fact(docs.setdefault(doc, doc_lines(root, tip, doc)), heading, start)
+            where = f"{doc} {heading.lstrip('# ')}"
+            lines.append(f"- {text} ({where})" if text else f"- (not found: {where})")
+    # The repo layout only when the node names no files: then the agent must find them.
+    layout = [] if files else section_bullets(doc_lines(root, tip, "AGENTS.md"), "## Repo layout")
+    if layout:
+        lines += ["", "Repo layout (AGENTS.md, shortened):", ""] + [f"- {short(b)}" for b in layout]
+
+    lines += ["", "## Rules", ""] + [f"- {r.format(sid=sid)}" for r in RULES]
     return "\n".join(lines) + "\n"
 
 
+def short(bullet, limit=140):
+    """The first sentence of a bullet, at most about limit characters, cut at a word and never
+    inside a code span."""
+    first = re.split(r"(?<=\.)\s", bullet, maxsplit=1)[0]
+    if len(first) <= limit:
+        return first
+    cut = first[:limit].rsplit(" ", 1)[0]
+    if cut.count("`") % 2:
+        cut = cut[:cut.rindex("`")].rstrip()
+    return cut.rstrip(",;:") + " …"
+
+
+def section_bullets(lines, heading):
+    out, inside = [], False
+    for line in lines:
+        if line.startswith("#"):
+            if inside:
+                break
+            inside = line.startswith(heading)
+        elif inside and line.startswith("- "):
+            out.append(line[2:].strip())
+    return out
+
+
+
 def main():
-    ap = argparse.ArgumentParser(prog="scripts/brief", description="Write the brief of one slice (see the file header).")
+    ap = argparse.ArgumentParser(prog="scripts/brief", description="Write the brief of one node (see the file header).")
     ap.add_argument("id")
     ap.add_argument("--round", type=int, default=1)
     ap.add_argument("--base", default="HEAD")
     ap.add_argument("--out")
+    ap.add_argument("--preview", action="store_true", help="also for a node with no branch yet")
     a = ap.parse_args()
     try:
         dshm.check_id(a.id)
         root = dshm.toplevel()
-        text = brief(root, a.id, a.round, a.base)
+        text = brief(root, a.id, a.round, a.base, a.preview)
     except (plandata.DataError, dshm.PlanError) as e:
         print(f"brief: {e}", file=sys.stderr)
         return 1

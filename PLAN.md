@@ -243,7 +243,7 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 
 ### S2 · Slice brief: scripts/brief <ID> replaces reading the docs
 
-**Status** todo · **Needs** T1 · **Branch** —
+**Status** review · **Needs** T1 · **Branch** —
 
 **Why**: Closes #59. Today a slice agent reads AGENTS, WORKFLOW, ARCHITECTURE, STORY and DESIGN before it starts: about 53k tokens. The brief is the one packet that it reads instead.
 
@@ -254,12 +254,24 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 **Demo**: —
 
 **Done when**
-- [ ] [auto] A test makes sure that the brief of each node in the `plan/` fixtures is 3k tokens or fewer — Evidence:
-- [ ] [auto] Each file and command that a brief names exists (test) — Evidence:
+- [x] [auto] A test makes sure that the brief of each node in the `plan/` fixtures is 3k tokens or fewer — Evidence: cmd:scripts/brief-test · commit:8dcbe97
+- [x] [auto] Each file and command that a brief names exists (test) — Evidence: cmd:scripts/brief-test · commit:8dcbe97
 
 **Not**: Screens in the brief (S4).
 
 **Log**: —
+- **2026-11-10 · Build: scripts/brief and scripts/brief-test.** Done: `scripts/brief <ID>` writes the packet from `plan/plan.json` and `plan/<ID>.json` at `--base`: items with tier and evidence (new evidence marked), the files of the node (new files marked), the commands (evidence, demos the items name, `scripts/plan-test`, `scripts/check-docs`, `scripts/check-wrappers`, and the wrappers of the areas its files touch; all areas when it names no files), facts quoted by bullet or paragraph from AGENTS.md (Repo layout) and ARCHITECTURE.md, and the rules of a slice agent. T1 interface kept (`--round`, `--base`, `--out`); new `--preview` for a node with no branch (without it, refused as before). `.claude/workflows/run-plan.js` not changed.
+  Test: `scripts/brief-test` (new file, so no existing evidence changes): each node of the live `plan/`, the fake plan fixture and a generated node of the largest size is 3k tokens or fewer (the estimate of `scripts/check-docs`); each path and command it names exists at the base; each quoted fact is found; the checks catch a bad brief. Largest brief: about 2.6k tokens (the generated node); live nodes 1.3k–2.2k.
+  Checks: `scripts/brief-test`, `scripts/plan-test`, `scripts/run-plan-test`, `scripts/check-docs`, `scripts/check-wrappers` pass; T0 demo passed (without `DSHM_SIM`: simulator `dshm-S2` does not exist).
+  Provisional: the brief design (ARCHITECTURE.md §7 "Slice brief"); `--preview`; a demo is listed only when the items name it (not `scripts/demo/<id>.sh`, which old milestones reuse).
+  Note for §8: ARCHITECTURE.md was at 10,000 tokens; to fit the new bullet the "Output wrappers" bullet is shorter. It is now just under the cap, so the next slice that adds to it must cut too.
+  Not done: the `/run-plan` prompt that tells the build agent to read only the brief is in S3 (run-plan.js).
+  Next: review.
+- **2026-11-10 · Round 2: Why, Cuts and Not in the brief.** Done: merged main (S3, ea755c4); the ARCHITECTURE.md conflict keeps both sides, and the wrappers and brief bullets are shorter to stay at most 10k tokens. The brief has the node's Why, Cuts and Not, read from its section of the plan file at `--base` with the section parser of `scripts/lib/plangen.py`. The file list adds each file that the Cuts name: a path, a glob (a glob with more than 5 matches is listed as itself, for example `scripts/demo/*.sh`), a unique file name (`Theme+S14.swift`) and a bare path (`DESIGN.md`). New rule: do not run `scripts/plan verify` or `scripts/plan merge`. The AGENTS.md repo layout is in the brief only when the node names no files, each bullet cut to its first sentence. Files listed: at most 30.
+  Test: `scripts/brief-test` also checks that each live node and each fixture brief has its Why, Cuts and Not, and each file of the base that the Cuts name is in the file list; fixtures get a plan file section. Largest real brief: about 2.55k tokens (S3); largest fixture: about 2.64k (the generated node).
+  Checks: brief-test, plan-test, run-plan-test, check-docs, check-wrappers pass.
+  Note for S7: `plan/<ID>.json` has no Why, Cuts or Not, so `scripts/brief` reads them from the plan file section; S7 moves these fields into `plan/` and changes `scope()` in `scripts/brief` to read them there.
+  Next: review.
 
 ### S3 · One run-plan Workflow for all plans, with the rework loop
 
