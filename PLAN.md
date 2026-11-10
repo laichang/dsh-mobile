@@ -520,6 +520,8 @@ Append-only, dated.
 
 - **2026-11-10 · S5 merged.** Merged as `424b093`; `scripts/check-plan` on the merge commit passed. `scripts/review S5` at `d15d8e2`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S5-d15d8e2.txt`). No open `[human]` items, so S5 is `done`.
 
+- **2026-11-10 · S5 merged (424b093) after a separate review PASS. Left for the end issue list: broken comment lines in scripts/demo/pairing.sh:2, all-tasks.sh:2, session-page.sh:2 and StructuredTranscriptView.swift:136.**
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
