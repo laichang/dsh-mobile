@@ -243,7 +243,7 @@ A slice is built by one session too: at most 5 Done when items (`scripts/plan` s
 
 ### S2 · Slice brief: scripts/brief <ID> replaces reading the docs
 
-**Status** todo · **Needs** T1 · **Branch** —
+**Status** review · **Needs** T1 · **Branch** —
 
 **Why**: Closes #59. Today a slice agent reads AGENTS, WORKFLOW, ARCHITECTURE, STORY and DESIGN before it starts: about 53k tokens. The brief is the one packet that it reads instead.
 
