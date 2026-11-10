@@ -40,7 +40,7 @@ This file exists only while this requirement is in progress. It serves this requ
 
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
-| T0 | doing | `claude/t0-plan-graph` | 2026-11-10 | Slice owner builds (§8) |
+| T0 | blocked | `claude/t0-plan-graph` | 2026-11-10 | User commits the scripts/check-plan guard patch (/tmp/dshm-t0-patch) on claude/t0-plan-graph |
 | T1 | todo | — | 2026-11-10 | Assign it and start a session |
 | S1 | done | merged `3b960e8` | 2026-11-10 | — (provisional D150 in §9) |
 | S2 | todo | — | 2026-11-10 | Assign it and start a session |
