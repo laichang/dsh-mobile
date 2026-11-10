@@ -45,7 +45,7 @@ This file exists only while this requirement is in progress. It serves this requ
 | S1 | done | merged `3b960e8` | 2026-11-10 | — (provisional D150 in §9) |
 | S2 | doing | `claude/s2-slice-brief` | 2026-11-10 | Round 2: Why/Cuts/Not in the brief, merge main; then a new separate review |
 | S3 | done | merged `ea755c4` | 2026-11-10 | — |
-| S4 | todo | — | 2026-11-10 | Assign it and start a session |
+| S4 | doing | `claude/s4-design-as-data` | 2026-11-10 | Slice owner builds (§8) |
 | S5 | todo | — | 2026-11-10 | Assign it and start a session |
 | S6 | done | merged `46d4f3d` | 2026-11-10 | — |
 | S7 | todo | — | 2026-11-10 | Assign it and start a session |
@@ -469,6 +469,8 @@ Append-only, dated.
 - **2026-11-10 · S3 merged.** Merged as `ea755c4`; `scripts/check-plan` on the merge commit passed. `scripts/review S3` at `b60495c`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/S3-b60495c.txt`). No open `[human]` items, so S3 is `done`.
 
 - **2026-11-10 · S3 merged; S2 round 2 for brief content.** S3 merged as ea755c4 (closes #60). Review /tmp/dshm-review/S3-b60495c.txt PASS; note: MAX_ROUNDS counts rounds of the current run only (args.rounds {ID:2} gives 3 more). S2 review /tmp/dshm-review/S2-cc5b2bf.txt PASS on its items, but a brief carries only the items, not Why/Cuts/Not, so a fresh agent cannot build S4 from it. S2 round 2: merge main; add Why/Cuts/Not from the PLAN.md section (S7 moves them into plan/); add the rule not to run verify/merge; tests.
+
+- **2026-11-10 · S4 assigned.** Branch `claude/s4-design-as-data`, simulator `dshm-S4`, DSHM_HOME `~/.dshm/home-s4`, bridge 47811, web 3284; second host 47841/3314. Decision numbers D165–D167. `eval "$(scripts/slice-env S4)"` exports them.
 
 ## 9. Pending user confirmation
 
