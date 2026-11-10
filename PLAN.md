@@ -176,7 +176,7 @@ A tracer is one thin round trip that one session can finish without running out 
 
 **Done when**
 - [x] [auto] With a fake agent, a test takes one node from brief to merge; the merge step runs the verifier again on the merge commit and ignores the agent's report — Evidence: cmd:scripts/run-plan-test · cmd:scripts/plan-test
-- [ ] [auto] One real Workflow run takes the fake node to a merge on a throwaway branch (Evidence: the run ID and the merge commit) — Evidence:
+- [x] [auto] One real Workflow run takes the fake node to a merge on a throwaway branch (Evidence: the run ID and the merge commit) — Evidence: commit:77d9088c6b51bf5dc86583ce37f882c911652d5d
 
 **Not**: More than one node, the rework loop, and fixes (S3). The full brief (S2).
 
