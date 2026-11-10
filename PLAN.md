@@ -419,6 +419,8 @@ Append-only, dated.
 
 - **2026-11-10 · T1 review FAIL: a branch can rewrite its own evidence.** Separate review at 8f50672: RESULT: FAIL (/tmp/dshm-review/T1-8f50672.txt). scripts/plan merge runs evidence in the merged tree, so a branch that changes its existing check to exit 0 merges. Coordinator rule sent to the owner (provisional): tooling from the target; an evidence file that exists on the target and is changed by the branch blocks the merge unless the coordinator passes --allow-changed-evidence after a reviewer read the diff (recorded in the merge message); new evidence files are allowed and listed for the reviewer. All other attacks held. plandata.py diff (user reviews at merge, option A): no check of check-plan is weakened.
 
+- **2026-11-10 · Interruption: app restart stopped the T1 reviewer.** The T1 review at f5c3925 was running when the app restarted; no result file was written. Recovery (§5.4): the same reviewer resumed, with leftovers cleaned first. T1 owner is idle at f5c3925 (clean).
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
