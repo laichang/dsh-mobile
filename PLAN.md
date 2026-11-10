@@ -40,7 +40,7 @@ This file exists only while this requirement is in progress. It serves this requ
 
 | ID | Status | Branch/PR | Updated | Next action |
 |---|---|---|---|---|
-| T0 | doing | `claude/t0-plan-graph` | 2026-11-10 | Owner repairs the review FAIL (self-recorded results); then guard patches for the user; then a new separate review |
+| T0 | done | merged `e3daa5a` | 2026-11-10 | — |
 | T1 | todo | — | 2026-11-10 | Assign it and start a session |
 | S1 | done | merged `3b960e8` | 2026-11-10 | — (provisional D150 in §9) |
 | S2 | todo | — | 2026-11-10 | Assign it and start a session |
@@ -410,6 +410,8 @@ Append-only, dated.
 - **2026-11-10 · T0 review FAIL: results can be recorded without a verifier.** Separate review at c78da12: RESULT: FAIL (/tmp/dshm-review/T0-c78da12.txt). All parts passed except the adversarial check: scripts/plan record --results <agent JSON> or a direct git notes write on refs/notes/dshm-verify makes passed true with no verifier run. Also plandata.py (imported by check-plan) is not protected. Sent back to the owner: one writer that runs the checks itself; a test; ARCHITECTURE says the merge-time rerun (T1) is the gate; guard patches (protect plandata.py; git-guard blocks writes to the notes ref) for the user to commit.
 
 - **2026-11-10 · User decision: checker changes reviewed by the user at merge; branches verified with main's scripts.** The user chose option A (2026-11-10, in chat). (1) The merge step (T1, S3) verifies a slice branch with the check scripts of main, not the branch's own copy, so a branch that edits a checker cannot pass itself. (2) A slice that changes a checker or a hook (scripts/check-plan and what it imports, scripts/review, .githooks/, .claude/hooks/, .claude/settings.json, .codex/) merges only after the user has looked at that diff; the coordinator shows it at merge time. (3) S7 removes the PLAN.md guards and replaces the branch-time block on guard files with the merge-time review of (2). Until S7 merges, the current guards stay as they are. T0's guard patches in /tmp/dshm-t0-patch2/ are not needed under this rule (the merge-time rerun covers them); they are not applied. Later slices add new checks to non-guard scripts that the merge step runs, where possible, so that they do not wait for the user.
+
+- **2026-11-10 · T0 merged.** Merged as `e3daa5a`; `scripts/check-plan` on the merge commit passed. `scripts/review T0` at `ab98dbc`: `RESULT: PASS`, no flaky part (`/tmp/dshm-review/T0-ab98dbc.txt`). No open `[human]` items, so T0 is `done`.
 
 ## 9. Pending user confirmation
 
