@@ -22,6 +22,7 @@ Used by scripts/plan (dag, passed, verify, lint) and by scripts/check-plan (stag
 import datetime
 import json
 import os
+import posixpath
 import re
 import shlex
 import shutil
@@ -571,38 +572,55 @@ PATH_RE = re.compile(r"[A-Za-z0-9_.][A-Za-z0-9_./-]*")
 
 
 def evidence_files(root, items, commits):
-    """The files that the cmd: evidence of items names: each executable, each argument that is a
-    file, and (for a text file among them) each path of a file that it names. One level, in the
-    trees of commits."""
+    """(direct, named): the files that the cmd: evidence of items names (each executable and
+    each argument that is a file), and those plus each repo path that a text file among them
+    names (one level). In the trees of commits."""
     trees = [_tree(root, c) for c in commits]
     known = lambda f: any(f in t for t in trees)
-    files = set()
+    direct = set()
     for it in items:
         if it["tier"] == "human":
             continue
         for ptr in it.get("evidence", []):
             if ptr.startswith("cmd:"):
-                files.update(a for a in shlex.split(ptr[4:].strip()) if known(a))
-    for f in list(files):
+                direct.update(a for a in shlex.split(ptr[4:].strip()) if known(a))
+    named = set(direct)
+    for f in direct:
         for c in commits:
             r = _git(root, "cat-file", "-p", f"{c}:{f}")
             if r.returncode == 0:
                 for w in PATH_RE.findall(r.stdout):
                     parts = w.split("/")     # $ROOT/scripts/x names scripts/x
-                    files.update(c for c in ("/".join(parts[i:]).lstrip("./") for i in range(len(parts)))
+                    named.update(c for c in ("/".join(parts[i:]).lstrip("./") for i in range(len(parts)))
                                  if ("/" in c or "." in c) and known(c))
-    return sorted(files)
+    return sorted(direct), sorted(named)
+
+
+PROTECTED_EVIDENCE_DIRS = ("scripts/lib/",)
+
+
+def protected_evidence(root, items, base, head):
+    """The evidence files of the target that a slice may not change without review: each file
+    that the evidence names (see evidence_files) and the target has; every file of the target in
+    the directory of a file that a cmd: pointer names, and below it (a helper called as
+    "$(dirname "$0")/x" is there; for a file at the top of the repo, only that file); and
+    scripts/lib/. Conservative on purpose: it does not follow calls."""
+    tb = _tree(root, base)
+    direct, named = evidence_files(root, items, [base, head])
+    prot = {f for f in named if f in tb}
+    dirs = {posixpath.dirname(f) + "/" for f in direct if f in tb and posixpath.dirname(f)}
+    dirs.update(PROTECTED_EVIDENCE_DIRS)
+    prot.update(p for p in tb if any(p.startswith(d) for d in dirs))
+    return prot, [f for f in named if f not in tb]
 
 
 def evidence_changes(root, items, base, head):
-    """(changed, new): evidence files that exist on the target and that the branch changes or
-    deletes (against the merge base), and evidence files that only the branch has."""
+    """(changed, new): protected evidence files that the branch changes or deletes (against the
+    merge base), and evidence files that only the branch has."""
     fork = _git(root, "merge-base", base, head, check=True).stdout.strip()
-    tb, tf, th = _tree(root, base), _tree(root, fork), _tree(root, head)
-    files = evidence_files(root, items, [base, head])
-    changed = [f for f in files if f in tb and tf.get(f) != th.get(f)]
-    new = [f for f in files if f not in tb]
-    return changed, new
+    tf, th = _tree(root, fork), _tree(root, head)
+    prot, new = protected_evidence(root, items, base, head)
+    return sorted(f for f in prot if tf.get(f) != th.get(f)), new
 
 
 def merge(root, sid, into, dry=False, allow=(), say=print):

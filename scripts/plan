@@ -37,9 +37,11 @@ Merge step (the coordinator, or the merge node of the Workflow):
         items from plan/ as committed there (the slice branch may only add evidence), makes the
         merge commit in a clean checkout, runs the evidence on it, stores the results on the
         merge commit, and then moves <branch> to it. It reads no report and no earlier results.
-        An evidence file (a `cmd:` executable, a file argument, or a file that such a script
-        names) that the target has and the branch changes or deletes stops the merge: a reviewer
-        or the user must look at it. After that, the coordinator passes
+        A protected evidence file that the branch changes or deletes stops the merge: a reviewer
+        or the user must look at it. Protected: each file of the target that a `cmd:` names (the
+        executable, a file argument, or a path that such a script names), every file of the
+        target in the directory of a `cmd:` file and below it (a file at the top of the repo
+        protects only itself), and scripts/lib/. It does not follow calls. After that, the coordinator passes
         --allow-changed-evidence <path> (repeatable); the merge commit message records it. New
         evidence files of the branch are listed as "new evidence, judged by the reviewer".
         Prints a JSON summary; exit 0 = merged (--dry-run: passed), 1 = not

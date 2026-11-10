@@ -536,10 +536,12 @@ echo "verify and passed: the branch from committed plan data; the merge step"
 export DSHM_VERIFY_LOGS="$T/verify-logs"
 mkdir -p plan
 printf '{"title": "Test · merge", "nodes": [{"id": "S5", "kind": "slice", "title": "merge me", "needs": [], "branch": "claude/s5-m"}]}\n' > plan/plan.json
-printf '{"id": "S5", "items": [{"tier": "auto", "text": "S5 works", "files": [], "screens": [], "passed": false, "evidence": ["cmd:s5-check.sh"]}]}\n' > plan/S5.json
+printf '{"id": "S5", "items": [{"tier": "auto", "text": "S5 works", "files": [], "screens": [], "passed": false, "evidence": ["cmd:s5-check.sh", "cmd:tools/s5-a4.sh"]}]}\n' > plan/S5.json
 mkdir -p checks && printf '[ "$(cat s5.txt 2>/dev/null)" = yes ]\n' > checks/s5-inner.sh
 printf '#!/bin/sh\nexec sh "$(dirname "$0")/checks/s5-inner.sh"\n' > s5-check.sh && chmod +x s5-check.sh
-git add plan s5-check.sh checks && git commit -q -m "merge fixtures"; BASE=$(git rev-parse HEAD)
+mkdir -p tools && printf '#!/bin/sh\nexec sh "$(dirname "$0")/s5-helper"\n' > tools/s5-a4.sh && chmod +x tools/s5-a4.sh
+printf '[ "$(cat s5.txt 2>/dev/null)" = yes ]\n' > tools/s5-helper
+git add plan s5-check.sh checks tools && git commit -q -m "merge fixtures"; BASE=$(git rev-parse HEAD)
 git branch claude/s5-m
 git worktree add -q "$T/wt-s5" claude/s5-m
 echo no > "$T/wt-s5/s5.txt" && git -C "$T/wt-s5" add s5.txt && git -C "$T/wt-s5" commit -q -m "s5: not done"
@@ -603,15 +605,31 @@ git log -1 --format=%B main | grep -qF "New evidence, judged by the reviewer: ne
   || bad "merge message: $(git log -1 --format=%B main)"
 # Case (a) with the flag, after a reviewer read the diff: merges and records the flag.
 M2=$(git rev-parse main)
-printf '#!/bin/sh\nexit 0\n' > "$T/wt-s5/s5-check.sh" && echo no > "$T/wt-s5/s5.txt" && git -C "$T/wt-s5" commit -q -am "s5: the check passes"
+printf '#!/bin/sh\nexit 0\n' > "$T/wt-s5/s5-check.sh" && git -C "$T/wt-s5" commit -q -am "s5: the check passes"
 expect "merge: case (a) refuses again" 1 scripts/plan merge S5 --into main
 expect "merge: case (a) with --allow-changed-evidence merges" 0 scripts/plan merge S5 --into main --allow-changed-evidence s5-check.sh
 [ "$(git rev-parse main^1)" = "$M2" ] && ok "merge with the flag: the target is the new merge commit" || bad "main: $(git log --oneline -2 main)"
 git log -1 --format=%B main | grep -qxF "allow-changed-evidence: s5-check.sh" && ok "the merge commit records the flag and the path" \
   || bad "merge message: $(git log -1 --format=%B main)"
+# Case (a4): the check calls a helper as "$(dirname "$0")/helper", which no name scan finds. The
+# directory of each cmd: file, and scripts/lib/, are protected as a whole.
+printf 'exit 0\n' > "$T/wt-s5/tools/s5-helper"
+mkdir -p "$T/wt-s5/scripts/lib" && echo "# changed" >> "$T/wt-s5/scripts/lib/plangen.py"
+git -C "$T/wt-s5" commit -q -am "s5: the helper passes"
+M3=$(git rev-parse main)
+scripts/plan merge S5 --into main > "$T/m8.out" 2>&1 && bad "merge passed with a changed dirname helper (a4)" || ok "merge: a changed helper in the directory of a check refuses (a4)"
+has "the refusal names the helper" "$T/m8.out" "  tools/s5-helper"
+has "the refusal names a changed file of scripts/lib/" "$T/m8.out" "  scripts/lib/plangen.py"
+expect "merge: a flag for only one of the two still refuses" 1 scripts/plan merge S5 --into main --allow-changed-evidence tools/s5-helper
+[ "$(git rev-parse main)" = "$M3" ] && ok "merge: the target did not move" || bad "main moved"
+expect "merge: (a4) with a flag for each file merges" 0 scripts/plan merge S5 --into main \
+  --allow-changed-evidence tools/s5-helper --allow-changed-evidence scripts/lib/plangen.py
+git log -1 --format=%B main > "$T/m9.out"
+line "the merge commit records the helper" "$T/m9.out" "allow-changed-evidence: tools/s5-helper"
+line "the merge commit records the scripts/lib/ file" "$T/m9.out" "allow-changed-evidence: scripts/lib/plangen.py"
 git worktree remove --force "$T/wt-s5"
 unset DSHM_VERIFY_LOGS
-git rm -rq plan s5-check.sh s5.txt checks new-check.sh && git commit -q -m "remove merge fixtures"
+git rm -rq plan s5-check.sh s5.txt checks tools new-check.sh && git checkout -q "$BASE" -- scripts/lib/plangen.py && git commit -q -m "remove merge fixtures"
 
 echo "free-space floor (scripts/demo/lib.sh guard, fake xcrun)"
 guard() { # guard <env…>: source lib.sh as a demo does, with the simulator plan-test-sim

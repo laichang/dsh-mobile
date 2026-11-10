@@ -8,7 +8,8 @@
       "screens": [],
       "passed": false,
       "evidence": [
-        "cmd:scripts/run-plan-test"
+        "cmd:scripts/run-plan-test",
+        "cmd:scripts/plan-test"
       ]
     },
     {
@@ -16,7 +17,10 @@
       "text": "One real Workflow run takes the fake node to a merge on a throwaway branch (Evidence: the run ID and the merge commit)",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "commit:77d9088c6b51bf5dc86583ce37f882c911652d5d"
+      ]
     }
   ]
 }
