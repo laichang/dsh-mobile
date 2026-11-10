@@ -127,13 +127,14 @@ A Cordis plugin in the user's DSH profile (install: `bridge/README.md`). It is t
 - **Close codes**: 4000 bad hello, 4001 pairing refused (unknown, expired, used, wrong secret), 4002 handshake failed, 4003 device unknown.
 - **State** in `$DSH_HOME/dsh-mobile-bridge/` (dir 0700, files 0600, atomic writes): host key, offers, device registry, approval journal.
 - Both implementations pass the official Noise test vectors and the golden transcripts in `protocol/fixtures/noise/`.
+- **Next transport (decided by the user, 2026-11-10; not built):** TLS 1.3 replaces Noise as the only production transport: binary protobuf over WSS, TLS ending at the iPhone (URLSession) and the bridge (Node TLS). The phone authenticates the host identity from the pairing QR; the bridge authorizes each enrolled device and revokes them one by one. The first TLS release needs a fresh iOS install and a new QR enrollment after the bridge update: the phone rebuilds its cache from the host, the computer keeps DSH sessions and audit history, and only the new TLS device registry grants access. Why: the platform TLS stacks take over the handshake and record encryption that are now hand-written in Swift and TypeScript, and end-to-end authentication must hold across address changes and any future relay.
 
 ### 4.3 Tasks, the host log and resume
 
 - Tasks belong to the host's `TaskHub` (`bridge/src/s2/`), not to a connection: closing the socket does not stop a task.
 - Each event that the bridge sends is appended to one per-host log with a monotonic `Event.host_seq`, named by a random `log_id` per bridge process. The log is in memory (the last 50,000 events). DSH has no resume cursor of its own, and the bridge keeps running when the phone sleeps. Restarting DSH starts a new log.
 - `Resume { log_id, after_seq }` replays the logged events after the cursor, answers `Resumed`, and then sends live events. Replay and subscribe happen in one synchronous step, so nothing falls between them. When the cursor does not apply (another `log_id`, or trimmed events), the bridge sends `LogReset` and replays all it kept.
-- `ListTasks` returns each task with its state. A summary also carries pending approvals and questions, the model selection, the workspace and the latest turn's start, so a card comes back after a trim or a fresh cache.
+- `ListTasks` returns each task with its state, pending approvals and questions, model and workspace, so a card comes back after a trim or a fresh cache.
 - **Sessions from other clients**: the bridge reads DSH's visible session list on resume and follows committed session events. One task row per DSH session ID. The title is DSH's session title once it has one, else the first prompt. With `sessions.v1`, the open session reads message-aligned journal pages (`ReadSession`) at one DSH cursor.
 
 ### 4.4 Approvals
@@ -208,7 +209,7 @@ DSHProtocol
 - **One `HostConnection` per paired host.** It owns its WebSocket, handshake, address order and reconnect. Each connection runs a fresh handshake (Noise has no session resumption); the cipher, outbox and receive loop belong to one connection generation, so a stale loop never tears down a newer one.
 - **`TaskListStore`** runs one sync loop per host: connect, Hello, Resume from the cached cursor; on a drop, backoff from 0.5 s to 30 s. `background()` closes the sockets; `foreground()` reconnects at once. iOS cannot keep sockets alive in the background.
 - **Cache**: events at or below the cursor, and chunks at or below a task's chunk seq, are skipped, so replays are idempotent. Saved within about 150 ms of each event. After a `LogReset` the app calls `ListTasks`; a cached task still running in a log that is gone is marked failed ("the bridge restarted").
-- **Keys**: the phone's only key is its Noise static key (X25519) in the Keychain (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, never synced), one per device, shared by all hosts. No Secure Enclave key: the Secure Enclave does not do X25519, and nothing needs a P-256 signature yet.
+- **Keys**: the phone's only key is its Noise static key (X25519) in the Keychain (`ThisDeviceOnly`, never synced), shared by all hosts. No Secure Enclave key: it does not do X25519.
 - **App Transport Security** allows cleartext loads (`NSAllowsArbitraryLoads`), the same in Debug and Release: the app uses `ws://` to the QR's IP addresses, and ATS refuses cleartext to non-local IPs such as Tailscale's 100.x. Safe because each frame is Noise-encrypted and the app talks to no other server. `NSAllowsLocalNetworking` does not cover 100.64/10, and exception domains cannot name IPs. `scripts/check-release-clean` fails when the Debug and Release Info.plist files differ.
 
 ### 5.2 Hosts and connections
@@ -298,7 +299,6 @@ Builds expire after 7 days. No push and no App Groups are used, so nothing needs
 
 - The Noise code is hand-written and not audited.
 - The host log is in memory: a DSH restart loses the resume cursor (the app then reloads the list and marks lost running tasks failed).
-- Upstream is a developer preview; a new DSH release stops new tasks until the bridge supports it (§4.10).
 - Approval fan-out to the DSH desktop app is not verified.
 - Without push, the phone learns of a decision or a result only while the app runs; the Live Activity keeps the time ticking.
 - Not built yet (STORY.md wants them): risk tiers and Face ID for the top tier, plan alignment with pre-authorization, contact by other channels, artifact preview and share-out, the share extension, attachments while a task runs, and a later answer to a question that DSH's timed mode continued.
