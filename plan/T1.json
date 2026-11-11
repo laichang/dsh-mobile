@@ -1,0 +1,26 @@
+{
+  "id": "T1",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "Swift and Node agree on the SPKI fixture, negotiate TLS 1.3, exchange a golden Hello and reconnect after valid same-key renewal. `cmd:scripts/demo/pinned-tls.sh` **new**",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "Reject the wrong host/key, an expired or unsuitable server certificate, TLS 1.2, cleartext and redirects. Use a harmless sentinel to prove upgrade-header delivery to the trusted listener and absence on rejected or redirected peers. The enrollment slice repeats this with actual device credentials. `cmd:scripts/demo/pinned-tls.sh`",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "ui",
+      "text": "Use the production client in an iOS build with no broad ATS exception and no preinstalled private CA. Test IP and DNS, then change the reachable address or DNS resolution after pairing under the same key. Show a recovery path if all known addresses fail. Inspect the built test product's Info.plist so the old arbitrary-loads setting cannot satisfy this check. `cmd:scripts/demo/pinned-tls.sh`",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

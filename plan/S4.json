@@ -1,0 +1,19 @@
+{
+  "id": "S4",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "Read a history with absent optional fields, mixed parts and attachments through the bridge and from disk. Both produce the same messages. Stale revisions and replay cannot duplicate a turn. `cmd:scripts/swift-test`",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "ui",
+      "text": "A web-originated turn updates the open phone session. After disconnect and relaunch, detail still displays the saved history. `cmd:scripts/demo/session-visibility.sh`, `cmd:scripts/demo/rich-detail.sh`",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

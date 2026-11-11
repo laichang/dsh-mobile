@@ -1,0 +1,257 @@
+{
+  "title": "M3 · Three-layer mobile architecture and TLS 1.3",
+  "nodes": [
+    {
+      "id": "T0",
+      "kind": "tracer",
+      "title": "Tracer bullet: List host workspaces through a Swift domain API",
+      "needs": [],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "The workspace picker proves the first host-scoped domain read from bridge to UI. Closes #72.",
+      "cuts": "Map the existing workspace-list response once inside DSHCore. Use the same Swift values for the real picker and its fake. Set the mapping and shared signatures with this single read. the host management, model and session slices each move their own operations into feature-specific extensions as needed. Keep the phone workspace, reverse RPC and shared-material grants outside this milestone.\nStarting files: `ios/dsh-mobile/Features/Workspaces/WorkspaceControl.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHTestSupport/FakePickers.swift`.\nScreen references: `design/screens/01.html`, `design/screens/07.html`.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S1",
+      "kind": "slice",
+      "title": "Extract the transport boundary",
+      "needs": [],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Both delivery lines need a stable byte channel and one owner for response and event dispatch. Closes #73.",
+      "cuts": "Move ordered WebSocket I/O, endpoint probing and generic key storage into DSHTransport. Keep the working connection path while T1 brings up TLS. DSHCore owns protocol-level upload, one inbound dispatcher per connection generation, cancellation, refusal handling and address selection. The transport can carry messages in either direction without decoding a protobuf frame. Keep one protobuf frame per binary WebSocket message. Each side announces its own supported features in Hello; DSHCore correlates responses while dispatching events independently.\nStarting files: `ios/DSHKit/Package.swift`, `ios/DSHKit/Sources/DSHCore/BridgeTransport.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHCore/SecureChannel.swift`, `protocol/frame.proto`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X3.html`.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "T1",
+      "kind": "tracer",
+      "title": "Tracer bullet: Exchange a golden Hello over pinned TLS 1.3",
+      "needs": [
+        "S1"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Prove iPhone trust and address changes before moving device registration to TLS. Closes #74.",
+      "cuts": "Connect the production iOS transport to a real Node HTTPS/WebSocket listener. Require TLS 1.3 at both ends. The QR identifies a host by SHA-256 of the P-256 DER SubjectPublicKeyInfo (SPKI). Define how the bridge issues and renews its certificate on supported host platforms, how IP and DNS addresses reach the QR, and how certificate names/SANs are validated as addresses change. Record any new signing dependency for user review. Try URLSession first; evaluate Network.framework against the same checks if needed.\nStarting files: `bridge/src/server.ts`, `bridge/scripts/pair.ts`, `ios/DSHKit/Package.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X3.html`.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S2",
+      "kind": "slice",
+      "title": "Give host management a domain API",
+      "needs": [
+        "T0"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Both host-management entry points must act on the same selected host and device. Closes #75.",
+      "cuts": "Route both the drawer and the hosts sheet through the selected host's device, audit-page and revocation operations in DSHCore. Interpret support and refusal once. Each feature owns its views and local interaction state. If the other device-management change has already landed, rerun self-revocation from both entry points on the integrated code.\nStarting files: `ios/dsh-mobile/Features/Devices/DeviceManagementView.swift`, `ios/dsh-mobile/Features/Hosts/HostActions.swift`, `ios/dsh-mobile/Features/Hosts/HostsSheet.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`.\nScreen references: `design/screens/02.html`, `design/screens/H.html`, `design/screens/X2.html`, `design/screens/08.html`.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S3",
+      "kind": "slice",
+      "title": "Use domain values for model selection",
+      "needs": [
+        "T0"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Users must retain the selected provider, model and reasoning effort across the boundary. Closes #76.",
+      "cuts": "Translate provider groups, model choices, optional reasoning effort, availability, defaults and errors at the host boundary. Keep picker draft and display decisions in the feature. Apply the same mapping to live and cached selections.\nStarting files: `ios/dsh-mobile/Features/Models/ModelControl.swift`, `ios/DSHKit/Sources/DSHCore/Models.swift`, `ios/DSHKit/Tests/DSHKitTests/PickerTests.swift`.\nScreen references: `design/screens/01.html`, `design/screens/M.html`, `design/screens/X4.html`.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S4",
+      "kind": "slice",
+      "title": "Read session history through domain values",
+      "needs": [
+        "T0"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Live and offline sessions must present the same committed messages and attachments. Closes #77.",
+      "cuts": "Map session pages, messages, parts and attachments at the host/cache boundary. Use them in the session page, retry text and single-turn transcript recovery. Preserve the serialized history format and revision rules.\nStarting files: `ios/dsh-mobile/Features/Session/SessionPage.swift`, `ios/DSHKit/Sources/DSHCore/Sync/TaskCache.swift`, `protocol/sessions.proto`.\nScreen references: `design/screens/04.html`, `design/screens/06.html`, `design/screens/X1.html`.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S5",
+      "kind": "slice",
+      "title": "Extract durable cache and per-host sync",
+      "needs": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Replay and durable data must stay consistent per host when the phone disconnects. Closes #78.",
+      "cuts": "Keep the SwiftData models in DSHCore. Give each host a single sync owner for its connection loop, replay cursor and writes. Save each applied set of events and its cursor together. Supply typed snapshots/events for consumers. S6 moves feature state after this boundary works.\nStarting files: `ios/DSHKit/Sources/DSHCore/Sync/TaskCache.swift`, `ios/DSHKit/Sources/DSHCore/Sync/TaskListStore.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`.\nScreen references: `design/screens/02.html`, `design/screens/03.html`, `design/screens/04.html`, `design/screens/X3.html`.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S6",
+      "kind": "slice",
+      "title": "Move feature state and commands to their consumers",
+      "needs": [
+        "S5"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Feature owners need typed snapshots and operations to preserve current app behavior. Closes #79.",
+      "cuts": "Build DSHFeatures on the typed sync API. Put draft/send state and Live Activity orchestration with their consumers. Keep protocol-level transfers and durable writes in DSHCore. Preserve the domain-facing transcriber and activity-client contracts and inject the iOS implementations at composition.\nStarting files: `ios/DSHKit/Package.swift`, `ios/DSHKit/Sources/DSHCore/Sync/TaskListStore.swift`, `ios/dsh-mobile/Features/Voice/SpeechFrameworkTranscriber.swift`, `ios/dsh-mobile/Features/LiveActivity/ActivityKitClient.swift`.\nScreen references: `design/screens/01.html`, `design/screens/04.html`, `design/screens/05.html`, `design/screens/P1.html`, `design/screens/V1.html`, `design/screens/L.html`.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S7",
+      "kind": "slice",
+      "title": "Enforce the dependency graph",
+      "needs": [
+        "S6"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "The compiler and normal test entry point must enforce the production dependency graph. Closes #80.",
+      "cuts": "Replace aggregate DSHKit linkage with explicit target dependencies and middle-layer factories. Keep DSHActivity dependency-free and Debug fakes in test support. Use compiler-enforced access control for generated types, then check target declarations, imports and re-exports. Add the check to the normal test entry point and update ARCHITECTURE.md and the repo layout in AGENTS.md alongside the code.\nStarting files: `ios/DSHKit/Package.swift`, `ios/dsh-mobile.xcodeproj/project.pbxproj`, `ios/DSHKit/Sources/DSHActivity/TaskActivity.swift`, `ARCHITECTURE.md`, `AGENTS.md`.\nScreen references: `design/screens/04.html`, `design/screens/L.html`, `design/screens/V1.html`.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S8",
+      "kind": "slice",
+      "title": "Enroll and revoke individual devices over TLS",
+      "needs": [
+        "T1"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Each enrolled phone needs independent authentication, reconnect and revocation. Closes #81.",
+      "cuts": "Use a versioned QR with the bridge key fingerprint, addresses, expiry and a single-use random enrollment secret. The bridge is the only writer of offers. The CLI requests each QR over owner-only local IPC. Record the platforms on which IPC access control and certificate provisioning were verified. Issue a random per-device bearer over the pinned connection, store it under a distinct ThisDeviceOnly Keychain service, and store its digest on the bridge. Use the Authorization header on the WebSocket upgrade. Redact secrets, reject redirects and gate task, event and management access on live registry membership. If the other device-management change has already landed, rerun self-revocation from both entry points on the integrated code.\nStarting files: `bridge/src/server.ts`, `bridge/scripts/pair.ts`, `ios/DSHKit/Sources/DSHCore/Pairing/DeviceIdentity.swift`, `ios/DSHKit/Sources/DSHCore/Pairing/PairingOffer.swift`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X2.html`, `design/screens/X3.html`.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S9",
+      "kind": "slice",
+      "title": "Migrate real bridge demos to TLS",
+      "needs": [
+        "S8"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "All real-network demos must exercise the production transport before cutover. Closes #82.",
+      "cuts": "Add a shared TLS enrollment step in `scripts/demo/lib.sh`. Inventory the demos and fixtures that use a network listener, then migrate them to the production TLS path. Retain in-process fakes for isolated tests. S9 owns demo migration, and S10 owns release cutover and removal of the old implementations. Budget review of the shared helper and the changed evidence scripts. Follow the merge tool's actual protected-path list and record each reviewed path it requires. Keep demo and slice resources isolated during concurrent runs.\nStarting files: `scripts/demo/lib.sh`, `scripts/demo/round-trip.sh`, `scripts/demo/attachments.sh`, `scripts/demo/reconnect.sh`, `scripts/demo/revoke.sh`.\nScreen references: `design/screens/08.html`, `design/screens/04.html`, `design/screens/H.html`, `design/screens/X2.html`.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S10",
+      "kind": "slice",
+      "title": "Cut over to TLS as the only phone–bridge network transport",
+      "needs": [
+        "S9"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Existing users must regain access to host history after updating and enrolling again. Closes #83.",
+      "cuts": "Ship the TLS-only plugin, CLI and iOS app together. Remove the Swift and TypeScript Noise implementations, their runtime dependencies and the real Debug cleartext route. Replace the old arbitrary-loads assertion in `scripts/check-release-clean` with checks of the built products. Have the reviewer inspect each protected evidence change. Keep the existing bridge state root and DSH session store. Put the TLS identity and new device registry in a separate subdirectory or files under that root. Read legacy device records only to reconstruct pairing audit; merge that history with approval records and new audit entries. Update STORY.md and the associated screens with any changed user-facing pairing or recovery steps.\nStarting files: `bridge/src/server.ts`, `bridge/scripts/pair.ts`, `bridge/README.md`, `ios/DSHKit/Sources/DSHCore/Pairing/NoiseChannel.swift`, `scripts/check-release-clean`, `ARCHITECTURE.md`, `STORY.md`, `design/screens.json`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X2.html`, `design/screens/X3.html`, `design/screens/04.html`.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S11",
+      "kind": "slice",
+      "title": "Verify the architecture and TLS cutover on the combined revision",
+      "needs": [
+        "S7",
+        "S10"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Both independently shippable lines must pass together before the physical-device exit. Closes #84.",
+      "cuts": "Run the milestone exit checks after both delivery lines merge. Exercise the final paired host flow through the production bridge. The later of host management and TLS enrollment must also cover self-revocation through both management entry points.\nStarting files: `ios/DSHKit/Package.swift`, `scripts/check-release-clean`, `scripts/demo/round-trip.sh`, `scripts/demo/revoke.sh`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X2.html`, `design/screens/04.html`.",
+      "not": "",
+      "demo": null,
+      "log": []
+    }
+  ],
+  "exit": [
+    {
+      "tier": "human",
+      "text": "After S11 passes, update the host plugin and use a fresh iPhone installation with Release trust settings. Enroll with a fresh QR, open a pre-existing host session, reconnect over LAN and over Tailscale using IP and MagicDNS, then relaunch offline and read the synced session.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ],
+  "log": [
+    {
+      "date": "2026-11-11",
+      "title": "Plan started",
+      "body": "M3 · Three-layer mobile architecture and TLS 1.3"
+    }
+  ],
+  "pending": [],
+  "github_milestone": "laichang/dsh-mobile#4"
+}

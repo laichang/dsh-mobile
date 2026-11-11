@@ -1,0 +1,33 @@
+{
+  "id": "S8",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "Run CLI and bridge as separate processes. Verify local caller access, concurrent issue/redemption, replay, expiry, interruption and restart. Each offer enrolls at most one device; a new offer recovers an interrupted enrollment. Wrong pins, redirects and invalid credentials yield no credential disclosure or RPC/event access. `cmd:scripts/demo/tls-enrollment.sh` **new**",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "Race upgrade/reconnect with revocation. Close all sockets of the targeted device, deny its reconnect and record the authenticated actor. The other device keeps access. Two authenticated peers with different Hello announcements receive the correct `questions.v1` behavior on their own connections. Reconnect renegotiates availability. `cmd:scripts/pnpm-test`, `cmd:scripts/demo/tls-enrollment.sh`",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "Disconnect with a partial or staged attachment. A fresh connection cannot consume the old upload ID. An attachment already consumed by CreateTask or SendMessage reached DSH with its original bytes and metadata. `cmd:scripts/pnpm-test`",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "ui",
+      "text": "Dispatch, relaunch and reconnect. Test revocation both while connected and while offline. Only an explicit device refusal from the pinned host triggers forgetting that host. Network errors, certificate errors and an unrelated listener leave its pairing and cache intact. Other hosts are unaffected. `cmd:scripts/demo/tls-enrollment.sh`",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}
