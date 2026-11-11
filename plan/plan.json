@@ -279,6 +279,24 @@
       "demo": null,
       "log": [],
       "round": 1
+    },
+    {
+      "id": "S14",
+      "kind": "slice",
+      "title": "Route repair reports to the active plan coordinator",
+      "needs": [
+        "S12"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "The user wants to report bugs from any chat without accidentally launching independent fixes during an active run.",
+      "cuts": "Register the current run coordinator locally, shared across worktrees, scoped to this plan. For a report from another chat, route it to that coordinator where messaging is available; otherwise show the destination. Enforce the boundary at the fix entry point before any plan mutation. Use existing identifiers and allow deliberate handoff/recovery; preserve authorized build/delegate actions and existing behavior without an active owner.",
+      "not": "",
+      "demo": null,
+      "log": []
     }
   ],
   "exit": [
