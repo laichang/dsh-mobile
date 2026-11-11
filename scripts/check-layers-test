@@ -36,7 +36,9 @@ with tempfile.TemporaryDirectory() as temp:
     shortcut.write_text("import DSHTransport\n")
     expect(check, "undeclared import DSHTransport")
     shortcut.write_text("@_exported import DSHCore\n")
-    expect(check, "re-export of DSHCore")
+    expect(check, "re-export attribute")
+    shortcut.write_text("@_exported\nimport DSHCore\n")
+    expect(check, "re-export attribute")
 
     package = root / "ios/DSHKit"
     expect(["swift", "build", "--package-path", package, "--target", "DSHProtocol"])

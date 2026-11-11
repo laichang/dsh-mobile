@@ -73,15 +73,13 @@ for name, allowed in {**layers, **clients}.items():
             elif code == "#endif" and debug:
                 debug.pop()
             match = imports.search(code)
-            reason = None
+            reason = "re-export attribute" if re.search(r"@_exported\b", code) else None
             if match:
                 module = match[1]
                 if (module.startswith("DSH") or module in {"SwiftProtobuf", "SystemCallbackDoubles"}) and module not in allowed:
                     reason = f"undeclared import {module}"
                 elif module == "DSHTestSupport" and name == "dsh-mobile" and not any(debug):
                     reason = "test support outside DEBUG"
-                elif "@_exported" in code:
-                    reason = f"re-export of {module}"
             if name in ("DSHFeatures", "dsh-mobile", "LiveActivity") and (low_level.search(code) or match and match[1] == "SwiftData"):
                 reason = "raw transport, persistence or wire detail"
             if reason:
