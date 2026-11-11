@@ -49,6 +49,8 @@ cases = [
     ("bash grep for the flag", "Bash", f'grep -n "{NOV}" AGENTS.md', "allow"),
     ("bash writes plan/", "Bash", "echo x >> plan/S99.json", "deny"),
     ("bash writes a guard", "Bash", "cp /tmp/x scripts/check-plan", "deny"),
+    ("human command", "Bash", 'env scripts/plan "accept" S99 1 x', "deny"),
+    ("mention of human command", "Bash", 'rg -F "scripts/plan accept" AGENTS.md', "allow"),
     ("bash plan script", "Bash", 'scripts/plan log "x"', "allow"),
     ("record human (rel)", "apply_patch", patch(ITEMS, "      " + human, f'      {human} "evidence": ["human:2026-11-05 x"],'), "deny"),
     ("record human (abs)", "apply_patch", patch(f"{R}/{ITEMS}", "      " + human, f'      {human} "evidence": ["human:2026-11-05 x"],'), "deny"),

@@ -19,9 +19,7 @@ refused() { # refused <name> <command…>: exit non-zero, and the output names a
   elif ! printf '%s' "$out" | grep -qE "$NEXT"; then bad "$name: no next step"; printf '%s\n' "$out" | head -4 | sed 's/^/        /'
   else ok "$name"; fi
 }
-notty() { # notty <command…>: run the command with no controlling terminal (as an agent's shell)
-  python3 -c 'import os, sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "$@" </dev/null
-}
+source "$SRC/scripts/test/terminal.sh"
 hook() { # hook <name> <hook> <tool> <json tool_input>: the hook denies or asks, and names a next step
   local name=$1 h=$2 tool=$3 inp=$4
   local out; out=$(printf '{"tool_name": "%s", "tool_input": %s, "cwd": "%s"}' "$tool" "$inp" "$T/repo" \
@@ -62,6 +60,7 @@ refused "an unknown need" scripts/plan add slice "x" --why W --cuts C --done "[a
 refused "a demo that is not a file" scripts/plan add slice "x" --why W --cuts C --done "[auto] a" --demo scripts/demo/none.sh
 refused "a non-[human] exit item" scripts/plan add exit "[auto] a"
 scripts/plan add exit "[human] It runs on a phone" --commit >/dev/null
+refused "wrong exit confirmation" typed nope scripts/plan accept exit 1 "iPhone"
 refused "accept from a shell with no terminal" notty scripts/plan accept exit 1 "iPhone"
 refused "passed with a base that is not a commit" scripts/plan passed T0 --base nosuchref
 refused "verify of a node with no branch" scripts/plan verify T0

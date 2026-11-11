@@ -81,7 +81,7 @@ Slice owner (on the slice branch):
 
 The user (not an agent):
   plan accept <ID>|exit <item number> "<device or note>"   record a [human] item as accepted.
-        It asks on the terminal (/dev/tty) and records only when the user types the ID back,
+        It asks on the terminal (/dev/tty) and records only when the user types the ID (or exit for an exit item),
         so a shell with no terminal (an agent's) cannot record it
 
 Exit 0 = OK, 1 = refused or check failed, 2 = usage.
@@ -765,7 +765,7 @@ def user_confirms(question, answer):
         raise PlanError("only the user records a [human] item, from a terminal. "
                         "Next: the user runs this in their own terminal")
     with tty_in, tty_out:
-        tty_out.write(f"{question}\nType {answer} to confirm: ")
+        tty_out.write(f'{question}\nType exactly "{answer}" and press Enter: ')
         tty_out.flush()
         typed = tty_in.readline().strip()
     if typed != answer:
@@ -784,7 +784,7 @@ def cmd_accept(p, a):
         raise PlanError(f"item {a.n} of {where} is [{it['tier']}]: the verifier decides it. "
                         f"Next: add evidence with `scripts/plan evidence`")
     if not a.dry_run:
-        user_confirms(f"Record item {a.n} of {where} as accepted by you: {it['text']}", where)
+        user_confirms(f"Confirm {where} item {a.n}: {it['text']}", where)
     it.setdefault("evidence", []).append(f"human:{dshm.today()} {' '.join(a.note.split())}")
     return p.save(a, f"Plan {where}: the user accepts item {a.n}", agent=False)
 
