@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Debug builds only (Release uses Release-Info.plist). Merged with the generated keys.
+<!-- Debug UI test builds only. Merged with the generated keys.
      Registers the reserved dshm:// scheme for the pairing deep link.
      Release builds have no URL scheme; scripts/check-release-clean verifies that. -->
 <plist version="1.0">

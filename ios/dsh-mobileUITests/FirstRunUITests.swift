@@ -11,6 +11,17 @@ final class FirstRunUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    #if DEBUG
+    func testUnpairedLaunchShowsPairing() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-DSHMResetPairing", "YES"]
+        app.launch()
+        XCTAssertTrue(app.buttons["pairing.scan"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["pairing.pasteLink"].exists)
+        XCTAssertFalse(app.textFields["composer.prompt"].exists)
+    }
+    #endif
+
     func testPastedLinkPairsAndOpensTheFirstTask() throws {
         guard let url = env["DSHM_PAIR_URL"] else { throw XCTSkip("Use scripts/demo/first-run.sh with a fresh Release install") }
         let app = XCUIApplication()

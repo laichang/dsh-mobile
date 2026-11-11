@@ -428,7 +428,7 @@
 				DEVELOPMENT_TEAM = R9JF9M64R9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				DSHM_DEBUG_APP_PLIST = "Config/Debug-Info.plist";
+				DSHM_DEBUG_APP_PLIST = "Config/Release-Info.plist";
 				INFOPLIST_FILE = "$(DSHM_DEBUG_APP_PLIST)";
 				INFOPLIST_KEY_NSCameraUsageDescription = "dsh-mobile scans the pairing QR code your DSH host shows, and takes the photos you attach to a task.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "dsh-mobile connects to DSH on your Mac over your local network.";

@@ -278,6 +278,8 @@ def xc_command(args):
         raise SystemExit(f"usage: scripts/xc {{{'|'.join(XC_ACTIONS)}}} [--log FILE] [xcodebuild args…]")
     action, rest = args[0], args[1:]
     cmd = ["xcodebuild", action]
+    if action in ("build-for-testing", "test") and not any(arg.startswith("DSHM_DEBUG_APP_PLIST=") for arg in rest):
+        cmd.append("DSHM_DEBUG_APP_PLIST=Config/Debug-Info.plist")
     if not has(rest, "-project", "-workspace"):
         cmd += ["-project", str(ROOT / "ios/dsh-mobile.xcodeproj"), "-scheme", "dsh-mobile",
                 "-onlyUsePackageVersionsFromResolvedFile", "-skipPackageUpdates"]

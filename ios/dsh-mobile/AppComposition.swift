@@ -171,8 +171,8 @@ final class AppModel {
         if !paired.isEmpty { return paired.compactMap(pairedConfig) }
         #if DEBUG
         // After this device lost its last paired host, show 08, not the loopback dev path.
-        if !forgottenHostKeys.isEmpty { return [] }
-        let endpoint = HostEndpoint.localBridge(port: options.bridgePort ?? 47801)
+        guard forgottenHostKeys.isEmpty, let port = options.bridgePort else { return [] }
+        let endpoint = HostEndpoint.localBridge(port: port)
         return [.init(key: "bridge:\(endpoint)",
                       connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: pairing.transport))]
         #else
