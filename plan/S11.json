@@ -12,7 +12,8 @@
         "cmd:scripts/pnpm-test",
         "cmd:scripts/codegen --check",
         "cmd:scripts/swift-test",
-        "cmd:scripts/check-release-clean"
+        "cmd:scripts/check-release-clean",
+        "cmd:scripts/demo/check-tls-demos.sh"
       ]
     },
     {
