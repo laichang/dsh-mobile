@@ -179,10 +179,10 @@
         "T0"
       ],
       "branch": "claude/s10-fake-turn-duration",
-      "status": "doing",
+      "status": "review",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "User accepts 1 [human] item (pending)",
+      "merge": "8a16109",
       "why": "The user reported a bug on 2026-11-11: Clean S5 demo twice stops in unchanged FakeTurns.swift:16 with compiler unable to type-check the Int64 duration; preserve 9,435,000 ms and complete OfflineReasonsTests.",
       "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
       "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
@@ -261,6 +261,11 @@
       "date": "2026-11-11",
       "title": "S10 assigned",
       "body": "Branch `claude/s10-fake-turn-duration`, worktree `/Users/bytedance/dsh-mobile-s10`, simulator `dshm-S10`, DSHM_HOME `~/.dshm/home-s10`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S10)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S10 merged",
+      "body": "Merged as `8a16109`; the plan/ rules hold on the merge commit. 1 open [human] item(s), so S10 is `review`. Pending 3."
     }
   ],
   "pending": [
@@ -279,6 +284,14 @@
       "item": "The user no longer sees the bug",
       "branch": "main",
       "ref": "aec6b8f"
+    },
+    {
+      "n": 3,
+      "slice": "S10",
+      "kind": "[human]",
+      "item": "The user no longer sees the bug",
+      "branch": "main",
+      "ref": "8a16109"
     }
   ]
 }
