@@ -218,12 +218,12 @@ function short(s, n = 120) {
 // One round of one node: brief -> build -> verify -> merge. The build agent's report is read
 // only for outside_slice. The merge step gets only the ID and the target.
 // Gives back {end: 'merged' | 'review' | 'outside' | 'error' | 'failed', evidence, ...}.
-async function runRound(a, { agent, log }) {
+async function runRound(a, { agent, log, onMain }) {
   const cmd = commands(a)
   const id = a.slice
   const tag = `${id} r${a.round}`
 
-  const brief = await agent(shellPrompt(a, cmd.brief), { label: `brief ${tag}`, phase: 'Brief', schema: SHELL_SCHEMA, effort: 'low' })
+  const brief = await onMain(() => agent(shellPrompt(a, `scripts/plan assign ${id} --schedule --commit 1>&2 && ${cmd.brief}`), { label: `brief ${tag}`, phase: 'Brief', schema: SHELL_SCHEMA, effort: 'low' }))
   if (!brief || brief.exit !== 0) return { end: 'error', why: `brief: exit ${brief ? brief.exit : 'none'}` }
 
   const report = await agent(buildPrompt(a), { label: `build ${tag}`, phase: 'Build', schema: BUILD_SCHEMA })
@@ -237,7 +237,7 @@ async function runRound(a, { agent, log }) {
     return { end: 'failed', evidence }
   }
 
-  const m = await agent(shellPrompt(a, cmd.merge), { label: `merge ${tag}`, phase: 'Merge', schema: SHELL_SCHEMA, effort: 'low' })
+  const m = await onMain(() => agent(shellPrompt(a, cmd.merge), { label: `merge ${tag}`, phase: 'Merge', schema: SHELL_SCHEMA, effort: 'low' }))
   const out = m ? m.stdout || '' : ''
   if (out.includes(REFUSED)) {
     const files = out.split('\n').filter((l) => l.startsWith('changed: ')).map((l) => l.slice(9).trim())
@@ -246,6 +246,10 @@ async function runRound(a, { agent, log }) {
   }
   const summary = parseJson(out)
   if (m && m.exit === 0 && summary && summary.merged === true) {
+    if (!/^[0-9a-f]{7,40}$/.test(summary.merge)) return { end: 'error', why: 'invalid merge commit' }
+    const record = await onMain(() => agent(shellPrompt(a, `scripts/plan merged ${id} ${summary.merge} --commit`),
+      { label: `record ${tag}`, phase: 'Merge', schema: SHELL_SCHEMA, effort: 'low' }))
+    if (!record || record.exit !== 0) return { end: 'error', why: `record merge ${summary.merge} with scripts/plan merged` }
     log(`${tag}: merged into ${a.into} as ${summary.merge}`)
     return { end: 'merged', merge: summary.merge }
   }
@@ -278,6 +282,13 @@ async function runNode(st, id, ctx) {
 async function runPlan(raw, ctx) {
   const st = normalize(raw)
   const running = new Map()
+  // Assignments, merge commits and cleanup all write the same checkout.
+  let main = Promise.resolve()
+  ctx.onMain = (work) => {
+    const result = main.then(work)
+    main = result.catch(() => {})
+    return result
+  }
   for (;;) {
     for (const id of ready(st)) {
       if (running.size >= MAX_PARALLEL) break

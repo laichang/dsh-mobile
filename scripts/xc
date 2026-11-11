@@ -10,6 +10,9 @@
 # scripts/demo/lib.sh (the machine guard). Summary format: scripts/lib/wrap.py.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [ -n "${DSHM_SIM:-}" ] && [[ " $* " != *" -destination "* ]]; then
+  "$ROOT/scripts/slice-env" --check-sim "$DSHM_SIM"
+fi
 case "${1:-}" in
   test|test-without-building)
     if [ -z "${DSHM_GUARD_OWNER:-}" ] && [ -n "${DSHM_SIM:-}" ]; then

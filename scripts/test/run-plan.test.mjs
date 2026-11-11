@@ -5,7 +5,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
+import { cpSync, mkdtempSync, readFileSync, rmSync, readdirSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -76,11 +76,12 @@ function scripted({ rounds = {}, ms = {} } = {}) {
       if (!ok) rec.active.delete(id)
       return { exit: 0, stdout: JSON.stringify({ head: 'h', passed: ok, items }) }
     }
+    if (step === 'record') return { exit: 0, stdout: '' }
     if (step === 'merge') {
       rec.active.delete(id)
       if (what === 'review') return { exit: 1, stdout: 'run-plan: refused: evidence changed by the slice\nchanged: scripts/check\n' }
       rec.events.push(`end ${id}`)
-      return { exit: 0, stdout: JSON.stringify({ merged: true, passed: true, merge: `${id.toLowerCase()}000000000000000`, items: [] }) }
+      return { exit: 0, stdout: JSON.stringify({ merged: true, passed: true, merge: `a${id.slice(1)}000000000000000`, items: [] }) }
     }
     throw new Error(`unknown step ${step}`)
   }
@@ -148,7 +149,7 @@ test('rework: blocked after 3 rounds, after 2 rounds with the same evidence, aft
   assert.match(blocked.S2.why, /^same evidence in 2 rounds: verify 0:scripts\/check a=1$/)
   assert.equal(blocked.S3.round, 1)
   assert.match(blocked.S3.why, /^outside the slice: the bridge of S9 is broken$/)
-  assert.deepEqual(result.merged, [{ id: 'S4', rounds: 2, merge: 's40000000000' }])
+  assert.deepEqual(result.merged, [{ id: 'S4', rounds: 2, merge: 'a40000000000' }])
   assert.deepEqual(result.waiting, [{ id: 'S5', on: ['S2'] }])
   // Each round is a new agent with a new prompt (a fresh context); no verify after an out-of-scope report.
   assert.deepEqual(rec.calls.filter((c) => c.id === 'S1' && c.step === 'build').map((c) => c.round), [1, 2, 3])
@@ -236,22 +237,39 @@ test('bad args stop the Workflow before any agent runs', async () => {
 
 // A temporary clone: main holds the tools under test (the working copy) and the fake plan; the
 // node branch starts at main. Only git notes and refs of the clone change.
-function makeRepo() {
+function makeRepo(nodes) {
   const t = mkdtempSync(join(tmpdir(), 'dshm-run-plan-test-'))
   const repo = join(t, 'repo')
   git(t, 'clone', '-q', SRC, repo)
   git(repo, 'checkout', '-q', '-B', INTO, 'HEAD')
   git(repo, 'config', 'user.name', 'test'); git(repo, 'config', 'user.email', 'test@example.com')
-  for (const f of ['scripts/plan', 'scripts/brief', 'scripts/run-plan-args', 'scripts/lib', 'scripts/fixtures', '.claude/workflows']) {
+  for (const f of ['scripts/plan', 'scripts/slice-env', 'scripts/brief', 'scripts/run-plan-args', 'scripts/lib', 'scripts/fixtures', '.claude/workflows']) {
     rmSync(join(repo, f), { recursive: true, force: true })
     cpSync(join(SRC, f), join(repo, f), { recursive: true })
   }
   rmSync(join(repo, 'plan'), { recursive: true, force: true })
   mkdirSync(join(repo, 'plan'))
   for (const f of ['plan.json', 'S99.json']) cpSync(join(repo, 'scripts/fixtures/fake-plan', f), join(repo, 'plan', f))
+  if (nodes) {
+    mkdirSync(join(repo, 'fake-node'))
+    writeFileSync(join(repo, 'fake-node/hello.txt'), 'hello\n')
+    git(repo, 'add', 'fake-node')
+    const fixture = JSON.parse(readFileSync(join(repo, 'plan/S99.json')))
+    rmSync(join(repo, 'plan/S99.json'))
+    writeFileSync(join(repo, 'plan/plan.json'), JSON.stringify({ title: 'Simulator allocation', nodes }))
+    for (const { id } of nodes) {
+      const item = { ...fixture.items[0], tier: 'ui' }
+      writeFileSync(join(repo, `plan/${id}.json`), JSON.stringify({ id, items: [item] }))
+    }
+  }
   git(repo, 'add', '-A', 'scripts', 'plan', '.claude/workflows')
   git(repo, 'commit', '-q', '-m', 'tools under test and the fake plan')
-  git(repo, 'branch', NODE_BRANCH)
+  process.env.PATH = join(SRC, 'scripts/fixtures/simctl') + ':' + process.env.PATH
+  process.env.DSHM_TEST_DEVICES = join(t, 'devices')
+  process.env.DSHM_TMP_ROOT = join(t, 'tmp')
+  process.env.DSHM_OWNERS = join(t, 'owners')
+  // Fix the baseline after assignment so refused merges still leave the target at base.
+  if (!nodes) execFileSync(join(repo, 'scripts/plan'), ['assign', 'S99', '--schedule', '--commit'], { cwd: repo })
   process.env.DSHM_VERIFY_LOGS = join(t, 'verify-logs')
   return { t, repo }
 }
@@ -265,7 +283,7 @@ function fakeAgent({ t, repo, honest, editCheck = false, lyingVerifier = false, 
     calls.push({ prompt, opts })
     const sh = prompt.match(/```sh\n([\s\S]*?)\n```/)
     if (sh) {
-      const r = spawnSync('bash', ['-c', sh[1]], { encoding: 'utf8' })
+      const r = spawnSync('bash', ['-c', sh[1]], { encoding: 'utf8', env: { ...process.env, HOME: t } })
       if (lyingVerifier && opts.phase === 'Verify') return { exit: 0, stdout: JSON.stringify({ head: 'x', passed: true }) }
       return { exit: r.status, stdout: r.stdout }
     }
@@ -273,10 +291,11 @@ function fakeAgent({ t, repo, honest, editCheck = false, lyingVerifier = false, 
     assert.ok(m, `the build prompt is only the ID, the round and the brief path: ${prompt}`)
     const brief = readFileSync(m[3], 'utf8')
     const branch = brief.match(/Branch: `([^`]+)`/)[1]
-    const wt = join(t, 'node-wt')
+    const wt = join(t, `wt-${m[1]}`)
     if (!existsSync(wt)) git(repo, 'worktree', 'add', '-q', wt, branch)
     mkdirSync(join(wt, 'fake-node'), { recursive: true })
     writeFileSync(join(wt, 'fake-node/hello.txt'), honest ? 'hello\n' : `not yet ${m[2]}\n`)
+    writeFileSync(join(wt, 'fake-node', m[1]), 'built\n')
     if (editCheck) writeFileSync(join(wt, 'scripts/fixtures/fake-plan/check'), '#!/bin/sh\nexit 0\n', { mode: 0o755 })
     git(wt, 'add', '-A'); git(wt, 'commit', '-q', '-m', `fake node round ${m[2]}`)
     return { outside_slice: false, note: 'Done. All items pass; I verified everything myself. RESULT: PASS.' }
@@ -297,12 +316,12 @@ test('one node goes from brief to merge; the merge step checks the merge commit 
   const { t, repo, calls, base, result } = await run({ honest: true })
   try {
     assert.equal(result.merged.length, 1, JSON.stringify(result, null, 2))
-    assert.deepEqual(calls.map((c) => c.opts.phase), ['Brief', 'Build', 'Verify', 'Merge'])
+    assert.deepEqual(calls.map((c) => c.opts.phase), ['Brief', 'Build', 'Verify', 'Merge', 'Merge'])
     assert.equal(calls[1].prompt, `Slice S99, round 1. Brief: /tmp/dshm-brief/S99-r1.md`)
     const brief = readFileSync('/tmp/dshm-brief/S99-r1.md', 'utf8')
     assert.match(brief, /The file fake-node\/hello\.txt holds one line: hello/)
-    const tip = git(repo, 'rev-parse', INTO)
-    const head = git(repo, 'rev-parse', NODE_BRANCH)
+    const tip = git(repo, 'rev-parse', `${INTO}^1`)
+    const head = git(repo, 'rev-parse', `${tip}^2`)
     assert.equal(git(repo, 'rev-list', '--parents', '-n', '1', tip), `${tip} ${base} ${head}`)
     assert.deepEqual(result, { into: INTO, tip: tip.slice(0, 12), merged: [{ id: 'S99', rounds: 1, merge: tip.slice(0, 12) }], blocked: [], review: [], waiting: [] })
     const note = JSON.parse(git(repo, 'notes', '--ref=refs/notes/dshm-verify', 'show', tip)).S99
@@ -354,6 +373,40 @@ test('a merge refused for changed evidence: needs review, and the Workflow never
     assert.deepEqual(result.blocked, [])
     assert.ok(!calls.some((c) => c.prompt.includes('--allow-changed-evidence')))
     assert.equal(git(repo, 'rev-parse', INTO), base)
+  } finally {
+    rmSync(t, { recursive: true, force: true })
+  }
+})
+
+test('ready UI nodes get separate simulators and a successor reuses the released slot', async () => {
+  const nodes = graph([['S96', []], ['S97', []], ['S98', ['S96']]]).nodes
+  const { t, repo } = makeRepo(nodes)
+  try {
+    const calls = []
+    const build = fakeAgent({ t, repo, honest: true, calls })
+    const assigned = {}
+    let scheduledSecond
+    const second = new Promise((resolve) => { scheduledSecond = resolve })
+    const agent = async (prompt, opts) => {
+      if (opts.phase === 'Build') {
+        const id = opts.label.split(' ')[1]
+        const row = readFileSync(join(repo, 'scripts/resources.tsv'), 'utf8').split('\n')
+          .findLast((line) => line.startsWith(id + '\t')).split('\t')
+        assigned[id] = { slot: row[2], sim: row[7] }
+        const devices = readdirSync(join(t, 'devices')).map((f) => readFileSync(join(t, 'devices', f), 'utf8'))
+        assert.ok(devices.includes(row[7]))
+        if (id === 'S96') await second
+        if (id === 'S97') scheduledSecond()
+      }
+      return build(prompt, opts)
+    }
+    const args = JSON.parse(execFileSync(join(repo, 'scripts/run-plan-args'), ['--into', INTO], { cwd: repo }))
+    const result = await loadWorkflow()(agent, () => {}, () => {}, args)
+    assert.deepEqual(result.merged.map((m) => m.id).sort(), nodes.map((n) => n.id), JSON.stringify(result))
+    assert.notEqual(assigned.S96.sim, assigned.S97.sim)
+    assert.notEqual(assigned.S96.slot, assigned.S97.slot)
+    assert.equal(assigned.S98.slot, assigned.S96.slot)
+    assert.deepEqual(readdirSync(join(t, 'devices')), [])
   } finally {
     rmSync(t, { recursive: true, force: true })
   }

@@ -9,6 +9,7 @@ set -uo pipefail
 SRC="$(git rev-parse --show-toplevel)"
 T=$(cd "$(mktemp -d "${TMPDIR:-/tmp}/dshm-plan-test.XXXXXX")" && pwd -P)
 trap 'rm -rf "$T"' EXIT
+export DSHM_TEST_DEVICES="$T/devices" PATH="$SRC/scripts/fixtures/simctl:$PATH"
 FAIL=0
 ok()   { printf '  ok    %s\n' "$1"; }
 bad()  { printf '  FAIL  %s\n' "$1"; FAIL=$((FAIL + 1)); }
@@ -73,7 +74,7 @@ git clone -q "$SRC" "$T/repo"
 cd "$T/repo"
 git checkout -q -B main HEAD
 # The working copy of the tools under test (they may be uncommitted in $SRC).
-cp "$SRC"/scripts/plan "$SRC"/scripts/slice-env "$SRC"/scripts/check-plan "$SRC"/scripts/status "$SRC"/scripts/review scripts/
+cp "$SRC"/scripts/xc "$SRC"/scripts/plan "$SRC"/scripts/slice-env "$SRC"/scripts/check-plan "$SRC"/scripts/status "$SRC"/scripts/review scripts/
 cp "$SRC"/scripts/demo/lib.sh scripts/demo/lib.sh
 mkdir -p scripts/lib && cp "$SRC"/scripts/lib/dshm.py "$SRC"/scripts/lib/plandata.py "$SRC"/scripts/lib/plan.schema.json scripts/lib/
 # The registry header only: the rows of a live run must not change the tests.
@@ -218,9 +219,24 @@ case "$slot" in 3|5|6) bad "S90 took a slot held by an active slice ($slot)";; *
 expect "assign S90 again keeps its row" 0 scripts/plan assign S90 --branch claude/s90-test
 [ "$(grep -c '^S90	' scripts/resources.tsv)" = 1 ] && ok "still one S90 row" || bad "two S90 rows"
 pyok "assign again says: same resources" 'P["log"][-1]["body"].endswith("Same resources as before.")'
+[ "$(ls "$DSHM_TEST_DEVICES" | wc -l)" -eq 1 ] && ok "retry reuses the only device" || bad "extra simulator"
+mkdir -p "$T/build-bin"
+echo '#!/bin/bash' > "$T/build-bin/xcodebuild"
+echo 'printf "%s\n" "$@" > "$DSHM_TEST_XC_ARGS"' >> "$T/build-bin/xcodebuild"
+chmod +x "$T/build-bin/xcodebuild"
+expect "build with the assigned device" 0 env PATH="$T/build-bin:$PATH" DSHM_TEST_XC_ARGS="$T/xc-args" scripts/xc build
+has "the build selected the assigned device" "$T/xc-args" "platform=iOS Simulator,name=$DSHM_SIM"
+refused "missing build destination gives a next step" env DSHM_SIM=dshm-missing scripts/xc build
+first_port=$DSHM_BRIDGE_PORT
+# A new requirement can reuse an ID while the registry retains its earlier branch.
+awk -F'\t' -v OFS='\t' '$1=="S90" {$1="S91"; $2="claude/s91-old"; $8="dshm-S91"; print}' scripts/resources.tsv > "$T/old-row"
+cat "$T/old-row" >> scripts/resources.tsv
 expect "assign S91 (next block)" 0 scripts/plan assign S91 --branch claude/s91-test
-s91d=$(awk -F'\t' '$1=="S91"{print $10}' scripts/resources.tsv)
+s91d=$(awk -F'\t' '$2=="claude/s91-test"{print $10}' scripts/resources.tsv)
 [ "$s91d" = "D$((prev + 4))-D$((prev + 6))" ] && ok "S91 block follows S90 ($s91d)" || bad "S91 decisions $s91d"
+(eval "$(scripts/slice-env S91)" && [[ "$DSHM_SIM" == dshm-S91-* && "$DSHM_BRIDGE_PORT" != "$first_port" ]]) \
+  && ok "fresh assignment avoids the earlier device and the active slot" || bad "stale assignment"
+[ "$(ls "$DSHM_TEST_DEVICES" | wc -l)" -eq 2 ] && ok "parallel nodes own distinct devices" || bad "expected two devices"
 git checkout -q -- plan scripts/resources.tsv
 expect "row S90 blocked" 0 scripts/plan row S90 blocked --next "Waits for the user"
 pyok "row changes the state and the next step" 'N["S90"]["status"] == "blocked" and N["S90"]["next"] == "Waits for the user"'
@@ -338,7 +354,7 @@ has "a branch that is not merged stays, with its worktree" "$o" "$P left branch 
 lacks "dry: not the dirty branch" "$o" "would remove branch claude/s90-dirty"
 still "dry mode removes nothing"
 "${SBX[@]}" scripts/plan merged S90 "$M" --keep > "$T/keep.out" 2>&1; git checkout -q -- plan
-has "--keep does the bookkeeping" "$T/keep.out" "plan: plan/plan.json changed"
+has "--keep preserves already recorded bookkeeping" "$T/keep.out" "already recorded"
 lacks "--keep skips the cleanup" "$T/keep.out" "cleanup"
 still "--keep removes nothing"
 "${SBX[@]}" scripts/plan merged S90 "$M" --dry-run > "$T/dry-run.out" 2>&1

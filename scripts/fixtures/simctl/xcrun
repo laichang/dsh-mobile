@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+"""Stateful simctl stand-in, confined to a test's temporary directory."""
+import json
+import os
+from pathlib import Path
+import sys
+import uuid
+
+root = Path(os.environ["DSHM_TEST_DEVICES"])
+root.mkdir(exist_ok=True)
+cmd = sys.argv[1:]
+if cmd[:2] == ["simctl", "create"]:
+    udid = str(uuid.uuid4()).upper()
+    (root / udid).write_text(cmd[2])
+    print(udid)
+elif cmd[:2] == ["simctl", "delete"]:
+    (root / cmd[2]).unlink()
+elif cmd[:3] == ["simctl", "list", "devices"]:
+    devices = [{"name": f.read_text(), "udid": f.name, "state": "Shutdown"} for f in root.iterdir()]
+    print(json.dumps({"devices": {"com.apple.CoreSimulator.SimRuntime.iOS-26-0": devices}}))
+elif cmd[:2] != ["simctl", "shutdown"]:
+    sys.exit(1)
