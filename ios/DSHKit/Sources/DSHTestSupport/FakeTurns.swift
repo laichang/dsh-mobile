@@ -13,7 +13,7 @@ public enum FakeTurns {
     public static let firstPrompt = "Plan a weekend in Hangzhou for two"
     public static let secondPrompt = "Make it a day trip instead"
     /// From the first turn's start to the end of the session: what the footer said before.
-    public static let sinceFirstTurn: Int64 = (2 * 3600 + 37 * 60 + 15) * 1000
+    public static let sinceFirstTurn: Int64 = 9_435_000
     /// The second turn, from its start to its end: what the footer says.
     public static let lastTurn: Int64 = 84 * 1000
     public static let answerStart = "Here is a day trip to Hangzhou, from the first train to the last."

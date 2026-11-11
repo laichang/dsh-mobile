@@ -44,7 +44,7 @@ import Testing
         try await waitUntil("both sessions") { store.tasks.count == 2 }
         let turns = try #require(store.task("fake:mac\n\(FakeTurns.taskID)"))
         #expect(turns.updatedAt.timeIntervalSince(turns.lastTurnStart) == Double(FakeTurns.lastTurn) / 1000)
-        #expect(turns.updatedAt.timeIntervalSince(turns.createdAt) == Double(FakeTurns.sinceFirstTurn) / 1000)
+        #expect(turns.updatedAt.timeIntervalSince(turns.createdAt) == 9_435)
         let fallback = try #require(store.task("fake:mac\nold-bridge"))
         #expect(fallback.turnStartedAt == nil)
         #expect(fallback.lastTurnStart == fallback.createdAt)
