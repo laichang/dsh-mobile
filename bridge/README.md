@@ -47,7 +47,7 @@ Held approvals: a paired phone or a DSH web client answers a request once. Set `
    DSH_HOME=~/.dsh node bridge/lib/scripts/pair.js
    ```
 
-   In dsh-mobile, tap the QR button and scan it, then tap **Pair**. The QR lists every external IPv4 address of the host (Wi-Fi, Ethernet, Tailscale's `100.x`); the phone tries them in order, so it works on the same Wi-Fi or over Tailscale. The link printed under the QR can be pasted into the app instead.
+   In dsh-mobile, tap the QR button and scan it, then tap **Pair**. The QR lists every external IPv4 address of the host (Wi-Fi, Ethernet, Tailscale's `100.x`); the phone tries them in order, so it works on the same Wi-Fi, or over Tailscale when Tailscale is on at both the phone and the host. The link printed under the QR can be pasted into the app instead.
 
 5. Talk to it without the app (the CLI pairs like a phone):
 

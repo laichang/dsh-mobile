@@ -8,7 +8,7 @@ Upstream is DeepSeek Harness (DSH) `0.2.2-rc.1`, a developer preview with breaki
 
 | STORY.md needs | Upstream DSH | What dsh-mobile does |
 |---|---|---|
-| Reach hosts behind NAT or on a LAN | Binds one IP (default `127.0.0.1:3080`); no relay or tunnel | The bridge opens its own listener; the user gives reachability (same Wi-Fi, Tailscale or another private network) |
+| Reach hosts behind NAT or on a LAN | Binds one IP (default `127.0.0.1:3080`); no relay or tunnel | The bridge opens its own listener; the user gives reachability (same Wi-Fi, or Tailscale on both ends) |
 | QR pairing, revoke per device | One launch token per process; revoke = revoke everything | The bridge owns pairing and a device registry |
 | Approvals belong to the account and wait until answered | With no answerer, a request is `unavailable` (fails closed). Under `dsh web` the Web forwarder holds a request until a tab connects. Subagents never ask | The bridge holds approvals in process, first in the chain, and fans a copy out to the Web (§4.4) |
 | Approvals say what they do | A request carries only `toolName`, `callId`, `reason` | The bridge joins it with the streamed tool call to show the arguments |
@@ -90,7 +90,7 @@ Interrupt, model switch and follow-up messages take the same outbound path as an
 | **The app talks only to the bridge facade** | Upstream breaks often and app builds update slowly; the bridge absorbs the breakage |
 | **Protobuf** in `protocol/` (swift-protobuf, protobuf-es) | Typed messages in an encrypted envelope; `oneof` for events; additive evolution |
 | **App-layer E2E encryption (Noise)**, the host key delivered by QR | Every transport is untrusted (plain LAN, Tailscale). Details in §4.2 |
-| **Direct reachability only**: LAN or a private network such as Tailscale. No relay | Tailscale is enough; a relay is a server to run and secure |
+| **Direct reachability only**: same LAN, or Tailscale on both ends. No relay, no public tunnel | Only the user's devices reach the bridge; a relay is a server to run |
 | **No APNs push** | Needs a paid Apple account and a key on each host. The app updates while it runs; a local Live Activity covers the lock screen (§5.7) |
 | **SwiftData cache**; the host is the source of truth | Offline viewing; nothing lost across disconnects |
 | **`@Observable` stores**, services as protocols with real and fake implementations; Swift Testing; Apple frameworks first, few pinned dependencies | Plain, testable, small supply chain |

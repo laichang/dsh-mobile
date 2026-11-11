@@ -136,7 +136,7 @@ scripts/demo/all-tasks.sh
    DSHM_BUNDLE_ID_PREFIX = com.example
    ```
 
-4. **Scan the QR** in the app. The phone tries each of the host's addresses, so the same Wi-Fi or Tailscale both work.
+4. **Scan the QR** in the app. The phone tries each of the host's addresses, so the same Wi-Fi works as it is. Away from that Wi-Fi, turn on Tailscale on both the phone and the computer.
 
 Need a fresh QR later (single use, valid 10 minutes)?
 
