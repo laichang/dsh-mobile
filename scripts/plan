@@ -45,7 +45,7 @@ Merge step (the coordinator, or the merge node of the Workflow):
         Prints a JSON summary; exit 0 = merged (--dry-run: passed), 1 = not
 
 Coordinator (on main):
-  plan new "<title>"                   start the plan of a requirement that the user has set
+  plan new "<title>" [--github-milestone OWNER/REPO#N]  start the plan of a requirement that the user has set
         (refused if plan/plan.json exists). Title: "M3 · Push and replies"
   plan add tracer|spike|slice "<name>" --why T --cuts T --done "[auto] …" [--done …]
         [--needs "T0, X1"] [--demo PATH] [--not T]
@@ -379,6 +379,8 @@ def cmd_new(p, a):
     if not title:
         raise PlanError("the plan has no title. Next: give one, for example \"M3 · Push and replies\"")
     p.doc = {"title": title, "nodes": [], "exit": [], "log": [entry("Plan started", title)], "pending": []}
+    if a.github_milestone:
+        p.doc["github_milestone"] = a.github_milestone
     return p.save(a, f"Plan: start {title}")
 
 
@@ -823,7 +825,7 @@ def main():
     sp = add("verify", cmd_verify); sp.add_argument("id"); sp.add_argument("--base", default="HEAD")
     sp = add("merge", cmd_merge); sp.add_argument("id"); sp.add_argument("--into", required=True)
     sp.add_argument("--allow-changed-evidence", dest="allow", action="append", default=[], metavar="PATH")
-    sp = add("new", cmd_new); sp.add_argument("title")
+    sp = add("new", cmd_new); sp.add_argument("title"); sp.add_argument("--github-milestone", metavar="OWNER/REPO#N")
     sp = add("add", cmd_add); sp.add_argument("kind", choices=[*KINDS, "exit"]); sp.add_argument("name")
     sp.add_argument("--why", default=""); sp.add_argument("--cuts", default="")
     sp.add_argument("--demo", default=""); sp.add_argument("--not", dest="not_", default="")
