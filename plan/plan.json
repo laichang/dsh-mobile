@@ -121,16 +121,17 @@
         "S3",
         "S4"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s5-636278c",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Replay and durable data must stay consistent per host when the phone disconnects. Closes #78.",
       "cuts": "Keep the SwiftData models in DSHCore. Give each host a single sync owner for its connection loop, replay cursor and writes. Save each applied set of events and its cursor together. Supply typed snapshots/events for consumers. S6 moves feature state after this boundary works.\nStarting files: `ios/DSHKit/Sources/DSHCore/Sync/TaskCache.swift`, `ios/DSHKit/Sources/DSHCore/Sync/TaskListStore.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`.\nScreen references: `design/screens/02.html`, `design/screens/03.html`, `design/screens/04.html`, `design/screens/X3.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S6",
@@ -356,6 +357,11 @@
       "date": "2026-11-11",
       "title": "S4 merged",
       "body": "Merged as `d69daf5`; the plan/ rules hold on the merge commit. No open [human] items, so S4 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S5 assigned",
+      "body": "Branch `claude/s5-636278c`, simulator `5FAAF192-E5D2-4A60-83B4-40B8D91DF539`, DSHM_HOME `~/.dshm/home-s5-5FAAF192-E5D2-4A60-83B4-40B8D91DF539`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S5)\"` exports them."
     }
   ],
   "pending": [
