@@ -13,7 +13,7 @@ final class SessionVisibilityUITests: XCTestCase {
         openAllTasks(app)
 
         let rows = app.buttons.matching(identifier: "tasklist.row")
-        let row = rows.matching(NSPredicate(format: "label CONTAINS %@", "网页第一条")).firstMatch
+        let row = rows.matching(NSPredicate(format: "label CONTAINS %@", "网页会话")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 25), app.debugDescription)
         XCTAssertEqual(rows.count, 1)
         row.tap()
