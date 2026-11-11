@@ -277,7 +277,8 @@
       "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
       "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     }
   ],
   "exit": [
