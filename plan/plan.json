@@ -178,10 +178,10 @@
       "needs": [
         "T0"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s10-fake-turn-duration",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Fix: Compile the fake turn duration with the installed Swift compiler; start a fix session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "The user reported a bug on 2026-11-11: Clean S5 demo twice stops in unchanged FakeTurns.swift:16 with compiler unable to type-check the Int64 duration; preserve 9,435,000 ms and complete OfflineReasonsTests.",
       "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
@@ -256,6 +256,11 @@
       "date": "2026-11-11",
       "title": "S5 assigned",
       "body": "Branch `claude/s5-pre-m3`, worktree `/Users/bytedance/dsh-mobile-s5`, simulator `dshm-S5-183`, DSHM_HOME `~/.dshm/home-s5-183`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S5)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S10 assigned",
+      "body": "Branch `claude/s10-fake-turn-duration`, worktree `/Users/bytedance/dsh-mobile-s10`, simulator `dshm-S10`, DSHM_HOME `~/.dshm/home-s10`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S10)\"` exports them."
     }
   ],
   "pending": [
