@@ -281,6 +281,8 @@ function makeRepo(nodes) {
 function fakeAgent({ t, repo, honest, editCheck = false, lyingVerifier = false, calls }) {
   return async (prompt, opts = {}) => {
     calls.push({ prompt, opts })
+    // Keep the real shell and builder on this fixture's private brief path.
+    prompt = prompt.replace('/tmp/dshm-brief/', join(t, 'briefs') + '/')
     const sh = prompt.match(/```sh\n([\s\S]*?)\n```/)
     if (sh) {
       const r = spawnSync('bash', ['-c', sh[1]], { encoding: 'utf8', env: { ...process.env, HOME: t } })
@@ -318,7 +320,7 @@ test('one node goes from brief to merge; the merge step checks the merge commit 
     assert.equal(result.merged.length, 1, JSON.stringify(result, null, 2))
     assert.deepEqual(calls.map((c) => c.opts.phase), ['Brief', 'Build', 'Verify', 'Merge', 'Merge'])
     assert.equal(calls[1].prompt, `Slice S99, round 1. Brief: /tmp/dshm-brief/S99-r1.md`)
-    const brief = readFileSync('/tmp/dshm-brief/S99-r1.md', 'utf8')
+    const brief = readFileSync(join(t, 'briefs/S99-r1.md'), 'utf8')
     assert.match(brief, /The file fake-node\/hello\.txt holds one line: hello/)
     const tip = git(repo, 'rev-parse', `${INTO}^1`)
     const head = git(repo, 'rev-parse', `${tip}^2`)
@@ -425,7 +427,16 @@ test('fresh runs share the committed three-round budget for each node', async ()
       let failed = false
       const interrupted = async (prompt, opts) => {
         if (opts.phase === 'Brief' && failed) throw new Error('workflow interrupted before next round')
-        if (opts.phase === 'Build') builds.push(prompt)
+        if (opts.phase === 'Build') {
+          builds.push(prompt)
+          const brief = readFileSync(join(t, 'briefs', `S96-r${round}.md`), 'utf8')
+          if (round > 1) {
+            const [, from, file] = brief.match(/Previous review \(round (\d+)\): `([^`]+)`/)
+            assert.equal(Number(from), round - 1)
+            assert.match(readFileSync(file, 'utf8'), /"passed": false/)
+            assert.ok(file.endsWith(`/r${round - 1}.txt`))
+          }
+        }
         const result = await build(prompt, opts)
         if (opts.phase === 'Verify') failed = !JSON.parse(result.stdout).passed
         return result

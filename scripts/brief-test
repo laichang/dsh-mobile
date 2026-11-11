@@ -60,10 +60,10 @@ def run_brief(repo, *args):
     return subprocess.run([str(repo / "scripts/brief"), *args], cwd=repo, capture_output=True, text=True)
 
 
-def tree(repo):
-    """{path: mode} of HEAD."""
+def tree(repo, ref="HEAD"):
+    """{path: mode} at ref."""
     out = {}
-    for line in git(repo, "ls-tree", "-r", "-z", "HEAD").split("\0"):
+    for line in git(repo, "ls-tree", "-r", "-z", ref).split("\0"):
         if line:
             meta, path = line.split("\t", 1)
             out[path] = meta.split()[0]
@@ -315,10 +315,21 @@ def main():
                              "Not": "Any other file."}})
         git(repo, "checkout", "-q", "base")
         out = tmp / "round2" / "S99.md"
+        review = Path(run_brief(repo, "S99", "--round", "1", "--base", "fake", "--review-path").stdout.strip())
+        review.write_text("first review")
+        review.with_name("r3.txt").write_text("a later review")
+        first = tmp / "first.md"
+        run_brief(repo, "S99", "--base", "fake", "--out", str(first))
+        (ok if "Previous review" not in first.read_text() else bad)("the first round needs no review")
         r = run_brief(repo, "S99", "--round", "2", "--base", "fake", "--out", str(out))
         if r.returncode == 0 and r.stdout.strip() == str(out) and out.exists():
             ok("--round, --base, --out: the brief is written to --out and its path is printed")
             text = out.read_text()
+            check_brief("rework", text, tree(repo, "fake"))
+            (ok if f"Previous review (round 1): `{review}`" in text else bad)("rework selects its own previous round")
+            review.unlink()
+            run_brief(repo, "S99", "--round", "2", "--base", "fake", "--out", str(out))
+            (ok if "No review was recorded for round 1" in out.read_text() else bad)("missing review cannot select a different round")
             (ok if "round 2" in text and "Branch: `claude/s99-fake-node`" in text else bad)(
                 "the brief has the round and the branch of the node at --base")
             (ok if "fake-node/hello.txt` (new)" in text else bad)("a file that the base does not have is marked new")
