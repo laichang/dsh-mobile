@@ -239,14 +239,15 @@ demo_part() {
   return 1
 }
 
-# A demo can register its own exit action after starting a host. Run that action with
-# its original shell options and delete the generated profile even if the action fails.
-demo_tls_remove_profile() {
-  rm -rf -- "$demo_tls_profile"
-}
-
+# Keep the original handler in the owning shell so it can wait for its host and proxy.
+# Preserve the demo's exit status and finish cleanup even if that handler reports an error.
 demo_tls_on_exit() {
-  trap "( trap demo_tls_remove_profile EXIT; ${1:-:} )" EXIT
+  trap "demo_tls_status=\$?
+    {
+      ${1:-:}
+    } || demo_tls_status=\$?
+    rm -rf -- \"\$demo_tls_profile\" || demo_tls_status=\$?
+    exit \"\$demo_tls_status\"" EXIT
 }
 
 # Each network demo gets a disposable host profile. Nested demos get their own as well.

@@ -58,7 +58,14 @@ for status in 0 17; do
     unset SIM DSHM_SIM
     source scripts/demo/lib.sh
     diagnostic="$1/diagnostic"
-    cleanup() { touch "$diagnostic"; }
+    sleep 60 &
+    host=$!
+    cleanup() {
+      kill "$host"
+      wait "$host" || [[ $? == 143 ]] || return 1
+      [[ -f "$demo_tls_profile/host-key" ]] || return 1
+      touch "$diagnostic"
+    }
     if [[ $2 == 0 ]]; then trap cleanup EXIT; fi
     demo_tls_home
     printf "%s" "$DSHM_HOME" > "$1/profile"
