@@ -170,6 +170,24 @@
       "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
       "demo": null,
       "log": []
+    },
+    {
+      "id": "S10",
+      "kind": "slice",
+      "title": "Fix: Compile the fake turn duration with the installed Swift compiler",
+      "needs": [
+        "T0"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Fix: Compile the fake turn duration with the installed Swift compiler; start a fix session",
+      "merge": null,
+      "why": "The user reported a bug on 2026-11-11: Clean S5 demo twice stops in unchanged FakeTurns.swift:16 with compiler unable to type-check the Int64 duration; preserve 9,435,000 ms and complete OfflineReasonsTests.",
+      "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
+      "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
+      "demo": null,
+      "log": []
     }
   ],
   "exit": [],
