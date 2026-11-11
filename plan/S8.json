@@ -1,0 +1,19 @@
+{
+  "id": "S8",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "A test reproduces the reported bug and passes with the fix",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "human",
+      "text": "The user no longer sees the bug",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

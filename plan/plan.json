@@ -138,6 +138,22 @@
       "not": "",
       "demo": null,
       "log": []
+    },
+    {
+      "id": "S8",
+      "kind": "slice",
+      "title": "Fix: Show the next action for active slices in status",
+      "needs": [],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Fix: Show the next action for active slices in status; start a fix session",
+      "merge": null,
+      "why": "The user reported a bug on 2026-11-11: scripts/status exits with KeyError on next when it prints an active slice.",
+      "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
+      "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
+      "demo": null,
+      "log": []
     }
   ],
   "exit": [],
