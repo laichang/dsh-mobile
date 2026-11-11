@@ -166,7 +166,7 @@ def main():
     except (dshm.PlanError, json.JSONDecodeError):
         doc = None
     has_plan = doc is not None
-    rows = [{"id": n["id"], "status": n.get("status", "todo"),
+    rows = [{"id": n["id"], "status": n.get("status", "todo"), "next": n.get("next", "—"),
              "branch": f"`{n['branch']}`" if n.get("branch") else "—"} for n in doc["nodes"]] if has_plan else []
     registry = {r["id"]: r for r in dshm.parse_registry(
         (main_root / dshm.REGISTRY).read_text() if (main_root / dshm.REGISTRY).exists() else "")}
