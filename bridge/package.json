@@ -1,13 +1,14 @@
 {
   "name": "@dsh-mobile/bridge",
   "version": "0.1.0",
-  "description": "DSH companion plugin for dsh-mobile: a loopback WebSocket listener speaking protocol/frame.proto",
+  "description": "DSH companion plugin for dsh-mobile over pinned TLS 1.3",
   "license": "PolyForm-Noncommercial-1.0.0",
   "private": true,
   "type": "module",
   "main": "lib/src/index.js",
   "files": [
     "lib/src",
+    "lib/scripts/pair.js",
     "cordis.patch.yml"
   ],
   "packageManager": "pnpm@11.28.5",
@@ -21,18 +22,14 @@
     }
   },
   "scripts": {
-    "build": "tsc -p .",
+    "build": "rm -rf lib && tsc -p .",
     "test": "tsc -p . && node --test \"lib/test/**/*.test.js\"",
     "typecheck": "tsc -p . --noEmit",
     "fixtures": "tsc -p . && node lib/scripts/fixtures.js",
-    "noise-fixtures": "tsc -p . && node lib/scripts/noise-fixtures.js",
     "pair": "node lib/scripts/pair.js"
   },
   "dependencies": {
     "@bufbuild/protobuf": "2.16.0",
-    "@noble/ciphers": "2.4.0",
-    "@noble/curves": "2.4.0",
-    "@noble/hashes": "2.4.0",
     "uqr": "0.1.3",
     "ws": "8.22.1"
   },

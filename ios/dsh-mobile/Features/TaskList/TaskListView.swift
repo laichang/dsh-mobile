@@ -187,8 +187,7 @@ struct HostStatusRow: View {
     }
 }
 
-/// Which channel the host is reached over: end-to-end encrypted (Noise), or plaintext on
-/// Debug's loopback dev path. `host.channel` value = the channel name.
+/// Shows the connection used for this host.
 struct HostChannelRow: View {
     let host: TaskListStore.HostStatus
 
@@ -197,12 +196,12 @@ struct HostChannelRow: View {
         HStack(spacing: 6) {
             Image(systemName: encrypted ? "lock.fill" : "lock.open")
                 .foregroundStyle(encrypted ? .green : .orange)
-            Text(encrypted ? "End-to-end encrypted" : "Plaintext (dev, loopback only)")
+            Text(encrypted ? "End-to-end encrypted" : "In-process test host")
         }
         .font(.caption)
         .foregroundStyle(.secondary)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(encrypted ? "\(host.name), encrypted" : "\(host.name), plaintext")
+        .accessibilityLabel(encrypted ? "\(host.name), encrypted" : "\(host.name), in-process test host")
         .accessibilityValue(host.channelName)
         .accessibilityIdentifier("host.channel")
     }

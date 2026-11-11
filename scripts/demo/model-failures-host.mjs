@@ -26,7 +26,7 @@ const port = process.env.DSHM_WEB_PORT
 const bridgePort = Number(process.env.DSHM_BRIDGE_PORT)
 assert.ok(home && signals && port && bridgePort, 'set DSHM_HOME, DSHM_FAILURE_SIGNALS, DSHM_WEB_PORT, DSHM_BRIDGE_PORT')
 const dsh = join(runtime, 'node_modules/.bin/dsh')
-const env = { ...process.env, DSH_HOME: home, DSHM_BRIDGE_HOST: '127.0.0.1', DSHM_BRIDGE_TLS: '1' }
+const env = { ...process.env, DSH_HOME: home, DSHM_BRIDGE_HOST: '127.0.0.1' }
 const bridge = fileURLToPath(new URL('../../bridge', import.meta.url))
 const add = spawnSync(dsh, ['plugin', '--profile', 'web', 'add', bridge], { env, encoding: 'utf8' })
 assert.equal(add.status, 0, add.stderr || add.stdout)

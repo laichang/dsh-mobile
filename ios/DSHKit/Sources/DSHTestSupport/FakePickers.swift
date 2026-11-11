@@ -28,8 +28,7 @@ public enum FakePickers {
             script.holdPrompt = hold
             let fake = FakeHost(script: script, hostName: name, pickers: pickers)
             let endpoint = HostEndpoint.localBridge(port: 47801 + index)
-            return .init(key: "fake:\(name)", connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(),
-                         transport: fake.factory), name: name)
+            return .init(key: "fake:\(name)", connection: HostConnection(endpoint: endpoint, transport: fake.factory), name: name)
         }
     }
 

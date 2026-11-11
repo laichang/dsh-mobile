@@ -62,15 +62,25 @@ async function startListener(host: string, port: number, stateDir: string,
   await new Promise<void>((resolve, reject) => http.once('error', reject).listen(port, host, resolve))
   const address = http.address()
   if (!address || typeof address !== 'object') throw new Error('missing listener address')
+  function renew() {
+    const info = listenerInfo(host, boundPort)
+    const current = tlsIdentity(join(stateDir, 'tls'), info.addresses.map(a => splitAddress(a).host))
+    http.setSecureContext(current.options)
+    return { info, pin: current.spkiSHA256 }
+  }
+  const boundPort = address.port
+  const renewal = setInterval(() => {
+    try { renew() }
+    catch (error) { console.error('Bridge TLS certificate renewal failed:', error instanceof Error ? error.message : String(error)) }
+  }, 24 * 3600_000).unref()
   return {
-    port: address.port,
+    port: boundPort,
     issue(ttl: number) {
-      const info = listenerInfo(host, address.port)
-      const renewed = tlsIdentity(join(stateDir, 'tls'), info.addresses.map(a => splitAddress(a).host))
-      http.setSecureContext(renewed.options)
-      return registry.issue(info, renewed.spkiSHA256, ttl)
+      const { info, pin } = renew()
+      return registry.issue(info, pin, ttl)
     },
     close: async () => {
+      clearInterval(renewal)
       for (const ws of wss.clients) ws.terminate()
       wss.close()
       await new Promise<void>(done => http.close(() => done()))

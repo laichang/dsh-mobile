@@ -3,14 +3,14 @@
  * is the Debug-only deep link, so the Simulator can pair without a camera. Parsed by
  * ios/DSHKit/Sources/DSHCore/Pairing/PairingOffer.swift.
  *
- *   dshm://pair?v=1&n=<host name>&a=<host:port>,<host:port>&k=<host key>&i=<offer id>&s=<secret>&x=<expiry>
+ *   dshm://pair?v=2&n=<host name>&a=<host:port>,<host:port>&k=<host key>&i=<offer id>&s=<secret>&x=<expiry>
  *
  * k, i and s are unpadded base64url (32, 16 and 32 bytes); x is Unix seconds.
  */
-import { KEY_LENGTH, OFFER_ID_LENGTH, SECRET_LENGTH, b64url, unb64url } from './wire.ts'
+const b64url = (bytes: Uint8Array) => Buffer.from(bytes).toString('base64url')
 
 export interface PairingOffer {
-  version?: 1 | 2
+  version: 2
   hostName: string
   /** "host:port", IPv6 hosts in brackets. Tried in order. */
   addresses: string[]
@@ -23,7 +23,7 @@ export interface PairingOffer {
 
 export function offerURL(o: PairingOffer): string {
   const q = new URLSearchParams({
-    v: String(o.version ?? 1),
+    v: String(o.version),
     n: o.hostName,
     a: o.addresses.join(','),
     k: b64url(o.hostKey),
@@ -38,9 +38,9 @@ export function parseOfferURL(url: string): PairingOffer {
   const u = new URL(url)
   if (u.protocol !== 'dshm:' || u.host !== 'pair') throw new Error('not a dshm://pair link')
   const q = u.searchParams
-  if (q.get('v') !== '1' && q.get('v') !== '2') throw new Error(`unsupported pairing link version ${q.get('v')}`)
+  if (q.get('v') !== '2') throw new Error(`unsupported pairing link version ${q.get('v')}. Generate a new code on the updated host.`)
   const bytes = (key: string, length: number) => {
-    const b = unb64url(q.get(key) ?? '')
+    const b = Buffer.from(q.get(key) ?? '', 'base64url')
     if (b.length !== length) throw new Error(`pairing link field ${key} must be ${length} bytes`)
     return b
   }
@@ -49,12 +49,12 @@ export function parseOfferURL(url: string): PairingOffer {
   const x = Number(q.get('x'))
   if (!Number.isFinite(x) || x <= 0) throw new Error('pairing link has no expiry')
   return {
-    ...(q.get('v') === '2' ? { version: 2 as const } : {}),
+    version: 2,
     hostName: q.get('n') ?? '',
     addresses,
-    hostKey: bytes('k', KEY_LENGTH),
-    offerId: bytes('i', OFFER_ID_LENGTH),
-    secret: bytes('s', SECRET_LENGTH),
+    hostKey: bytes('k', 32),
+    offerId: bytes('i', 16),
+    secret: bytes('s', 32),
     expiresAt: x * 1000,
   }
 }

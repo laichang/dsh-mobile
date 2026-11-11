@@ -7,7 +7,7 @@ import UIKit
 import DSHTestSupport
 #endif
 
-/// Each paired host syncs over its own Noise connection into the shared task list.
+/// Each paired host syncs over its own pinned TLS connection into the shared task list.
 @MainActor
 @Observable
 final class AppModel {
@@ -54,9 +54,7 @@ final class AppModel {
     var revokedNotice: String?
 
     init() {
-        let keys = KeychainDeviceKeyStore()
         let hosts = FilePairedHostStore()
-        var transport: BridgeTransportFactory = WebSocketTransport.factory
         // After a timeout, a TCP connect tells another program on the port from no computer.
         var probe: PortProbe? = TCPPortProbe.probe
         var transcriber = SpeechFrameworkTranscriber.factory
@@ -71,19 +69,21 @@ final class AppModel {
         if options.resetPairing {
             for host in hosts.load() { try? Pairing.removeCredential(for: host) }
             try? hosts.removeAll()
-            try? keys.reset()
+        }
+        if ProcessInfo.processInfo.arguments.contains("-DSHMSeedLegacyPairing") {
+            try! LegacyPairingFixture.install(in: hosts)
         }
         if options.resetStore {
             try? TaskCache.erase(container)
             UserDefaults.standard.removeObject(forKey: Self.preferredHostKey)
         }
-        if options.useFakeBridge { transport = FakeBridge.factory(); probe = nil }
+        if options.useFakeBridge { probe = nil }
         presetPrompt = options.presetPrompt ?? ""
         if let seconds = options.connectDelay { connectDelay = .milliseconds(Int(seconds * 1000)) }
         if let speech = options.fakeSpeech { transcriber = FakeTranscriber.factory(speech) }
         #endif
         self.transcriber = transcriber
-        pairing = Pairing(keys: keys, hosts: hosts, transport: transport, probe: probe)
+        pairing = Pairing(hosts: hosts, probe: probe)
         if !liveActivitiesOn { activityClient.dismissAll() }
         store = makeStore()
     }
@@ -146,7 +146,7 @@ final class AppModel {
                                     approvals: options.fakeApprovals ? FakeApprovals.seed(for: name) : [])
                 if options.fakeApprovals { FakeApprovalSheet.watchWebAnswers(fake) }
                 return .init(key: "fake:\(name)", connection: HostConnection(endpoint: endpoint,
-                             channel: PlaintextChannel(), transport: fake.factory), name: name)
+                             transport: fake.factory), name: name)
             }
         }
         if options.useFakeBridge {
@@ -163,21 +163,12 @@ final class AppModel {
                            extraCapabilities: options.fakeScenario == "transcript" ? [FakeTranscript.capability] : [])
             if options.fakeScenario == "outcomes" { FakeApprovalSheet.watchWebAnswers(fake) }
             return [.init(key: "fake:\(endpoint)",
-                          connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: fake.factory))]
+                          connection: HostConnection(endpoint: endpoint, transport: fake.factory))]
         }
         #endif
         let paired = pairing.hosts.load()
         hasSavedHosts = !paired.isEmpty
-        if !paired.isEmpty { return paired.compactMap(pairedConfig) }
-        #if DEBUG
-        // After this device lost its last paired host, show 08, not the loopback dev path.
-        guard forgottenHostKeys.isEmpty, let port = options.bridgePort else { return [] }
-        let endpoint = HostEndpoint.localBridge(port: port)
-        return [.init(key: "bridge:\(endpoint)",
-                      connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: pairing.transport))]
-        #else
-        return []
-        #endif
+        return paired.compactMap(pairedConfig)
     }
 
     /// This device lost its access to the host (it revoked itself): forget the pairing

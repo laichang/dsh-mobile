@@ -4,9 +4,9 @@
  */
 import { hostname, networkInterfaces } from 'node:os'
 import { renderUnicodeCompact } from 'uqr'
-import { isLoopbackAddress } from '../channel.ts'
+import { isIP } from 'node:net'
 import { joinAddress, offerURL, type PairingOffer } from './offer.ts'
-import { DEFAULT_OFFER_TTL_MS, type ListenerInfo, type PairingStore } from './store.ts'
+export interface ListenerInfo { hostName: string; addresses: string[] }
 
 /**
  * Where a phone can reach a listener bound to `host`. A wildcard bind lists every external
@@ -27,18 +27,11 @@ export function listenerInfo(host: string, port: number): ListenerInfo {
   return { hostName: hostname().replace(/\.local$/, ''), addresses: reachableAddresses(host, port) }
 }
 
-/** Creates a fresh single-use offer for the listener the store last recorded. */
-export function makeOffer(store: PairingStore, ttlMs = DEFAULT_OFFER_TTL_MS, listener = store.listener()): PairingOffer {
-  if (!listener) throw new Error(`no listener recorded in ${store.dir}; start the bridge first`)
-  const offer = store.createOffer(ttlMs)
-  return {
-    hostName: listener.hostName,
-    addresses: listener.addresses,
-    hostKey: store.hostKey().publicKey,
-    offerId: offer.id,
-    secret: offer.secret,
-    expiresAt: offer.expiresAt,
-  }
+function isLoopbackAddress(host: string): boolean {
+  const h = host.startsWith('[') && host.endsWith(']') ? host.slice(1, -1) : host
+  if (isIP(h) === 4) return h.split('.')[0] === '127'
+  if (isIP(h) === 6) return h === '::1' || h.toLowerCase() === '0:0:0:0:0:0:0:1'
+  return false // names (even "localhost") can resolve anywhere; require a literal address
 }
 
 export function renderOffer(offer: PairingOffer): string {

@@ -8,7 +8,7 @@ import Testing
 @MainActor
 struct DurableHostSyncTests {
     private func config(_ key: String, _ host: FakeHost) -> TaskListStore.HostConfig {
-        .init(key: key, connection: .init(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory))
+        .init(key: key, connection: .init(endpoint: .localBridge(), transport: host.factory))
     }
 
     private func chunk(_ seq: UInt64, _ text: String) -> Dshm_V1_Event {

@@ -13,7 +13,7 @@ import Testing
         .appendingPathComponent("dshm-s16-\(UUID().uuidString).store")
 
     func launch(_ host: FakeHost) throws -> TaskListStore {
-        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
+        let connection = HostConnection(endpoint: .localBridge(), transport: host.factory)
         let store = TaskListStore(
             container: try TaskCache.container(url: storeURL),
             hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Fix the failing test.")

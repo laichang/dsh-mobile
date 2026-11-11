@@ -18,7 +18,6 @@ async function freePort() {
 }
 process.env.DSHM_MOCK_PORT = await freePort()
 process.env.DSHM_BRIDGE_HOST = '127.0.0.1'
-process.env.DSHM_BRIDGE_TLS = '1'
 const bridgePort = Number(process.env.DSHM_BRIDGE_PORT ?? 47801)
 
 export const QUESTION = {

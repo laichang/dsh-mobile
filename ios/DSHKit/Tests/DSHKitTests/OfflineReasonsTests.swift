@@ -19,38 +19,15 @@ import Testing
     static let textReply = HostEndpoint(host: "192.0.2.7", port: 47801)
     static let echo = HostEndpoint(host: "192.0.2.8", port: 47801)
 
-    /// A transport that fails the handshake the way one kind of peer does.
-    final class Peer: BridgeTransport {
-        enum Kind: Sendable { case silent, foreignClose, textReply, echo }
-        let kind: Kind
-        private let closed = AsyncStream<Void>.makeStream()
-        private let sent = Mutex<[Data]>([])
-
-        init(_ kind: Kind) { self.kind = kind }
-
-        func send(_ message: Data) async throws { sent.withLock { $0.append(message) } }
-        func receive() async throws -> Data {
-            switch kind {
-            case .silent:
-                for await _ in closed.stream {}
-                throw URLError(.networkConnectionLost)
-            case .foreignClose: throw BridgeTransportError.closed(code: 1002, reason: "protocol error")
-            case .textReply: throw BridgeTransportError.unexpectedTextMessage
-            case .echo: return sent.withLock { $0.first } ?? Data()
-            }
-        }
-        func close() async { closed.continuation.finish() }
-    }
-
     /// The phone's sockets: how each address answers a WebSocket and a plain TCP connect.
     static let transport: BridgeTransportFactory = { url in
         switch HostEndpoint(host: url.host() ?? "", port: url.port ?? 0) {
         case OfflineReasonsTests.refused: throw URLError(.cannotConnectToHost)
         case OfflineReasonsTests.http: throw URLError(.badServerResponse)
-        case OfflineReasonsTests.foreignClose: return Peer(.foreignClose)
-        case OfflineReasonsTests.textReply: return Peer(.textReply)
-        case OfflineReasonsTests.echo: return Peer(.echo)
-        default: return Peer(.silent)
+        case OfflineReasonsTests.foreignClose: throw URLError(.badServerResponse)
+        case OfflineReasonsTests.textReply: throw BridgeTransportError.unexpectedTextMessage
+        case OfflineReasonsTests.echo: throw URLError(.badServerResponse)
+        default: try await Task.sleep(for: .seconds(60)); throw URLError(.timedOut)
         }
     }
 
@@ -64,8 +41,7 @@ import Testing
 
     func failures(_ endpoints: [HostEndpoint], probe: PortProbe? = Self.probe,
                   transport: @escaping BridgeTransportFactory = Self.transport) async throws -> [AddressFailure] {
-        let channel = NoiseChannel(identity: NoiseKeyPair(), hostKey: NoiseKeyPair().publicKey, mode: .reconnect)
-        let connection = HostConnection(endpoints: endpoints, channel: channel, transport: transport,
+        let connection = HostConnection(endpoints: endpoints, transport: transport,
                                         attemptTimeout: .milliseconds(200), probe: probe)
         do {
             try await connection.connect()
@@ -92,7 +68,7 @@ import Testing
     }
 
     /// A WebSocket peer that is not a DSH bridge: a close code the bridge never sends, a text
-    /// message, or a reply that is not Noise message 2 (an echo).
+    /// message, or an unexpected reply.
     @Test func aWebSocketThatIsNoBridgeIsAnotherProgram() async throws {
         let failures = try await failures([Self.foreignClose, Self.textReply, Self.echo])
         #expect(failures.map(\.kind) == [.otherProgram, .otherProgram, .otherProgram])
@@ -109,12 +85,9 @@ import Testing
     /// The bridge's own refusals stay what they were: they mean a DSH bridge answered.
     @Test func theBridgesOwnRefusalsAreNoneOfTheThree() {
         let e = Self.refused
-        #expect(AddressFailure(endpoint: e, error: NoiseChannelError.handshakeFailed("handshake failed")).kind == nil)
-        #expect(AddressFailure(endpoint: e, error: NoiseChannelError.deviceUnknown).kind == nil)
+        #expect(AddressFailure(endpoint: e, error: URLError(.serverCertificateUntrusted)).kind == nil)
+        #expect(AddressFailure(endpoint: e, error: HostConnectionError.deviceRevoked).kind == nil)
         #expect(AddressFailure(endpoint: e, error: URLError(.appTransportSecurityRequiresSecureConnection)).kind == nil)
-        #expect(NoiseChannel.refusal(code: 4002, reason: "") == .handshakeFailed("closed 4002"))
-        #expect(NoiseChannel.refusal(code: 1001, reason: "") == .handshakeFailed("closed 1001"))
-        #expect(NoiseChannel.refusal(code: 1002, reason: "") == .notABridge("closed 1002"))
     }
 
     /// The host row and the offline card name the reason that says most about the host.
@@ -201,7 +174,12 @@ import Testing
         let closed = try await closedPort()
 
         let failures = try await failures([closed, http.endpoint, silent.endpoint], probe: TCPPortProbe.probe,
-                                          transport: WebSocketTransport.factory)
+                                          transport: { url in
+            var parts = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+            parts.scheme = "https"
+            _ = try await WebSocketTransport.pinnedRequest(URLRequest(url: parts.url!), spkiSHA256: Data(repeating: 0, count: 32))
+            throw URLError(.badServerResponse)
+        })
         #expect(failures.map(\.kind) == [.nothingListens, .otherProgram, .otherProgram], "\(failures)")
 
         #expect(await TCPPortProbe.probe(silent.endpoint, .seconds(1)) == .accepted)

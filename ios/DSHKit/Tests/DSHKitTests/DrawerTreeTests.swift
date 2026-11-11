@@ -43,7 +43,7 @@ import Testing
         // Through a host, into the cache, into one workspace of the drawer.
         let host = FakeHost(hostName: "Mac", seed: [phone, web], extraCapabilities: [DrawerTree.capability])
         let store = try store([.init(key: "fake:mac", connection: HostConnection(
-            endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory))])
+            endpoint: .localBridge(), transport: host.factory))])
         store.foreground()
         try await waitUntil("both sessions") { store.tasks.count == 2 }
         #expect(store.tasks.allSatisfy { $0.workspace == "/work/app" })

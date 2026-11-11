@@ -6,7 +6,7 @@
 import { createHash } from 'node:crypto'
 
 export const ATTACHMENTS_CAPABILITY = 'attachments.v1'
-/** Data bytes in one UploadChunk: one Frame stays well under Noise's 65535-byte message. */
+/** Data bytes in one UploadChunk. Keep this in sync with the app's partSize. */
 export const PART_SIZE = 48 * 1024
 /** Largest file the bridge takes. DSH's own image limit is 50 MiB; the app sends photos as JPEG. */
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024

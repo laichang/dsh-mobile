@@ -20,7 +20,7 @@ struct ModelDomainTests {
         context.insert(task)
         try context.save()
 
-        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: FakeHost().factory)
+        let connection = HostConnection(endpoint: .localBridge(), transport: FakeHost().factory)
         let reopened = TaskListStore(container: container, hosts: [.init(key: "mac", connection: connection)])
         #expect(reopened.task(task.key)?.modelSelection == ModelSelection(provider: "mock", model: "alpha", effort: effort))
     }
@@ -36,7 +36,7 @@ struct ModelDomainTests {
         var wire = Dshm_V1_ModelCatalog()
         wire.groups = [first, second]
         let host = FakeHost(pickers: .init(catalog: wire, workspaces: .init(defaultPath: "/", recentPaths: [])))
-        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
+        let connection = HostConnection(endpoint: .localBridge(), transport: host.factory)
         try await connection.connect()
         let catalog = try await connection.modelCatalog()
         await connection.disconnect()

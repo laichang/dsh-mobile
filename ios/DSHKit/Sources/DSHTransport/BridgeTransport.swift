@@ -15,8 +15,7 @@ public typealias BridgeTransportFactory = @Sendable (URL) async throws -> any Br
 
 public enum BridgeTransportError: Error, Equatable {
     case unexpectedTextMessage
-    /// The bridge closed the WebSocket with this code and reason (bridge/src/pairing/wire.ts
-    /// `CloseCode` for Noise refusals).
+    /// A revoked device receives close code 4003.
     case closed(code: Int, reason: String)
 }
 
@@ -24,22 +23,12 @@ public enum BridgeTransportError: Error, Equatable {
 public final class WebSocketTransport: BridgeTransport {
     private let task: URLSessionWebSocketTask
 
-    private let ownedSession: URLSession?
+    private let ownedSession: URLSession
 
     init(request: URLRequest, ownedSession: URLSession) {
         self.ownedSession = ownedSession
         task = ownedSession.webSocketTask(with: request)
         task.resume()
-    }
-
-    public init(url: URL, session: URLSession = .shared) {
-        self.ownedSession = nil
-        task = session.webSocketTask(with: url)
-        task.resume()
-    }
-
-    public static let factory: BridgeTransportFactory = { url in
-        WebSocketTransport(url: url)
     }
 
     public func send(_ message: Data) async throws {
@@ -67,6 +56,6 @@ public final class WebSocketTransport: BridgeTransport {
 
     public func close() async {
         task.cancel(with: .normalClosure, reason: nil)
-        ownedSession?.invalidateAndCancel()
+        ownedSession.invalidateAndCancel()
     }
 }

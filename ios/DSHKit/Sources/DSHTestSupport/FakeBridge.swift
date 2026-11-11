@@ -529,7 +529,7 @@ public final class FakeHost: Sendable {
             defer { s.connections = [:] }
             return s.connections.values.map(\.bridge)
         }
-        for bridge in dropped { bridge.drop(code: PairingWire.CloseCode.deviceUnknown.rawValue) }
+        for bridge in dropped { bridge.drop(code: 4003) }
     }
 
     /// Unreachable: new connections fail and live ones drop (the Mac slept, Wi-Fi went away).
@@ -580,7 +580,7 @@ public final class FakeHost: Sendable {
             // Like the bridge's handshake (bridge/src/pairing/handshake.ts), a revoked
             // device is refused with close 4003 device unknown.
             guard !s.revoked else {
-                throw BridgeTransportError.closed(code: PairingWire.CloseCode.deviceUnknown.rawValue, reason: "device not paired")
+                throw BridgeTransportError.closed(code: 4003, reason: "device not paired")
             }
             s.connections[bridge.id] = Connection(bridge: bridge)
         }
@@ -902,7 +902,7 @@ public final class FakeHost: Sendable {
                 }
                 if revokedCurrent {
                     s.revoked = true
-                    for conn in s.connections.values { conn.bridge.drop(code: PairingWire.CloseCode.deviceUnknown.rawValue) }
+                    for conn in s.connections.values { conn.bridge.drop(code: 4003) }
                 }
             case .answerApproval?, .answerQuestion?, .interrupt?, .sendMessage?, .editQueue?, .getModelCatalog?, .selectModel?, .listWorkspaces?, .listDevices?, .listAudit?, .revokeDevice?, .readSession?,
                  .uploadBegin?, .uploadChunk?, .uploadEnd?:

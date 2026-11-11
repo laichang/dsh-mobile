@@ -2,8 +2,7 @@ import CryptoKit
 import DSHProtocol
 import Foundation
 
-/// Attachments: a file larger than one Noise message (65535 bytes)
-/// goes to the host in parts before the `CreateTask` or `SendMessage` that names it
+/// Attachments go to the host in bounded chunks before the `CreateTask` or `SendMessage` that names it
 /// (protocol/attachments.proto).
 public enum Attachments {
     /// Data bytes in one `UploadChunk`. Must match `PART_SIZE` in bridge/src/attachments/staging.ts.

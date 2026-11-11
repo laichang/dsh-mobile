@@ -39,7 +39,7 @@ import Testing
         old.clearTurnStartedAtMs()
         let host = FakeHost(hostName: "Mac", seed: [FakeTurns.summary(now: now), old])
         let store = TaskListStore(container: try TaskCache.container(url: storeURL), hosts: [.init(key: "fake:mac",
-            connection: HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory))])
+            connection: HostConnection(endpoint: .localBridge(), transport: host.factory))])
         store.foreground()
         try await waitUntil("both sessions") { store.tasks.count == 2 }
         let turns = try #require(store.task("fake:mac\n\(FakeTurns.taskID)"))

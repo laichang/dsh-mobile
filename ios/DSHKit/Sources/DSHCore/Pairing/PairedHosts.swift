@@ -2,7 +2,7 @@ import Foundation
 import Synchronization
 
 /// A host this phone has paired with. Nothing here is secret: the host key is public and the
-/// phone's own key is in the Keychain (`DeviceKeyStore`).
+/// phone's device credential is in the Keychain.
 public struct PairedHost: Sendable, Equatable, Codable, Identifiable {
     /// Hex of the first 8 bytes of the host key; stable across address changes.
     public var id: String
@@ -11,7 +11,7 @@ public struct PairedHost: Sendable, Equatable, Codable, Identifiable {
     public var addresses: [HostEndpoint]
     public var hostKey: [UInt8]
     public var tlsDeviceID: String?
-    public var cacheKey: String { (tlsDeviceID == nil ? "noise:" : "tls:") + id }
+    public var cacheKey: String { "tls:" + id }
     public var pairedAt: Date
 
     public init(name: String, addresses: [HostEndpoint], hostKey: [UInt8], pairedAt: Date = .now) {
@@ -45,7 +45,7 @@ public struct FilePairedHostStore: PairedHostStore {
 
     public func load() -> [PairedHost] {
         guard let data = try? Data(contentsOf: url) else { return [] }
-        return (try? JSONDecoder().decode([PairedHost].self, from: data)) ?? []
+        return (try? JSONDecoder().decode([PairedHost].self, from: data).filter { $0.tlsDeviceID != nil }) ?? []
     }
 
     public func save(_ host: PairedHost) throws {

@@ -29,17 +29,15 @@ public struct HostEndpoint: Sendable, Equatable, Codable, CustomStringConvertibl
     }
 
     #if DEBUG
-    /// The bridge on this Mac, as seen from the iOS Simulator (the plaintext dev path). Debug
-    /// builds only; `-DSHMBridgePort` overrides the port.
+    /// Loopback endpoint for test fixtures.
     public static func localBridge(port: Int = 47801) -> HostEndpoint {
         HostEndpoint(host: "127.0.0.1", port: port)
     }
     #endif
 
-    /// `ws://host:port<path>`; the channel picks the path (`SecureChannel.path`).
     public func webSocketURL(path: String = "/") -> URL {
         let h = host.contains(":") ? "[\(host)]" : host
-        return URL(string: "ws://\(h):\(port)\(path)")!
+        return URL(string: "wss://\(h):\(port)\(path)")!
     }
 
     public var description: String { host.contains(":") ? "[\(host)]:\(port)" : "\(host):\(port)" }

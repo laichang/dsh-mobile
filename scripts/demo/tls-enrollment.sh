@@ -19,7 +19,7 @@ cleanup() {
 trap cleanup EXIT
 (cd bridge && corepack pnpm install --frozen-lockfile >/dev/null && corepack pnpm build)
 scripts/pnpm-test --node-test lib/test/tls-enrollment.test.js
-export DSHM_HOME="$run/home" DSHM_BRIDGE_TLS=1 DSHM_BRIDGE_DEV_PLAINTEXT=0
+export DSHM_HOME="$run/home"
 state="$DSHM_HOME/dsh-mobile-bridge"
 start_host() {
   node scripts/dsh-up.mjs > "$run/host.log" 2>&1 &

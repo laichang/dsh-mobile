@@ -55,7 +55,7 @@ public final class TaskListStore {
         public var lastConnectedAt: Date?
         /// The negotiated channel shown in the host status row.
         public var channelName: String
-        public var isEncrypted: Bool { channelName == "noise" || channelName == "TLS 1.3" }
+        public var isEncrypted: Bool { channelName == "TLS 1.3" }
         public var capabilities: [String]
         /// The address of the host in use while online, or the last one that worked.
         public var address: HostEndpoint? = nil

@@ -1,35 +1,20 @@
-/**
- * The bridge's own WebSocket listener (ARCHITECTURE §5.1). One binary WebSocket message carries
- * one `Frame` through the connection's channel. It serves Hello and CreateTask, then ListTasks
- * and Resume, and tasks now belong to the host's `TaskHub`, not to the connection.
- *
- * Channels:
- * - Noise on every path except `PLAINTEXT_PATH`: the first message is the handshake
- *   (src/pairing/wire.ts), then each message is one Noise transport message.
- * - Plaintext on `PLAINTEXT_PATH`, only when a PlaintextChannel is configured, which in turn
- *   only listens on loopback (development and the round-trip demo).
- */
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
-import { WebSocketServer, type WebSocket } from 'ws'
+import type { WebSocket } from 'ws'
 import type { ApprovalHolder } from './approvals/holder.ts'
 import type { QuestionHolder } from './questions/holder.ts'
 import { SUPPORTED_DSH, supportsDsh } from './compatibility.ts'
 import { ApprovalDecision } from './gen/approvals_pb.ts'
 import { TaskState } from './gen/durable_list_pb.ts'
-import { deviceId } from './pairing/store.ts'
-import { CloseCode } from './pairing/wire.ts'
 import { auditPage, deviceList } from './devices/manage.ts'
 import { listenTLS } from './tls/listener.ts'
 import type { TLSRegistry } from './tls/registry.ts'
 import { hostname } from 'node:os'
-import type { SecureChannel } from './channel.ts'
 import { FrameSchema, type Frame, type Request, type ResponseSchema } from './gen/frame_pb.ts'
 import type { SessionDirectory } from './sessions/directory.ts'
 import { MILESTONES_CAPABILITY } from './milestones/wire.ts'
 import { DRAWER_CAPABILITY } from './drawer/workspace.ts'
 import { TRANSCRIPT_CAPABILITY } from './transcript/wire.ts'
 import { MessageMode, QueueAction } from './gen/conversation_pb.ts'
-import { HandshakeRejected, type NoiseResponder } from './pairing/handshake.ts'
 import type { LoggedEvent } from './tasks/host-log.ts'
 import { TaskHub, type TaskStarter } from './tasks/task-hub.ts'
 import { ATTACHMENTS_CAPABILITY, UploadError, UploadStaging, type StagedFile } from './attachments/staging.ts'
@@ -49,18 +34,11 @@ export const CONVERSATION_CAPABILITY = 'conversation.v1'
 export const QUEUE_CAPABILITY = 'conversation.v2'
 /** TaskEnded / TaskSummary carry `failure_code`, and a failed task takes a follow-up. */
 export const FAILURES_CAPABILITY = 'failures.v1'
-/** Where the dev-only plaintext channel is served. */
-export const PLAINTEXT_PATH = '/plaintext'
-
 export interface BridgeServerOptions {
   host: string
   /** 0 picks a free port (tests). */
   port: number
-  /** Dev-only plaintext on PLAINTEXT_PATH; refuses non-loopback listen addresses. */
-  channel?: SecureChannel
-  /** Pairing + reconnect over Noise on every other path. */
-  noise?: NoiseResponder
-  tlsStateDir?: string
+  tlsStateDir: string
   tasks: TaskStarter
   dshVersion: string
   /** The host's name in TaskList / Resumed (default: this machine's hostname). */
@@ -83,39 +61,11 @@ export interface BridgeServer {
 export async function startBridgeServer(options: BridgeServerOptions): Promise<BridgeServer> {
   const hub = options.hub ?? new TaskHub(options.tasks)
   const host = { hub, hostName: options.hostName ?? hostname(), authenticated: new Map<WebSocket, string>() }
-  if (options.tlsStateDir) {
-    const server = await listenTLS(options.host, options.port, options.tlsStateDir, (ws, id, store) => {
-      host.authenticated.set(ws, id)
-      serveConnection(ws, '/', options, host, options.log ?? (() => {}), store)
-    })
-    return { port: server.port, hub, close: async () => { await server.close(); await hub.close() } }
-  }
-  if (!options.channel && !options.noise) throw new Error('the bridge needs a channel: noise, plaintext, or both')
-  options.channel?.assertListenAddress(options.host)
-  const log = options.log ?? (() => {})
-  const wss = new WebSocketServer({ host: options.host, port: options.port })
-  await new Promise<void>((resolve, reject) => {
-    wss.once('listening', resolve)
-    wss.once('error', reject)
+  const server = await listenTLS(options.host, options.port, options.tlsStateDir, (ws, device, registry) => {
+    host.authenticated.set(ws, device)
+    serveConnection(ws, device, options, host, options.log ?? (() => {}), registry)
   })
-  const address = wss.address()
-  const port = typeof address === 'object' && address ? address.port : options.port
-  const channels = [options.noise && 'noise', options.channel && `${options.channel.name} on ${PLAINTEXT_PATH}`]
-  log(`listening on ${options.host}:${port} (${channels.filter(Boolean).join(', ')})`)
-
-  wss.on('connection', (socket, req) => serveConnection(socket, req.url ?? '/', options, host, log))
-
-  return {
-    port,
-    hub,
-    close: async () => {
-      await new Promise<void>((resolve) => {
-        for (const client of wss.clients) client.terminate()
-        wss.close(() => resolve())
-      })
-      await hub.close()
-    },
-  }
+  return { port: server.port, hub, close: async () => { await server.close(); await hub.close() } }
 }
 
 /**
@@ -128,21 +78,14 @@ function withoutQuestions<T extends { state?: TaskState; pendingApprovals?: read
   return { ...task, state, pendingQuestions: [] }
 }
 
-/** Seals and opens the frames of one connection. */
-interface FrameCodec {
-  seal(plaintext: Uint8Array): Uint8Array
-  open(ciphertext: Uint8Array): Uint8Array
-}
-
 function serveConnection(
-  socket: WebSocket, url: string, options: BridgeServerOptions, host: { hub: TaskHub; hostName: string; authenticated: Map<WebSocket, string> },
-  log: (m: string) => void, tls?: TLSRegistry,
+  socket: WebSocket, device: string, options: BridgeServerOptions, host: { hub: TaskHub; hostName: string; authenticated: Map<WebSocket, string> },
+  log: (m: string) => void, store: TLSRegistry,
 ) {
   const { hub, hostName } = host
   const supported = supportsDsh(options.dshVersion)
   // The host can queue follow-ups while a task runs, and edit the queue.
   const queues = !!(options.tasks.followUp && options.tasks.prompt && options.tasks.editQueue)
-  let device = host.authenticated.get(socket) ?? 'dev loopback'
   let helloDone = false
   let clientSessions = false
   let clientApprovals = false
@@ -150,18 +93,8 @@ function serveConnection(
   let clientConversation = false
   let clientQueue = false
   let clientQuestions = false
-  let codec: FrameCodec | undefined
   const uploads = new UploadStaging() // This connection's attachments
 
-  const path = new URL(url, 'ws://bridge').pathname
-  if (tls) {
-    codec = { seal: bytes => bytes, open: bytes => bytes }
-  } else if (path === PLAINTEXT_PATH) {
-    if (!options.channel) return socket.close(1008, 'plaintext disabled')
-    codec = options.channel
-  } else if (!options.noise) {
-    return socket.close(1008, `plaintext only, on ${PLAINTEXT_PATH}`)
-  }
   // Which logged events this connection receives. Before Resume (a client without the durable list): only the
   // events of tasks it created here. After Resume: every event, in host_seq order.
   const ownTasks = new Set<string>()
@@ -169,8 +102,8 @@ function serveConnection(
   let unsubscribe: (() => void) | undefined
 
   const send = (frame: MessageInitShape<typeof FrameSchema>) => {
-    if (socket.readyState !== socket.OPEN || !codec || (tls && !tls.has(device))) return
-    socket.send(codec.seal(toBinary(FrameSchema, create(FrameSchema, frame))))
+    if (socket.readyState !== socket.OPEN || !store.has(device)) return
+    socket.send(toBinary(FrameSchema, create(FrameSchema, frame)))
   }
   const respond = (requestId: bigint, body: ResponseBody) =>
     send({ kind: { case: 'response', value: { requestId, body } } })
@@ -380,8 +313,7 @@ function serveConnection(
       case 'revokeDevice': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
         const actor = host.authenticated.get(socket)
-        const store = tls ?? options.noise?.store
-        if (!actor || !store) return fail(id, 'devices/forbidden', 'Pair this device to manage the host.')
+        if (!actor) return fail(id, 'devices/forbidden', 'Pair this device to manage the host.')
         try {
           if (request.body.case === 'listAudit') {
             return respond(id, { case: 'auditPage', value: auditPage(store, request.body.value.beforeId) })
@@ -393,7 +325,7 @@ function serveConnection(
             respond(id, { case: 'deviceList', value: deviceList(store, actor) })
           } finally {
             for (const [client, fingerprint] of host.authenticated) {
-              if (fingerprint === target) client.close(CloseCode.DeviceUnknown, 'device revoked')
+              if (fingerprint === target) client.close(4003, 'device revoked')
             }
           }
         } catch (error) {
@@ -447,7 +379,7 @@ function serveConnection(
           try { await options.sessions!.reconcile() }
           catch (error) { return fail(id, 'session/list-failed', String(error)) }
         }
-        if (socket.readyState !== socket.OPEN || (tls && !tls.has(device))) return
+        if (socket.readyState !== socket.OPEN || !store.has(device)) return
         // Replay and subscribe in one synchronous step, so no event falls between them.
         const { logId, afterSeq } = request.body.value
         unsubscribe?.()
@@ -471,30 +403,12 @@ function serveConnection(
   }
 
   socket.on('message', (data, isBinary) => {
-    if (socket.readyState !== socket.OPEN || (tls && !tls.has(device))) return
+    if (socket.readyState !== socket.OPEN || !store.has(device)) return
     if (!isBinary) return socket.close(1003, 'binary frames only')
     const bytes = new Uint8Array(Array.isArray(data) ? Buffer.concat(data) : Buffer.from(data as ArrayBuffer))
-    if (!codec) {
-      // First message on a Noise connection: the handshake.
-      try {
-        const { reply, session } = options.noise!.accept(bytes)
-        socket.send(reply)
-        codec = session
-        device = deviceId(session.remoteStatic)
-        host.authenticated.set(socket, device)
-      } catch (error) {
-        if (error instanceof HandshakeRejected) {
-          log(`refused a connection: ${error.reason}`)
-          return socket.close(error.code, error.reason)
-        }
-        log(`handshake error: ${String(error)}`)
-        return socket.close(1011, 'handshake error')
-      }
-      return
-    }
     let frame: Frame
     try {
-      frame = fromBinary(FrameSchema, codec.open(bytes))
+      frame = fromBinary(FrameSchema, bytes)
     } catch {
       return socket.close(1007, 'undecodable frame')
     }

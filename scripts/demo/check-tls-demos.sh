@@ -8,7 +8,7 @@ import re
 
 root = Path('scripts/demo')
 demos = set('approvals attachments bridge-errors devices drawer durable-list first-run first-run-release followup interrupt milestones model-failures models multi-host pair-again pair-tailscale pairing questions reconnect revoke rich-detail round-trip session-visibility ui-health upstream-version workspaces'.split())
-special = {'pinned-tls', 'tls-enrollment'}
+special = {'pinned-tls', 'tls-enrollment', 'tls-upgrade'}
 bad = []
 def code(path):
     return '\n'.join(line for line in path.read_text().splitlines() if not line.lstrip().startswith(('#', '//')))
@@ -34,9 +34,7 @@ for name in sorted(demos):
 for file in [*root.glob('*-host.mjs'), Path('scripts/dsh-up.mjs'), Path('scripts/ci/bridge-upstream'), Path('bridge/scripts/probe-upstream.ts')]:
     check(file, code(file))
 for file in Path('bridge/test').glob('*.test.ts'):
-    if file.name == 'pairing.test.ts':  # Legacy protocol conformance until cutover.
-        continue
-    source = code(file).split("describe('PlaintextChannelBridge'")[0]
+    source = code(file)
     check(file, source)
     if 'startBridgeServer(' in source:
         require(file, 'tlsStateDir' in source, 'use a TLS listener or startTestBridge')

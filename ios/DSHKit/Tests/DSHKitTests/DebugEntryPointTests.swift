@@ -15,8 +15,8 @@ import Testing
     }
 
     @Test func parsesLaunchArguments() {
-        let o = DebugLaunchOptions.parse(["/app", "-DSHMFakeBridge", "YES", "-DSHMPresetPrompt", "hi there", "-DSHMBridgePort", "47811"])
-        #expect(o == .init(useFakeBridge: true, presetPrompt: "hi there", bridgePort: 47811))
+        let o = DebugLaunchOptions.parse(["/app", "-DSHMFakeBridge", "YES", "-DSHMPresetPrompt", "hi there"])
+        #expect(o == .init(useFakeBridge: true, presetPrompt: "hi there"))
         #expect(DebugLaunchOptions.parse(["/app"]) == .init())
     }
 

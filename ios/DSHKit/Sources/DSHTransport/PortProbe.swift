@@ -13,8 +13,7 @@ public enum PortProbeResult: Sendable, Equatable {
 }
 
 /// Opens a plain TCP connection to an address and closes it at once, within the given time
-///. `HostConnection` asks it after an address gave no answer to the WebSocket and Noise
-/// handshake: it tells "another program holds the port and says nothing" from "the computer is not
+///. `HostConnection` asks it after an address gave no answer during connection setup: it tells "another program holds the port and says nothing" from "the computer is not
 /// reachable". Tests inject a fake; the app uses `TCPPortProbe.probe`.
 public typealias PortProbe = @Sendable (HostEndpoint, Duration) async -> PortProbeResult
 
