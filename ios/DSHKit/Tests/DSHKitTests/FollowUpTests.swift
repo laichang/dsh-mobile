@@ -1,4 +1,5 @@
 @testable import DSHCore
+@testable import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
 import Foundation
@@ -14,8 +15,7 @@ import Testing
 
     func launch(_ host: FakeHost, url: URL) throws -> TaskListStore {
         let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
-        let store = TaskListStore(container: try TaskCache.container(url: url),
-                                  hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Say hello.")
+        let store = TaskListStore(cache: try TaskCache(url: url), hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Say hello.")
         store.backoff = (.milliseconds(20), .milliseconds(100))
         store.sendWaitsFor = .seconds(30) // a deadline: send() returns once the host is online
         return store

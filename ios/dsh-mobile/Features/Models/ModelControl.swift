@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// The model pill (screen 01): the composer's choice, or a running task's.
@@ -12,7 +13,7 @@ struct ModelControl: View {
     private var catalog: ModelCatalog? { store.catalogs[hostKey] }
     private var selection: ModelSelection? {
         if let task { return task.modelSelection }
-        return store.composerSelections[hostKey] ?? catalog?.defaultSelection
+        return store.composer.selections[hostKey] ?? catalog?.defaultSelection
     }
 
     var body: some View {
@@ -70,7 +71,7 @@ struct ModelPicker: View {
     /// A task with no recorded selection runs on the host default, so the sheet starts there.
     private var selection: ModelSelection? {
         if let task { return task.modelSelection ?? catalog?.defaultSelection }
-        return store.composerSelections[hostKey] ?? catalog?.defaultSelection
+        return store.composer.selections[hostKey] ?? catalog?.defaultSelection
     }
     private var unavailable: ModelSelection? {
         guard let catalog, let selection, !catalog.isAvailable(selection) else { return nil }
@@ -260,7 +261,7 @@ struct ModelPicker: View {
             if let task {
                 try await store.selectModel(draft, for: task)
             } else {
-                store.composerSelections[hostKey] = draft
+                store.composer.selections[hostKey] = draft
             }
             dismiss()
         } catch {

@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHTestSupport
 import Foundation
 import SwiftData
@@ -19,8 +20,7 @@ import Testing
                                         transport: transport)
         #expect(connection.channelName == "noise")
         let store = TaskListStore(
-            container: try TaskCache.container(url: storeURL),
-            hosts: [.init(key: "noise:\(paired.id)", connection: connection)], prompt: "Count to five.")
+            cache: try TaskCache(url: storeURL), hosts: [.init(key: "noise:\(paired.id)", connection: connection)], prompt: "Count to five.")
         store.backoff = (.milliseconds(20), .milliseconds(100))
         // send() returns as soon as the host is online; under load the first connect can take
         // longer than 500 ms, and then send() gave nil. The 30 s
@@ -83,9 +83,9 @@ import Testing
             channel: try officePairing.reconnectChannel(to: officeHost), transport: officePairing.transport)
         store.connectPairedHost(.init(key: officeKey, connection: officeConnection, name: officeHost.name))
         #expect(hosts.load().map(\.id) == [homeHost.id, officeHost.id])
-        #expect(store.composerHostKey == "noise:\(homeHost.id)")
+        #expect(store.composer.hostKey == "noise:\(homeHost.id)")
         store.chooseHost(officeKey)
-        store.prompt = "Run on office"
+        store.composer.prompt = "Run on office"
         let officeTask = try #require(await store.send())
         await waitForStore("both tasks complete") {
             store.task(homeTask)?.state == .completed && store.task(officeTask)?.state == .completed

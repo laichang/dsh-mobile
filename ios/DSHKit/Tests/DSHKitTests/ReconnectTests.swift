@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHTestSupport
 import Foundation
 import SwiftData
@@ -72,8 +73,7 @@ import Testing
     /// A store as `AppModel` builds it for a paired host (`Pairing.connection(to:)`).
     func launch(_ pairing: Pairing, _ paired: PairedHost) throws -> TaskListStore {
         let connection = try pairing.connection(to: paired, attemptTimeout: .milliseconds(300))
-        let store = TaskListStore(container: try TaskCache.container(url: storeURL),
-                                  hosts: [.init(key: "noise:\(paired.id)", connection: connection, name: paired.name)],
+        let store = TaskListStore(cache: try TaskCache(url: storeURL), hosts: [.init(key: "noise:\(paired.id)", connection: connection, name: paired.name)],
                                   prompt: "Which address?")
         store.backoff = (.milliseconds(20), .milliseconds(100))
         store.sendWaitsFor = .seconds(5)

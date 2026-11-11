@@ -1,5 +1,6 @@
 #if DEBUG
 import DSHCore
+import DSHFeatures
 import Foundation
 
 /// A transcriber that "hears" a fixed phrase: partial results that grow a few

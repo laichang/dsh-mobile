@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHTestSupport
 import Foundation
 import Testing
@@ -18,8 +19,7 @@ import Testing
 
     func launch(_ host: FakeHost) async throws -> TaskListStore {
         let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
-        let store = TaskListStore(container: try TaskCache.container(url: storeURL),
-                                  hosts: [.init(key: "fake:outcomes", connection: connection)])
+        let store = TaskListStore(cache: try TaskCache(url: storeURL), hosts: [.init(key: "fake:outcomes", connection: connection)])
         store.backoff = (.milliseconds(20), .milliseconds(100))
         store.foreground()
         try await waitUntil("online") { store.hosts.first?.reachability == .online }
@@ -27,7 +27,7 @@ import Testing
     }
 
     func send(_ prompt: String, _ store: TaskListStore) async throws -> String {
-        store.prompt = prompt
+        store.composer.prompt = prompt
         return try #require(await store.send())
     }
 

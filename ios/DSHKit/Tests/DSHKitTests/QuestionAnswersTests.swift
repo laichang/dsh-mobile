@@ -1,4 +1,5 @@
 @testable import DSHCore
+@testable import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
 import Foundation
@@ -26,7 +27,7 @@ import Testing
 
     func launch(_ host: FakeHost, url: URL = FollowUpTests.cacheURL()) throws -> TaskListStore {
         let store = try FollowUpTests().launch(host, url: url)
-        store.prompt = Self.prompt
+        store.composer.prompt = Self.prompt
         return store
     }
 

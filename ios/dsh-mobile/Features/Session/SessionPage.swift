@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHProtocol
 import SwiftUI
 import UIKit
@@ -57,9 +58,9 @@ private struct NewSessionBody: View {
                             .foregroundStyle(DSHTheme.textSecondary)
                             .accessibilityIdentifier("tasklist.empty")
                     }
-                    if store.prompt.isEmpty {
+                    if store.composer.prompt.isEmpty {
                         Button {
-                            store.prompt = FirstRun.suggestion
+                            store.composer.prompt = FirstRun.suggestion
                         } label: {
                             Label("Try a first task", systemImage: "text.bubble")
                         }
@@ -485,8 +486,8 @@ private struct SessionComposer: View {
         .onChange(of: taskKey) { dictation.cancel(); draft = ""; sendError = nil }
         .onDisappear { dictation.cancel() }
         // Follow-ups that a stop gave back come back into the field, to send again or not.
-        .task(id: "\(taskKey)/\(store.returnedDrafts[taskKey]?.count ?? 0)") {
-            let returned = store.takeReturnedDrafts(for: taskKey)
+        .task(id: "\(taskKey)/\(store.composer.returnedDrafts[taskKey]?.count ?? 0)") {
+            let returned = store.composer.takeReturnedDrafts(for: taskKey)
             guard !returned.isEmpty else { return }
             draft = ([draft] + returned).filter { !$0.isEmpty }.joined(separator: "\n")
         }
@@ -540,25 +541,26 @@ extension SessionComposer {
 /// The composer of a new session: one line with "host · workspace" (and the host picker when
 /// there are more hosts), the prompt, the model pill and the send key.
 struct ComposerView: View {
-    @Bindable var store: TaskListStore
+    let store: TaskListStore
     let opened: (String) -> Void
     @State private var dictation = Dictation()
     @FocusState private var editingPrompt: Bool
 
     var body: some View {
+        @Bindable var composer = store.composer
         VStack(alignment: .leading, spacing: 10) {
-            if let key = store.composerHostKey {
+            if let key = composer.hostKey {
                 contextLine(key)
             }
-            if let error = store.sendError {
+            if let error = composer.sendError {
                 Text(error)
                     .font(.footnote)
                     .foregroundStyle(DSHTheme.amber)
                     .accessibilityIdentifier("composer.error")
             }
-            AttachmentChips(store: store, target: .composer, disabled: store.isSending)
+            AttachmentChips(store: store, target: .composer, disabled: composer.isSending)
             DictationNotice(dictation: dictation)
-            TextField("One sentence for your agent", text: $store.prompt, axis: .vertical)
+            TextField("One sentence for your agent", text: $composer.prompt, axis: .vertical)
                 .lineLimit(1...5)
                 .focused($editingPrompt)
                 .foregroundStyle(DSHTheme.textPrimary)
@@ -566,15 +568,15 @@ struct ComposerView: View {
                 .onSubmit(send)
             HStack(spacing: 8) {
                 if store.canAttach {
-                    AttachMenu(store: store, target: .composer, disabled: store.isSending)
+                    AttachMenu(store: store, target: .composer, disabled: composer.isSending)
                 }
-                if let key = store.composerHostKey {
+                if let key = composer.hostKey {
                     modelControl(key)
                 }
                 Spacer()
-                MicKey(dictation: dictation, identifier: "composer.mic", disabled: store.isSending,
-                       read: { store.prompt }, write: { store.prompt = $0 })
-                SendKey(enabled: store.canSend, sending: store.isSending, action: send)
+                MicKey(dictation: dictation, identifier: "composer.mic", disabled: composer.isSending,
+                       read: { composer.prompt }, write: { composer.prompt = $0 })
+                SendKey(enabled: store.canSend, sending: composer.isSending, action: send)
                     .accessibilityLabel("Send")
                     .accessibilityIdentifier("composer.send")
             }
@@ -602,7 +604,7 @@ struct ComposerView: View {
                 .tint(DSHTheme.textSecondary)
                 .dismissesKeyboardBeforeMenu()
                 .accessibilityIdentifier("composer.host")
-                .disabled(store.isSending)
+                .disabled(store.composer.isSending)
             } else if let host {
                 Text(host.name)
                     .lineLimit(1)
@@ -612,10 +614,10 @@ struct ComposerView: View {
             if let host, host.reachability == .online, host.capabilities.contains("workspaces.v1") {
                 WorkspaceControl(store: store, hostKey: key)
                     .tint(DSHTheme.textSecondary)
-            } else if let host, host.reachability == .online, store.composerWorkspaces[key] != nil {
-                Button("Use default workspace on this host") { store.chooseWorkspace(nil, hostKey: key) }
+            } else if let host, host.reachability == .online, store.composer.workspaces[key] != nil {
+                Button("Use default workspace on this host") { store.composer.chooseWorkspace(nil, hostKey: key) }
             } else {
-                Label(store.composerWorkspaces[key] ?? String(localized: "Default workspace"), systemImage: "folder")
+                Label(store.composer.workspaces[key] ?? String(localized: "Default workspace"), systemImage: "folder")
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
@@ -632,11 +634,11 @@ struct ComposerView: View {
             ModelControl(store: store, hostKey: key, task: nil)
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.capsule)
-        } else if let choice = store.composerSelections[key],
+        } else if let choice = store.composer.selections[key],
                   store.hosts.contains(where: { $0.key == key && $0.reachability == .online && !$0.capabilities.contains("models.v1") }) {
             VStack(alignment: .leading) {
                 Text("This host cannot select \(choice.model).").font(.footnote)
-                Button("Use host default") { store.useHostDefault(hostKey: key) }
+                Button("Use host default") { store.composer.useHostDefault(hostKey: key) }
             }
         }
     }

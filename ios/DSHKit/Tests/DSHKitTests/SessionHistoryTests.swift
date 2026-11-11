@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
 import Foundation
@@ -26,7 +27,7 @@ import Testing
             summary.sessionRevision = revision
             let host = FakeHost(seed: [summary], journals: [summary.taskID: page])
             let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
-            let store = TaskListStore(container: try TaskCache.container(url: url), hosts: [.init(key: "host", connection: connection)])
+            let store = TaskListStore(cache: try TaskCache(url: url), hosts: [.init(key: "host", connection: connection)])
             store.foreground()
             await waitForStore("updated session") { store.task(key)?.sessionRevision == revision && store.hosts.first?.reachability == .online }
             return store
@@ -42,7 +43,7 @@ import Testing
         ])
         store.background()
         let disconnected = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: FakeHost().factory)
-        let offline = TaskListStore(container: try TaskCache.container(url: url), hosts: [.init(key: "host", connection: disconnected)])
+        let offline = TaskListStore(cache: try TaskCache(url: url), hosts: [.init(key: "host", connection: disconnected)])
         let savedRow = try #require(offline.task(key))
         let saved = try #require(try await offline.readHistory(for: savedRow))
         #expect(saved.messages == live.messages)

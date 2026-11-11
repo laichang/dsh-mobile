@@ -4,17 +4,19 @@ import SwiftData
 
 /// Serializes one host's reconnects and saves its replay cursor with the rows it covers.
 @MainActor
-final class HostSync {
-    typealias Reachability = TaskListStore.Reachability
-    typealias TaskRow = TaskListStore.TaskRow
-    let key: String
-    let connection: HostConnection
+public final class HostSync {
+    package let key: String
+    private let connection: HostConnection
+    package var commands: any HostCommands { connection }
+    package var endpointDescription: String { connection.endpoint.description }
+    package func uses(_ config: HostConfig) -> Bool { connection === config.connection }
+    package func supports(_ capability: HostCapability) -> Bool { capabilities?.contains(capability.name) == true }
     private let commit: (ModelContext) throws -> Void
     private let context: ModelContext
     private let host: CachedHost
-    var name: String { host.name }
+    package var name: String { host.name }
     private(set) var capabilities: [String]?
-    private(set) var reachability: Reachability = .connecting
+    package private(set) var reachability: Reachability = .connecting
     private var address: HostEndpoint?
     private var addressFailures: [AddressFailure] = []
     private var loop: Task<Void, Never>?
@@ -26,12 +28,12 @@ final class HostSync {
     private var timelines: [String: MilestoneTimeline] = [:]
     private var structuredTranscripts: [String: StructuredTranscript] = [:]
     private var pendingThumbnails: [String: [MessageAttachment]] = [:]
-    var changed: () -> Void = {}
-    var online: () async -> Void = {}
-    var revoked: () -> Void = {}
-    var returnedDraft: (String, String) -> Void = { _, _ in }
+    package var changed: () -> Void = {}
+    package var online: () async -> Void = {}
+    package var revoked: () -> Void = {}
+    package var returnedDraft: (String, String) -> Void = { _, _ in }
 
-    init(config: TaskListStore.HostConfig, container: ModelContainer,
+    init(config: HostConfig, container: ModelContainer,
          commit: @escaping (ModelContext) throws -> Void = { try $0.save() }) {
         self.commit = commit
         key = config.key
@@ -50,7 +52,7 @@ final class HostSync {
         saveNow()
     }
 
-    func start(firstConnectDelay: Duration, backoff: (initial: Duration, max: Duration)) {
+    package func start(firstConnectDelay: Duration, backoff: (initial: Duration, max: Duration)) {
         if events == nil {
             let stream = connection.events
             events = Task { [weak self] in
@@ -69,7 +71,7 @@ final class HostSync {
         }
     }
 
-    func stop() {
+    package func stop() {
         let previous = loop
         loop = nil
         saveNow()
@@ -84,7 +86,7 @@ final class HostSync {
         }
     }
 
-    func retire() {
+    package func retire() {
         stop()
         events?.cancel()
         events = nil
@@ -143,7 +145,7 @@ final class HostSync {
                 host.lastConnectedAt = Date()
                 saveNow()
                 setReachability(.online)
-                if capabilities?.contains("models.v1") == true {
+                if supports(.models) {
                     await online()
                 }
                 delay = backoff.initial
@@ -381,7 +383,7 @@ final class HostSync {
 
     /// The user saw this session as it is now. A finished session loses its unread mark
     /// until the host reports a newer change. Stored in the cache, on this phone only.
-    func markRead(_ key: String) {
+    package func markRead(_ key: String) {
         guard let task = try? context.fetch(FetchDescriptor<CachedTask>(predicate: #Predicate { $0.key == key })).first,
               task.state.isTerminal, task.readThrough.map({ $0 < task.updatedAt }) ?? true else { return }
         task.readThrough = task.updatedAt
@@ -389,12 +391,12 @@ final class HostSync {
         changed()
     }
 
-    func cachedHistory(for row: TaskRow) -> SessionHistory? {
+    package func cachedHistory(for row: TaskRow) -> SessionHistory? {
         let record = taskRecord(taskID: row.taskID, title: row.title)
         return record.history
     }
 
-    func readHistory(for row: TaskRow) async throws -> SessionHistory? {
+    package func readHistory(for row: TaskRow) async throws -> SessionHistory? {
         let cached = cachedHistory(for: row)
         guard let revision = row.sessionRevision, cached.map({ $0.throughSeq < revision }) ?? true,
               reachability == .online,
@@ -450,8 +452,42 @@ final class HostSync {
         if context.hasChanges { try commit(context) }
     }
 
+    package typealias UploadProgress = @MainActor @Sendable (UUID, Result<Double, any Error>) -> Void
+
+    package func createTask(prompt: String, selection: ModelSelection?, workspace: String?,
+                            attachments: [FileAttachment], progress: @escaping UploadProgress) async throws -> String {
+        let ids = try await upload(attachments, progress: progress)
+        let taskID = try await connection.createTask(prompt: prompt, selection: selection, workspace: workspace, uploadIDs: ids)
+        return recordCreatedTask(taskID, title: prompt, attachments: attachments.map(\.sent))
+    }
+
+    package func sendFollowUp(_ text: String, for row: TaskRow, attachments: [FileAttachment],
+                              progress: @escaping UploadProgress) async throws {
+        let ids = try await upload(attachments, progress: progress)
+        let messageID = try await connection.sendMessage(taskID: row.taskID, text: text,
+                                                         mode: row.state.isTerminal ? .steer : .queue, uploadIDs: ids)
+        if attachments.contains(where: { $0.thumbnail != nil }) {
+            keepThumbnails(attachments.map(\.sent), messageID: messageID, taskKey: row.key)
+        }
+    }
+
+    private func upload(_ files: [FileAttachment], progress: @escaping UploadProgress) async throws -> [String] {
+        var ids: [String] = []
+        for file in files {
+            progress(file.id, .success(0))
+            do {
+                let id = try await connection.upload(file) { progress(file.id, .success($0)) }
+                ids.append(id)
+            } catch {
+                progress(file.id, .failure(error))
+                throw error
+            }
+        }
+        return ids
+    }
+
     /// The follow-up's row gets the thumbnails of its images, now or when its `UserMessage` arrives.
-    func keepThumbnails(_ sent: [MessageAttachment], messageID: String, taskKey: String) {
+    private func keepThumbnails(_ sent: [MessageAttachment], messageID: String, taskKey: String) {
         let rowID = TranscriptItem.userMessageID(messageID)
         guard let task = try? context.fetch(FetchDescriptor<CachedTask>(predicate: #Predicate { $0.key == taskKey })).first else { return }
         var blocks = structuredTranscript(of: task)
@@ -482,7 +518,7 @@ final class HostSync {
         return decoded
     }
 
-    func recordCreatedTask(_ taskID: String, title: String, attachments: [MessageAttachment]) -> String {
+    private func recordCreatedTask(_ taskID: String, title: String, attachments: [MessageAttachment]) -> String {
         let task = taskRecord(taskID: taskID, title: title)
         if task.title.isEmpty { task.title = title }
         if !attachments.isEmpty { task.sentAttachments = attachments }
@@ -491,18 +527,18 @@ final class HostSync {
         return task.key
     }
 
-    func rename(_ name: String) {
+    package func rename(_ name: String) {
         host.name = name
         saveNow()
     }
 
-    func status(named name: String) -> TaskListStore.HostStatus {
+    package func status(named name: String) -> HostStatus {
         .init(key: key, name: name, reachability: reachability, lastConnectedAt: host.lastConnectedAt,
               channelName: connection.channelName, capabilities: capabilities ?? [], address: address,
               addressFailures: addressFailures)
     }
 
-    func rows(hostName: String) -> [TaskRow] {
+    package func rows(hostName: String) -> [TaskRow] {
         cachedTasks().compactMap { t in
             let supportsApprovals = capabilities?.contains(DSHProtocolInfo.approvalsCapability)
             if t.approvalOnly && supportsApprovals == false { return nil }

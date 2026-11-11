@@ -1,11 +1,11 @@
-import DSHCore
+import DSHFeatures
 import SwiftUI
 import UIKit
 
 extension EnvironmentValues {
     /// The transcriber of the mic key. The app sets it at the root (`AppModel`): the Speech
     /// framework, or in Debug the fake of `-DSHMFakeSpeech`.
-    @Entry var transcriber: TranscriberFactory = SpeechFrameworkTranscriber.factory
+    @Entry var transcriber: TranscriberFactory?
 }
 
 /// The mic key on a composer (STORY §7, voice): a tap starts to listen and the
@@ -21,6 +21,7 @@ struct MicKey: View {
     var body: some View {
         let listening = dictation.isActive
         Button {
+            guard let transcriber else { return }
             dictation.toggle(using: transcriber, read: read, write: write)
         } label: {
             Group {
@@ -38,7 +39,7 @@ struct MicKey: View {
             .frame(width: 40, height: 40)
             .background(listening ? DSHTheme.blue : Color.white.opacity(0.08), in: .circle)
         }
-        .disabled(disabled && !listening)
+        .disabled(transcriber == nil || (disabled && !listening))
         .accessibilityLabel(listening ? Text("Stop dictation", tableName: "Voice") : Text("Dictate", tableName: "Voice"))
         .accessibilityValue(listening ? "listening" : "idle")
         .accessibilityIdentifier(identifier)

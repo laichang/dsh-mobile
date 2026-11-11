@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHTestSupport
 import Foundation
 import Testing

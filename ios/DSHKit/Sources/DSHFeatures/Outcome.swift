@@ -1,3 +1,4 @@
+import DSHCore
 import Foundation
 
 /// What the session page says about a task that has ended (screens 06 and X1).

@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// The workspace part of the "host · workspace" line above the composer (screen
@@ -9,7 +10,7 @@ struct WorkspaceControl: View {
     let hostKey: String
     @Environment(ShellModel.self) private var shell
 
-    private var path: String? { store.composerWorkspaces[hostKey] }
+    private var path: String? { store.composer.workspaces[hostKey] }
 
     var body: some View {
         Button {
@@ -162,7 +163,7 @@ struct WorkspacePicker: View {
             } label: { label }
             .accessibilityLabel(host?.name ?? hostKey)
             .accessibilityIdentifier("workspace.host")
-            .disabled(store.isSending)
+            .disabled(store.composer.isSending)
         } else {
             label
                 .accessibilityElement(children: .combine)
@@ -171,7 +172,7 @@ struct WorkspacePicker: View {
     }
 
     private func option(_ label: String, detail: String, value: String?) -> some View {
-        PickerRow(id: "workspace.option." + (value ?? "default"), checked: store.composerWorkspaces[hostKey] == value) {
+        PickerRow(id: "workspace.option." + (value ?? "default"), checked: store.composer.workspaces[hostKey] == value) {
             Image(systemName: "folder").foregroundStyle(DSHTheme.textSecondary)
             Text(verbatim: label).lineLimit(1).layoutPriority(1)
             Text(verbatim: detail)
@@ -194,7 +195,7 @@ struct WorkspacePicker: View {
     }
 
     private func choose(_ value: String?) {
-        store.chooseWorkspace(value, hostKey: hostKey)
+        store.composer.chooseWorkspace(value, hostKey: hostKey)
         dismiss()
     }
 

@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// Screen 04: the follow-ups that wait while the task runs, above the composer's field, as

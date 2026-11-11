@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// Model failures on the X1 card (STORY §8). A model that fails ends the

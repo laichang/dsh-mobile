@@ -496,12 +496,12 @@ public actor HostConnection {
     /// One more message into the DSH session of `taskID`. Returns the message's ID once DSH
     /// accepted it; its `.userMessage` event and the new turn's events follow.
     @discardableResult
-    public func sendMessage(taskID: String, text: String, mode: Dshm_V1_MessageMode = .steer,
+    public func sendMessage(taskID: String, text: String, mode: FollowUpMode = .steer,
                             uploadIDs: [String] = []) async throws -> String {
         var message = Dshm_V1_SendMessage()
         message.taskID = taskID
         message.text = text
-        message.mode = mode
+        message.mode = mode == .steer ? .steer : .queue
         message.uploadIds = uploadIDs // Staged files, after the text
         let response = try await request(.sendMessage(message))
         guard case .messageAccepted(let accepted)? = response.body else { throw HostConnectionError.unexpectedResponse }
@@ -511,14 +511,14 @@ public actor HostConnection {
     /// Moves a waiting follow-up into the running turn (`.steer`), or takes it out
     /// (`.remove`). Returns where it waits now; its `.queuedMessage` event follows.
     @discardableResult
-    public func editQueue(taskID: String, messageID: String, action: Dshm_V1_QueueAction) async throws -> QueuedMessage.Placement {
+    public func editQueue(taskID: String, messageID: String, action: QueueAction) async throws -> QueuedMessage.Placement {
         guard capabilities.contains(DSHProtocolInfo.queueCapability) else {
             throw HostConnectionError.bridge(code: "request/unsupported", message: "This host cannot change the queue.")
         }
         var edit = Dshm_V1_EditQueue()
         edit.taskID = taskID
         edit.messageID = messageID
-        edit.action = action
+        edit.action = action == .steer ? .steer : .remove
         let response = try await request(.editQueue(edit))
         guard case .queueEdited(let edited)? = response.body else { throw HostConnectionError.unexpectedResponse }
         return QueuedMessage.Placement(wire: edited.placement)

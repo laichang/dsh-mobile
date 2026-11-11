@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import PhotosUI
 import SwiftUI
 import UIKit
@@ -17,7 +18,7 @@ struct AttachMenu: View {
     @State private var photo: PhotosPickerItem?
     @State private var loading = false
 
-    private var full: Bool { store.attachments(on: target).count >= Attachments.maxCount }
+    private var full: Bool { store.composer.attachments(on: target).count >= Attachments.maxCount }
 
     var body: some View {
         Menu {
@@ -58,7 +59,7 @@ struct AttachMenu: View {
             Task {
                 let data = try? await picked.loadTransferable(type: Data.self)
                 loading = false
-                if let file = data.flatMap({ PhotoTranscoder.attachment(from: $0) }) { store.attach(file, to: target) }
+                if let file = data.flatMap({ PhotoTranscoder.attachment(from: $0) }) { store.composer.attach(file, to: target) }
             }
         }
     }
@@ -68,7 +69,7 @@ struct AttachMenu: View {
         Task {
             let file = await Task.detached(priority: .userInitiated) { read() }.value
             loading = false
-            if let file { store.attach(file, to: target) }
+            if let file { store.composer.attach(file, to: target) }
         }
     }
 }
@@ -81,12 +82,12 @@ struct AttachmentChips: View {
     var disabled = false
 
     var body: some View {
-        let list = store.attachments(on: target)
+        let list = store.composer.attachments(on: target)
         if !list.isEmpty {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 10) {
                     ForEach(list) { item in
-                        AttachmentChip(item: item, disabled: disabled) { store.removeAttachment(item.id, from: target) }
+                        AttachmentChip(item: item, disabled: disabled) { store.composer.removeAttachment(item.id, from: target) }
                     }
                 }
                 .padding(.top, 8)
