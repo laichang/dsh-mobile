@@ -102,8 +102,7 @@ RULES = [
     "Delete comments that repeat the code. Keep comments that explain a reason or an external constraint.",
     "Docs tell the current state. No decision IDs (D<number>) and no slice IDs in docs or code. "
     "ARCHITECTURE.md stays short (`scripts/check-docs`).",
-    "Do not wait for the user. At a choice, take your recommendation, write it in ARCHITECTURE.md as current state "
-    "marked **provisional, pending user confirmation** with the alternatives, and list it in your report. "
+    "Record architectural choices and their reasons in ARCHITECTURE.md. Confirm downloads with the user. "
     "Pin each new dependency to an exact version.",
     "In `plan/{sid}.json` only add evidence pointers (`cmd:<repo-relative executable> <args>`, `commit:<sha>`) "
     "to an item. Do not change a tier, a text, or `passed`: it stays false. Only the verifier sets it.",

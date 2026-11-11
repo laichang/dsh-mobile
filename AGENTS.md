@@ -69,7 +69,7 @@ Only the user does these things:
 
 - Set a requirement, and approve its plan.
 - Record a `[human]` item: the user runs `scripts/plan accept` in their own terminal and types the ID back.
-- Confirm a provisional choice, a dependency, or a download.
+- Confirm a download.
 - Push to GitHub, or open a pull request.
 - Commit a change to a guard file, also the merge of a slice that changes one into `main`. The user reviews the guard diff and merges it by hand. The guard files are `PROTECTED` in `scripts/check-plan`.
 - Delete `plan/` at the end of a requirement.
