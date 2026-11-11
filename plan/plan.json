@@ -6,10 +6,10 @@
       "kind": "tracer",
       "title": "Tracer bullet: Allocate and release a simulator for each scheduled node",
       "needs": [],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/t0-pre-m3",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "M3 starts two independent iOS paths. Each node must receive a usable simulator before its first build. Closes #65",
       "cuts": "Trace scheduler assignment through .claude/workflows/run-plan.js, scripts/slice-env, scripts/xc and scripts/plan cleanup. Reuse the registry, machine guard and ownership checks. Extend scripts/plan-test and scripts/run-plan-test.",
@@ -146,6 +146,11 @@
       "date": "2026-11-11",
       "title": "Plan started",
       "body": "Pre-M3 · Workflow and design cleanup"
+    },
+    {
+      "date": "2026-11-11",
+      "title": "T0 assigned",
+      "body": "Branch `claude/t0-pre-m3`, worktree `/Users/bytedance/dsh-mobile-t0`, simulator `dshm-T0`, DSHM_HOME `~/.dshm/home-t0`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env T0)\"` exports them. Same resources as before."
     }
   ],
   "pending": []
