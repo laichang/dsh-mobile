@@ -274,7 +274,10 @@
       "text": "The user reads ARCHITECTURE.md, STORY.md and the AGENTS.md process section, and accepts them as the current state",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "human:2026-11-11 read and accepted"
+      ]
     }
   ],
   "log": [
