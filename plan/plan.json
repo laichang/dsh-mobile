@@ -97,10 +97,10 @@
         "T0"
       ],
       "branch": "claude/s5-pre-m3",
-      "status": "review",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Real demo passed; user applies, commits and merges reviewed pre-commit hook",
-      "merge": null,
+      "next": "—",
+      "merge": "2f202b6",
       "why": "M3 migrates real-bridge demos and needs failures to retain their exit status and short summaries. Closes #69",
       "cuts": "Cover .githooks/pre-commit, scripts/check-wrappers, scripts/demo/bridge-errors.sh, the applicable wrapper and scripts/wrap-test. Keep the existing listener-error test selection and real-bridge UI path. The user reviews, commits and merges the protected pre-commit change.",
       "not": "",
@@ -332,6 +332,11 @@
       "date": "2026-11-11",
       "title": "S4 merged",
       "body": "Merged as `c11a0f0`; the plan/ rules hold on the merge commit. No open [human] items, so S4 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S5 merged",
+      "body": "Merged as `2f202b6`; the plan/ rules hold on the merge commit. No open [human] items, so S5 is `done`."
     }
   ],
   "pending": [
