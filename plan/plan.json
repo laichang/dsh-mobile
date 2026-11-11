@@ -329,6 +329,11 @@
       "date": "2026-11-11",
       "title": "S12 merged",
       "body": "Merged as `4a4af15`; the plan/ rules hold on the merge commit. No open [human] items, so S12 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "Host signer decision recorded",
+      "body": "The workflow change supersedes pending item 1. The bridge uses the host OpenSSL-compatible CLI; macOS is verified. No user response is required for this choice."
     }
   ],
   "pending": [
