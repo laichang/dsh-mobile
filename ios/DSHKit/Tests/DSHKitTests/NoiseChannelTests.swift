@@ -210,6 +210,7 @@ struct Transcript: Decodable, Sendable, CustomTestStringConvertible {
 
     @Test func versionTwoUsesTLSAndScopesCredentialsToTheHost() throws {
         #expect(try PairingOffer(string: Self.link(v: "2")).usesTLS)
+        #expect(throws: PairingOffer.ParseError.badField("a")) { try PairingOffer(string: Self.link(a: "user%40host%3A80", v: "2")) }
         let device = UUID().uuidString
         #expect(Pairing.credential(pin: [1], deviceID: device).account != Pairing.credential(pin: [2], deviceID: device).account)
     }

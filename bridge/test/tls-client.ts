@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { request } from 'node:https'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
+import { setTimeout as sleep } from 'node:timers/promises'
 import { once } from 'node:events'
 import { WebSocket } from 'ws'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
@@ -64,11 +65,19 @@ export async function connectDevice(dir: string, address: string, bearer: string
 if (import.meta.main) {
   const dir = process.argv[2], offer = await issue(dir), own = await redeem(dir, offer)
   const peer = await connectDevice(dir, offer.searchParams.get('a')!.split(',')[0], own.bearer)
-  const list = await peer.rpc({ case: 'listDevices', value: {} })
-  if (list.case !== 'deviceList') throw new Error('list devices failed')
-  const phones = list.value.devices.filter(d => d.id !== own.id)
-  if (phones.length !== 1) throw new Error('expected one enrolled phone before offline revoke')
-  const result = await peer.rpc({ case: 'revokeDevice', value: { deviceId: phones[0].id } })
-  if (result.case !== 'deviceList') throw new Error('revoke failed')
+  if (process.argv[3] === 'seed-task') {
+    const task = await peer.rpc({ case: 'createTask', value: { prompt: 'Second enrolled host cache check' } })
+    if (task.case !== 'taskCreated') throw new Error('second host could not start task')
+    const ended = () => peer.events.some(f => f.kind.case === 'event' && f.kind.value.body.case === 'taskEnded')
+    for (let n = 0; !ended() && n < 400; n++) await sleep(100)
+    if (!ended()) throw new Error('second host task did not finish')
+  } else {
+    const list = await peer.rpc({ case: 'listDevices', value: {} })
+    if (list.case !== 'deviceList') throw new Error('list devices failed')
+    const phones = list.value.devices.filter(d => d.id !== own.id)
+    if (phones.length !== 1) throw new Error('expected one enrolled phone before offline revoke')
+    const result = await peer.rpc({ case: 'revokeDevice', value: { deviceId: phones[0].id } })
+    if (result.case !== 'deviceList') throw new Error('revoke failed')
+  }
   peer.ws.close()
 }

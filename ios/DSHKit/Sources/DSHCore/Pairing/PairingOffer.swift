@@ -54,7 +54,14 @@ public struct PairingOffer: Sendable, Equatable {
         }
         let addresses = (q["a"] ?? "").split(separator: ",").compactMap { HostEndpoint(address: String($0)) }
         guard !addresses.isEmpty else { throw .badField("a") }
-        guard let x = q["x"].flatMap(TimeInterval.init), x > 0 else { throw .badField("x") }
+        if q["v"] == "2" {
+            guard addresses.allSatisfy({ endpoint in
+                guard let url = URL(string: "https://" + endpoint.description, encodingInvalidCharacters: false) else { return false }
+                return url.host(percentEncoded: false) == endpoint.host && url.port == endpoint.port
+                    && url.user == nil && url.password == nil && url.query == nil && url.fragment == nil && url.path.isEmpty
+            }) else { throw .badField("a") }
+        }
+        guard let x = q["x"].flatMap(TimeInterval.init), x.isFinite, x > 0 else { throw .badField("x") }
         self.init(
             hostName: q["n"] ?? "",
             addresses: addresses,
