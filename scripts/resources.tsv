@@ -3,21 +3,3 @@
 # the slice is todo, doing or blocked in plan/plan.json. Rows live as long as the plan: when the plan
 # ends, the registry goes back to this header (slice IDs start again at S1 in the next plan).
 id	branch	slot	bridge	web	bridge2	web2	sim	home	decisions	assigned
-T0	claude/t0-plan-graph	0	47810	3283	47840	3313	dshm-T0	~/.dshm/home-t0	D147-D149	2026-11-10
-S1	claude/s1-output-wrappers	1	47811	3284	47841	3314	dshm-S1	~/.dshm/home-s1	D150-D152	2026-11-10
-S6	claude/s6-architecture-current	2	47812	3285	47842	3315	dshm-S6	~/.dshm/home-s6	D153-D155	2026-11-10
-T1	claude/t1-workflow-round-trip	0	47810	3283	47840	3313	dshm-T1	~/.dshm/home-t1	D156-D158	2026-11-10
-S2	claude/s2-slice-brief	0	47810	3283	47840	3313	dshm-S2	~/.dshm/home-s2	D159-D161	2026-11-10
-S3	claude/s3-run-plan-workflow	1	47811	3284	47841	3314	dshm-S3	~/.dshm/home-s3	D162-D164	2026-11-10
-S4	claude/s4-design-as-data	1	47811	3284	47841	3314	dshm-S4	~/.dshm/home-s4	D165-D167	2026-11-10
-S5	claude/s5-remove-ids	0	47810	3283	47840	3313	dshm-S5	~/.dshm/home-s5	D168-D170	2026-11-10
-S7	claude/s7-plan-dir	0	47810	3283	47840	3313	dshm-S7	~/.dshm/home-s7	D171-D173	2026-11-10
-S8	claude/s8-status-next	3	47813	3286	47843	3316	dshm-S8	~/.dshm/home-s8	D174-D176	2026-11-11
-S9	claude/s9-input-diagnostics	3	47813	3286	47843	3316	dshm-S9	~/.dshm/home-s9	D177-D179	2026-11-11
-S2	claude/s2-pre-m3	0	47810	3283	47840	3313	dshm-S2-180	~/.dshm/home-s2-180	D180-D182	2026-11-11
-S5	claude/s5-pre-m3	1	47811	3284	47841	3314	dshm-S5-183	~/.dshm/home-s5-183	D183-D185	2026-11-11
-S10	claude/s10-fake-turn-duration	2	47812	3285	47842	3315	dshm-S10	~/.dshm/home-s10	D186-D188	2026-11-11
-S11	claude/s11-owned-cleanup	2	47812	3285	47842	3315	dshm-S11	~/.dshm/home-s11	D189-D191	2026-11-11
-S3	claude/s3-a1e6a14	0	47810	3283	47840	3313	D14B36C0-6B79-48E0-9B8B-1A64A5DA6DED	~/.dshm/home-s3-D14B36C0-6B79-48E0-9B8B-1A64A5DA6DED	D192-D194	2026-11-11
-S4	claude/s4-0abf811	1	47811	3284	47841	3314	8892F9BC-3FB7-4971-8156-C178D4F50021	~/.dshm/home-s4-8892F9BC-3FB7-4971-8156-C178D4F50021	D195-D197	2026-11-11
-S6	claude/s6-b7a5515	0	47810	3283	47840	3313	13D75C72-5CB6-42E8-BC1D-36737D41CE06	~/.dshm/home-s6-13D75C72-5CB6-42E8-BC1D-36737D41CE06	D198-D200	2026-11-11
