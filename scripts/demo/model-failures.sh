@@ -52,7 +52,7 @@ case "$PART" in
     node scripts/demo/model-failures-host.mjs > "$LOGS/host.log" 2>&1 &
     host_pid=$!
     cleanup() { kill "$host_pid" 2>/dev/null || true; wait "$host_pid" 2>/dev/null || true; rm -rf "$DSHM_HOME" "$DSHM_FAILURE_SIGNALS"; }
-    trap cleanup EXIT
+    demo_tls_on_exit cleanup
     for _ in $(seq 1 360); do
       [ -e "$DSHM_FAILURE_SIGNALS/bridge-port" ] && break
       kill -0 "$host_pid" 2>/dev/null || { cat "$LOGS/host.log"; exit 1; }

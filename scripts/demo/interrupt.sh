@@ -22,7 +22,7 @@ if lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null; then
 fi
 node scripts/demo/durable-list-host.mjs > "$LOGS/host.log" 2>&1 &
 host_pid=$!
-trap 'kill "$host_pid" 2>/dev/null || true' EXIT
+demo_tls_on_exit 'kill "$host_pid" 2>/dev/null || true'
 for _ in $(seq 1 240); do
   lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null && break
   kill -0 "$host_pid" 2>/dev/null || { tail -12 "$LOGS/host.log"; exit 1; }

@@ -16,7 +16,7 @@ mkdir -p "$DSHM_HOME"
 PROFILE=$(mktemp -d "$DSHM_HOME/approval-demo.XXXXXX")
 PID=""
 cleanup() { if [ -n "$PID" ]; then kill "$PID" 2>/dev/null || true; wait "$PID" || true; fi; rm -rf "$FIXTURE" "$PROFILE"; }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 mkdir "$FIXTURE/tmp"; echo 'approvals fixture' > "$FIXTURE/tmp/x"
 export DSHM_APPROVALS_COMMAND="rm '$FIXTURE/tmp/x'"
 demo_prepare_bridge

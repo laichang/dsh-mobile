@@ -42,7 +42,7 @@ demo_swift_tests "$LOGS/swift-test.log"
 
 DSH_PID=""
 cleanup() { [ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true; }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 if [ $FAKE_ONLY = 0 ]; then
   (cd bridge && corepack pnpm build >/dev/null)
   if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then

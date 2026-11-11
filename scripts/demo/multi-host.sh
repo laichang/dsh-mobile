@@ -27,7 +27,7 @@ cleanup() {
   fi
   rm -rf "$profiles"
 }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 for port in "${ports[@]}" "${web[@]}"; do
   ! lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null || { echo "multi-host port $port is busy" >&2; exit 1; }
 done

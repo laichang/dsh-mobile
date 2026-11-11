@@ -38,7 +38,7 @@ export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR" TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM
 DSH_PID=""; HOLDER_PID=""
 stop() { if [ -n "$1" ]; then kill "$1" 2>/dev/null || true; wait "$1" 2>/dev/null || true; fi; }
 cleanup() { stop "$DSH_PID"; stop "$HOLDER_PID"; rm -rf "$SHOT_DIR"; }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 listening() { lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
 
 demo_prepare_bridge

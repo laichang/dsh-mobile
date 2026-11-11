@@ -66,7 +66,7 @@ ui_part() { # name, then -only-testing selectors
 
 # A real DSH + bridge on the given ports and home. Sets DSH_PID.
 DSH_PID=""
-trap '[ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true' EXIT
+demo_tls_on_exit '[ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true'
 start_host() { # bridge port, web port, home
   mkdir -p "$3"
   if lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; then echo "port $1 is in use" >&2; exit 1; fi

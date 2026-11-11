@@ -18,7 +18,7 @@ cleanup() {
   if [ -n "$host_pid" ]; then kill "$host_pid" 2>/dev/null || true; wait "$host_pid" || true; fi
   rm -rf "$FIXTURE" "$PROFILE"
 }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 mkdir "$FIXTURE/tmp"; echo 'keep' > "$FIXTURE/tmp/x"
 export DSHM_APPROVALS_COMMAND="rm '$FIXTURE/tmp/x'"
 demo_prepare_bridge

@@ -31,7 +31,7 @@ mkdir -p "$DSHM_HOME"
 PROFILE=$(mktemp -d "$DSHM_HOME/questions-demo.XXXXXX")
 PID=""
 cleanup() { if [ -n "$PID" ]; then kill "$PID" 2>/dev/null || true; wait "$PID" 2>/dev/null || true; fi; rm -rf "$PROFILE" "$SHOTDIR"; }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 
 demo_prepare_bridge
 demo_bridge_tests "$LOGS/bridge-test.log"

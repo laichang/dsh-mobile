@@ -73,7 +73,7 @@ ADDRS="$(non_local_ipv4 | sed "s/\$/:$DSHM_BRIDGE_PORT/" | paste -sd, -)"
 [ -n "$ADDRS" ] || { echo "this Mac has no non-local IPv4 address (Tailscale 100.x or public); this demo cannot show the bug here" >&2; exit 1; }
 
 DSH_PID=""
-trap '[ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true' EXIT
+demo_tls_on_exit '[ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true'
 demo_prepare_bridge
 (cd bridge && corepack pnpm build >/dev/null)
 

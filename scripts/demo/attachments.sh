@@ -71,7 +71,7 @@ if [ $ALL = 1 ]; then
 fi
 
 DSH_PID=""
-trap '[ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true' EXIT
+demo_tls_on_exit '[ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true'
 (cd bridge && corepack pnpm build >/dev/null)
 step "real DSH + bridge (web $DSHM_WEB_PORT, bridge $DSHM_BRIDGE_PORT, $DSHM_HOME)"
 mkdir -p "$DSHM_HOME"

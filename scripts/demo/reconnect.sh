@@ -36,7 +36,7 @@ export TEST_RUNNER_DSHM_DEAD_PORT="$DSHM_SECOND_BRIDGE_PORT"
 DSH_PID=""; PROXY_PID=""
 stop() { if [ -n "$1" ]; then kill "$1" 2>/dev/null || true; wait "$1" 2>/dev/null || true; fi; }
 cleanup() { stop "$DSH_PID"; stop "$PROXY_PID"; rm -rf "$SHOT_DIR"; }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 
 step "DSHKit tests (swift test, fake hosts)"
 demo_part reconnect-swift-test bash -c 'source scripts/demo/lib.sh; demo_swift_tests "$1"' _ "$LOGS/swift-test.log"

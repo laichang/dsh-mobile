@@ -46,7 +46,7 @@ host_pid=""
 stop_host() {
   if [ -n "$host_pid" ]; then kill "$host_pid" 2>/dev/null || true; wait "$host_pid" || true; host_pid=""; fi
 }
-trap stop_host EXIT
+demo_tls_on_exit stop_host
 start_host() { # mock reply, ms per chunk
   if lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null; then
     echo "rich-detail needs its own host on port $DSHM_BRIDGE_PORT" >&2; exit 1

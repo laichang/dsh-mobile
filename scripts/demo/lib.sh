@@ -239,13 +239,31 @@ demo_part() {
   return 1
 }
 
+# A demo can register its own exit action after starting a host. Run that action with
+# its original shell options and delete the generated profile even if the action fails.
+demo_tls_remove_profile() {
+  rm -rf -- "$demo_tls_profile"
+}
+
+demo_tls_on_exit() {
+  trap "( trap demo_tls_remove_profile EXIT; ${1:-:} )" EXIT
+}
+
 # Each network demo gets a disposable host profile. Nested demos get their own as well.
 demo_tls_home() {
   export DSHM_BRIDGE_TLS=1
   local base="${DSHM_HOME:-${TMPDIR:-/tmp}}"
   mkdir -p "$base"
-  DSHM_HOME="$(mktemp -d "$base/demo.XXXXXXXX")"
-  export DSHM_HOME
+  demo_tls_profile="$(mktemp -d "$base/demo.XXXXXXXX")" || return 1
+  export DSHM_HOME="$demo_tls_profile"
+  local previous
+  previous=$(trap -p EXIT)
+  if [[ -n "$previous" ]]; then
+    # Bash quotes its current handler as a reusable shell command.
+    eval "${previous/#trap -- /demo_tls_on_exit }"
+  else
+    demo_tls_on_exit
+  fi
 }
 
 # The simulator drives enrollment through the app's normal deep link. Hand off secrets in

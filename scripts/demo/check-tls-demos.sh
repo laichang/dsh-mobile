@@ -44,3 +44,30 @@ if bad:
     raise SystemExit('\n'.join(bad))
 print(f'{len(demos)} live UI demos use shared TLS enrollment. Host fixtures and upstream probes checked.')
 PY
+
+# A standalone demo removes only the home it created, on both success and failure.
+scratch=$(mktemp -d)
+trap 'rm -rf "$scratch"' EXIT
+base="$scratch/original profile"
+mkdir -p "$base"
+touch "$base/keep"
+for status in 0 17; do
+  result=0
+  DSHM_HOME="$base" bash -s -- "$scratch" "$status" <<'BASH' || result=$?
+    set -eu
+    unset SIM DSHM_SIM
+    source scripts/demo/lib.sh
+    diagnostic="$1/diagnostic"
+    cleanup() { touch "$diagnostic"; }
+    if [[ $2 == 0 ]]; then trap cleanup EXIT; fi
+    demo_tls_home
+    printf "%s" "$DSHM_HOME" > "$1/profile"
+    touch "$DSHM_HOME/host-key" "$DSHM_HOME/device-bearer"
+    if [[ $2 != 0 ]]; then demo_tls_on_exit cleanup; fi
+    DSHM_HOME="$1"
+    exit "$2"
+BASH
+  [[ $result == "$status" && ! -e "$(cat "$scratch/profile")" && -f "$base/keep" && -f "$scratch/diagnostic" ]]
+  rm "$scratch/diagnostic"
+done
+echo 'Disposable profiles removed after successful and failed demos.'

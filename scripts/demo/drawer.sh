@@ -66,7 +66,7 @@ case "$PART" in
     node scripts/demo/drawer-web.mjs > "$LOGS/web.log" 2>&1 &
     web_pid=$!
     cleanup() { kill "$web_pid" 2>/dev/null || true; wait "$web_pid" 2>/dev/null || true; rm -rf "$DSHM_HOME" "$DSHM_DRAWER_SIGNALS"; }
-    trap cleanup EXIT
+    demo_tls_on_exit cleanup
     for _ in $(seq 1 240); do
       [ -e "$DSHM_DRAWER_SIGNALS/workspace" ] && break
       kill -0 "$web_pid" 2>/dev/null || { cat "$LOGS/web.log"; exit 1; }

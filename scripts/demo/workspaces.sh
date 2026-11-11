@@ -30,7 +30,7 @@ mkdir -p "$DSHM_HOME/profiles/web"
 printf '%s\n' '- id: dsh-mobile-bridge' '  config:' "    cwd: \"$fixtures/amber\"" > "$DSHM_HOME/profiles/web/cordis.patch.yml"
 node scripts/demo/workspaces-host.mjs > "$LOGS/host.log" 2>&1 &
 host_pid=$!
-trap 'kill "$host_pid" 2>/dev/null || true' EXIT
+demo_tls_on_exit 'kill "$host_pid" 2>/dev/null || true'
 for _ in $(seq 1 240); do
   grep -q 'workspaces-host: ready' "$LOGS/host.log" && break
   kill -0 "$host_pid" 2>/dev/null || { tail -12 "$LOGS/host.log"; exit 1; }

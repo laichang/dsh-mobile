@@ -73,7 +73,7 @@ ui_part s29 RevokeUITests/testRevokedHostLeavesTheDrawerAndIsNotRetried RevokeUI
 
 # The user's path on a real DSH + bridge: the bridge answers the revoke, then closes with 4003.
 DSH_PID=""
-trap '[ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true' EXIT
+demo_tls_on_exit '[ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true'
 real_bridge() {
   mkdir -p "$DSHM_HOME"
   demo_prepare_bridge

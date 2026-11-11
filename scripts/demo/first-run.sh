@@ -47,7 +47,7 @@ if [ "$PART" = ui ]; then
     if [ -n "$host_pid" ]; then kill "$host_pid" 2>/dev/null || true; wait "$host_pid" || true; fi
     rm -rf "$PROFILE"
   }
-  trap cleanup EXIT
+  demo_tls_on_exit cleanup
   xcrun simctl bootstatus "$SIM" -b >/dev/null
   if xcrun simctl get_app_container "$SIM" chang.dsh-mobile app >/dev/null 2>&1; then
     xcrun simctl uninstall "$SIM" chang.dsh-mobile

@@ -49,7 +49,7 @@ fi
 
 DSH_PID=""
 cleanup() { [ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true; }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 (cd bridge && corepack pnpm build >/dev/null)
 if ! lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
   step "starting real DSH + bridge (scripts/dsh-up.mjs: web $DSHM_WEB_PORT, bridge $PORT, $DSHM_HOME)"
@@ -73,7 +73,7 @@ if DSHM_DEMO_OFFER="$URL" demo_tls_client "$DSHM_HOME" "$DSHM_HOME/other.json" "
   echo "a reused pairing secret was accepted" >&2; exit 1
 fi
 rm -f "$LOGS/cli-other.json"
-grep -q "enrollment refused" "$LOGS/reuse.err" && cat "$LOGS/reuse.err"
+grep -Fq "client: enrollment refused" "$LOGS/reuse.err" || { echo "Expected an enrollment refusal from the host" >&2; exit 1; }
 
 step "UI tests in the Simulator ($SIM): pairing, resume over TLS (durable list seam), round trip"
 SHOT_DIR="$(mktemp -d)"

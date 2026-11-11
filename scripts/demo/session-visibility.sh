@@ -31,7 +31,7 @@ cleanup() {
   wait "$web_pid" 2>/dev/null || true
   rm -rf "$DSHM_HOME" "$DSHM_VISIBILITY_SIGNALS"
 }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 for _ in $(seq 1 240); do
   [ -e "$DSHM_VISIBILITY_SIGNALS/first-ready" ] && break
   kill -0 "$web_pid" 2>/dev/null || { cat "$logs/web.log"; exit 1; }

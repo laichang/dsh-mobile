@@ -66,7 +66,7 @@ uitest fake \
 
 HOST_PID=""
 cleanup() { [ -n "$HOST_PID" ] && kill "$HOST_PID" 2>/dev/null || true; }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 if [ $FAKE_ONLY = 0 ]; then
   STARTED=0
   if listening; then
