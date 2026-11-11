@@ -42,16 +42,17 @@
       "needs": [
         "S1"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/t1-f391f77",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Prove iPhone trust and address changes before moving device registration to TLS. Closes #74.",
       "cuts": "Connect the production iOS transport to a real Node HTTPS/WebSocket listener. Require TLS 1.3 at both ends. The QR identifies a host by SHA-256 of the P-256 DER SubjectPublicKeyInfo (SPKI). Define how the bridge issues and renews its certificate on supported host platforms, how IP and DNS addresses reach the QR, and how certificate names/SANs are validated as addresses change. Record any new signing dependency for user review. Try URLSession first; evaluate Network.framework against the same checks if needed.\nStarting files: `bridge/src/server.ts`, `bridge/scripts/pair.ts`, `ios/DSHKit/Package.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X3.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S2",
@@ -284,6 +285,11 @@
       "date": "2026-11-11",
       "title": "S1 merged",
       "body": "Merged as `e63c1f5`; the plan/ rules hold on the merge commit. No open [human] items, so S1 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "T1 assigned",
+      "body": "Branch `claude/t1-f391f77`, simulator `A96B1CF6-AF10-4CB8-A1D3-85155723DAC7`, DSHM_HOME `~/.dshm/home-t1-A96B1CF6-AF10-4CB8-A1D3-85155723DAC7`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env T1)\"` exports them."
     }
   ],
   "pending": [],
