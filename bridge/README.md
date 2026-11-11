@@ -119,3 +119,10 @@ The TLS identity helper stores one P-256 PKCS#8 key under an owner-only director
 The TLS enrollment QR needs the pin and the same addresses used for the certificate. For a wildcard bind the existing listener announcement enumerates LAN and VPN IP addresses. A specific bind advertises its configured IP or DNS name. Include each advertised IP as an IP SAN and each DNS name as a DNS SAN. A DNS address can resolve to a new IP under the same certificate. To advertise a new literal IP, renew the certificate under the same key. The phone retries the saved addresses and promotes the one that succeeds. If every address fails, the hosts sheet shows each error and offers a new pairing.
 
 `scripts/demo/pinned-tls.sh` exercises the production Swift transport under strict ATS on an iOS simulator. The existing QR enrollment flow still uses Noise.
+
+
+### TLS device enrollment
+
+Set `DSHM_BRIDGE_TLS=1` for the TLS listener. Run `node bridge/lib/scripts/pair.js` in the same profile to display a version 2 QR. The bridge mints the offer over a Unix socket in an owner-only directory, with mode 0600 on the socket. Only the CLI displays the link. Each offer expires after ten minutes by default and can be redeemed once. Restarting the listener invalidates outstanding offers. If enrollment is interrupted, request a fresh QR.
+
+The phone posts the offer to `/enroll` over pinned HTTPS. It stores the returned bearer in a ThisDeviceOnly Keychain item per device. Each reconnect checks `/device` and sends its bearer in the WebSocket upgrade. Only an explicit device refusal from the pinned host removes the pairing. The bridge stores bearer digests and device history under `tls/devices.json`; revoked devices lose all their sockets. The host key and device registry survive restarts. Unix socket access control and certificate provisioning have been exercised on macOS. Linux remains unverified. Windows enrollment needs an owner-restricted IPC implementation.

@@ -8,6 +8,7 @@ import Foundation
 ///
 /// k, i and s are unpadded base64url (32, 16 and 32 bytes); x is Unix seconds.
 public struct PairingOffer: Sendable, Equatable {
+    public var usesTLS = false
     public var hostName: String
     /// Tried in order.
     public var addresses: [HostEndpoint]
@@ -46,7 +47,7 @@ public struct PairingOffer: Sendable, Equatable {
         // The bridge writes the query with URLSearchParams (form encoding: space is "+").
         func decode(_ s: String) -> String { s.replacingOccurrences(of: "+", with: " ").removingPercentEncoding ?? s }
         for item in components.percentEncodedQueryItems ?? [] { q[decode(item.name)] = decode(item.value ?? "") }
-        guard q["v"] == "1" else { throw .unsupportedVersion(q["v"] ?? "none") }
+        guard ["1", "2"].contains(q["v"]) else { throw .unsupportedVersion(q["v"] ?? "none") }
         func bytes(_ key: String, _ length: Int) throws(ParseError) -> [UInt8] {
             guard let s = q[key], let b = Self.base64URLDecode(s), b.count == length else { throw .badField(key) }
             return b
@@ -61,6 +62,7 @@ public struct PairingOffer: Sendable, Equatable {
             offerID: try bytes("i", PairingWire.offerIDLength),
             secret: try bytes("s", PairingWire.secretLength),
             expiresAt: Date(timeIntervalSince1970: x))
+        usesTLS = q["v"] == "2"
     }
 
     public init(string: String) throws(ParseError) {

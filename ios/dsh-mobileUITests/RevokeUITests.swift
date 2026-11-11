@@ -88,15 +88,27 @@ final class RevokeUITests: XCTestCase {
         saveShot("revoke-revoked-08")
     }
     /// Pairs with the real bridge of scripts/demo/revoke.sh (a fresh link per test) and waits for it.
-    private func pairWithRealBridge(_ variable: String) throws -> XCUIApplication {
-        try XCTSkipUnless(env[variable] != nil, "needs a pairing link; run scripts/demo/revoke.sh")
-        let link = try XCTUnwrap(env[variable].flatMap(URL.init(string:)))
+    func pairWithRealBridge(_ variable: String) throws -> XCUIApplication {
+        guard env[variable + "_FILE"] != nil || env[variable] != nil else {
+            throw XCTSkip("needs a pairing link; run the enrollment or revocation demo")
+        }
         let first = XCUIApplication()
         // The unpaired Debug fallback must not reach a real host (port 1 is closed).
         first.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN", "-DSHMResetPairing", "YES",
                                  "-DSHMResetStore", "YES", "-DSHMBridgePort", "1"]
         first.launch()
-        let app = openDeepLink(link)
+        let app: XCUIApplication
+        if let path = env[variable + "_FILE"] {
+            // Let simctl open the private link so XCTest logs only the file name.
+            try Data().write(to: URL(fileURLWithPath: path + ".open"))
+            let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let open = system.buttons.matching(NSPredicate(format: "label IN {'Open', '打开'}")).firstMatch
+            if open.waitForExistence(timeout: 4) { open.tap() }
+            app = XCUIApplication(bundleIdentifier: "chang.dsh-mobile")
+        } else {
+            let link = try XCTUnwrap(env[variable].flatMap(URL.init(string:)))
+            app = openDeepLink(link)
+        }
         let confirm = app.buttons["pairing.confirm"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 15), app.debugDescription)
         confirm.tap()
@@ -168,4 +180,37 @@ final class RevokeUITests: XCTestCase {
         alert.buttons.matching(NSPredicate(format: "label IN {'Revoke', '吊销'}")).firstMatch.tap()
         expect08AndStays(app, shot: "revoke-real-bridge-drawer-08")
     }
+    func testEnrolledPhoneDispatchesAfterRelaunch() throws {
+        let app = try pairWithRealBridge("DSHM_TLS_PAIR_URL")
+        XCTAssertEqual(any(app, "host.channel").firstMatch.value as? String, "TLS 1.3")
+        let first = runDemo(app, prompt: "TLS dispatch", timeout: 120)
+        XCTAssertTrue(first.contains("streamed through the dsh-mobile bridge"))
+        app.terminate()
+        app.launch()
+        openDrawer(app)
+        XCTAssertEqual(waitForValue(any(app, "drawer.hosts").firstMatch, in: ["1/1"], timeout: 30), "1/1")
+        XCTAssertTrue(runDemo(app, prompt: "TLS reconnect", timeout: 120).contains("streamed through the dsh-mobile bridge"))
+        app.terminate()
+    }
+
+    func testUnreachableTLSHostRetainsPairingAndCachedTask() throws {
+        try XCTSkipUnless(env["DSHM_TLS_UNAVAILABLE"] == "1", "run the TLS enrollment demo")
+        let app = XCUIApplication()
+        app.launch()
+        openDrawer(app)
+        XCTAssertEqual(waitForValue(any(app, "drawer.hosts").firstMatch, in: ["0/1"], timeout: 30), "0/1")
+        let recent = app.buttons.matching(identifier: "drawer.session")
+            .matching(NSPredicate(format: "label CONTAINS %@", "TLS reconnect"))
+        XCTAssertTrue(recent.firstMatch.waitForExistence(timeout: 15))
+        app.terminate()
+    }
+
+    func testOfflineRevokedPhoneForgetsHostOnLaunch() throws {
+        try XCTSkipUnless(env["DSHM_TLS_OFFLINE_REVOKE"] == "1", "run the TLS enrollment demo")
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launch()
+        expect08AndStays(app, shot: "offline-revoke")
+    }
+
 }

@@ -36,6 +36,7 @@ export interface Config {
    * Development only: also serve unencrypted frames on `/plaintext`. Requires a loopback `host`;
    * the bridge refuses to start otherwise. Off by default.
    */
+  tls?: boolean
   devPlaintext?: boolean
 }
 
@@ -56,6 +57,7 @@ export function resolveConfig(config: Config = {}, env: NodeJS.ProcessEnv = proc
     cwd: config.cwd,
     stateDir: config.stateDir ?? env.DSHM_BRIDGE_STATE_DIR ?? join(dshHome, 'dsh-mobile-bridge'),
     approvalTimeoutMs: config.approvalTimeoutMs,
+    tls: config.tls ?? env.DSHM_BRIDGE_TLS === '1',
     devPlaintext: config.devPlaintext ?? env.DSHM_BRIDGE_DEV_PLAINTEXT === '1',
   }
 }
@@ -86,7 +88,8 @@ export function apply(ctx: PluginContext, config: Config = {}) {
     startBridgeServer({
       host: c.host,
       port: c.port,
-      noise: new NoiseResponder(store, log),
+      noise: c.tls ? undefined : new NoiseResponder(store, log),
+      tlsStateDir: c.tls ? c.stateDir : undefined,
       channel: c.devPlaintext ? new PlaintextChannel() : undefined,
       tasks, hub, approvals, questions, sessions, dshVersion,
       log,
@@ -94,10 +97,10 @@ export function apply(ctx: PluginContext, config: Config = {}) {
       (s) => {
         if (disposed) return void s.close()
         server = s
-        store.writeListener(listenerInfo(c.host, s.port))
+        store.writeListener({ ...listenerInfo(c.host, s.port), ...(c.tls ? { tls: true } : {}) })
         // Terminal-first pairing: with no device yet, print a QR right away. More offers:
         // `node bridge/lib/scripts/pair.js` (see bridge/README.md).
-        if (store.devices().length === 0) log(`\n${renderOffer(makeOffer(store))}`)
+        if (!c.tls && store.devices().length === 0) log(`\n${renderOffer(makeOffer(store))}`)
       },
       (error) => {
         stopSessions?.(); sessions?.close()

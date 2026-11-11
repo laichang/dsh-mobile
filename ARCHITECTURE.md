@@ -127,7 +127,7 @@ A Cordis plugin in the user's DSH profile (install: `bridge/README.md`). It is t
 - **Close codes**: 4000 bad hello, 4001 pairing refused (unknown, expired, used, wrong secret), 4002 handshake failed, 4003 device unknown.
 - **State** in `$DSH_HOME/dsh-mobile-bridge/` (dir 0700, files 0600, atomic writes): host key, offers, device registry, approval journal.
 - Both implementations pass the official Noise test vectors and the golden transcripts in `protocol/fixtures/noise/`.
-- **TLS 1.3 tracer**: URLSession validates a pinned P-256 SPKI, leaf dates, server use and IP/DNS SANs. Redirects fail. One binary WSS message carries one protobuf frame. The bridge signs certificates with the host’s OpenSSL-compatible CLI. Provisioning, renewal and address rules: `bridge/README.md`. Current enrollment uses Noise. TLS cutover requires updating the bridge and enrolling a fresh install. Host sessions and audit remain; only the new device registry grants access.
+- **TLS 1.3**: with `DSHM_BRIDGE_TLS=1`, the CLI obtains a single-use QR from the listener over owner-only IPC. URLSession pins P-256 SPKI, checks dates, server usage and IP/DNS SANs, and rejects redirects. Each enrolled device authenticates its WSS upgrade with a Keychain bearer. The bridge stores digests and closes all sockets of a revoked device. Certificate signing, supported hosts and enrollment: `bridge/README.md`.
 
 ### 4.3 Tasks, the host log and resume
 
@@ -212,7 +212,7 @@ DSHProtocol
 - **One `HostConnection` per paired host.** Each address attempt negotiates fresh Noise keys. Each generation owns its cipher, ordered writer and receive loop. The loop correlates responses by ID, delivers events to the store and ignores incoming requests.
 - **`TaskListStore`** runs one sync loop per host: connect, Hello, Resume from the cached cursor; on a drop, backoff from 0.5 s to 30 s. `background()` closes the sockets; `foreground()` reconnects at once. iOS cannot keep sockets alive in the background.
 - **Cache**: events at or below the cursor, and chunks at or below a task's chunk seq, are skipped, so replays are idempotent. Saved within about 150 ms of each event. After a `LogReset` the app calls `ListTasks`; a cached task still running in a log that is gone is marked failed ("the bridge restarted").
-- **Keys**: the phone's only key is its Noise static key (X25519) in the Keychain (`ThisDeviceOnly`, never synced), shared by all hosts. No Secure Enclave key: it does not do X25519.
+- **Keys**: the Noise path uses a static key (X25519) in the Keychain (`ThisDeviceOnly`, never synced), shared by all hosts. No Secure Enclave key: it does not do X25519.
 - **App Transport Security** allows cleartext loads (`NSAllowsArbitraryLoads`), the same in Debug and Release: the app uses `ws://` to the QR's IP addresses, and ATS refuses cleartext to non-local IPs such as Tailscale's 100.x. Safe because each frame is Noise-encrypted and the app talks to no other server. `NSAllowsLocalNetworking` does not cover 100.64/10, and exception domains cannot name IPs. `scripts/check-release-clean` fails when the Debug and Release Info.plist files differ.
 
 ### 5.2 Hosts and connections

@@ -1,6 +1,6 @@
 import Foundation
 
-private struct TLSChannel: SecureChannel, FrameCipher {
+struct TLSChannel: SecureChannel, FrameCipher {
     let name = "TLS 1.3"
     let path = "/"
     func url(for endpoint: HostEndpoint) -> URL {

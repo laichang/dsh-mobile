@@ -19,6 +19,8 @@ import { TaskState } from './gen/durable_list_pb.ts'
 import { deviceId } from './pairing/store.ts'
 import { CloseCode } from './pairing/wire.ts'
 import { auditPage, deviceList } from './devices/manage.ts'
+import { listenTLS } from './tls/listener.ts'
+import type { TLSRegistry } from './tls/registry.ts'
 import { hostname } from 'node:os'
 import type { SecureChannel } from './channel.ts'
 import { FrameSchema, type Frame, type Request, type ResponseSchema } from './gen/frame_pb.ts'
@@ -58,6 +60,7 @@ export interface BridgeServerOptions {
   channel?: SecureChannel
   /** Pairing + reconnect over Noise on every other path. */
   noise?: NoiseResponder
+  tlsStateDir?: string
   tasks: TaskStarter
   dshVersion: string
   /** The host's name in TaskList / Resumed (default: this machine's hostname). */
@@ -78,6 +81,15 @@ export interface BridgeServer {
 }
 
 export async function startBridgeServer(options: BridgeServerOptions): Promise<BridgeServer> {
+  const hub = options.hub ?? new TaskHub(options.tasks)
+  const host = { hub, hostName: options.hostName ?? hostname(), authenticated: new Map<WebSocket, string>() }
+  if (options.tlsStateDir) {
+    const server = await listenTLS(options.host, options.port, options.tlsStateDir, (ws, id, store) => {
+      host.authenticated.set(ws, id)
+      serveConnection(ws, '/', options, host, options.log ?? (() => {}), store)
+    })
+    return { port: server.port, hub, close: async () => { await server.close(); await hub.close() } }
+  }
   if (!options.channel && !options.noise) throw new Error('the bridge needs a channel: noise, plaintext, or both')
   options.channel?.assertListenAddress(options.host)
   const log = options.log ?? (() => {})
@@ -91,8 +103,6 @@ export async function startBridgeServer(options: BridgeServerOptions): Promise<B
   const channels = [options.noise && 'noise', options.channel && `${options.channel.name} on ${PLAINTEXT_PATH}`]
   log(`listening on ${options.host}:${port} (${channels.filter(Boolean).join(', ')})`)
 
-  const hub = options.hub ?? new TaskHub(options.tasks)
-  const host = { hub, hostName: options.hostName ?? hostname(), authenticated: new Map<WebSocket, string>() }
   wss.on('connection', (socket, req) => serveConnection(socket, req.url ?? '/', options, host, log))
 
   return {
@@ -126,13 +136,13 @@ interface FrameCodec {
 
 function serveConnection(
   socket: WebSocket, url: string, options: BridgeServerOptions, host: { hub: TaskHub; hostName: string; authenticated: Map<WebSocket, string> },
-  log: (m: string) => void,
+  log: (m: string) => void, tls?: TLSRegistry,
 ) {
   const { hub, hostName } = host
   const supported = supportsDsh(options.dshVersion)
   // The host can queue follow-ups while a task runs, and edit the queue.
   const queues = !!(options.tasks.followUp && options.tasks.prompt && options.tasks.editQueue)
-  let device = 'dev loopback'
+  let device = host.authenticated.get(socket) ?? 'dev loopback'
   let helloDone = false
   let clientSessions = false
   let clientApprovals = false
@@ -144,7 +154,9 @@ function serveConnection(
   const uploads = new UploadStaging() // This connection's attachments
 
   const path = new URL(url, 'ws://bridge').pathname
-  if (path === PLAINTEXT_PATH) {
+  if (tls) {
+    codec = { seal: bytes => bytes, open: bytes => bytes }
+  } else if (path === PLAINTEXT_PATH) {
     if (!options.channel) return socket.close(1008, 'plaintext disabled')
     codec = options.channel
   } else if (!options.noise) {
@@ -157,7 +169,7 @@ function serveConnection(
   let unsubscribe: (() => void) | undefined
 
   const send = (frame: MessageInitShape<typeof FrameSchema>) => {
-    if (socket.readyState !== socket.OPEN || !codec) return
+    if (socket.readyState !== socket.OPEN || !codec || (tls && !tls.has(device))) return
     socket.send(codec.seal(toBinary(FrameSchema, create(FrameSchema, frame))))
   }
   const respond = (requestId: bigint, body: ResponseBody) =>
@@ -368,7 +380,7 @@ function serveConnection(
       case 'revokeDevice': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
         const actor = host.authenticated.get(socket)
-        const store = options.noise?.store
+        const store = tls ?? options.noise?.store
         if (!actor || !store) return fail(id, 'devices/forbidden', 'Pair this device to manage the host.')
         try {
           if (request.body.case === 'listAudit') {
@@ -458,7 +470,7 @@ function serveConnection(
   }
 
   socket.on('message', (data, isBinary) => {
-    if (socket.readyState !== socket.OPEN) return
+    if (socket.readyState !== socket.OPEN || (tls && !tls.has(device))) return
     if (!isBinary) return socket.close(1003, 'binary frames only')
     const bytes = new Uint8Array(Array.isArray(data) ? Buffer.concat(data) : Buffer.from(data as ArrayBuffer))
     if (!codec) {

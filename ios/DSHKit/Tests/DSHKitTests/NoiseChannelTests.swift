@@ -209,7 +209,7 @@ struct Transcript: Decodable, Sendable, CustomTestStringConvertible {
     }
 
     @Test func rejectsMalformedOffers() {
-        #expect(throws: PairingOffer.ParseError.unsupportedVersion("2")) { try PairingOffer(string: Self.link(v: "2")) }
+        #expect(throws: PairingOffer.ParseError.unsupportedVersion("99")) { try PairingOffer(string: Self.link(v: "99")) }
         #expect(throws: PairingOffer.ParseError.badField("s")) { try PairingOffer(string: Self.link(s: [1, 2, 3])) }
         #expect(throws: PairingOffer.ParseError.badField("a")) { try PairingOffer(string: Self.link(a: "nope")) }
         #expect(throws: PairingOffer.ParseError.notAPairingLink) { try PairingOffer(string: "https://example.com/pair?v=1") }
