@@ -55,7 +55,7 @@ The scripts and the hooks hold the rules. When a script or a hook refuses, read 
 - See the run: `scripts/status`, `scripts/plan show <ID>`, `scripts/plan dag`.
 - Build a node: read `scripts/brief <ID>` only. Run `eval "$(scripts/slice-env <ID>)"` in the worktree of the node.
 - Record a merge: `scripts/plan merged <ID> <merge-commit>`.
-- Report a bug: on a plan, `scripts/plan fix`. With no plan, open a GitHub issue.
+- Report a bug during a plan: run `scripts/plan coordinator` from any worktree. If another chat owns the run, send the report there with the available chat tool. For `codex:<thread-id>`, pass only the ID after `codex:` to `send_message_to_thread`. If delivery is unavailable, give the user the report and its destination. For Codex, link to `codex://threads/<thread-id>` using the same ID. Leave scheduling to the owner. The owner checks for an existing fix before it runs `scripts/plan fix`. With no claim, use `scripts/plan fix` on main. With no plan, open a GitHub issue.
 
 ### Close a plan
 

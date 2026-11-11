@@ -1,0 +1,50 @@
+#!/bin/bash
+# Run the real fix and claim commands in an isolated repository with two chat identities.
+set -euo pipefail
+src=$(git rev-parse --show-toplevel)
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+git init -q -b main "$tmp/repo"
+cd "$tmp/repo"
+git config user.name tester
+git config user.email test@example.org
+mkdir -p scripts/lib
+cp "$src"/scripts/{plan,check-plan} scripts/
+cp "$src"/scripts/lib/{dshm.py,plandata.py,plan.schema.json} scripts/lib/
+git add scripts
+git commit -qm tools
+git worktree add -q --detach "$tmp/other"
+export CODEX_THREAD_ID=first
+scripts/plan new "Test plan" --commit
+[[ $(scripts/plan coordinator --claim) == codex:first ]]
+[[ $(scripts/plan coordinator --claim) == codex:first ]]
+[[ $(cd "$tmp/other/scripts" && ./plan coordinator) == codex:first ]]
+head=$(git rev-parse HEAD)
+export CODEX_THREAD_ID=second
+refused() {
+  if "$@" >"$tmp/refusal" 2>&1; then echo "Unexpected success: $*" >&2; exit 1; fi
+  grep -Fq 'codex:first' "$tmp/refusal"
+}
+refused scripts/plan coordinator --claim
+refused scripts/plan fix "My bug" --bug "First launch fails" --commit
+(cd "$tmp/other/scripts" && refused ./plan fix "My bug" --bug "First launch fails")
+[[ $(git rev-parse HEAD) == "$head" && -z $(git status --porcelain) ]]
+export CODEX_THREAD_ID=first
+scripts/plan fix "My bug" --bug "First launch fails" --commit
+export CODEX_THREAD_ID=second
+fix_id=$(python3 -c 'import json; print(json.load(open("plan/plan.json"))["nodes"][-1]["id"])')
+refused scripts/plan assign "$fix_id" --branch claude/other-chat
+[[ $(scripts/plan coordinator --replace codex:first) == codex:second ]]
+scripts/plan fix "Second bug" --bug "Restart fails" --commit
+git rm -qr plan
+git commit -qm close
+[[ $(scripts/plan coordinator) == none ]]
+scripts/plan new "Test plan" --commit
+[[ $(scripts/plan coordinator) == none ]]
+scripts/plan fix "Later bug" --bug "New issue" --commit
+for chat in first second; do
+  (CODEX_THREAD_ID=$chat scripts/plan coordinator --claim >"$tmp/$chat" 2>&1 || echo refused >>"$tmp/$chat") &
+done
+wait
+[[ $(grep -lx refused "$tmp/first" "$tmp/second" | wc -l) -eq 1 ]]
+echo 'Coordinator routing, handoff and plan replacement passed.'

@@ -9,6 +9,7 @@ change nothing. Coordinator commands run only on main; slice owner commands only
 of that slice. Each refusal says the next step.
 
 Read-only (anywhere):
+  plan coordinator                     the active coordinator chat, shared by all local worktrees
   plan show <ID>                       the node: state, scope, items, log
   plan title [--milestone M1]          the coordinator status title, counted from the states
   plan lint                            check plan/ (exit 1)
@@ -217,6 +218,56 @@ def need_main():
     if b != "main":
         raise PlanError(f"this command is for the coordinator, on main (now on {b}). "
                         f"Next: run it in the main checkout, or ask the coordinator")
+
+
+def current_chat():
+    for client, key in (("codex", "CODEX_THREAD_ID"), ("claude", "CLAUDE_SESSION_ID")):
+        if os.environ.get(key):
+            return f"{client}:{os.environ[key]}"
+    return None
+
+
+def coordinator(claim=False, replace=None):
+    # The first-parent addition identifies a run even if later plans reuse its title.
+    root = dshm.toplevel()
+    if not dshm.git("ls-tree", "main", "--", plandata.PLAN_FILE, cwd=root):
+        if claim:
+            raise PlanError("no committed plan on main. Next: commit the approved plan first")
+        return None
+    start = dshm.git("log", "-1", "--first-parent", "--diff-filter=A", "--format=%H", "main",
+                     "--", plandata.PLAN_FILE, cwd=root)
+    ref = f"refs/dshm-coordinators/{start}"
+    old = dshm.git("rev-parse", "--verify", "--quiet", ref, check=False)
+    owner = dshm.git("cat-file", "blob", old) if old else None
+    if not claim:
+        return owner
+    chat = current_chat()
+    if not chat:
+        raise PlanError("missing chat identity. Next: claim from the coordinator chat with CODEX_THREAD_ID "
+                        "or CLAUDE_SESSION_ID")
+    if owner == chat:
+        return owner
+    if owner != replace:
+        raise PlanError(f"coordinator: {owner or 'none'}. Next: use that chat or request a handoff")
+    need_main()
+    blob = subprocess.run(["git", "hash-object", "-w", "--stdin"], input=chat, text=True,
+                          capture_output=True, check=True).stdout.strip()
+    # Compare-and-swap makes simultaneous claims exclusive across worktrees.
+    result = subprocess.run(["git", "update-ref", ref, blob, old], capture_output=True)
+    if result.returncode:
+        raise PlanError("could not register this chat. Next: run scripts/plan coordinator to see the current owner")
+    return chat
+
+
+def cmd_coordinator(p, a):
+    print(coordinator(a.claim or a.replace is not None, a.replace) or "none")
+    return 0
+
+
+def need_fix_owner():
+    owner = coordinator()
+    if owner and owner != current_chat():
+        raise PlanError(f"active coordinator: {owner}. Next: send the bug report to that chat")
 
 
 def need_slice_branch(sid):
@@ -488,6 +539,8 @@ def cmd_fix(p, a):
 def cmd_assign(p, a):
     need_main()
     node = p.node(a.id)
+    if not a.schedule and node["title"].startswith("Fix: "):
+        need_fix_owner()
     if a.round is not None:
         previous = node.get("round", 0)
         if not a.schedule or not previous < a.round <= 3:
@@ -816,6 +869,11 @@ def main():
         sp.set_defaults(fn=fn)
         return sp
 
+    sp = sub.add_parser("coordinator", help="show or claim the current plan's coordinator chat")
+    sp.set_defaults(fn=cmd_coordinator)
+    claim = sp.add_mutually_exclusive_group()
+    claim.add_argument("--claim", action="store_true", help="register this chat")
+    claim.add_argument("--replace", metavar="OLD-OWNER", help="transfer a claim after a user-requested handoff")
     sp = add("show", cmd_show); sp.add_argument("id")
     sp = add("title", cmd_title); sp.add_argument("--milestone")
     add("lint", cmd_lint)
@@ -855,8 +913,10 @@ def main():
     try:
         if getattr(a, "id", None) and not (a.fn is cmd_accept and a.id == "exit"):
             dshm.check_id(a.id)
+        if a.fn is cmd_fix:
+            need_fix_owner()
         p = Plan(dshm.toplevel())
-        if a.fn not in (cmd_new, cmd_cleanup, cmd_dag, cmd_passed, cmd_verify, cmd_merge, cmd_lint):
+        if a.fn not in (cmd_coordinator, cmd_new, cmd_cleanup, cmd_dag, cmd_passed, cmd_verify, cmd_merge, cmd_lint):
             p.load()
         return a.fn(p, a)
     except PlanError as e:
