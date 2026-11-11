@@ -897,10 +897,10 @@ public final class FakeHost: Sendable {
                 bridge.deliver(Self.response(id, .sessionPage(journals[read.taskID]!)))
             case let body? where s.devices != nil && FakeDevices.handles(body):
                 guard let (answer, revokedCurrent) = s.devices?.answer(body) else { break }
-                bridge.deliver(Self.response(id, answer))
+                if !revokedCurrent || s.devices?.closeBeforeRevokeResponse != true {
+                    bridge.deliver(Self.response(id, answer))
+                }
                 if revokedCurrent {
-                    // Like bridge/src/server.ts: the response first, then every socket of this
-                    // device closes with 4003 (device unknown), and new ones are refused.
                     s.revoked = true
                     for conn in s.connections.values { conn.bridge.drop(code: PairingWire.CloseCode.deviceUnknown.rawValue) }
                 }

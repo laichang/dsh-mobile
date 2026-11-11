@@ -1,5 +1,4 @@
 import DSHCore
-import DSHProtocol
 import SwiftUI
 
 /// The hosts sheet (screen H), from the "2 / 3" pill in the drawer. Every host is a row of

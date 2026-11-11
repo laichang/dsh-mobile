@@ -1,5 +1,4 @@
 import DSHCore
-import DSHProtocol
 import SwiftUI
 
 /// One host (screen X2), pushed in the hosts sheet: its paired devices (this device is
@@ -16,12 +15,12 @@ struct HostDetailView: View {
     let hostKey: String
     @Environment(\.hostActions) private var actions
     @Environment(ShellModel.self) private var shell
-    @State private var list: Dshm_V1_DeviceList?
-    @State private var entries: [Dshm_V1_AuditEntry] = []
+    @State private var list: [PairedDevice]?
+    @State private var entries: [DeviceAuditEntry] = []
     @State private var nextBeforeID = ""
     @State private var loadingOlder = false
     @State private var error: String?
-    @State private var target: Dshm_V1_PairedDevice?
+    @State private var target: PairedDevice?
 
     var body: some View {
         let host = store.hosts.first { $0.key == hostKey }
@@ -56,7 +55,7 @@ struct HostDetailView: View {
                 .accessibilityIdentifier("device.revoke.confirm")
             Button(role: .cancel) {} label: { Text("Cancel", tableName: "Hosts") }
         } message: { device in
-            if device.id == list?.currentDeviceID {
+            if device.isCurrent {
                 // Say what happens; the host leaves the drawer and is not retried.
                 Text(Self.revokeThisDeviceMessage(host?.name ?? ""))
             } else {
@@ -72,7 +71,7 @@ struct HostDetailView: View {
     }
 
     private var confirmTitle: Text {
-        target?.id == list?.currentDeviceID
+        target?.isCurrent == true
             ? Text("Revoke this device?", tableName: "Hosts")
             : Text("Revoke this device's access?", tableName: "Hosts")
     }
@@ -94,13 +93,13 @@ struct HostDetailView: View {
     }
 
     @ViewBuilder
-    private func content(_ connection: HostConnection) -> some View {
+    private func content(_ connection: any HostDeviceManagement) -> some View {
         sectionTitle(Text("Paired devices", tableName: "Hosts"))
         card {
             if let list {
-                ForEach(Array(list.devices.enumerated()), id: \.element.id) { index, device in
+                ForEach(Array(list.enumerated()), id: \.element.id) { index, device in
                     if index > 0 { Divider().overlay(DSHTheme.hairline) }
-                    DeviceRow(device: device, current: device.id == list.currentDeviceID) { target = device }
+                    DeviceRow(device: device) { target = device }
                 }
             } else {
                 ProgressView().frame(maxWidth: .infinity).padding(16)
@@ -150,7 +149,7 @@ struct HostDetailView: View {
         } catch { self.error = String(describing: error) }
     }
 
-    private func loadOlder(_ connection: HostConnection) async {
+    private func loadOlder(_ connection: any HostDeviceManagement) async {
         guard !loadingOlder, !nextBeforeID.isEmpty else { return }
         loadingOlder = true
         defer { loadingOlder = false }
@@ -162,24 +161,18 @@ struct HostDetailView: View {
         } catch { self.error = String(describing: error) }
     }
 
-    private func revoke(_ device: Dshm_V1_PairedDevice) {
+    private func revoke(_ device: PairedDevice) {
         guard let connection = store.deviceManagement(for: hostKey) else { return }
-        let isCurrent = device.id == list?.currentDeviceID
         Task {
             do {
-                list = try await connection.revokeDevice(device.id)
-                error = nil
-                if isCurrent {
-                    // This phone has no access to the host any more.
+                switch try await connection.revokeDevice(device) {
+                case .thisDevice:
                     shell.sheet = nil
                     actions.forget(hostKey)
-                } else {
+                case .remaining(let devices):
+                    list = devices
                     await load()
                 }
-            } catch where isCurrent && HostConnection.isDeviceRefusal(error) {
-                // The close 4003 came before the response; the revoke took effect.
-                shell.sheet = nil
-                actions.forget(hostKey)
             } catch { self.error = String(describing: error) }
         }
     }
@@ -187,8 +180,7 @@ struct HostDetailView: View {
 
 /// "▯ This device / dshm-a3f9c21e / paired 11/3 · last connected just now    Revoke".
 private struct DeviceRow: View {
-    let device: Dshm_V1_PairedDevice
-    let current: Bool
+    let device: PairedDevice
     let revoke: () -> Void
 
     var body: some View {
@@ -198,15 +190,15 @@ private struct DeviceRow: View {
                 .padding(.top, 2)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
-                if current {
+                if device.isCurrent {
                     Text("This device", tableName: "Hosts").font(.body.weight(.semibold))
                 }
                 Text(verbatim: device.id)
-                    .font(DSHTheme.mono(current ? .subheadline : .body))
-                    .foregroundStyle(current ? DSHTheme.textSecondary : DSHTheme.textPrimary)
+                    .font(DSHTheme.mono(device.isCurrent ? .subheadline : .body))
+                    .foregroundStyle(device.isCurrent ? DSHTheme.textSecondary : DSHTheme.textPrimary)
                     .accessibilityLabel(device.id)
-                    .accessibilityIdentifier(current ? "device.current" : "device.id.\(device.id)")
-                Text("Paired \(date(device.pairedAtMs), format: .dateTime.month(.defaultDigits).day()) · last connected \(date(device.lastSeenAtMs), format: .relative(presentation: .named))",
+                    .accessibilityIdentifier(device.isCurrent ? "device.current" : "device.id.\(device.id)")
+                Text("Paired \(device.pairedAt, format: .dateTime.month(.defaultDigits).day()) · last connected \(device.lastSeenAt, format: .relative(presentation: .named))",
                      tableName: "Hosts")
                     .font(.footnote)
                     .foregroundStyle(DSHTheme.textTertiary)
@@ -225,10 +217,10 @@ private struct DeviceRow: View {
 
 /// "Approval allowed / bash rm -rf … / owner · dshm-a3f9c21e    11:02".
 private struct AuditRow: View {
-    let entry: Dshm_V1_AuditEntry
+    let entry: DeviceAuditEntry
 
     var body: some View {
-        let at = date(entry.atMs)
+        let at = entry.at
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
                 Text(LocalizedStringKey(entry.action), tableName: "Hosts").font(.body.weight(.semibold))
@@ -255,8 +247,4 @@ private struct AuditRow: View {
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("audit.\(entry.action)")
     }
-}
-
-private func date(_ milliseconds: Int64) -> Date {
-    Date(timeIntervalSince1970: Double(milliseconds) / 1000)
 }

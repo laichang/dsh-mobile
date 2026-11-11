@@ -183,7 +183,7 @@ A Cordis plugin in the user's DSH profile (install: `bridge/README.md`). It is t
 
 ### 4.10 Devices, audit and the upstream guard
 
-- **Devices** (`devices.v1`): a paired Noise client can manage the host; the static-key fingerprint identifies the device. Revoke removes the key and records the action in one atomic registry write, then closes each open socket of that device. Every paired device has the same rights.
+- **Devices** (`devices.v1`): both screens use the selected online host’s `HostDeviceManagement` API. Paired Noise devices have equal rights. Revocation atomically removes the static-key fingerprint and records the action, then closes that device’s sockets.
 - **Audit**: pairing and revoke history together with the approval journal, 50 entries per page (`ListAudit`).
 - **Upstream guard**: the bridge supports exactly the verified DSH release (`0.2.2-rc.1`), read from the running launcher's app-boot manifest. The loader range is broad, so a host with another DSH can still pair and answer Hello; then the bridge injects no DSH services, registers no holder and refuses other requests, and the phone shows the installed and supported versions. CI runs the bridge suite on the pinned runtime and, non-blocking, on DSH's default branch (`scripts/ci/bridge-upstream`).
 
@@ -218,7 +218,7 @@ DSHProtocol
 - Pairing (scan or paste the link) tries the offer's addresses in order. The host (name, addresses, host key) is saved as JSON (`paired-hosts.json`) in Application Support.
 - A reconnect tries each saved address one at a time, the last working one first. Each try (WebSocket open and handshake) has 5 s. After a try with no answer, a plain TCP connect of at most 1 s (`TCPPortProbe`) tells "another program", "nothing listens" or "not reachable". A try that the host answers with a refusal ends the search (4003, or a bridge that needs a DSH update). On success the working address is saved first.
 - Each failed address gets a reason (`AddressFailure`): nothing listens, another program (not a bridge), or not reachable. The hosts sheet lists each address with its reason and what to do; the all-offline card names the most telling reason per host.
-- **Close 4003 is final**: the store stops that host's loop, drops it and its rows, and the app forgets the pairing and says once "Access removed: <host> revoked this phone's access." (not after a revoke of this phone from this phone). With no host left the app shows the first-run screen. Pairing the same host again clears the forget (`AppModel.forgottenHostKeys`, in memory).
+- **Close 4003 is final**: the store drops the host and its rows and stops retries. The app forgets its pairing, reports an external revoke once and shows first run when no hosts remain. A self-revoke recognizes either the response or the refusal. Pairing again clears `AppModel.forgottenHostKeys` for that host.
 - **Multi-host**: the phone syncs every paired host. The composer's host is kept in UserDefaults. When it goes offline, the app does not switch hosts by itself: another host could run the command in another workspace.
 - **All offline**: once every host has failed (offline, or its DSH needs an update), the new session shows the all-offline card and the send key is off; the drawer and the cache still open.
 

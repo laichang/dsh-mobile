@@ -31,7 +31,8 @@ import Testing
             store.hosts.map(\.reachability.token) == ["online", "bridgeUpdateRequired", "online"]
         }
         #expect(!store.allHostsOffline)
-        #expect(store.hosts.first?.capabilities.contains(FakeDevices.capability) == true)
+        #expect(store.deviceManagement(for: "fake:\(FakeHosts.macName)") != nil)
+        #expect(store.deviceManagement(for: "fake:\(FakeHosts.officeName)") == nil)
         // MacBook-Pro sends its model catalog; screen H shows the default model.
         let mac = "fake:\(FakeHosts.macName)"
         try await waitUntil("MacBook-Pro's catalog") { store.catalogs[mac] != nil }
@@ -43,6 +44,7 @@ import Testing
         try await waitUntil("all offline") { store.allHostsOffline }
         store.prompt = "Summarize the Q3 report"
         #expect(!store.canSend)
+        #expect(store.deviceManagement(for: mac) == nil)
         #expect(store.hosts.allSatisfy { $0.lastConnectedAt != nil || $0.name == FakeHosts.hkName })
         // Retries (connecting) do not clear it.
         for _ in 0..<20 {
@@ -64,21 +66,29 @@ import Testing
         let connection = try #require(store.deviceManagement(for: "fake:\(FakeHosts.macName)"))
 
         let list = try await connection.listDevices()
-        #expect(list.currentDeviceID == FakeHosts.thisDevice)
-        #expect(list.devices.map(\.id) == [FakeHosts.thisDevice, FakeHosts.otherDevice])
+        let current = try #require(list.first { $0.isCurrent })
+        let other = try #require(list.first { !$0.isCurrent })
+        #expect(current.id == FakeHosts.thisDevice)
+        #expect(list.map(\.id) == [FakeHosts.thisDevice, FakeHosts.otherDevice])
 
         let first = try await connection.audit()
         #expect(first.entries.map(\.id) == ["audit-3", "audit-2"])
+        #expect(first.entries.map(\.actor) == ["owner", "owner"])
+        #expect(first.entries.map(\.device) == [FakeHosts.thisDevice, "web"])
+        #expect(first.nextBeforeID == "audit-2")
         let older = try await connection.audit(beforeID: first.nextBeforeID)
         #expect(older.entries.map(\.id) == ["audit-1"])
         #expect(older.nextBeforeID.isEmpty)
 
-        let afterOther = try await connection.revokeDevice(FakeHosts.otherDevice)
-        #expect(afterOther.devices.map(\.id) == [FakeHosts.thisDevice])
+        guard case .remaining(let afterOther) = try await connection.revokeDevice(other) else {
+            Issue.record("revoking another device removed this phone"); return
+        }
+        #expect(afterOther.map(\.id) == [FakeHosts.thisDevice])
         #expect(store.hosts.first?.reachability == .online)
 
-        let afterSelf = try await connection.revokeDevice(FakeHosts.thisDevice)
-        #expect(afterSelf.devices.isEmpty)
+        guard case .thisDevice = try await connection.revokeDevice(current) else {
+            Issue.record("self-revocation kept this phone"); return
+        }
         // The host closes with 4003 and refuses this device; the store drops it for good.
         try await waitUntil("refused and dropped") { store.hosts.isEmpty }
         #expect(store.revokedHosts.map(\.name) == [FakeHosts.macName])
@@ -89,5 +99,20 @@ import Testing
         try await Task.sleep(for: .milliseconds(200))
         #expect(store.hosts.isEmpty)
         #expect(switchable[0].connectAttempts == attempts)
+    }
+
+    @Test func selfRevokeRecognizesDeviceRefusalBeforeResponse() async throws {
+        var devices = FakeHosts.macDevices()
+        devices.closeBeforeRevokeResponse = true
+        let host = FakeHost(devices: devices)
+        let connection = HostConnection(endpoint: .localBridge(port: 47801), channel: PlaintextChannel(),
+                                        transport: host.factory)
+        try await connection.connect()
+        let list = try await connection.listDevices()
+        let current = try #require(list.first { $0.isCurrent })
+        guard case .thisDevice = try await connection.revokeDevice(current) else {
+            Issue.record("self-revocation did not recognize the close"); return
+        }
+        #expect(await connection.deviceRevoked)
     }
 }

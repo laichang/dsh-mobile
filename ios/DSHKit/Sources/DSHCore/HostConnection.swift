@@ -469,28 +469,6 @@ public actor HostConnection {
         return WorkspaceList(defaultPath: list.defaultPath, recentPaths: list.recentPaths)
     }
 
-    public func listDevices() async throws -> Dshm_V1_DeviceList {
-        let response = try await request(.listDevices(.init()))
-        guard case .deviceList(let list)? = response.body else { throw HostConnectionError.unexpectedResponse }
-        return list
-    }
-
-    public func revokeDevice(_ id: String) async throws -> Dshm_V1_DeviceList {
-        var revoke = Dshm_V1_RevokeDevice()
-        revoke.deviceID = id
-        let response = try await request(.revokeDevice(revoke))
-        guard case .deviceList(let list)? = response.body else { throw HostConnectionError.unexpectedResponse }
-        return list
-    }
-
-    public func audit(beforeID: String = "") async throws -> Dshm_V1_AuditPage {
-        var list = Dshm_V1_ListAudit()
-        list.beforeID = beforeID
-        let response = try await request(.listAudit(list))
-        guard case .auditPage(let page)? = response.body else { throw HostConnectionError.unexpectedResponse }
-        return page
-    }
-
     public func interrupt(taskID: String) async throws {
         var command = Dshm_V1_Interrupt()
         command.taskID = taskID
@@ -637,7 +615,7 @@ public actor HostConnection {
         for waiter in waiters { waiter.resume() }
     }
 
-    private func request(_ body: Dshm_V1_Request.OneOf_Body) async throws -> Dshm_V1_Response {
+    func request(_ body: Dshm_V1_Request.OneOf_Body) async throws -> Dshm_V1_Response {
         guard let outbox, let cipher else { throw HostConnectionError.notConnected }
         let id = nextRequestID
         nextRequestID += 1

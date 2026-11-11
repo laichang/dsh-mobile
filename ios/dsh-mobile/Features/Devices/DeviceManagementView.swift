@@ -1,15 +1,15 @@
 import DSHCore
-import DSHProtocol
 import SwiftUI
 
 struct DeviceManagementView: View {
+    let hostKey: String
     let host: String
-    let connection: HostConnection
-    @State private var list: Dshm_V1_DeviceList?
-    @State private var target: Dshm_V1_PairedDevice?
+    let connection: any HostDeviceManagement
+    @State private var list: [PairedDevice]?
+    @State private var target: PairedDevice?
     @State private var confirming = false
     @State private var error: String?
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.hostActions) private var actions
 
     var body: some View {
         List {
@@ -23,13 +23,13 @@ struct DeviceManagementView: View {
             }
             Section("Paired devices") {
                 if let list {
-                    ForEach(list.devices, id: \.id) { device in
+                    ForEach(list) { device in
                         VStack(alignment: .leading, spacing: 4) {
-                            if device.id == list.currentDeviceID { Text("This device").font(.headline) }
+                            if device.isCurrent { Text("This device").font(.headline) }
                             Text(device.id).font(.body.monospaced())
-                                .accessibilityIdentifier(device.id == list.currentDeviceID ? "device.current" : "device.id.\(device.id)")
-                            Text("Paired \(date(device.pairedAtMs).formatted())")
-                            Text("Last connected \(date(device.lastSeenAtMs).formatted())")
+                                .accessibilityIdentifier(device.isCurrent ? "device.current" : "device.id.\(device.id)")
+                            Text("Paired \(device.pairedAt.formatted())")
+                            Text("Last connected \(device.lastSeenAt.formatted())")
                                 .foregroundStyle(.secondary)
                             Button("Revoke access", role: .destructive) {
                                 target = device
@@ -50,15 +50,17 @@ struct DeviceManagementView: View {
             Button("Revoke", role: .destructive) {
                 Task {
                     do {
-                        list = try await connection.revokeDevice(device.id)
+                        switch try await connection.revokeDevice(device) {
+                        case .thisDevice: actions.forget(hostKey)
+                        case .remaining(let devices): list = devices
+                        }
                         error = nil
-                        if device.id == list?.currentDeviceID { dismiss() }
                     } catch { self.error = String(describing: error) }
                 }
             }
             Button("Cancel", role: .cancel) {}
         } message: { device in
-            if device.id == list?.currentDeviceID {
+            if device.isCurrent {
                 // The same words as X2 (HostDetailView).
                 Text(HostDetailView.revokeThisDeviceMessage(host))
             } else {
@@ -74,20 +76,20 @@ struct DeviceManagementView: View {
 }
 
 private struct AuditHistoryView: View {
-    let connection: HostConnection
-    @State private var entries: [Dshm_V1_AuditEntry] = []
+    let connection: any HostDeviceManagement
+    @State private var entries: [DeviceAuditEntry] = []
     @State private var next = ""
     @State private var error: String?
     @State private var loading = false
 
     var body: some View {
         List {
-            ForEach(entries, id: \.id) { entry in
+            ForEach(entries) { entry in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(entry.action).font(.headline)
                     Text(entry.detail)
                     Text("\(entry.actor) · \(entry.device)").foregroundStyle(.secondary)
-                    Text(date(entry.atMs).formatted(date: .abbreviated, time: .standard))
+                    Text(entry.at.formatted(date: .abbreviated, time: .standard))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .accessibilityElement(children: .combine)
@@ -114,8 +116,4 @@ private struct AuditHistoryView: View {
             error = nil
         } catch { self.error = String(describing: error) }
     }
-}
-
-private func date(_ milliseconds: Int64) -> Date {
-    Date(timeIntervalSince1970: Double(milliseconds) / 1000)
 }
