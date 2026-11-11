@@ -17,7 +17,10 @@
       "text": "The user no longer sees the bug",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "human:2026-11-11 已确认 null 计划、缺少 text 和缺少 id 均给出预期诊断"
+      ]
     }
   ]
 }
