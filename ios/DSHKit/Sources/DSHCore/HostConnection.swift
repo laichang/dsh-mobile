@@ -463,10 +463,10 @@ public actor HostConnection {
         return uploadID
     }
 
-    public func listWorkspaces() async throws -> Dshm_V1_WorkspaceList {
+    public func listWorkspaces() async throws -> WorkspaceList {
         let response = try await request(.listWorkspaces(.init()))
         guard case .workspaceList(let list)? = response.body else { throw HostConnectionError.unexpectedResponse }
-        return list
+        return WorkspaceList(defaultPath: list.defaultPath, recentPaths: list.recentPaths)
     }
 
     public func listDevices() async throws -> Dshm_V1_DeviceList {

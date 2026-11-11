@@ -1,5 +1,4 @@
 import DSHCore
-import DSHProtocol
 import SwiftUI
 
 /// The workspace part of the "host · workspace" line above the composer (screen
@@ -57,7 +56,7 @@ struct WorkspacePicker: View {
     let store: TaskListStore
     @State private var hostKey: String
     @Environment(\.dismiss) private var dismiss
-    @State private var workspaces: Dshm_V1_WorkspaceList?
+    @State private var workspaces: WorkspaceList?
     @State private var error: String?
     @State private var path = ""
 

@@ -140,7 +140,7 @@ public final class TaskListStore {
         sendError = nil
     }
 
-    public func listWorkspaces(hostKey: String) async throws -> Dshm_V1_WorkspaceList {
+    public func listWorkspaces(hostKey: String) async throws -> WorkspaceList {
         guard let link = links.first(where: { $0.key == hostKey }), link.reachability == .online else {
             throw HostConnectionError.notConnected
         }
