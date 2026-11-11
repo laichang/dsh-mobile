@@ -42,6 +42,7 @@ public struct Pairing: Sendable {
     public func pair(_ offer: PairingOffer) async throws -> PairedHost {
         // The bridge enforces expiry too; refusing early keeps a stale QR off the network.
         guard !offer.isExpired(at: now()) else { throw PairingError.expired }
+        if offer.usesTLS { return try await enroll(offer) }
         let channel = NoiseChannel.pair(offer, identity: try keys.identity())
         // The same loop over the addresses as a reconnect, each with its own timeout. A
         // refused pairing code (the bridge answered and said no) ends it: another address won't
@@ -70,12 +71,29 @@ public struct Pairing: Sendable {
     /// it first too.
     public func connection(to host: PairedHost, attemptTimeout: Duration = HostConnection.defaultAttemptTimeout) throws -> HostConnection {
         let store = hosts, id = host.id
-        return HostConnection(endpoints: host.addresses, channel: try reconnectChannel(to: host), transport: transport,
-                              attemptTimeout: attemptTimeout, probe: probe) { addresses in
+        let saveAddresses: @Sendable ([HostEndpoint]) -> Void = { addresses in
             guard var saved = store.load().first(where: { $0.id == id }), saved.addresses != addresses else { return }
             saved.addresses = addresses
             try? store.update(saved)
         }
+        if let deviceID = host.tlsDeviceID {
+            let pin = Data(host.hostKey), key = Self.credential(pin: host.hostKey, deviceID: deviceID)
+            return HostConnection(endpoints: host.addresses, channel: TLSChannel(), transport: { url in
+                guard let data = try key.read(), let bearer = String(data: data, encoding: .utf8) else {
+                    throw PairingError.unreachable(["device credential unavailable"])
+                }
+                var check = URLRequest(url: url.withScheme("https").appending(path: "device"))
+                check.setValue("Bearer " + bearer, forHTTPHeaderField: "Authorization")
+                let (_, status) = try await WebSocketTransport.pinnedRequest(check, spkiSHA256: pin)
+                if status.statusCode == 403 && status.value(forHTTPHeaderField: "x-dshm-device") == "unknown" {
+                    throw HostConnectionError.deviceRevoked
+                }
+                guard status.statusCode == 204 else { throw URLError(.badServerResponse) }
+                return try WebSocketTransport.pinnedTLS(url: url, spkiSHA256: pin, authorization: "Bearer " + bearer)
+            }, attemptTimeout: attemptTimeout, probe: probe, onAddressesChange: saveAddresses)
+        }
+        return HostConnection(endpoints: host.addresses, channel: try reconnectChannel(to: host), transport: transport,
+                              attemptTimeout: attemptTimeout, probe: probe, onAddressesChange: saveAddresses)
     }
 }
 

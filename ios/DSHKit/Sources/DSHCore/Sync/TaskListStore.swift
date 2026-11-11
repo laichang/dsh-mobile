@@ -53,8 +53,9 @@ public final class TaskListStore {
         public var name: String
         public var reachability: Reachability
         public var lastConnectedAt: Date?
-        /// The connection's channel: "noise", or "plaintext" on Debug's loopback dev path.
+        /// The negotiated channel shown in the host status row.
         public var channelName: String
+        public var isEncrypted: Bool { channelName == "noise" || channelName == "TLS 1.3" }
         public var capabilities: [String]
         /// The address of the host in use while online, or the last one that worked.
         public var address: HostEndpoint? = nil

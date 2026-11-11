@@ -6,7 +6,8 @@
  */
 import { resolveConfig } from '../src/index.ts'
 import { makeOffer, renderOffer } from '../src/pairing/announce.ts'
-import { offerURL } from '../src/pairing/offer.ts'
+import { requestOffer } from '../src/tls/local-offers.ts'
+import { parseOfferURL, offerURL } from '../src/pairing/offer.ts'
 import { PairingStore } from '../src/pairing/store.ts'
 
 const args = process.argv.slice(2)
@@ -17,7 +18,10 @@ const flag = (name: string) => {
 const stateDir = flag('--state-dir') ?? resolveConfig().stateDir
 const ttlMinutes = Number(flag('--ttl-minutes') ?? 10)
 try {
-  const offer = makeOffer(new PairingStore(stateDir), ttlMinutes * 60_000)
+  const store = new PairingStore(stateDir)
+  const offer = store.listener()?.tls
+    ? parseOfferURL(await requestOffer(stateDir, ttlMinutes * 60_000))
+    : makeOffer(store, ttlMinutes * 60_000)
   console.log(args.includes('--url-only') ? offerURL(offer) : renderOffer(offer))
 } catch (error) {
   console.error(`pair: ${error instanceof Error ? error.message : String(error)}`)

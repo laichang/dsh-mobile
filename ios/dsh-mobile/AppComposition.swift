@@ -69,6 +69,7 @@ final class AppModel {
         // A test launch starts no Live Activities unless it asks, and ends the ones left.
         liveActivitiesOn = DebugLaunchOptions.liveActivitiesOn(ProcessInfo.processInfo.arguments)
         if options.resetPairing {
+            for host in hosts.load() { try? Pairing.removeCredential(for: host) }
             try? hosts.removeAll()
             try? keys.reset()
         }
@@ -115,7 +116,7 @@ final class AppModel {
     private func pairedConfig(_ host: PairedHost) -> TaskListStore.HostConfig? {
         // Every saved address, the one that worked last first; a new working one is saved first.
         guard let endpoint = host.addresses.first, let connection = try? pairing.connection(to: host) else { return nil }
-        return .init(key: "noise:\(host.id)", connection: connection, name: host.name.isEmpty ? endpoint.description : host.name)
+        return .init(key: host.cacheKey, connection: connection, name: host.name.isEmpty ? endpoint.description : host.name)
     }
 
     private func hostConfigs() -> [TaskListStore.HostConfig] {
@@ -184,11 +185,9 @@ final class AppModel {
     func forgetHost(_ key: String) {
         // Once per host; the revoke response and the close 4003 can both report it.
         guard forgottenHostKeys.insert(key).inserted else { return }
-        if key.hasPrefix("noise:") {
-            let id = String(key.dropFirst("noise:".count))
-            let kept = pairing.hosts.load().filter { $0.id != id }
-            try? pairing.hosts.removeAll()
-            for host in kept { try? pairing.hosts.save(host) }
+        if let host = pairing.hosts.load().first(where: { $0.cacheKey == key }) {
+            try? Pairing.removeCredential(for: host)
+            try? pairing.hosts.remove(id: host.id)
         }
         store?.background()
         store = makeStore()
@@ -222,8 +221,8 @@ final class AppModel {
         if case .offer(let model)? = pairingRoute, case .paired(let paired) = model.state {
             // The same Mac paired again after a revoke has the same key (the id comes
             // from the host key). It is a new pairing: keep it, and let a later revoke forget it again.
-            forgottenHostKeys.remove("noise:\(paired.id)")
-            if let store, store.hosts.contains(where: { $0.channelName == "noise" }), let config = pairedConfig(paired) {
+            forgottenHostKeys.remove(paired.cacheKey)
+            if let store, store.hosts.contains(where: { $0.isEncrypted }), let config = pairedConfig(paired) {
                 store.connectPairedHost(config)
             } else {
                 store?.background()
