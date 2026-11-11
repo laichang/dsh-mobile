@@ -55,6 +55,10 @@ IN_PLACE = {"sed", "gsed", "perl"}
 PLAN_REASON = ("plan/: do not write a plan file from a shell command. Next: use scripts/plan "
                "(row, log, pending, assign, merged, evidence, slice-log, slice-status), or the "
                "Edit tool, which this hook checks with check-plan.")
+ACCEPT_TEXT = re.compile(r"\bplan\s+accept\b")
+ACCEPT_REASON = ("scripts/plan accept records a [human] item, and only the user does that. "
+                 "Next: tell the user the item and its evidence, and let the user run it in "
+                 "their own terminal.")
 GUARD_REASON = ("{rel} is a guard file: it enforces the plan/ and git hook rules. Approve only "
                 "if you asked for this change to the guard itself in the conversation; an agent "
                 "blocked by a check must not change the check instead. Next: tell the user the "
@@ -230,6 +234,8 @@ def bash_writes(cmd, cwd=None, depth=0, gg=None):
 
 
 def bash_decision(cmd, cwd=None):
+    if ACCEPT_TEXT.search(cmd):
+        return "deny", ACCEPT_REASON
     if "plan/" not in cmd and not GUARD_TEXT.search(cmd):
         return None
     hits = bash_writes(cmd, cwd)
