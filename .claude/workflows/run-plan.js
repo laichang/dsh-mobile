@@ -183,12 +183,15 @@ const REFUSED = 'run-plan: refused: evidence changed by the slice'
 
 function commands(a) {
   const id = a.slice
-  const err = `/tmp/dshm-merge-${id}-r${a.round}.err`
+  const review = `review=$(scripts/brief ${id} --round ${a.round} --base ${q(a.into)} --review-path)`
+  const err = '"$review.merge-err"'
   return {
     brief: `scripts/brief ${id} --round ${a.round} --base ${q(a.into)} --out ${q(briefPath(a))}`,
-    verify: `scripts/plan verify ${id} --base ${q(a.into)} 1>&2 && scripts/plan passed ${id} --base ${q(a.into)} --json`,
+    verify: `${review} || exit 1; scripts/plan verify ${id} --base ${q(a.into)} >"$review" 2>&1 || exit $?; ` +
+      `result=$(scripts/plan passed ${id} --base ${q(a.into)} --json 2>>"$review"); e=$?; printf '%s\\n' "$result" | tee -a "$review"; exit $e`,
     // stderr goes to a file; a refusal for changed evidence prints one marker line and the files.
-    merge: `scripts/plan merge ${id} --into ${q(a.into)} 2>${err}; e=$?; ` +
+    merge: `${review} || exit 1; result=$(scripts/plan merge ${id} --into ${q(a.into)} 2>${err}); e=$?; ` +
+      `cat ${err} >>"$review"; printf '%s\\n' "$result" | tee -a "$review"; ` +
       `if grep -q 'evidence changed by the slice' ${err}; then echo '${REFUSED}'; sed -n 's/^  \\(.*\\)$/changed: \\1/p' ${err}; fi; exit $e`,
   }
 }
