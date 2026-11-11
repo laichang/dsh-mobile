@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { randomBytes, X509Certificate } from 'node:crypto'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { get } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { connect } from 'node:tls'
@@ -63,6 +64,17 @@ test('a running listener refreshes its certificate before expiry without an offe
   t.after(async () => { await host.close(); rmSync(dir, { recursive: true, force: true }) })
   const key = join(dir, 'tls/host-key.pem'), cert = join(dir, 'tls/host-cert.pem')
   const original = new X509Certificate(readFileSync(cert))
+  await assert.rejects(new Promise<void>((resolve, reject) => {
+    const socket = connect({ host: '127.0.0.1', port: host.port, maxVersion: 'TLSv1.2', ca: original.toString() },
+      () => { socket.end(); resolve() })
+    socket.once('error', reject)
+  }), /protocol version/)
+  await assert.rejects(new Promise<void>((resolve, reject) => {
+    get({ host: '127.0.0.1', port: host.port, path: '/device' }, response => {
+      response.resume()
+      resolve()
+    }).once('error', reject)
+  }), { code: 'ECONNRESET' })
   execFileSync('openssl', ['req', '-x509', '-new', '-key', key, '-out', cert, '-days', '1', '-subj', '/CN=localhost',
     '-addext', 'subjectAltName=IP:127.0.0.1'])
   const nearExpiry = new X509Certificate(readFileSync(cert))
