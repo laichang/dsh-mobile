@@ -7,10 +7,10 @@
       "title": "Tracer bullet: Allocate and release a simulator for each scheduled node",
       "needs": [],
       "branch": "claude/t0-pre-m3",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "64cab9d",
       "why": "M3 starts two independent iOS paths. Each node must receive a usable simulator before its first build. Closes #65",
       "cuts": "Trace scheduler assignment through .claude/workflows/run-plan.js, scripts/slice-env, scripts/xc and scripts/plan cleanup. Reuse the registry, machine guard and ownership checks. Extend scripts/plan-test and scripts/run-plan-test.",
       "not": "",
@@ -223,6 +223,11 @@
       "date": "2026-11-11",
       "title": "S9 merged",
       "body": "Merged as `aec6b8f`; the plan/ rules hold on the merge commit. 1 open [human] item(s), so S9 is `review`. Pending 2."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "T0 merged",
+      "body": "Merged as `64cab9d`; the plan/ rules hold on the merge commit. No open [human] items, so T0 is `done`."
     }
   ],
   "pending": [
