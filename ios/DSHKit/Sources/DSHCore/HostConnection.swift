@@ -1,4 +1,5 @@
 import DSHProtocol
+import DSHTransport
 import Foundation
 import SwiftProtobuf
 import Synchronization
@@ -216,12 +217,11 @@ public actor HostConnection {
 
     private var transport: (any BridgeTransport)?
     private var cipher: (any FrameCipher)?
-    private var outbox: AsyncStream<(UInt64, Data)>.Continuation?
+    private var outbox: OrderedWriter?
     private var connecting: Task<Void, any Error>?
     /// Bumped per transport, so a finished receive loop never tears down a newer connection.
     private var generation = 0
     private var receiveLoop: Task<Void, Never>?
-    private var sendLoop: Task<Void, Never>?
     private var nextRequestID: UInt64 = 1
     private var pending: [UInt64: CheckedContinuation<Dshm_V1_Response, any Error>] = [:]
     private var disconnectWaiters: [CheckedContinuation<Void, Never>] = []
@@ -281,7 +281,7 @@ public actor HostConnection {
         if transport != nil { return }
         let attempt = Task { try await self.open() }
         connecting = attempt
-        defer { connecting = nil }
+        defer { if connecting == attempt { connecting = nil } }
         try await attempt.value
     }
 
@@ -296,7 +296,9 @@ public actor HostConnection {
             try Task.checkCancellation()
             do {
                 try await open(endpoint)
+                try Task.checkCancellation()
             } catch {
+                try Task.checkCancellation()
                 if Self.endsTheSearch(error) {
                     addressFailures = failures + [AddressFailure(endpoint: endpoint, error: error)]
                     throw error
@@ -336,6 +338,7 @@ public actor HostConnection {
                 let t = try await makeTransport(url)
                 opened.set(t)
                 do {
+                    try Task.checkCancellation()
                     return (t, try await channel.establish(over: t))
                 } catch {
                     await t.close()
@@ -347,8 +350,14 @@ public actor HostConnection {
                 return nil
             }
             defer { group.cancelAll() }
-            guard let first = try await group.next() else { throw CancellationError() }
+            let result = try await withTaskCancellationHandler {
+                try await group.next()
+            } onCancel: {
+                Task { await opened.close() }
+            }
+            guard let first = result else { throw CancellationError() }
             if let established = first { return established }
+            group.cancelAll()
             // No answer in time: closing the transport ends the handshake's wait for a reply.
             await opened.close()
             // Does anything take TCP connections there? Another program, or no computer.
@@ -362,36 +371,44 @@ public actor HostConnection {
         do {
             (t, established) = try await handshake(endpoint)
         } catch {
+            try Task.checkCancellation()
             throw refusal(error)
+        }
+        if Task.isCancelled {
+            await t.close()
+            throw CancellationError()
         }
         generation += 1
         let gen = generation
         transport = t
         cipher = established
-        let (stream, continuation) = AsyncStream.makeStream(of: (UInt64, Data).self)
-        outbox = continuation
-        sendLoop = Task {
-            for await (id, bytes) in stream {
-                do { try await t.send(bytes) } catch { self.resolve(id, with: .failure(error)) }
-            }
+        outbox = OrderedWriter(transport: t) { error in
+            await self.teardown(generation: gen, cause: error)
         }
         receiveLoop = Task { await self.receive(from: t, cipher: established, generation: gen) }
         do {
             var hello = Dshm_V1_Hello()
             hello.protocolVersion = DSHProtocolInfo.version
-            hello.capabilities = [DSHProtocolInfo.approvalsCapability, "sessions.v1", DSHProtocolInfo.transcriptCapability,
-                                  DSHProtocolInfo.conversationCapability, DSHProtocolInfo.queueCapability,
-                                  DSHProtocolInfo.questionsCapability]
+            hello.capabilities = [
+                DSHProtocolInfo.tasksCapability, DSHProtocolInfo.milestonesCapability, DSHProtocolInfo.resumeCapability,
+                DSHProtocolInfo.interruptCapability, DSHProtocolInfo.transcriptCapability, DSHProtocolInfo.approvalsCapability,
+                DSHProtocolInfo.conversationCapability, DSHProtocolInfo.failuresCapability, DSHProtocolInfo.queueCapability,
+                DSHProtocolInfo.questionsCapability, DSHProtocolInfo.attachmentsCapability,
+                "sessions.v1", "models.v1", "workspaces.v1", "devices.v1", "drawer.v1",
+            ]
             let response = try await request(.hello(hello))
             guard case .hello(let theirs)? = response.body else { throw HostConnectionError.unexpectedResponse }
             if theirs.requiresBridgeUpdate {
                 throw HostConnectionError.bridgeUpdateRequired(version: theirs.dshVersion, supported: theirs.supportedDshRange)
             }
+            try Task.checkCancellation()
+            guard gen == generation, transport != nil else { throw HostConnectionError.disconnected }
             capabilities = theirs.capabilities
             deviceRevoked = false
         } catch {
+            let failure = gen == generation ? refusal(error) : error
             await teardown(generation: gen)
-            throw refusal(error)
+            throw failure
         }
     }
 
@@ -616,28 +633,32 @@ public actor HostConnection {
     }
 
     public func disconnect() async {
+        connecting?.cancel()
+        connecting = nil
+        generation += 1
         await teardown(generation: generation)
     }
 
     // MARK: - Internals
 
-    private func teardown(generation gen: Int) async {
+    private func teardown(generation gen: Int, cause: (any Error)? = nil) async {
         guard gen == generation, let t = transport else { return }
         transport = nil
         cipher = nil
-        outbox?.finish()
+        outbox?.stop()
         outbox = nil
-        sendLoop = nil
         receiveLoop?.cancel()
         receiveLoop = nil
-        await t.close()
-        failPending(deviceRevoked ? HostConnectionError.deviceRevoked : HostConnectionError.disconnected)
+        if let cause { _ = refusal(cause) }
+        failPending(deviceRevoked ? HostConnectionError.deviceRevoked : cause ?? HostConnectionError.disconnected)
         let waiters = disconnectWaiters
         disconnectWaiters = []
         for waiter in waiters { waiter.resume() }
+        await t.close()
     }
 
     private func request(_ body: Dshm_V1_Request.OneOf_Body) async throws -> Dshm_V1_Response {
+        try Task.checkCancellation()
         guard let outbox, let cipher else { throw HostConnectionError.notConnected }
         let id = nextRequestID
         nextRequestID += 1
@@ -648,9 +669,13 @@ public actor HostConnection {
         frame.request = request
         // Sealed here, inside the actor, and queued in the same step: outbox order = nonce order.
         let bytes = try cipher.seal(try frame.serializedBytes())
-        let response = try await withCheckedThrowingContinuation { continuation in
-            pending[id] = continuation
-            outbox.yield((id, bytes))
+        let response = try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                pending[id] = continuation
+                outbox.send(bytes)
+            }
+        } onCancel: {
+            Task { await self.resolve(id, with: .failure(CancellationError())) }
         }
         if case .error(let e)? = response.body { throw HostConnectionError.bridge(code: e.code, message: e.message) }
         return response

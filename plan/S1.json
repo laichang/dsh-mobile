@@ -6,21 +6,30 @@
       "text": "The foundation targets build independently of DSHCore, UI, widget and fakes. Exercise ordered delivery, cancellation, refusal and disconnect with an outstanding request. A stale connection cannot affect its replacement. `cmd:scripts/swift-test`",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test"
+      ]
     },
     {
       "tier": "auto",
       "text": "Inject an existing, well-formed Request frame such as Hello toward the phone. It triggers no action or reply. On the same channel a subsequent valid response resolves its caller and a supported event reaches the store. `cmd:scripts/swift-test`",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test"
+      ]
     },
     {
       "tier": "ui",
       "text": "Pair during the test and reconnect to the real bridge through the second address. `cmd:scripts/demo/reconnect.sh`",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/demo/reconnect.sh"
+      ]
     }
   ]
 }

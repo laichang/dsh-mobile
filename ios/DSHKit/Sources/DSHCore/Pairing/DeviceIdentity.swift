@@ -1,5 +1,5 @@
 import Foundation
-import Security
+import DSHTransport
 import Synchronization
 
 /// Where the phone's Noise static key (X25519) lives (ARCHITECTURE §4 "Keys"). One key per
@@ -11,9 +11,7 @@ public protocol DeviceKeyStore: Sendable {
     func reset() throws
 }
 
-public enum DeviceKeyStoreError: Error, Equatable {
-    case keychain(OSStatus)
-}
+public typealias DeviceKeyStoreError = KeychainDataError
 
 /// Keychain, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`: never synced, never in backups,
 /// readable after the first unlock so a foreground reconnect never waits for Face ID.
@@ -26,35 +24,14 @@ public struct KeychainDeviceKeyStore: DeviceKeyStore {
         self.account = account
     }
 
-    private var query: [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword,
-         kSecAttrService as String: service,
-         kSecAttrAccount as String: account]
-    }
+    private var item: KeychainData { KeychainData(service: service, account: account) }
 
     public func identity() throws -> NoiseKeyPair {
-        var q = query
-        q[kSecReturnData as String] = true
-        q[kSecMatchLimit as String] = kSecMatchLimitOne
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(q as CFDictionary, &item)
-        if status == errSecSuccess, let data = item as? Data {
-            return try NoiseKeyPair(privateKey: Array(data))
-        }
-        guard status == errSecItemNotFound else { throw DeviceKeyStoreError.keychain(status) }
-        let key = NoiseKeyPair()
-        var add = query
-        add[kSecValueData as String] = Data(key.privateKeyBytes)
-        add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        let added = SecItemAdd(add as CFDictionary, nil)
-        guard added == errSecSuccess else { throw DeviceKeyStoreError.keychain(added) }
-        return key
+        let bytes = try item.readOrCreate { Data(NoiseKeyPair().privateKeyBytes) }
+        return try NoiseKeyPair(privateKey: Array(bytes))
     }
 
-    public func reset() throws {
-        let status = SecItemDelete(query as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else { throw DeviceKeyStoreError.keychain(status) }
-    }
+    public func reset() throws { try item.reset() }
 }
 
 /// For tests and previews.
