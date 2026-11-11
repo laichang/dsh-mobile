@@ -261,6 +261,22 @@
       "demo": null,
       "log": [],
       "round": 1
+    },
+    {
+      "id": "S13",
+      "kind": "slice",
+      "title": "Fix: Match Debug and Release first launch",
+      "needs": [],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Fix: Match Debug and Release first launch; start a fix session",
+      "merge": null,
+      "why": "The user reported a bug on 2026-11-11: An unpaired Debug install opens an offline session instead of the first pairing screen.",
+      "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
+      "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
+      "demo": null,
+      "log": []
     }
   ],
   "exit": [
