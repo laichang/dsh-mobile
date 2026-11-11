@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 
 /// First run (DESIGN screen 08, STORY §6). A fresh Release install with no
@@ -49,8 +50,10 @@ final class FirstRunUITests: XCTestCase {
         XCTAssertTrue(link.waitForExistence(timeout: 5))
         let focused = expectation(for: NSPredicate(format: "hasKeyboardFocus == true"), evaluatedWith: link)
         wait(for: [focused], timeout: 5)
-        link.typeText(url)
         saveShot("first-run-paste")
+        UIPasteboard.general.string = url
+        link.typeKey("v", modifierFlags: .command)
+        UIPasteboard.general.items = []
         app.buttons["pairing.pasteUse"].tap()
 
         let pair = app.buttons["pairing.confirm"]

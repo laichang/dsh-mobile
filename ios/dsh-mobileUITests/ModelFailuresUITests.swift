@@ -19,7 +19,7 @@ final class ModelFailuresUITests: XCTestCase {
         let port = try String(contentsOf: signals.appendingPathComponent("bridge-port"), encoding: .utf8)
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMBridgePort", port, "-DSHMResetStore", "YES", "-DSHMResetPairing", "YES"]
-        app.launch()
+        launchEnrolled(app, port: port)
 
         // 1. A task on a provider with no balance.
         let tag = UUID().uuidString.prefix(6)

@@ -14,6 +14,7 @@ pid=""
 cleanup() { if [ -n "$pid" ]; then kill "$pid" 2>/dev/null || true; wait "$pid" || true; fi; rm -rf "$scratch"; }
 trap cleanup EXIT
 source scripts/demo/lib.sh
+demo_tls_home
 (cd bridge && corepack pnpm install --frozen-lockfile)
 demo_bridge_tests "$scratch/bridge-test.log"
 node scripts/demo/approvals-host.mjs > "$scratch/host.log" 2>&1 &
@@ -25,5 +26,5 @@ for _ in $(seq 1 240); do
 done
 control=$(awk '/^approvals-host: ready / { print $3; exit }' "$scratch/host.log")
 [ -n "$control" ] || { tail -25 "$scratch/host.log"; exit 1; }
-node bridge/lib/scripts/probe-upstream.js "$control"
+(cd bridge && node lib/scripts/probe-upstream.js "$control")
 test "$(cat "$scratch/untouched")" = keep

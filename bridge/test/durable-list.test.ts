@@ -1,3 +1,4 @@
+import { startTestBridge, type TestBridge } from './tls-bridge.ts'
 /**
  * Durable list + resume: the host event log, Resume, ListTasks, and tasks
  * that outlive the connection that created them. All against FakeDSH.
@@ -12,20 +13,18 @@ import { TaskHub } from '../src/tasks/task-hub.ts'
 import { after, describe, test } from 'node:test'
 import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
-import { WebSocket } from 'ws'
-import { PlaintextChannel } from '../src/channel.ts'
 import { DshTasks } from '../src/dsh.ts'
 import { FrameSchema, TaskStatus, type Event, type Frame, type Response } from '../src/gen/frame_pb.ts'
 import { TaskState } from '../src/gen/durable_list_pb.ts'
 import { HostLog } from '../src/tasks/host-log.ts'
-import { PLAINTEXT_PATH, startBridgeServer, type BridgeServer } from '../src/server.ts'
+import { type BridgeServer } from '../src/server.ts'
 import { FakeDSH, type FakeDSHOptions } from './fake-dsh.ts'
 
 type RequestBody = NonNullable<MessageInitShape<typeof FrameSchema>['kind']> extends infer K
   ? K extends { case: 'request'; value: infer V } ? V extends { body?: infer B } ? B : never : never : never
 
-async function connect(port: number, capabilities: string[] = []) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}${PLAINTEXT_PATH}`)
+async function connect(server: TestBridge, capabilities: string[] = []) {
+  const ws = await server.socket()
   ws.binaryType = 'nodebuffer'
   const frames: Frame[] = []
   const waiters: (() => void)[] = []
@@ -71,9 +70,9 @@ after(async () => { await Promise.all(servers.map((s) => s.close())) })
 
 async function bridgeWith(options: FakeDSHOptions = {}) {
   const dsh = new FakeDSH(options)
-  const server = await startBridgeServer({
+  const server = await startTestBridge({
     dshVersion: SUPPORTED_DSH,
-    host: '127.0.0.1', port: 0, channel: new PlaintextChannel(), tasks: new DshTasks(dsh, '/tmp/dshm-ws'),
+    host: '127.0.0.1', port: 0, tasks: new DshTasks(dsh, '/tmp/dshm-ws'),
     hostName: 'test-mac',
   })
   servers.push(server)
@@ -112,7 +111,7 @@ describe('HostLog', () => {
 describe('ResumeAgainstFakeDSH', () => {
   test('resumeReturnsExactlyTheEventsAfterSeq', async () => {
     const { server } = await bridgeWith({ reply: ['a', 'b', 'c'] })
-    const writer = await connect(server.port)
+    const writer = await connect(server)
     await writer.call({ case: 'createTask', value: { prompt: 'one' } })
     await writer.call({ case: 'createTask', value: { prompt: 'two' } })
     await writer.until((fs) => endedCount(fs) === 2)
@@ -121,7 +120,7 @@ describe('ResumeAgainstFakeDSH', () => {
     assert.ok(head >= 10n, `head ${head}`)
 
     for (const afterSeq of [0n, 3n, head - 1n, head]) {
-      const reader = await connect(server.port)
+      const reader = await connect(server)
       const resumed = await reader.call({ case: 'resume', value: { logId: server.hub.log.logId, afterSeq } })
       assert.equal(resumed.body.case, 'resumed')
       const r = resumed.body.value
@@ -137,7 +136,7 @@ describe('ResumeAgainstFakeDSH', () => {
     }
 
     // After the replay the reader is live: a new task's events follow with head+1, head+2, …
-    const reader = await connect(server.port)
+    const reader = await connect(server)
     await reader.call({ case: 'resume', value: { logId: server.hub.log.logId, afterSeq: head } })
     await writer.call({ case: 'createTask', value: { prompt: 'three' } })
     await reader.until((fs) => endedCount(fs) === 1)
@@ -149,12 +148,12 @@ describe('ResumeAgainstFakeDSH', () => {
 
   test('resumeFromAnotherLogSendsLogResetThenEverything', async () => {
     const { server } = await bridgeWith()
-    const writer = await connect(server.port)
+    const writer = await connect(server)
     await writer.call({ case: 'createTask', value: { prompt: 'one' } })
     await writer.until((fs) => endedCount(fs) === 1)
     writer.close()
 
-    const reader = await connect(server.port)
+    const reader = await connect(server)
     const resumed = await reader.call({ case: 'resume', value: { logId: 'a-log-from-an-older-bridge', afterSeq: 99n } })
     assert.ok(resumed.body.case === 'resumed')
     assert.equal(resumed.body.value.reset, true)
@@ -169,7 +168,7 @@ describe('ResumeAgainstFakeDSH', () => {
   test('taskOutlivesTheConnectionThatCreatedIt', async () => {
     const reply = ['one ', 'two ', 'three ', 'four ', 'five']
     const { server } = await bridgeWith({ reply, chunkDelayMs: 40 })
-    const writer = await connect(server.port)
+    const writer = await connect(server)
     const created = await writer.call({ case: 'createTask', value: { prompt: 'count to five' } })
     assert.ok(created.body.case === 'taskCreated')
     const taskId = created.body.value.taskId
@@ -179,7 +178,7 @@ describe('ResumeAgainstFakeDSH', () => {
 
     await new Promise((r) => setTimeout(r, 400)) // the task finishes while nobody is connected
 
-    const reader = await connect(server.port)
+    const reader = await connect(server)
     await reader.call({ case: 'resume', value: { logId: server.hub.log.logId, afterSeq: seen } })
     const gap = reader.events()
     const text = gap.flatMap((e) => (e.body.case === 'assistantChunk' ? [e.body.value.text] : []))
@@ -196,12 +195,12 @@ describe('ResumeAgainstFakeDSH', () => {
 
   test('listTasksReturnsTheHostsTasksNewestFirst', async () => {
     const { server } = await bridgeWith({ failWith: { kind: 'error', error: { message: 'boom' } } })
-    const a = await connect(server.port)
+    const a = await connect(server)
     await a.call({ case: 'createTask', value: { prompt: 'first' } })
     await a.call({ case: 'createTask', value: { prompt: 'second' } })
     await a.until((fs) => endedCount(fs) === 2)
     a.close()
-    const b = await connect(server.port)
+    const b = await connect(server)
     const list = await b.call({ case: 'listTasks', value: {} })
     assert.ok(list.body.case === 'taskList')
     assert.equal(list.body.value.hostName, 'test-mac')
@@ -213,7 +212,7 @@ describe('ResumeAgainstFakeDSH', () => {
 
   test('resumeBeforeHelloIsRefused', async () => {
     const { server } = await bridgeWith()
-    const ws = new WebSocket(`ws://127.0.0.1:${server.port}${PLAINTEXT_PATH}`)
+    const ws = await server.socket()
     ws.binaryType = 'nodebuffer'
     await new Promise((resolve) => ws.once('open', resolve))
     const got = new Promise<Frame>((resolve) => ws.once('message', (d: Buffer) => resolve(fromBinary(FrameSchema, new Uint8Array(d)))))
@@ -237,7 +236,7 @@ describe('ResumeReplaysMilestones', () => {
         { type: 'todo/write', data: steps('completed', 'completed') },
       ],
     })
-    const writer = await connect(server.port)
+    const writer = await connect(server)
     await writer.call({ case: 'createTask', value: { prompt: 'two steps' } })
     await writer.until((fs) => endedCount(fs) === 1)
     writer.close()
@@ -247,7 +246,7 @@ describe('ResumeReplaysMilestones', () => {
     assert.ok(milestones.every((e) => e.hostSeq > 0n), 'every milestone is numbered in the host log')
     // Resume from just after the second milestone: exactly the later events, milestones included.
     const cursor = milestones[1].hostSeq
-    const reader = await connect(server.port)
+    const reader = await connect(server)
     const listing = await reader.call({ case: 'listTasks', value: {} })
     assert.ok(listing.body.case === 'taskList')
     const resumed = await reader.call({ case: 'resume', value: { logId: listing.body.value.logId, afterSeq: cursor } })
@@ -267,7 +266,7 @@ describe('ResumeReplaysMilestones', () => {
 test('legacyResumeAndListOmitTemporaryUpstreamApprovalRows', async () => {
   const { server } = await bridgeWith()
   server.hub.approvalChanged({ id: 'ask', taskId: 'external', tool: 'bash', argumentsJson: '{}', reason: '', callId: 'call' }, true)
-  const client = await connect(server.port)
+  const client = await connect(server)
   try {
     await client.call({ case: 'resume', value: { logId: '', afterSeq: 0n } })
     assert.deepEqual(client.events().map(event => event.body.case), ['logReset'])
@@ -286,9 +285,9 @@ test('waitingTaskSwitchesModelResumesBothFieldsAndInterruptCancelsApproval', asy
   const tasks = new DshTasks(dsh, dir)
   const hub = new TaskHub(tasks, new HostLog(1))
   const approvals = new ApprovalHolder(join(dir, 'audit.jsonl'), event => hub.approvalChanged(event))
-  const server = await startBridgeServer({ dshVersion: SUPPORTED_DSH, host: '127.0.0.1', channel: new PlaintextChannel(), port: 0, tasks, hub, approvals })
+  const server = await startTestBridge({ dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0, tasks, hub, approvals })
   servers.push(server)
-  const writer = await connect(server.port, ['approvals.v1'])
+  const writer = await connect(server, ['approvals.v1'])
   const created = await writer.call({ case: 'createTask', value: { prompt: 'hold for approval' } })
   assert.ok(created.body.case === 'taskCreated')
   const taskId = created.body.value.taskId
@@ -301,7 +300,7 @@ test('waitingTaskSwitchesModelResumesBothFieldsAndInterruptCancelsApproval', asy
   await writer.until(() => hub.list()[0].modelSelection?.reasoningEffort === 'high')
   writer.close()
 
-  const reader = await connect(server.port, ['approvals.v1'])
+  const reader = await connect(server, ['approvals.v1'])
   try {
     const resumed = await reader.call({ case: 'resume', value: { logId: hub.log.logId, afterSeq: 0n } })
     assert.ok(resumed.body.case === 'resumed' && resumed.body.value.reset)

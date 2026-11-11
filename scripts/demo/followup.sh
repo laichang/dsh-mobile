@@ -40,6 +40,7 @@ export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
 SIM="$DSHM_SIM"
 source scripts/demo/lib.sh
+demo_tls_home
 LOGS="/tmp/dshm-followup-${DSHM_SIM}"; mkdir -p "$LOGS" "$DSHM_HOME"
 export DSHM_FOLLOWUP_SHOTS="${DSHM_FOLLOWUP_SHOTS:-$LOGS/shots}"; mkdir -p "$DSHM_FOLLOWUP_SHOTS"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
@@ -61,14 +62,14 @@ ui_against_real_dsh() {
   node "${DSHM_FOLLOWUP_HOST:-scripts/demo/followup-host.mjs}" > "$LOGS/host.log" 2>&1 &
   host_pid=$!
   cleanup() { kill "$host_pid" 2>/dev/null || true; wait "$host_pid" 2>/dev/null || true; rm -rf "$DSHM_HOME" "$DSHM_FOLLOWUP_SIGNALS"; }
-  trap cleanup EXIT
+  demo_tls_on_exit cleanup
   for _ in $(seq 1 360); do
     [ -e "$DSHM_FOLLOWUP_SIGNALS/bridge-port" ] && break
     kill -0 "$host_pid" 2>/dev/null || { cat "$LOGS/host.log"; exit 1; }
     sleep 0.5
   done
   [ -e "$DSHM_FOLLOWUP_SIGNALS/bridge-port" ] || { cat "$LOGS/host.log"; exit 1; }
-  scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+  demo_tls_ui test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
     -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "$@" --log "$log" \
     || { grep -E "error:|Test Case.*(passed|failed)" "$log"; cat "$LOGS/host.log"; exit 1; }
   grep -E "Test Case.*(passed|failed|skipped)" "$log"

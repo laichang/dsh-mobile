@@ -14,7 +14,7 @@ final class PairTailscaleUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Pair through a non-local address, then the paired host is online over Noise (IK) at the
+    /// Pair through a non-local address, then the paired host is online over TLS at the
     /// same address.
     func testPairAndConnectThroughANonLocalAddress() throws {
         try XCTSkipUnless(env["DSHM_TAILSCALE_PAIR_URL"] != nil, "needs a pairing link; run scripts/demo/pair-tailscale.sh")
@@ -38,7 +38,7 @@ final class PairTailscaleUITests: XCTestCase {
         openDrawer(reopened)
         let channel = reopened.descendants(matching: .any)["host.channel"]
         XCTAssertTrue(channel.waitForExistence(timeout: 15), reopened.debugDescription)
-        XCTAssertEqual(channel.value as? String, "noise")
+        XCTAssertEqual(channel.value as? String, "TLS 1.3")
         let host = reopened.descendants(matching: .any)["host.status"]
         XCTAssertEqual(waitForValue(host, in: ["online"], timeout: 30), "online", host.label)
         saveShot("pair-tailscale-online")

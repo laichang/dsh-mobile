@@ -1,5 +1,5 @@
 #!/bin/bash
-# Two Noise-authenticated clients on a disposable DSH profile. The CLI device dispatches
+# Two TLS-authenticated clients on a disposable DSH profile. The CLI device dispatches
 # the approvals demo's held fixture command; the simulated phone denies it, audits it, and revokes that CLI.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -9,7 +9,8 @@ export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-devices}"
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 SIM="${DSHM_SIM:-dshm-devices}"
 source scripts/demo/lib.sh
-LOGS=/tmp/dshm-s10; mkdir -p "$LOGS" "$DSHM_HOME"
+demo_tls_home
+LOGS="/tmp/dshm-s10-${DSHM_BRIDGE_PORT:-47801}"; mkdir -p "$LOGS" "$DSHM_HOME"
 FIXTURE=$(mktemp -d); PROFILE=$(mktemp -d "$DSHM_HOME/device-demo.XXXXXX")
 host_pid=""; peer_pid=""
 cleanup() {
@@ -17,7 +18,7 @@ cleanup() {
   if [ -n "$host_pid" ]; then kill "$host_pid" 2>/dev/null || true; wait "$host_pid" || true; fi
   rm -rf "$FIXTURE" "$PROFILE"
 }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 mkdir "$FIXTURE/tmp"; echo 'keep' > "$FIXTURE/tmp/x"
 export DSHM_APPROVALS_COMMAND="rm '$FIXTURE/tmp/x'"
 demo_prepare_bridge
@@ -41,32 +42,25 @@ grep -q 'approvals-host: ready' "$LOGS/host.log" || { echo "approval host did no
 pair_url() { DSH_HOME="$PROFILE" node bridge/lib/scripts/pair.js --url-only; }
 identity="$FIXTURE/cli.json"
 : > "$LOGS/peer.log"
-node bridge/lib/scripts/client.js --identity "$identity" --pair "$(pair_url)" 'Delete the demo fixture' > "$LOGS/peer.log" 2>&1 &
+demo_tls_client "$PROFILE" "$identity" 'Delete the demo fixture' > "$LOGS/peer.log" 2>&1 &
 peer_pid=$!
 for _ in $(seq 1 40); do [ -s "$LOGS/peer.log" ] && grep -q 'client: task session-' "$LOGS/peer.log" && break; sleep 0.5; done
 grep -q 'client: task session-' "$LOGS/peer.log" || { tail -5 "$LOGS/peer.log"; exit 1; }
-peer=$(node --input-type=module - "$identity" <<'JS'
-import { readFileSync } from 'node:fs'
-import { keyPairFromSecret } from './bridge/lib/src/pairing/noise.js'
-import { deviceId } from './bridge/lib/src/pairing/store.js'
-const key = JSON.parse(readFileSync(process.argv[2])).secretKey
-console.log(deviceId(keyPairFromSecret(Buffer.from(key, 'base64url')).publicKey))
-JS
-)
+peer=$(node -e 'process.stdout.write(require(process.argv[1]).id)' "$identity")
 export TEST_RUNNER_DSHM_DEVICES_PEER="$peer" TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT"
 export TEST_RUNNER_DSHM_PAIR_URL="$(pair_url)" TEST_RUNNER_DSHM_SHOT_DIR="$FIXTURE"
 export TEST_RUNNER_DSHM_APPROVALS_COMMAND="$DSHM_APPROVALS_COMMAND"
-scripts/xc test-without-building "${args[@]}" -only-testing:dsh-mobileUITests/DevicesUITests --log "$LOGS/ui.log" || {
+demo_tls_ui test-without-building "${args[@]}" -only-testing:dsh-mobileUITests/DevicesUITests --log "$LOGS/ui.log" || {
   grep -E 'error:|Test Case' "$LOGS/ui.log" | tail -20; exit 1
 }
 grep -E 'Test Case.*testAuditAndRevokeAnotherPairedDevice.* passed' "$LOGS/ui.log"
 demo_no_skipped_ui "$LOGS/ui.log"
 wait "$peer_pid"; peer_pid=""
 test "$(cat "$FIXTURE/tmp/x")" = 'keep'
-if node bridge/lib/scripts/client.js --identity "$identity" 'Must not run' > "$LOGS/reconnect.log" 2>&1; then
+if demo_tls_client "$PROFILE" "$identity" 'Must not run' > "$LOGS/reconnect.log" 2>&1; then
   echo "Revoked peer reconnected"; exit 1
 fi
-grep -F 'closed 4003 device not paired' "$LOGS/reconnect.log"
+grep -F 'Unexpected server response: 403' "$LOGS/reconnect.log"
 if [ "${1:-}" = --shots ]; then
   mkdir -p ${DSHM_EVIDENCE:-evidence/devices}
   for f in "$FIXTURE"/devices-*.png; do sips --resampleWidth 402 "$f" --out "${DSHM_EVIDENCE:-evidence/devices}/$(basename "$f")" >/dev/null; done

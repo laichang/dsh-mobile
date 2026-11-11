@@ -5,8 +5,7 @@ import XCTest
 /// - `testDemoAgainstRealDSH` needs `node scripts/dsh-up.mjs` (real DSH + bridge on 47801) and
 ///   runs only with TEST_RUNNER_DSHM_REAL_DSH=1; scripts/demo/round-trip.sh sets that up.
 /// Set TEST_RUNNER_DSHM_SHOT_DIR to save a screenshot of the finished screen there.
-/// Every launch passes `-DSHMResetPairing YES`, so a pairing left by the pairing tests doesn't move
-/// these onto Noise: this is the Debug plaintext loopback path. Helpers: UITestSupport.swift.
+/// The real test enrolls through the app before sending its prompt.
 @MainActor
 final class RoundTripUITests: XCTestCase {
     override func setUp() {
@@ -53,7 +52,7 @@ final class RoundTripUITests: XCTestCase {
         try XCTSkipUnless(env["DSHM_REAL_DSH"] == "1", "needs scripts/dsh-up.mjs; run scripts/demo/round-trip.sh")
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47801", "-DSHMResetPairing", "YES"]
-        app.launch()
+        launchEnrolled(app)
         // A unique prompt per run: real DSH keeps every earlier run, and the list shows only the rows
         // on screen, so a repeated prompt never adds a row that the wait can see.
         let text = runDemo(app, prompt: "用一句话介绍你自己。#\(UUID().uuidString.prefix(6))", timeout: 120)

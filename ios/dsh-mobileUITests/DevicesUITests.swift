@@ -4,19 +4,16 @@ import XCTest
 final class DevicesUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
-    // The companion CLI device dispatches a held request over Noise. The demo script then
-    // attempts IK with its original key and requires the real bridge's device-unknown refusal.
+    // The companion CLI device dispatches a held request over TLS. The demo script then
+    // reconnects with its original bearer and requires the bridge to refuse the upgrade.
     func testAuditAndRevokeAnotherPairedDevice() throws {
         try XCTSkipUnless(env["DSHM_DEVICES_PEER"] != nil, "run scripts/demo/devices.sh")
         let peer = try XCTUnwrap(env["DSHM_DEVICES_PEER"])
         let link = try XCTUnwrap(env["DSHM_PAIR_URL"].flatMap(URL.init(string:)))
         let original = XCUIApplication()
-        // The unpaired Debug fallback must not cache this real host under its loopback identity.
-        original.launchArguments = ["-DSHMResetPairing", "YES", "-DSHMResetStore", "YES",
-                                    "-DSHMBridgePort", "1"]
+        original.launchArguments = ["-DSHMResetPairing", "YES", "-DSHMResetStore", "YES"]
         original.launch()
-        openDrawer(original)
-        XCTAssertTrue(original.descendants(matching: .any)["host.channel"].waitForExistence(timeout: 15))
+        XCTAssertTrue(original.buttons["pairing.pasteLink"].waitForExistence(timeout: 15))
         XCTAssertFalse(original.buttons["host.manage"].exists)
         let app = openDeepLink(link)
         app.buttons["pairing.confirm"].tap()

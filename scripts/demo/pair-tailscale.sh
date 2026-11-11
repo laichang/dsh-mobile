@@ -5,7 +5,7 @@
 # the local ranges (Tailscale 100.64/10, a public 30.x) before any packet left the phone.
 #
 #   scripts/demo/pair-tailscale.sh          PairTailscaleUITests on a real DSH + bridge bound to 0.0.0.0
-#                                (its own ports, Noise). The pairing link keeps only the Mac's
+#                                (its own ports, TLS). The pairing link keeps only the Mac's
 #                                non-local IPv4 addresses (not 10/8, 172.16/12, 192.168/16,
 #                                127/8, 169.254/16). Then swift test (DSHKit).
 #   scripts/demo/pair-tailscale.sh --shots  also refresh the screenshots in evidence/pair-tailscale/ (1/3 size)
@@ -31,7 +31,8 @@ NODE24="$HOME/.nvm/versions/node/v24.14.0/bin"
 [ -d "$HOME/.dshm/bin" ] && export PATH="$HOME/.dshm/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
 source scripts/demo/lib.sh
-LOGS=/tmp/dshm-s31; mkdir -p "$LOGS"
+demo_tls_home
+LOGS="/tmp/dshm-s31-${DSHM_BRIDGE_PORT:-47801}"; mkdir -p "$LOGS"
 SIM="$DSHM_SIM"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 
@@ -52,7 +53,7 @@ ui_part() { # name, then -only-testing selectors
   local args=() t
   for t in "$@"; do args+=("-only-testing:dsh-mobileUITests/$t"); done
   step "UI: $name (log: $LOGS/ui-$name.log)"
-  if demo_part "ui-$name" scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+  if demo_part "ui-$name" demo_tls_ui test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
       -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" \
       --log "$LOGS/ui-$name.log"; then
     grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui-$name.log" || true
@@ -72,14 +73,14 @@ ADDRS="$(non_local_ipv4 | sed "s/\$/:$DSHM_BRIDGE_PORT/" | paste -sd, -)"
 [ -n "$ADDRS" ] || { echo "this Mac has no non-local IPv4 address (Tailscale 100.x or public); this demo cannot show the bug here" >&2; exit 1; }
 
 DSH_PID=""
-trap '[ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true' EXIT
+demo_tls_on_exit '[ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true'
 demo_prepare_bridge
 (cd bridge && corepack pnpm build >/dev/null)
 
 step "real DSH + bridge on 0.0.0.0 (web $DSHM_WEB_PORT, bridge $DSHM_BRIDGE_PORT, $DSHM_HOME)"
 mkdir -p "$DSHM_HOME"
 if lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null 2>&1; then echo "port $DSHM_BRIDGE_PORT is in use" >&2; exit 1; fi
-DSHM_BRIDGE_HOST=0.0.0.0 DSHM_BRIDGE_DEV_PLAINTEXT=0 node scripts/dsh-up.mjs > "$LOGS/dsh-up.log" 2>&1 &
+DSHM_BRIDGE_HOST=0.0.0.0 node scripts/dsh-up.mjs > "$LOGS/dsh-up.log" 2>&1 &
 DSH_PID=$!
 for _ in $(seq 1 240); do lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null 2>&1 && break; sleep 0.5; done
 lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null || { tail -20 "$LOGS/dsh-up.log"; echo "bridge did not come up" >&2; exit 1; }

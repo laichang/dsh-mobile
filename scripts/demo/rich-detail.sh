@@ -27,6 +27,7 @@ LOGS="/tmp/dshm-rich-detail-$SIM"
 mkdir -p "$LOGS"
 step() { printf '\n== %s\n' "$*"; }
 source scripts/demo/lib.sh
+demo_tls_home
 if [ "$OFFLINE_ONLY" = 0 ]; then
   demo_prepare_bridge
   step "bridge tests"
@@ -45,7 +46,7 @@ host_pid=""
 stop_host() {
   if [ -n "$host_pid" ]; then kill "$host_pid" 2>/dev/null || true; wait "$host_pid" || true; host_pid=""; fi
 }
-trap stop_host EXIT
+demo_tls_on_exit stop_host
 start_host() { # mock reply, ms per chunk
   if lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null; then
     echo "rich-detail needs its own host on port $DSHM_BRIDGE_PORT" >&2; exit 1
@@ -63,7 +64,7 @@ run_ui() { # DSHM_RICH_REPLY, test name
   export TEST_RUNNER_DSHM_RICH_REPLY="$1" TEST_RUNNER_DSHM_SHOT_DIR="$shot_dir" TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT"
   local log="$LOGS/$1.log"
   step "UI: RichDetailUITests/$2 (log: $log)"
-  scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+  demo_tls_ui test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
     -derivedDataPath "$DD" -parallel-testing-enabled NO \
     -only-testing:"dsh-mobileUITests/RichDetailUITests/$2" --log "$log" || {
       grep -E 'error:|Test Case' "$log"; echo "UI test failed: $2" >&2; exit 1;

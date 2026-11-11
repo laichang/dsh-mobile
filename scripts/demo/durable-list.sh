@@ -25,11 +25,12 @@ SIM="${DSHM_SIM:-dshm-durable-list}"
 NODE24="$HOME/.nvm/versions/node/v24.14.0/bin"
 [ -d "$NODE24" ] && export PATH="$NODE24:$PATH"
 [ -d "$HOME/.dshm/bin" ] && export PATH="$HOME/.dshm/bin:$PATH"
-LOGS=/tmp/dshm-s2-demo; mkdir -p "$LOGS"
+LOGS="/tmp/dshm-s2-demo-${DSHM_BRIDGE_PORT:-47801}"; mkdir -p "$LOGS"
 step() { printf '\n== %s\n' "$*"; }
 listening() { lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; }
 
 source scripts/demo/lib.sh
+demo_tls_home
 demo_prepare_bridge
 
 step "bridge tests (node:test, FakeDSH, golden fixtures; durable list: HostLog, ResumeAgainstFakeDSH)"
@@ -50,7 +51,7 @@ scripts/xc build-for-testing -project ios/dsh-mobile.xcodeproj -scheme dsh-mobil
 
 uitest() { # name, then -only-testing targets
   local name=$1; shift
-  scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+  demo_tls_ui test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
     -derivedDataPath "$DD" "$@" --log "$LOGS/$name.log" \
     || { grep -E "error:|Test Case.*(passed|failed)" "$LOGS/$name.log"; exit 1; }
   grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/$name.log"
@@ -65,20 +66,22 @@ uitest fake \
 
 HOST_PID=""
 cleanup() { [ -n "$HOST_PID" ] && kill "$HOST_PID" 2>/dev/null || true; }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 if [ $FAKE_ONLY = 0 ]; then
   STARTED=0
-  if ! listening; then
-    step "starting real DSH + bridge (scripts/demo/durable-list-host.mjs: web $DSHM_WEB_PORT, bridge $PORT, $DSHM_HOME)"
-    (cd bridge && corepack pnpm build >/dev/null)
-    node scripts/demo/durable-list-host.mjs > "$LOGS/durable-list-host.log" 2>&1 &
-    HOST_PID=$!
-    STARTED=1
-    for _ in $(seq 1 240); do listening && break; sleep 0.5; done
-    listening || { cat "$LOGS/durable-list-host.log"; echo "bridge did not come up" >&2; exit 1; }
+  if listening; then
+    echo "The assigned bridge port is in use" >&2
+    exit 1
   fi
+  step "starting real DSH + bridge (scripts/demo/durable-list-host.mjs: web $DSHM_WEB_PORT, bridge $PORT, $DSHM_HOME)"
+  (cd bridge && corepack pnpm build >/dev/null)
+  node scripts/demo/durable-list-host.mjs > "$LOGS/durable-list-host.log" 2>&1 &
+  HOST_PID=$!
+  STARTED=1
+  for _ in $(seq 1 240); do listening && break; sleep 0.5; done
+  listening || { cat "$LOGS/durable-list-host.log"; echo "bridge did not come up" >&2; exit 1; }
   step "bridge inside real DSH answers a CLI client"
-  node bridge/lib/scripts/client.js --port "$PORT" "用一句话介绍你自己。"
+  demo_tls_client "$DSHM_HOME" "$DSHM_HOME/cli.json" "用一句话介绍你自己。"
 
   step "UI: start a task, kill the app, wait, reopen: list + transcript intact, gap filled (real DSH)"
   TEST_RUNNER_DSHM_REAL_DSH=1 uitest real \

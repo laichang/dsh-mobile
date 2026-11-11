@@ -21,7 +21,7 @@ final class MilestonesUITests: XCTestCase {
     private func launch(_ arguments: [String]) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"] + arguments
-        app.launch()
+        if arguments.contains("-DSHMBridgePort") { launchEnrolled(app) } else { app.launch() }
         return app
     }
 

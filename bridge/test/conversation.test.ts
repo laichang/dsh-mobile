@@ -1,3 +1,4 @@
+import { startTestBridge, type TestBridge } from './tls-bridge.ts'
 /**
  * Conversation: a follow-up message into the DSH session of a finished
  * task. The new turn streams under the same task ID, and Resume replays the whole conversation.
@@ -6,21 +7,19 @@
 import assert from 'node:assert/strict'
 import { after, describe, test } from 'node:test'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
-import { WebSocket } from 'ws'
-import { PlaintextChannel } from '../src/channel.ts'
 import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { DshTasks } from '../src/dsh.ts'
 import { MessageMode, QueueAction, QueuePlacement } from '../src/gen/conversation_pb.ts'
 import { FrameSchema, TaskStatus, type Event, type Frame, type Response } from '../src/gen/frame_pb.ts'
 import { TaskState } from '../src/gen/durable_list_pb.ts'
-import { CONVERSATION_CAPABILITY, PLAINTEXT_PATH, QUEUE_CAPABILITY, startBridgeServer, type BridgeServer } from '../src/server.ts'
+import { CONVERSATION_CAPABILITY, QUEUE_CAPABILITY, type BridgeServer } from '../src/server.ts'
 import { FakeDSH, type FakeDSHOptions } from './fake-dsh.ts'
 
 type RequestBody = NonNullable<MessageInitShape<typeof FrameSchema>['kind']> extends infer K
   ? K extends { case: 'request'; value: infer V } ? V extends { body?: infer B } ? B : never : never : never
 
-async function connect(port: number, capabilities: string[]) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}${PLAINTEXT_PATH}`)
+async function connect(server: TestBridge, capabilities: string[]) {
+  const ws = await server.socket()
   ws.binaryType = 'nodebuffer'
   const frames: Frame[] = []
   ws.on('message', (data: Buffer) => { frames.push(fromBinary(FrameSchema, new Uint8Array(data))) })
@@ -54,8 +53,8 @@ after(async () => { await Promise.all(servers.map((s) => s.close())) })
 
 async function bridgeWith(options: FakeDSHOptions) {
   const dsh = new FakeDSH(options)
-  const server = await startBridgeServer({
-    dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0, channel: new PlaintextChannel(),
+  const server = await startTestBridge({
+    dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0,
     tasks: new DshTasks(dsh, '/tmp/dshm-ws'), hostName: 'test-mac',
   })
   servers.push(server)
@@ -82,7 +81,7 @@ describe('FollowUpAgainstFakeDSH', () => {
   test('aFollowUpOnACompletedTaskStreamsTheNextTurnUnderTheSameTaskID', async () => {
     const { dsh, server } = await bridgeWith({ replies: { 1: ['First', ' answer.'], 2: ['Second', ' answer.'] },
       reasoning: ['Think.'] })
-    const { client, hello } = await connect(server.port, caps)
+    const { client, hello } = await connect(server, caps)
     assert.ok(hello.body.case === 'hello' && hello.body.value.capabilities.includes(CONVERSATION_CAPABILITY))
     const created = await client.call({ case: 'createTask', value: { prompt: 'Say hello' } })
     assert.equal(created.body.case, 'taskCreated')
@@ -121,7 +120,7 @@ describe('FollowUpAgainstFakeDSH', () => {
 
   test('resumeReplaysTheWholeConversationInOrder', async () => {
     const { server } = await bridgeWith({ replies: { 1: ['One.'], 2: ['Two.'], 3: ['Three.'] } })
-    const { client } = await connect(server.port, caps)
+    const { client } = await connect(server, caps)
     const created = await client.call({ case: 'createTask', value: { prompt: 'Count' } })
     assert.equal(created.body.case, 'taskCreated')
     const taskId = created.body.value.taskId
@@ -133,7 +132,7 @@ describe('FollowUpAgainstFakeDSH', () => {
     const live = conversation(client.events(), taskId)
     client.close()
 
-    const { client: again } = await connect(server.port, caps)
+    const { client: again } = await connect(server, caps)
     const resumed = await again.call({ case: 'resume', value: { logId: '', afterSeq: 0n } })
     assert.equal(resumed.body.case, 'resumed')
     const replay = conversation(again.events(), taskId)
@@ -144,7 +143,7 @@ describe('FollowUpAgainstFakeDSH', () => {
 
   test('aFollowUpIsRefusedWhenItIsEmptyOrForAnUnknownTaskAndTakenAfterAFailure', async () => {
     const { server } = await bridgeWith({ reply: ['a', 'b', 'c'], chunkDelayMs: 50, failWith: { kind: 'error', error: { message: 'boom' } } })
-    const { client } = await connect(server.port, caps)
+    const { client } = await connect(server, caps)
     const created = await client.call({ case: 'createTask', value: { prompt: 'Slow' } })
     assert.equal(created.body.case, 'taskCreated')
     const taskId = created.body.value.taskId
@@ -162,14 +161,14 @@ describe('FollowUpAgainstFakeDSH', () => {
 
   test('appsWithoutTheCapabilityGetNoUserMessages', async () => {
     const { server } = await bridgeWith({ replies: { 1: ['One.'], 2: ['Two.'] } })
-    const { client } = await connect(server.port, caps)
+    const { client } = await connect(server, caps)
     const created = await client.call({ case: 'createTask', value: { prompt: 'Count' } })
     assert.equal(created.body.case, 'taskCreated')
     await client.until((fs) => ended(fs) === 1)
     await client.call({ case: 'sendMessage', value: { taskId: created.body.value.taskId, text: 'More' } })
     await client.until((fs) => ended(fs) === 2)
     client.close()
-    const { client: old } = await connect(server.port, [])
+    const { client: old } = await connect(server, [])
     await old.call({ case: 'resume', value: { logId: '', afterSeq: 0n } })
     assert.equal(old.events().filter((e) => e.body.case === 'userMessage').length, 0)
     old.close()
@@ -205,7 +204,7 @@ async function send(client: Awaited<ReturnType<typeof connect>>['client'], taskI
 describe('FollowUpQueueAgainstFakeDSH', () => {
   test('aFollowUpWhileTheTaskRunsIsQueuedAndRunsAsTheNextTurn', async () => {
     const { dsh, server } = await bridgeWith({ replies: { 1: ['One', ' a', ' b'], 2: ['Two.'] }, chunkDelayMs: 60 })
-    const { client, hello } = await connect(server.port, queueCaps)
+    const { client, hello } = await connect(server, queueCaps)
     assert.ok(hello.body.case === 'hello' && hello.body.value.capabilities.includes(QUEUE_CAPABILITY))
     const created = await client.call({ case: 'createTask', value: { prompt: 'Count' } })
     assert.equal(created.body.case, 'taskCreated')
@@ -229,7 +228,7 @@ describe('FollowUpQueueAgainstFakeDSH', () => {
 
   test('sendNowMovesAQueuedMessageIntoTheCurrentTurnAtItsNextStep', async () => {
     const { dsh, server } = await bridgeWith({ replies: { 1: ['One', ' a', ' b', ' c'], 2: ['Two.'] }, stepReply: ['Steered.'], chunkDelayMs: 60 })
-    const { client } = await connect(server.port, queueCaps)
+    const { client } = await connect(server, queueCaps)
     const created = await client.call({ case: 'createTask', value: { prompt: 'Count' } })
     assert.equal(created.body.case, 'taskCreated')
     const taskId = created.body.value.taskId
@@ -255,7 +254,7 @@ describe('FollowUpQueueAgainstFakeDSH', () => {
     // Real DSH gives a steered message to the agent only when the step ends (a tool call that
     // waits, as for subagents). Until then the app has only the STEERING event to draw.
     const { server } = await bridgeWith({ toolStepMs: 400, reply: ['Stopped', ' here.'], chunkDelayMs: 20 })
-    const { client } = await connect(server.port, queueCaps)
+    const { client } = await connect(server, queueCaps)
     const created = await client.call({ case: 'createTask', value: { prompt: 'Summarize every file' } })
     assert.equal(created.body.case, 'taskCreated')
     const taskId = created.body.value.taskId
@@ -277,7 +276,7 @@ describe('FollowUpQueueAgainstFakeDSH', () => {
 
   test('removeTakesAQueuedMessageOut', async () => {
     const { dsh, server } = await bridgeWith({ reply: ['One', ' a', ' b'], chunkDelayMs: 60 })
-    const { client } = await connect(server.port, queueCaps)
+    const { client } = await connect(server, queueCaps)
     const created = await client.call({ case: 'createTask', value: { prompt: 'Count' } })
     assert.equal(created.body.case, 'taskCreated')
     const taskId = created.body.value.taskId
@@ -297,7 +296,7 @@ describe('FollowUpQueueAgainstFakeDSH', () => {
 
   test('theQueueAndItsOrderStayTheSameAfterAReconnect', async () => {
     const { server } = await bridgeWith({ replies: { 1: ['One', ' a', ' b', ' c', ' d'], 2: ['Two.'], 3: ['Three.'] }, chunkDelayMs: 80 })
-    const { client } = await connect(server.port, queueCaps)
+    const { client } = await connect(server, queueCaps)
     const created = await client.call({ case: 'createTask', value: { prompt: 'Count' } })
     assert.equal(created.body.case, 'taskCreated')
     const taskId = created.body.value.taskId
@@ -310,7 +309,7 @@ describe('FollowUpQueueAgainstFakeDSH', () => {
     client.close()
 
     // Another connection (the phone back from the background) replays the same queue, in order.
-    const { client: again } = await connect(server.port, queueCaps)
+    const { client: again } = await connect(server, queueCaps)
     const resumed = await again.call({ case: 'resume', value: { logId: '', afterSeq: 0n } })
     assert.equal(resumed.body.case, 'resumed')
     assert.deepEqual(queue(again.events(), taskId), live)
@@ -322,7 +321,7 @@ describe('FollowUpQueueAgainstFakeDSH', () => {
 
   test('anInterruptGivesQueuedMessagesBackAndANewMessageContinuesTheSession', async () => {
     const { dsh, server } = await bridgeWith({ replies: { 1: ['One', ' a', ' b', ' c', ' d'], 2: ['Two.'] }, chunkDelayMs: 80 })
-    const { client } = await connect(server.port, queueCaps)
+    const { client } = await connect(server, queueCaps)
     const created = await client.call({ case: 'createTask', value: { prompt: 'Count' } })
     assert.equal(created.body.case, 'taskCreated')
     const taskId = created.body.value.taskId
@@ -349,13 +348,13 @@ describe('FollowUpQueueAgainstFakeDSH', () => {
 
   test('appsWithoutTheQueueCapabilityGetNoQueuedMessages', async () => {
     const { server } = await bridgeWith({ replies: { 1: ['One', ' a'], 2: ['Two.'] }, chunkDelayMs: 60 })
-    const { client } = await connect(server.port, queueCaps)
+    const { client } = await connect(server, queueCaps)
     const created = await client.call({ case: 'createTask', value: { prompt: 'Count' } })
     assert.equal(created.body.case, 'taskCreated')
     await send(client, created.body.value.taskId, 'Then two')
     await client.until((fs) => ended(fs) === 1, 5000)
     client.close()
-    const { client: old } = await connect(server.port, caps)
+    const { client: old } = await connect(server, caps)
     await old.call({ case: 'resume', value: { logId: '', afterSeq: 0n } })
     assert.equal(old.events().filter((e) => e.body.case === 'queuedMessage').length, 0)
     assert.equal(old.events().filter((e) => e.body.case === 'userMessage').length, 1)

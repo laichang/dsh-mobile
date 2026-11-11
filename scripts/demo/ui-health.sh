@@ -89,7 +89,9 @@ ui_test() { # part name, then Suite or Suite/test selectors
   # Activity left by an earlier run): the first test then got an app without its launch arguments
   #. Remove the app first; xcodebuild installs it again.
   xcrun simctl uninstall "$SIM" chang.dsh-mobile >/dev/null 2>&1 || true
-  if ! scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+  local runner=scripts/xc
+  [[ "$name" != "focus-t0" ]] || runner=demo_tls_ui
+  if ! "$runner" test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
       -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" --log "$log"; then
     grep -E "error:|Test Case.*(passed|failed)" "$log" || tail -30 "$log"
     ui_waits "$log" "$SESSION_PAGE_SCROLL=$SESSION_PAGE_LIMIT" || true
@@ -107,17 +109,20 @@ case "$PART" in
   focus-s3) ui_test focus-s3 MilestonesUITests/testTodosTickOffOnCardWithFakeBridge; exit ;;
   focus-s2) ui_test focus-s2 DurableListUITests/testCachedMilestonesAfterKillAndReopenWithFakeBridge; exit ;;
   focus-t0)
+    demo_tls_home
     DSH_PID=""
     cleanup() { [ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true; }
-    trap cleanup EXIT
-    if ! lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
-      step "starting real DSH + bridge on $DSHM_BRIDGE_PORT (scripts/dsh-up.mjs, DSH_HOME $DSHM_HOME)"
-      (cd bridge && corepack pnpm build >/dev/null)
-      node scripts/dsh-up.mjs > "$LOGS/dsh-up.log" 2>&1 &
-      DSH_PID=$!
-      for _ in $(seq 1 240); do lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null 2>&1 && break; sleep 0.5; done
-      lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null || { cat "$LOGS/dsh-up.log"; echo "bridge did not come up" >&2; exit 1; }
+    demo_tls_on_exit cleanup
+    if lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+      echo "The assigned bridge port is in use" >&2
+      exit 1
     fi
+    step "starting real DSH + bridge on $DSHM_BRIDGE_PORT (scripts/dsh-up.mjs, DSH_HOME $DSHM_HOME)"
+    (cd bridge && corepack pnpm build >/dev/null)
+    node scripts/dsh-up.mjs > "$LOGS/dsh-up.log" 2>&1 &
+    DSH_PID=$!
+    for _ in $(seq 1 240); do lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null 2>&1 && break; sleep 0.5; done
+    lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null || { cat "$LOGS/dsh-up.log"; echo "bridge did not come up" >&2; exit 1; }
     export TEST_RUNNER_DSHM_REAL_DSH=1 TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT"
     ui_test focus-t0 RoundTripUITests/testDemoAgainstRealDSH; exit ;;
   idle-s16) ui_test idle-s16 SessionPageUITests; exit ;;

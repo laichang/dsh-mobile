@@ -22,7 +22,8 @@ NODE24="$HOME/.nvm/versions/node/v24.14.0/bin"
 [ -d "$HOME/.dshm/bin" ] && export PATH="$HOME/.dshm/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
 source scripts/demo/lib.sh
-LOGS=/tmp/dshm-t0; mkdir -p "$LOGS"
+demo_tls_home
+LOGS="/tmp/dshm-t0-${DSHM_BRIDGE_PORT:-47801}"; mkdir -p "$LOGS"
 DD="${DSHM_DD:-/tmp/dshm-round-trip-dd}"
 
 demo_prepare_bridge
@@ -35,18 +36,20 @@ demo_swift_tests "$LOGS/swift-test.log"
 
 DSH_PID=""
 cleanup() { [ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true; }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 if [ $FAKE_ONLY = 0 ]; then
-  if ! lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
-    step "starting real DSH + bridge (scripts/dsh-up.mjs)"
-    (cd bridge && corepack pnpm build >/dev/null)
-    node scripts/dsh-up.mjs > /tmp/dshm-t0-dsh-up.log 2>&1 &
-    DSH_PID=$!
-    for _ in $(seq 1 240); do lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1 && break; sleep 0.5; done
-    lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null || { cat /tmp/dshm-t0-dsh-up.log; echo "bridge did not come up" >&2; exit 1; }
+  if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "The assigned bridge port is in use" >&2
+    exit 1
   fi
+  step "starting real DSH + bridge (scripts/dsh-up.mjs)"
+  (cd bridge && corepack pnpm build >/dev/null)
+  node scripts/dsh-up.mjs > "$LOGS/dsh-up.log" 2>&1 &
+  DSH_PID=$!
+  for _ in $(seq 1 240); do lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1 && break; sleep 0.5; done
+  lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null || { cat "$LOGS/dsh-up.log"; echo "bridge did not come up" >&2; exit 1; }
   step "bridge inside real DSH answers a CLI client"
-  node bridge/lib/scripts/client.js --port "$PORT" "用一句话介绍你自己。"
+  demo_tls_client "$DSHM_HOME" "$DSHM_HOME/cli.json" "用一句话介绍你自己。"
 fi
 
 step "UI tests in the Simulator ($SIM)"
@@ -56,7 +59,7 @@ export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR" TEST_RUNNER_DSHM_BRIDGE_PORT="$PORT
 ONLY=(-only-testing:dsh-mobileUITests/RoundTripUITests)
 if [ $FAKE_ONLY = 0 ]; then export TEST_RUNNER_DSHM_REAL_DSH=1
 else ONLY+=(-skip-testing:dsh-mobileUITests/RoundTripUITests/testDemoAgainstRealDSH); fi
-scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+demo_tls_ui test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates "${ONLY[@]}" \
   --log "$LOGS/uitest.log" || { grep -E "error:|Test Case" "$LOGS/uitest.log"; exit 1; }
 grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/uitest.log"

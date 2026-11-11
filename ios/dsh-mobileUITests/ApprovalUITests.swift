@@ -9,7 +9,7 @@ final class ApprovalUITests: XCTestCase {
         app.launchArguments = ["-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47810",
                                "-DSHMPresetPrompt", "delete /tmp/x"]
         if reset { app.launchArguments += ["-DSHMResetStore", "YES", "-DSHMResetPairing", "YES"] }
-        app.launch()
+        launchEnrolled(app)
         return app
     }
 

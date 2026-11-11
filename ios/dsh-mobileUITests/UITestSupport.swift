@@ -3,7 +3,44 @@ import XCTest
 /// Shared by the UI tests: drive the composer and the shell, open deep links, save shots.
 @MainActor
 extension XCTestCase {
-    var env: [String: String] { ProcessInfo.processInfo.environment }
+    var env: [String: String] {
+        var values = ProcessInfo.processInfo.environment
+        if let path = values["DSHM_TLS_HANDOFF"],
+           let files = try? FileManager.default.contentsOfDirectory(atPath: path) {
+            for key in files where key.hasPrefix("DSHM_") {
+                values[key] = try? String(contentsOfFile: path + "/" + key, encoding: .utf8)
+            }
+        }
+        return values
+    }
+
+    /// Enroll on a fresh launch. The fixture may give the phone a relay port for failover tests.
+    func launchEnrolled(_ app: XCUIApplication, port: String = "") {
+        guard let path = env["DSHM_TLS_HANDOFF"] else { XCTFail("Run the TLS demo"); return }
+        if let index = app.launchArguments.firstIndex(of: "-DSHMBridgePort") {
+            app.launchArguments.removeSubrange(index...index + 1)
+        }
+        if !app.launchArguments.contains("-DSHMResetPairing") { app.launchArguments += ["-DSHMResetPairing", "YES"] }
+        app.launch()
+        do {
+            try Data(port.utf8).write(to: URL(fileURLWithPath: path + "/enroll"), options: .atomic)
+        } catch { XCTFail("Could not request enrollment: \(error)"); return }
+        confirmSystemOpen()
+        let confirm = app.buttons["pairing.confirm"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 15))
+        confirm.tap()
+        let done = app.buttons["pairing.done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 20))
+        done.tap()
+        // Restore launch-time prompts after switching from the welcome screen to the enrolled host.
+        app.terminate()
+        for reset in ["-DSHMResetPairing", "-DSHMResetStore"] {
+            if let i = app.launchArguments.firstIndex(of: reset) {
+                app.launchArguments.removeSubrange(i...i + 1)
+            }
+        }
+        app.launch()
+    }
 
     /// Launch arguments that turn off UIKit's view animations in the app.
     /// Before each step XCUITest waits until they end; under load it could wait 60 s per step.
@@ -144,11 +181,21 @@ extension XCTestCase {
     /// Opens a `dshm://` link the way the system does, confirms iOS's "Open in dsh-mobile?"
     /// prompt, and returns a fresh handle on the app (the old one can keep a stale tree).
     func openDeepLink(_ url: URL) -> XCUIApplication {
-        XCUIApplication().open(url)
+        if let path = env["DSHM_TLS_HANDOFF"], url.host == "pair" {
+            do {
+                try Data(url.absoluteString.utf8).write(to: URL(fileURLWithPath: path + "/open"), options: .atomic)
+            } catch { XCTFail("Could not open private pairing link: \(error)") }
+        } else {
+            XCUIApplication().open(url)
+        }
+        confirmSystemOpen()
+        return XCUIApplication(bundleIdentifier: "chang.dsh-mobile")
+    }
+
+    private func confirmSystemOpen() {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let open = springboard.buttons.matching(NSPredicate(format: "label IN {'Open', '打开'}")).firstMatch
         if open.waitForExistence(timeout: 3) { open.tap() }
-        return XCUIApplication(bundleIdentifier: "chang.dsh-mobile")
     }
 
     /// Waits until the element's accessibility value is one of `values`; returns the value.

@@ -9,7 +9,7 @@ final class InterruptUITests: XCTestCase {
         app.launchArguments = ["-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47811",
                                "-DSHMResetPairing", "YES", "-DSHMResetStore", "YES",
                                "-DSHMPresetPrompt", "Stream a long reply"]
-        app.launch()
+        launchEnrolled(app)
         app.buttons["composer.send"].tap()
         let transcript = app.descendants(matching: .any)["transcript.text"]
         wait(for: [expectation(for: NSPredicate(format: "value != '' AND exists == true"), evaluatedWith: transcript)], timeout: 20)

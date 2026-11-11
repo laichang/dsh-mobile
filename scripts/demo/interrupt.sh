@@ -10,9 +10,10 @@ export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47811}" DSHM_WEB_PORT="${DSHM_WEB_P
 export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-interrupt}" DSHM_MOCK_CHUNK_DELAY_MS=800
 SIM="${DSHM_SIM:-dshm-interrupt}"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
-LOGS=/tmp/dshm-s5
+LOGS="/tmp/dshm-s5-${DSHM_BRIDGE_PORT:-47801}"
 mkdir -p "$LOGS"
 source scripts/demo/lib.sh
+demo_tls_home
 demo_prepare_bridge
 demo_bridge_tests "$LOGS/bridge.log"
 demo_swift_tests "$LOGS/swift.log"
@@ -21,7 +22,7 @@ if lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null; then
 fi
 node scripts/demo/durable-list-host.mjs > "$LOGS/host.log" 2>&1 &
 host_pid=$!
-trap 'kill "$host_pid" 2>/dev/null || true' EXIT
+demo_tls_on_exit 'kill "$host_pid" 2>/dev/null || true'
 for _ in $(seq 1 240); do
   lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null && break
   kill -0 "$host_pid" 2>/dev/null || { tail -12 "$LOGS/host.log"; exit 1; }
@@ -30,7 +31,7 @@ done
 lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null || { echo "interrupt bridge did not start" >&2; exit 1; }
 shot_dir="$(mktemp -d)"
 export TEST_RUNNER_DSHM_REAL_DSH=1 TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT" TEST_RUNNER_DSHM_SHOT_DIR="$shot_dir"
-scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+demo_tls_ui test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "${DSHM_DD:-/tmp/dshm-interrupt-dd}" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
   -parallel-testing-enabled NO -jobs 4 -only-testing:dsh-mobileUITests/InterruptUITests --log "$LOGS/ui.log" || {
     grep -E 'error:|Test Case' "$LOGS/ui.log"; exit 1;

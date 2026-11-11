@@ -1,8 +1,9 @@
+import { WebSocket } from 'ws'
+import { startTestBridge, type TestBridge } from './tls-bridge.ts'
 import assert from 'node:assert/strict'
 import { after, describe, test } from 'node:test'
 import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
-import { WebSocket } from 'ws'
 import { PlaintextChannel, isLoopbackAddress } from '../src/channel.ts'
 import { DshTasks } from '../src/dsh.ts'
 import { FrameSchema, TaskStatus, type Frame } from '../src/gen/frame_pb.ts'
@@ -12,8 +13,8 @@ import { PLAINTEXT_PATH, startBridgeServer, type BridgeServer } from '../src/ser
 import { FakeDSH, type FakeDSHOptions } from './fake-dsh.ts'
 
 /** A minimal test client: send Requests, collect every Frame received. */
-async function connect(port: number) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}${PLAINTEXT_PATH}`)
+async function connect(server: Pick<TestBridge, 'socket'>) {
+  const ws = await server.socket()
   ws.binaryType = 'nodebuffer'
   const frames: Frame[] = []
   const waiters: (() => void)[] = []
@@ -41,12 +42,12 @@ after(async () => { await Promise.all(servers.map((s) => s.close())) })
 
 async function bridgeWith(options: FakeDSHOptions = {}, dshVersion = SUPPORTED_DSH) {
   const dsh = new FakeDSH(options)
-  const server = await startBridgeServer({
+  const server = await startTestBridge({
     dshVersion,
-    host: '127.0.0.1', port: 0, channel: new PlaintextChannel(), tasks: new DshTasks(dsh, '/tmp/dshm-ws'),
+    host: '127.0.0.1', port: 0, tasks: new DshTasks(dsh, '/tmp/dshm-ws'),
   })
   servers.push(server)
-  return { dsh, client: await connect(server.port) }
+  return { dsh, client: await connect(server) }
 }
 
 const ended = (fs: Frame[]) => fs.some((f) => f.kind.case === 'event' && f.kind.value.body.case === 'taskEnded')
@@ -113,18 +114,6 @@ describe('BridgeAgainstFakeDSH', () => {
     assert.equal(started.workspace, '/home/user/Documents/deepseek-harness/default-workspace')
     for await (const _ of started.output) { /* drain */ }
     assert.equal(new DshTasks(dsh, '/srv/configured', '/home/user').cwd, '/srv/configured')
-  })
-
-  test('plaintextCannotReadOrChangeDeviceManagement', async () => {
-    const { client } = await bridgeWith()
-    client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
-    client.send({ kind: { case: 'request', value: { id: 2n, body: { case: 'listDevices', value: {} } } } })
-    client.send({ kind: { case: 'request', value: { id: 3n, body: { case: 'revokeDevice', value: { deviceId: 'victim' } } } } })
-    client.send({ kind: { case: 'request', value: { id: 4n, body: { case: 'listAudit', value: {} } } } })
-    await client.until(fs => fs.length === 4)
-    assert.ok(client.frames.slice(1).every(f => f.kind.case === 'response'
-      && f.kind.value.body.case === 'error' && f.kind.value.body.value.code === 'devices/forbidden'))
-    client.close()
   })
 
   test('hostCatalogPreservesGroupsNamesEffortsAndDefault', async () => {
@@ -202,7 +191,7 @@ describe('BridgeAgainstFakeDSH', () => {
     const [hello, created, ...events] = client.frames
     assert.equal(hello.kind.case, 'response')
     assert.equal(hello.kind.value?.body.case, 'hello')
-    assert.deepEqual(hello.kind.case === 'response' && hello.kind.value.body.case === 'hello' && hello.kind.value.body.value.capabilities, ['tasks.v1', 'milestones.v1', 'resume.v1', 'interrupt.v1', 'transcript.v1', 'models.v1', 'workspaces.v1', 'drawer.v1', 'conversation.v1', 'failures.v1', 'conversation.v2', 'attachments.v1'])
+    assert.deepEqual(hello.kind.case === 'response' && hello.kind.value.body.case === 'hello' && hello.kind.value.body.value.capabilities, ['tasks.v1', 'milestones.v1', 'resume.v1', 'interrupt.v1', 'transcript.v1', 'models.v1', 'workspaces.v1', 'drawer.v1', 'devices.v1', 'conversation.v1', 'failures.v1', 'conversation.v2', 'attachments.v1'])
 
     assert.ok(created.kind.case === 'response' && created.kind.value.body.case === 'taskCreated')
     assert.equal(created.kind.value.requestId, 2n)
@@ -289,6 +278,21 @@ describe('BridgeAgainstFakeDSH', () => {
 })
 
 describe('PlaintextChannelBridge', () => {
+  test('plaintextCannotReadOrChangeDeviceManagement', async () => {
+    const server = await startBridgeServer({ dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0,
+      channel: new PlaintextChannel(), tasks: new DshTasks(new FakeDSH(), '/tmp/dshm-ws') })
+    servers.push(server)
+    const client = await connect({ socket: async () => new WebSocket('ws://127.0.0.1:' + server.port + PLAINTEXT_PATH) })
+    client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
+    client.send({ kind: { case: 'request', value: { id: 2n, body: { case: 'listDevices', value: {} } } } })
+    client.send({ kind: { case: 'request', value: { id: 3n, body: { case: 'revokeDevice', value: { deviceId: 'victim' } } } } })
+    client.send({ kind: { case: 'request', value: { id: 4n, body: { case: 'listAudit', value: {} } } } })
+    await client.until(fs => fs.length === 4)
+    assert.ok(client.frames.slice(1).every(f => f.kind.case === 'response'
+      && f.kind.value.body.case === 'error' && f.kind.value.body.value.code === 'devices/forbidden'))
+    client.close()
+  })
+
   test('refusesNonLoopbackAddress', async () => {
     const channel = new PlaintextChannel()
     for (const host of ['0.0.0.0', '192.168.1.10', '10.0.0.1', '::', 'example.com', 'localhost']) {

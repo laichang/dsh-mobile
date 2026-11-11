@@ -4,7 +4,7 @@
 # "connecting" every few seconds. Now a close 4003 (device unknown) is final: the app forgets
 # the host, says so once, and shows 08 (no host left) or 01 with the other hosts.
 # The fake parts use in-process `FakeHosts`, which close with 4003 like the bridge. One part
-# runs the user's path on a real DSH + bridge (scripts/dsh-up.mjs on its own ports, Noise).
+# runs the user's path on a real DSH + bridge (scripts/dsh-up.mjs on its own ports, TLS).
 #
 #   scripts/demo/revoke.sh          swift test (RevokedHostTests and the rest of DSHKit),
 #                                RevokeUITests on the fakes, then on the real bridge (pair,
@@ -35,7 +35,8 @@ NODE24="$HOME/.nvm/versions/node/v24.14.0/bin"
 [ -d "$HOME/.dshm/bin" ] && export PATH="$HOME/.dshm/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
 source scripts/demo/lib.sh
-LOGS=/tmp/dshm-s29; mkdir -p "$LOGS"
+demo_tls_home
+LOGS="/tmp/dshm-s29-${DSHM_BRIDGE_PORT:-47801}"; mkdir -p "$LOGS"
 SIM="$DSHM_SIM"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 
@@ -56,7 +57,7 @@ ui_part() { # name, then -only-testing selectors
   local args=() t
   for t in "$@"; do args+=("-only-testing:dsh-mobileUITests/$t"); done
   step "UI: $name (log: $LOGS/ui-$name.log)"
-  if demo_part "ui-$name" scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+  if demo_part "ui-$name" demo_tls_ui test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
       -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" \
       --log "$LOGS/ui-$name.log"; then
     grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui-$name.log" || true
@@ -72,7 +73,7 @@ ui_part s29 RevokeUITests/testRevokedHostLeavesTheDrawerAndIsNotRetried RevokeUI
 
 # The user's path on a real DSH + bridge: the bridge answers the revoke, then closes with 4003.
 DSH_PID=""
-trap '[ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true' EXIT
+demo_tls_on_exit '[ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true'
 real_bridge() {
   mkdir -p "$DSHM_HOME"
   demo_prepare_bridge

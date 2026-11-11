@@ -11,7 +11,7 @@
 # 3. The script stops that program. DSH runs, but its bridge did not start: the app shows that
 #    nothing listens on the port.
 #
-#   scripts/demo/bridge-errors.sh           tests, then the UI tests on real DSH (Noise)
+#   scripts/demo/bridge-errors.sh           tests, then the UI tests on real DSH (TLS)
 #   scripts/demo/bridge-errors.sh --shots   also refresh the screenshots in evidence/bridge-errors/ (1/3 size)
 #   DSHM_RESUME=1                          skip the parts that passed for the same code (lib.sh demo_part)
 #
@@ -28,6 +28,7 @@ export DSHM_SIM="${DSHM_SIM:-iPhone 17 Pro}" DSHM_DD="${DSHM_DD:-/tmp/dshm-bridg
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
 source scripts/demo/lib.sh
+demo_tls_home
 LOGS=/tmp/dshm-bridge-errors-$DSHM_BRIDGE_PORT; mkdir -p "$LOGS"
 SIM="$DSHM_SIM"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
@@ -37,7 +38,7 @@ export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR" TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM
 DSH_PID=""; HOLDER_PID=""
 stop() { if [ -n "$1" ]; then kill "$1" 2>/dev/null || true; wait "$1" 2>/dev/null || true; fi; }
 cleanup() { stop "$DSH_PID"; stop "$HOLDER_PID"; rm -rf "$SHOT_DIR"; }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 listening() { lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
 
 demo_prepare_bridge
@@ -58,7 +59,7 @@ ui_part() { # name, then -only-testing selectors
   local args=() t
   for t in "$@"; do args+=("-only-testing:dsh-mobileUITests/$t"); done
   step "UI: $name (log: $LOGS/ui-$name.log)"
-  if demo_part "ui-$name" scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+  if demo_part "ui-$name" demo_tls_ui test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
       -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" \
       --log "$LOGS/ui-$name.log"; then
     grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui-$name.log" || true
@@ -71,14 +72,14 @@ ui_part() { # name, then -only-testing selectors
 }
 
 start_dsh() { # log file
-  DSHM_BRIDGE_DEV_PLAINTEXT=0 node scripts/dsh-up.mjs > "$1" 2>&1 &
+  node scripts/dsh-up.mjs > "$1" 2>&1 &
   DSH_PID=$!
 }
 
 if listening "$DSHM_BRIDGE_PORT"; then echo "port $DSHM_BRIDGE_PORT is in use" >&2; exit 1; fi
 if listening "$DSHM_WEB_PORT"; then echo "port $DSHM_WEB_PORT is in use" >&2; exit 1; fi
 
-step "1. real DSH + bridge with Noise only (web $DSHM_WEB_PORT, bridge $DSHM_BRIDGE_PORT, $DSHM_HOME)"
+step "1. real DSH + bridge with TLS (web $DSHM_WEB_PORT, bridge $DSHM_BRIDGE_PORT, $DSHM_HOME)"
 mkdir -p "$DSHM_HOME"
 start_dsh "$LOGS/dsh-up.log"
 for _ in $(seq 1 240); do listening "$DSHM_BRIDGE_PORT" && break; sleep 0.5; done

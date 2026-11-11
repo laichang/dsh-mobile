@@ -1,7 +1,7 @@
 import XCTest
 
 /// A reconnect tries every saved address of a host (screen H). Real DSH and
-/// bridge, Noise only (scripts/demo/reconnect.sh). The pairing link lists two addresses: first a
+/// bridge, TLS (scripts/demo/reconnect.sh). The pairing link lists two addresses: first a
 /// proxy that forwards one connection and then dies (DSHM_DEAD_PORT), then the bridge itself
 /// (DSHM_BRIDGE_PORT). The app pairs through the proxy, so it saves the proxy first.
 @MainActor
