@@ -6,7 +6,10 @@
       "text": "For a rework round, scripts/brief gives the new builder the node, round and matching previous review file. The first round needs no earlier review. Exercise the brief size budget and review selection with scripts/brief-test.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/brief-test"
+      ]
     },
     {
       "tier": "auto",
