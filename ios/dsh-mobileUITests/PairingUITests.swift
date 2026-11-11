@@ -83,8 +83,7 @@ final class PairingUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMResetPairing", "YES"]
         app.launch()
-        openDrawer(app)
-        XCTAssertTrue(app.descendants(matching: .any)["host.channel"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["pairing.pasteLink"].waitForExistence(timeout: 10))
         let reopened = openDeepLink(link)
         let confirm = reopened.buttons["pairing.confirm"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 10))
