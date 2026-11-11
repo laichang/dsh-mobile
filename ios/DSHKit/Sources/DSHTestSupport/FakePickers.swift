@@ -47,7 +47,7 @@ public enum FakePickers {
         .init(catalog: catalog(failures: []), workspaces: .init(defaultPath: officeHome, recentPaths: [officeReports]))
     }
 
-    static func catalog(failures: [Dshm_V1_ModelCatalogFailure]) -> ModelCatalog {
+    static func catalog(failures: [Dshm_V1_ModelCatalogFailure]) -> Dshm_V1_ModelCatalog {
         func effort(_ id: String, _ name: String) -> Dshm_V1_ModelEffort {
             var e = Dshm_V1_ModelEffort()
             e.id = id
@@ -66,9 +66,11 @@ public enum FakePickers {
         group.id = provider
         group.name = "DeepSeek"
         group.models = [model(flash, "DeepSeek-V41-Flash"), model(pro, "DeepSeek-V41-Pro")]
-        var catalog = ModelCatalog()
+        var catalog = Dshm_V1_ModelCatalog()
         catalog.groups = [group]
-        catalog.defaultSelection = ModelSelection(provider: provider, model: flash, effort: "high")
+        catalog.defaultSelection.provider = provider
+        catalog.defaultSelection.model = flash
+        catalog.defaultSelection.reasoningEffort = "high"
         catalog.failures = failures
         return catalog
     }

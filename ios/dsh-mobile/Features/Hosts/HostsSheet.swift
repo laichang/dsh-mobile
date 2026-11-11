@@ -182,8 +182,7 @@ private struct HostRow: View {
 
     /// The host's default model, as the host names it (STORY §8: no rewording).
     private var defaultModel: String? {
-        guard let catalog = store.catalogs[host.key], catalog.hasDefaultSelection else { return nil }
-        let selection = catalog.defaultSelection
+        guard let catalog = store.catalogs[host.key], let selection = catalog.defaultSelection else { return nil }
         let name = catalog.entry(for: selection)?.name ?? ""
         return name.isEmpty ? selection.model : name
     }

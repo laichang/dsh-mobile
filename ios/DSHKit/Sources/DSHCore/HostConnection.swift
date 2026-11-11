@@ -128,7 +128,7 @@ public struct TaskSnapshot: Sendable, Equatable {
         approvals = s.pendingApprovals.map(Approval.init)
         questions = s.pendingQuestions.map { AgentQuestion.pendingRow($0) }
         approvalOnly = s.approvalOnly
-        modelSelection = s.hasModelSelection ? s.modelSelection : nil
+        modelSelection = s.hasModelSelection ? ModelSelection(s.modelSelection) : nil
     }
 }
 
@@ -434,7 +434,7 @@ public actor HostConnection {
             guard capabilities.contains("models.v1") else {
                 throw HostConnectionError.bridge(code: "model/unavailable", message: "This host cannot select the requested model.")
             }
-            create.modelSelection = selection
+            create.modelSelection = selection.wire
         }
         let response = try await request(.createTask(create))
         guard case .taskCreated(let created)? = response.body else { throw HostConnectionError.unexpectedResponse }
@@ -549,16 +549,16 @@ public actor HostConnection {
     public func modelCatalog() async throws -> ModelCatalog {
         let response = try await request(.getModelCatalog(.init()))
         guard case .modelCatalog(let catalog)? = response.body else { throw HostConnectionError.unexpectedResponse }
-        return catalog
+        return ModelCatalog(catalog)
     }
 
     public func selectModel(_ selection: ModelSelection, taskID: String) async throws {
         var select = Dshm_V1_SelectModel()
         select.taskID = taskID
-        select.selection = selection
+        select.selection = selection.wire
         let response = try await request(.selectModel(select))
         guard case .modelSelected(let accepted)? = response.body,
-              accepted.taskID == taskID, accepted.selection == selection else { throw HostConnectionError.unexpectedResponse }
+              accepted.taskID == taskID, accepted.hasSelection, ModelSelection(accepted.selection) == selection else { throw HostConnectionError.unexpectedResponse }
     }
 
     public func answerApproval(id: String, allow: Bool) async throws {
@@ -732,7 +732,7 @@ public actor HostConnection {
         case .logReset(let r)?:
             return .logReset(logID: r.logID)
         case .modelSelected(let m)?:
-            return .modelSelected(taskID: m.taskID, selection: m.selection)
+            return .modelSelected(taskID: m.taskID, selection: ModelSelection(m.selection))
         case .milestoneAdded(let m)?:
             return Milestone(m).map { .milestone($0) }
         case .transcriptBlock(let b)?:
