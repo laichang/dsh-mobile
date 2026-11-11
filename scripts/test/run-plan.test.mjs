@@ -281,6 +281,8 @@ function makeRepo(nodes) {
 function fakeAgent({ t, repo, honest, editCheck = false, lyingVerifier = false, calls }) {
   return async (prompt, opts = {}) => {
     calls.push({ prompt, opts })
+    // Keep the real shell and builder on this fixture's private brief path.
+    prompt = prompt.replace('/tmp/dshm-brief/', join(t, 'briefs') + '/')
     const sh = prompt.match(/```sh\n([\s\S]*?)\n```/)
     if (sh) {
       const r = spawnSync('bash', ['-c', sh[1]], { encoding: 'utf8', env: { ...process.env, HOME: t } })
@@ -318,11 +320,12 @@ test('one node goes from brief to merge; the merge step checks the merge commit 
     assert.equal(result.merged.length, 1, JSON.stringify(result, null, 2))
     assert.deepEqual(calls.map((c) => c.opts.phase), ['Brief', 'Build', 'Verify', 'Merge', 'Merge'])
     assert.equal(calls[1].prompt, `Slice S99, round 1. Brief: /tmp/dshm-brief/S99-r1.md`)
-    const brief = readFileSync('/tmp/dshm-brief/S99-r1.md', 'utf8')
+    const brief = readFileSync(join(t, 'briefs/S99-r1.md'), 'utf8')
     assert.match(brief, /The file fake-node\/hello\.txt holds one line: hello/)
     const tip = git(repo, 'rev-parse', `${INTO}^1`)
     const head = git(repo, 'rev-parse', `${tip}^2`)
-    assert.equal(git(repo, 'rev-list', '--parents', '-n', '1', tip), `${tip} ${base} ${head}`)
+    assert.equal(git(repo, 'rev-parse', `${tip}^1^1`), base)
+    assert.equal(git(repo, 'rev-parse', `${tip}^2`), head)
     assert.deepEqual(result, { into: INTO, tip: tip.slice(0, 12), merged: [{ id: 'S99', rounds: 1, merge: tip.slice(0, 12) }], blocked: [], review: [], waiting: [] })
     const note = JSON.parse(git(repo, 'notes', '--ref=refs/notes/dshm-verify', 'show', tip)).S99
     assert.deepEqual(note.items[0].runs.map((r) => [r.cmd, r.exit]), [['scripts/fixtures/fake-plan/check', 0]])
@@ -349,7 +352,7 @@ test('a build agent that reports done without the work, and a verifier that repo
     assert.equal(result.blocked[0].round, 2, JSON.stringify(result))
     assert.match(result.blocked[0].why, /^same evidence in 2 rounds: merge 0:scripts\/fixtures\/fake-plan\/check=1$/)
     assert.deepEqual(calls.map((c) => c.opts.phase), ['Brief', 'Build', 'Verify', 'Merge', 'Brief', 'Build', 'Verify', 'Merge'])
-    assert.equal(git(repo, 'rev-parse', INTO), base, 'the target did not move')
+    assert.equal(git(repo, 'rev-list', '--merges', `${base}..${INTO}`), '', 'no slice was merged')
   } finally {
     rmSync(t, { recursive: true, force: true })
   }
@@ -360,7 +363,7 @@ test('an honest verifier stops a node that is not done before the merge step', a
   try {
     assert.match(result.blocked[0].why, /^same evidence in 2 rounds: verify 0:/)
     assert.ok(!calls.some((c) => c.opts.phase === 'Merge'))
-    assert.equal(git(repo, 'rev-parse', INTO), base)
+    assert.equal(git(repo, 'rev-list', '--merges', `${base}..${INTO}`), '')
   } finally {
     rmSync(t, { recursive: true, force: true })
   }
@@ -372,7 +375,7 @@ test('a merge refused for changed evidence: needs review, and the Workflow never
     assert.deepEqual(result.review, [{ id: 'S99', round: 1, files: ['scripts/fixtures/fake-plan/check'] }], JSON.stringify(result))
     assert.deepEqual(result.blocked, [])
     assert.ok(!calls.some((c) => c.prompt.includes('--allow-changed-evidence')))
-    assert.equal(git(repo, 'rev-parse', INTO), base)
+    assert.equal(git(repo, 'rev-list', '--merges', `${base}..${INTO}`), '')
   } finally {
     rmSync(t, { recursive: true, force: true })
   }
@@ -393,7 +396,7 @@ test('ready UI nodes get separate simulators and a successor reuses the released
         const row = readFileSync(join(repo, 'scripts/resources.tsv'), 'utf8').split('\n')
           .findLast((line) => line.startsWith(id + '\t')).split('\t')
         assigned[id] = { slot: row[2], sim: row[7] }
-        const devices = readdirSync(join(t, 'devices')).map((f) => readFileSync(join(t, 'devices', f), 'utf8'))
+        const devices = readdirSync(join(t, 'devices'))
         assert.ok(devices.includes(row[7]))
         if (id === 'S96') await second
         if (id === 'S97') scheduledSecond()
@@ -407,6 +410,48 @@ test('ready UI nodes get separate simulators and a successor reuses the released
     assert.notEqual(assigned.S96.slot, assigned.S97.slot)
     assert.equal(assigned.S98.slot, assigned.S96.slot)
     assert.deepEqual(readdirSync(join(t, 'devices')), [])
+  } finally {
+    rmSync(t, { recursive: true, force: true })
+  }
+})
+
+test('fresh runs share the committed three-round budget for each node', async () => {
+  const nodes = graph([['S96', []], ['S97', []]]).nodes
+  const { t, repo } = makeRepo(nodes)
+  const args = (...extra) => JSON.parse(execFileSync(join(repo, 'scripts/run-plan-args'),
+    ['--into', INTO, ...extra], { cwd: repo }))
+  try {
+    const builds = []
+    for (let round = 1; round <= 3; round++) {
+      const build = fakeAgent({ t, repo, honest: false, calls: [] })
+      let failed = false
+      const interrupted = async (prompt, opts) => {
+        if (opts.phase === 'Brief' && failed) throw new Error('workflow interrupted before next round')
+        if (opts.phase === 'Build') {
+          builds.push(prompt)
+          const brief = readFileSync(join(t, 'briefs', `S96-r${round}.md`), 'utf8')
+          if (round > 1) {
+            const [, from, file] = brief.match(/Previous review \(round (\d+)\): `([^`]+)`/)
+            assert.equal(Number(from), round - 1)
+            assert.match(readFileSync(file, 'utf8'), /"passed": false/)
+            assert.ok(file.endsWith(`/r${round - 1}.txt`))
+          }
+        }
+        const result = await build(prompt, opts)
+        if (opts.phase === 'Verify') failed = !JSON.parse(result.stdout).passed
+        return result
+      }
+      const result = await loadWorkflow()(interrupted, () => {}, () => {}, args('--done', 'S97', '--round', 'S96=1'))
+      assert.ok(failed)
+      assert.deepEqual(result.merged, [])
+      assert.equal(args().rounds.S96, round + 1)
+      assert.equal(args().rounds.S97, undefined)
+    }
+    const idle = scripted()
+    const final = await loadWorkflow()(idle, () => {}, () => {}, args('--done', 'S97'))
+    assert.equal(idle.rec.calls.length, 0)
+    assert.match(final.blocked[0].why, /3 build rounds already used/)
+    assert.deepEqual(builds.map((s) => Number(s.match(/round (\d+)/)[1])), [1, 2, 3])
   } finally {
     rmSync(t, { recursive: true, force: true })
   }

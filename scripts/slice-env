@@ -46,16 +46,18 @@ def find_row(sid, root):
         plan = (plandata.read_plan(root) if on_main else json.loads(dshm.read_main_file(plandata.PLAN_FILE)))
         branch = plandata.find_node(plan, sid).get("branch")
     except (dshm.PlanError, plandata.DataError):
-        branch = None
+        return None
+    if not branch:
+        return None
     for main in (not on_main, on_main):
         rows = dshm.parse_registry(registry_text(root, prefer_main=main))
         for row in reversed(rows):
-            if row["id"] == sid and (branch is None or row["branch"] == branch):
+            if row["id"] == sid and row["branch"] == branch:
                 return row
     return None
 
 
-def simulator(name, create=False):
+def simulator(name):
     try:
         result = subprocess.run(["xcrun", "simctl", "list", "devices", "available", "-j"],
                                 capture_output=True, text=True, check=True)
@@ -66,17 +68,27 @@ def simulator(name, create=False):
             return
         if len(matches) > 1:
             raise dshm.PlanError(f"multiple simulators named {name}. Next: select a unique simulator by UDID")
-        if not create:
-            raise dshm.PlanError(f"simulator {name} is missing. Next: retry the slice assignment or set "
-                                 "DSHM_SIM to an available iOS simulator")
-        free, mount = dshm.disk_free()
-        if free is not None and free < dshm.min_free_gb() * 1024**2:
-            raise dshm.PlanError(f"low disk space on {mount}. Next: free space before creating {name}")
-        subprocess.run(["xcrun", "simctl", "create", name, "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro"],
-                       capture_output=True, text=True, check=True)
+        raise dshm.PlanError(f"simulator {name} is missing. Next: select an available iOS simulator "
+                             "or give the slice a new assignment")
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as e:
         raise dshm.PlanError(f"cannot prepare simulator {name}: {getattr(e, 'stderr', None) or e}. "
                              "Next: check Xcode and the installed iOS simulator runtime") from e
+
+
+def create_simulator(name):
+    free, mount = dshm.disk_free()
+    if free is not None and free < dshm.min_free_gb() * 1024**2:
+        raise dshm.PlanError(f"low disk space on {mount}. Next: free space before creating {name}")
+    try:
+        result = subprocess.run(["xcrun", "simctl", "create", name, "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro"],
+                                capture_output=True, text=True, check=True)
+    except (OSError, subprocess.CalledProcessError) as e:
+        raise dshm.PlanError(f"cannot prepare simulator {name}: {getattr(e, 'stderr', None) or e}. "
+                             "Next: check Xcode and the installed iOS simulator runtime") from e
+    udid = result.stdout.strip()
+    if not dshm.SIM_UDID.fullmatch(udid):
+        raise dshm.PlanError("invalid simulator identifier from simctl. Next: check the installed iOS runtime")
+    return udid
 
 
 def exports(row):
@@ -125,8 +137,11 @@ def assign(sid, branch_name, block, root):
         raise dshm.PlanError(f"{sid} is not a node of {plandata.PLAN_FILE}. "
                              f"Next: the coordinator adds it with `scripts/plan add`")
     if old and old[-1]["branch"] == branch_name:
-        simulator(old[-1]["sim"], create=True)
-        return old[-1], False
+        # A standalone --assign can write its row before plan assign records the branch.
+        committed = dshm.parse_registry(registry_text(root, prefer_main=True))
+        if nodes[sid].get("branch") == branch_name or old[-1] not in committed:
+            simulator(old[-1]["sim"])
+            return old[-1], False
     active = {n.get("branch") for n in nodes.values() if n.get("status", "todo") in dshm.ACTIVE}
     held = {int(r["slot"]) for r in rows if r["branch"] in active}
     for slot in range(0, dshm.MAX_SLOT + 1):
@@ -138,13 +153,10 @@ def assign(sid, branch_name, block, root):
         raise dshm.PlanError("no free slot (all held by active slices or listening)")
     first = highest_decision(root, rows) + 1
     decisions = f"D{first}" if block == 1 else f"D{first}-D{first + block - 1}"
+    udid = create_simulator(f"dshm-{sid}-{first}")
     row = dict(id=sid, branch=branch_name, slot=str(slot), bridge=str(ports[0]), web=str(ports[1]),
-               bridge2=str(ports[2]), web2=str(ports[3]), sim=f"dshm-{sid}",
-               home=f"~/.dshm/home-{sid.lower()}", decisions=decisions, assigned=dshm.today())
-    if old:
-        row["sim"] += f"-{first}"
-        row["home"] += f"-{first}"
-    simulator(row["sim"], create=True)
+               bridge2=str(ports[2]), web2=str(ports[3]), sim=udid,
+               home=f"~/.dshm/home-{sid.lower()}-{udid}", decisions=decisions, assigned=dshm.today())
     text = path.read_text()
     if not text.endswith("\n"):
         text += "\n"

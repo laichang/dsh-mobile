@@ -183,12 +183,15 @@ const REFUSED = 'run-plan: refused: evidence changed by the slice'
 
 function commands(a) {
   const id = a.slice
-  const err = `/tmp/dshm-merge-${id}-r${a.round}.err`
+  const review = `review=$(scripts/brief ${id} --round ${a.round} --base ${q(a.into)} --review-path)`
+  const err = '"$review.merge-err"'
   return {
     brief: `scripts/brief ${id} --round ${a.round} --base ${q(a.into)} --out ${q(briefPath(a))}`,
-    verify: `scripts/plan verify ${id} --base ${q(a.into)} 1>&2 && scripts/plan passed ${id} --base ${q(a.into)} --json`,
+    verify: `${review} || exit 1; scripts/plan verify ${id} --base ${q(a.into)} >"$review" 2>&1 || exit $?; ` +
+      `result=$(scripts/plan passed ${id} --base ${q(a.into)} --json 2>>"$review"); e=$?; printf '%s\\n' "$result" | tee -a "$review"; exit $e`,
     // stderr goes to a file; a refusal for changed evidence prints one marker line and the files.
-    merge: `scripts/plan merge ${id} --into ${q(a.into)} 2>${err}; e=$?; ` +
+    merge: `${review} || exit 1; result=$(scripts/plan merge ${id} --into ${q(a.into)} 2>${err}); e=$?; ` +
+      `cat ${err} >>"$review"; printf '%s\\n' "$result" | tee -a "$review"; ` +
       `if grep -q 'evidence changed by the slice' ${err}; then echo '${REFUSED}'; sed -n 's/^  \\(.*\\)$/changed: \\1/p' ${err}; fi; exit $e`,
   }
 }
@@ -223,7 +226,7 @@ async function runRound(a, { agent, log, onMain }) {
   const id = a.slice
   const tag = `${id} r${a.round}`
 
-  const brief = await onMain(() => agent(shellPrompt(a, `scripts/plan assign ${id} --schedule --commit 1>&2 && ${cmd.brief}`), { label: `brief ${tag}`, phase: 'Brief', schema: SHELL_SCHEMA, effort: 'low' }))
+  const brief = await onMain(() => agent(shellPrompt(a, `scripts/plan assign ${id} --schedule --round ${a.round} --commit 1>&2 && ${cmd.brief}`), { label: `brief ${tag}`, phase: 'Brief', schema: SHELL_SCHEMA, effort: 'low' }))
   if (!brief || brief.exit !== 0) return { end: 'error', why: `brief: exit ${brief ? brief.exit : 'none'}` }
 
   const report = await agent(buildPrompt(a), { label: `build ${tag}`, phase: 'Build', schema: BUILD_SCHEMA })
@@ -264,6 +267,7 @@ async function runRound(a, { agent, log, onMain }) {
 // changed evidence: the Workflow never passes --allow-changed-evidence.
 async function runNode(st, id, ctx) {
   const first = st.rounds[id] || 1
+  if (first > MAX_ROUNDS) return { status: 'blocked', round: MAX_ROUNDS, why: '3 build rounds already used' }
   let prev = null
   for (let round = first, n = 1; ; round++, n++) {
     const r = await runRound({ slice: id, round, into: st.into, repo: st.repo }, ctx)
@@ -271,7 +275,7 @@ async function runNode(st, id, ctx) {
     if (r.end === 'review') return { status: 'review', round, files: r.files }
     if (r.end === 'outside' || r.end === 'error') return { status: 'blocked', round, why: short(r.why) }
     if (prev !== null && r.evidence === prev) return { status: 'blocked', round, why: short(`same evidence in 2 rounds: ${r.evidence}`) }
-    if (n >= MAX_ROUNDS) return { status: 'blocked', round, why: short(`${MAX_ROUNDS} rounds: ${r.evidence}`) }
+    if (round >= MAX_ROUNDS) return { status: 'blocked', round, why: short(`${MAX_ROUNDS} rounds: ${r.evidence}`) }
     prev = r.evidence
   }
 }

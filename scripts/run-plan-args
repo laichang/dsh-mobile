@@ -12,7 +12,7 @@ The plan comes from plan/ as committed at the tip of --into (the merge step uses
   fixes    --fix S2:3 = item 3 of S2 is a fix (an item with passed: false). S2 runs again; each
            node that has not started and shares a file or a screen with the item waits for it.
   started  --started: nodes that the stopped run had started (a fix does not hold them)
-  rounds   --round S2=2: the first round of S2 (default 1)
+  rounds   next build round after the last committed round; --round ID=N may advance it
   repo     default: the top of this checkout
 A graph change: stop the run, then resume it with resumeFromRunId and the new output of this.
 """
@@ -28,13 +28,26 @@ import plandata  # noqa: E402
 HISTORY = 500    # first-parent commits of --into that are searched for merge results
 
 
-def merged_ids(root, into, ids):
+def merged_ids(root, into, nodes):
     """The IDs whose merge-step results are on a commit of the first-parent history of into."""
     out = set()
-    log = plandata._git(root, "rev-list", "--first-parent", "--merges", f"--max-count={HISTORY}", into).stdout.split()
-    for c in log:
-        for sid in ids:
-            if sid in out:
+    heads = {}
+    for n in nodes:
+        if n.get("merge") and n.get("status") in ("done", "review"):
+            if plandata._git(root, "merge-base", "--is-ancestor", n["merge"], into).returncode == 0:
+                out.add(n["id"])
+                continue
+        head = plandata.branch_head(root, n["branch"])
+        if head:
+            heads[n["id"]] = head
+    # The merge step can finish before its bookkeeping commit.
+    if not heads:
+        return out
+    log = plandata._git(root, "log", "--first-parent", "--merges", "--format=%H %P", f"-{HISTORY}", into)
+    for line in log.stdout.splitlines():
+        c, _, *parents = line.split()
+        for sid, head in heads.items():
+            if sid in out or head not in parents:
                 continue
             res = plandata.results_for(root, sid, c)
             if not res:
@@ -70,7 +83,6 @@ def main():
     except plandata.DataError as e:
         print(f"run-plan-args: {e}", file=sys.stderr)
         return 1
-    ids = [n["id"] for n in plan["nodes"]]
 
     def known(sid, what):
         if sid not in items:
@@ -87,13 +99,13 @@ def main():
             raise SystemExit(f"run-plan-args: --fix {f}: {sid} has no item {i}")
         it = items[sid][int(i)]
         fixes.append({"node": sid, "item": int(i), "files": it["files"], "screens": it["screens"]})
-    rounds = {}
+    rounds = {n["id"]: n["round"] + 1 for n in plan["nodes"] if "round" in n}
     for r in a.round:
         sid, _, n = r.partition("=")
         if not n.isdigit() or int(n) < 1:
             raise SystemExit(f"run-plan-args: --round {r}: ID=N, N 1 or more")
-        rounds[known(sid, "--round")] = int(n)
-    done = merged_ids(root, a.into, ids) | {known(s, "--done") for s in a.done}
+        rounds[known(sid, "--round")] = max(rounds.get(sid, 1), int(n))
+    done = merged_ids(root, tip, plan["nodes"]) | {known(s, "--done") for s in a.done}
     out = {"graph": graph, "scope": scope, "into": a.into, "repo": str(Path(root).resolve()),
            "done": [s for s in graph["order"] if s in done], "fixes": fixes,
            "started": [known(s, "--started") for s in a.started], "rounds": rounds}

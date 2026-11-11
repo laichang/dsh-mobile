@@ -1,0 +1,23 @@
+{
+  "id": "S11",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "A test reproduces the reported bug and passes with the fix",
+      "files": [],
+      "screens": [],
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/plan-test",
+        "cmd:scripts/run-plan-test"
+      ]
+    },
+    {
+      "tier": "human",
+      "text": "The user no longer sees the bug",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

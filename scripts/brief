@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """The brief of one plan node: the one packet a slice agent reads instead of the docs.
 
-  scripts/brief <ID> [--round N] [--base REF] [--out PATH] [--preview]
+  scripts/brief <ID> [--round N] [--base REF] [--out PATH] [--preview] [--review-path]
 
 It reads plan/plan.json and plan/<ID>.json, and the short facts it quotes from AGENTS.md and
 ARCHITECTURE.md, as committed at REF (default HEAD; the merge target), never an uncommitted edit.
+--review-path prints the review destination for this assignment and round.
 It writes the brief to PATH (default /tmp/dshm-brief/<ID>-r<N>.md) and prints the path.
 
 The brief has: the node, its branch and worktree; its Why, Cuts and Not (from its node in
@@ -286,6 +287,11 @@ def demos_of(items, modes):
     return seen
 
 
+def review_path(root, branch, rnd):
+    common = dshm.git("rev-parse", "--path-format=absolute", "--git-common-dir", cwd=root)
+    return Path(common, "dshm-reviews", branch, f"r{rnd}.txt")
+
+
 def brief(root, sid, rnd, base, preview=False):
     plan, items = plandata.load_at(root, base)
     node = next((n for n in plan["nodes"] if n["id"] == sid), None)
@@ -311,10 +317,14 @@ def brief(root, sid, rnd, base, preview=False):
         branch,
         f"- Worktree: {where}",
         f"- Plan data: `plan/{sid}.json` at `{base}` ({tip[:12]})",
-        "",
-        "## Scope",
-        "",
     ]
+    if rnd > 1 and node["branch"]:
+        previous = review_path(root, node["branch"], rnd - 1)
+        if previous.is_file():
+            lines.append(f"- Previous review (round {rnd - 1}): `{previous}`")
+        else:
+            lines.append(f"- No review was recorded for round {rnd - 1}. Inspect the branch and its verification results.")
+    lines += ["", "## Scope", ""]
     if sc is None:
         lines.append(f"The node has no Why, Cuts or Not in plan/plan.json: the items are the whole scope.")
     else:
@@ -423,11 +433,22 @@ def main():
     ap.add_argument("--round", type=int, default=1)
     ap.add_argument("--base", default="HEAD")
     ap.add_argument("--out")
+    ap.add_argument("--review-path", action="store_true", help="print the review destination for this round")
     ap.add_argument("--preview", action="store_true", help="also for a node with no branch yet")
     a = ap.parse_args()
     try:
         dshm.check_id(a.id)
         root = dshm.toplevel()
+        if a.round < 1:
+            raise plandata.DataError("round must be a positive integer")
+        if a.review_path:
+            branch = plandata.node_at(root, a.base, a.id)["branch"]
+            if not branch:
+                raise plandata.DataError(f"{a.id} has no assigned branch")
+            path = review_path(root, branch, a.round)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            print(path)
+            return 0
         text = brief(root, a.id, a.round, a.base, a.preview)
     except (plandata.DataError, dshm.PlanError) as e:
         print(f"brief: {e}", file=sys.stderr)

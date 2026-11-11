@@ -41,10 +41,10 @@
         "T0"
       ],
       "branch": "claude/s2-pre-m3",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "c0a4b93",
       "why": "M3 changes shared demo helpers and can span more than one workflow run. Closes #68",
       "cuts": "Use scripts/lib/plandata.py, scripts/plan, scripts/run-plan-args and .claude/workflows/run-plan.js. Extend scripts/plan-test and scripts/run-plan-test. Coordinate the persisted round state with the next slice for fresh-session handoff.",
       "not": "",
@@ -58,16 +58,17 @@
       "needs": [
         "S2"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s3-a1e6a14",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
-      "merge": null,
+      "next": "—",
+      "merge": "2502d13",
       "why": "A new builder can act on the previous review without inheriting the old conversation. Closes #70",
       "cuts": "Keep the existing fresh-agent path in .claude/workflows/run-plan.js. Update scripts/brief and .agents/skills/run-plan/SKILL.md for normal and fallback coordination. Couple the handoff test to the persisted rounds from the previous slice.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S4",
@@ -76,16 +77,17 @@
       "needs": [
         "S2"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s4-0abf811",
+      "status": "review",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "User reviews, applies, commits and merges protected acceptance hook patch on claude/s4-0abf811",
       "merge": null,
       "why": "The M3 physical iPhone check needs reliable human acceptance and an unambiguous terminal prompt. Closes #67",
       "cuts": "Use the existing command parser in the Claude/Codex hook path and adjust the confirmation in scripts/plan. Update .claude/hooks/plan-guard, its header, scripts/refusal-test, scripts/plan-test and their duplicated terminal-test helper. The user reviews, commits and merges protected hook changes.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S5",
@@ -95,9 +97,9 @@
         "T0"
       ],
       "branch": "claude/s5-pre-m3",
-      "status": "doing",
+      "status": "review",
       "updated": "2026-11-11",
-      "next": "Re-run full demo with the merged Swift fix; then review protected hook",
+      "next": "Real demo passed; user applies, commits and merges reviewed pre-commit hook",
       "merge": null,
       "why": "M3 migrates real-bridge demos and needs failures to retain their exit status and short summaries. Closes #69",
       "cuts": "Cover .githooks/pre-commit, scripts/check-wrappers, scripts/demo/bridge-errors.sh, the applicable wrapper and scripts/wrap-test. Keep the existing listener-error test selection and real-bridge UI path. The user reviews, commits and merges the protected pre-commit change.",
@@ -112,16 +114,17 @@
       "needs": [
         "S3"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s6-b7a5515",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "The next architecture change will move Swift feature code and demo helpers. Keep the source and slice brief clear before that move. Closes #66",
       "cuts": "Start with scripts/demo/pairing.sh, scripts/demo/all-tasks.sh, scripts/demo/session-page.sh and ios/dsh-mobile/Features/Transcript/StructuredTranscriptView.swift. Inspect ios/ and scripts/ for comments that merely repeat code. Add the convention to AGENTS.md and scripts/brief after the handoff work lands.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S7",
@@ -184,6 +187,24 @@
       "next": "User accepts 1 [human] item (pending)",
       "merge": "8a16109",
       "why": "The user reported a bug on 2026-11-11: Clean S5 demo twice stops in unchanged FakeTurns.swift:16 with compiler unable to type-check the Int64 duration; preserve 9,435,000 ms and complete OfflineReasonsTests.",
+      "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
+      "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S11",
+      "kind": "slice",
+      "title": "Fix: Limit cleanup to resources owned by the recorded assignment",
+      "needs": [
+        "T0"
+      ],
+      "branch": "claude/s11-owned-cleanup",
+      "status": "review",
+      "updated": "2026-11-11",
+      "next": "User accepts 1 [human] item (pending)",
+      "merge": "d86e7a3",
+      "why": "The user reported a bug on 2026-11-11: On merged S10, cleanup deleted two historical branches (restored), old /tmp directories, and reused a prior device/home when no old registry row existed. Scope cleanup to verifiable resources of this assignment and preserve unknown older ones; test against legacy state.",
       "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
       "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
       "demo": null,
@@ -266,6 +287,41 @@
       "date": "2026-11-11",
       "title": "S10 merged",
       "body": "Merged as `8a16109`; the plan/ rules hold on the merge commit. 1 open [human] item(s), so S10 is `review`. Pending 3."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S11 assigned",
+      "body": "Branch `claude/s11-owned-cleanup`, worktree `/Users/bytedance/dsh-mobile-s11`, simulator `dshm-S11`, DSHM_HOME `~/.dshm/home-s11`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S11)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S11 merged",
+      "body": "Merged as `d86e7a3`; the plan/ rules hold on the merge commit. 1 open [human] item(s), so S11 is `review`. Pending 4."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S2 merged",
+      "body": "Merged as `c0a4b93`; the plan/ rules hold on the merge commit. No open [human] items, so S2 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S3 assigned",
+      "body": "Branch `claude/s3-a1e6a14`, simulator `D14B36C0-6B79-48E0-9B8B-1A64A5DA6DED`, DSHM_HOME `~/.dshm/home-s3-D14B36C0-6B79-48E0-9B8B-1A64A5DA6DED`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S3)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S4 assigned",
+      "body": "Branch `claude/s4-0abf811`, simulator `8892F9BC-3FB7-4971-8156-C178D4F50021`, DSHM_HOME `~/.dshm/home-s4-8892F9BC-3FB7-4971-8156-C178D4F50021`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S4)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S3 merged",
+      "body": "Merged as `2502d13`; the plan/ rules hold on the merge commit. No open [human] items, so S3 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S6 assigned",
+      "body": "Branch `claude/s6-b7a5515`, simulator `13D75C72-5CB6-42E8-BC1D-36737D41CE06`, DSHM_HOME `~/.dshm/home-s6-13D75C72-5CB6-42E8-BC1D-36737D41CE06`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S6)\"` exports them."
     }
   ],
   "pending": [
@@ -292,6 +348,14 @@
       "item": "The user no longer sees the bug",
       "branch": "main",
       "ref": "8a16109"
+    },
+    {
+      "n": 4,
+      "slice": "S11",
+      "kind": "[human]",
+      "item": "The user no longer sees the bug",
+      "branch": "main",
+      "ref": "d86e7a3"
     }
   ]
 }

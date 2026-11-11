@@ -100,6 +100,11 @@
         "updated": {
           "type": "string"
         },
+        "round": {
+          "type": "integer",
+          "enum": [1, 2, 3],
+          "description": "Last build round reserved by the coordinator."
+        },
         "next": {
           "type": "string"
         },

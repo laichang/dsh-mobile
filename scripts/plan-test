@@ -203,6 +203,9 @@ prev=$( { grep -oE '^\| D[0-9]+ \|' ARCHITECTURE.md | grep -oE '[0-9]+'
           awk -F'\t' '$1!="id" && $1!~/^#/ && NF>9 {n=$10; sub(/.*D/, "", n); print n+0}' scripts/resources.tsv; } | sort -n | tail -1)
 refused "assign with a branch that does not name the slice is refused" scripts/plan assign S90 --branch claude/other
 lacks "a refused assign writes no registry row" scripts/resources.tsv "claude/other"
+mkdir -p "$DSHM_TEST_DEVICES"
+legacy_sim=AAAAAAAA-0000-0000-0000-000000000090
+echo dshm-S90 > "$DSHM_TEST_DEVICES/$legacy_sim"
 expect "assign S90" 0 scripts/plan assign S90 --branch claude/s90-test --worktree .claude/worktrees/s90 --from abc1234 --commit
 scripts/status --fast > "$T/active-status.out" && ok "status runs with an assigned slice" || bad "status failed for an assigned slice"
 line "status prints the assigned slice's next action" "$T/active-status.out" "     next: Slice owner builds"
@@ -213,19 +216,19 @@ pyok "plan.json: S90 is doing on its branch" 'N["S90"]["status"] == "doing" and 
 pyok "plan log entry for the assignment" 'P["log"][-1]["title"] == "S90 assigned" and P["log"][-1]["body"].startswith("Branch `claude/s90-test`, worktree `.claude/worktrees/s90` (from `abc1234`)")'
 clean "assign --commit commits plan/ and the registry" plan scripts/resources.tsv
 eval "$(scripts/slice-env S90)"
-[ "$DSHM_SIM" = dshm-S90 ] && ok "slice-env exports the simulator" || bad "slice-env DSHM_SIM=$DSHM_SIM"
+[ -f "$DSHM_TEST_DEVICES/$DSHM_SIM" ] && [ "$DSHM_SIM" != "$legacy_sim" ] && ok "slice-env exports the simulator" || bad "slice-env DSHM_SIM=$DSHM_SIM"
 slot=$(awk -F'\t' '$1=="S90"{print $3}' scripts/resources.tsv)
 case "$slot" in 3|5|6) bad "S90 took a slot held by an active slice ($slot)";; *) ok "S90 slot $slot is not held";; esac
 expect "assign S90 again keeps its row" 0 scripts/plan assign S90 --branch claude/s90-test
 [ "$(grep -c '^S90	' scripts/resources.tsv)" = 1 ] && ok "still one S90 row" || bad "two S90 rows"
 pyok "assign again says: same resources" 'P["log"][-1]["body"].endswith("Same resources as before.")'
-[ "$(ls "$DSHM_TEST_DEVICES" | wc -l)" -eq 1 ] && ok "retry reuses the only device" || bad "extra simulator"
+[ "$(ls "$DSHM_TEST_DEVICES" | wc -l)" -eq 2 ] && ok "retry reuses its own device" || bad "extra simulator"
 mkdir -p "$T/build-bin"
 echo '#!/bin/bash' > "$T/build-bin/xcodebuild"
 echo 'printf "%s\n" "$@" > "$DSHM_TEST_XC_ARGS"' >> "$T/build-bin/xcodebuild"
 chmod +x "$T/build-bin/xcodebuild"
 expect "build with the assigned device" 0 env PATH="$T/build-bin:$PATH" DSHM_TEST_XC_ARGS="$T/xc-args" scripts/xc build
-has "the build selected the assigned device" "$T/xc-args" "platform=iOS Simulator,name=$DSHM_SIM"
+has "the build selected the assigned device" "$T/xc-args" "platform=iOS Simulator,id=$DSHM_SIM"
 refused "missing build destination gives a next step" env DSHM_SIM=dshm-missing scripts/xc build
 first_port=$DSHM_BRIDGE_PORT
 # A new requirement can reuse an ID while the registry retains its earlier branch.
@@ -234,9 +237,9 @@ cat "$T/old-row" >> scripts/resources.tsv
 expect "assign S91 (next block)" 0 scripts/plan assign S91 --branch claude/s91-test
 s91d=$(awk -F'\t' '$2=="claude/s91-test"{print $10}' scripts/resources.tsv)
 [ "$s91d" = "D$((prev + 4))-D$((prev + 6))" ] && ok "S91 block follows S90 ($s91d)" || bad "S91 decisions $s91d"
-(eval "$(scripts/slice-env S91)" && [[ "$DSHM_SIM" == dshm-S91-* && "$DSHM_BRIDGE_PORT" != "$first_port" ]]) \
+(eval "$(scripts/slice-env S91)" && [[ -f "$DSHM_TEST_DEVICES/$DSHM_SIM" && "$DSHM_BRIDGE_PORT" != "$first_port" ]]) \
   && ok "fresh assignment avoids the earlier device and the active slot" || bad "stale assignment"
-[ "$(ls "$DSHM_TEST_DEVICES" | wc -l)" -eq 2 ] && ok "parallel nodes own distinct devices" || bad "expected two devices"
+[ "$(ls "$DSHM_TEST_DEVICES" | wc -l)" -eq 3 ] && ok "parallel nodes own distinct devices" || bad "expected two assigned devices plus the legacy device"
 git checkout -q -- plan scripts/resources.tsv
 expect "row S90 blocked" 0 scripts/plan row S90 blocked --next "Waits for the user"
 pyok "row changes the state and the next step" 'N["S90"]["status"] == "blocked" and N["S90"]["next"] == "Waits for the user"'
@@ -291,7 +294,8 @@ M=$(git rev-parse HEAD | cut -c1-7)
 # worktrees, branches and DSHM_HOME. claude/s90-dirty is merged but has an untracked file;
 # claude/s90-extra has a commit that is not merged. dshm-S900, dshm-s900-dd and dshm-s9-dd belong
 # to other slices.
-mkdir -p "$T/bin" "$T/home/.dshm/home-s90/profile" "$T/home/.dshm/runtime" "$T/owners"
+owned_home="$T/home/.dshm/home-s90-$DSHM_SIM"
+mkdir -p "$T/bin" "$owned_home" "$T/home/.dshm/home-s90/profile" "$T/home/.dshm/runtime" "$T/owners"
 for d in dshm-s90 dshm-s90-dd dshm-s90-demo dshm-s900-dd dshm-s9-dd dshm-state; do mkdir -p "$T/tmp/$d"; done
 echo log > "$T/tmp/dshm-s90-run.log"
 git worktree add -q "$T/wt-s90" claude/s90-test
@@ -299,7 +303,8 @@ git worktree add -q -b claude/s90-dirty "$T/wt-s90-dirty" "$M"
 echo wip > "$T/wt-s90-dirty/wip.txt"
 git worktree add -q -b claude/s90-extra "$T/wt-s90-extra" "$M"
 (cd "$T/wt-s90-extra" && echo x > extra.txt && git add extra.txt && git commit -qm "not merged")
-U90=AAAAAAAA-0000-0000-0000-000000000090; U900=AAAAAAAA-0000-0000-0000-000000000900
+git branch codex/s90-historical "$M"
+U90=$DSHM_SIM; U900=AAAAAAAA-0000-0000-0000-000000000900
 cat > "$T/bin/xcrun" <<EOF
 #!/bin/bash
 echo "\$*" >> "$T/xcrun.log"
@@ -307,6 +312,7 @@ case "\$*" in
   "simctl list devices -j") cat <<'JSON'
 {"devices": {"com.apple.CoreSimulator.SimRuntime.iOS-26-4": [
   {"name": "dshm-S90", "udid": "$U90", "state": "Booted", "dataPathSize": 2000000000},
+  {"name": "dshm-S90", "udid": "$legacy_sim", "state": "Shutdown"},
   {"name": "dshm-S900", "udid": "$U900", "state": "Shutdown", "dataPathSize": 1000000000},
   {"name": "iPhone 17 Pro", "udid": "AAAAAAAA-0000-0000-0000-000000000001", "state": "Shutdown"}]}}
 JSON
@@ -338,20 +344,13 @@ refused "merged on a commit that is not a merge is refused" "${SBX[@]}" scripts/
 
 echo "cleanup after the merge"
 o="$T/merged.out"; P="plan: cleanup:"
-line "dry: the simulator of the slice" "$o" "$P would remove simulator dshm-S90 ($U90)"
+line "dry: the simulator of the slice" "$o" "$P would remove simulator $U90"
 lacks "dry: not the simulator of another slice" "$o" "dshm-S900"
-line "dry: /tmp/dshm-s90" "$o" "$P would remove $T/tmp/dshm-s90"
-line "dry: /tmp/dshm-s90-dd" "$o" "$P would remove $T/tmp/dshm-s90-dd"
-line "dry: /tmp/dshm-s90-demo" "$o" "$P would remove $T/tmp/dshm-s90-demo"
-line "dry: /tmp/dshm-s90-run.log" "$o" "$P would remove $T/tmp/dshm-s90-run.log"
-lacks "dry: not /tmp/dshm-s900-dd" "$o" "dshm-s900-dd"
-lacks "dry: not /tmp/dshm-s9-dd" "$o" "dshm-s9-dd"
+lacks "dry: legacy temporary files stay" "$o" "$T/tmp/dshm-s90"
+lacks "dry: a historical branch stays" "$o" "codex/s90-historical"
 line "dry: the merged, clean worktree" "$o" "$P would remove worktree $T/wt-s90 (claude/s90-test)"
 line "dry: its branch" "$o" "$P would remove branch claude/s90-test"
-line "dry: DSHM_HOME" "$o" "$P would remove DSHM_HOME $T/home/.dshm/home-s90"
-line "a worktree with an untracked file stays" "$o" "$P left worktree $T/wt-s90-dirty (claude/s90-dirty): 1 uncommitted or untracked file(s)"
-has "a branch that is not merged stays, with its worktree" "$o" "$P left branch claude/s90-extra and worktree $T/wt-s90-extra: "
-lacks "dry: not the dirty branch" "$o" "would remove branch claude/s90-dirty"
+line "dry: DSHM_HOME" "$o" "$P would remove DSHM_HOME $owned_home"
 still "dry mode removes nothing"
 "${SBX[@]}" scripts/plan merged S90 "$M" --keep > "$T/keep.out" 2>&1; git checkout -q -- plan
 has "--keep preserves already recorded bookkeeping" "$T/keep.out" "already recorded"
@@ -361,17 +360,10 @@ still "--keep removes nothing"
 line "--dry-run also makes the cleanup dry" "$T/dry-run.out" "$P would remove branch claude/s90-test"
 clean "--dry-run changes no plan file" plan
 still "--dry-run removes nothing"
-bash -c 'exec -a "xcodebuild -derivedDataPath $1/tmp/dshm-s90-dd" sleep 60' _ "$T" & busy=$!
-for _ in 1 2 3 4 5 6 7 8 9 10; do ps -axo command= | grep -q "^xcodebuild -derivedDataPath $T/tmp/dshm-s90-dd" && break; sleep 0.2; done
-"${SBX[@]}" DSHM_CLEANUP_DRY=1 scripts/plan cleanup S90 > "$T/busy.out" 2>&1
-kill "$busy" 2>/dev/null; wait "$busy" 2>/dev/null
-has "a /tmp path that a process uses stays" "$T/busy.out" "$P left $T/tmp/dshm-s90-dd: a process uses it (xcodebuild -derivedDataPath "
-line "the other /tmp paths of the slice still go" "$T/busy.out" "$P would remove $T/tmp/dshm-s90-demo"
-line "/tmp/dshm-s90 is not /tmp/dshm-s90-dd" "$T/busy.out" "$P would remove $T/tmp/dshm-s90"
-echo "$$ test" > "$T/owners/dshm-S90"
+echo "$$ test" > "$T/owners/$U90"
 "${SBX[@]}" DSHM_CLEANUP_DRY=1 scripts/plan cleanup S90 > "$T/owned.out" 2>&1
-line "a simulator that a running demo owns stays" "$T/owned.out" "$P left simulator dshm-S90: a demo or review (pid $$) owns it"
-rm -f "$T/owners/dshm-S90"
+line "a simulator that a running demo owns stays" "$T/owned.out" "$P left simulator $U90: a demo or review (pid $$) owns it"
+rm -f "$T/owners/$U90"
 safe=$(HOME="$T/home" python3 -c 'import sys; sys.path.insert(0, "scripts/lib"); import dshm
 print(" ".join(str(dshm.safe_slice_home(h) is not None) for h in sys.argv[1:]))' \
   "~/.dshm/home-s90" "~/.dshm" "~/.dshm/runtime" "~/.dshm/runtime/x" "~/.dshm/../x" "/tmp/x" "")
@@ -384,19 +376,31 @@ git checkout -q main; git branch -q -D claude/s90-try
 "${SBX[@]}" DSHM_FREE_KB=$((12 * 1024 * 1024)) scripts/status --fast > "$T/status.out" 2>&1 \
   && ok "status runs" || bad "status failed: $(cat "$T/status.out")"
 has "status: disk line" "$T/status.out" "disk: 12.0 GB free on "
-has "status: counts the dshm simulators" "$T/status.out" "dshm simulators 2 (3.0 GB)"
+has "status: counts the dshm simulators" "$T/status.out" "dshm simulators 3 (3.0 GB)"
 has "status: counts the worktrees" "$T/status.out" "worktrees 3"
 has "status: counts /tmp/dshm-*" "$T/status.out" "$T/tmp/dshm-* 7"
 has "status: attention below the floor" "$T/status.out" "12.0 GB free, below the floor of 30 GB"
-has "status: attention for the leftovers of a merged slice" "$T/status.out" "S90 is review, but simulator dshm-S90, 3 worktrees, 4 $T/tmp/dshm-s90* paths remain: scripts/plan cleanup S90"
+has "status: attention for the leftovers of a merged slice" "$T/status.out" "S90 is review, but simulator $U90, 1 worktree remain: scripts/plan cleanup S90"
 "${SBX[@]}" DSHM_FREE_KB=$((31 * 1024 * 1024)) scripts/status --fast > "$T/status.out" 2>&1
 lacks "status: no floor attention above the floor" "$T/status.out" "below the floor"
+cp scripts/resources.tsv "$T/registry"
+awk -F'	' '$1!="S90"' "$T/registry" > scripts/resources.tsv
+"${SBX[@]}" scripts/plan cleanup S90 > "$T/no-row.out"
+still "cleanup without a registry row leaves all resources"
+awk -F'	' -v OFS='	' '$1=="S90" {$8="dshm-S90";$9="~/.dshm/home-s90"} {print}' "$T/registry" > scripts/resources.tsv
+"${SBX[@]}" DSHM_CLEANUP_DRY=1 scripts/plan cleanup S90 > "$T/legacy.out"
+lacks "a legacy row cannot delete its device by name" "$T/legacy.out" "would remove simulator"
+lacks "a legacy row cannot delete a shared home" "$T/legacy.out" "would remove DSHM_HOME"
+mv "$T/registry" scripts/resources.tsv
 "${SBX[@]}" scripts/plan cleanup S90 > "$T/cleanup.out" 2>&1 && ok "cleanup S90" || bad "cleanup S90 failed: $(cat "$T/cleanup.out")"
 has "simulator shut down" "$T/xcrun.log" "simctl shutdown $U90"
 has "simulator deleted" "$T/xcrun.log" "simctl delete $U90"
 lacks "the simulator of another slice stays" "$T/xcrun.log" "$U900"
-gone=""; for f in dshm-s90 dshm-s90-dd dshm-s90-demo dshm-s90-run.log; do [ -e "$T/tmp/$f" ] && gone="$gone $f"; done
-[ -z "$gone" ] && ok "/tmp/dshm-s90* removed" || bad "still there:$gone"
+for f in dshm-s90 dshm-s90-dd dshm-s90-demo dshm-s90-run.log; do
+  [ -e "$T/tmp/$f" ] && ok "unregistered $f stays" || bad "removed $f"
+done
+git show-ref --verify --quiet refs/heads/codex/s90-historical && ok "historical merged branch stays" || bad "removed historical branch"
+lacks "the legacy device with the reused name stays" "$T/xcrun.log" "$legacy_sim"
 [ -d "$T/tmp/dshm-s900-dd" ] && [ -d "$T/tmp/dshm-s9-dd" ] && [ -d "$T/tmp/dshm-state" ] \
   && ok "other /tmp/dshm-* dirs stay" || bad "another /tmp/dshm-* dir was removed"
 [ ! -e "$T/wt-s90" ] && ok "merged clean worktree removed" || bad "$T/wt-s90 still there"
@@ -405,10 +409,10 @@ git rev-parse -q --verify refs/heads/claude/s90-test >/dev/null && bad "claude/s
   && ok "dirty worktree and its branch stay" || bad "dirty worktree or branch removed"
 [ -f "$T/wt-s90-extra/extra.txt" ] && git rev-parse -q --verify refs/heads/claude/s90-extra >/dev/null \
   && ok "unmerged worktree and its branch stay" || bad "unmerged worktree or branch removed"
-[ ! -e "$T/home/.dshm/home-s90" ] && [ -d "$T/home/.dshm/runtime" ] && ok "DSHM_HOME removed, ~/.dshm/runtime stays" \
+[ ! -e "$owned_home" ] && [ -d "$T/home/.dshm/home-s90/profile" ] && [ -d "$T/home/.dshm/runtime" ] && ok "DSHM_HOME removed, ~/.dshm/runtime stays" \
   || bad "DSHM_HOME not removed, or runtime removed"
 line "cleanup prints what it removed" "$T/cleanup.out" "$P removed worktree $T/wt-s90 (claude/s90-test)"
-has "cleanup says what is left" "$T/cleanup.out" "$P 2 thing(s) left"
+
 expect "slot of a merged slice is free again" 0 scripts/plan assign S91 --branch claude/s91-test
 s91=$(awk -F'\t' '$1=="S91"{print $3}' scripts/resources.tsv)
 busy() { for p in $((47810 + $1)) $((3283 + $1)) $((47840 + $1)) $((3313 + $1)); do
@@ -554,6 +558,12 @@ has "a failing check: its exit code is kept" "$T/p3.out" "check.sh one → 1"
 scripts/plan verify T0 >/dev/null 2>&1
 scripts/plan passed T0 > "$T/p4.out" 2>&1; has "all checks pass on the head: passed" "$T/p4.out" "passed: true"
 has "passed names the verifier" "$T/p4.out" "verified by scripts/plan verify"
+# A transferred verifier note has the full valid shape but no local execution record.
+receipt="$(git rev-parse --git-common-dir)/dshm-verify/$H2/T0"
+mv "$receipt" "$T/local-receipt"
+scripts/plan passed T0 > "$T/imported.out"
+has "an imported note alone cannot pass" "$T/imported.out" "passed: false"
+mv "$T/local-receipt" "$receipt"
 # A note written by hand in another shape counts for nothing.
 git notes --ref=refs/notes/dshm-verify add -f -m "{\"T0\": {\"slice\": \"T0\", \"commit\": \"$H2\", \"verifier\": \"me\", \"items\": [{\"item\": 0, \"passed\": true}, {\"item\": 1, \"passed\": true}]}}" "$H2" 2>/dev/null
 scripts/plan passed T0 > "$T/p5.out" 2>&1; has "a hand-written note without runs: not passed" "$T/p5.out" "passed: false"
@@ -594,12 +604,16 @@ echo "verify and passed: the branch from committed plan data; the merge step"
 export DSHM_VERIFY_LOGS="$T/verify-logs"
 mkdir -p plan
 printf '{"title": "Test · merge", "nodes": [{"id": "S5", "kind": "slice", "title": "merge me", "needs": [], "branch": "claude/s5-m"}]}\n' > plan/plan.json
-printf '{"id": "S5", "items": [{"tier": "auto", "text": "S5 works", "files": [], "screens": [], "passed": false, "evidence": ["cmd:s5-check.sh", "cmd:tools/s5-a4.sh"]}]}\n' > plan/S5.json
+printf '{"id": "S5", "items": [{"tier": "auto", "text": "S5 works", "files": [], "screens": [], "passed": false, "evidence": ["cmd:s5-check.sh", "cmd:tools/s5-a4.sh", "cmd:deep/checks/outer.sh"]}]}\n' > plan/S5.json
 mkdir -p checks && printf '[ "$(cat s5.txt 2>/dev/null)" = yes ]\n' > checks/s5-inner.sh
 printf '#!/bin/sh\nexec sh "$(dirname "$0")/checks/s5-inner.sh"\n' > s5-check.sh && chmod +x s5-check.sh
+mkdir -p deep/checks deep/shared
+printf '# shared check setup\n' > deep/shared/setup.sh
+printf '#!/bin/sh\n. "$(dirname "$0")/../shared/setup.sh"\n' > deep/checks/outer.sh
+chmod +x deep/checks/outer.sh
 mkdir -p tools && printf '#!/bin/sh\nexec sh "$(dirname "$0")/s5-helper"\n' > tools/s5-a4.sh && chmod +x tools/s5-a4.sh
 printf '[ "$(cat s5.txt 2>/dev/null)" = yes ]\n' > tools/s5-helper
-git add plan s5-check.sh checks tools && git commit -q -m "merge fixtures"; BASE=$(git rev-parse HEAD)
+git add plan s5-check.sh checks tools deep && git commit -q -m "merge fixtures"; BASE=$(git rev-parse HEAD)
 git branch claude/s5-m
 git worktree add -q "$T/wt-s5" claude/s5-m
 echo no > "$T/wt-s5/s5.txt" && git -C "$T/wt-s5" add s5.txt && git -C "$T/wt-s5" commit -q -m "s5: not done"
@@ -626,6 +640,11 @@ has "merge names the changed items" "$T/m3.out" "the branch changed the items"
 git -C "$T/wt-s5" reset -q --hard HEAD~1
 # Evidence that the target has and the branch changes stops the merge (also a file that the
 # check script runs); a reviewer reads that diff first.
+printf '# updated setup\n' >> "$T/wt-s5/deep/shared/setup.sh"
+git -C "$T/wt-s5" commit -q -am "update the shared setup"
+scripts/plan merge S5 --into main --dry-run > "$T/parent-helper.out" 2>&1
+has "a helper reached through its caller's parent needs review" "$T/parent-helper.out" "  deep/shared/setup.sh"
+git -C "$T/wt-s5" reset -q --hard HEAD~1
 printf 'exit 0\n' > "$T/wt-s5/checks/s5-inner.sh" && git -C "$T/wt-s5" commit -q -am "s5: the inner check passes"
 scripts/plan merge S5 --into main > "$T/m5.out" 2>&1 && bad "merge passed with a changed inner check" || ok "merge: a changed file that the check runs refuses"
 has "the refusal names the file that the check runs" "$T/m5.out" "  checks/s5-inner.sh"
