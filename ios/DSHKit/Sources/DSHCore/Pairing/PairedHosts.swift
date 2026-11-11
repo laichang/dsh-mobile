@@ -10,6 +10,8 @@ public struct PairedHost: Sendable, Equatable, Codable, Identifiable {
     /// The address that worked last first (pairing, then each reconnect), then the others from the QR.
     public var addresses: [HostEndpoint]
     public var hostKey: [UInt8]
+    public var tlsDeviceID: String?
+    public var cacheKey: String { (tlsDeviceID == nil ? "noise:" : "tls:") + id }
     public var pairedAt: Date
 
     public init(name: String, addresses: [HostEndpoint], hostKey: [UInt8], pairedAt: Date = .now) {
@@ -30,6 +32,7 @@ public protocol PairedHostStore: Sendable {
     /// Does nothing if the host is not paired.
     func update(_ host: PairedHost) throws
     func removeAll() throws
+    func remove(id: String) throws
 }
 
 /// A JSON file in Application Support.
@@ -61,6 +64,8 @@ public struct FilePairedHostStore: PairedHostStore {
         try JSONEncoder().encode(hosts).write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
 
+    public func remove(id: String) throws { try write(load().filter { $0.id != id }) }
+
     public func removeAll() throws {
         if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
     }
@@ -80,5 +85,6 @@ public final class InMemoryPairedHostStore: PairedHostStore {
             if let index = hosts.firstIndex(where: { $0.hostKey == host.hostKey }) { hosts[index] = host }
         }
     }
+    public func remove(id: String) throws { hosts.withLock { $0.removeAll { $0.id == id } } }
     public func removeAll() throws { hosts.withLock { $0 = [] } }
 }

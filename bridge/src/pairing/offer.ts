@@ -10,6 +10,7 @@
 import { KEY_LENGTH, OFFER_ID_LENGTH, SECRET_LENGTH, b64url, unb64url } from './wire.ts'
 
 export interface PairingOffer {
+  version?: 1 | 2
   hostName: string
   /** "host:port", IPv6 hosts in brackets. Tried in order. */
   addresses: string[]
@@ -22,7 +23,7 @@ export interface PairingOffer {
 
 export function offerURL(o: PairingOffer): string {
   const q = new URLSearchParams({
-    v: '1',
+    v: String(o.version ?? 1),
     n: o.hostName,
     a: o.addresses.join(','),
     k: b64url(o.hostKey),
@@ -37,7 +38,7 @@ export function parseOfferURL(url: string): PairingOffer {
   const u = new URL(url)
   if (u.protocol !== 'dshm:' || u.host !== 'pair') throw new Error('not a dshm://pair link')
   const q = u.searchParams
-  if (q.get('v') !== '1') throw new Error(`unsupported pairing link version ${q.get('v')}`)
+  if (q.get('v') !== '1' && q.get('v') !== '2') throw new Error(`unsupported pairing link version ${q.get('v')}`)
   const bytes = (key: string, length: number) => {
     const b = unb64url(q.get(key) ?? '')
     if (b.length !== length) throw new Error(`pairing link field ${key} must be ${length} bytes`)
@@ -48,6 +49,7 @@ export function parseOfferURL(url: string): PairingOffer {
   const x = Number(q.get('x'))
   if (!Number.isFinite(x) || x <= 0) throw new Error('pairing link has no expiry')
   return {
+    ...(q.get('v') === '2' ? { version: 2 as const } : {}),
     hostName: q.get('n') ?? '',
     addresses,
     hostKey: bytes('k', KEY_LENGTH),

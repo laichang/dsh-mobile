@@ -33,6 +33,7 @@ export interface Device {
 
 /** What the listener tells `scripts/pair.ts`, so it can print the right addresses. */
 export interface ListenerInfo {
+  tls?: boolean
   hostName: string
   addresses: string[]
 }

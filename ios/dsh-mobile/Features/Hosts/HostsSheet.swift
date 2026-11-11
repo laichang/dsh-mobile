@@ -210,7 +210,7 @@ struct HostChannelLabel: View {
     let host: TaskListStore.HostStatus
 
     var body: some View {
-        if host.channelName == "noise" {
+        if host.isEncrypted {
             Label { Text("End-to-end encrypted", tableName: "Hosts") } icon: { Image(systemName: "lock") }
                 .foregroundStyle(DSHTheme.green)
                 .labelStyle(.tightIcon)

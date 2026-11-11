@@ -131,7 +131,7 @@
       "not": "",
       "demo": null,
       "log": [],
-      "round": 1
+      "round": 2
     },
     {
       "id": "S6",
@@ -177,10 +177,10 @@
         "T1"
       ],
       "branch": "claude/s8-34dc87a",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "89a8c8c",
       "why": "Each enrolled phone needs independent authentication, reconnect and revocation. Closes #81.",
       "cuts": "Use a versioned QR with the bridge key fingerprint, addresses, expiry and a single-use random enrollment secret. The bridge is the only writer of offers. The CLI requests each QR over owner-only local IPC. Record the platforms on which IPC access control and certificate provisioning were verified. Issue a random per-device bearer over the pinned connection, store it under a distinct ThisDeviceOnly Keychain service, and store its digest on the bridge. Use the Authorization header on the WebSocket upgrade. Redact secrets, reject redirects and gate task, event and management access on live registry membership. If the other device-management change has already landed, rerun self-revocation from both entry points on the integrated code.\nStarting files: `bridge/src/server.ts`, `bridge/scripts/pair.ts`, `ios/DSHKit/Sources/DSHCore/Pairing/DeviceIdentity.swift`, `ios/DSHKit/Sources/DSHCore/Pairing/PairingOffer.swift`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X2.html`, `design/screens/X3.html`.",
       "not": "",
@@ -195,16 +195,17 @@
       "needs": [
         "S8"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s9-c84bb59",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "All real-network demos must exercise the production transport before cutover. Closes #82.",
       "cuts": "Add a shared TLS enrollment step in `scripts/demo/lib.sh`. Inventory the demos and fixtures that use a network listener, then migrate them to the production TLS path. Retain in-process fakes for isolated tests. S9 owns demo migration, and S10 owns release cutover and removal of the old implementations. Budget review of the shared helper and the changed evidence scripts. Follow the merge tool's actual protected-path list and record each reviewed path it requires. Keep demo and slice resources isolated during concurrent runs.\nStarting files: `scripts/demo/lib.sh`, `scripts/demo/round-trip.sh`, `scripts/demo/attachments.sh`, `scripts/demo/reconnect.sh`, `scripts/demo/revoke.sh`.\nScreen references: `design/screens/08.html`, `design/screens/04.html`, `design/screens/H.html`, `design/screens/X2.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S10",
@@ -261,6 +262,22 @@
       "demo": null,
       "log": [],
       "round": 1
+    },
+    {
+      "id": "S13",
+      "kind": "slice",
+      "title": "Fix: Match Debug and Release first launch",
+      "needs": [],
+      "branch": "claude/s13-first-pairing",
+      "status": "doing",
+      "updated": "2026-11-11",
+      "next": "Slice owner builds",
+      "merge": null,
+      "why": "The user reported a bug on 2026-11-11: An unpaired Debug install opens an offline session instead of the first pairing screen.",
+      "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
+      "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
+      "demo": null,
+      "log": []
     }
   ],
   "exit": [
@@ -362,6 +379,21 @@
       "date": "2026-11-11",
       "title": "S5 assigned",
       "body": "Branch `claude/s5-636278c`, simulator `5FAAF192-E5D2-4A60-83B4-40B8D91DF539`, DSHM_HOME `~/.dshm/home-s5-5FAAF192-E5D2-4A60-83B4-40B8D91DF539`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S5)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S13 assigned",
+      "body": "Branch `claude/s13-first-pairing`, worktree `/Users/bytedance/.codex/worktrees/debug-first-pairing/dsh-mobile`, simulator `C343FB93-4A6B-4F37-8CB6-929FDF0B0FBB`, DSHM_HOME `~/.dshm/home-s13-C343FB93-4A6B-4F37-8CB6-929FDF0B0FBB`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S13)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S8 merged",
+      "body": "Merged as `89a8c8c`; the plan/ rules hold on the merge commit. No open [human] items, so S8 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S9 assigned",
+      "body": "Branch `claude/s9-c84bb59`, simulator `4C52BC88-0A2D-45D9-8FBC-7A9A11010542`, DSHM_HOME `~/.dshm/home-s9-4C52BC88-0A2D-45D9-8FBC-7A9A11010542`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S9)\"` exports them."
     }
   ],
   "pending": [

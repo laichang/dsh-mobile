@@ -193,7 +193,7 @@ struct HostChannelRow: View {
     let host: TaskListStore.HostStatus
 
     var body: some View {
-        let encrypted = host.channelName == "noise"
+        let encrypted = host.isEncrypted
         HStack(spacing: 6) {
             Image(systemName: encrypted ? "lock.fill" : "lock.open")
                 .foregroundStyle(encrypted ? .green : .orange)

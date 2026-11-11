@@ -1,17 +1,21 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { AuditEntry } from '../gen/devices_pb.ts'
-import type { PairingStore } from '../pairing/store.ts'
+interface DeviceStore {
+  readonly dir: string
+  devices(): { id: string; pairedAt: number; lastSeenAt: number }[]
+  pairingHistory(): { id: string; atMs: number; actor: string; device: string; action: string; detail: string }[]
+}
 
 type Record = Omit<AuditEntry, '$typeName' | '$unknown'>
 
-export function deviceList(store: PairingStore, currentDeviceId: string) {
+export function deviceList(store: DeviceStore, currentDeviceId: string) {
   return { currentDeviceId, devices: store.devices().map(d => ({
     id: d.id, pairedAtMs: BigInt(d.pairedAt), lastSeenAtMs: BigInt(d.lastSeenAt),
   })) }
 }
 
-export function auditPage(store: PairingStore, beforeId: string) {
+export function auditPage(store: DeviceStore, beforeId: string) {
   const records: Record[] = store.pairingHistory().map(row => ({ ...row, atMs: BigInt(row.atMs) }))
   // The approvals service already persists the authenticated answerer and the exact tool arguments before a tool can run.
   const file = join(store.dir, 'approvals.jsonl')
