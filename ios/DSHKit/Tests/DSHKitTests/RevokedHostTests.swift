@@ -73,8 +73,11 @@ import Testing
         store.foreground()
         try await waitUntil("online") { store.hosts.first?.reachability == .online }
         let connection = try #require(store.deviceManagement(for: Self.mac))
-        let list = try await connection.revokeDevice(FakeHosts.thisDevice)
-        #expect(list.devices.map(\.id) == [FakeHosts.otherDevice])
+        let list = try await connection.listDevices()
+        let current = try #require(list.first { $0.isCurrent })
+        guard case .thisDevice = try await connection.revokeDevice(current) else {
+            Issue.record("self-revocation kept this phone"); return
+        }
         try await waitUntil("no host left") { store.hosts.isEmpty }
         #expect(store.revokedHosts.map(\.name) == [FakeHosts.macName])
         let attempts = switchable[0].connectAttempts

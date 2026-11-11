@@ -168,7 +168,7 @@ private struct DevicesSheet: View {
     var body: some View {
         NavigationStack {
             if let connection = store.deviceManagement(for: hostKey) {
-                DeviceManagementView(host: store.hosts.first { $0.key == hostKey }?.name ?? "", connection: connection)
+                DeviceManagementView(hostKey: hostKey, host: store.hosts.first { $0.key == hostKey }?.name ?? "", connection: connection)
                     .toolbar { SheetDoneButton() }
             } else {
                 Text("This host has no device management.").foregroundStyle(.secondary)
