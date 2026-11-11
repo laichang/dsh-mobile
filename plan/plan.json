@@ -175,16 +175,17 @@
       "needs": [
         "T1"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s8-34dc87a",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Each enrolled phone needs independent authentication, reconnect and revocation. Closes #81.",
       "cuts": "Use a versioned QR with the bridge key fingerprint, addresses, expiry and a single-use random enrollment secret. The bridge is the only writer of offers. The CLI requests each QR over owner-only local IPC. Record the platforms on which IPC access control and certificate provisioning were verified. Issue a random per-device bearer over the pinned connection, store it under a distinct ThisDeviceOnly Keychain service, and store its digest on the bridge. Use the Authorization header on the WebSocket upgrade. Redact secrets, reject redirects and gate task, event and management access on live registry membership. If the other device-management change has already landed, rerun self-revocation from both entry points on the integrated code.\nStarting files: `bridge/src/server.ts`, `bridge/scripts/pair.ts`, `ios/DSHKit/Sources/DSHCore/Pairing/DeviceIdentity.swift`, `ios/DSHKit/Sources/DSHCore/Pairing/PairingOffer.swift`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X2.html`, `design/screens/X3.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S9",
@@ -340,6 +341,11 @@
       "date": "2026-11-11",
       "title": "S4 assigned",
       "body": "Branch `claude/s4-44a0783`, simulator `AB817158-ABCE-4939-B5A1-2838558F9C5E`, DSHM_HOME `~/.dshm/home-s4-AB817158-ABCE-4939-B5A1-2838558F9C5E`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S4)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S8 assigned",
+      "body": "Branch `claude/s8-34dc87a`, simulator `01D1AB02-25B2-45EA-ADD2-CB06DB1A0BB5`, DSHM_HOME `~/.dshm/home-s8-01D1AB02-25B2-45EA-ADD2-CB06DB1A0BB5`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S8)\"` exports them."
     }
   ],
   "pending": [
