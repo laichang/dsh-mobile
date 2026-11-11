@@ -191,11 +191,11 @@ public final class FakeBridge: BridgeTransport {
     /// A model in `goneAfterUse` leaves the catalog once a task uses it (the scenario's stand-in
     /// for a provider key that expired on the host).
     public struct Pickers: Sendable {
-        public var catalog: ModelCatalog
+        public var catalog: Dshm_V1_ModelCatalog
         public var workspaces: WorkspaceList
         public var goneAfterUse: Set<String>
 
-        public init(catalog: ModelCatalog, workspaces: WorkspaceList, goneAfterUse: Set<String> = []) {
+        public init(catalog: Dshm_V1_ModelCatalog, workspaces: WorkspaceList, goneAfterUse: Set<String> = []) {
             self.catalog = catalog
             self.workspaces = workspaces
             self.goneAfterUse = goneAfterUse
@@ -917,7 +917,7 @@ public final class FakeHost: Sendable {
     }
 
     /// The catalog without the models that left it.
-    private static func catalog(_ pickers: FakeBridge.Pickers, gone: Set<String>) -> ModelCatalog {
+    private static func catalog(_ pickers: FakeBridge.Pickers, gone: Set<String>) -> Dshm_V1_ModelCatalog {
         var catalog = pickers.catalog
         for i in catalog.groups.indices { catalog.groups[i].models.removeAll { gone.contains($0.id) } }
         return catalog
@@ -925,7 +925,9 @@ public final class FakeHost: Sendable {
 
     /// A running task switches model; a model that is not in the catalog is refused.
     private func selectModel(_ select: Dshm_V1_SelectModel, requestID: UInt64, bridge: FakeBridge, in s: inout State) {
-        guard let pickers, Self.catalog(pickers, gone: s.goneModels).entry(for: select.selection) != nil,
+        guard let pickers, Self.catalog(pickers, gone: s.goneModels).groups.contains(where: { group in
+                  group.id == select.selection.provider && group.models.contains { $0.id == select.selection.model }
+              }),
               let at = s.tasks.firstIndex(where: { $0.taskID == select.taskID }) else {
             var error = Dshm_V1_Error()
             error.code = "model/unavailable"

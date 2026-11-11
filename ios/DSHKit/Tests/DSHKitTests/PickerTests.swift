@@ -34,7 +34,6 @@ import Testing
         #expect(catalog.isAvailable(pro))
         #expect(catalog.isHostDefault(provider: FakePickers.provider, model: FakePickers.flash))
         #expect(catalog.failures.map(\.name) == ["OpenRouter"], "a failed provider list is one row")
-        #expect(ModelSheetState(catalog: catalog, current: pro).initialDraft == pro)
 
         let workspaces = try await store.listWorkspaces(hostKey: mac)
         #expect(workspaces.recentPaths.contains(FakePickers.repo))
@@ -49,12 +48,8 @@ import Testing
         let after = try #require(store.catalogs[mac])
         #expect(!after.isAvailable(pro))
         let row = try #require(store.task(key))
-        let sheet = ModelSheetState(catalog: after, current: row.modelSelection)
-        #expect(sheet.unavailable == pro)
-        #expect(sheet.initialDraft == nil, "no other model is selected in its place")
-        #expect(!ModelSheetState.canApply(sheet.initialDraft, in: after))
-        #expect(!ModelSheetState.canApply(pro, in: after))
-        #expect(ModelSheetState.canApply(flash, in: after))
+        #expect(row.modelSelection == pro, "losing the model never selects a replacement")
+        #expect(after.isAvailable(flash))
         #expect(after.providerName(FakePickers.provider) == "DeepSeek")
 
         await #expect(throws: (any Error).self) { try await store.selectModel(pro, for: row) }

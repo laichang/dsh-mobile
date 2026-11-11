@@ -1,5 +1,4 @@
 import DSHCore
-import DSHProtocol
 import SwiftUI
 
 /// The model pill (screen 01): the composer's choice, or a running task's.
@@ -47,7 +46,7 @@ struct ModelControl: View {
 
     private var effort: String? {
         guard let selection, let model = catalog?.entry(for: selection) else { return nil }
-        let effortID = selection.hasReasoningEffort ? selection.reasoningEffort : model.defaultEffort
+        let effortID = selection.reasoningEffort ?? model.defaultEffort
         return model.efforts.first { $0.id == effortID }?.name
     }
 }
@@ -73,9 +72,17 @@ struct ModelPicker: View {
         if let task { return task.modelSelection ?? catalog?.defaultSelection }
         return store.composerSelections[hostKey] ?? catalog?.defaultSelection
     }
-    private var sheet: ModelSheetState { ModelSheetState(catalog: catalog, current: selection) }
+    private var unavailable: ModelSelection? {
+        guard let catalog, let selection, !catalog.isAvailable(selection) else { return nil }
+        return selection
+    }
     /// Until the user taps a row, the draft follows the current selection (and the catalog).
-    private var effectiveDraft: ModelSelection? { touched ? draft : sheet.initialDraft }
+    private var effectiveDraft: ModelSelection? { touched ? draft : (unavailable == nil ? selection : nil) }
+
+    private var canApply: Bool {
+        guard let effectiveDraft, let catalog else { return false }
+        return catalog.isAvailable(effectiveDraft)
+    }
 
     var body: some View {
         NavigationStack {
@@ -85,7 +92,7 @@ struct ModelPicker: View {
                         .font(.subheadline)
                         .foregroundStyle(DSHTheme.textSecondary)
                         .accessibilityIdentifier("model.provider")
-                    if let gone = sheet.unavailable { unavailableNote(gone) }
+                    if let gone = unavailable { unavailableNote(gone) }
                     if let catalog {
                         ForEach(groups(catalog), id: \.id) { group in
                             PickerGroupTitle(text: group.name)
@@ -102,7 +109,7 @@ struct ModelPicker: View {
                             PickerCard {
                                 ForEach(Array(model.efforts.enumerated()), id: \.element.id) { index, effort in
                                     if index > 0 { PickerDivider() }
-                                    let current = draft.hasReasoningEffort ? draft.reasoningEffort : model.defaultEffort
+                                    let current = draft.reasoningEffort ?? model.defaultEffort
                                     PickerRow(id: "model.effort.\(effort.id)", checked: current == effort.id) {
                                         Text(verbatim: effort.name)
                                     } action: {
@@ -137,7 +144,7 @@ struct ModelPicker: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "Apply", table: "Pickers")) { Task { await apply() } }
-                        .disabled(saving || !ModelSheetState.canApply(effectiveDraft, in: catalog))
+                        .disabled(saving || !canApply)
                         .accessibilityIdentifier("model.apply")
                 }
             }
@@ -156,28 +163,22 @@ struct ModelPicker: View {
     }
 
     /// The catalog's groups, plus the selection that went away, so the user sees which one it was.
-    private func groups(_ catalog: ModelCatalog) -> [Dshm_V1_ModelGroup] {
+    private func groups(_ catalog: ModelCatalog) -> [ModelCatalog.Group] {
         var groups = catalog.groups
-        if let gone = sheet.unavailable, catalog.entry(for: gone) == nil {
-            var missing = Dshm_V1_CatalogModel()
-            missing.id = gone.model
-            missing.name = gone.model
+        if let gone = unavailable, catalog.entry(for: gone) == nil {
+            let missing = ModelCatalog.Model(id: gone.model, name: gone.model)
             if let at = groups.firstIndex(where: { $0.id == gone.provider }) {
                 groups[at].models.append(missing)
             } else {
-                var group = Dshm_V1_ModelGroup()
-                group.id = gone.provider
-                group.name = catalog.providerName(gone.provider)
-                group.models = [missing]
-                groups.append(group)
+                groups.append(.init(id: gone.provider, name: catalog.providerName(gone.provider), models: [missing]))
             }
         }
         return groups
     }
 
     @ViewBuilder
-    private func modelRow(_ model: Dshm_V1_CatalogModel, provider: String, catalog: ModelCatalog) -> some View {
-        let gone = sheet.unavailable.map { $0.provider == provider && $0.model == model.id } ?? false
+    private func modelRow(_ model: ModelCatalog.Model, provider: String, catalog: ModelCatalog) -> some View {
+        let gone = unavailable.map { $0.provider == provider && $0.model == model.id } ?? false
         let name = gone ? (lastKnownName(model.id) ?? model.name) : model.name
         if gone {
             PickerRow(id: "model.option.\(provider).\(model.id)", checked: false, enabled: false) {
@@ -198,7 +199,7 @@ struct ModelPicker: View {
             } action: {
                 if !checked {
                     pick(ModelSelection(provider: provider, model: model.id,
-                                        effort: model.hasDefaultEffort ? model.defaultEffort : nil))
+                                        effort: model.defaultEffort))
                 }
             }
             .accessibilityValue(catalog.isHostDefault(provider: provider, model: model.id) ? "default" : "")
@@ -225,7 +226,7 @@ struct ModelPicker: View {
             .accessibilityIdentifier("model.unavailable")
     }
 
-    private func failureRow(_ failure: Dshm_V1_ModelCatalogFailure) -> some View {
+    private func failureRow(_ failure: ModelCatalog.Failure) -> some View {
         failureLine(String(localized: "\(failure.name): \(failure.message)", table: "Pickers"), id: failure.id)
     }
 
@@ -252,7 +253,7 @@ struct ModelPicker: View {
     }
 
     private func apply() async {
-        guard let draft = effectiveDraft, ModelSheetState.canApply(draft, in: catalog) else { return }
+        guard let draft = effectiveDraft, canApply else { return }
         saving = true
         defer { saving = false }
         do {

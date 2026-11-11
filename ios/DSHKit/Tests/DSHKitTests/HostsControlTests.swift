@@ -36,8 +36,8 @@ import Testing
         let mac = "fake:\(FakeHosts.macName)"
         try await waitUntil("MacBook-Pro's catalog") { store.catalogs[mac] != nil }
         let catalog = try #require(store.catalogs[mac])
-        #expect(catalog.hasDefaultSelection)
-        #expect(catalog.entry(for: catalog.defaultSelection)?.name == FakeHosts.defaultModelName)
+        let selection = try #require(catalog.defaultSelection)
+        #expect(catalog.entry(for: selection)?.name == FakeHosts.defaultModelName)
 
         for host in switchable { host.setReachable(false) }
         try await waitUntil("all offline") { store.allHostsOffline }

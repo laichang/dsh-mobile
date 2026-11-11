@@ -907,7 +907,7 @@ public final class TaskListStore {
     }
 
     private func applyModel(_ selection: ModelSelection, to task: CachedTask) {
-        let data = try? selection.serializedData()
+        let data = try? selection.wire.serializedData()
         if task.modelSelectionData != data {
             task.modelSelectionData = data
             task.transcript += selection.transcriptLine
@@ -1017,7 +1017,7 @@ public final class TaskListStore {
                 latestReply: t.latestReply, sessionRevision: t.sessionRevision.map(UInt64.init), externalSession: t.externalSession,
                 approvalOnly: t.approvalOnly, approvals: supportsApprovals == false ? [] : t.approvals,
                 milestones: timeline(of: t),
-                modelSelection: t.modelSelectionData.flatMap { try? ModelSelection(serializedBytes: $0) },
+                modelSelection: t.modelSelectionData.flatMap { (try? Dshm_V1_ModelSelection(serializedBytes: $0)).map(ModelSelection.init) },
                 workspace: t.workspace, unread: t.state.isTerminal && (t.readThrough.map { $0 < t.updatedAt } ?? true),
                 approvalsAnswered: t.approvalsAnswered,
                 blocks: link.capabilities?.contains(DSHProtocolInfo.transcriptCapability) == false
