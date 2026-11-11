@@ -197,10 +197,10 @@
         "T0"
       ],
       "branch": "claude/s11-owned-cleanup",
-      "status": "doing",
+      "status": "review",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "User accepts 1 [human] item (pending)",
+      "merge": "d86e7a3",
       "why": "The user reported a bug on 2026-11-11: On merged S10, cleanup deleted two historical branches (restored), old /tmp directories, and reused a prior device/home when no old registry row existed. Scope cleanup to verifiable resources of this assignment and preserve unknown older ones; test against legacy state.",
       "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
       "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
@@ -289,6 +289,11 @@
       "date": "2026-11-11",
       "title": "S11 assigned",
       "body": "Branch `claude/s11-owned-cleanup`, worktree `/Users/bytedance/dsh-mobile-s11`, simulator `dshm-S11`, DSHM_HOME `~/.dshm/home-s11`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S11)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S11 merged",
+      "body": "Merged as `d86e7a3`; the plan/ rules hold on the merge commit. 1 open [human] item(s), so S11 is `review`. Pending 4."
     }
   ],
   "pending": [
@@ -315,6 +320,14 @@
       "item": "The user no longer sees the bug",
       "branch": "main",
       "ref": "8a16109"
+    },
+    {
+      "n": 4,
+      "slice": "S11",
+      "kind": "[human]",
+      "item": "The user no longer sees the bug",
+      "branch": "main",
+      "ref": "d86e7a3"
     }
   ]
 }
