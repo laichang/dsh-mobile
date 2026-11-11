@@ -8,7 +8,8 @@
       "screens": [],
       "passed": false,
       "evidence": [
-        "cmd:scripts/plan-test"
+        "cmd:scripts/plan-test",
+        "cmd:scripts/run-plan-test"
       ]
     },
     {
