@@ -145,10 +145,10 @@
       "title": "Fix: Show the next action for active slices in status",
       "needs": [],
       "branch": "claude/s8-status-next",
-      "status": "doing",
+      "status": "review",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "User accepts 1 [human] item (pending)",
+      "merge": "8558397",
       "why": "The user reported a bug on 2026-11-11: scripts/status exits with KeyError on next when it prints an active slice.",
       "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
       "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
@@ -192,7 +192,21 @@
       "date": "2026-11-11",
       "title": "S8 assigned",
       "body": "Branch `claude/s8-status-next`, simulator `dshm-S8`, DSHM_HOME `~/.dshm/home-s8`, bridge 47813, web 3286; second host 47843/3316. `eval \"$(scripts/slice-env S8)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S8 merged",
+      "body": "Merged as `8558397`; the plan/ rules hold on the merge commit. 1 open [human] item(s), so S8 is `review`. Pending 1."
     }
   ],
-  "pending": []
+  "pending": [
+    {
+      "n": 1,
+      "slice": "S8",
+      "kind": "[human]",
+      "item": "The user no longer sees the bug",
+      "branch": "main",
+      "ref": "8558397"
+    }
+  ]
 }
