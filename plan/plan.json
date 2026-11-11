@@ -41,9 +41,9 @@
         "T0"
       ],
       "branch": "claude/s2-pre-m3",
-      "status": "doing",
+      "status": "review",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
+      "next": "Three checks passed; user reviews merge checker in 7b8a217",
       "merge": null,
       "why": "M3 changes shared demo helpers and can span more than one workflow run. Closes #68",
       "cuts": "Use scripts/lib/plandata.py, scripts/plan, scripts/run-plan-args and .claude/workflows/run-plan.js. Extend scripts/plan-test and scripts/run-plan-test. Coordinate the persisted round state with the next slice for fresh-session handoff.",
