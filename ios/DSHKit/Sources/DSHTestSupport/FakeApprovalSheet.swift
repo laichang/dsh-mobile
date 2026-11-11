@@ -1,6 +1,5 @@
 #if DEBUG
 import CoreFoundation
-import DSHTestSupport
 import Synchronization
 
 /// The FakeBridge parts of the approval sheet scenario. Debug only.

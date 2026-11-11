@@ -73,7 +73,7 @@ public struct AgentQuestion: Codable, Equatable, Sendable {
     public static func rowID(_ requestID: String) -> String { "question-\(requestID)" }
 
     /// The card as a transcript row, placed where the text stood when it arrived.
-    public static func pendingRow(_ wire: Dshm_V1_QuestionPending, time: Date = .now) -> TranscriptItem {
+    package static func pendingRow(_ wire: Dshm_V1_QuestionPending, time: Date = .now) -> TranscriptItem {
         let items = wire.questions.map { q in
             Item(id: q.id, text: q.text, header: q.header, detail: q.detail,
                  options: q.options.map { Option(label: $0.label, description: $0.description_p) }, multiSelect: q.multiSelect)
@@ -83,7 +83,7 @@ public struct AgentQuestion: Codable, Equatable, Sendable {
     }
 
     /// The same question, closed by `QuestionResolved`.
-    public func resolved(_ wire: Dshm_V1_QuestionResolved) -> AgentQuestion {
+    package func resolved(_ wire: Dshm_V1_QuestionResolved) -> AgentQuestion {
         var copy = self
         copy.outcome = switch wire.outcome {
         case .answered: .answered

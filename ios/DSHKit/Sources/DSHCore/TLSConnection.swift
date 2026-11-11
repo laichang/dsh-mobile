@@ -1,3 +1,4 @@
+import DSHTransport
 import Foundation
 
 struct TLSChannel: SecureChannel, FrameCipher {

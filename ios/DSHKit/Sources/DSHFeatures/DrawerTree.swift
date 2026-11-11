@@ -10,7 +10,6 @@ import Foundation
 /// - An offline host has no capabilities until it connects again. Its cached sessions keep their
 ///   workspaces, so the cache decides: group when any cached session has a workspace.
 public struct DrawerTree: Equatable, Sendable {
-    public static let capability = "drawer.v1"
 
     public struct Workspace: Identifiable, Equatable, Sendable {
         public var id: String { path }
@@ -40,10 +39,10 @@ public struct DrawerTree: Equatable, Sendable {
     /// ones whose workspace the host did not report.
     public var loose: [TaskListStore.TaskRow]
 
-    public init(rows: [TaskListStore.TaskRow], hostKey: String, capabilities: [String]) {
-        let sessions = rows.filter { $0.hostKey == hostKey && !$0.approvalOnly }.sorted { $0.updatedAt > $1.updatedAt }
-        grouped = capabilities.contains(Self.capability) ||
-            (capabilities.isEmpty && sessions.contains { $0.workspace != nil })
+    public init(rows: [TaskListStore.TaskRow], host: TaskListStore.HostStatus) {
+        let sessions = rows.filter { $0.hostKey == host.key && !$0.approvalOnly }.sorted { $0.updatedAt > $1.updatedAt }
+        grouped = host.supports(.drawer) ||
+            (!host.hasCapabilities && sessions.contains { $0.workspace != nil })
         guard grouped else {
             workspaces = []
             loose = sessions

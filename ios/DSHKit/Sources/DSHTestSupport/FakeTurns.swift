@@ -56,7 +56,7 @@ public enum FakeTurns {
         """
 
     /// The session's summary; the times count back from now, so the footer is the same on each run.
-    public static func summary(now: Int64 = Int64(Date().timeIntervalSince1970 * 1000)) -> Dshm_V1_TaskSummary {
+    package static func summary(now: Int64 = Int64(Date().timeIntervalSince1970 * 1000)) -> Dshm_V1_TaskSummary {
         var s = Dshm_V1_TaskSummary()
         s.taskID = taskID
         s.title = title
@@ -70,7 +70,7 @@ public enum FakeTurns {
     }
 
     /// The journal: two user messages and two replies.
-    public static func journal() -> Dshm_V1_SessionPage {
+    package static func journal() -> Dshm_V1_SessionPage {
         var page = Dshm_V1_SessionPage()
         page.messages = [(firstPrompt, true), (firstReply, false), (secondPrompt, true), (finalReply, false)]
             .enumerated().map { i, m in

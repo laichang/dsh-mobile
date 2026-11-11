@@ -20,18 +20,18 @@ fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobu
   typealias Version = _2
 }
 
-public nonisolated enum Dshm_V1_ApprovalDecision: SwiftProtobuf.Enum, Swift.CaseIterable {
-  public typealias RawValue = Int
+package nonisolated enum Dshm_V1_ApprovalDecision: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
   case unspecified // = 0
   case deny // = 1
   case allowOnce // = 2
   case UNRECOGNIZED(Int)
 
-  public init() {
+  package init() {
     self = .unspecified
   }
 
-  public init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .unspecified
     case 1: self = .deny
@@ -40,7 +40,7 @@ public nonisolated enum Dshm_V1_ApprovalDecision: SwiftProtobuf.Enum, Swift.Case
     }
   }
 
-  public var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .unspecified: return 0
     case .deny: return 1
@@ -50,7 +50,7 @@ public nonisolated enum Dshm_V1_ApprovalDecision: SwiftProtobuf.Enum, Swift.Case
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static let allCases: [Dshm_V1_ApprovalDecision] = [
+  package static let allCases: [Dshm_V1_ApprovalDecision] = [
     .unspecified,
     .deny,
     .allowOnce,
@@ -58,8 +58,8 @@ public nonisolated enum Dshm_V1_ApprovalDecision: SwiftProtobuf.Enum, Swift.Case
 
 }
 
-public nonisolated enum Dshm_V1_ApprovalOutcome: SwiftProtobuf.Enum, Swift.CaseIterable {
-  public typealias RawValue = Int
+package nonisolated enum Dshm_V1_ApprovalOutcome: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
   case unspecified // = 0
   case denied // = 1
   case allowed // = 2
@@ -67,11 +67,11 @@ public nonisolated enum Dshm_V1_ApprovalOutcome: SwiftProtobuf.Enum, Swift.CaseI
   case cancelled // = 4
   case UNRECOGNIZED(Int)
 
-  public init() {
+  package init() {
     self = .unspecified
   }
 
-  public init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .unspecified
     case 1: self = .denied
@@ -82,7 +82,7 @@ public nonisolated enum Dshm_V1_ApprovalOutcome: SwiftProtobuf.Enum, Swift.CaseI
     }
   }
 
-  public var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .unspecified: return 0
     case .denied: return 1
@@ -94,7 +94,7 @@ public nonisolated enum Dshm_V1_ApprovalOutcome: SwiftProtobuf.Enum, Swift.CaseI
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static let allCases: [Dshm_V1_ApprovalOutcome] = [
+  package static let allCases: [Dshm_V1_ApprovalOutcome] = [
     .unspecified,
     .denied,
     .allowed,
@@ -104,57 +104,57 @@ public nonisolated enum Dshm_V1_ApprovalOutcome: SwiftProtobuf.Enum, Swift.CaseI
 
 }
 
-public nonisolated struct Dshm_V1_ApprovalPending: Sendable {
+package nonisolated struct Dshm_V1_ApprovalPending: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var id: String = String()
+  package var id: String = String()
 
-  public var taskID: String = String()
+  package var taskID: String = String()
 
-  public var callID: String = String()
+  package var callID: String = String()
 
-  public var tool: String = String()
+  package var tool: String = String()
 
   /// Original JSON from the matching tool call; empty if the host has no matching call.
-  public var argumentsJson: String = String()
+  package var argumentsJson: String = String()
 
-  public var reason: String = String()
+  package var reason: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_AnswerApproval: Sendable {
+package nonisolated struct Dshm_V1_AnswerApproval: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var id: String = String()
+  package var id: String = String()
 
-  public var decision: Dshm_V1_ApprovalDecision = .unspecified
+  package var decision: Dshm_V1_ApprovalDecision = .unspecified
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_ApprovalResolved: Sendable {
+package nonisolated struct Dshm_V1_ApprovalResolved: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var id: String = String()
+  package var id: String = String()
 
-  public var taskID: String = String()
+  package var taskID: String = String()
 
-  public var outcome: Dshm_V1_ApprovalOutcome = .unspecified
+  package var outcome: Dshm_V1_ApprovalOutcome = .unspecified
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -162,18 +162,18 @@ public nonisolated struct Dshm_V1_ApprovalResolved: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_ApprovalDecision: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0APPROVAL_DECISION_UNSPECIFIED\0\u{1}APPROVAL_DECISION_DENY\0\u{1}APPROVAL_DECISION_ALLOW_ONCE\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0APPROVAL_DECISION_UNSPECIFIED\0\u{1}APPROVAL_DECISION_DENY\0\u{1}APPROVAL_DECISION_ALLOW_ONCE\0")
 }
 
 nonisolated extension Dshm_V1_ApprovalOutcome: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0APPROVAL_OUTCOME_UNSPECIFIED\0\u{1}APPROVAL_OUTCOME_DENIED\0\u{1}APPROVAL_OUTCOME_ALLOWED\0\u{1}APPROVAL_OUTCOME_TIMEOUT\0\u{1}APPROVAL_OUTCOME_CANCELLED\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0APPROVAL_OUTCOME_UNSPECIFIED\0\u{1}APPROVAL_OUTCOME_DENIED\0\u{1}APPROVAL_OUTCOME_ALLOWED\0\u{1}APPROVAL_OUTCOME_TIMEOUT\0\u{1}APPROVAL_OUTCOME_CANCELLED\0")
 }
 
 nonisolated extension Dshm_V1_ApprovalPending: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ApprovalPending"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}task_id\0\u{3}call_id\0\u{1}tool\0\u{3}arguments_json\0\u{1}reason\0")
+  package static let protoMessageName: String = _protobuf_package + ".ApprovalPending"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}task_id\0\u{3}call_id\0\u{1}tool\0\u{3}arguments_json\0\u{1}reason\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -190,7 +190,7 @@ nonisolated extension Dshm_V1_ApprovalPending: SwiftProtobuf.Message, SwiftProto
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.id.isEmpty {
       try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
     }
@@ -212,7 +212,7 @@ nonisolated extension Dshm_V1_ApprovalPending: SwiftProtobuf.Message, SwiftProto
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ApprovalPending, rhs: Dshm_V1_ApprovalPending) -> Bool {
+  package static func ==(lhs: Dshm_V1_ApprovalPending, rhs: Dshm_V1_ApprovalPending) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.taskID != rhs.taskID {return false}
     if lhs.callID != rhs.callID {return false}
@@ -225,10 +225,10 @@ nonisolated extension Dshm_V1_ApprovalPending: SwiftProtobuf.Message, SwiftProto
 }
 
 nonisolated extension Dshm_V1_AnswerApproval: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".AnswerApproval"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}decision\0")
+  package static let protoMessageName: String = _protobuf_package + ".AnswerApproval"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}decision\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -241,7 +241,7 @@ nonisolated extension Dshm_V1_AnswerApproval: SwiftProtobuf.Message, SwiftProtob
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.id.isEmpty {
       try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
     }
@@ -251,7 +251,7 @@ nonisolated extension Dshm_V1_AnswerApproval: SwiftProtobuf.Message, SwiftProtob
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_AnswerApproval, rhs: Dshm_V1_AnswerApproval) -> Bool {
+  package static func ==(lhs: Dshm_V1_AnswerApproval, rhs: Dshm_V1_AnswerApproval) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.decision != rhs.decision {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -260,10 +260,10 @@ nonisolated extension Dshm_V1_AnswerApproval: SwiftProtobuf.Message, SwiftProtob
 }
 
 nonisolated extension Dshm_V1_ApprovalResolved: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ApprovalResolved"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}task_id\0\u{1}outcome\0")
+  package static let protoMessageName: String = _protobuf_package + ".ApprovalResolved"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}task_id\0\u{1}outcome\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -277,7 +277,7 @@ nonisolated extension Dshm_V1_ApprovalResolved: SwiftProtobuf.Message, SwiftProt
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.id.isEmpty {
       try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
     }
@@ -290,7 +290,7 @@ nonisolated extension Dshm_V1_ApprovalResolved: SwiftProtobuf.Message, SwiftProt
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ApprovalResolved, rhs: Dshm_V1_ApprovalResolved) -> Bool {
+  package static func ==(lhs: Dshm_V1_ApprovalResolved, rhs: Dshm_V1_ApprovalResolved) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.taskID != rhs.taskID {return false}
     if lhs.outcome != rhs.outcome {return false}

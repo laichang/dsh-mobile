@@ -64,7 +64,7 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
     }
 
     /// Nil for a block of a kind this app does not know (a newer bridge).
-    public init?(_ wire: Dshm_V1_TranscriptBlock) {
+    package init?(_ wire: Dshm_V1_TranscriptBlock) {
         let kind: Kind
         switch wire.kind {
         case .thinking(let t)?:
@@ -88,7 +88,7 @@ public struct TranscriptItem: Codable, Equatable, Sendable, Identifiable {
     public static func userMessageID(_ messageID: String) -> String { messagePrefix + messageID }
 
     /// A follow-up message, placed like a row: after the text that streamed before it.
-    public init(_ wire: Dshm_V1_UserMessage) {
+    package init(_ wire: Dshm_V1_UserMessage) {
         self.init(id: Self.userMessageID(wire.messageID), taskID: wire.taskID, state: .done, kind: .userMessage(text: wire.text),
                   time: Date(timeIntervalSince1970: TimeInterval(wire.timeMs) / 1000),
                   attachments: wire.attachments.isEmpty ? nil : wire.attachments.map(MessageAttachment.init))

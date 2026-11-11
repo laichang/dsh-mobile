@@ -1,4 +1,5 @@
 #if DEBUG
+import DSHTransport
 import DSHCore
 import DSHProtocol
 import Foundation
@@ -70,7 +71,7 @@ public final class FakeBridge: BridgeTransport {
         }
         /// Transcript blocks, each sent just before reply chunk `beforeChunk` (0-based;
         /// `reply.count` or more: after the reply). The host sends them whatever its capabilities.
-        public var blocks: [(beforeChunk: Int, block: Dshm_V1_TranscriptBlock)] = []
+        package var blocks: [(beforeChunk: Int, block: Dshm_V1_TranscriptBlock)] = []
         /// With a value, the host advertises `conversation.v1`. A follow-up on a completed task
         /// is accepted like the real bridge does it: `MessageAccepted`, a logged `UserMessage`, the
         /// task RUNNING again, this reply (its chunk seqs go on), and `TaskEnded(COMPLETED)`.
@@ -191,11 +192,11 @@ public final class FakeBridge: BridgeTransport {
     /// A model in `goneAfterUse` leaves the catalog once a task uses it (the scenario's stand-in
     /// for a provider key that expired on the host).
     public struct Pickers: Sendable {
-        public var catalog: Dshm_V1_ModelCatalog
+        package var catalog: Dshm_V1_ModelCatalog
         public var workspaces: WorkspaceList
         public var goneAfterUse: Set<String>
 
-        public init(catalog: Dshm_V1_ModelCatalog, workspaces: WorkspaceList, goneAfterUse: Set<String> = []) {
+        package init(catalog: Dshm_V1_ModelCatalog, workspaces: WorkspaceList, goneAfterUse: Set<String> = []) {
             self.catalog = catalog
             self.workspaces = workspaces
             self.goneAfterUse = goneAfterUse
@@ -433,7 +434,7 @@ public final class FakeHost: Sendable {
     private let state = Mutex(State())
 
     /// - Parameter seed: sessions the host already has, as if other clients made them.
-    public init(script: FakeBridge.Script = .init(), hostName: String = "FakeBridge Mac", reachable: Bool = true,
+    package init(script: FakeBridge.Script = .init(), hostName: String = "FakeBridge Mac", reachable: Bool = true,
                 incompatibleDsh: (installed: String, supported: String)? = nil,
                 seed: [Dshm_V1_TaskSummary] = [], extraCapabilities: [String] = [],
                 approvals: [FakeBridge.PendingApproval] = [], pickers: FakeBridge.Pickers? = nil,
@@ -494,7 +495,7 @@ public final class FakeHost: Sendable {
     /// The follow-up messages this host accepted, in order.
     public var followUps: [String] { state.withLock { $0.followUps } }
     /// Every accepted answer to an agent question, in order: what reached DSH.
-    public var questionAnswers: [Dshm_V1_AnswerQuestion] { state.withLock { $0.questionAnswers } }
+    package var questionAnswers: [Dshm_V1_AnswerQuestion] { state.withLock { $0.questionAnswers } }
     /// The queue edits this host made, in order ("steer <text>", "remove <text>").
     public var queueEdits: [String] { state.withLock { $0.queueEdits } }
     /// Per created task, the staged files it named: (media type, name, bytes).
@@ -565,7 +566,7 @@ public final class FakeHost: Sendable {
 
     /// Logs `event` for `taskID` and sends it to the connections, as the bridge does with an event
     /// that no script makes (for example a `QuestionPending` from DSH).
-    public func emit(_ event: Dshm_V1_Event, taskID: String) {
+    package func emit(_ event: Dshm_V1_Event, taskID: String) {
         state.withLock { s in Self.append(event, taskID: taskID, in: &s) }
     }
 

@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+"""Check the SwiftPM graph, Xcode linkage and production Swift imports."""
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+import tempfile
+
+root = Path(__file__).resolve().parents[1]
+package = root / "ios/DSHKit"
+layers = {
+    "DSHActivity": set(),
+    "DSHTransport": set(),
+    "DSHProtocol": {"SwiftProtobuf"},
+    "DSHCore": {"DSHTransport", "DSHProtocol", "SwiftProtobuf"},
+    "DSHFeatures": {"DSHCore", "DSHActivity"},
+    "DSHTestSupport": {"DSHCore", "DSHFeatures", "DSHProtocol", "DSHTransport", "SwiftProtobuf"},
+}
+clients = {
+    "dsh-mobile": {"DSHCore", "DSHFeatures", "DSHActivity", "DSHTestSupport"},
+    "LiveActivity": {"DSHActivity"},
+    "dsh-mobileUITests": {"DSHCore", "DSHTransport"},
+}
+errors = []
+
+
+def check(label, actual, expected):
+    if actual != expected:
+        errors.append(f"{label}: found {sorted(actual)}, expected {sorted(expected)}")
+
+
+with tempfile.TemporaryDirectory() as scratch:
+    manifest = json.loads(subprocess.check_output([
+        "swift", "package", "--package-path", package, "--scratch-path", scratch, "dump-package",
+    ]))
+targets = {t["name"]: t for t in manifest["targets"] if t["type"] == "regular" and t["name"] != "SystemCallbackDoubles"}
+check("package layers", set(targets), set(layers))
+for name, target in targets.items():
+    deps = {next(iter(dep.values()))[0] for dep in target["dependencies"]}
+    check(name, deps, layers.get(name, set()))
+products = {p["name"]: p["targets"] for p in manifest["products"]}
+check("package products", set(products), set.union(*clients.values()))
+for name, members in products.items():
+    check(f"product {name}", set(members), {name})
+
+project = root / "ios/dsh-mobile.xcodeproj/project.pbxproj"
+objects = json.loads(subprocess.check_output(["plutil", "-convert", "json", "-o", "-", project]))["objects"]
+native = {t["name"]: t for t in objects.values() if t["isa"] == "PBXNativeTarget"}
+for name, expected in clients.items():
+    target = native[name]
+    check(name, {objects[i]["productName"] for i in target["packageProductDependencies"]}, expected)
+    linked = set()
+    for phase in (objects[i] for i in target["buildPhases"]):
+        if phase["isa"] == "PBXFrameworksBuildPhase":
+            for file in (objects[i] for i in phase["files"]):
+                if "productRef" in file:
+                    linked.add(objects[file["productRef"]]["productName"])
+    check(f"{name} linked products", linked, expected)
+
+imports = re.compile(r"\bimport\s+(?:(?:actor|class|enum|func|protocol|struct|typealias|var|let)\s+)?(\w+)")
+low_level = re.compile(r'\b(?:Dshm_V1_\w+|DSHProtocolInfo|HostConnection|HostEndpoint|TCPPortProbe|SecureChannel|PlaintextChannel|BridgeTransport(?:Factory)?|WebSocketTransport|ModelContainer|ModelContext)\b|"[\w.-]+\.v\d+"')
+for name, allowed in {**layers, **clients}.items():
+    folder = package / "Sources" / name if name in layers else root / "ios" / name
+    for file in folder.rglob("*.swift"):
+        debug = []
+        for lineno, line in enumerate(file.read_text().splitlines(), 1):
+            code = line.split("//", 1)[0].strip()
+            if code.startswith("#if "):
+                debug.append(code == "#if DEBUG")
+            elif code.startswith(("#else", "#elseif")) and debug:
+                debug[-1] = False
+            elif code == "#endif" and debug:
+                debug.pop()
+            match = imports.search(code)
+            reason = None
+            if match:
+                module = match[1]
+                if (module.startswith("DSH") or module in {"SwiftProtobuf", "SystemCallbackDoubles"}) and module not in allowed:
+                    reason = f"undeclared import {module}"
+                elif module == "DSHTestSupport" and name == "dsh-mobile" and not any(debug):
+                    reason = "test support outside DEBUG"
+                elif "@_exported" in code:
+                    reason = f"re-export of {module}"
+            if name in ("DSHFeatures", "dsh-mobile", "LiveActivity") and (low_level.search(code) or match and match[1] == "SwiftData"):
+                reason = "raw transport, persistence or wire detail"
+            if reason:
+                errors.append(f"{file.relative_to(root)}:{lineno}: {reason}")
+if errors:
+    sys.exit("\n".join(errors))
+print("Swift layer graph, Xcode products and imports passed")

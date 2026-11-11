@@ -142,7 +142,7 @@ import Testing
         store.foreground()
         let key = try #require(await store.send())
         try await waitUntil("the task ends") { store.task(key)?.state == .completed }
-        #expect(store.hosts.first?.capabilities.contains(DSHProtocolInfo.transcriptCapability) == false)
+        #expect(store.hosts.first?.supports(.transcript) == false)
         #expect(store.task(key)?.blocks.isEmpty == true)
         #expect(store.task(key)?.transcript == FakeTranscript.script().reply.joined())
         store.background()

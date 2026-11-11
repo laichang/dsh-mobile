@@ -11,5 +11,5 @@ plugins:
   - local: protoc-gen-swift
     out: ../ios/DSHKit/Sources/DSHProtocol/Generated
     opt:
-      - Visibility=Public
+      - Visibility=Package
       - FileNaming=DropPath

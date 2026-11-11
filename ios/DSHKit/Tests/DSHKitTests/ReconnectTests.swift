@@ -1,3 +1,4 @@
+import DSHTransport
 import DSHCore
 import DSHFeatures
 import DSHTestSupport

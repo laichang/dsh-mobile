@@ -7,4 +7,5 @@
 # Summary format: scripts/lib/wrap.py.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+"$ROOT/scripts/check-layers" >/dev/null
 exec python3 "$ROOT/scripts/lib/wrap.py" run swift-test "$@"

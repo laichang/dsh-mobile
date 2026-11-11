@@ -6,7 +6,10 @@ let package = Package(
     name: "DSHKit",
     platforms: [.iOS(.v26), .macOS(.v15)],
     products: [
-        .library(name: "DSHKit", targets: ["DSHProtocol", "DSHCore", "DSHFeatures", "DSHTestSupport", "DSHActivity"]),
+        .library(name: "DSHCore", targets: ["DSHCore"]),
+        .library(name: "DSHFeatures", targets: ["DSHFeatures"]),
+        .library(name: "DSHTestSupport", targets: ["DSHTestSupport"]),
+        .library(name: "DSHTransport", targets: ["DSHTransport"]),
         // The Live Activity's data, shared by the app and its widget extension. No dependencies,
         // so the extension stays small.
         .library(name: "DSHActivity", targets: ["DSHActivity"]),
@@ -24,16 +27,16 @@ let package = Package(
         .target(name: "DSHActivity"),
         .target(name: "DSHTransport"),
         // HostConnection, SecureChannel, PlaintextChannel, TaskStore.
-        .target(name: "DSHCore", dependencies: ["DSHProtocol", "DSHTransport"]),
+        .target(name: "DSHCore", dependencies: ["DSHProtocol", "DSHTransport", .product(name: "SwiftProtobuf", package: "swift-protobuf")]),
         .target(name: "DSHFeatures", dependencies: ["DSHCore", "DSHActivity"]),
         // FakeBridge and other debug-only test doubles. Compiled out of Release (#if DEBUG).
-        .target(name: "DSHTestSupport", dependencies: ["DSHCore", "DSHFeatures", "DSHProtocol"]),
+        .target(name: "DSHTestSupport", dependencies: ["DSHCore", "DSHFeatures", "DSHProtocol", "DSHTransport", .product(name: "SwiftProtobuf", package: "swift-protobuf")]),
         // Test only: an Objective-C API that calls its handler on a queue of its own, like the
         // Speech framework's permission request. In no product.
         .target(name: "SystemCallbackDoubles", path: "Tests/SystemCallbackDoubles"),
         .testTarget(
             name: "DSHKitTests",
-            dependencies: ["DSHCore", "DSHFeatures", "DSHProtocol", "DSHTestSupport", "DSHActivity", "SystemCallbackDoubles"]
+            dependencies: ["DSHCore", "DSHFeatures", "DSHProtocol", "DSHTestSupport", "DSHActivity", "DSHTransport", "SystemCallbackDoubles", .product(name: "SwiftProtobuf", package: "swift-protobuf")]
         ),
     ]
 )

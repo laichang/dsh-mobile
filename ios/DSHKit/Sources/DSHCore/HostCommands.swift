@@ -3,21 +3,26 @@ import DSHProtocol
 public enum FollowUpMode: Sendable { case steer, queue }
 public enum QueueAction: Sendable { case steer, remove }
 
-package struct HostCapability: Sendable {
+public struct HostCapability: Sendable {
     let name: String
 
-    package static let attachments = Self(name: DSHProtocolInfo.attachmentsCapability)
-    package static let conversation = Self(name: DSHProtocolInfo.conversationCapability)
-    package static let queue = Self(name: DSHProtocolInfo.queueCapability)
-    package static let failures = Self(name: DSHProtocolInfo.failuresCapability)
-    package static let approvals = Self(name: DSHProtocolInfo.approvalsCapability)
-    package static let questions = Self(name: DSHProtocolInfo.questionsCapability)
-    package static let models = Self(name: "models.v1")
-    package static let devices = Self(name: "devices.v1")
+    public static let drawer = Self(name: "drawer.v1")
+    public static let workspaces = Self(name: "workspaces.v1")
+    public static let interrupt = Self(name: DSHProtocolInfo.interruptCapability)
+    public static let transcript = Self(name: DSHProtocolInfo.transcriptCapability)
+    public static let attachments = Self(name: DSHProtocolInfo.attachmentsCapability)
+    public static let conversation = Self(name: DSHProtocolInfo.conversationCapability)
+    public static let queue = Self(name: DSHProtocolInfo.queueCapability)
+    public static let failures = Self(name: DSHProtocolInfo.failuresCapability)
+    public static let approvals = Self(name: DSHProtocolInfo.approvalsCapability)
+    public static let questions = Self(name: DSHProtocolInfo.questionsCapability)
+    public static let models = Self(name: "models.v1")
+    public static let devices = Self(name: "devices.v1")
 }
 
 extension HostSync.HostStatus {
-    package func supports(_ capability: HostCapability) -> Bool { capabilities.contains(capability.name) }
+    public func supports(_ capability: HostCapability) -> Bool { capabilities.contains(capability.name) }
+    public var hasCapabilities: Bool { !capabilities.isEmpty }
 }
 
 package protocol HostCommands: HostDeviceManagement {
@@ -32,3 +37,7 @@ package protocol HostCommands: HostDeviceManagement {
 }
 
 extension HostConnection: HostCommands {}
+
+public enum HostProtocol {
+    public static let version = DSHProtocolInfo.version
+}

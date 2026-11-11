@@ -7,10 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		CDE500000000000000000001 /* DSHKit in Frameworks */ = {isa = PBXBuildFile; productRef = D5A100000000000000000002 /* DSHKit */; };
-		D5A100000000000000000003 /* DSHKit in Frameworks */ = {isa = PBXBuildFile; productRef = D5A100000000000000000002 /* DSHKit */; };
 		D5A100000000000000000101 /* DSHActivity in Frameworks */ = {isa = PBXBuildFile; productRef = D5A10000000000000000010F /* DSHActivity */; };
 		D5A100000000000000000102 /* LiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D5A100000000000000000104 /* LiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8B0800000000000000000B00 /* DSHCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8B0800000000000000000A00 /* DSHCore */; };
+		8B0800000000000000000B01 /* DSHFeatures in Frameworks */ = {isa = PBXBuildFile; productRef = 8B0800000000000000000A01 /* DSHFeatures */; };
+		8B0800000000000000000B02 /* DSHTestSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 8B0800000000000000000A02 /* DSHTestSupport */; };
+		8B0800000000000000000B03 /* DSHActivity in Frameworks */ = {isa = PBXBuildFile; productRef = D5A10000000000000000010F /* DSHActivity */; };
+		8B0800000000000000000B10 /* DSHCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8B0800000000000000000A00 /* DSHCore */; };
+		8B0800000000000000000B11 /* DSHTransport in Frameworks */ = {isa = PBXBuildFile; productRef = 8B0800000000000000000A04 /* DSHTransport */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,7 +78,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D5A100000000000000000003 /* DSHKit in Frameworks */,
+				8B0800000000000000000B00 /* DSHCore in Frameworks */,
+				8B0800000000000000000B01 /* DSHFeatures in Frameworks */,
+				8B0800000000000000000B02 /* DSHTestSupport in Frameworks */,
+				8B0800000000000000000B03 /* DSHActivity in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -82,7 +89,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CDE500000000000000000001 /* DSHKit in Frameworks */,
+				8B0800000000000000000B10 /* DSHCore in Frameworks */,
+				8B0800000000000000000B11 /* DSHTransport in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,7 +148,10 @@
 			);
 			name = "dsh-mobile";
 			packageProductDependencies = (
-				D5A100000000000000000002 /* DSHKit */,
+				8B0800000000000000000A00 /* DSHCore */,
+				8B0800000000000000000A01 /* DSHFeatures */,
+				8B0800000000000000000A02 /* DSHTestSupport */,
+				D5A10000000000000000010F /* DSHActivity */,
 			);
 			productName = "dsh-mobile";
 			productReference = 29CD3FE1309A450F00EBCEA1 /* dsh-mobile.app */;
@@ -164,7 +175,8 @@
 			);
 			name = "dsh-mobileUITests";
 			packageProductDependencies = (
-				D5A100000000000000000002 /* DSHKit */,
+				8B0800000000000000000A00 /* DSHCore */,
+				8B0800000000000000000A04 /* DSHTransport */,
 			);
 			productName = "dsh-mobileUITests";
 			productReference = D5A100000000000000000005 /* dsh-mobileUITests.xctest */;
@@ -654,13 +666,25 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		D5A100000000000000000002 /* DSHKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = DSHKit;
-		};
 		D5A10000000000000000010F /* DSHActivity */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = DSHActivity;
+		};
+		8B0800000000000000000A00 /* DSHCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DSHCore;
+		};
+		8B0800000000000000000A01 /* DSHFeatures */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DSHFeatures;
+		};
+		8B0800000000000000000A02 /* DSHTestSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DSHTestSupport;
+		};
+		8B0800000000000000000A04 /* DSHTransport */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DSHTransport;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -20,104 +20,104 @@ fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobu
   typealias Version = _2
 }
 
-public nonisolated struct Dshm_V1_ListDevices: Sendable {
+package nonisolated struct Dshm_V1_ListDevices: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_RevokeDevice: Sendable {
+package nonisolated struct Dshm_V1_RevokeDevice: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var deviceID: String = String()
+  package var deviceID: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_PairedDevice: Sendable {
+package nonisolated struct Dshm_V1_PairedDevice: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var id: String = String()
+  package var id: String = String()
 
-  public var pairedAtMs: Int64 = 0
+  package var pairedAtMs: Int64 = 0
 
-  public var lastSeenAtMs: Int64 = 0
+  package var lastSeenAtMs: Int64 = 0
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_DeviceList: Sendable {
+package nonisolated struct Dshm_V1_DeviceList: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var currentDeviceID: String = String()
+  package var currentDeviceID: String = String()
 
-  public var devices: [Dshm_V1_PairedDevice] = []
+  package var devices: [Dshm_V1_PairedDevice] = []
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_ListAudit: Sendable {
+package nonisolated struct Dshm_V1_ListAudit: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var beforeID: String = String()
+  package var beforeID: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_AuditEntry: Sendable {
+package nonisolated struct Dshm_V1_AuditEntry: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var id: String = String()
+  package var id: String = String()
 
-  public var atMs: Int64 = 0
+  package var atMs: Int64 = 0
 
-  public var actor: String = String()
+  package var actor: String = String()
 
-  public var device: String = String()
+  package var device: String = String()
 
-  public var action: String = String()
+  package var action: String = String()
 
-  public var detail: String = String()
+  package var detail: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_AuditPage: Sendable {
+package nonisolated struct Dshm_V1_AuditPage: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var entries: [Dshm_V1_AuditEntry] = []
+  package var entries: [Dshm_V1_AuditEntry] = []
 
-  public var nextBeforeID: String = String()
+  package var nextBeforeID: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -125,29 +125,29 @@ public nonisolated struct Dshm_V1_AuditPage: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_ListDevices: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ListDevices"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+  package static let protoMessageName: String = _protobuf_package + ".ListDevices"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     // Load everything into unknown fields
     while try decoder.nextFieldNumber() != nil {}
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ListDevices, rhs: Dshm_V1_ListDevices) -> Bool {
+  package static func ==(lhs: Dshm_V1_ListDevices, rhs: Dshm_V1_ListDevices) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
 nonisolated extension Dshm_V1_RevokeDevice: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".RevokeDevice"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}device_id\0")
+  package static let protoMessageName: String = _protobuf_package + ".RevokeDevice"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}device_id\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -159,14 +159,14 @@ nonisolated extension Dshm_V1_RevokeDevice: SwiftProtobuf.Message, SwiftProtobuf
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.deviceID.isEmpty {
       try visitor.visitSingularStringField(value: self.deviceID, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_RevokeDevice, rhs: Dshm_V1_RevokeDevice) -> Bool {
+  package static func ==(lhs: Dshm_V1_RevokeDevice, rhs: Dshm_V1_RevokeDevice) -> Bool {
     if lhs.deviceID != rhs.deviceID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -174,10 +174,10 @@ nonisolated extension Dshm_V1_RevokeDevice: SwiftProtobuf.Message, SwiftProtobuf
 }
 
 nonisolated extension Dshm_V1_PairedDevice: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".PairedDevice"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}paired_at_ms\0\u{3}last_seen_at_ms\0")
+  package static let protoMessageName: String = _protobuf_package + ".PairedDevice"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}paired_at_ms\0\u{3}last_seen_at_ms\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -191,7 +191,7 @@ nonisolated extension Dshm_V1_PairedDevice: SwiftProtobuf.Message, SwiftProtobuf
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.id.isEmpty {
       try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
     }
@@ -204,7 +204,7 @@ nonisolated extension Dshm_V1_PairedDevice: SwiftProtobuf.Message, SwiftProtobuf
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_PairedDevice, rhs: Dshm_V1_PairedDevice) -> Bool {
+  package static func ==(lhs: Dshm_V1_PairedDevice, rhs: Dshm_V1_PairedDevice) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.pairedAtMs != rhs.pairedAtMs {return false}
     if lhs.lastSeenAtMs != rhs.lastSeenAtMs {return false}
@@ -214,10 +214,10 @@ nonisolated extension Dshm_V1_PairedDevice: SwiftProtobuf.Message, SwiftProtobuf
 }
 
 nonisolated extension Dshm_V1_DeviceList: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".DeviceList"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}current_device_id\0\u{1}devices\0")
+  package static let protoMessageName: String = _protobuf_package + ".DeviceList"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}current_device_id\0\u{1}devices\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -230,7 +230,7 @@ nonisolated extension Dshm_V1_DeviceList: SwiftProtobuf.Message, SwiftProtobuf._
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.currentDeviceID.isEmpty {
       try visitor.visitSingularStringField(value: self.currentDeviceID, fieldNumber: 1)
     }
@@ -240,7 +240,7 @@ nonisolated extension Dshm_V1_DeviceList: SwiftProtobuf.Message, SwiftProtobuf._
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_DeviceList, rhs: Dshm_V1_DeviceList) -> Bool {
+  package static func ==(lhs: Dshm_V1_DeviceList, rhs: Dshm_V1_DeviceList) -> Bool {
     if lhs.currentDeviceID != rhs.currentDeviceID {return false}
     if lhs.devices != rhs.devices {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -249,10 +249,10 @@ nonisolated extension Dshm_V1_DeviceList: SwiftProtobuf.Message, SwiftProtobuf._
 }
 
 nonisolated extension Dshm_V1_ListAudit: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ListAudit"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}before_id\0")
+  package static let protoMessageName: String = _protobuf_package + ".ListAudit"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}before_id\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -264,14 +264,14 @@ nonisolated extension Dshm_V1_ListAudit: SwiftProtobuf.Message, SwiftProtobuf._M
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.beforeID.isEmpty {
       try visitor.visitSingularStringField(value: self.beforeID, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ListAudit, rhs: Dshm_V1_ListAudit) -> Bool {
+  package static func ==(lhs: Dshm_V1_ListAudit, rhs: Dshm_V1_ListAudit) -> Bool {
     if lhs.beforeID != rhs.beforeID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -279,10 +279,10 @@ nonisolated extension Dshm_V1_ListAudit: SwiftProtobuf.Message, SwiftProtobuf._M
 }
 
 nonisolated extension Dshm_V1_AuditEntry: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".AuditEntry"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}at_ms\0\u{1}actor\0\u{1}device\0\u{1}action\0\u{1}detail\0")
+  package static let protoMessageName: String = _protobuf_package + ".AuditEntry"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}at_ms\0\u{1}actor\0\u{1}device\0\u{1}action\0\u{1}detail\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -299,7 +299,7 @@ nonisolated extension Dshm_V1_AuditEntry: SwiftProtobuf.Message, SwiftProtobuf._
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.id.isEmpty {
       try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
     }
@@ -321,7 +321,7 @@ nonisolated extension Dshm_V1_AuditEntry: SwiftProtobuf.Message, SwiftProtobuf._
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_AuditEntry, rhs: Dshm_V1_AuditEntry) -> Bool {
+  package static func ==(lhs: Dshm_V1_AuditEntry, rhs: Dshm_V1_AuditEntry) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.atMs != rhs.atMs {return false}
     if lhs.actor != rhs.actor {return false}
@@ -334,10 +334,10 @@ nonisolated extension Dshm_V1_AuditEntry: SwiftProtobuf.Message, SwiftProtobuf._
 }
 
 nonisolated extension Dshm_V1_AuditPage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".AuditPage"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}entries\0\u{3}next_before_id\0")
+  package static let protoMessageName: String = _protobuf_package + ".AuditPage"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}entries\0\u{3}next_before_id\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -350,7 +350,7 @@ nonisolated extension Dshm_V1_AuditPage: SwiftProtobuf.Message, SwiftProtobuf._M
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.entries.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.entries, fieldNumber: 1)
     }
@@ -360,7 +360,7 @@ nonisolated extension Dshm_V1_AuditPage: SwiftProtobuf.Message, SwiftProtobuf._M
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_AuditPage, rhs: Dshm_V1_AuditPage) -> Bool {
+  package static func ==(lhs: Dshm_V1_AuditPage, rhs: Dshm_V1_AuditPage) -> Bool {
     if lhs.entries != rhs.entries {return false}
     if lhs.nextBeforeID != rhs.nextBeforeID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

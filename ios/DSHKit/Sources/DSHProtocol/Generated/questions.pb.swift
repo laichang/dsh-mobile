@@ -23,8 +23,8 @@ fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobu
   typealias Version = _2
 }
 
-public nonisolated enum Dshm_V1_QuestionOutcome: SwiftProtobuf.Enum, Swift.CaseIterable {
-  public typealias RawValue = Int
+package nonisolated enum Dshm_V1_QuestionOutcome: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
   case unspecified // = 0
 
   /// Answered on this or another paired phone.
@@ -37,11 +37,11 @@ public nonisolated enum Dshm_V1_QuestionOutcome: SwiftProtobuf.Enum, Swift.CaseI
   case cancelled // = 3
   case UNRECOGNIZED(Int)
 
-  public init() {
+  package init() {
     self = .unspecified
   }
 
-  public init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .unspecified
     case 1: self = .answered
@@ -51,7 +51,7 @@ public nonisolated enum Dshm_V1_QuestionOutcome: SwiftProtobuf.Enum, Swift.CaseI
     }
   }
 
-  public var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .unspecified: return 0
     case .answered: return 1
@@ -62,7 +62,7 @@ public nonisolated enum Dshm_V1_QuestionOutcome: SwiftProtobuf.Enum, Swift.CaseI
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static let allCases: [Dshm_V1_QuestionOutcome] = [
+  package static let allCases: [Dshm_V1_QuestionOutcome] = [
     .unspecified,
     .answered,
     .answeredElsewhere,
@@ -71,116 +71,116 @@ public nonisolated enum Dshm_V1_QuestionOutcome: SwiftProtobuf.Enum, Swift.CaseI
 
 }
 
-public nonisolated struct Dshm_V1_QuestionOption: Sendable {
+package nonisolated struct Dshm_V1_QuestionOption: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// The answer value DSH expects back: the option's label, verbatim.
-  public var label: String = String()
+  package var label: String = String()
 
-  public var description_p: String = String()
+  package var description_p: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_Question: Sendable {
+package nonisolated struct Dshm_V1_Question: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// DSH's question id, echoed in the answer.
-  public var id: String = String()
+  package var id: String = String()
 
-  public var text: String = String()
+  package var text: String = String()
 
   /// Short heading, may be empty.
-  public var header: String = String()
+  package var header: String = String()
 
   /// Supporting detail, may be empty.
-  public var detail: String = String()
+  package var detail: String = String()
 
-  public var options: [Dshm_V1_QuestionOption] = []
+  package var options: [Dshm_V1_QuestionOption] = []
 
-  public var multiSelect: Bool = false
+  package var multiSelect: Bool = false
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// Event: a task waits for the answer to one or more questions.
-public nonisolated struct Dshm_V1_QuestionPending: Sendable {
+package nonisolated struct Dshm_V1_QuestionPending: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// A fresh id per held request; an old card can never answer a later request.
-  public var id: String = String()
+  package var id: String = String()
 
-  public var taskID: String = String()
+  package var taskID: String = String()
 
-  public var questions: [Dshm_V1_Question] = []
+  package var questions: [Dshm_V1_Question] = []
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_QuestionAnswer: Sendable {
+package nonisolated struct Dshm_V1_QuestionAnswer: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var questionID: String = String()
+  package var questionID: String = String()
 
   /// Labels of the chosen options (one or more when the question is multi-select).
-  public var selected: [String] = []
+  package var selected: [String] = []
 
   /// What the user typed instead of, or with, the options: DSH's free-text "other" answer.
-  public var custom: String = String()
+  package var custom: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// Request: answer every question of a pending request. Each answer names offered options, or has
 /// typed text in `custom` (the composer's "回答 Agent…"), or both when the question is multi-select.
-public nonisolated struct Dshm_V1_AnswerQuestion: Sendable {
+package nonisolated struct Dshm_V1_AnswerQuestion: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var id: String = String()
+  package var id: String = String()
 
-  public var answers: [Dshm_V1_QuestionAnswer] = []
+  package var answers: [Dshm_V1_QuestionAnswer] = []
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// Response to AnswerQuestion, and the event that withdraws the card on every phone.
-public nonisolated struct Dshm_V1_QuestionResolved: Sendable {
+package nonisolated struct Dshm_V1_QuestionResolved: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var id: String = String()
+  package var id: String = String()
 
-  public var taskID: String = String()
+  package var taskID: String = String()
 
-  public var outcome: Dshm_V1_QuestionOutcome = .unspecified
+  package var outcome: Dshm_V1_QuestionOutcome = .unspecified
 
   /// What was answered; empty when cancelled.
-  public var answers: [Dshm_V1_QuestionAnswer] = []
+  package var answers: [Dshm_V1_QuestionAnswer] = []
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -188,14 +188,14 @@ public nonisolated struct Dshm_V1_QuestionResolved: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_QuestionOutcome: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0QUESTION_OUTCOME_UNSPECIFIED\0\u{1}QUESTION_OUTCOME_ANSWERED\0\u{1}QUESTION_OUTCOME_ANSWERED_ELSEWHERE\0\u{1}QUESTION_OUTCOME_CANCELLED\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0QUESTION_OUTCOME_UNSPECIFIED\0\u{1}QUESTION_OUTCOME_ANSWERED\0\u{1}QUESTION_OUTCOME_ANSWERED_ELSEWHERE\0\u{1}QUESTION_OUTCOME_CANCELLED\0")
 }
 
 nonisolated extension Dshm_V1_QuestionOption: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".QuestionOption"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}label\0\u{1}description\0")
+  package static let protoMessageName: String = _protobuf_package + ".QuestionOption"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}label\0\u{1}description\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -208,7 +208,7 @@ nonisolated extension Dshm_V1_QuestionOption: SwiftProtobuf.Message, SwiftProtob
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.label.isEmpty {
       try visitor.visitSingularStringField(value: self.label, fieldNumber: 1)
     }
@@ -218,7 +218,7 @@ nonisolated extension Dshm_V1_QuestionOption: SwiftProtobuf.Message, SwiftProtob
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_QuestionOption, rhs: Dshm_V1_QuestionOption) -> Bool {
+  package static func ==(lhs: Dshm_V1_QuestionOption, rhs: Dshm_V1_QuestionOption) -> Bool {
     if lhs.label != rhs.label {return false}
     if lhs.description_p != rhs.description_p {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -227,10 +227,10 @@ nonisolated extension Dshm_V1_QuestionOption: SwiftProtobuf.Message, SwiftProtob
 }
 
 nonisolated extension Dshm_V1_Question: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Question"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}text\0\u{1}header\0\u{1}detail\0\u{1}options\0\u{3}multi_select\0")
+  package static let protoMessageName: String = _protobuf_package + ".Question"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}text\0\u{1}header\0\u{1}detail\0\u{1}options\0\u{3}multi_select\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -247,7 +247,7 @@ nonisolated extension Dshm_V1_Question: SwiftProtobuf.Message, SwiftProtobuf._Me
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.id.isEmpty {
       try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
     }
@@ -269,7 +269,7 @@ nonisolated extension Dshm_V1_Question: SwiftProtobuf.Message, SwiftProtobuf._Me
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_Question, rhs: Dshm_V1_Question) -> Bool {
+  package static func ==(lhs: Dshm_V1_Question, rhs: Dshm_V1_Question) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.text != rhs.text {return false}
     if lhs.header != rhs.header {return false}
@@ -282,10 +282,10 @@ nonisolated extension Dshm_V1_Question: SwiftProtobuf.Message, SwiftProtobuf._Me
 }
 
 nonisolated extension Dshm_V1_QuestionPending: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".QuestionPending"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}task_id\0\u{1}questions\0")
+  package static let protoMessageName: String = _protobuf_package + ".QuestionPending"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}task_id\0\u{1}questions\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -299,7 +299,7 @@ nonisolated extension Dshm_V1_QuestionPending: SwiftProtobuf.Message, SwiftProto
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.id.isEmpty {
       try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
     }
@@ -312,7 +312,7 @@ nonisolated extension Dshm_V1_QuestionPending: SwiftProtobuf.Message, SwiftProto
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_QuestionPending, rhs: Dshm_V1_QuestionPending) -> Bool {
+  package static func ==(lhs: Dshm_V1_QuestionPending, rhs: Dshm_V1_QuestionPending) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.taskID != rhs.taskID {return false}
     if lhs.questions != rhs.questions {return false}
@@ -322,10 +322,10 @@ nonisolated extension Dshm_V1_QuestionPending: SwiftProtobuf.Message, SwiftProto
 }
 
 nonisolated extension Dshm_V1_QuestionAnswer: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".QuestionAnswer"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}question_id\0\u{1}selected\0\u{1}custom\0")
+  package static let protoMessageName: String = _protobuf_package + ".QuestionAnswer"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}question_id\0\u{1}selected\0\u{1}custom\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -339,7 +339,7 @@ nonisolated extension Dshm_V1_QuestionAnswer: SwiftProtobuf.Message, SwiftProtob
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.questionID.isEmpty {
       try visitor.visitSingularStringField(value: self.questionID, fieldNumber: 1)
     }
@@ -352,7 +352,7 @@ nonisolated extension Dshm_V1_QuestionAnswer: SwiftProtobuf.Message, SwiftProtob
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_QuestionAnswer, rhs: Dshm_V1_QuestionAnswer) -> Bool {
+  package static func ==(lhs: Dshm_V1_QuestionAnswer, rhs: Dshm_V1_QuestionAnswer) -> Bool {
     if lhs.questionID != rhs.questionID {return false}
     if lhs.selected != rhs.selected {return false}
     if lhs.custom != rhs.custom {return false}
@@ -362,10 +362,10 @@ nonisolated extension Dshm_V1_QuestionAnswer: SwiftProtobuf.Message, SwiftProtob
 }
 
 nonisolated extension Dshm_V1_AnswerQuestion: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".AnswerQuestion"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}answers\0")
+  package static let protoMessageName: String = _protobuf_package + ".AnswerQuestion"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}answers\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -378,7 +378,7 @@ nonisolated extension Dshm_V1_AnswerQuestion: SwiftProtobuf.Message, SwiftProtob
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.id.isEmpty {
       try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
     }
@@ -388,7 +388,7 @@ nonisolated extension Dshm_V1_AnswerQuestion: SwiftProtobuf.Message, SwiftProtob
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_AnswerQuestion, rhs: Dshm_V1_AnswerQuestion) -> Bool {
+  package static func ==(lhs: Dshm_V1_AnswerQuestion, rhs: Dshm_V1_AnswerQuestion) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.answers != rhs.answers {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -397,10 +397,10 @@ nonisolated extension Dshm_V1_AnswerQuestion: SwiftProtobuf.Message, SwiftProtob
 }
 
 nonisolated extension Dshm_V1_QuestionResolved: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".QuestionResolved"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}task_id\0\u{1}outcome\0\u{1}answers\0")
+  package static let protoMessageName: String = _protobuf_package + ".QuestionResolved"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}task_id\0\u{1}outcome\0\u{1}answers\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -415,7 +415,7 @@ nonisolated extension Dshm_V1_QuestionResolved: SwiftProtobuf.Message, SwiftProt
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.id.isEmpty {
       try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
     }
@@ -431,7 +431,7 @@ nonisolated extension Dshm_V1_QuestionResolved: SwiftProtobuf.Message, SwiftProt
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_QuestionResolved, rhs: Dshm_V1_QuestionResolved) -> Bool {
+  package static func ==(lhs: Dshm_V1_QuestionResolved, rhs: Dshm_V1_QuestionResolved) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.taskID != rhs.taskID {return false}
     if lhs.outcome != rhs.outcome {return false}

@@ -1,8 +1,11 @@
+import DSHTransport
 import Foundation
 
 /// Why one address of a host could not be used, the last time it was tried.
 public struct AddressFailure: Sendable, Equatable, CustomStringConvertible {
-    public var endpoint: HostEndpoint
+    package var endpoint: HostEndpoint
+    public var address: String { endpoint.description }
+    public var port: Int { endpoint.port }
     /// A short reason (`AddressFailure.reason(for:)`), e.g. "URL error -1004, connection refused".
     public var reason: String
     /// What the failure says about the bridge's port, when that is clear; nil for other

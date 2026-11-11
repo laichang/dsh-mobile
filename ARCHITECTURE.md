@@ -106,7 +106,7 @@ Interrupt, model switch and follow-up messages take the same outbound path as an
 - Codegen: `buf` + `protoc-gen-es` (pinned devDependencies of `bridge/`) and `protoc-gen-swift` built by SwiftPM from the swift-protobuf version that `ios/DSHKit` pins. One entry point: `scripts/codegen`.
 - Generated code is committed; `scripts/codegen --check` fails when regeneration changes a file. Xcode builds without a codegen toolchain, and protocol changes show in review.
 - Bridge: pnpm, pinned by `packageManager` (Node ≥ 24.9, as DSH requires); tests use `node:test`.
-- Swift: `ios/DSHKit` contains DSHTransport, DSHProtocol, DSHCore, DSHFeatures, DSHActivity and Debug-only DSHTestSupport. SwiftPM tests run on macOS 15 without a simulator. Views live in the app.
+- Swift: DSHCore wraps DSHTransport, package-visible protobuf messages and SwiftData. DSHFeatures consumes typed DSHCore operations and shares DSHActivity with the app. The widget links only DSHActivity. Debug composition uses DSHTestSupport factories. `scripts/swift-test` checks these boundaries before running the package tests on macOS.
 - Dependencies are pinned to exact versions (`ios/DSHKit/Package.swift`, `bridge/package.json`).
 
 ## 4. Bridge plugin (`bridge/`)

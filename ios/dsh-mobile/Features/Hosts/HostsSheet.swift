@@ -1,6 +1,5 @@
 import DSHCore
 import DSHFeatures
-import DSHProtocol
 import SwiftUI
 
 /// The hosts sheet (screen H), from the "2 / 3" pill in the drawer. Every host is a row of
@@ -132,8 +131,8 @@ private struct HostRow: View {
                     }
                 }
                 // Which of the host's addresses this phone uses (LAN, Tailscale, ...).
-                if let address = host.address {
-                    Text("Via \(address.description)", tableName: "Hosts")
+                if let address = host.addressDescription {
+                    Text("Via \(address)", tableName: "Hosts")
                         .font(.subheadline.monospacedDigit())
                         .foregroundStyle(DSHTheme.textSecondary)
                         .lineLimit(1)
@@ -155,15 +154,15 @@ private struct HostRow: View {
                     .foregroundStyle(DSHTheme.textSecondary)
                 // Every address was tried; the last error of each. In words when it
                 // says why the bridge does not answer, with the error after it.
-                ForEach(host.addressFailures, id: \.endpoint.description) { failure in
+                ForEach(host.addressFailures, id: \.address) { failure in
                     if let kind = failure.kind {
-                        (Text(verbatim: "\(failure.endpoint.description) · ") + kind.sentence
+                        (Text(verbatim: "\(failure.address) · ") + kind.sentence
                             + Text(verbatim: " (\(failure.reason))"))
                             .font(.footnote)
                             .foregroundStyle(DSHTheme.textTertiary)
                             .lineLimit(3)
                     } else {
-                        Text(verbatim: "\(failure.endpoint.description) · \(failure.reason)")
+                        Text(verbatim: "\(failure.address) · \(failure.reason)")
                             .font(.footnote)
                             .foregroundStyle(DSHTheme.textTertiary)
                             .lineLimit(2)
