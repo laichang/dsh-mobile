@@ -24,10 +24,10 @@
       "title": "Extract the transport boundary",
       "needs": [],
       "branch": "claude/s1-5ef6ca7",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "e63c1f5",
       "why": "Both delivery lines need a stable byte channel and one owner for response and event dispatch. Closes #73.",
       "cuts": "Move ordered WebSocket I/O, endpoint probing and generic key storage into DSHTransport. Keep the working connection path while T1 brings up TLS. DSHCore owns protocol-level upload, one inbound dispatcher per connection generation, cancellation, refusal handling and address selection. The transport can carry messages in either direction without decoding a protobuf frame. Keep one protobuf frame per binary WebSocket message. Each side announces its own supported features in Hello; DSHCore correlates responses while dispatching events independently.\nStarting files: `ios/DSHKit/Package.swift`, `ios/DSHKit/Sources/DSHCore/BridgeTransport.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHCore/SecureChannel.swift`, `protocol/frame.proto`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X3.html`.",
       "not": "",
@@ -279,6 +279,11 @@
       "date": "2026-11-11",
       "title": "S3 assigned",
       "body": "Branch `claude/s3-4d1d106`, simulator `55EFAA4C-D381-4378-B6F6-EFE2FC4A4D6B`, DSHM_HOME `~/.dshm/home-s3-55EFAA4C-D381-4378-B6F6-EFE2FC4A4D6B`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S3)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S1 merged",
+      "body": "Merged as `e63c1f5`; the plan/ rules hold on the merge commit. No open [human] items, so S1 is `done`."
     }
   ],
   "pending": [],
