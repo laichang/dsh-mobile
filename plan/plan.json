@@ -23,16 +23,17 @@
       "kind": "slice",
       "title": "Extract the transport boundary",
       "needs": [],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s1-5ef6ca7",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Both delivery lines need a stable byte channel and one owner for response and event dispatch. Closes #73.",
       "cuts": "Move ordered WebSocket I/O, endpoint probing and generic key storage into DSHTransport. Keep the working connection path while T1 brings up TLS. DSHCore owns protocol-level upload, one inbound dispatcher per connection generation, cancellation, refusal handling and address selection. The transport can carry messages in either direction without decoding a protobuf frame. Keep one protobuf frame per binary WebSocket message. Each side announces its own supported features in Hello; DSHCore correlates responses while dispatching events independently.\nStarting files: `ios/DSHKit/Package.swift`, `ios/DSHKit/Sources/DSHCore/BridgeTransport.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHCore/SecureChannel.swift`, `protocol/frame.proto`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X3.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "T1",
@@ -256,6 +257,11 @@
       "date": "2026-11-11",
       "title": "T0 assigned",
       "body": "Branch `claude/t0-a38e968`, simulator `E2E05E75-0562-4887-A5C4-99A7856725D3`, DSHM_HOME `~/.dshm/home-t0-E2E05E75-0562-4887-A5C4-99A7856725D3`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env T0)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S1 assigned",
+      "body": "Branch `claude/s1-5ef6ca7`, simulator `6197D16B-BD7A-4D29-93C3-43C0D9896699`, DSHM_HOME `~/.dshm/home-s1-6197D16B-BD7A-4D29-93C3-43C0D9896699`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S1)\"` exports them."
     }
   ],
   "pending": [],
