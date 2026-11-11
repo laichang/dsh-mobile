@@ -106,7 +106,7 @@ Interrupt, model switch and follow-up messages take the same outbound path as an
 - Codegen: `buf` + `protoc-gen-es` (pinned devDependencies of `bridge/`) and `protoc-gen-swift` built by SwiftPM from the swift-protobuf version that `ios/DSHKit` pins. One entry point: `scripts/codegen`.
 - Generated code is committed; `scripts/codegen --check` fails when regeneration changes a file. Xcode builds without a codegen toolchain, and protocol changes show in review.
 - Bridge: pnpm, pinned by `packageManager` (Node ≥ 24.9, as DSH requires); tests use `node:test`.
-- Swift: one local package `ios/DSHKit` with the targets `DSHProtocol` (generated), `DSHCore` (connection, channels, store, models), `DSHActivity` (Live Activity types, no dependencies) and `DSHTestSupport` (fakes, Debug only). The app target holds views. `swift test` runs on the Mac without a Simulator. DSHKit targets macOS 15 for these host tests (a macOS 26 test bundle cannot load on macOS 15).
+- Swift: `ios/DSHKit` contains DSHTransport, DSHProtocol, DSHCore, DSHActivity and Debug-only DSHTestSupport. SwiftPM tests run on macOS 15 without a simulator. Views live in the app.
 - Dependencies are pinned to exact versions (`ios/DSHKit/Package.swift`, `bridge/package.json`).
 
 ## 4. Bridge plugin (`bridge/`)
@@ -202,12 +202,14 @@ DSHCore (DSHKit)
   , Milestones, Transcript, Outcome, FollowUpQueue, Questions, Attachments, Dictation, LiveActivities
 Persistence
    SwiftData: CachedHost (cursor), CachedTask (transcript, milestones, blocks, attachments, read state)
+DSHTransport
+   Ordered WebSocket I/O, endpoint probing and device-only Keychain storage
 DSHProtocol
    generated from protocol/ (swift-protobuf)
 ```
 
 - **Design as data (provisional, pending user confirmation):** `design/screens.json`: screens and shared parts (needs, nav, STORY sections, rules with XCUITests). A screen is `design/screens/<id>.html` on `design/kit/` (png: `scripts/render-design`); `scripts/check-design` checks them and the theme names. Not chosen: one board.
-- **One `HostConnection` per paired host.** It owns its WebSocket, handshake, address order and reconnect. Each connection runs a fresh handshake (Noise has no session resumption); the cipher, outbox and receive loop belong to one connection generation, so a stale loop never tears down a newer one.
+- **One `HostConnection` per paired host.** Each address attempt negotiates fresh Noise keys. Each generation owns its cipher, ordered writer and receive loop. The loop correlates responses by ID, delivers events to the store and ignores incoming requests.
 - **`TaskListStore`** runs one sync loop per host: connect, Hello, Resume from the cached cursor; on a drop, backoff from 0.5 s to 30 s. `background()` closes the sockets; `foreground()` reconnects at once. iOS cannot keep sockets alive in the background.
 - **Cache**: events at or below the cursor, and chunks at or below a task's chunk seq, are skipped, so replays are idempotent. Saved within about 150 ms of each event. After a `LogReset` the app calls `ListTasks`; a cached task still running in a log that is gone is marked failed ("the bridge restarted").
 - **Keys**: the phone's only key is its Noise static key (X25519) in the Keychain (`ThisDeviceOnly`, never synced), shared by all hosts. No Secure Enclave key: it does not do X25519.
