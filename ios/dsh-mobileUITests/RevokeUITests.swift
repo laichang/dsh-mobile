@@ -39,10 +39,10 @@ final class RevokeUITests: XCTestCase {
     }
 
     /// The notice, once: "访问已被吊销 / MacBook-Pro 已吊销这台手机的访问…". 好 closes it.
-    private func dismissNotice(_ app: XCUIApplication) {
+    private func dismissNotice(_ app: XCUIApplication, host: String = RevokeUITests.mac) {
         let notice = app.alerts["访问已被吊销"]
         XCTAssertTrue(notice.waitForExistence(timeout: 20), app.debugDescription)
-        XCTAssertTrue(notice.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "\(Self.mac) 已吊销")).firstMatch.exists,
+        XCTAssertTrue(notice.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "\(host) 已吊销")).firstMatch.exists,
                       notice.debugDescription)
         saveShot("revoke-revoked-notice")
         notice.buttons["好"].tap()
@@ -238,7 +238,7 @@ final class RevokeUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launch()
-        dismissNotice(app)
+        dismissNotice(app, host: try XCTUnwrap(env["DSHM_REVOKED_HOST_NAME"]))
         openDrawer(app)
         XCTAssertEqual(waitForValue(any(app, "drawer.hosts").firstMatch, in: ["1/1"], timeout: 30), "1/1")
         let rows = app.buttons.matching(identifier: "drawer.session")
