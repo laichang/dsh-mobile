@@ -1,0 +1,12 @@
+{
+  "id": "S12",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "The repository guidance and generated brief no longer require confirmation solely for a dependency or provisional choice. Download confirmation remains. cmd:scripts/brief-test and cmd:scripts/check-docs.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}
