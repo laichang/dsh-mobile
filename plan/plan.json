@@ -188,6 +188,24 @@
       "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
       "demo": null,
       "log": []
+    },
+    {
+      "id": "S11",
+      "kind": "slice",
+      "title": "Fix: Limit cleanup to resources owned by the recorded assignment",
+      "needs": [
+        "T0"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Fix: Limit cleanup to resources owned by the recorded assignment; start a fix session",
+      "merge": null,
+      "why": "The user reported a bug on 2026-11-11: On merged S10, cleanup deleted two historical branches (restored), old /tmp directories, and reused a prior device/home when no old registry row existed. Scope cleanup to verifiable resources of this assignment and preserve unknown older ones; test against legacy state.",
+      "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
+      "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
+      "demo": null,
+      "log": []
     }
   ],
   "exit": [],
