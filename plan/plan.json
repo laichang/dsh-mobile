@@ -60,16 +60,17 @@
       "needs": [
         "T0"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s2-7c569b0",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Both host-management entry points must act on the same selected host and device. Closes #75.",
       "cuts": "Route both the drawer and the hosts sheet through the selected host's device, audit-page and revocation operations in DSHCore. Interpret support and refusal once. Each feature owns its views and local interaction state. If the other device-management change has already landed, rerun self-revocation from both entry points on the integrated code.\nStarting files: `ios/dsh-mobile/Features/Devices/DeviceManagementView.swift`, `ios/dsh-mobile/Features/Hosts/HostActions.swift`, `ios/dsh-mobile/Features/Hosts/HostsSheet.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`.\nScreen references: `design/screens/02.html`, `design/screens/H.html`, `design/screens/X2.html`, `design/screens/08.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S3",
@@ -267,6 +268,11 @@
       "date": "2026-11-11",
       "title": "T0 merged",
       "body": "Merged as `83b9217`; the plan/ rules hold on the merge commit. No open [human] items, so T0 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S2 assigned",
+      "body": "Branch `claude/s2-7c569b0`, simulator `A3D5FA03-BF1B-438A-8889-F54AE28B23BD`, DSHM_HOME `~/.dshm/home-s2-A3D5FA03-BF1B-438A-8889-F54AE28B23BD`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S2)\"` exports them."
     }
   ],
   "pending": [],
