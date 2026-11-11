@@ -1,6 +1,6 @@
 # X2 · Spike: Noise interop: conclusion
 
-Working note for PLAN.md X2 (answers ARCHITECTURE §8.3, feeds the Noise choice and S1). Archive it to `.archive/YYYYMMDD/x2-noise.md` once S1 has acted on it.
+[Current development process](../../AGENTS.md#process).
 
 ## Answer
 

@@ -1,6 +1,6 @@
 # X1 (M2) · Spike: model failures in DSH: conclusion
 
-Working note for PLAN.md X1 (feeds S3, issue #4). Measured on 2026-11-08 against DSH `0.2.2-rc.1` (`dsh web`, `DSH_HOME=~/.dshm/home-x1`), with a fake DeepSeek provider in front of DSH's mock LLM. Delete this folder once S3 has acted on it (move the fixtures it replays first, see [Fixtures](#fixtures)).
+[Current development process](../../AGENTS.md#process). Measured on 2026-11-08 against DSH `0.2.2-rc.1` (`dsh web`, `DSH_HOME=~/.dshm/home-x1`), with a fake DeepSeek provider in front of DSH's mock LLM.
 
 ## Answer
 
