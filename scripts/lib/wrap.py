@@ -222,8 +222,8 @@ def map_js(path):
     return rel(p)
 
 
-PARSERS = {"xc": parse_xc, "swift-test": parse_swift, "pnpm-test": parse_pnpm}
-TOOL_NAMES = {"xc": "xcodebuild", "swift-test": "swift test", "pnpm-test": "pnpm test"}
+PARSERS = {"xc": parse_xc, "swift-test": parse_swift, "pnpm-test": parse_pnpm, "node-test": parse_pnpm}
+TOOL_NAMES = {"xc": "xcodebuild", "swift-test": "swift test", "pnpm-test": "pnpm test", "node-test": "node --test"}
 
 
 def summary(kind, action, text, code, log):
@@ -326,7 +326,9 @@ def run(kind, argv):
             k = args.index("--dir")
             d = Path(args[k + 1])
             args = args[:k] + args[k + 2:]
-        cmd = ["corepack", "pnpm", "test"] + args
+        if args[:1] == ["--node-test"]:
+            kind, args = "node-test", args[1:]
+        cmd = (["node", "--test"] if kind == "node-test" else ["corepack", "pnpm", "test"]) + args
         cwd = d
         PNPM_DIR = d.resolve()
     log = log or default_log(kind, action)

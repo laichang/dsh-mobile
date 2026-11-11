@@ -4,6 +4,8 @@
 #
 #   scripts/pnpm-test [--log FILE] [--dir DIR] [pnpm test args…]     default DIR: bridge/
 #
+#   scripts/pnpm-test [--dir DIR] --node-test FILE…   run selected compiled Node tests in DIR
+#
 # Summary format: scripts/lib/wrap.py.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

@@ -43,7 +43,7 @@ listening() { lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
 demo_prepare_bridge
 step "bridge tests: the listen error line (node:test)"
 (cd bridge && corepack pnpm build >/dev/null)
-demo_part bridge-errors-bridge-test node --test bridge/lib/test/listen-errors.test.js
+demo_part bridge-errors-bridge-test scripts/pnpm-test --node-test lib/test/listen-errors.test.js
 
 step "DSHKit tests: the three reasons (swift test, fake and loopback sockets)"
 demo_part bridge-errors-swift-test scripts/swift-test --package-path ios/DSHKit --filter OfflineReasonsTests
