@@ -79,16 +79,17 @@
       "needs": [
         "T0"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s3-4d1d106",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Users must retain the selected provider, model and reasoning effort across the boundary. Closes #76.",
       "cuts": "Translate provider groups, model choices, optional reasoning effort, availability, defaults and errors at the host boundary. Keep picker draft and display decisions in the feature. Apply the same mapping to live and cached selections.\nStarting files: `ios/dsh-mobile/Features/Models/ModelControl.swift`, `ios/DSHKit/Sources/DSHCore/Models.swift`, `ios/DSHKit/Tests/DSHKitTests/PickerTests.swift`.\nScreen references: `design/screens/01.html`, `design/screens/M.html`, `design/screens/X4.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S4",
@@ -273,6 +274,11 @@
       "date": "2026-11-11",
       "title": "S2 assigned",
       "body": "Branch `claude/s2-7c569b0`, simulator `A3D5FA03-BF1B-438A-8889-F54AE28B23BD`, DSHM_HOME `~/.dshm/home-s2-A3D5FA03-BF1B-438A-8889-F54AE28B23BD`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S2)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S3 assigned",
+      "body": "Branch `claude/s3-4d1d106`, simulator `55EFAA4C-D381-4378-B6F6-EFE2FC4A4D6B`, DSHM_HOME `~/.dshm/home-s3-55EFAA4C-D381-4378-B6F6-EFE2FC4A4D6B`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S3)\"` exports them."
     }
   ],
   "pending": [],
