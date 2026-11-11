@@ -10,7 +10,7 @@ DSHM_MIN_FREE_GB; all dshm-* simulators; worktrees; /tmp/dshm-* paths and their 
 and age, its distance from main, uncommitted files in its worktree, the processes that run for it
 (demo, review, xcodebuild, swift test), and its latest review result. "attention" lists what
 looks stuck, free space below the floor, and what slices in review or done left behind
-(simulator, worktrees, /tmp/dshm-<id>*; remove with `scripts/plan cleanup <ID>`). It cannot see the app's sessions: use list_sessions (linked: true) for those.
+(registered simulator and worktree; remove with `scripts/plan cleanup <ID>`). It cannot see the app's sessions: use list_sessions (linked: true) for those.
 """
 
 import argparse
@@ -29,9 +29,6 @@ IDLE_AFTER_MIN = 45        # a doing slice with no process and no commit for thi
 HEARTBEAT_STALE_MIN = 30   # the heartbeat fires about every 20 minutes
 SIM_LIMIT, MIN_IDLE = 3, 15
 DU_TIMEOUT_S = 5           # du over /tmp/dshm-* (DerivedData copies); skipped with --fast
-# Demos that run after their merge: round-trip.sh at the start of each work session and
-# shell.sh --all as a regression in reviews. Their /tmp/dshm-t0*, /tmp/dshm-t1* are caches, not leftovers.
-SHARED_DEMO_TMP = ("T0", "T1")
 REVIEW_DIR = Path("/tmp/dshm-review")
 PROC_RE = re.compile(r"xcodebuild|swift-test|swiftpm-testing|scripts/review|scripts/demo/|xctest|swift test|swift-build")
 
@@ -237,18 +234,15 @@ def main():
     for r in rows:
         if r["status"] not in ("review", "done"):
             continue
-        sid, rx = r["id"], dshm.slice_key_re(r["id"])
-        sim = registry.get(sid, {}).get("sim") or f"dshm-{sid}"
+        sid = r["id"]
+        reg = registry.get(sid)
+        if not reg or r["branch"] != f"`{reg['branch']}`":
+            continue
         stale = []
-        n = sum(d["name"] == sim for d in all_sims)
-        if n:
-            stale.append(f"simulator {sim}" + (f" ×{n}" if n > 1 else ""))
-        wl = [w for w in wt_list if w["branch"] and rx.search(w["branch"])]
-        if wl:
-            stale.append(f"{len(wl)} worktree{'s' if len(wl) > 1 else ''}")
-        tl = [] if sid in SHARED_DEMO_TMP else dshm.slice_tmp_paths(sid)
-        if tl:
-            stale.append(f"{len(tl)} {dshm.tmp_root()}/dshm-{sid.lower()}* path{'s' if len(tl) > 1 else ''}")
+        if any(d["udid"] == reg["sim"] for d in all_sims):
+            stale.append(f"simulator {reg['sim']}")
+        if any(w["branch"] == reg["branch"] for w in wt_list):
+            stale.append("1 worktree")
         if stale:
             attention.append(f"{sid} is {r['status']}, but {', '.join(stale)} remain: "
                              f"scripts/plan cleanup {sid} (on main)")
@@ -287,6 +281,7 @@ def main():
                 or re.search(rf"(dshm-{sid}\b|/tmp/dshm-{key}\b|scripts/demo/{key}\.sh|scripts/review {sid}\b)", p[2])]
         if reg:
             owned_sims.add(reg["sim"])
+            owned_sims.update(d["name"] for d in all_sims if d["udid"] == reg["sim"])
         owned_sims.add(f"dshm-{sid}")
         if mine:
             seen = set()

@@ -393,7 +393,7 @@ test('ready UI nodes get separate simulators and a successor reuses the released
         const row = readFileSync(join(repo, 'scripts/resources.tsv'), 'utf8').split('\n')
           .findLast((line) => line.startsWith(id + '\t')).split('\t')
         assigned[id] = { slot: row[2], sim: row[7] }
-        const devices = readdirSync(join(t, 'devices')).map((f) => readFileSync(join(t, 'devices', f), 'utf8'))
+        const devices = readdirSync(join(t, 'devices'))
         assert.ok(devices.includes(row[7]))
         if (id === 'S96') await second
         if (id === 'S97') scheduledSecond()

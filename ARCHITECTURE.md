@@ -289,7 +289,7 @@ A drawer page with 等我处理 / 正在跑 / 已完成 across hosts, from the c
 - **Output wrappers (provisional, pending user confirmation):** `scripts/xc <action>`, `scripts/swift-test`, `scripts/pnpm-test` log to `/tmp/dshm-*` and emit JSON counts and first errors as `file:line` (`scripts/lib/wrap.py`). `scripts/check-wrappers` enforces their use in demos and review. `xcbeautify` and `xcpretty` lack JSON.
 - **Plan data (provisional, pending user confirmation):** `scripts/plan verify` checks `cmd:` evidence on the branch. `scripts/plan merge` rechecks the merge commit with target tools and items from `plan/*.json`, requiring review of changes to commands, their directories and `scripts/lib/`. `.claude/workflows/run-plan.js` (`scripts/run-plan-args`) schedules ≤3 nodes, ≤3 fresh rounds each.
 - **Slice brief (provisional, pending user confirmation):** a build agent reads `scripts/brief <ID>`, not the docs (`scripts/brief-test`).
-- **UI tests** use `scripts/demo/<name>.sh` or `scripts/review` with the disk, CPU and device guard in `scripts/demo/lib.sh`. The scheduler creates each node’s simulator before build and releases it on merge.
+- **UI tests**: demos and review use the disk, CPU and device guard in `scripts/demo/lib.sh`. Cleanup matches the assigned simulator UDID, home and branch.
 - **Debug-only entry points**, behind `#if DEBUG` and the Debug Info.plist; `scripts/check-release-clean` proves a Release build has none:
   - `-DSHM…` launch arguments (`DebugEntryPoints.swift`): `-DSHMFakeBridge` and `-DSHMFakeScenario <name>` put a `FakeHost` in process; others preset the prompt, the bridge port (default 47801), speech, the store and pairing.
   - The URL scheme `dshm://pair?…` and the accessibility identifiers that the UI tests use.
