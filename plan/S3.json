@@ -16,7 +16,10 @@
       "text": "Fail one round, resume, and verify that a new builder gets the next brief with the last review and the remaining round budget. Fallback coordinator instructions also start a fresh session. Run scripts/run-plan-test and scripts/brief-test.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/run-plan-test"
+      ]
     }
   ]
 }
