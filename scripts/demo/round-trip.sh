@@ -35,7 +35,12 @@ step "DSHKit tests (swift test, FakeBridge, golden fixtures)"
 demo_swift_tests "$LOGS/swift-test.log"
 
 DSH_PID=""
-cleanup() { [ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true; }
+cleanup() {
+  if [ -n "$DSH_PID" ]; then
+    kill "$DSH_PID" 2>/dev/null || true
+    wait "$DSH_PID"
+  fi
+}
 demo_tls_on_exit cleanup
 if [ $FAKE_ONLY = 0 ]; then
   if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
