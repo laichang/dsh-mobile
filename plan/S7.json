@@ -6,7 +6,10 @@
       "text": "Clean all live references in the spike tree and run scripts/check-old-docs against the whole repository.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/check-old-docs"
+      ]
     },
     {
       "tier": "auto",
