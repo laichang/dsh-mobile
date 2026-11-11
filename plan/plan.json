@@ -195,16 +195,17 @@
       "needs": [
         "S8"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s9-c84bb59",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "All real-network demos must exercise the production transport before cutover. Closes #82.",
       "cuts": "Add a shared TLS enrollment step in `scripts/demo/lib.sh`. Inventory the demos and fixtures that use a network listener, then migrate them to the production TLS path. Retain in-process fakes for isolated tests. S9 owns demo migration, and S10 owns release cutover and removal of the old implementations. Budget review of the shared helper and the changed evidence scripts. Follow the merge tool's actual protected-path list and record each reviewed path it requires. Keep demo and slice resources isolated during concurrent runs.\nStarting files: `scripts/demo/lib.sh`, `scripts/demo/round-trip.sh`, `scripts/demo/attachments.sh`, `scripts/demo/reconnect.sh`, `scripts/demo/revoke.sh`.\nScreen references: `design/screens/08.html`, `design/screens/04.html`, `design/screens/H.html`, `design/screens/X2.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S10",
@@ -388,6 +389,11 @@
       "date": "2026-11-11",
       "title": "S8 merged",
       "body": "Merged as `89a8c8c`; the plan/ rules hold on the merge commit. No open [human] items, so S8 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S9 assigned",
+      "body": "Branch `claude/s9-c84bb59`, simulator `4C52BC88-0A2D-45D9-8FBC-7A9A11010542`, DSHM_HOME `~/.dshm/home-s9-4C52BC88-0A2D-45D9-8FBC-7A9A11010542`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S9)\"` exports them."
     }
   ],
   "pending": [
