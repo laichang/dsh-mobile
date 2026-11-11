@@ -18,7 +18,8 @@
       "screens": [],
       "passed": false,
       "evidence": [
-        "cmd:scripts/close-plan-github-test"
+        "cmd:scripts/close-plan-github-test",
+        "cmd:scripts/close-plan-simulators-test"
       ]
     }
   ]
