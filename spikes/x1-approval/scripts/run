@@ -1,7 +1,7 @@
 #!/bin/sh
 # X1: start a real DSH 0.2.2-rc.1 (mock LLM) with the throwaway approval-answerer plugin and run
 # every scenario (see ../run.mjs). Writes ../results/latest.json; exits non-zero if a check fails.
-# Needs: ~/.dshm/runtime (DSH + mock server, see PLAN.md T0 Log), Node >= 24.9, a pnpm on PATH.
+# Needs: ~/.dshm/runtime (DSH + mock server, installed by scripts/bootstrap), Node >= 24.9, a pnpm on PATH.
 # Env: DSHM_WEB_PORT (3282), DSHM_MOCK_PORT (47804), X1_CONTROL_PORT (47803),
 #      DSHM_HOME (~/.dshm/home-x1x4), DSHM_RUNTIME (~/.dshm/runtime).
 set -eu

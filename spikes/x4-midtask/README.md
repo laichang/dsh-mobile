@@ -1,6 +1,6 @@
 # X4 · Spike: mid-task context: conclusion
 
-Working note for PLAN.md X4 (answers ARCHITECTURE §8.6, feeds the M2 mid-task context slice). Archive it to `.archive/YYYYMMDD/x4-midtask.md` once that slice has acted on it. Measured on 2026-11-05 against DSH `0.2.2-rc.1` (`dsh web`, mock LLM, `DSH_HOME=~/.dshm/home-x1x4`).
+[Current development process](../../AGENTS.md#process). Measured on 2026-11-05 against DSH `0.2.2-rc.1` (`dsh web`, mock LLM, `DSH_HOME=~/.dshm/home-x1x4`).
 
 ## Answer
 

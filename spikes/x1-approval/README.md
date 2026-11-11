@@ -1,6 +1,6 @@
 # X1 · Spike: approval answerer: conclusion
 
-Working note for PLAN.md X1 (answers ARCHITECTURE §8.1, feeds S4). Archive it to `.archive/YYYYMMDD/x1-approval.md` once S4 has acted on it. Measured on 2026-11-05 against DSH `0.2.2-rc.1` (`dsh web`, mock LLM, `DSH_HOME=~/.dshm/home-x1x4`).
+[Current development process](../../AGENTS.md#process). Measured on 2026-11-05 against DSH `0.2.2-rc.1` (`dsh web`, mock LLM, `DSH_HOME=~/.dshm/home-x1x4`).
 
 ## Answer
 
@@ -33,7 +33,7 @@ node spikes/x1-approval/release.mjs list        # while a scenario holds one: se
 node spikes/x1-approval/release.mjs first allow # release it (allow | reject); the phone's AnswerApproval
 ```
 
-Needs `~/.dshm/runtime` (DSH + mock server, see PLAN.md T0 Log), Node ≥ 24.9 and a `pnpm` on PATH (the script finds both). Ports: DSH web 3282, mock proxy 47804, plugin control 47803. The run adds the plugin to the `web` profile of `~/.dshm/home-x1x4`.
+Needs `~/.dshm/runtime` (DSH + mock server, installed by [scripts/bootstrap](../../scripts/bootstrap)), Node ≥ 24.9 and a `pnpm` on PATH (the script finds both). Ports: DSH web 3282, mock proxy 47804, plugin control 47803. The run adds the plugin to the `web` profile of `~/.dshm/home-x1x4`.
 
 ## Layout
 

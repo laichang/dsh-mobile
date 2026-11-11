@@ -78,6 +78,19 @@ d=$(tree old)
 git -C "$SRC" show d5271d1:ARCHITECTURE.md > "$d/ARCHITECTURE.md" 2>/dev/null \
   && expect "the old ARCHITECTURE.md (Dxx, §7 Milestones, ~37k tokens) fails" 1 "$d" "more than 10000"
 
+echo "check-old-docs"
+d="$T/old-docs"
+git clone --quiet --local --no-checkout "$SRC" "$d" || exit 1
+mkdir -p "$d/spikes/example"
+spike="spikes/example/README.md"
+printf 'See %s.md\n' WORKFLOW > "$d/$spike"
+out=$(cd "$d" && "$SRC/scripts/check-old-docs" 2>&1); rc=$?
+if [ "$rc" = 1 ] && grep -qF "$spike:1:" <<<"$out"; then ok "a removed process doc in a spike reports its path"
+else bad "a removed process doc in a spike (exit $rc): $out"; fi
+printf 'See ../../AGENTS.md#process\n' > "$d/$spike"
+if (cd "$d" && "$SRC/scripts/check-old-docs"); then ok "the corrected spike passes"
+else bad "the corrected spike fails"; fi
+
 echo "repository"
 if out=$("$CHECK" 2>&1); then ok "scripts/check-docs passes on this repository"
 else bad "scripts/check-docs fails on this repository"; printf '%s\n' "$out" | head -20 | sed 's/^/        /'; fi
