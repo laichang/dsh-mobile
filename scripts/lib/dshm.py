@@ -13,6 +13,7 @@ from pathlib import Path
 STATUSES = ("todo", "doing", "blocked", "review", "done")
 ACTIVE = ("todo", "doing", "blocked")          # a slice in these states holds its resources
 SLICE_ID_RE = re.compile(r"^(T|X|S|M)\d+$")
+SIM_UDID = re.compile(r"[0-9A-F]{8}(?:-[0-9A-F]{4}){3}-[0-9A-F]{12}")
 REGISTRY = "scripts/resources.tsv"
 REGISTRY_COLUMNS = ("id", "branch", "slot", "bridge", "web", "bridge2", "web2", "sim", "home",
                     "decisions", "assigned")
@@ -105,8 +106,6 @@ def expand_home(path):
 
 
 # ---------------------------------------------------------------- disk and leftovers of a slice
-# A merged slice leaves a simulator (2-4 GB), a worktree, /tmp/dshm-<id>* dirs (DerivedData
-# copies, logs) and a DSHM_HOME. scripts/plan cleanup removes them; scripts/status counts them.
 
 MIN_FREE_GB_DEFAULT = 30       # the floor of the guard in scripts/demo/lib.sh (DSHM_MIN_FREE_GB)
 
@@ -150,20 +149,6 @@ def simulators():
     return out
 
 
-def slice_key_re(sid):
-    """Matches a branch name of slice <sid>: claude/s31-pair-tailscale-83a483, codex/s31-x."""
-    return re.compile(rf"(^|/){re.escape(sid.lower())}(-|$)")
-
-
-def slice_tmp_paths(sid):
-    """/tmp/dshm-<id> and /tmp/dshm-<id>-* (lowercase id). Exact: s1 does not match dshm-s10-dd."""
-    root, key = tmp_root(), sid.lower()
-    hits = [p for p in root.glob(f"dshm-{key}-*")]
-    if (root / f"dshm-{key}").exists() or (root / f"dshm-{key}").is_symlink():
-        hits.append(root / f"dshm-{key}")
-    return sorted(hits)
-
-
 def worktree_entries(cwd=None):
     """[dict(path, head, branch)] from git worktree list; branch is '' when detached."""
     out, cur = [], None
@@ -176,13 +161,6 @@ def worktree_entries(cwd=None):
         elif cur is not None and line.startswith("branch refs/heads/"):
             cur["branch"] = line[18:]
     return out
-
-
-def slice_branches(sid, cwd=None):
-    """Local branches whose name belongs to slice <sid> (slice_key_re)."""
-    rx = slice_key_re(sid)
-    names = git("for-each-ref", "--format=%(refname:short)", "refs/heads/", cwd=cwd).split("\n")
-    return [b for b in names if b and b != "main" and rx.search(b)]
 
 
 def safe_slice_home(home):

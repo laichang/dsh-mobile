@@ -68,14 +68,10 @@ Coordinator (on main):
         ARCHITECTURE.md; add the log entry with the review result from /tmp/dshm-review. Then
         the cleanup below; --keep skips it
   plan cleanup <ID>
-        remove what a merged slice left on the Mac, and print each thing: the simulator dshm-<ID>;
-        /tmp/dshm-<id> and /tmp/dshm-<id>-*; each worktree and branch of the slice whose HEAD is
-        an ancestor of the merge commit (`cleanup`: of main) and that has no uncommitted or
-        untracked file (`git worktree remove`, `git branch -d`, never forced); its DSHM_HOME if it
-        is inside ~/.dshm/. A simulator that a running demo owns (/tmp/dshm-guard) and a /tmp path
-        that a running process names stay. It prints what it leaves, and why. Only for a slice
-        that is review or done. With DSHM_CLEANUP_DRY=1 or --dry-run it prints what it would
-        remove and removes nothing
+        for a merged node, remove its registered simulator by UDID, its matching home and its
+        exact branch and clean merged worktree. Keep resources with a running simulator owner.
+        A legacy device name or /tmp filename alone does not identify an assignment.
+        DSHM_CLEANUP_DRY=1 or --dry-run prints the actions without removing anything.
 
 Slice owner (on the slice branch):
   plan evidence <ID> <item number> "<pointer>"   add an evidence pointer (cmd:, test:, commit:,
@@ -653,70 +649,45 @@ def destroy(dry, what, *steps):
 
 
 def cleanup(root, sid, target, dry):
-    """Remove the simulator, /tmp dirs, worktrees, branches and DSHM_HOME of slice <sid>.
+    """Remove the simulator, home and merged worktree of the recorded assignment.
     A worktree or branch goes only when its HEAD is an ancestor of <target> and it is clean."""
     reg = [r for r in dshm.parse_registry((root / dshm.REGISTRY).read_text()) if r["id"] == sid] \
         if (root / dshm.REGISTRY).exists() else []
-    row = reg[-1] if reg else {}
-    if reg and (root / plandata.PLAN_FILE).exists():
-        branch = plandata.find_node(plandata.read_plan(root), sid).get("branch")
-        if row["branch"] != branch:
-            print(f"plan: cleanup: resources belong to {row['branch']}, not the current assignment; left them in place")
-            return
-    left = 0
+    if not reg or not (root / plandata.PLAN_FILE).exists():
+        print("plan: cleanup: no current assignment; left resources in place")
+        return
+    row = reg[-1]
+    branch = plandata.find_node(plandata.read_plan(root), sid).get("branch")
+    if row["branch"] != branch:
+        print(f"plan: cleanup: resources belong to {row['branch']}, not the current assignment; left them in place")
+        return
 
-    # 1. Simulator dshm-<ID> (each device with that name, by UDID).
-    sim = row.get("sim") or f"dshm-{sid}"
-    owner = Path(os.environ.get("DSHM_OWNERS", "/tmp/dshm-guard")) / sim   # the guard's record
+    # Older rows have a shared device name and home. Only simctl's returned UDID identifies the allocation.
+    sim = row["sim"]
+    owned = dshm.SIM_UDID.fullmatch(sim)
+    left = 0
+    owner = Path(os.environ.get("DSHM_OWNERS", "/tmp/dshm-guard")) / sim
     pid = owner.read_text().split()[0] if owner.is_file() and owner.read_text().split() else ""
     if pid.isdigit() and subprocess.run(["kill", "-0", pid], capture_output=True).returncode == 0:
         print(f"plan: cleanup: left simulator {sim}: a demo or review (pid {pid}) owns it")
-        left += 1
-    elif sim.startswith("dshm-"):
-        for d in dshm.simulators():
-            if d["name"] == sim:
-                destroy(dry, f"simulator {sim} ({d['udid']})",
-                        ["-", "xcrun", "simctl", "shutdown", d["udid"]],
-                        ["xcrun", "simctl", "delete", d["udid"]])
+        return
+    if owned and any(d["udid"] == sim for d in dshm.simulators()):
+        destroy(dry, f"simulator {sim}", ["-", "xcrun", "simctl", "shutdown", sim],
+                ["xcrun", "simctl", "delete", sim])
 
-    # 2. /tmp/dshm-<id> and /tmp/dshm-<id>-*. Not while a process uses them: the review of
-    #    another slice can run the demo of this slice as a regression.
-    key = sid.lower()
-    ps = [l.strip() for l in subprocess.run(["ps", "-axo", "command="], capture_output=True, text=True).stdout.split("\n")
-          if l.strip() and "scripts/plan" not in l]
-    for path in dshm.slice_tmp_paths(sid):
-        users = [l for l in ps if re.search(rf"{re.escape(path.name)}(?![\w.-])|scripts/demo/{key}\.sh", l)]
-        if users:
-            print(f"plan: cleanup: left {path}: a process uses it ({users[0][:80]})")
-            left += 1
-        else:
-            destroy(dry, str(path), ("rm", str(path)))
-
-    # 3. Worktrees and branches of the slice, only when merged into <target> and clean.
     here = {str(root), str(dshm.main_checkout())}
     wts = dshm.worktree_entries(cwd=root)
-    reg_branch = row.get("branch")
-    historical = {r["branch"] for r in reg[:-1] if r["branch"] != reg_branch}
-    branches = [b for b in dshm.slice_branches(sid, cwd=root) if b not in historical]
-    if reg_branch and reg_branch not in branches and \
-            dshm.git("rev-parse", "--verify", "-q", f"refs/heads/{reg_branch}", cwd=root, check=False):
-        branches.append(reg_branch)
 
-    def merged(commit):
-        return subprocess.run(["git", "merge-base", "--is-ancestor", commit, target], cwd=root).returncode == 0
-
-    for br in branches:
-        tip = dshm.git("rev-parse", br, cwd=root)
-        holders = [w for w in wts if w["branch"] == br and w["path"] not in here]
-        if any(w["branch"] == br and w["path"] in here for w in wts):
-            print(f"plan: cleanup: left branch {br}: it is checked out here")
-            left += 1
-            continue
-        if not merged(tip):
+    if dshm.git("show-ref", "--verify", "--hash", f"refs/heads/{branch}", cwd=root, check=False):
+        tip = dshm.git("rev-parse", branch, cwd=root)
+        holders = [w for w in wts if w["branch"] == branch and w["path"] not in here]
+        if any(w["branch"] == branch and w["path"] in here for w in wts):
+            print(f"plan: cleanup: left branch {branch}: it is checked out here")
+            return
+        if subprocess.run(["git", "merge-base", "--is-ancestor", tip, target], cwd=root).returncode:
             where = f" and worktree {holders[0]['path']}" if holders else ""
-            print(f"plan: cleanup: left branch {br}{where}: {tip[:7]} is not merged into {target[:7]}")
-            left += 1
-            continue
+            print(f"plan: cleanup: left branch {branch}{where}: {tip[:7]} is not merged into {target[:7]}")
+            return
         ok = True
         for w in holders:
             dirty = subprocess.run(["git", "--no-optional-locks", "-C", w["path"], "status", "--porcelain"],
@@ -726,19 +697,17 @@ def cleanup(root, sid, target, dry):
                 ok = False
             elif dirty.stdout.strip():
                 n = len(dirty.stdout.strip().split("\n"))
-                print(f"plan: cleanup: left worktree {w['path']} ({br}): {n} uncommitted or untracked file(s)")
+                print(f"plan: cleanup: left worktree {w['path']} ({branch}): {n} uncommitted or untracked file(s)")
                 ok = False
-            elif not destroy(dry, f"worktree {w['path']} ({br})", ["git", "-C", str(root), "worktree", "remove", w["path"]]):
+            elif not destroy(dry, f"worktree {w['path']} ({branch})", ["git", "-C", str(root), "worktree", "remove", w["path"]]):
                 ok = False
         if not ok:
             left += 1
-            continue
-        if not destroy(dry, f"branch {br}", ["git", "-C", str(root), "branch", "-d", br]):
+        elif not destroy(dry, f"branch {branch}", ["git", "-C", str(root), "branch", "-d", branch]):
             left += 1
 
-    # 4. DSHM_HOME, only inside ~/.dshm/.
     home = row.get("home")
-    if home:
+    if owned and home == f"~/.dshm/home-{sid.lower()}-{sim}" and not Path(home).expanduser().is_symlink():
         safe = dshm.safe_slice_home(home)
         if safe is None:
             print(f"plan: cleanup: left DSHM_HOME {home}: it is not inside ~/.dshm/")
@@ -755,7 +724,7 @@ def cleanup(root, sid, target, dry):
 def cmd_cleanup(p, a):
     need_main()
     target = dshm.git("rev-parse", "--verify", "main^{commit}", cwd=p.root)
-    if not p.exists:   # no plan: every slice of the last one is over; cleanup keeps its own checks
+    if not p.exists:
         return cleanup(p.root, a.id, target, cleanup_dry(a))
     status = p.node(a.id).get("status", "todo")
     if status not in ("review", "done"):
