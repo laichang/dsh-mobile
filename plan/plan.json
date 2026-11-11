@@ -128,10 +128,10 @@
       "kind": "slice",
       "title": "Remove stale process-document references from spikes",
       "needs": [],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s7-pre-m3",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Readers of the archived experiments need working navigation to the current process. Closes #71",
       "cuts": "Extend scripts/check-old-docs to cover spikes/. On the current tree the obsolete references occur in the READMEs under spikes/x1-approval/, spikes/x2-noise/, spikes/x4-midtask/ and spikes/model-failures/, and in the x1-approval and x4-midtask runner comments. Keep the existing historical-link exception.",
@@ -156,6 +156,11 @@
       "date": "2026-11-11",
       "title": "S1 assigned",
       "body": "Branch `claude/s1-pre-m3`, worktree `/Users/bytedance/dsh-mobile-s1`, simulator `dshm-S1`, DSHM_HOME `~/.dshm/home-s1`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S1)\"` exports them. Same resources as before."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S7 assigned",
+      "body": "Branch `claude/s7-pre-m3`, worktree `/Users/bytedance/dsh-mobile-s7`, simulator `dshm-S7`, DSHM_HOME `~/.dshm/home-s7`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S7)\"` exports them. Same resources as before."
     }
   ],
   "pending": []
