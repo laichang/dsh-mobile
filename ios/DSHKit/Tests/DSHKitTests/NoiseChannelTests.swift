@@ -208,6 +208,12 @@ struct Transcript: Decodable, Sendable, CustomTestStringConvertible {
         #expect(offer.expiresAt == Date(timeIntervalSince1970: 1_893_456_000))
     }
 
+    @Test func versionTwoUsesTLSAndScopesCredentialsToTheHost() throws {
+        #expect(try PairingOffer(string: Self.link(v: "2")).usesTLS)
+        let device = UUID().uuidString
+        #expect(Pairing.credential(pin: [1], deviceID: device).account != Pairing.credential(pin: [2], deviceID: device).account)
+    }
+
     @Test func rejectsMalformedOffers() {
         #expect(throws: PairingOffer.ParseError.unsupportedVersion("99")) { try PairingOffer(string: Self.link(v: "99")) }
         #expect(throws: PairingOffer.ParseError.badField("s")) { try PairingOffer(string: Self.link(s: [1, 2, 3])) }

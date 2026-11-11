@@ -74,8 +74,9 @@ for mode in wrong-key redirect unrelated; do
   for _ in {1..100}; do [[ -s "$run/counts.json" ]] && break; sleep 0.1; done
   ui "$mode" -only-testing:dsh-mobileUITests/RevokeUITests/testUnreachableTLSHostRetainsPairingAndCachedTask
   node - "$mode" "$run/counts.json" <<'JS'
-const { received, authenticated, forwarded } = require(process.argv[3])
+const { connections, received, authenticated, forwarded } = require(process.argv[3])
 const { ok } = require('node:assert/strict')
+ok(connections > 0)
 ok(process.argv[2] === 'wrong-key' ? received === 0 : authenticated > 0)
 ok(forwarded === 0)
 JS

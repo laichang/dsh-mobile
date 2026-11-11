@@ -9,12 +9,12 @@ extension URL {
 }
 
 extension Pairing {
-    static func credential(_ deviceID: String) -> KeychainData {
-        .init(service: "dsh-mobile.tls-device", account: deviceID)
+    static func credential(pin: [UInt8], deviceID: String) -> KeychainData {
+        .init(service: "dsh-mobile.tls-device", account: Data(pin).base64EncodedString() + ":" + deviceID)
     }
 
     public static func removeCredential(for host: PairedHost) throws {
-        if let id = host.tlsDeviceID { try credential(id).reset() }
+        if let id = host.tlsDeviceID { try credential(pin: host.hostKey, deviceID: id).reset() }
     }
 
     func enroll(_ offer: PairingOffer) async throws -> PairedHost {
@@ -44,7 +44,7 @@ extension Pairing {
             let deviceID = entry.id.uuidString.lowercased()
             host.tlsDeviceID = deviceID
             let previous = hosts.load().first { $0.id == host.id }
-            let key = Self.credential(deviceID)
+            let key = Self.credential(pin: offer.hostKey, deviceID: deviceID)
             _ = try key.readOrCreate { Data(entry.bearer.utf8) }
             do { try hosts.save(host) }
             catch { try? key.reset(); throw error }

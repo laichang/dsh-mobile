@@ -77,11 +77,11 @@ public struct Pairing: Sendable {
             try? store.update(saved)
         }
         if let deviceID = host.tlsDeviceID {
-            guard let data = try Self.credential(deviceID).read(), let bearer = String(data: data, encoding: .utf8) else {
-                throw PairingError.unreachable(["device credential unavailable"])
-            }
-            let pin = Data(host.hostKey)
+            let pin = Data(host.hostKey), key = Self.credential(pin: host.hostKey, deviceID: deviceID)
             return HostConnection(endpoints: host.addresses, channel: TLSChannel(), transport: { url in
+                guard let data = try key.read(), let bearer = String(data: data, encoding: .utf8) else {
+                    throw PairingError.unreachable(["device credential unavailable"])
+                }
                 var check = URLRequest(url: url.withScheme("https").appending(path: "device"))
                 check.setValue("Bearer " + bearer, forHTTPHeaderField: "Authorization")
                 let (_, status) = try await WebSocketTransport.pinnedRequest(check, spkiSHA256: pin)

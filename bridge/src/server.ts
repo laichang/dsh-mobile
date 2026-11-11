@@ -447,6 +447,7 @@ function serveConnection(
           try { await options.sessions!.reconcile() }
           catch (error) { return fail(id, 'session/list-failed', String(error)) }
         }
+        if (socket.readyState !== socket.OPEN || (tls && !tls.has(device))) return
         // Replay and subscribe in one synchronous step, so no event falls between them.
         const { logId, afterSeq } = request.body.value
         unsubscribe?.()

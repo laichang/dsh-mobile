@@ -142,7 +142,8 @@ describe('PairingOffer', () => {
     assert.deepEqual(back.offerId, offer.offerId)
     assert.deepEqual(back.secret, offer.secret)
     assert.equal(back.expiresAt, Math.floor(offer.expiresAt / 1000) * 1000)
-    assert.throws(() => parseOfferURL(url.replace('v=1', 'v=2')), /version/)
+    assert.equal(parseOfferURL(url.replace('v=1', 'v=2')).version, 2)
+    assert.throws(() => parseOfferURL(url.replace('v=1', 'v=99')), /version/)
     assert.throws(() => parseOfferURL(url.replace(/&s=[^&]+/, '&s=AAAA')), /field s/)
   })
 

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { once } from 'node:events'
 import { chmodSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
+import { request } from 'node:https'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
@@ -43,6 +44,18 @@ test('local offers, enrollment, restart, authenticated dispatch and revocation',
   await delay(10)
   await assert.rejects(redeem(dir, expired))
   assert.ok(!readFileSync(join(dir, 'tls/devices.json'), 'utf8').includes(a.bearer))
+  const lostReply = await issue(dir)
+  const header = 'Offer ' + lostReply.searchParams.get('i') + '.' + lostReply.searchParams.get('s')
+  await new Promise<void>((resolve, reject) => {
+    const req = request('https://' + address + '/enroll', { method: 'POST', ca: readFileSync(join(dir, 'tls/host-cert.pem')),
+      headers: { authorization: header } }, res => {
+      if (res.statusCode !== 201) { reject(new Error('expected enrollment')); return }
+      res.destroy()
+      resolve()
+    })
+    req.once('error', reject).end()
+  })
+  await assert.rejects(redeem(dir, lostReply))
   await bridge.close()
   ;({ bridge, address } = await start())
   interrupted.searchParams.set('a', address)
