@@ -146,12 +146,18 @@ EOF
   mkdir -p "$D/index/scripts/demo"
   (
     cd "$D/index" || exit 1
+    git config user.name test && git config user.email test@example.invalid || exit 1
+    cp "$ROOT/.githooks/pre-commit" .git/hooks/pre-commit || exit 1
+    cp "$ROOT/scripts/check-wrappers" scripts/check-wrappers || exit 1
+    for check in check-plan check-ids; do
+      printf '#!/bin/sh\nexit 0\n' > "scripts/$check" && chmod +x "scripts/$check" || exit 1
+    done
     cp "$D/raw.sh" scripts/demo/example.sh && git add scripts/demo/example.sh || exit 1
     cp "$D/wrapped.sh" scripts/demo/example.sh || exit 1
-    "$ROOT/scripts/check-wrappers" --staged > "$W/index.out" 2>&1 && exit 1
+    git commit -qm raw > "$W/index.out" 2>&1 && exit 1
     grep -q 'scripts/demo/example.sh:8: runs node --test' "$W/index.out" || exit 1
-    git add scripts/demo/example.sh && "$ROOT/scripts/check-wrappers" --staged
-  ) && ok "wrapper check reads the staged demo" || bad "staged wrapper check"
+    git add scripts/demo/example.sh && git commit -qm wrapped
+  ) && ok "pre-commit checks the staged demo" || bad "pre-commit wrapper check"
   if scripts/check-wrappers > "$W/check3.out" 2>&1; then ok "check-wrappers passes scripts/demo/*.sh and scripts/review"
   else bad "check-wrappers on this repository:"; cat "$W/check3.out"; fi
 else
