@@ -16,7 +16,10 @@
       "text": "In a disposable checkout introduce a stale reference under spikes/ and verify that the checker fails and names the path. Remove that reference and verify it passes. Cover the case in scripts/check-docs-test.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/check-docs-test"
+      ]
     }
   ]
 }
