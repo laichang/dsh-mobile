@@ -248,10 +248,10 @@
         "T1"
       ],
       "branch": "claude/s12-e090771",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "4a4af15",
       "why": "The user asked to remove the standing confirmation rule after the certificate signer prompted them during the run.",
       "cuts": "Edit AGENTS.md and the generated builder guidance in scripts/brief. Keep download confirmation. Record technical choices without prompting solely because they are dependencies or provisional. Align the new certificate signing note and its current-plan bookkeeping with this change. Preserve historical unrelated decisions. Starting files: AGENTS.md, scripts/brief, ARCHITECTURE.md.",
       "not": "",
@@ -324,6 +324,11 @@
       "date": "2026-11-11",
       "title": "S3 merged",
       "body": "Merged as `1090228`; the plan/ rules hold on the merge commit. No open [human] items, so S3 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S12 merged",
+      "body": "Merged as `4a4af15`; the plan/ rules hold on the merge commit. No open [human] items, so S12 is `done`."
     }
   ],
   "pending": [
