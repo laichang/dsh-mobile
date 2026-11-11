@@ -107,6 +107,6 @@ export TEST_RUNNER_DSHM_SECOND_PAIR_URL_FILE="$run/SECOND_PAIR_URL"
 ui second -only-testing:dsh-mobileUITests/RevokeUITests/testEnrollSecondHostAndSyncItsTask
 (cd bridge && node lib/test/tls-client.js "$state")
 export TEST_RUNNER_DSHM_TLS_OFFLINE_REVOKE=1
-export TEST_RUNNER_DSHM_REVOKED_HOST_NAME="$(node -e 'process.stdout.write(require(process.argv[1]).hostName)' "$state/listener.json")"
+export TEST_RUNNER_DSHM_REVOKED_HOST_NAME="$(node -e 'const x = require(process.argv[1]); process.stdout.write(x.hostName + " (" + x.addresses[0] + ")")' "$state/listener.json")"
 ui offline -only-testing:dsh-mobileUITests/RevokeUITests/testOfflineRevokedPhoneKeepsOtherHostOnLaunch
 echo "TLS enrollment and revocation passed."
