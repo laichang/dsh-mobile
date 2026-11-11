@@ -1,6 +1,5 @@
 #!/bin/bash
-# Milestones demo and checks, end to end. Re-runnable evidence for its
-# checks.
+# Milestones demo and checks, end to end.
 #
 #   scripts/demo/milestones.sh             all checks + milestones UI tests, including the real-DSH demo
 #   scripts/demo/milestones.sh --fake-only skip anything that needs DSH (CI-like)

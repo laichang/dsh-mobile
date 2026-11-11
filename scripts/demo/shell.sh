@@ -1,5 +1,5 @@
 #!/bin/bash
-# Demo and checks: the new UI shell. Re-runnable evidence for its checks.
+# Demo and checks: the new UI shell.
 #
 #   scripts/demo/shell.sh          ShellUITests + every FakeBridge UI test of the M1 slices, on the new shell
 #   scripts/demo/shell.sh --all    also bridge tests, swift test, and every slice demo (round-trip.sh, pairing.sh … session-visibility.sh),

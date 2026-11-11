@@ -1,6 +1,6 @@
 #!/bin/bash
 # Demo and checks: drawer motion and landing positions (design screens F1–F4).
-# Re-runnable evidence for its checks. Everything runs against the in-process
+# Everything runs against the in-process
 # FakeBridge (scenarios `outcomes` and `coding`); no DSH is needed.
 #
 #   scripts/demo/drawer-motion.sh          swift test, DrawerMotionUITests, then the seams: OutcomesUITests

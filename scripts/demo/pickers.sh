@@ -1,6 +1,6 @@
 #!/bin/bash
 # Demo and checks: the workspace sheet (07) and the model sheet (M, X4).
-# Re-runnable evidence for its checks. FakeBridge: two in-process hosts with models
+# FakeBridge: two in-process hosts with models
 # and workspaces (`-DSHMFakeBridge pickers`); no DSH and no port is needed for the pickers tests.
 #
 #   scripts/demo/pickers.sh            swift test, PickersUITests, and the FakeBridge UI tests of

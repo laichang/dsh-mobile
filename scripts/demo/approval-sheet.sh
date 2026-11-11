@@ -1,6 +1,6 @@
 #!/bin/bash
 # Demo and checks: the approval sheet in a session (design screen 05).
-# Re-runnable evidence for its checks. FakeBridge only: two in-process hosts; Home Mac
+# FakeBridge only: two in-process hosts; Home Mac
 # starts with a task that waits on `rm -rf ~/Desktop/Q3/tmp` (`-DSHMFakeBridge approvals`), and a
 # new task asks for the same command (`-DSHMFakeAsk`). The Web's answer is a Darwin notification
 # to the fake hosts. No DSH and no port is needed.

@@ -1,7 +1,4 @@
 #!/bin/bash
-# Pair + encrypt demo and checks, end to end. Re-runnable evidence for
-# Re-runnable evidence for its checks.
-#
 #   scripts/demo/pairing.sh                  all checks, CLI pairing, UI tests in the Simulator
 #   scripts/demo/pairing.sh --shots          also refresh the screenshots in evidence/pairing/
 #   scripts/demo/pairing.sh --no-release     skip scripts/check-release-clean (two extra builds)

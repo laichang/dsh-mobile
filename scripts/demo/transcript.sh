@@ -1,6 +1,6 @@
 #!/bin/bash
-# Demo and checks: the structured transcript (screen 04). Re-runnable evidence
-# Re-runnable evidence for its checks. The UI runs against the in-process FakeBridge; no DSH is needed.
+# Demo and checks: the structured transcript (screen 04).
+# The UI runs against the in-process FakeBridge; no DSH is needed.
 #
 #   scripts/demo/transcript.sh          codegen check, bridge tests (FakeDSH, transcript fixtures),
 #                                swift test (FakeBridge transcript task, fixtures), TranscriptUITests,

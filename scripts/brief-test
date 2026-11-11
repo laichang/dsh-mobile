@@ -320,6 +320,8 @@ def main():
         review.with_name("r3.txt").write_text("a later review")
         first = tmp / "first.md"
         run_brief(repo, "S99", "--base", "fake", "--out", str(first))
+        rule = "Delete comments that repeat the code. Keep comments that explain a reason or an external constraint."
+        (ok if rule in first.read_text() and rule in (SRC / "AGENTS.md").read_text() else bad)("source comment rule in contributor guide and generated brief")
         (ok if "Previous review" not in first.read_text() else bad)("the first round needs no review")
         r = run_brief(repo, "S99", "--round", "2", "--base", "fake", "--out", str(out))
         if r.returncode == 0 and r.stdout.strip() == str(out) and out.exists():

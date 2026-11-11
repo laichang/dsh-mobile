@@ -1,5 +1,5 @@
 #!/bin/bash
-# Demo and checks, end to end. Re-runnable evidence for its checks.
+# Demo and checks, end to end.
 #
 #   scripts/demo/round-trip.sh             all checks + UI tests, including the real-DSH demo
 #   scripts/demo/round-trip.sh --fake-only skip anything that needs DSH (CI-like)
