@@ -542,6 +542,8 @@ Append-only, dated.
 
 - **2026-11-11 · S7 review FAIL at a1e2190 (/tmp/dshm-review/S7-a1e2190.txt): F1 an agent can record a [human] item via scripts/plan accept; F3 plan merge --into main skips the guard-on-main rule; F2 false comment; F4 refusals without a next step; F5 README.zh-CN mentions PLAN.md. S7 round 2 started in its session.**
 
+- **2026-11-11 · S7 round 2 at 9a6a638 fixes F1-F5 without guard edits; open gap: an agent with a pseudo-terminal can pass accept's typed check. Drafted /tmp/dshm-s7-accept-hook.patch (plan-guard denies 'plan accept' from an agent; guard-test 0, refusal-test 0 in a scratch clone). Waiting for the user to apply it; then a new verifier.**
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
