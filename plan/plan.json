@@ -22,10 +22,10 @@
       "kind": "slice",
       "title": "Align the design screens with current pairing and supported surfaces",
       "needs": [],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s1-pre-m3",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "First-run instructions must work on the current host and remain useful when M3 changes the transport. Closes #64",
       "cuts": "Update STORY.md, design/screens.json and design/screens/08.html, design/screens/L.html, design/screens/X1.html and design/screens/P1.html with their renders. Compare the current bridge CLI and bridge/README.md with the installed DSH pairing entry. Proposed for review: direct the user to obtain a fresh code on the host via the bridge CLI and scan or paste on the phone. Preserve the current LAN and two-ended Tailscale guidance. TLS enrollment belongs to M3.",
@@ -151,6 +151,11 @@
       "date": "2026-11-11",
       "title": "T0 assigned",
       "body": "Branch `claude/t0-pre-m3`, worktree `/Users/bytedance/dsh-mobile-t0`, simulator `dshm-T0`, DSHM_HOME `~/.dshm/home-t0`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env T0)\"` exports them. Same resources as before."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S1 assigned",
+      "body": "Branch `claude/s1-pre-m3`, worktree `/Users/bytedance/dsh-mobile-s1`, simulator `dshm-S1`, DSHM_HOME `~/.dshm/home-s1`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S1)\"` exports them. Same resources as before."
     }
   ],
   "pending": []
