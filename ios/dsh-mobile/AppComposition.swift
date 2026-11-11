@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHProtocol
 import Foundation
 import SwiftData
@@ -91,7 +92,7 @@ final class AppModel {
     private func makeStore() -> TaskListStore? {
         let hosts = hostConfigs().filter { !forgottenHostKeys.contains($0.key) }
         guard !hosts.isEmpty else { return nil }
-        let store = TaskListStore(container: container, hosts: hosts, prompt: presetPrompt, firstConnectDelay: connectDelay,
+        let store = TaskListStore(cache: TaskCache(container), hosts: hosts, prompt: presetPrompt, firstConnectDelay: connectDelay,
                                   preferredHostKey: UserDefaults.standard.string(forKey: Self.preferredHostKey)) { key in
             UserDefaults.standard.set(key, forKey: Self.preferredHostKey)
         }

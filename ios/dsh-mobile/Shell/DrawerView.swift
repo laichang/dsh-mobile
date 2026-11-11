@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// The thin workspace drawer (02): 新建会话, 所有任务, and the sessions in groups by host.

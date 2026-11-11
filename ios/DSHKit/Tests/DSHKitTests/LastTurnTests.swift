@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
 import Foundation
@@ -38,7 +39,7 @@ import Testing
         old.taskID = "old-bridge"
         old.clearTurnStartedAtMs()
         let host = FakeHost(hostName: "Mac", seed: [FakeTurns.summary(now: now), old])
-        let store = TaskListStore(container: try TaskCache.container(url: storeURL), hosts: [.init(key: "fake:mac",
+        let store = TaskListStore(cache: try TaskCache(url: storeURL), hosts: [.init(key: "fake:mac",
             connection: HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory))])
         store.foreground()
         try await waitUntil("both sessions") { store.tasks.count == 2 }

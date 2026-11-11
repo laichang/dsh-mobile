@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHTestSupport
 import Foundation
 import Testing
@@ -18,7 +19,7 @@ import Testing
 
     func launch(_ variant: FakeHosts.Variant) throws -> (TaskListStore, [FakeHost]) {
         let (configs, switchable) = FakeHosts.hosts(variant)
-        let store = TaskListStore(container: try TaskCache.container(url: storeURL), hosts: configs)
+        let store = TaskListStore(cache: try TaskCache(url: storeURL), hosts: configs)
         store.backoff = (.milliseconds(20), .milliseconds(100))
         return (store, switchable)
     }
@@ -42,7 +43,7 @@ import Testing
 
         for host in switchable { host.setReachable(false) }
         try await waitUntil("all offline") { store.allHostsOffline }
-        store.prompt = "Summarize the Q3 report"
+        store.composer.prompt = "Summarize the Q3 report"
         #expect(!store.canSend)
         #expect(store.deviceManagement(for: mac) == nil)
         #expect(store.hosts.allSatisfy { $0.lastConnectedAt != nil || $0.name == FakeHosts.hkName })

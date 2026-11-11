@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// Screen 03 · a task that waits on an agent question, under 等我处理 in 所有任务 (STORY §4–§5,

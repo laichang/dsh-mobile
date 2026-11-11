@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHTestSupport
 import Foundation
 import SwiftData
@@ -30,8 +31,7 @@ import Testing
     func launch(_ host: FakeHost, prompt: String = "Count to five.") throws -> TaskListStore {
         let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
         let store = TaskListStore(
-            container: try TaskCache.container(url: storeURL),
-            hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: prompt)
+            cache: try TaskCache(url: storeURL), hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: prompt)
         store.backoff = (.milliseconds(20), .milliseconds(100))
         // send() returns as soon as the host is online; under load the first connect can take
         // longer than 500 ms, and then send() gave nil.
@@ -47,7 +47,7 @@ import Testing
         let store = try launch(host)
         store.foreground()
         let key = try #require(await store.send())
-        #expect(store.prompt.isEmpty)
+        #expect(store.composer.prompt.isEmpty)
         try await waitUntil("completed") { store.task(key)?.state == .completed }
         let task = try #require(store.task(key))
         #expect(task.title == "Count to five.")
@@ -99,33 +99,33 @@ import Testing
 
     @Test func explicitModelRequiresUserChoiceWhenReconnectedHostLacksModelSupport() async throws {
         let store = try launch(FakeHost())
-        let key = try #require(store.composerHostKey)
+        let key = try #require(store.composer.hostKey)
         let choice = ModelSelection(provider: "previous-host-provider", model: "previous-model", effort: nil)
-        store.composerSelections[key] = choice
+        store.composer.selections[key] = choice
         store.foreground()
         defer { store.background() }
         try await waitUntil("reconnected") { store.hosts.first?.reachability == .online }
         #expect(!store.modelHosts.contains(key))
         #expect(await store.send() == nil)
         #expect(store.tasks.isEmpty)
-        #expect(store.composerSelections[key] == choice)
-        store.useHostDefault(hostKey: key)
-        #expect(store.sendError == nil)
+        #expect(store.composer.selections[key] == choice)
+        store.composer.useHostDefault(hostKey: key)
+        #expect(store.composer.sendError == nil)
         #expect(await store.send() != nil)
     }
 
     @Test func explicitWorkspaceCannotFallBackAfterBridgeDowngrade() async throws {
         let store = try launch(FakeHost())
-        let key = try #require(store.composerHostKey)
-        store.chooseWorkspace("/repo/chosen", hostKey: key)
+        let key = try #require(store.composer.hostKey)
+        store.composer.chooseWorkspace("/repo/chosen", hostKey: key)
         store.foreground()
         defer { store.background() }
         try await waitUntil("online") { store.hosts.first?.reachability == .online }
         #expect(await store.send() == nil)
         #expect(store.tasks.isEmpty)
-        #expect(store.composerWorkspaces[key] == "/repo/chosen")
-        #expect(store.sendError?.contains("workspace") == true)
-        store.chooseWorkspace(nil, hostKey: key)
+        #expect(store.composer.workspaces[key] == "/repo/chosen")
+        #expect(store.composer.sendError?.contains("workspace") == true)
+        store.composer.chooseWorkspace(nil, hostKey: key)
         #expect(await store.send() != nil)
     }
 
@@ -140,7 +140,7 @@ import Testing
         try context.save()
         let link = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(),
                                   transport: FakeHost(reachable: false).factory)
-        let store = TaskListStore(container: container, hosts: [.init(key: "paired-mac", connection: link, name: "Paired Mac")])
+        let store = TaskListStore(cache: TaskCache(container), hosts: [.init(key: "paired-mac", connection: link, name: "Paired Mac")])
         store.foreground()
         defer { store.background() }
         try await waitUntil { store.hosts.first?.reachability == .offline }
@@ -154,28 +154,28 @@ import Testing
             let connection = HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: FakeHost().factory)
             return TaskListStore.HostConfig(key: endpoint.description, connection: connection, name: "Mac")
         }
-        let store = TaskListStore(container: try TaskCache.container(inMemory: true), hosts: links)
+        let store = TaskListStore(cache: try TaskCache(inMemory: true), hosts: links)
         #expect(store.hosts.map(\.name) == ["Mac (127.0.0.1:47801)", "Mac (127.0.0.1:47802)"])
     }
 
     @Test func composerChoicesStayWithTheirHost() async throws {
         let home = FakeHost(), office = FakeHost()
-        let store = TaskListStore(container: try TaskCache.container(inMemory: true), hosts: [
+        let store = TaskListStore(cache: try TaskCache(inMemory: true), hosts: [
             .init(key: "home", connection: .init(endpoint: .localBridge(), channel: PlaintextChannel(), transport: home.factory)),
             .init(key: "office", connection: .init(endpoint: .localBridge(), channel: PlaintextChannel(), transport: office.factory))
         ], prompt: "Run on office", preferredHostKey: "home")
         store.foreground()
         defer { store.background() }
         let selection = ModelSelection(provider: "home-provider", model: "home-model", effort: nil)
-        store.composerSelections["home"] = selection
-        store.chooseWorkspace("/home/project", hostKey: "home")
+        store.composer.selections["home"] = selection
+        store.composer.chooseWorkspace("/home/project", hostKey: "home")
         store.chooseHost("office")
         #expect(await store.send() != nil)
         #expect(office.prompts == ["Run on office"])
         store.chooseHost("home")
-        #expect(store.composerSelections["home"] == selection)
-        #expect(store.composerWorkspaces["home"] == "/home/project")
-        store.prompt = "Requires the chosen model and workspace"
+        #expect(store.composer.selections["home"] == selection)
+        #expect(store.composer.workspaces["home"] == "/home/project")
+        store.composer.prompt = "Requires the chosen model and workspace"
         #expect(await store.send() == nil)
         #expect(home.prompts.isEmpty)
     }
@@ -183,13 +183,13 @@ import Testing
     @Test func unsupportedHostRetainsDraftAndChoicesWhileAnotherHostDispatches() async throws {
         let home = FakeHost(hostName: "Home Mac")
         let office = FakeHost(hostName: "Office Mac", incompatibleDsh: ("0.2.2-alpha.3", "0.2.2-rc.1"))
-        let store = TaskListStore(container: try TaskCache.container(inMemory: true), hosts: [
+        let store = TaskListStore(cache: try TaskCache(inMemory: true), hosts: [
             .init(key: "home", connection: .init(endpoint: .localBridge(), channel: PlaintextChannel(), transport: home.factory), name: home.hostName),
             .init(key: "office", connection: .init(endpoint: .localBridge(), channel: PlaintextChannel(), transport: office.factory), name: office.hostName)
         ], prompt: "Use this repo", preferredHostKey: "office")
         let selection = ModelSelection(provider: "office", model: "office-model", effort: nil)
-        store.composerSelections["office"] = selection
-        store.chooseWorkspace("/office/repo", hostKey: "office")
+        store.composer.selections["office"] = selection
+        store.composer.chooseWorkspace("/office/repo", hostKey: "office")
         store.foreground()
         defer { store.background() }
         try await waitUntil {
@@ -197,15 +197,15 @@ import Testing
                 && store.hosts.first { $0.key == "office" }?.reachability == .needsBridgeUpdate(version: "0.2.2-alpha.3", supported: "0.2.2-rc.1")
         }
         #expect(await store.send() == nil)
-        #expect(store.sendError?.contains("Office Mac needs a bridge update") == true)
-        #expect(store.prompt == "Use this repo")
+        #expect(store.composer.sendError?.contains("Office Mac needs a bridge update") == true)
+        #expect(store.composer.prompt == "Use this repo")
         #expect(office.prompts.isEmpty && home.prompts.isEmpty)
         store.chooseHost("home")
         #expect(await store.send() != nil)
         #expect(home.prompts == ["Use this repo"])
         #expect(office.prompts.isEmpty)
-        #expect(store.composerSelections["office"] == selection)
-        #expect(store.composerWorkspaces["office"] == "/office/repo")
+        #expect(store.composer.selections["office"] == selection)
+        #expect(store.composer.workspaces["office"] == "/office/repo")
     }
 
     @Test func offlineSelectionNeverSendsToAnotherHost() async throws {
@@ -214,8 +214,7 @@ import Testing
             .init(key: key, connection: HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(),
                                                        transport: host.factory), name: name)
         }
-        let store = TaskListStore(container: try TaskCache.container(inMemory: true),
-                                  hosts: [config("home", name: "Home Mac", host: home),
+        let store = TaskListStore(cache: try TaskCache(inMemory: true), hosts: [config("home", name: "Home Mac", host: home),
                                           config("office", name: "Office Mac", host: office)],
                                   prompt: "Selected host only", preferredHostKey: "office")
         store.sendWaitsFor = .milliseconds(150)
@@ -223,7 +222,7 @@ import Testing
         defer { store.background() }
         try await waitUntil { store.hosts.first?.reachability == .online && store.offlineHosts.count == 1 }
         #expect(await store.send() == nil)
-        #expect(store.sendError?.contains("Office Mac") == true)
+        #expect(store.composer.sendError?.contains("Office Mac") == true)
         #expect(home.prompts.isEmpty)
         home.setReachable(false)
         try await waitUntil { store.offlineHosts.count == 2 }
@@ -239,7 +238,7 @@ import Testing
         try await waitUntil("offline") { store.hosts.first?.reachability == .offline }
         #expect(store.offlineHosts.map(\.name) == ["FakeBridge Mac"])
         // With no host online the send key is off (X3); 01 names the host on its card.
-        store.prompt = "Will not go out"
+        store.composer.prompt = "Will not go out"
         #expect(store.allHostsOffline)
         #expect(!store.canSend)
         #expect(await store.send() == nil)
@@ -268,7 +267,7 @@ import Testing
         try await waitUntil("lost") { store.task(key)?.state == .failed }
         #expect(store.task(key)?.message.contains("restarted") == true)
         // The new bridge's tasks still arrive.
-        store.prompt = "again"
+        store.composer.prompt = "again"
         let next = try #require(await store.send())
         try await waitUntil("completed") { store.task(next)?.state == .completed }
         #expect(store.task(next)?.transcript == Self.fullReply)

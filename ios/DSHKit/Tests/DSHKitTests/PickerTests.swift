@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHTestSupport
 import Foundation
 import Testing
@@ -13,11 +14,10 @@ import Testing
     }
 
     func launch(hold: String? = nil) async throws -> (TaskListStore, String) {
-        let store = TaskListStore(container: try TaskCache.container(inMemory: true),
-                                  hosts: FakePickers.hosts(hold: hold), prompt: "")
+        let store = TaskListStore(cache: try TaskCache(inMemory: true), hosts: FakePickers.hosts(hold: hold), prompt: "")
         store.sendWaitsFor = .seconds(2)
         let mac = "fake:\(FakePickers.macName)"
-        #expect(store.composerHostKey == mac, "with no saved choice, MacBook-Pro is the default host")
+        #expect(store.composer.hostKey == mac, "with no saved choice, MacBook-Pro is the default host")
         store.foreground()
         try await waitUntil("catalog") { store.catalogs[mac] != nil }
         return (store, mac)
@@ -37,11 +37,11 @@ import Testing
 
         let workspaces = try await store.listWorkspaces(hostKey: mac)
         #expect(workspaces.recentPaths.contains(FakePickers.repo))
-        store.chooseWorkspace(FakePickers.repo, hostKey: mac)
-        store.composerSelections[mac] = pro
-        store.prompt = "修复 CI 挂掉的测试"
+        store.composer.chooseWorkspace(FakePickers.repo, hostKey: mac)
+        store.composer.selections[mac] = pro
+        store.composer.prompt = "修复 CI 挂掉的测试"
         let key = try #require(await store.send())
-        #expect(store.composerWorkspaces[mac] == nil, "the workspace choice is for this one new session")
+        #expect(store.composer.workspaces[mac] == nil, "the workspace choice is for this one new session")
         try await waitUntil("task carries Pro") { store.task(key)?.modelSelection == pro }
 
         await store.refreshCatalog(hostKey: mac)

@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// One host (screen X2), pushed in the hosts sheet: its paired devices (this device is

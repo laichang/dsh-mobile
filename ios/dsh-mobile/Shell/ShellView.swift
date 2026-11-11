@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// The navigation shell (design/screens.json nav and rules): one page at a time, and the workspace

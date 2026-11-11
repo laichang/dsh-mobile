@@ -1,5 +1,6 @@
 @preconcurrency import AVFoundation
 import DSHCore
+import DSHFeatures
 import Speech
 
 /// On-device speech to text with iOS 26's `SpeechAnalyzer`: the microphone

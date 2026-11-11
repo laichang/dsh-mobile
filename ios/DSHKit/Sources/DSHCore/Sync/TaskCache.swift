@@ -143,7 +143,20 @@ public final class CachedTask {
     }
 }
 
-public enum TaskCache {
+public struct TaskCache {
+    private let storage: ModelContainer
+
+    public init(_ container: ModelContainer) { storage = container }
+
+    public init(url: URL? = nil, inMemory: Bool = false) throws {
+        storage = try Self.container(url: url, inMemory: inMemory)
+    }
+
+    @MainActor
+    package func sync(for config: HostSync.HostConfig) -> HostSync {
+        HostSync(config: config, container: storage)
+    }
+
     public static let models: [any PersistentModel.Type] = [CachedHost.self, CachedTask.self]
 
     /// The app's store on disk, or at `url` (tests), or in memory.

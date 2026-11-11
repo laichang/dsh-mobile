@@ -106,7 +106,7 @@ Interrupt, model switch and follow-up messages take the same outbound path as an
 - Codegen: `buf` + `protoc-gen-es` (pinned devDependencies of `bridge/`) and `protoc-gen-swift` built by SwiftPM from the swift-protobuf version that `ios/DSHKit` pins. One entry point: `scripts/codegen`.
 - Generated code is committed; `scripts/codegen --check` fails when regeneration changes a file. Xcode builds without a codegen toolchain, and protocol changes show in review.
 - Bridge: pnpm, pinned by `packageManager` (Node ≥ 24.9, as DSH requires); tests use `node:test`.
-- Swift: `ios/DSHKit` contains DSHTransport, DSHProtocol, DSHCore, DSHActivity and Debug-only DSHTestSupport. SwiftPM tests run on macOS 15 without a simulator. Views live in the app.
+- Swift: `ios/DSHKit` contains DSHTransport, DSHProtocol, DSHCore, DSHFeatures, DSHActivity and Debug-only DSHTestSupport. SwiftPM tests run on macOS 15 without a simulator. Views live in the app.
 - Dependencies are pinned to exact versions (`ios/DSHKit/Package.swift`, `bridge/package.json`).
 
 ## 4. Bridge plugin (`bridge/`)
@@ -197,9 +197,10 @@ Features (SwiftUI views + @Observable stores)
   , Approval sheet, Questions, Pickers, Hosts, Devices, First run, Voice, Attachments, Live Activity
 Theme
    DSHTheme (base tokens) + Theme+<feature>.swift files
-DSHCore (DSHKit)
-   HostConnection, SecureChannel (Noise over WebSocket), Pairing, TaskListStore (Sync)
-  , Milestones, Transcript, Outcome, FollowUpQueue, Questions, Attachments, Dictation, LiveActivities
+DSHFeatures
+   TaskListStore, TaskComposer, DrawerTree, TaskOutcome, Dictation, LiveActivities
+DSHCore
+   HostConnection, Pairing, HostSync, Milestones, Transcript, FollowUpQueue, Questions, Attachments
 Persistence
    SwiftData: CachedHost (cursor), CachedTask (transcript, milestones, blocks, attachments, read state)
 DSHTransport
@@ -210,7 +211,7 @@ DSHProtocol
 
 - **Design as data (provisional, pending user confirmation):** `design/screens.json`: screens and shared parts (needs, nav, STORY sections, rules with XCUITests). A screen is `design/screens/<id>.html` on `design/kit/` (png: `scripts/render-design`); `scripts/check-design` checks them and the theme names. Not chosen: one board.
 - **One `HostConnection` per paired host.** Each address attempt negotiates fresh Noise keys. Each generation owns its cipher, ordered writer and receive loop. The loop correlates responses by ID, delivers events to the store and ignores incoming requests.
-- **`HostSync`** owns one host’s connection loop and SwiftData context. It resumes from its saved cursor and backs off on disconnect. Backgrounding flushes each host and closes its socket; foregrounding waits for shutdown before reconnecting. `TaskListStore` combines typed host and task snapshots.
+- **`HostSync`** owns one host’s connection loop and SwiftData context. It resumes from its saved cursor and backs off on disconnect. Backgrounding flushes each host and closes its socket; foregrounding waits for shutdown before reconnecting. `TaskListStore` consumes snapshots and host commands. `TaskComposer` owns drafts, selection, upload progress and send state. HostSync stages files and records successful sends.
 - **Cache**: events at or below the cursor, and chunks at or below a task's chunk seq, are skipped, so replays are idempotent. Equal summary timestamps use the turn start to distinguish a resumed task from a stale replay. Each host saves pending events and their cursor together after 150 ms. A `LogReset` persists a pending `ListTasks` reconciliation, so a relaunch finishes marking lost running tasks failed.
 - **Keys**: the Noise path uses a static key (X25519) in the Keychain (`ThisDeviceOnly`, never synced), shared by all hosts. No Secure Enclave key: it does not do X25519.
 - **App Transport Security** allows cleartext loads (`NSAllowsArbitraryLoads`), the same in Debug and Release: the app uses `ws://` to the QR's IP addresses, and ATS refuses cleartext to non-local IPs such as Tailscale's 100.x. Safe because each frame is Noise-encrypted and the app talks to no other server. `NSAllowsLocalNetworking` does not cover 100.64/10, and exception domains cannot name IPs. `scripts/check-release-clean` fails when the Debug and Release Info.plist files differ.
@@ -252,7 +253,7 @@ A drawer page with 等我处理 / 正在跑 / 已完成 across hosts, from the c
 
 ### 5.7 Live Activity
 
-- One activity per task that runs on an online host: title, host, time since the turn started (`Text(timerInterval:)`, so it ticks while the app is suspended), the latest step, `done/total`. `LiveActivities` (DSHCore) brings them in line with the task list after each change: start, update with a `staleDate` 15 minutes on, end when the task is done, failed, stopped or waits on the user. An ended activity stays on the lock screen; never two for one task; after a relaunch existing activities are taken over by task key.
+- One activity per task that runs on an online host: title, host, time since the turn started (`Text(timerInterval:)`, so it ticks while the app is suspended), the latest step, `done/total`. `LiveActivities` (DSHFeatures) brings them in line with the task list after each change: start, update with a `staleDate` 15 minutes on, end when the task is done, failed, stopped or waits on the user. An ended activity stays on the lock screen; never two for one task; after a relaunch existing activities are taken over by task key.
 - Local only: without push, the step changes only while the app runs; then `staleDate` greys it.
 - The app sends everything in the ActivityKit state (`DSHActivity` library). No App Group, no shared files, no entitlements, so a free Apple team can sign the extension (`ios/LiveActivity`).
 

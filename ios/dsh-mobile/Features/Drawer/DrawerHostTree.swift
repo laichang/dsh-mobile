@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// One host in the workspace drawer (screen 02): host › workspace › session, like the DSH

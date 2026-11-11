@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// Screen P1 · a question from the agent, as a card in the transcript and under 等我处理 in 所有任务

@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// The streamed transcript with its collapsed rows (screen 04): the text

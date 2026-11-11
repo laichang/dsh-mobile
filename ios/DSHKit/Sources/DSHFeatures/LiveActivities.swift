@@ -1,3 +1,4 @@
+import DSHCore
 import DSHActivity
 import Foundation
 

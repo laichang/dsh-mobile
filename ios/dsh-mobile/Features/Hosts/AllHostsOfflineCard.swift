@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// Screen X3: when no host can take a task (`TaskListStore.allHostsOffline`), the blank

@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
 import Foundation
@@ -97,8 +98,7 @@ import Testing
     func launch(_ host: FakeHost) throws -> TaskListStore {
         let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
         let store = TaskListStore(
-            container: try TaskCache.container(url: storeURL),
-            hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Fix the failing test.")
+            cache: try TaskCache(url: storeURL), hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Fix the failing test.")
         store.backoff = (.milliseconds(20), .milliseconds(100))
         // Long enough for a loaded Mac (other slices' simulators): a short wait made send() nil once.
         store.sendWaitsFor = .seconds(5)
