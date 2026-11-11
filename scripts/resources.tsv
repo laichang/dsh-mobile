@@ -3,4 +3,3 @@
 # the slice is todo, doing or blocked in plan/plan.json. Rows live as long as the plan: when the plan
 # ends, the registry goes back to this header (slice IDs start again at S1 in the next plan).
 id	branch	slot	bridge	web	bridge2	web2	sim	home	decisions	assigned
-T0	claude/t0-451539f	0	47810	3283	47840	3313	3925AF50-FE4D-4D93-A83F-CE315B10A94E	~/.dshm/home-t0-3925AF50-FE4D-4D93-A83F-CE315B10A94E	D51-D53	2026-11-11
