@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+"""Exercise milestone synchronization through real commits in a disposable clone."""
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
+
+
+SRC = Path(__file__).resolve().parents[1]
+FAKE_GH = """#!/usr/bin/env python3
+import json, os, sys
+from pathlib import Path
+db = Path(os.environ["GH_FIXTURE"])
+data = json.loads(db.read_text())
+args = sys.argv[1:]
+assert args[:3] == ["api", "--hostname", "github.com"], args
+repo, slug, path = args[3][6:].split("/", 2)
+assert (repo, slug) == ("example", "mobile")
+data["calls"].append(path)
+db.write_text(json.dumps(data))
+if path == "milestones/7":
+    print(json.dumps({"number": 7}))
+elif path.startswith("milestones?"):
+    assert args[4:] == ["--paginate", "--slurp"]
+    print(json.dumps([[{"number": 7, "title": "Demo"}]] +
+                     ([[{"number": 8, "title": "Demo · older"}]] if data["fault"] == "ambiguous" else [])))
+elif path == "issues?milestone=7&state=all&per_page=100":
+    assert args[4:] == ["--paginate", "--slurp"]
+    rows = [{"number": int(n), "state": state} for n, state in data["issues"].items()]
+    if data["fault"] == "reopened" and all(row["state"] == "closed" for row in rows):
+        rows[-1]["state"] = "open"
+    print(json.dumps([rows[:1], rows[1:]]))
+elif path.startswith("issues/"):
+    assert args[4:] == ["--method", "PATCH", "-f", "state=closed", "-f", "state_reason=completed"]
+    n = path.split("/")[1]
+    if data["fault"] == "partial" and n == "3":
+        sys.exit(1)
+    assert data["issues"][n] == "open"
+    data["issues"][n] = "closed"
+    db.write_text(json.dumps(data))
+    print(json.dumps({"number":int(n), "state":"closed"}))
+else:
+    sys.exit("unexpected endpoint " + path)
+"""
+
+
+def run(*args, expect=True, contains="", **env):
+    result = subprocess.run(args, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            env={**os.environ, **env})
+    if (result.returncode == 0) != expect or contains not in result.stdout:
+        raise AssertionError(f"{args}: exit {result.returncode}\n{result.stdout}")
+    return result.stdout.strip()
+
+
+with tempfile.TemporaryDirectory(prefix="dshm-close-issues-") as tmp:
+    root = Path(tmp)
+    repo = root / "repo"
+    run("git", "clone", "-q", "--local", str(SRC), str(repo))
+    os.chdir(repo)
+    run("git", "checkout", "-q", "-B", "main", "HEAD")
+    run("git", "config", "user.name", "test")
+    run("git", "config", "user.email", "test@example.com")
+    run("git", "remote", "set-url", "origin", "https://github.com/example/mobile.git")
+    for path in ["scripts/plan", "scripts/lib/plan.schema.json", "scripts/lib/github_close.py",
+                 "scripts/close-plan-simulators"]:
+        shutil.copy2(SRC / path, path)
+    shutil.rmtree("plan", ignore_errors=True)
+    run("git", "add", "-A")
+    run("git", "commit", "--allow-empty", "-qm", "fixture tools")
+    run("git", "config", "core.hooksPath", ".githooks")
+    bin_dir = root / "bin"
+    bin_dir.mkdir()
+    gh = bin_dir / "gh"
+    gh.write_text(FAKE_GH)
+    gh.chmod(0o755)
+    (bin_dir / "xcrun").symlink_to(SRC / "scripts/fixtures/simctl/xcrun")
+    db = root / "gh.json"
+    os.environ.update(PATH=f"{bin_dir}:{os.environ['PATH']}", GH_FIXTURE=str(db),
+                      DSHM_TEST_DEVICES=str(root / "devices"), DSHM_OWNERS=str(root / "owners"))
+
+    def setup(fault="", target="example/mobile#7", why="Closes #1. Closes #2. Closes #1. Closes #3.",
+              status="done", extra=False):
+        run("git", "reset", "-q", "--hard")
+        shutil.rmtree("plan", ignore_errors=True)
+        run("scripts/plan", "new", "Demo · requirement", *(["--github-milestone", target] if target else []))
+        plan_file = Path("plan/plan.json")
+        plan = json.loads(plan_file.read_text())
+        if target:
+            assert plan["github_milestone"] == target
+        node = json.loads(Path("scripts/fixtures/fake-plan/plan.json").read_text())["nodes"][0]
+        node.update(why=why, status=status)
+        plan["nodes"] = [node]
+        plan_file.write_text(json.dumps(plan))
+        shutil.copy2(f"scripts/fixtures/fake-plan/{node['id']}.json", "plan")
+        issues = {"1":"open", "2":"closed", "3":"open"}
+        if extra:
+            issues["4"] = "open"
+        db.write_text(json.dumps(dict(fault=fault, issues=issues, calls=[])))
+        run("git", "add", "plan")
+        run("git", "commit", "--allow-empty", "-qm", "ordinary planning commit")
+        assert not json.loads(db.read_text())["calls"]
+        run("git", "rm", "-rq", "plan")
+
+    def close(expected=True, message=""):
+        before = run("git", "rev-parse", "HEAD")
+        run("git", "commit", "-qm", "close plan", expect=expected, contains=message, CHECK_PLAN_ALLOW="1")
+        assert (run("git", "rev-parse", "HEAD") != before) == expected
+        return json.loads(db.read_text())
+
+    setup(target=None, why="Standalone")
+    assert not close()["calls"]
+    print("ok: ordinary commits and standalone close stay offline", flush=True)
+    for options, diagnostic in [
+        ({"status":"doing"}, "unfinished plan nodes"),
+        ({"target":"example/wrong#7"}, "does not match origin"),
+        ({"why":"Closes #9"}, "outside"),
+        ({"extra":True}, "without a Closes reference"),
+        ({"fault":"ambiguous","target":None}, "cannot identify one milestone"),
+    ]:
+        setup(**options)
+        data = close(False, diagnostic)
+        assert not any(p.startswith("issues/") for p in data["calls"])
+    print("ok: incomplete or ambiguous plans block before closing any issue", flush=True)
+    setup(fault="partial")
+    data = close(False, "check GitHub access")
+    assert data["issues"] == {"1":"closed","2":"closed","3":"open"}
+    data["fault"] = ""
+    db.write_text(json.dumps(data))
+    data = close(message="verified zero open issues")
+    assert set(data["issues"].values()) == {"closed"}
+    assert data["calls"].count("issues/1") == 1 and "issues/2" not in data["calls"]
+    print("ok: paginated close deduplicates references, skips closed issues and resumes after failure", flush=True)
+    setup(fault="reopened")
+    close(False, "still has open issues")
+    setup(target=None)
+    close(message="verified zero open issues")
+    print("ok: final remote inventory gates close; unambiguous legacy plans synchronize", flush=True)

@@ -15,7 +15,7 @@ The argument is the milestone, for example `M2`: $ARGUMENTS. With no argument, u
    - the open `upstream` issues: `gh issue list --label upstream --state open`. Ask the user whether the plan includes them;
    - what the issues cite: ARCHITECTURE.md, and STORY.md and design/screens.json for each change that the user sees.
 3. Write the plan with `scripts/plan` only. Do not write `plan/` by hand. Do not commit it yet: until the user approves, you can write it again from the start.
-   - `scripts/plan new "<milestone> · <short name>"`
+   - `scripts/plan new "<milestone> · <short name>" --github-milestone "laichang/dsh-mobile#<milestone number>"`
    - `scripts/plan add tracer|spike|slice …` for each node, then `scripts/plan add exit "<check>"` for each real-device check.
    - Tracers first. Each tracer is one thin round trip that one session can finish: at most 3 items. A slice has at most 5. `scripts/plan` stops more. Use `[auto]` and `[ui]` items; use `[human]` only for a check that only a real device can do.
    - A design question that blocks a slice is a spike.

@@ -8,6 +8,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import dshm
+import github_close
 import plandata
 
 
@@ -73,6 +74,10 @@ def main():
             raise ValueError(f"unowned {name} ({udid}) remains after cleanup")
         print(f"plan close: kept {name} ({udid}) for {held}")
     print(f"plan close: {len(remaining)} project simulator(s) remain")
+    try:
+        github_close.sync(plan)
+    except (OSError, ValueError, TypeError, KeyError, subprocess.CalledProcessError, dshm.PlanError) as e:
+        sys.exit(f"plan close: {e}. Next: check GitHub access and the milestone issue mapping, then retry.")
 
 
 if __name__ == "__main__":
