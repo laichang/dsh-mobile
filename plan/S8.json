@@ -6,7 +6,10 @@
       "text": "A test reproduces the reported bug and passes with the fix",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/plan-test"
+      ]
     },
     {
       "tier": "human",

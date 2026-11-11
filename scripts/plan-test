@@ -191,6 +191,8 @@ prev=$( { grep -oE '^\| D[0-9]+ \|' ARCHITECTURE.md | grep -oE '[0-9]+'
 refused "assign with a branch that does not name the slice is refused" scripts/plan assign S90 --branch claude/other
 lacks "a refused assign writes no registry row" scripts/resources.tsv "claude/other"
 expect "assign S90" 0 scripts/plan assign S90 --branch claude/s90-test --worktree .claude/worktrees/s90 --from abc1234 --commit
+scripts/status --fast > "$T/active-status.out" && ok "status runs with an assigned slice" || bad "status failed for an assigned slice"
+line "status prints the assigned slice's next action" "$T/active-status.out" "     next: Slice owner builds"
 has "registry row for S90" scripts/resources.tsv "S90	claude/s90-test	"
 s90d=$(awk -F'\t' '$1=="S90"{print $10}' scripts/resources.tsv)
 [ "$s90d" = "D$((prev + 1))-D$((prev + 3))" ] && ok "S90 got the next decision block ($s90d)" || bad "S90 decisions $s90d, highest before $prev"
