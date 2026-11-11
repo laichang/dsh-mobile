@@ -18,7 +18,8 @@
       "screens": [],
       "passed": false,
       "evidence": [
-        "cmd:scripts/brief-test"
+        "cmd:scripts/brief-test",
+        "cmd:scripts/check-docs"
       ]
     }
   ]
