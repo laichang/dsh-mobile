@@ -6,14 +6,26 @@
       "text": "On the combined revision the dependency, code generation, Swift package, bridge and release checks pass. `cmd:scripts/check-layers`, `cmd:scripts/codegen --check`, `cmd:scripts/swift-test`, `cmd:scripts/pnpm-test`, `cmd:scripts/check-release-clean`",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/check-layers",
+        "cmd:scripts/pnpm-test",
+        "cmd:scripts/codegen --check",
+        "cmd:scripts/swift-test",
+        "cmd:scripts/check-release-clean",
+        "cmd:scripts/demo/check-tls-demos.sh"
+      ]
     },
     {
       "tier": "ui",
       "text": "Run a real task through the TLS bridge and exercise revocation through both management entry points on the combined code. `cmd:scripts/demo/round-trip.sh`, `cmd:scripts/demo/revoke.sh`",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/demo/round-trip.sh",
+        "cmd:scripts/demo/revoke.sh"
+      ]
     }
   ]
 }

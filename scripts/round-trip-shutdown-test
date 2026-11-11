@@ -1,0 +1,71 @@
+#!/bin/bash
+# Exercise the real demo shell and host launcher without installing DSH or booting a simulator.
+set -eu
+cd "$(dirname "$0")/.."
+scratch=$(mktemp -d)
+export DSHM_BRIDGE_PORT="shutdown-test-$$"
+logs="/tmp/dshm-t0-$DSHM_BRIDGE_PORT"
+trap 'rm -rf "$scratch" "$logs"' EXIT
+export TMPDIR="$scratch" DSHM_RUNTIME="$scratch" DSHM_HOME="$scratch/profiles"
+bin="$scratch/node_modules/.bin"
+mock="$scratch/node_modules/@deepseek-ai/dsh-llm-mock-server/lib"
+mkdir -p "$scratch/scripts/demo" "$scratch/bridge/lib/src" "$bin" "$mock"
+touch "$scratch/bridge/lib/src/index.js"
+cp scripts/dsh-up.mjs "$scratch/scripts/"
+cp scripts/demo/{round-trip,lib}.sh "$scratch/scripts/demo/"
+cat >> "$scratch/scripts/demo/lib.sh" <<'SH'
+demo_prepare_bridge() { :; }
+demo_bridge_tests() { :; }
+demo_swift_tests() { :; }
+demo_tls_client() { :; }
+demo_tls_ui() { echo 'Test Case fixture passed' > "${!#}"; }
+corepack() { :; }
+lsof() { [[ -f "$case_dir/ready" ]]; }
+SH
+
+cat > "$bin/dsh" <<'SH'
+#!/bin/bash
+set -eu
+[[ $1 == web ]] || exit 0
+finish() {
+  # The launcher releases this gate after its synchronous signal handlers return.
+  for ((i=0; i<250; i++)); do
+    if [[ -f "$case_dir/released" ]]; then
+      echo flushed > "$DSH_HOME/final-write"
+      exit "$host_status"
+    fi
+    sleep 0.02
+  done
+  exit 125
+}
+trap finish TERM
+echo "$DSH_HOME" > "$case_dir/ready"
+while :; do sleep 0.02; done
+SH
+chmod +x "$bin/dsh"
+cat > "$mock/index.js" <<'JS'
+const fs = require('node:fs')
+const dir = process.env.case_dir
+exports.startMockLlmServer = () => {
+  process.once('SIGTERM', () => setImmediate(() => fs.writeFileSync(dir + '/released', '')))
+  return { baseURL: 'http://localhost', close() {
+    const flush = fs.readFileSync(process.env.DSHM_HOME + '/final-write', 'utf8')
+    fs.writeFileSync(dir + '/closed', flush)
+  } }
+}
+JS
+
+export DSHM_GUARD_OWNER=$$ case_dir host_status
+for host_status in 0 23; do
+  case_dir="$scratch/case-$host_status"
+  mkdir "$case_dir"
+  status=0
+  "$scratch/scripts/demo/round-trip.sh" > "$case_dir/output" 2>&1 || status=$?
+  if [[ $status != "$host_status" || ! -f "$case_dir/closed" ]] ||
+      [[ $(cat "$case_dir/closed") != flushed || -e $(cat "$case_dir/ready") ]]; then
+    cat "$case_dir/output" "$logs/dsh-up.log" >&2
+    echo "Shutdown failed: expected host status $host_status, demo returned $status." >&2
+    exit 1
+  fi
+done
+echo 'Round trip waits for final host writes, removes the profile and propagates host failures.'

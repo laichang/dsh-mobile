@@ -76,3 +76,5 @@ BASH
   rm "$scratch/diagnostic"
 done
 echo 'Disposable profiles removed after successful and failed demos.'
+
+scripts/round-trip-shutdown-test
