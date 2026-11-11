@@ -40,10 +40,10 @@
       "needs": [
         "T0"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s2-pre-m3",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "M3 changes shared demo helpers and can span more than one workflow run. Closes #68",
       "cuts": "Use scripts/lib/plandata.py, scripts/plan, scripts/run-plan-args and .claude/workflows/run-plan.js. Extend scripts/plan-test and scripts/run-plan-test. Coordinate the persisted round state with the next slice for fresh-session handoff.",
@@ -228,6 +228,11 @@
       "date": "2026-11-11",
       "title": "T0 merged",
       "body": "Merged as `64cab9d`; the plan/ rules hold on the merge commit. No open [human] items, so T0 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S2 assigned",
+      "body": "Branch `claude/s2-pre-m3`, worktree `/Users/bytedance/dsh-mobile-s2`, simulator `dshm-S2-180`, DSHM_HOME `~/.dshm/home-s2-180`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S2)\"` exports them."
     }
   ],
   "pending": [
