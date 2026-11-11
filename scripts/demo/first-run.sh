@@ -9,7 +9,7 @@
 #                                already in the composer)
 #   scripts/demo/first-run.sh --shots  also refresh the screenshots in evidence/first-run/ (1/3 size)
 #
-# Resources (WORKFLOW.md §6), read from the environment (`eval "$(scripts/slice-env <ID>)"`):
+# Resources, read from the environment (`eval "$(scripts/slice-env <ID>)"`):
 #   DSHM_SIM dshm-first-run   DSHM_BRIDGE_PORT 47810   DSHM_WEB_PORT 3283   DSHM_HOME ~/.dshm/home-first-run
 #   DSHM_DD (DerivedData) /tmp/dshm-first-run-dd
 # Fails on any failed or skipped test.

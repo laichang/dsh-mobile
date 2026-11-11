@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Where the run is now, in one screen (WORKFLOW.md §5.4 step 1, §5.5). Read-only.
+"""Where the run is now, in one screen: the first look of a coordinator work session. Read-only.
 
   scripts/status          from any checkout or worktree
   scripts/status --fast   no CPU sample, no du of /tmp/dshm-*
 
-It shows: §0 counts (the coordinator title), the heartbeat, the machine (CPU idle, load, booted
+It shows: the counts of plan/plan.json on main (the coordinator title), the heartbeat, the machine (CPU idle, load, booted
 dshm-* simulators), the disk (free space on the volume of $HOME against the floor of the guard,
-DSHM_MIN_FREE_GB; all dshm-* simulators; worktrees; /tmp/dshm-* paths and their size), and for each slice that is todo/doing/blocked in §0 on main: its branch head
+DSHM_MIN_FREE_GB; all dshm-* simulators; worktrees; /tmp/dshm-* paths and their size), and for each slice that is todo/doing/blocked in plan/ on main: its branch head
 and age, its distance from main, uncommitted files in its worktree, the processes that run for it
 (demo, review, xcodebuild, swift test), and its latest review result. "attention" lists what
 looks stuck, free space below the floor, and what slices in review or done left behind
@@ -23,13 +23,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import dshm  # noqa: E402
-import plangen  # noqa: E402
+import plandata  # noqa: E402
 
 IDLE_AFTER_MIN = 45        # a doing slice with no process and no commit for this long needs a look
 HEARTBEAT_STALE_MIN = 30   # the heartbeat fires about every 20 minutes
 SIM_LIMIT, MIN_IDLE = 3, 15
 DU_TIMEOUT_S = 5           # du over /tmp/dshm-* (DerivedData copies); skipped with --fast
-# Demos that run after their merge: round-trip.sh at the start of each work session (WORKFLOW.md §4.1) and
+# Demos that run after their merge: round-trip.sh at the start of each work session and
 # shell.sh --all as a regression in reviews. Their /tmp/dshm-t0*, /tmp/dshm-t1* are caches, not leftovers.
 SHARED_DEMO_TMP = ("T0", "T1")
 REVIEW_DIR = Path("/tmp/dshm-review")
@@ -161,9 +161,13 @@ def main():
     a = ap.parse_args()
     now = time.time()
     main_root = dshm.main_checkout()
-    has_plan = subprocess.run(["git", "cat-file", "-e", "main:PLAN.md"], capture_output=True).returncode == 0
-    plan = dshm.split_lines(dshm.read_main_file("PLAN.md")) if has_plan else []
-    rows = [r for _, r in dshm.status_table(plan)] if has_plan else []
+    try:
+        doc = json.loads(dshm.read_main_file(plandata.PLAN_FILE))
+    except (dshm.PlanError, json.JSONDecodeError):
+        doc = None
+    has_plan = doc is not None
+    rows = [{"id": n["id"], "status": n.get("status", "todo"),
+             "branch": f"`{n['branch']}`" if n.get("branch") else "—"} for n in doc["nodes"]] if has_plan else []
     registry = {r["id"]: r for r in dshm.parse_registry(
         (main_root / dshm.REGISTRY).read_text() if (main_root / dshm.REGISTRY).exists() else "")}
     wts = worktrees()
@@ -175,7 +179,7 @@ def main():
     print(f"dsh-mobile · {time.strftime('%Y-%m-%d %H:%M')} · main {head} ({ago(now - int(head_t))} ago)")
     marks = {"done": "✅", "review": "👀", "doing": "🔨", "blocked": "⏸"}
     if has_plan:
-        print(f"🎛 Coordinator · {plangen.plan_title(plan)} · " + " ".join(
+        print(f"🎛 Coordinator · {doc['title'].split(' · ')[0]} · " + " ".join(
             f"{marks[k]}{sum(r['status'] == k for r in rows)}" for k in marks))
     else:
         print("🎛 Coordinator · no plan: no requirement in progress (ideas and bugs are GitHub issues)")
@@ -189,11 +193,11 @@ def main():
         if age > HEARTBEAT_STALE_MIN * 60:
             attention.append(f"heartbeat {hb['id']} has not fired for {ago(age)}: the app or the Mac may be asleep")
         if now - hb.get("createdAt", now * 1000) / 1000 > 6 * 86400:
-            attention.append("heartbeat is older than 6 days: renew it (WORKFLOW.md §5.5, step 5)")
+            attention.append("heartbeat is older than 6 days: renew it")
     else:
         print("heartbeat: none")
         if any(r["status"] == "doing" for r in rows):
-            attention.append("slices are doing, but there is no heartbeat (WORKFLOW.md §5.5)")
+            attention.append("slices are doing, but there is no heartbeat: start one")
 
     load = sh("sysctl", "-n", "vm.loadavg").strip("{} \n").split()
     idle = None if a.fast else cpu_idle()
@@ -209,9 +213,9 @@ def main():
         machine += f" · other booted: {', '.join(other)}"
     print(machine)
     if idle is not None and idle < MIN_IDLE:
-        attention.append(f"CPU is {idle:.0f}% idle: demos wait in the guard (WORKFLOW.md §6.1)")
+        attention.append(f"CPU is {idle:.0f}% idle: demos wait in the guard")
 
-    # Disk: free space and what the slices leave behind (WORKFLOW.md §6.1, §10).
+    # Disk: free space and what the slices leave behind.
     kb, mount = dshm.disk_free()
     floor = dshm.min_free_gb()
     all_sims = [d for d in dshm.simulators() if d["name"].startswith("dshm-")]
@@ -229,7 +233,7 @@ def main():
     print(disk)
     if kb is not None and kb < floor * 1048576:
         attention.append(f"{kb / 1048576:.1f} GB free, below the floor of {floor} GB: the guard refuses demos "
-                         f"and reviews. Remove leftovers (scripts/plan cleanup <ID>) (WORKFLOW.md §6.1)")
+                         f"and reviews. Remove leftovers (scripts/plan cleanup <ID>)")
     for r in rows:
         if r["status"] not in ("review", "done"):
             continue
@@ -302,16 +306,16 @@ def main():
             newer_review = rv and rv[2] > now - IDLE_AFTER_MIN * 60
             if not newer_review:
                 attention.append(f"{sid}: nothing runs and the last commit is {ago(commit_age)} old. "
-                                 f"Check its session (WORKFLOW.md §5.4)")
+                                 f"Check its session")
     if waiting:
         print(f"todo, not started: {', '.join(waiting)}")
     if not active and not waiting:
         print("no slice is todo, doing or blocked")
     for s in dshm_sims:
         if s not in owned_sims:
-            attention.append(f"{s} is booted, but its slice is not active: shut it down (WORKFLOW.md §6.1)")
+            attention.append(f"{s} is booted, but its slice is not active: shut it down")
     if len(dshm_sims) >= SIM_LIMIT:
-        attention.append(f"{len(dshm_sims)} dshm simulators are booted: do not start another slice (WORKFLOW.md §6.1)")
+        attention.append(f"{len(dshm_sims)} dshm simulators are booted: do not start another slice")
 
     print()
     if attention:

@@ -17,7 +17,7 @@
 # library first, so the picker shows it as the newest photo. With --all, the files of
 # scripts/demo/attachments-files/ are put in Files > On My iPhone (the Files app's local storage).
 #
-# Resources (WORKFLOW.md §6), read from the environment (scripts/slice-env):
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM, DSHM_DD (DerivedData, default /tmp/dshm-attachments-dd), DSHM_BRIDGE_PORT,
 #   DSHM_WEB_PORT, DSHM_HOME. Fails on any failed or skipped test.
 set -euo pipefail

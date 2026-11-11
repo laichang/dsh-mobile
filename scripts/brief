@@ -7,8 +7,8 @@ It reads plan/plan.json and plan/<ID>.json, and the short facts it quotes from A
 ARCHITECTURE.md, as committed at REF (default HEAD; the merge target), never an uncommitted edit.
 It writes the brief to PATH (default /tmp/dshm-brief/<ID>-r<N>.md) and prints the path.
 
-The brief has: the node, its branch and worktree; its Why, Cuts and Not (from the node's section of
-the plan file at REF: plan/<ID>.json has no such fields yet); its items with tier and evidence; the
+The brief has: the node, its branch and worktree; its Why, Cuts and Not (from its node in
+plan/plan.json at REF); its items with tier and evidence; the
 files of the items and of the Cuts (marked "new" when REF does not have them); the commands to run
 (the evidence, the checks, the output wrappers for the areas the files touch, a demo that the items
 name); the facts of those areas, a bullet or a paragraph of ARCHITECTURE.md, and the repo layout of
@@ -35,7 +35,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import dshm  # noqa: E402
 import plandata  # noqa: E402
-import plangen  # noqa: E402
 
 # Areas of the repo: the files of a node select the areas, and each area its commands and facts.
 # A fact is (doc, heading, first words of a bullet or paragraph); None = the first paragraph.
@@ -76,7 +75,7 @@ AREAS = {
         "facts": [("ARCHITECTURE.md", "### 5.1 Layers", "**Design as data")],
     },
     "process": {
-        "prefixes": ("scripts/", "plan/", ".claude/", ".agents/", "AGENTS.md", "WORKFLOW.md", "ARCHITECTURE.md"),
+        "prefixes": ("scripts/", "plan/", ".claude/", ".agents/", "AGENTS.md", "ARCHITECTURE.md"),
         "commands": [("scripts/run-plan-test", "after a change to the Workflow or the plan tools")],
         "facts": [
             ("ARCHITECTURE.md", "## 7. Testing", "**Output wrappers"),
@@ -94,7 +93,7 @@ ALWAYS = [
 ]
 
 RULES = [
-    "Read this brief, not AGENTS/WORKFLOW/ARCHITECTURE/STORY/DESIGN. Open one section of a doc only when you need it.",
+    "Read this brief, not AGENTS/ARCHITECTURE/STORY or the design files. Open one section of a doc only when you need it.",
     "Commit only on the branch above. Do not merge, push or rebase, and do not touch `main`.",
     "Never `git commit --no-verify`/`-n`, never change `core.hooksPath`, never set `CHECK_PLAN_ALLOW`.",
     "Do not edit guard files: `scripts/check-plan`, `.githooks/`, `.claude/hooks/`, `.claude/settings.json`, `.codex/`.",
@@ -115,7 +114,6 @@ RULES = [
     "End with a short report: the head commit, what is done, what is not, each provisional item.",
 ]
 
-PLAN_MD = "PLAN" + ".md"
 MAX_FILES = 30      # files listed in a brief; more are counted, not listed
 MAX_GLOB = 5        # a glob in the Cuts with more matches is listed as the glob
 SCREENS_FILE = "design/screens.json"
@@ -194,23 +192,12 @@ def exists(f, modes):
     return f in modes or any(p.startswith(d) or fnmatch.fnmatch(p, f) for p in modes)
 
 
-def scope(root, base, sid):
-    """{Why, Cuts, Not}: the lines of each field of the node's section of the plan file at base, or
-    None. plan/<ID>.json has no such fields yet; the plan file is their source until plan/ holds them."""
-    lines = doc_lines(root, base, PLAN_MD)
-    sec = next(((a, b) for a, b, i, _ in plangen.sections(lines) if i == sid), None)
-    if sec is None:
-        return None
-    out, cur = {}, None
-    for line in lines[sec[0] + 1:sec[1]]:
-        m = re.match(r"^\*\*(Status|Why|Cuts|Demo|Done when|Not|Log)\*\*:?\s*(.*)$", line)
-        if m:
-            cur = m.group(1) if m.group(1) in ("Why", "Cuts", "Not") else None
-            if cur:
-                out[cur] = [m.group(2)] if m.group(2) else []
-        elif cur and line.strip():
-            out[cur].append(line.rstrip())
-    return out
+def scope(node):
+    """{Why, Cuts, Not}: the lines of each field of the node in plan/plan.json, or None when the
+    node has none of them."""
+    out = {name: [l.rstrip() for l in node[name.lower()].strip().split("\n")]
+           for name in ("Why", "Cuts", "Not") if node.get(name.lower(), "").strip()}
+    return out or None
 
 
 def screen_ids(items, files):
@@ -316,7 +303,7 @@ def brief(root, sid, rnd, base, preview=False):
         branch = f"- Branch: `{node['branch']}` (commit only there)"
     else:
         where, branch = "none yet", "- Branch: none yet (the coordinator assigns one)"
-    sc = scope(root, tip, sid)
+    sc = scope(node)
     lines = [
         f"# Brief: {sid} · {node['title']} · round {rnd}",
         "",
@@ -329,7 +316,7 @@ def brief(root, sid, rnd, base, preview=False):
         "",
     ]
     if sc is None:
-        lines.append(f"The plan file at the base has no section for {sid}: the items are the whole scope.")
+        lines.append(f"The node has no Why, Cuts or Not in plan/plan.json: the items are the whole scope.")
     else:
         for name in ("Why", "Cuts", "Not"):
             body = sc.get(name) or ["—"]
@@ -374,7 +361,10 @@ def brief(root, sid, rnd, base, preview=False):
     for c in evid:
         new = "" if c.split()[0] in modes else " (new: not at the base yet)"
         lines.append(f"- `{c}`: evidence of an item{new}")
-    for c in demos_of(its, modes):
+    demos = demos_of(its, modes)
+    if node.get("demo") and node["demo"] not in demos:
+        demos.append(node["demo"])
+    for c in demos:
         if c not in evid:
             lines.append(f"- `{c}`: the demo of the node")
     for c, why in ALWAYS:

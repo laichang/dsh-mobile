@@ -1,6 +1,6 @@
 """Shared helpers for scripts/plan, scripts/status and scripts/slice-env.
 
-Stdlib only. Reads PLAN.md, ARCHITECTURE.md and scripts/resources.tsv, and knows the repo layout:
+Stdlib only. Reads ARCHITECTURE.md and scripts/resources.tsv, and knows the repo layout:
 the main checkout (branch `main`) and the slice worktrees.
 """
 
@@ -17,7 +17,7 @@ REGISTRY = "scripts/resources.tsv"
 REGISTRY_COLUMNS = ("id", "branch", "slot", "bridge", "web", "bridge2", "web2", "sim", "home",
                     "decisions", "assigned")
 
-# WORKFLOW.md §6: slot k uses bridge 47810+k and web 3283+k; a second host adds 30.
+# Slot k uses bridge 47810+k and web 3283+k; a second host adds 30.
 BRIDGE_BASE, WEB_BASE, SECOND_OFFSET, MAX_SLOT = 47810, 3283, 30, 29
 DECISION_BLOCK = 3
 
@@ -60,78 +60,6 @@ def check_id(sid):
 def read_main_file(path):
     """A file as committed on main (works from any worktree)."""
     return git("show", f"main:{path}")
-
-
-# ---------------------------------------------------------------- PLAN.md
-
-def split_lines(text):
-    return text.split("\n")
-
-
-def section_bounds(lines, heading_prefix):
-    """(start, end) line indexes of the '## …' section whose heading starts with heading_prefix.
-    end is the index of the next '## ' heading (or len)."""
-    start = None
-    for i, line in enumerate(lines):
-        if start is None and line.startswith(heading_prefix):
-            start = i
-        elif start is not None and line.startswith("## "):
-            return start, i
-    if start is None:
-        raise PlanError(f"PLAN.md: no section '{heading_prefix}'")
-    return start, len(lines)
-
-
-def status_table(lines):
-    """§0 rows: list of (line index, dict with id, status, branch, updated, next)."""
-    s, e = section_bounds(lines, "## 0. Status")
-    rows = []
-    for i in range(s, e):
-        cells = table_cells(lines[i])
-        if cells and SLICE_ID_RE.match(cells[0]) and len(cells) == 5:
-            rows.append((i, dict(zip(("id", "status", "branch", "updated", "next"), cells))))
-    return rows
-
-
-def table_cells(line):
-    if not line.startswith("|") or line.startswith("|---"):
-        return None
-    return [c.strip() for c in line.strip().strip("|").split("|")]
-
-
-def format_row(cells):
-    return "| " + " | ".join(cells) + " |"
-
-
-def statuses(lines):
-    return {r["id"]: r["status"] for _, r in status_table(lines)}
-
-
-def slice_bounds(lines, sid):
-    """(start, end) of '### <ID> · …' up to the next '### ' or '## ' heading."""
-    start = None
-    for i, line in enumerate(lines):
-        if start is None and line.startswith(f"### {sid} ·"):
-            start = i
-        elif start is not None and (line.startswith("### ") or line.startswith("## ")):
-            return start, i
-    if start is None:
-        raise PlanError(f"PLAN.md: no slice section '### {sid} ·'")
-    return start, len(lines)
-
-
-ITEM_RE = re.compile(r"^- \[(?P<box>[ xX])\] \[(?P<tier>auto|ui|human)\] (?P<desc>.*?)"
-                     r"(?:\s+—\s+Evidence:(?P<ev>.*))?\s*$")
-
-
-def items(lines, sid):
-    s, e = slice_bounds(lines, sid)
-    out = []
-    for i in range(s, e):
-        m = ITEM_RE.match(lines[i])
-        if m:
-            out.append((i, m))
-    return out
 
 
 # ---------------------------------------------------------------- ARCHITECTURE.md

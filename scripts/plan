@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
-"""Bookkeeping in PLAN.md, without hand edits (WORKFLOW.md §3, §5.2, §10).
+"""Bookkeeping in plan/, without hand edits. The plan of a requirement is plan/plan.json (the
+graph and the state of the run) and plan/<ID>.json (the items of each node); the schema is
+scripts/lib/plan.schema.json, the rules are in scripts/lib/plandata.py.
 
-Each command changes PLAN.md in one place, checks the result with scripts/check-plan, and writes
-it. Add --commit to commit it (one commit, a standard message). Add --dry-run to print the diff
-and change nothing. The ownership rules of WORKFLOW.md §3 apply: coordinator commands run only
-on main, slice owner commands only on the branch of that slice.
-
-PLAN.md exists only while a requirement is in progress. With no PLAN.md, every command except
-`new` stops and says so. Every write redraws §2 Map from the Needs fields and lints the format
-(scripts/lib/plangen.py) before check-plan.
+Each write changes plan/ in one place, checks the change with scripts/check-plan, and writes it.
+Add --commit to commit it (one commit, a standard message). Add --dry-run to print the diff and
+change nothing. Coordinator commands run only on main; slice owner commands only on the branch
+of that slice. Each refusal says the next step.
 
 Read-only (anywhere):
-  plan show <ID>                       the §0 row and the slice section
-  plan title [--milestone M1]          the coordinator status title, counted from §0
-  plan lint                            check the format of PLAN.md and the files in plan/ (exit 1)
-  plan dag --json                      write the graph of plan/plan.json (nodes, edges, order) to
-        stdout; a cycle, an unknown need or a schema error makes it fail (no PLAN.md needed)
+  plan show <ID>                       the node: state, scope, items, log
+  plan title [--milestone M1]          the coordinator status title, counted from the states
+  plan lint                            check plan/ (exit 1)
+  plan dag [--json]                    the graph of plan/plan.json (nodes, edges, order); a cycle,
+        an unknown need or a schema error makes it fail
   plan passed <ID> [--json] [--base REF]   passed of each item of <ID>, derived from the
         verifier results for the head commit of its branch (scripts/lib/plandata.py); results
         for an older commit are stale and count for nothing. The branch and the items come from
         plan/ as committed at REF (default HEAD), never from an uncommitted edit
 
-Verifier (not the slice owner; WORKFLOW.md §10):
+Verifier (not the slice owner):
   plan verify <ID> [--base REF]        check out the head commit of the branch of <ID> (from
         plan/plan.json as committed at REF, default HEAD) clean, run the `cmd:` evidence of each
         item there (and check `commit:` pointers), and store the commands and exit codes as a
@@ -47,27 +45,28 @@ Merge step (the coordinator, or the merge node of the Workflow):
         Prints a JSON summary; exit 0 = merged (--dry-run: passed), 1 = not
 
 Coordinator (on main):
-  plan new "<title>"                   start the plan of a requirement the user has set, from
-        scripts/lib/plan-template.md (refused if PLAN.md exists). Title: "M2 · Push and replies"
+  plan new "<title>"                   start the plan of a requirement that the user has set
+        (refused if plan/plan.json exists). Title: "M3 · Push and replies"
   plan add tracer|spike|slice "<name>" --why T --cuts T --done "[auto] …" [--done …]
-        [--needs "T0, X1"] [--demo T] [--not T]
-        add a section in the format: the next ID (T0, X1, S1, …), a §0 row (todo), the fields in
-        order. A slice needs the first tracer unless --needs says otherwise. A value with a
-        newline is written under the field name (bullets); --cuts - reads stdin
-  plan add exit "<item>"               add a [human] item to §6 Exit
-  plan row <ID> <status> [--branch T] [--next T]       change the §0 row (Updated = today)
-  plan log "<title>" [--body T|-]                       add a §8 entry (- = body from stdin)
-  plan pending <slice> <kind> "<item>" [--branch B] [--commit-ref C]   add a §9 row
+        [--needs "T0, X1"] [--demo PATH] [--not T]
+        add a node: the next ID (T0, X1, S1, …), state todo, its items in plan/<ID>.json.
+        A slice needs the first tracer unless --needs says otherwise. --cuts - reads stdin
+  plan add exit "<item>"               add a [human] exit item
+  plan row <ID> <status> [--next T]    change the state of a node (updated = today)
+  plan log "<title>" [--body T|-]      add a plan log entry (- = body from stdin)
+  plan pending <slice> <kind> "<item>" [--branch B] [--commit-ref C]   add what waits for the user
   plan fix "<name>" --bug "<what the user saw>" [--needs ID]
-        a bug that the user reported: add a fix slice (next S number, a §0 row, a section);
-        then `plan assign` and start a session for it. The coordinator does not fix code.
-  plan assign <ID> --branch B [--worktree P] [--from C] [--decisions N] [--note T]
-        give the slice its resources (scripts/slice-env), set §0 to doing, add the §8 entry
+        a bug that the user reported: add a fix slice (the next S number); then `plan assign`
+        and start a session for it. The coordinator does not fix code.
+  plan assign <ID> --branch B [--worktree P] [--from C] [--note T]
+        give the slice its branch (in plan/plan.json) and its resources (scripts/slice-env),
+        set it to doing, add the log entry
   plan merged <ID> <merge-commit> [--note T] [--keep]
-        after a merge: check PLAN.md of the merge commit against its first parent (§10, condition
-        3); set §0 to review (open [human] items) or done; add §9 rows for the open [human]
-        items and for the provisional D entries that the merge added; add the §8 entry with the
-        review result from /tmp/dshm-review. Then the cleanup below; --keep skips it
+        after a merge: check plan/ of the merge commit against its first parent; set the node
+        to review (open [human] items) or done, with the merge commit; add pending entries for
+        its open [human] items and for each provisional choice that the merge added to
+        ARCHITECTURE.md; add the log entry with the review result from /tmp/dshm-review. Then
+        the cleanup below; --keep skips it
   plan cleanup <ID>
         remove what a merged slice left on the Mac, and print each thing: the simulator dshm-<ID>;
         /tmp/dshm-<id> and /tmp/dshm-<id>-*; each worktree and branch of the slice whose HEAD is
@@ -79,9 +78,15 @@ Coordinator (on main):
         remove and removes nothing
 
 Slice owner (on the slice branch):
-  plan tick <ID> "<part of the item>" --evidence "test:… · cmd:…"   tick one [auto]/[ui] item
-  plan slice-log <ID> "<title>" [--body T|-]                         add a dated Log entry
-  plan slice-status <ID> <status>                                    the Status field
+  plan evidence <ID> <item number> "<pointer>"   add an evidence pointer (cmd:, test:, commit:,
+        shot:) to an [auto] or [ui] item. Only the verifier decides `passed`
+  plan slice-log <ID> "<title>" [--body T|-]     add a dated entry to the log of the node
+  plan slice-status <ID> <status>                the state of the node
+
+The user (not an agent):
+  plan accept <ID>|exit <item number> "<device or note>"   record a [human] item as accepted.
+        It asks on the terminal (/dev/tty) and records only when the user types the ID back,
+        so a shell with no terminal (an agent's) cannot record it
 
 Exit 0 = OK, 1 = refused or check failed, 2 = usage.
 """
@@ -101,124 +106,108 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import dshm  # noqa: E402
 import plandata  # noqa: E402
-import plangen  # noqa: E402
 
 PlanError = dshm.PlanError
 TRAILER = "\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+ID_RE = re.compile(r"\b[TXS]\d+\b")
+# kind: (ID prefix, first number, title prefix)
+KINDS = {"tracer": ("T", 0, "Tracer bullet: "), "spike": ("X", 1, "Spike: "), "slice": ("S", 1, "")}
+MAX_ITEMS = {"T": 3, "S": 5}     # one session can finish a tracer or a slice; spikes have no limit
+MARKS = {"done": "✅", "review": "👀", "doing": "🔨", "blocked": "⏸"}
 
 
 class Plan:
+    """plan/ of the working tree: plan.json and the items files, changed in memory, then saved."""
+
     def __init__(self, root):
         self.root = root
-        self.path = root / "PLAN.md"
-        self.exists = self.path.exists()
-        self.before = self.path.read_text() if self.exists else ""
-        self.lines = dshm.split_lines(self.before) if self.exists else []
-        self.extra_files = []      # other files to commit with PLAN.md
+        self.dir = root / plandata.PLAN_DIR
+        self.before = plandata_files(self.dir)
+        self.exists = plandata.PLAN_FILE in self.before
+        self.doc = json.loads(self.before[plandata.PLAN_FILE]) if self.exists else None
+        self.slices = {}           # ID -> items doc, for each items file that a command changes
+        # Other files to commit with plan/.
+        self.extra_files = []
 
-    # -- write ------------------------------------------------------------------------------
-    def text(self):
-        return "\n".join(self.lines)
+    def load(self):
+        if not self.exists:
+            raise PlanError(plandata.NO_PLAN)
+        try:
+            plandata.read_plan(self.root)
+        except plandata.DataError as e:
+            raise PlanError(str(e))
+        return self
 
-    def save(self, args, message):
-        plangen.redraw_map(self.lines)
-        errors = plangen.lint(self.lines)
-        if errors:
-            raise PlanError("the plan format is broken (scripts/lib/plangen.py):\n  " + "\n  ".join(errors))
-        after = self.text()
-        if after == self.before:
+    def node(self, sid):
+        try:
+            return plandata.find_node(self.doc, sid)
+        except plandata.DataError as e:
+            raise PlanError(str(e))
+
+    def items(self, sid):
+        if sid not in self.slices:
+            self.slices[sid] = json.loads(self.before[f"plan/{sid}.json"])
+        return self.slices[sid]
+
+    def after(self):
+        out = dict(self.before)
+        out[plandata.PLAN_FILE] = plandata.dump(self.doc)
+        for sid, doc in self.slices.items():
+            out[f"plan/{sid}.json"] = plandata.dump(doc)
+        return out
+
+    def save(self, args, message, agent=True):
+        after = self.after()
+        changed = sorted(p for p in after if after[p] != self.before.get(p))
+        if not changed:
             print("plan: no change")
             return 0
         if args.dry_run:
-            sys.stdout.writelines(difflib.unified_diff(
-                self.before.splitlines(True), after.splitlines(True), "PLAN.md", "PLAN.md (new)"))
+            for p in changed:
+                sys.stdout.writelines(difflib.unified_diff(
+                    self.before.get(p, "").splitlines(True), after[p].splitlines(True), p, f"{p} (new)"))
             return 0
-        check(self.root, self.before, after)
-        self.path.write_text(after)
-        print(f"plan: PLAN.md changed ({message})")
+        check(self.root, self.before, after, agent)
+        self.dir.mkdir(exist_ok=True)
+        for p in changed:
+            (self.root / p).write_text(after[p])
+        print(f"plan: {', '.join(changed)} changed ({message})")
         if args.commit:
-            files = ["PLAN.md", *self.extra_files]
+            files = [*changed, *self.extra_files]
             dshm.git("add", "--", *files, cwd=self.root)
             r = subprocess.run(["git", "commit", "-q", "-m", message + TRAILER, "--", *files],
                                cwd=self.root, capture_output=True, text=True)
             if r.returncode != 0:
-                raise PlanError(f"git commit failed:\n{r.stdout}{r.stderr}")
+                raise PlanError(f"git commit failed:\n{r.stdout}{r.stderr}\nNext: read the hook message above, "
+                                f"repair what it names, and commit plan/ again")
             print(f"plan: committed {dshm.git('rev-parse', '--short', 'HEAD', cwd=self.root)} {message}")
         return 0
 
-    # -- §0 --------------------------------------------------------------------------------
-    def row(self, sid):
-        for i, r in dshm.status_table(self.lines):
-            if r["id"] == sid:
-                return i, r
-        raise PlanError(f"{sid} has no row in §0 (adding a row is a plan change for the user)")
 
-    def set_row(self, sid, status=None, branch=None, nxt=None):
-        i, r = self.row(sid)
-        if status:
-            if status not in dshm.STATUSES:
-                raise PlanError(f"status must be one of {', '.join(dshm.STATUSES)}")
-            r["status"] = status
-        if branch is not None:
-            r["branch"] = branch
-        if nxt is not None:
-            r["next"] = nxt
-        r["updated"] = dshm.today()
-        self.lines[i] = dshm.format_row([r["id"], r["status"], r["branch"], r["updated"], r["next"]])
-
-    # -- §8 --------------------------------------------------------------------------------
-    def add_log(self, title, body=""):
-        entry = format_entry(title, body)
-        _, e = dshm.section_bounds(self.lines, "## 8. Plan log")
-        while e > 0 and self.lines[e - 1].strip() == "":
-            e -= 1
-        self.lines[e:e] = ["", *entry]
-        # one blank line before the next heading
-        _, e2 = dshm.section_bounds(self.lines, "## 8. Plan log")
-        if self.lines[e2 - 1].strip() != "":
-            self.lines.insert(e2, "")
-
-    # -- §9 --------------------------------------------------------------------------------
-    def add_pending(self, sid, kind, item, branch="`main`", ref="—"):
-        s, e = dshm.section_bounds(self.lines, "## 9. Pending user confirmation")
-        last, numbers = None, []
-        for i in range(s, e):
-            cells = dshm.table_cells(self.lines[i])
-            if cells and cells[0].isdigit():
-                last = i
-                numbers.append(int(cells[0]))
-        if last is None:   # an empty table: the first row goes under the |---| line
-            last = next((i for i in range(s, e) if self.lines[i].startswith("|---")), None)
-            if last is None:
-                raise PlanError("§9 has no table to add to")
-            # Keep the numbers unique: §8 entries name the rows that left ("§9 rows 63, 64").
-            for m in re.finditer(r"§9 rows? (\d+(?:(?:, | and |–|-)\d+)*)", self.text()):
-                numbers += [int(x) for x in re.findall(r"\d+", m.group(1))]
-        n = max(numbers, default=0) + 1
-        self.lines.insert(last + 1, dshm.format_row([str(n), sid, kind, item.replace("|", "\\|"), branch, ref]))
-        return n
+def plandata_files(d):
+    if not d.is_dir():
+        return {}
+    return {f"{plandata.PLAN_DIR}/{p.name}": p.read_text() for p in sorted(d.iterdir()) if p.is_file()}
 
 
-def format_entry(title, body):
-    title = title.strip().rstrip(".")
-    body_lines = [l.rstrip() for l in (body or "").strip("\n").split("\n")] if body and body.strip() else []
-    head = f"- **{dshm.today()} · {title}.**"
-    if body_lines and not body_lines[0].lstrip().startswith("- "):
-        head += " " + body_lines.pop(0).strip()
-    rest = [("  " + l if l and not l.startswith("  ") else l) for l in body_lines]
-    return [head, *rest]
-
-
-def check(root, before, after):
-    """scripts/check-plan on this one edit (--agent: no [human] tick, no pre-ticked new item)."""
+def check(root, before, after, agent=True):
+    """scripts/check-plan on this one change (--agent: no human: pointer)."""
     with tempfile.TemporaryDirectory() as d:
-        b, a = Path(d, "base.md"), Path(d, "new.md")
-        b.write_text(before)
-        a.write_text(after)
-        r = subprocess.run([str(root / "scripts/check-plan"), "--base", str(b), "--new", str(a), "--agent"],
-                           cwd=root, capture_output=True, text=True)
+        for name, files in (("base", before), ("new", after)):
+            Path(d, name).mkdir()
+            for p, text in files.items():
+                Path(d, name, Path(p).name).write_text(text)
+        argv = [str(root / "scripts/check-plan"), "--base", str(Path(d, "base")), "--new", str(Path(d, "new"))]
+        r = subprocess.run(argv + (["--agent"] if agent else []), cwd=root, capture_output=True, text=True)
     if r.returncode != 0:
-        raise PlanError("scripts/check-plan refused the change:\n" + r.stdout + r.stderr)
+        raise PlanError("scripts/check-plan refused the change (nothing written):\n" + r.stdout + r.stderr)
+
+
+def entry(title, body=""):
+    title = " ".join(title.split()).rstrip(".")
+    if not title:
+        raise PlanError("the entry has no title. Next: give it a title")
+    return {"date": dshm.today(), "title": title, "body": (body or "").strip("\n")}
 
 
 def read_body(value):
@@ -230,43 +219,78 @@ def read_body(value):
 def need_main():
     b = dshm.branch()
     if b != "main":
-        raise PlanError(f"this command is for the coordinator, on main (now on {b}); WORKFLOW.md §3")
+        raise PlanError(f"this command is for the coordinator, on main (now on {b}). "
+                        f"Next: run it in the main checkout, or ask the coordinator")
 
 
 def need_slice_branch(sid):
     b = dshm.branch()
     key = sid.lower()
     if b == "main" or not re.search(rf"(^|/){re.escape(key)}(-|$)", b):
-        raise PlanError(f"this command is for the owner of {sid}, on its branch (now on {b}); WORKFLOW.md §3")
+        raise PlanError(f"this command is for the owner of {sid}, on its branch (now on {b}). "
+                        f"Next: run it in the worktree of {sid}, or ask the coordinator")
+
+
+def set_state(node, status=None, nxt=None):
+    if status:
+        if status not in plandata.STATUSES:
+            raise PlanError(f"status must be one of {', '.join(plandata.STATUSES)}. Next: use one of them")
+        node["status"] = status
+    if nxt is not None:
+        node["next"] = nxt
+    node["updated"] = dshm.today()
+
+
+def parse_item(text):
+    text = " ".join(text.split())
+    m = re.match(r"^\[(auto|ui|human)\]\s+(.+)$", text)
+    if not m:
+        raise PlanError(f"an item starts with [auto], [ui] or [human]: {text!r}. Next: add the tier")
+    return {"tier": m.group(1), "text": m.group(2).rstrip(), "files": [], "screens": [], "passed": False}
+
+
+def item_at(items, n, sid):
+    if not 1 <= n <= len(items):
+        raise PlanError(f"{sid} has items 1 to {len(items)}, not {n}. Next: `scripts/plan show {sid}` lists them")
+    return items[n - 1]
 
 
 # ------------------------------------------------------------------------------- commands
 
 def cmd_show(p, a):
-    _, r = p.row(a.id)
-    print(dshm.format_row([r["id"], r["status"], r["branch"], r["updated"], r["next"]]))
-    print()
-    s, e = dshm.slice_bounds(p.lines, a.id)
-    print("\n".join(p.lines[s:e]).rstrip())
+    n = p.node(a.id)
+    print(f"{n['id']} · {n['title']}  [{n['kind']}]  {n.get('status', 'todo')}"
+          f"  needs {', '.join(n['needs']) or '—'}  branch {n['branch'] or '—'}"
+          + (f"  merged {n['merge']}" if n.get("merge") else ""))
+    for k in ("why", "cuts", "not", "demo", "next"):
+        if n.get(k):
+            print(f"{k.capitalize()}: {n[k]}")
+    print("Items:")
+    for i, it in enumerate(p.items(a.id)["items"], 1):
+        ev = " · ".join(it.get("evidence", []))
+        print(f"  {i}. [{it['tier']}] {it['text']}" + (f" — {ev}" if ev else ""))
+    for e in n.get("log", []):
+        print(f"- {e['date']} · {e['title']}." + (f" {e['body']}" if e["body"] else ""))
     return 0
 
 
-def title_from(lines, milestone):
-    marks = {"done": "✅", "review": "👀", "doing": "🔨", "blocked": "⏸"}
-    count = {k: 0 for k in marks}
-    for _, r in dshm.status_table(lines):
-        if r["status"] in count:
-            count[r["status"]] += 1
-    return f"🎛 Coordinator · {milestone} · " + " ".join(f"{marks[k]}{count[k]}" for k in marks)
+def title_from(doc, milestone):
+    count = {k: 0 for k in MARKS}
+    for n in doc["nodes"]:
+        if n.get("status", "todo") in count:
+            count[n.get("status", "todo")] += 1
+    return f"🎛 Coordinator · {milestone} · " + " ".join(f"{MARKS[k]}{count[k]}" for k in MARKS)
 
 
 def cmd_title(p, a):
-    print(title_from(p.lines, a.milestone or plangen.plan_title(p.lines)))
+    print(title_from(p.doc, a.milestone or p.doc["title"].split(" · ")[0]))
     return 0
 
 
 def cmd_lint(p, a):
-    errors = plangen.lint(p.lines) + plandata.tree_errors(plandata.worktree_files(p.root))
+    errors = plandata.tree_errors(plandata.worktree_files(p.root))
+    if not p.exists:
+        errors = [plandata.NO_PLAN] + errors
     for e in errors:
         print(f"plan lint: {e}")
     if not errors:
@@ -284,7 +308,7 @@ def cmd_dag(p, a):
     else:
         for sid in g["order"]:
             n = next(n for n in g["nodes"] if n["id"] == sid)
-            print(f"{sid}  needs {', '.join(n['needs']) or '—'}  {n['title']}")
+            print(f"{sid}  {n.get('status', 'todo'):7} needs {', '.join(n['needs']) or '—'}  {n['title']}")
     return 0
 
 
@@ -324,7 +348,7 @@ def cmd_merge(p, a):
     root, say = p.root, (lambda m: print(f"plan: {m}", flush=True, file=sys.stderr))
     base = dshm.git("rev-parse", "-q", "--verify", f"refs/heads/{a.into}^{{commit}}", cwd=root, check=False)
     if not base:
-        raise PlanError(f"no branch {a.into}")
+        raise PlanError(f"no branch {a.into}. Next: give an existing target branch, for example --into main")
     here = Path(__file__).resolve().parent.parent
     if not plandata.same_as(root, base, here):
         # Not the copy of the tools at the tip of the target: run that copy instead.
@@ -348,47 +372,111 @@ def cmd_merge(p, a):
     return 0 if ok else 1
 
 
+
 def cmd_new(p, a):
-    """Start the plan of a requirement that the user has set (WORKFLOW.md §3.1)."""
+    """Start the plan of a requirement that the user has set."""
     need_main()
     if p.exists:
-        raise PlanError("PLAN.md exists: one requirement at a time. The user deletes PLAN.md when "
-                        "its exit passes; then start the next one")
-    p.lines = dshm.split_lines(plangen.new_plan(a.title))
-    p.extra_files = []
-    return p.save(a, f"PLAN: start {plangen.plan_title(p.lines)}")
+        raise PlanError("plan/plan.json exists: one requirement at a time. Next: when its exit "
+                        "passes, the user removes plan/; then start the next one")
+    title = " ".join(a.title.split())
+    if not title:
+        raise PlanError("the plan has no title. Next: give one, for example \"M3 · Push and replies\"")
+    p.doc = {"title": title, "nodes": [], "exit": [], "log": [entry("Plan started", title)], "pending": []}
+    return p.save(a, f"Plan: start {title}")
+
+
+def next_id(doc, kind):
+    prefix, first, _ = KINDS[kind]
+    nums = [int(n["id"][1:]) for n in doc["nodes"] if n["id"].startswith(prefix)]
+    return f"{prefix}{max(nums) + 1 if nums else first}"
+
+
+def add_node(p, kind, name, needs=None, why="", cuts="", demo="", done=(), not_="",
+             nxt="Assign it and start a session"):
+    """Add a tracer, spike or slice: the next ID, state todo, the items file. Returns the ID."""
+    doc = p.doc
+    sid = next_id(doc, kind)
+    prefix, _, title_prefix = KINDS[kind]
+    name = " ".join(name.split()).rstrip(".")
+    if not name:
+        raise PlanError("the node has no name. Next: give it a name")
+    if title_prefix and not name.startswith(title_prefix):
+        name = title_prefix + name
+    known = [n["id"] for n in doc["nodes"]]
+    if needs is None:   # a slice needs the first tracer, unless it says otherwise
+        tracers = sorted((x for x in known if x.startswith("T")), key=lambda x: int(x[1:]))
+        needs = tracers[:1] if kind == "slice" else []
+    missing = [n for n in needs if n not in known]
+    if missing:
+        raise PlanError(f"--needs names IDs that this plan does not have: {', '.join(missing)}. "
+                        f"Next: `scripts/plan dag` lists the IDs")
+    if not done:
+        raise PlanError(f"{sid} needs at least one item. Next: add --done \"[auto] …\"")
+    limit = MAX_ITEMS.get(prefix)
+    if limit and len(done) > limit:
+        split = "more tracers, or move the rest to slices" if prefix == "T" else "more slices"
+        raise PlanError(f"{sid}: a {kind} has at most {limit} items ({len(done)} given), so that one "
+                        f"session can finish it. Next: split it into {split}")
+    items = [parse_item(d) for d in done]
+    if demo and not (p.root / demo).is_file():
+        raise PlanError(f"--demo {demo} is not a file of the repo. Next: give the path of the demo "
+                        f"script, or leave --demo out")
+    doc["nodes"].append({"id": sid, "kind": kind, "title": name, "needs": needs, "branch": None,
+                         "status": "todo", "updated": dshm.today(), "next": nxt, "merge": None,
+                         "why": why.strip(), "cuts": cuts.strip(), "not": not_.strip(),
+                         "demo": demo or None, "log": []})
+    p.slices[sid] = {"id": sid, "items": items}
+    return sid
 
 
 def cmd_add(p, a):
     need_main()
     if a.kind == "exit":
-        plangen.add_exit(p.lines, a.name)
-        return p.save(a, "PLAN §6: exit item")
-    needs = None if a.needs is None else plangen.ID_RE.findall(a.needs)
-    sid = plangen.add(p.lines, a.kind, a.name, needs, read_body(a.why), read_body(a.cuts),
-                      read_body(a.demo), a.done or [], read_body(a.not_))
+        it = parse_item(a.name if a.name.lstrip().startswith("[") else f"[human] {a.name}")
+        if it["tier"] != "human":
+            raise PlanError("exit items are [human] only. Next: add it to a slice instead")
+        p.doc.setdefault("exit", []).append(it)
+        return p.save(a, "Plan: exit item")
+    needs = None if a.needs is None else ID_RE.findall(a.needs)
+    sid = add_node(p, a.kind, a.name, needs, read_body(a.why), read_body(a.cuts),
+                   a.demo or "", a.done or [], read_body(a.not_))
     print(f"plan: new {a.kind} {sid}")
-    return p.save(a, f"PLAN: add {sid} ({a.name.strip()})")
+    return p.save(a, f"Plan: add {sid} ({a.name.strip()})")
 
 
 def cmd_row(p, a):
     need_main()
-    p.set_row(a.id, a.status, a.branch, a.next)
-    return p.save(a, f"PLAN: {a.id} {a.status}")
+    set_state(p.node(a.id), a.status, a.next)
+    return p.save(a, f"Plan: {a.id} {a.status}")
 
 
 def cmd_log(p, a):
     need_main()
-    p.add_log(a.title, read_body(a.body))
-    return p.save(a, f"PLAN §8: {a.title.strip().rstrip('.')}")
+    e = entry(a.title, read_body(a.body))
+    p.doc.setdefault("log", []).append(e)
+    return p.save(a, f"Plan log: {e['title']}")
+
+
+def add_pending(doc, sid, kind, item, branch="main", ref="—"):
+    rows = doc.setdefault("pending", [])
+    n = max((r["n"] for r in rows), default=0) + 1
+    rows.append({"n": n, "slice": sid, "kind": kind, "item": item, "branch": branch, "ref": ref})
+    return n
+
+
+def cmd_pending(p, a):
+    need_main()
+    n = add_pending(p.doc, a.slice, a.kind, a.item, a.branch, a.commit_ref or "—")
+    return p.save(a, f"Plan: pending {n} ({a.slice} {a.kind})")
 
 
 def cmd_fix(p, a):
-    """A bug that the user reported becomes a fix slice: a §0 row and a section (WORKFLOW.md §5.2)."""
+    """A bug that the user reported becomes a fix slice."""
     need_main()
     name, bug = a.name.strip().rstrip("."), " ".join(a.bug.split()).rstrip(".")
-    sid = plangen.add(
-        p.lines, "slice", f"Fix: {name}", plangen.ID_RE.findall(a.needs or ""),
+    sid = add_node(
+        p, "slice", f"Fix: {name}", ID_RE.findall(a.needs or ""),
         why=f"The user reported a bug on {dshm.today()}: {bug}.",
         cuts="Find the cause. Fix it. Add a test that fails without the fix.",
         done=["[auto] A test reproduces the reported bug and passes with the fix",
@@ -396,18 +484,15 @@ def cmd_fix(p, a):
         not_="Other changes. Report other bugs to the coordinator as new fix slices.",
         nxt=f"Fix: {name}; start a fix session")
     print(f"plan: new fix slice {sid}")
-    return p.save(a, f"PLAN: {sid} fix slice ({name})")
-
-
-def cmd_pending(p, a):
-    need_main()
-    n = p.add_pending(a.slice, a.kind, a.item, f"`{a.branch}`", f"`{a.commit_ref}`" if a.commit_ref else "—")
-    return p.save(a, f"PLAN §9: row {n} ({a.slice} {a.kind})")
+    return p.save(a, f"Plan: {sid} fix slice ({name})")
 
 
 def cmd_assign(p, a):
     need_main()
-    sys.path.insert(0, str(p.root / "scripts"))
+    node = p.node(a.id)
+    if not re.search(rf"(^|/){a.id.lower()}(-|$)", a.branch):
+        raise PlanError(f"the branch of {a.id} names it (claude/{a.id.lower()}-…), not {a.branch}. "
+                        f"Next: give such a branch")
     import importlib.machinery
     import importlib.util
     loader = importlib.machinery.SourceFileLoader("slice_env", str(p.root / "scripts/slice-env"))
@@ -415,22 +500,22 @@ def cmd_assign(p, a):
     se = importlib.util.module_from_spec(spec)
     loader.exec_module(se)
     if a.dry_run:
-        raise PlanError("assign has no --dry-run (it writes the registry); use scripts/slice-env --list")
+        raise PlanError("assign has no --dry-run (it writes the registry). Next: scripts/slice-env --list")
     row, new = se.assign(a.id, a.branch, a.decisions, p.root)
     p.extra_files.append(dshm.REGISTRY)
-    p.set_row(a.id, "doing", f"`{a.branch}`", "Slice owner builds (§8)")
+    node["branch"] = a.branch
+    set_state(node, "doing", "Slice owner builds")
     where = f", worktree `{a.worktree}`" if a.worktree else ""
     base = f" (from `{a.from_commit}`)" if a.from_commit else ""
     body = (f"Branch `{a.branch}`{where}{base}, simulator `{row['sim']}`, DSHM_HOME `{row['home']}`, "
             f"bridge {row['bridge']}, web {row['web']}; second host {row['bridge2']}/{row['web2']}. "
-            f"Decision numbers {row['decisions'].replace('-', '–')}. "
             f"`eval \"$(scripts/slice-env {a.id})\"` exports them.")
     if not new:
         body += " Same resources as before."
     if a.note:
         body += " " + a.note.strip()
-    p.add_log(f"{a.id} assigned", body)
-    return p.save(a, f"PLAN: assign {a.id}")
+    p.doc.setdefault("log", []).append(entry(f"{a.id} assigned", body))
+    return p.save(a, f"Plan: assign {a.id}")
 
 
 def review_line(sid, short):
@@ -446,6 +531,24 @@ def review_line(sid, short):
     return f"`scripts/review {sid}` at `{commit}`: `RESULT: {result}`{flaky} (`{f}`)."
 
 
+PROVISIONAL = re.compile(r"\(?provisional, pending user confirmation\)?", re.I)
+BOLD_LEAD = re.compile(r"\*\*(.+?)\*\*:?\s*(.*)")
+
+
+def provisional(text):
+    """The summaries of the provisional choices of an ARCHITECTURE.md text: the bold lead of each
+    line that says 'provisional, pending user confirmation' (in the lead or after it), without
+    that phrase; when the lead is only the phrase, the start of the text after it."""
+    out = []
+    for line in (text or "").splitlines():
+        m = BOLD_LEAD.search(line)
+        if not m or not PROVISIONAL.search(line):
+            continue
+        lead = PROVISIONAL.sub("", m.group(1)).strip().rstrip(".:(, ")
+        out.append(lead or m.group(2).split(". ")[0].strip()[:80])
+    return out
+
+
 def cmd_merged(p, a):
     need_main()
     root = p.root
@@ -453,57 +556,53 @@ def cmd_merged(p, a):
     short = full[:7]
     parents = dshm.git("rev-list", "--parents", "-n", "1", full, cwd=root).split()[1:]
     if len(parents) < 2:
-        raise PlanError(f"{short} is not a merge commit")
-    # §10, condition 3: the merge commit skipped pre-commit; check its PLAN.md against parent 1.
-    check(root, dshm.git("show", f"{parents[0]}:PLAN.md", cwd=root), dshm.git("show", f"{full}:PLAN.md", cwd=root))
+        raise PlanError(f"{short} is not a merge commit. Next: give the merge commit of {a.id} "
+                        f"(`git log --merges -3 --oneline`)")
+    # The merge commit skipped pre-commit: check its plan/ against the first parent.
+    errs = plandata.change_errors(root, plandata.head_files(root, parents[0]), plandata.head_files(root, full))
+    if errs:
+        raise PlanError("plan/ of the merge commit breaks the rules:\n" + "\n".join(errs)
+                        + "\nNext: ask the user; a merge that breaks plan/ needs their review")
+    node = p.node(a.id)
+    open_human = [it["text"] for it in p.items(a.id)["items"]
+                  if it["tier"] == "human" and not any(e.startswith("human:") for e in it.get("evidence", []))]
 
-    open_human = [m.group("desc").strip() for _, m in dshm.items(p.lines, a.id)
-                  if m.group("tier") == "human" and m.group("box") == " "]
-    old = dshm.decision_rows(dshm.git("show", f"{parents[0]}:ARCHITECTURE.md", cwd=root))
-    new = dshm.decision_rows(dshm.git("show", f"{full}:ARCHITECTURE.md", cwd=root))
-    added = [(n, new[n]) for n in sorted(new) if n not in old and "provisional" in new[n].lower()]
-    _, r = p.row(a.id)
-    branch = r["branch"] if r["branch"].startswith("`claude/") or r["branch"].startswith("`codex/") else "—"
-
-    rows = []
-    for n, line in added:
-        m = re.search(r"\*\*(.+?)\*\*", line)
-        summary = m.group(1).rstrip(".") if m else "see ARCHITECTURE.md"
-        rows.append(p.add_pending(a.id, "decision", f"ARCHITECTURE D{n}, *provisional*: {summary}",
-                                  branch, f"merged `{short}`"))
-    for desc in open_human:
-        rows.append(p.add_pending(a.id, "`[human]`", desc, "`main`", f"`{short}`"))
-
-    ds = ", ".join(f"D{n}" for n, _ in added)
+    def arch(ref):
+        r = subprocess.run(["git", "-C", str(root), "show", f"{ref}:ARCHITECTURE.md"], capture_output=True, text=True)
+        return r.stdout if r.returncode == 0 else ""
+    old = set(provisional(arch(parents[0])))
+    added = [s for s in provisional(arch(full)) if s not in old]
+    branch = node["branch"] or "—"
+    rows = [add_pending(p.doc, a.id, "provisional", f"ARCHITECTURE.md: {s}", branch, f"merged {short}")
+            for s in added]
+    rows += [add_pending(p.doc, a.id, "[human]", desc, "main", short) for desc in open_human]
     if open_human:
         status = "review"
-        nxt = f"User accepts {len(open_human)} `[human]` item{'s' if len(open_human) > 1 else ''} (§9)"
+        nxt = f"User accepts {len(open_human)} [human] item{'s' if len(open_human) > 1 else ''} (pending)"
     else:
         status = "done"
-        nxt = f"— (provisional {ds} in §9)" if ds else "—"
-    p.set_row(a.id, status, f"merged `{short}`", nxt)
-
-    parts = [f"Merged as `{short}`; `scripts/check-plan` on the merge commit passed."]
+        nxt = "— (provisional choices in pending)" if added else "—"
+    set_state(node, status, nxt)
+    node["merge"] = short
+    parts = [f"Merged as `{short}`; the plan/ rules hold on the merge commit."]
     rl = review_line(a.id, short)
     if rl:
         parts.append(rl)
-    if open_human:
-        parts.append(f"{len(open_human)} open `[human]` item{'s' if len(open_human) > 1 else ''}, so {a.id} is `review`.")
-    else:
-        parts.append(f"No open `[human]` items, so {a.id} is `done`.")
+    parts.append(f"{len(open_human)} open [human] item(s), so {a.id} is `review`." if open_human
+                 else f"No open [human] items, so {a.id} is `done`.")
     if rows:
-        parts.append(f"§9 rows {', '.join(map(str, rows))}" + (f" ({ds})." if ds else "."))
+        parts.append(f"Pending {', '.join(map(str, rows))}.")
     if a.note:
         parts.append(a.note.strip())
-    p.add_log(f"{a.id} merged", " ".join(parts))
-    rc = p.save(a, f"PLAN: {a.id} {status}" + (f"; {ds} to §9" if ds else ""))
+    p.doc.setdefault("log", []).append(entry(f"{a.id} merged", " ".join(parts)))
+    rc = p.save(a, f"Plan: {a.id} {status}")
     if rc == 0 and not a.keep:
         cleanup(root, a.id, full, cleanup_dry(a))
     return rc
 
 
 # ------------------------------------------------------------------------------- cleanup
-# After a merge, remove what the slice left on the Mac (WORKFLOW.md §10). Each destructive call
+# After a merge, remove what the slice left on the Mac. Each destructive call
 # goes through destroy(): with DSHM_CLEANUP_DRY=1 (or --dry-run) it prints and deletes nothing.
 
 def cleanup_dry(a):
@@ -560,7 +659,7 @@ def cleanup(root, sid, target, dry):
                         ["xcrun", "simctl", "delete", d["udid"]])
 
     # 2. /tmp/dshm-<id> and /tmp/dshm-<id>-*. Not while a process uses them: the review of
-    #    another slice can run this slice's demo (scripts/demo/<id>.sh) as a regression.
+    #    another slice can run the demo of this slice as a regression.
     key = sid.lower()
     ps = [l.strip() for l in subprocess.run(["ps", "-axo", "command="], capture_output=True, text=True).stdout.split("\n")
           if l.strip() and "scripts/plan" not in l]
@@ -630,61 +729,88 @@ def cleanup(root, sid, target, dry):
     return 0
 
 
+
 def cmd_cleanup(p, a):
     need_main()
-    if not p.exists:   # no plan: every slice of the last one is over; cleanup keeps its own checks
-        return cleanup(p.root, a.id, dshm.git("rev-parse", "--verify", "main^{commit}", cwd=p.root), cleanup_dry(a))
-    _, r = p.row(a.id)
-    if r["status"] not in ("review", "done"):
-        raise PlanError(f"{a.id} is {r['status']} in §0; cleanup is only for a merged slice (review or done)")
     target = dshm.git("rev-parse", "--verify", "main^{commit}", cwd=p.root)
+    if not p.exists:   # no plan: every slice of the last one is over; cleanup keeps its own checks
+        return cleanup(p.root, a.id, target, cleanup_dry(a))
+    status = p.node(a.id).get("status", "todo")
+    if status not in ("review", "done"):
+        raise PlanError(f"{a.id} is {status}; cleanup is only for a merged slice (review or done). "
+                        f"Next: merge it first, then `scripts/plan merged {a.id} <merge-commit>`")
     return cleanup(p.root, a.id, target, cleanup_dry(a))
 
 
-def cmd_tick(p, a):
+def cmd_evidence(p, a):
     need_slice_branch(a.id)
-    hits = [(i, m) for i, m in dshm.items(p.lines, a.id) if m.group("box") == " " and a.match in m.group("desc")]
-    if not hits:
-        raise PlanError(f"no open item of {a.id} contains {a.match!r}")
-    if len(hits) > 1:
-        raise PlanError(f"{len(hits)} open items of {a.id} contain {a.match!r}; give more of the text:\n" +
-                        "\n".join("  " + p.lines[i][:120] for i, _ in hits))
-    i, m = hits[0]
-    if m.group("tier") == "human":
-        raise PlanError("only the user ticks [human] items (WORKFLOW.md §12)")
-    p.lines[i] = f"- [x] [{m.group('tier')}] {m.group('desc').strip()} — Evidence: {a.evidence.strip()}"
-    return p.save(a, f"PLAN {a.id}: tick \"{m.group('desc').strip()[:50]}\"")
+    p.node(a.id)
+    it = item_at(p.items(a.id)["items"], a.n, a.id)
+    if it["tier"] == "human":
+        raise PlanError(f"item {a.n} of {a.id} is [human]: only the user accepts it. "
+                        f"Next: leave it open; the coordinator lists it for the user")
+    ptr = a.pointer.strip()
+    ev = it.setdefault("evidence", [])
+    if ptr in ev:
+        print("plan: no change")
+        return 0
+    ev.append(ptr)
+    return p.save(a, f"Plan {a.id}: evidence for item {a.n}")
+
+
+def user_confirms(question, answer):
+    """Refuse unless the user types `answer` on the controlling terminal."""
+    try:
+        tty_in, tty_out = open("/dev/tty"), open("/dev/tty", "w")
+    except OSError:
+        raise PlanError("only the user records a [human] item, from a terminal. "
+                        "Next: the user runs this in their own terminal")
+    with tty_in, tty_out:
+        tty_out.write(f"{question}\nType {answer} to confirm: ")
+        tty_out.flush()
+        typed = tty_in.readline().strip()
+    if typed != answer:
+        raise PlanError(f"not confirmed (typed {typed!r}, not {answer!r}). "
+                        f"Next: the user runs it again and types {answer}")
+
+
+def cmd_accept(p, a):
+    if a.id == "exit":
+        items, where = p.doc.setdefault("exit", []), "exit"
+    else:
+        p.node(a.id)
+        items, where = p.items(a.id)["items"], a.id
+    it = item_at(items, a.n, where)
+    if it["tier"] != "human":
+        raise PlanError(f"item {a.n} of {where} is [{it['tier']}]: the verifier decides it. "
+                        f"Next: add evidence with `scripts/plan evidence`")
+    if not a.dry_run:
+        user_confirms(f"Record item {a.n} of {where} as accepted by you: {it['text']}", where)
+    it.setdefault("evidence", []).append(f"human:{dshm.today()} {' '.join(a.note.split())}")
+    return p.save(a, f"Plan {where}: the user accepts item {a.n}", agent=False)
 
 
 def cmd_slice_log(p, a):
     need_slice_branch(a.id)
-    s, e = dshm.slice_bounds(p.lines, a.id)
-    while e > s and p.lines[e - 1].strip() == "":
-        e -= 1
-    p.lines[e:e] = format_entry(a.title, read_body(a.body))
-    return p.save(a, f"PLAN {a.id}: Log, {a.title.strip().rstrip('.')}")
+    e = entry(a.title, read_body(a.body))
+    p.node(a.id).setdefault("log", []).append(e)
+    return p.save(a, f"Plan {a.id}: log, {e['title']}")
 
 
 def cmd_slice_status(p, a):
     need_slice_branch(a.id)
-    if a.status not in dshm.STATUSES:
-        raise PlanError(f"status must be one of {', '.join(dshm.STATUSES)}")
-    s, e = dshm.slice_bounds(p.lines, a.id)
-    for i in range(s, e):
-        if p.lines[i].startswith("**Status** "):
-            p.lines[i] = re.sub(r"^\*\*Status\*\* \S+", f"**Status** {a.status}", p.lines[i])
-            return p.save(a, f"PLAN {a.id}: status {a.status}")
-    raise PlanError(f"{a.id} has no **Status** line")
+    set_state(p.node(a.id), a.status)
+    return p.save(a, f"Plan {a.id}: status {a.status}")
 
 
 def main():
-    ap = argparse.ArgumentParser(prog="scripts/plan", description="Bookkeeping in PLAN.md (see the file header).")
+    ap = argparse.ArgumentParser(prog="scripts/plan", description="Bookkeeping in plan/ (see the file header).")
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--commit", action="store_true", help="commit the change")
     common.add_argument("--dry-run", action="store_true", help="print the diff, change nothing")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    def add(name, fn, *args):
+    def add(name, fn):
         sp = sub.add_parser(name, parents=[common])
         sp.set_defaults(fn=fn)
         return sp
@@ -699,12 +825,11 @@ def main():
     sp = add("merge", cmd_merge); sp.add_argument("id"); sp.add_argument("--into", required=True)
     sp.add_argument("--allow-changed-evidence", dest="allow", action="append", default=[], metavar="PATH")
     sp = add("new", cmd_new); sp.add_argument("title")
-    sp = add("add", cmd_add); sp.add_argument("kind", choices=[*plangen.KINDS, "exit"]); sp.add_argument("name")
+    sp = add("add", cmd_add); sp.add_argument("kind", choices=[*KINDS, "exit"]); sp.add_argument("name")
     sp.add_argument("--why", default=""); sp.add_argument("--cuts", default="")
     sp.add_argument("--demo", default=""); sp.add_argument("--not", dest="not_", default="")
     sp.add_argument("--done", action="append"); sp.add_argument("--needs")
-    sp = add("row", cmd_row); sp.add_argument("id"); sp.add_argument("status")
-    sp.add_argument("--branch"); sp.add_argument("--next")
+    sp = add("row", cmd_row); sp.add_argument("id"); sp.add_argument("status"); sp.add_argument("--next")
     sp = add("log", cmd_log); sp.add_argument("title"); sp.add_argument("--body")
     sp = add("fix", cmd_fix); sp.add_argument("name"); sp.add_argument("--bug", required=True)
     sp.add_argument("--needs")
@@ -712,23 +837,24 @@ def main():
     sp.add_argument("--branch", default="main"); sp.add_argument("--commit-ref")
     sp = add("assign", cmd_assign); sp.add_argument("id"); sp.add_argument("--branch", required=True)
     sp.add_argument("--worktree"); sp.add_argument("--from", dest="from_commit")
-    sp.add_argument("--decisions", type=int, default=dshm.DECISION_BLOCK); sp.add_argument("--note")
-    sp = add("merged", cmd_merged); sp.add_argument("id"); sp.add_argument("merge_commit", metavar="merge-commit"); sp.add_argument("--note")
-    sp.add_argument("--keep", action="store_true", help="skip the cleanup")
+    sp.add_argument("--decisions", type=int, default=dshm.DECISION_BLOCK, help=argparse.SUPPRESS)
+    sp.add_argument("--note")
+    sp = add("merged", cmd_merged); sp.add_argument("id"); sp.add_argument("merge_commit", metavar="merge-commit")
+    sp.add_argument("--note"); sp.add_argument("--keep", action="store_true", help="skip the cleanup")
     sp = add("cleanup", cmd_cleanup); sp.add_argument("id")
-    sp = add("tick", cmd_tick); sp.add_argument("id"); sp.add_argument("match")
-    sp.add_argument("--evidence", required=True)
+    sp = add("evidence", cmd_evidence); sp.add_argument("id"); sp.add_argument("n", type=int)
+    sp.add_argument("pointer")
+    sp = add("accept", cmd_accept); sp.add_argument("id"); sp.add_argument("n", type=int); sp.add_argument("note")
     sp = add("slice-log", cmd_slice_log); sp.add_argument("id"); sp.add_argument("title"); sp.add_argument("--body")
     sp = add("slice-status", cmd_slice_status); sp.add_argument("id"); sp.add_argument("status")
 
     a = ap.parse_args()
     try:
-        for attr in ("id",):
-            if getattr(a, attr, None):
-                dshm.check_id(getattr(a, attr))
+        if getattr(a, "id", None) and not (a.fn is cmd_accept and a.id == "exit"):
+            dshm.check_id(a.id)
         p = Plan(dshm.toplevel())
-        if not p.exists and a.fn not in (cmd_new, cmd_cleanup, cmd_dag, cmd_passed, cmd_verify, cmd_merge):
-            raise PlanError(plangen.NO_PLAN)
+        if a.fn not in (cmd_new, cmd_cleanup, cmd_dag, cmd_passed, cmd_verify, cmd_merge, cmd_lint):
+            p.load()
         return a.fn(p, a)
     except PlanError as e:
         print(f"plan: {e}", file=sys.stderr)

@@ -1,4 +1,6 @@
 #!/bin/sh
 # Enabled with: git config core.hooksPath .githooks
 # Never bypass with --no-verify. See AGENTS.md "Hooks".
-exec "$(git rev-parse --show-toplevel)/scripts/check-plan" --staged
+top="$(git rev-parse --show-toplevel)"
+"$top/scripts/check-plan" --staged || exit 1
+"$top/scripts/check-ids" || { echo "pre-commit: Next: remove the decision or slice ID from the code (scripts/check-ids names each line)"; exit 1; }

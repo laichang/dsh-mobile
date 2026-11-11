@@ -10,7 +10,7 @@
 #                                (landing positions)
 #   DSHM_RESUME=1               skip the parts that passed for the same code (lib.sh demo_part)
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-outcome-footer   DSHM_DD (DerivedData) /tmp/dshm-outcome-footer-dd
 #   (DSHM_BRIDGE_PORT 47810, DSHM_WEB_PORT 3283, DSHM_HOME ~/.dshm/home-outcome-footer are unused here.)
 # Fails on any failed or skipped test.

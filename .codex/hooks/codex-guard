@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Codex PreToolUse hook: the repo's guards for Codex (WORKFLOW.md §12).
+"""Codex PreToolUse hook: the repo's guards for Codex.
 
 Codex sends hook input in the Claude Code shape, with two differences that this
 adapter covers:
@@ -10,11 +10,11 @@ adapter covers:
     user in the chat instead.
 
 Bash   -> .claude/hooks/git-guard, unchanged (same tool_input.command string); then the
-          Bash checks of .claude/hooks/plan-guard (a write to PLAN.md or to a guard file
-          from a shell command) -> deny.
+          Bash checks of .claude/hooks/plan-guard (a write to plan/<name>.json or to a guard
+          file from a shell command) -> deny.
 Patch  -> guard files (PROTECTED in scripts/check-plan) -> deny;
-          PLAN.md -> the file as it would be after the patch, judged by
-          scripts/check-plan --agent against the on-disk version -> deny on any error.
+          plan/<name>.json -> the file as it would be after the patch, judged by
+          scripts/check-plan --agent against the plan/ on disk -> deny on any error.
 A patch this adapter cannot apply is let through: apply_patch will fail on it too,
 and the git pre-commit hook still checks every commit.
 """
@@ -22,13 +22,14 @@ and the git pre-commit hook still checks every commit.
 import fnmatch
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PLAN = ROOT / "PLAN.md"
+PLAN_PATH = re.compile(r"^plan/[^/]+\.json$")
 
 
 def load_check_plan():
@@ -43,8 +44,8 @@ def deny(reason):
     print(json.dumps({"hookSpecificOutput": {
         "hookEventName": "PreToolUse",
         "permissionDecision": "deny",
-        "permissionDecisionReason": reason + "\nDon't retry or work around this. Ask the "
-                                    "user in the conversation (WORKFLOW.md §12).",
+        "permissionDecisionReason": reason + "\nDon't retry or work around this. Next: ask "
+                                    "the user in the conversation.",
     }}))
     sys.exit(0)
 
@@ -129,30 +130,34 @@ def guard_patch(data):
         for target in filter(None, (path, move_to)):
             rel = relpath(target, cwd)
             if rel and any(fnmatch.fnmatch(rel, pat) for pat in check.PROTECTED):
-                deny(f"{rel} is a guard file: it enforces the PLAN.md and git hook rules. "
+                deny(f"{rel} is a guard file: it enforces the plan/ and git hook rules. "
                      "Only the user changes guard files, by hand. An agent blocked by a "
                      "check must not change the check instead.")
-        if relpath(path, cwd) != "PLAN.md" and relpath(move_to or "", cwd) != "PLAN.md":
+        src = relpath(path, cwd)
+        dst = relpath(move_to, cwd) if move_to else src
+        if not any(r and PLAN_PATH.match(r) for r in (src, dst)):
             continue
-        current = PLAN.read_text() if PLAN.exists() else ""
+        current = (ROOT / src).read_text() if src and (ROOT / src).is_file() else ""
         if op == "Add":
             new = "\n".join(l[1:] for l in body if l.startswith("+"))
-        elif op == "Delete" or (move_to and relpath(move_to, cwd) != "PLAN.md"):
-            new = ""
+        elif op == "Delete":
+            new = None
         else:
             new = apply_update(current, body)
             if new is None:
                 return
-        errors = check.check(current, new, agent=True)
+        changes = {src: new} if dst == src else {src: None, dst: new}
+        errors = [e for r, text in changes.items() if r and PLAN_PATH.match(r)
+                  for e in check.edit_errors(r, text)]
         if not errors:
             continue
         body_text = "\n".join(errors)
-        if any(e.startswith("HUMAN ITEM TICKED BY AGENT") for e in errors):
-            deny("PLAN.md: only the user ticks [human] items. Tell the user what you "
-                 "verified and let them tick it themselves.\n\n" + body_text)
-        deny("PLAN.md Done when items may only be ticked (with valid evidence pointers) or "
-             "added unticked. To change an item, show the user the original text, the new "
-             "text and the reason, and let the user make the edit.\n\n" + body_text)
+        if any(e.startswith("HUMAN ITEM") for e in errors):
+            deny("plan/: only the user records a [human] item. Next: tell the user what you "
+                 "verified and let them record it.\n\n" + body_text)
+        deny("plan/: items keep their text and only gain evidence that resolves. Next: to "
+             "change an item, tell the user the original text, the new text and the reason, "
+             "and let the user make the edit.\n\n" + body_text)
 
 
 def main():

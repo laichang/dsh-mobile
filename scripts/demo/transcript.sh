@@ -8,7 +8,7 @@
 #   scripts/demo/transcript.sh --shots  also refresh the screenshots in evidence/transcript/ (1/3 size)
 #   DSHM_RESUME=1               skip the parts that passed for the same code (lib.sh demo_part)
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-transcript   DSHM_DD (DerivedData) /tmp/dshm-transcript-dd
 #   (DSHM_BRIDGE_PORT 47818, DSHM_WEB_PORT 3291, DSHM_HOME ~/.dshm/home-transcript are unused here.)
 # Fails on any failed or skipped test.

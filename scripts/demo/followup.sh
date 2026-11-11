@@ -15,7 +15,7 @@
 #   --shots                            also refresh the screenshots in evidence/ (1/3 size)
 #   DSHM_RESUME=1                      skip the parts that passed for the same code (lib.sh demo_part)
 #
-# Resources (WORKFLOW.md §6), from the environment (`eval "$(scripts/slice-env <ID>)"`):
+# Resources, from the environment (`eval "$(scripts/slice-env <ID>)"`):
 #   DSHM_BRIDGE_PORT, DSHM_WEB_PORT, DSHM_HOME, DSHM_SIM, DSHM_DD (DerivedData).
 # The real part runs scripts/demo/followup-host.mjs: DSH Web with the bridge plugin and DSH's mock
 # LLM, in a fresh DSH home under DSHM_HOME. Fails on any failed or skipped test.

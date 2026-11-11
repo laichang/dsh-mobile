@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Resources of one slice (WORKFLOW.md §6), from the registry scripts/resources.tsv.
+"""Resources of one slice, from the registry scripts/resources.tsv.
 
   eval "$(scripts/slice-env S22)"       export the resources of S22 (any worktree)
   scripts/slice-env --assign S22 --branch claude/s22-name [--decisions N]
                                         coordinator, on main: give S22 a slot and a block of
                                         decision numbers, and append the row (no commit)
-  scripts/slice-env --list              all rows, with the §0 status of each slice
+  scripts/slice-env --list              all rows, with the state of each slice in plan/plan.json
 
 A slot k gives bridge 47810+k, web 3283+k, and a second host at +30 (bridge 47840+k, web 3313+k).
-A slot is free when no row with that slot belongs to a slice that is todo, doing or blocked in §0,
+A slot is free when no row with that slot belongs to a slice that is todo, doing or blocked in plan/,
 and no process listens on its ports. The decision block (default 3 numbers) starts after the
 highest D number in ARCHITECTURE.md on main, on each slice branch, and in the registry. Unused
 numbers in a block stay unused. Assigning a slice that already has a row prints that row again.
@@ -25,7 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import dshm  # noqa: E402
-import plangen  # noqa: E402
+import plandata  # noqa: E402
 
 
 def registry_text(root, prefer_main=False):
@@ -80,17 +80,19 @@ def highest_decision(root, rows):
 
 def assign(sid, branch_name, block, root):
     if dshm.branch() != "main":
-        raise dshm.PlanError("--assign runs on main (the coordinator owns the registry, WORKFLOW.md §3)")
+        raise dshm.PlanError("--assign runs on main (the coordinator owns the registry). "
+                             "Next: run it in the main checkout, or ask the coordinator")
     path = root / dshm.REGISTRY
     rows = dshm.parse_registry(path.read_text())
     old = [r for r in rows if r["id"] == sid]
     if old:
         return old[-1], False
-    if not (root / "PLAN.md").exists():
-        raise dshm.PlanError(plangen.NO_PLAN)
-    status = dshm.statuses(dshm.split_lines((root / "PLAN.md").read_text()))
+    if not (root / plandata.PLAN_FILE).exists():
+        raise dshm.PlanError(plandata.NO_PLAN)
+    status = plandata.statuses(root)
     if sid not in status:
-        raise dshm.PlanError(f"{sid} has no row in PLAN.md §0")
+        raise dshm.PlanError(f"{sid} is not a node of {plandata.PLAN_FILE}. "
+                             f"Next: the coordinator adds it with `scripts/plan add`")
     held = {int(r["slot"]) for r in rows if status.get(r["id"]) in dshm.ACTIVE}
     for slot in range(0, dshm.MAX_SLOT + 1):
         ports = (dshm.BRIDGE_BASE + slot, dshm.WEB_BASE + slot,
@@ -122,8 +124,7 @@ def main():
     root = dshm.toplevel()
     try:
         if a.list:
-            plan_file = root / "PLAN.md"
-            status = dshm.statuses(dshm.split_lines(plan_file.read_text())) if plan_file.exists() else {}
+            status = plandata.statuses(root)
             print("\t".join(dshm.REGISTRY_COLUMNS + ("status",)))
             for r in dshm.parse_registry(registry_text(root)):
                 print("\t".join([r[c] for c in dshm.REGISTRY_COLUMNS] + [status.get(r["id"], "?")]))

@@ -172,10 +172,10 @@ node bridge/lib/scripts/pair.js
 
 - **[STORY.md](STORY.md)**：产品愿景和九条设计原则。每条原则都对应 **[design/screens.json](design/screens.json)** 里的一个画面。
 - **计划文件**（[M1 的计划，见 tag `m1`](https://github.com/laichang/dsh-mobile/blob/m1/PLAN.md)）：先打一发曳光弹（tracer bullet），再做纵向切片。每个「Done when」条目都有分级（`[auto]`、`[ui]`、`[human]`）和必须可解析的证据，由 pre-commit hook 检查。计划文件只在一个需求进行中时存在；其他一切都是 [GitHub issue](https://github.com/laichang/dsh-mobile/issues)。
-- **[WORKFLOW.md](WORKFLOW.md)**：协调会话如何在 git worktree 里调度各个切片会话，独立评审如何重跑每一项界面检查，哪些决定必须留给人。
+- **流程**（[AGENTS.md「Process」](AGENTS.md#process)、`plan/` 里的计划数据、`scripts/`、[run-plan Workflow](.claude/workflows/run-plan.js)）：协调者让每个节点依次经过全新的构建 Agent、独立的验证者和合并步骤（在合并提交上重跑证据）；规则写在脚本和 hook 里，有些决定必须留给人。
 - **[`evidence/`](evidence/)**：每个已完成切片背后的截图。
 
-如果你好奇长周期的 Agent 开发能把一个真实的原生 App 做到什么程度，从 WORKFLOW.md 读起。
+如果你好奇长周期的 Agent 开发能把一个真实的原生 App 做到什么程度，从 AGENTS.md「Process」和 `scripts/plan` 读起。
 
 ## 目录结构
 
@@ -186,7 +186,7 @@ protocol/       frame.proto + golden fixtures · 用 scripts/codegen 重新生�
 design/         画面（screens.json、screens/<id>.html → png、kit/）、App 图标
 spikes/         关键决策背后的 X1–X4 实验
 scripts/        bootstrap · demo/<feature>.sh · codegen · check-plan · review
-evidence/       PLAN.md 引用的截图
+evidence/       当前计划引用的截图（仅在需求进行中存在）
 ```
 
 ## 开发

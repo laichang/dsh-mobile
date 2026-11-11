@@ -20,7 +20,7 @@
 # SessionPageUITests/testMilestoneBarStaysAtTopWhileTranscriptScrolls takes $SESSION_PAGE_LIMIT s (120)
 # or more.
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-ui-health   DSHM_DD (DerivedData) /tmp/dshm-ui-health-dd   DSHM_BRIDGE_PORT 47810
 #   DSHM_WEB_PORT 3283   DSHM_HOME ~/.dshm/home-ui-health (the round trip part's DSH)
 set -euo pipefail

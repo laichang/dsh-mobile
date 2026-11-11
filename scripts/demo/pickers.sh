@@ -9,7 +9,7 @@
 #   scripts/demo/pickers.sh --regress  also run models.sh and workspaces.sh (real DSH: the model and workspace
 #                                  sheets against the real bridge), with the pickers resources
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-pickers   DSHM_DD (DerivedData) /tmp/dshm-pickers-dd
 #   --regress only: DSHM_BRIDGE_PORT 47815, DSHM_WEB_PORT 3288, DSHM_HOME ~/.dshm/home-pickers
 # Fails on any failed or skipped test.

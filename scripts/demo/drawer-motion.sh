@@ -10,7 +10,7 @@
 #   scripts/demo/drawer-motion.sh --shots  also refresh the screenshots in evidence/drawer-motion/ (1/3 size)
 #   DSHM_RESUME=1               skip the parts that passed for the same code (lib.sh demo_part)
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-drawer-motion   DSHM_DD (DerivedData) /tmp/dshm-drawer-motion-dd
 #   (DSHM_BRIDGE_PORT 47811, DSHM_WEB_PORT 3284, DSHM_HOME ~/.dshm/home-drawer-motion are unused here.)
 # Fails on any failed or skipped test.

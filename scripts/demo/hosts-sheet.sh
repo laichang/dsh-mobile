@@ -9,7 +9,7 @@
 #                                tests (the "2 / 3" pill now opens the hosts sheet)
 #   scripts/demo/hosts-sheet.sh --shots  also refresh the screenshots in evidence/hosts-sheet/ (1/3 size)
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-hosts-sheet   DSHM_DD (DerivedData) /tmp/dshm-hosts-sheet-dd
 # The bridge and web ports (47816, 3289) are not used: the hosts are in-process fakes.
 # Fails on any failed or skipped test.

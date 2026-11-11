@@ -7,7 +7,7 @@
 #   scripts/demo/session-page.sh --shots  also refresh the screenshots in evidence/session-page/ (1/3 size)
 #   DSHM_RESUME=1               skip the parts that passed for the same code (lib.sh demo_part)
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-session-page   DSHM_DD (DerivedData) /tmp/dshm-session-page-dd
 #   (DSHM_BRIDGE_PORT 47813, DSHM_WEB_PORT 3286, DSHM_HOME ~/.dshm/home-session-page are unused here.)
 # Fails on any failed or skipped test.

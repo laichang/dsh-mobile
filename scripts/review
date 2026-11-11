@@ -1,20 +1,20 @@
 #!/bin/bash
-# Review run for one slice (WORKFLOW.md §10, §10.1). The reviewer runs this script and nothing else.
+# Review run for one slice. The reviewer runs this script and nothing else.
 #
-#   scripts/review <ID>              run the [ui] items of slice <ID> from PLAN.md
+#   scripts/review <ID>              run the [ui] items of slice <ID> from plan/<ID>.json
 #   scripts/review <ID> --resume     skip the parts that passed for the same code
 #   scripts/review <ID> --dry-run    show what it would run, run nothing
 #
-# What it runs, from the slice section in PLAN.md (this worktree):
+# What it runs, from plan/ of this worktree:
 #   - each distinct cmd: pointer of a [ui] item, one time;
-#   - if a [ui] item has only test: pointers, the slice demo scripts/demo/<id>.sh, one time.
+#   - if a [ui] item has only test: pointers, the demo of the node ("demo" in plan/plan.json), one time.
 # Then each test: pointer of a [ui] item must show as passed in that output.
 # Retries: a failed part runs again a maximum of 2 times (DSHM_PART_RETRIES). A part that passes
 # on a retry is FLAKY, and the review still passes. The machine guard in scripts/demo/lib.sh
 # applies (load, simulator limit, shutdown at exit).
 # It refuses a worktree with uncommitted changes (evidence/ excepted).
 # Result: $DSHM_REVIEW_DIR (/tmp/dshm-review)/<ID>-<commit>.txt, and the exit code (0 = pass).
-# Resources (WORKFLOW.md §6) come from DSHM_BRIDGE_PORT, DSHM_WEB_PORT, DSHM_HOME, DSHM_SIM.
+# Resources (scripts/slice-env) come from DSHM_BRIDGE_PORT, DSHM_WEB_PORT, DSHM_HOME, DSHM_SIM.
 set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || { cd "$(dirname "$0")/.." && pwd; })"
 cd "$ROOT"
@@ -23,26 +23,25 @@ for a in "$@"; do
   case "$a" in
     --resume) RESUME=1 ;;
     --dry-run) DRY=1 ;;
-    -*) echo "unknown arg $a" >&2; exit 2 ;;
+    -*) echo "review: unknown arg $a. Next: scripts/review <ID> [--resume] [--dry-run]" >&2; exit 2 ;;
     *) ID="$a" ;;
   esac
 done
-[ -n "$ID" ] || { echo "usage: scripts/review <ID> [--resume] [--dry-run]" >&2; exit 2; }
+[ -n "$ID" ] || { echo "review: no ID. Next: scripts/review <ID> [--resume] [--dry-run]" >&2; exit 2; }
 
-[ -f PLAN.md ] || { echo "review: no PLAN.md: no requirement is in progress" >&2; exit 2; }
+# The [ui] items of the node, from plan/<ID>.json of this worktree, one per line as
+# "UI<tab><number><tab><pointers, joined by ' · '><tab><text>"; and the demo of the node.
+PLAN_DATA=$(python3 scripts/lib/plandata.py ui "$ID")
+ERR=$(printf '%s\n' "$PLAN_DATA" | sed -n 's/^ERR	//p')
+[ -z "$ERR" ] || { echo "review: $ERR" >&2; exit 2; }
+DEMO=$(printf '%s\n' "$PLAN_DATA" | sed -n 's/^DEMO	//p')
+UI=$(printf '%s\n' "$PLAN_DATA" | awk -F'\t' '$1 == "UI" { print "item " $2 ": " $4 " — Evidence: " $3 }')
+[ -n "$UI" ] || { echo "review: $ID has no [ui] items. Next: the verifier runs its [auto] items (scripts/plan verify $ID)" >&2; exit 2; }
 
-# The slice section: from "### <ID> ·" to the next "### " or "## ".
-SECTION=$(awk -v id="$ID" '
-  /^##+ / { f = (index($0, "### " id " ") == 1) ; next }
-  f' PLAN.md)
-[ -n "$SECTION" ] || { echo "review: no section '### $ID ·' in PLAN.md" >&2; exit 2; }
-UI=$(printf '%s\n' "$SECTION" | grep -E '^- \[[x ]\] \[ui\]' || true)
-[ -n "$UI" ] || { echo "review: $ID has no [ui] items" >&2; exit 2; }
-
-# Merge condition 1: each [ui] item is ticked.
-OPEN=$(printf '%s\n' "$UI" | grep -E '^- \[ \]' || true)
+# Each [ui] item needs evidence pointers.
+OPEN=$(printf '%s\n' "$UI" | grep -E ' — Evidence: $' || true)
 if [ -n "$OPEN" ]; then
-  echo "review: $ID has [ui] items that are not ticked (WORKFLOW.md §10, condition 1):" >&2
+  echo "review: $ID has [ui] items with no evidence. Next: the slice owner adds a test: or cmd: pointer to each (scripts/plan evidence $ID <n> \"…\"):" >&2
   printf '%s\n' "$OPEN" | cut -c1-120 | sed 's/^/  /' >&2
   exit 1
 fi
@@ -55,9 +54,11 @@ CMDS=$(printf '%s\n' "$UI" | pointers cmd | awk '!seen[$0]++' \
   | awk '{ c[NR] = $0 } END { for (i = 1; i <= NR; i++) { a = 0; for (j = 1; j <= NR; j++) if (c[j] == c[i] " --all") a = 1; if (!a) print c[i] } }')
 TESTS=$(printf '%s\n' "$UI" | pointers test | awk '!seen[$0]++')
 ONLY_TEST=$(printf '%s\n' "$UI" | grep -v 'cmd:' || true)
-DEMO="scripts/demo/$(printf '%s' "$ID" | tr '[:upper:]' '[:lower:]').sh"
-if [ -n "$ONLY_TEST" ] && ! printf '%s\n' "$CMDS" | grep -qE "^$DEMO( |$)"; then
-  [ -x "$DEMO" ] || { echo "review: [ui] items with only test: pointers need $DEMO" >&2; exit 1; }
+if [ -n "$ONLY_TEST" ] && ! { [ -n "$DEMO" ] && printf '%s\n' "$CMDS" | grep -qE "^$DEMO( |$)"; }; then
+  if [ -z "$DEMO" ] || [ ! -x "$DEMO" ]; then
+    echo "review: [ui] items with only test: pointers need the demo of the node (\"demo\" in plan/plan.json: ${DEMO:-none}). Next: the coordinator sets it (scripts/plan add --demo), or the owner adds a cmd: pointer" >&2
+    exit 1
+  fi
   CMDS=$(printf '%s\n%s\n' "$CMDS" "$DEMO" | grep . )
 fi
 
@@ -67,7 +68,7 @@ echo "review: parts to run:"; printf '%s\n' "$CMDS" | sed 's/^/  /'
 echo "review: tests that must pass:"; printf '%s\n' "${TESTS:-(none)}" | sed 's/^/  /'
 [ $DRY = 1 ] && exit 0
 if [ -n "$(git status --porcelain -- . ':!evidence')" ]; then
-  echo "review: commit the changes first. A review runs on a commit, so the merge can name it." >&2
+  echo "review: uncommitted changes. Next: commit them; a review runs on a commit, so the merge can name it." >&2
   git status --short -- . ':!evidence' | head -10 | sed 's/^/  /' >&2
   exit 1
 fi
@@ -87,7 +88,7 @@ while IFS= read -r cmd; do
   n=$((n + 1))
   set +e
   # shellcheck disable=SC2086 # a cmd: pointer is a path plus words
-  # The part name holds a hash of the command: the code key ignores PLAN.md, so a changed list of
+  # The part name holds a hash of the command: the code key ignores plan/, so a changed list of
   # cmd: pointers must not reuse a pass that belongs to another command.
   demo_part "cmd$n-$(printf '%s' "$cmd" | shasum | cut -c1-8)" $cmd 2>&1 | tee -a "$LOG"
   rc=${PIPESTATUS[0]}
@@ -128,7 +129,7 @@ FLAKY="$DSHM_STATE/$(dshm_code_key)/flaky.txt"
 {
   echo "review $ID at $HEAD  $(date '+%Y-%m-%d %H:%M')"
   printf '%s\n' "${LINES[@]}"
-  if [ -s "$FLAKY" ]; then echo "flaky (record in the slice Log and in PLAN.md §8):"; sed 's/^/  /' "$FLAKY"; fi
+  if [ -s "$FLAKY" ]; then echo "flaky (record them in the slice log: scripts/plan slice-log):"; sed 's/^/  /' "$FLAKY"; fi
   if [ $STATUS = 0 ]; then echo "RESULT: PASS"; else echo "RESULT: FAIL"; fi
   echo "log: $LOG"
 } | tee "$RESULT"

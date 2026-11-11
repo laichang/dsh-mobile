@@ -11,7 +11,7 @@ area, evidence and a demo). For each brief:
     item is plan data and may name a file to make), each command
     in its Commands list starts with an executable file of the base, and each fact it quotes from
     AGENTS.md or ARCHITECTURE.md was found.
-  - it has the Why, Cuts and Not of the node's section of the plan file (fixtures get one), and
+  - it has the Why, Cuts and Not of the node in plan/plan.json (fixtures get one), and
     each file of the base that the Cuts name is in its file list.
 Also: the T1 interface (--round, --base, --out; the path is printed) and the refusals.
 """
@@ -35,7 +35,6 @@ estimate_tokens = importlib.machinery.SourceFileLoader(
 OVERLAY = ["scripts/brief", "scripts/brief-test", "scripts/check-docs", "scripts/lib", "plan", "AGENTS.md", "ARCHITECTURE.md"]
 EXTS = (".md", ".sh", ".json", ".py", ".ts", ".mjs", ".js", ".proto", ".swift", ".html", ".png", ".tsv", ".xcconfig")
 PATH_RE = re.compile(r"[A-Za-z0-9_.][A-Za-z0-9_./+-]*")
-PLAN_MD = "PLAN" + ".md"
 
 fails = 0
 largest = (0, "")
@@ -144,19 +143,11 @@ def check_brief(name, text, modes):
         ok(f"{name}: each fact was found")
 
 
-def plan_scope(plan_md, sid):
-    """{Why, Cuts, Not} -> their lines, from the node's section of the plan file (its own parser)."""
-    m = re.search(rf"^### {sid} · .*?\n(.*?)(?=^##)", plan_md + "\n## end", re.S | re.M)
-    out, cur = {}, None
-    for line in (m.group(1) if m else "").splitlines():
-        f = re.match(r"^\*\*([A-Za-z ]+)\*\*:?\s*(.*)$", line)
-        if f:
-            cur = f.group(1) if f.group(1) in ("Why", "Cuts", "Not") else None
-            if cur:
-                out[cur] = [f.group(2)] if f.group(2) else []
-        elif cur and line.strip():
-            out[cur].append(line.strip())
-    return out
+def plan_scope(plan_json, sid):
+    """{Why, Cuts, Not} -> their lines, from the node in plan/plan.json (why, cuts, not)."""
+    node = next((n for n in json.loads(plan_json)["nodes"] if n["id"] == sid), {})
+    return {k: [l.strip() for l in (node.get(k.lower()) or "—").splitlines() if l.strip()]
+            for k in ("Why", "Cuts", "Not")}
 
 
 def cuts_files(cuts, modes):
@@ -211,25 +202,22 @@ def briefs_of(repo, label):
             bad(f"{label} {node['id']}: brief exits 0", r.stderr)
             continue
         check_brief(f"{label} {node['id']}", out.read_text(), modes)
-        check_scope(f"{label} {node['id']}", out.read_text(), (repo / PLAN_MD).read_text(), node["id"], modes)
+        check_scope(f"{label} {node['id']}", out.read_text(), (repo / "plan/plan.json").read_text(), node["id"], modes)
 
 
 def commit_plan(repo, branch, plan, slices, scopes):
-    """plan/ of a fixture, and a plan file with the Why, Cuts and Not of each node (scopes)."""
+    """plan/ of a fixture, with the Why, Cuts and Not of each node (scopes)."""
     git(repo, "checkout", "-q", "-B", branch)
     shutil.rmtree(repo / "plan")
     (repo / "plan").mkdir()
+    plan = json.loads(json.dumps(plan))
+    for n in plan["nodes"]:
+        sc = scopes[n["id"]]
+        n.update(why=sc["Why"], cuts="\n".join(sc["Cuts"]), **{"not": sc["Not"]})
     (repo / "plan/plan.json").write_text(json.dumps(plan, indent=2) + "\n")
     for sid, items in slices.items():
         (repo / f"plan/{sid}.json").write_text(json.dumps({"id": sid, "items": items}, indent=2) + "\n")
-    md = [f"# {plan['title']}", ""]
-    for n in plan["nodes"]:
-        sc = scopes[n["id"]]
-        md += [f"### {n['id']} · {n['title']}", "", f"**Status** todo · **Needs** — · **Branch** —", "",
-               f"**Why**: {sc['Why']}", "", "**Cuts**", *sc["Cuts"], "", "**Demo**: —", "",
-               "**Done when**", "", f"**Not**: {sc['Not']}", "", "**Log**: —", ""]
-    (repo / PLAN_MD).write_text("\n".join(md))
-    git(repo, "add", "-A", "plan", PLAN_MD)
+    git(repo, "add", "-A", "plan")
     git(repo, "commit", "-q", "-m", f"fixture {branch}")
 
 
@@ -298,7 +286,8 @@ def main():
         caught, fails = fails - before, before
         globals()["largest"] = keep
         (ok if caught == 4 else bad)(f"too many tokens, a missing path, a missing command, a missing fact: {caught} of 4 caught")
-        md = "### S97 · x\n\n**Why**: Because.\n\n**Cuts**\n- `scripts/plan` reads it.\n\n**Not**: Other things.\n\n## end\n"
+        md = json.dumps({"nodes": [{"id": "S97", "why": "Because.", "cuts": "- `scripts/plan` reads it.",
+                                    "not": "Other things."}]})
         before = fails
         with contextlib.redirect_stdout(io.StringIO()):
             check_scope("bad", "**Why**: Because.\n## Files\n\n## Rules\n", md, "S97", tree(repo))

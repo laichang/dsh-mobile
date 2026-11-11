@@ -1,6 +1,6 @@
-# Slice resources (WORKFLOW.md §6). The coordinator appends a row on main with
+# Slice resources (scripts/slice-env). The coordinator appends a row on main with
 # `scripts/slice-env --assign` (or `scripts/plan assign`). Do not edit rows. A slot is held while
-# the slice is todo, doing or blocked in PLAN.md §0. Rows live as long as the plan: when the plan
+# the slice is todo, doing or blocked in plan/plan.json. Rows live as long as the plan: when the plan
 # ends, the registry goes back to this header (slice IDs start again at S1 in the next plan).
 id	branch	slot	bridge	web	bridge2	web2	sim	home	decisions	assigned
 T0	claude/t0-plan-graph	0	47810	3283	47840	3313	dshm-T0	~/.dshm/home-t0	D147-D149	2026-11-10

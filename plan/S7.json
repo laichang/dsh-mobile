@@ -6,21 +6,31 @@
       "text": "`scripts/plan` and `scripts/check-plan` read only `plan/`; the import of this run's PLAN.md passes `scripts/check-plan`",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/plan-test",
+        "cmd:scripts/check-plan --tree"
+      ]
     },
     {
       "tier": "auto",
       "text": "A test runs each refusal of `scripts/plan`, `scripts/check-plan`, `scripts/review` and the hooks, and each message names a next step",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/refusal-test"
+      ]
     },
     {
       "tier": "auto",
       "text": "No living doc, skill or script refers to WORKFLOW.md or `plan-template.md`",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/check-old-docs"
+      ]
     }
   ]
 }

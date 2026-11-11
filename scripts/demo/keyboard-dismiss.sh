@@ -7,7 +7,7 @@
 #                                drawer, the tap and swipe on the new session)
 #   DSHM_RESUME=1               skip the parts that passed for the same code (lib.sh demo_part)
 #
-# Resources (WORKFLOW.md §6), read from the environment:
+# Resources, read from the environment (scripts/slice-env):
 #   DSHM_SIM dshm-keyboard-dismiss   DSHM_DD (DerivedData) /tmp/dshm-keyboard-dismiss-dd
 #   (DSHM_BRIDGE_PORT 47810, DSHM_WEB_PORT 3283, DSHM_HOME ~/.dshm/home-keyboard-dismiss are unused here.)
 # Fails on any failed or skipped test.

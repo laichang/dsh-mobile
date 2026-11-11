@@ -9,7 +9,7 @@
 #   scripts/demo/markdown-tables.sh --only-tables  only the Markdown tables UI tests (the red run on the unfixed code)
 #   DSHM_RESUME=1               skip the parts that passed for the same code (lib.sh demo_part)
 #
-# Resources (WORKFLOW.md §6), read from the environment (eval "$(scripts/slice-env <ID>)"):
+# Resources, read from the environment (eval "$(scripts/slice-env <ID>)"):
 #   DSHM_SIM dshm-markdown-tables   DSHM_DD (DerivedData) /tmp/dshm-markdown-tables-dd
 #   DSHM_BRIDGE_PORT 47811, DSHM_WEB_PORT 3284, DSHM_HOME ~/.dshm/home-markdown-tables: the rich detail part's DSH host.
 # Fails on any failed or skipped test.
