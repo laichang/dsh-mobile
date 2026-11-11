@@ -130,7 +130,7 @@ public enum FakeHosts {
     public static let defaultModelName = "DeepSeek-V41-Flash"
     static var macPickers: FakeBridge.Pickers {
         .init(catalog: FakePickers.catalog(failures: []),
-              workspaces: FakePickers.workspaces(FakePickers.home, [FakePickers.q3]))
+              workspaces: .init(defaultPath: FakePickers.home, recentPaths: [FakePickers.q3]))
     }
 
     /// The hosts that a UI test can stop and start: every host of the variant except hk-1.

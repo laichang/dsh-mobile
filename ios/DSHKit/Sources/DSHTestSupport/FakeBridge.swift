@@ -192,10 +192,10 @@ public final class FakeBridge: BridgeTransport {
     /// for a provider key that expired on the host).
     public struct Pickers: Sendable {
         public var catalog: ModelCatalog
-        public var workspaces: Dshm_V1_WorkspaceList
+        public var workspaces: WorkspaceList
         public var goneAfterUse: Set<String>
 
-        public init(catalog: ModelCatalog, workspaces: Dshm_V1_WorkspaceList, goneAfterUse: Set<String> = []) {
+        public init(catalog: ModelCatalog, workspaces: WorkspaceList, goneAfterUse: Set<String> = []) {
             self.catalog = catalog
             self.workspaces = workspaces
             self.goneAfterUse = goneAfterUse
@@ -888,7 +888,11 @@ public final class FakeHost: Sendable {
             case .selectModel(let select)? where pickers != nil:
                 selectModel(select, requestID: id, bridge: bridge, in: &s)
             case .listWorkspaces? where pickers != nil:
-                bridge.deliver(Self.response(id, .workspaceList(pickers!.workspaces)))
+                let workspaces = pickers!.workspaces
+                var reply = Dshm_V1_WorkspaceList()
+                reply.defaultPath = workspaces.defaultPath
+                reply.recentPaths = workspaces.recentPaths
+                bridge.deliver(Self.response(id, .workspaceList(reply)))
             case .readSession(let read)? where journals[read.taskID] != nil:
                 bridge.deliver(Self.response(id, .sessionPage(journals[read.taskID]!)))
             case let body? where s.devices != nil && FakeDevices.handles(body):

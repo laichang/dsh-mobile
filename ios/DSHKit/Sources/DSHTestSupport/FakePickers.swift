@@ -40,11 +40,11 @@ public enum FakePickers {
         failure.message = "无法获取模型列表（密钥无效）"
         var catalog = catalog(failures: [failure])
         catalog.routableProviders = [provider]
-        return .init(catalog: catalog, workspaces: workspaces(home, [q3, repo, analysis]), goneAfterUse: [pro])
+        return .init(catalog: catalog, workspaces: .init(defaultPath: home, recentPaths: [q3, repo, analysis]), goneAfterUse: [pro])
     }
 
     static var officePickers: FakeBridge.Pickers {
-        .init(catalog: catalog(failures: []), workspaces: workspaces(officeHome, [officeReports]))
+        .init(catalog: catalog(failures: []), workspaces: .init(defaultPath: officeHome, recentPaths: [officeReports]))
     }
 
     static func catalog(failures: [Dshm_V1_ModelCatalogFailure]) -> ModelCatalog {
@@ -71,13 +71,6 @@ public enum FakePickers {
         catalog.defaultSelection = ModelSelection(provider: provider, model: flash, effort: "high")
         catalog.failures = failures
         return catalog
-    }
-
-    static func workspaces(_ home: String, _ recent: [String]) -> Dshm_V1_WorkspaceList {
-        var list = Dshm_V1_WorkspaceList()
-        list.defaultPath = home
-        list.recentPaths = recent
-        return list
     }
 }
 #endif
