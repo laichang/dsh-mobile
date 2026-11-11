@@ -26,7 +26,7 @@ let package = Package(
         // HostConnection, SecureChannel, PlaintextChannel, TaskStore.
         .target(name: "DSHCore", dependencies: ["DSHProtocol", "DSHActivity", "DSHTransport"]),
         // FakeBridge and other debug-only test doubles. Compiled out of Release (#if DEBUG).
-        .target(name: "DSHTestSupport", dependencies: ["DSHCore", "DSHProtocol", "DSHTransport"]),
+        .target(name: "DSHTestSupport", dependencies: ["DSHCore", "DSHProtocol"]),
         // Test only: an Objective-C API that calls its handler on a queue of its own, like the
         // Speech framework's permission request. In no product.
         .target(name: "SystemCallbackDoubles", path: "Tests/SystemCallbackDoubles"),

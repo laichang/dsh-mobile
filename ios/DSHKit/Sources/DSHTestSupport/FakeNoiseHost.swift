@@ -1,6 +1,5 @@
 #if DEBUG
 import DSHCore
-import struct DSHTransport.HostEndpoint
 import Foundation
 
 /// In-process stand-in for the bridge's Noise side (bridge/src/pairing/handshake.ts + store.ts):
