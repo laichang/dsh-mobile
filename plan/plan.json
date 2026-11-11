@@ -100,10 +100,10 @@
         "T0"
       ],
       "branch": "claude/s4-44a0783",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "d69daf5",
       "why": "Live and offline sessions must present the same committed messages and attachments. Closes #77.",
       "cuts": "Map session pages, messages, parts and attachments at the host/cache boundary. Use them in the session page, retry text and single-turn transcript recovery. Preserve the serialized history format and revision rules.\nStarting files: `ios/dsh-mobile/Features/Session/SessionPage.swift`, `ios/DSHKit/Sources/DSHCore/Sync/TaskCache.swift`, `protocol/sessions.proto`.\nScreen references: `design/screens/04.html`, `design/screens/06.html`, `design/screens/X1.html`.",
       "not": "",
@@ -351,6 +351,11 @@
       "date": "2026-11-11",
       "title": "S2 merged",
       "body": "Merged as `92882d6`; the plan/ rules hold on the merge commit. No open [human] items, so S2 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S4 merged",
+      "body": "Merged as `d69daf5`; the plan/ rules hold on the merge commit. No open [human] items, so S4 is `done`."
     }
   ],
   "pending": [
