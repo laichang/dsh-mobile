@@ -269,10 +269,10 @@
       "title": "Fix: Match Debug and Release first launch",
       "needs": [],
       "branch": "claude/s13-first-pairing",
-      "status": "doing",
+      "status": "review",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "User accepts 1 [human] item (pending)",
+      "merge": "1a35c9b",
       "why": "The user reported a bug on 2026-11-11: An unpaired Debug install opens an offline session instead of the first pairing screen.",
       "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
       "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
@@ -395,6 +395,11 @@
       "date": "2026-11-11",
       "title": "S9 assigned",
       "body": "Branch `claude/s9-c84bb59`, simulator `4C52BC88-0A2D-45D9-8FBC-7A9A11010542`, DSHM_HOME `~/.dshm/home-s9-4C52BC88-0A2D-45D9-8FBC-7A9A11010542`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S9)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S13 merged",
+      "body": "Merged as `1a35c9b`; the plan/ rules hold on the merge commit. 1 open [human] item(s), so S13 is `review`. Pending 2."
     }
   ],
   "pending": [
@@ -405,6 +410,14 @@
       "item": "ARCHITECTURE.md: TLS 1.3 tracer",
       "branch": "claude/t1-f391f77",
       "ref": "merged f72b66a"
+    },
+    {
+      "n": 2,
+      "slice": "S13",
+      "kind": "[human]",
+      "item": "The user no longer sees the bug",
+      "branch": "main",
+      "ref": "1a35c9b"
     }
   ],
   "github_milestone": "laichang/dsh-mobile#4"
