@@ -4,3 +4,4 @@
 top="$(git rev-parse --show-toplevel)"
 "$top/scripts/check-plan" --staged || exit 1
 "$top/scripts/check-ids" || { echo "pre-commit: Next: remove the decision or slice ID from the code (scripts/check-ids names each line)"; exit 1; }
+"$top/scripts/check-wrappers" --staged
