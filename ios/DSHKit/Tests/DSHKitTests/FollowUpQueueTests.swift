@@ -17,7 +17,10 @@ import Testing
     ///   machine (under load the turn ended first).
     func host(chunkDelay: Duration = .milliseconds(120), pause: AsyncStream<Void>? = nil) -> FakeHost {
         var script = FakeBridge.Script(reply: Self.first, chunkDelay: chunkDelay)
-        if let pause { script.afterFirstChunk = { for await _ in pause {} } }
+        if let pause {
+            let release = Task { for await _ in pause {} }
+            script.afterFirstChunk = { await release.value }
+        }
         script.followUpReply = Self.second
         script.queuesFollowUps = true
         script.interruptible = true
@@ -174,12 +177,14 @@ import Testing
     }
 
     @Test func aStopGivesWaitingMessagesBackAndANewMessageContinuesTheTask() async throws {
-        let host = host(chunkDelay: .milliseconds(200))
+        let (pause, release) = AsyncStream<Void>.makeStream()
+        defer { release.finish() }
+        let host = host(pause: pause)
         let store = try launch(host)
         store.foreground()
         defer { store.background() }
         let key = try #require(await store.send())
-        await waitForStore("running") { store.task(key)?.state == .running }
+        await waitForStore("first chunk") { store.task(key)?.transcript == "First " }
         try await store.sendFollowUp("Waiting.", for: try #require(store.task(key)))
         await waitForStore("queued") { store.task(key)?.queue.count == 1 }
 
@@ -193,6 +198,7 @@ import Testing
         #expect(store.canFollowUp(stopped))
         try await store.sendFollowUp("Go on.", for: stopped)
         await waitForStore("running again") { store.task(key)?.state == .running }
+        release.finish()
         await waitForStore("done") { store.task(key)?.state == .completed }
         let page = FollowUpTests.page(try #require(store.task(key)))
         #expect(page.suffix(2) == ["user: Go on.", "agent: Second answer."], "\(page)")

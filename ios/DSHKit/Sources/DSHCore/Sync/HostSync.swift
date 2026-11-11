@@ -339,7 +339,7 @@ final class HostSync {
     func merge(_ snapshot: TaskSnapshot, into task: CachedTask) {
         let previousRevision = task.sessionRevision
         if let current = previousRevision, let incoming = snapshot.sessionRevision, incoming < UInt64(current) { return }
-        let newerTurn = snapshot.sessionRevision.map { $0 > UInt64(previousRevision ?? 0) } ?? false
+        let newerRevision = snapshot.sessionRevision.map { $0 > UInt64(previousRevision ?? 0) } ?? false
         if !snapshot.title.isEmpty { task.title = snapshot.title }
         if let revision = snapshot.sessionRevision {
             task.sessionRevision = max(task.sessionRevision ?? 0, Int64(revision))
@@ -350,7 +350,11 @@ final class HostSync {
         task.approvalOnly = snapshot.approvalOnly
         if let workspace = snapshot.workspace { task.workspace = workspace }
         let regresses = task.state.isTerminal && !snapshot.state.isTerminal
-        if newerTurn || snapshot.updatedAt > task.updatedAt || (snapshot.updatedAt == task.updatedAt && !regresses) {
+        // The host clock has millisecond precision. A follow-up can start in the same tick as a stop.
+        let incomingTurn = snapshot.turnStartedAt ?? snapshot.createdAt
+        let currentTurn = task.turnStartedAt ?? task.createdAt
+        let winsTie = incomingTurn > currentTurn || (incomingTurn == currentTurn && !regresses)
+        if newerRevision || snapshot.updatedAt > task.updatedAt || (snapshot.updatedAt == task.updatedAt && winsTie) {
             task.approvals = snapshot.approvals
             if let selection = snapshot.modelSelection { applyModel(selection, to: task) }
             task.state = snapshot.state
