@@ -6,21 +6,31 @@
       "text": "Populate a fresh disk cache via production sync. Offline after relaunch, read tasks, transcript, pending decisions, attachment metadata and the saved cursor. `cmd:scripts/swift-test`",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test"
+      ]
     },
     {
       "tier": "auto",
       "text": "Interrupt a save and restart. The durable cursor never leads the stored data. Replay from the last committed cursor restores each change once. Repeated foreground transitions, dropped connections and host-log replacement preserve isolation between hosts. `cmd:scripts/swift-test`",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test"
+      ]
     },
     {
       "tier": "ui",
       "text": "A phone task streams into the list, survives relaunch and remains available for a follow-up. `cmd:scripts/demo/durable-list.sh`, `cmd:scripts/demo/followup.sh`",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/demo/durable-list.sh",
+        "cmd:scripts/demo/followup.sh"
+      ]
     }
   ]
 }

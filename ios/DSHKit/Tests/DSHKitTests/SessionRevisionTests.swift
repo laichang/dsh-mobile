@@ -1,5 +1,6 @@
 @testable import DSHCore
 import DSHProtocol
+import DSHTestSupport
 import Foundation
 import Testing
 
@@ -18,18 +19,19 @@ import Testing
     }
 
     @Test func laterTurnCanRunAtTheSameTimestampAndStaleReplayCannotFinishIt() throws {
-        let store = TaskListStore(container: try TaskCache.container(inMemory: true), hosts: [])
+        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: FakeHost().factory)
+        let sync = HostSync(config: .init(key: "Mac", connection: connection), container: try TaskCache.container(inMemory: true))
         let now = Date()
         let task = CachedTask(hostKey: "Mac", taskID: "one session", title: "First turn", createdAt: now)
         var snapshot = TaskSnapshot(taskID: task.taskID, title: task.title, state: .completed,
                                     createdAt: now, updatedAt: now)
         snapshot.sessionRevision = 7
-        store.merge(snapshot, into: task)
+        sync.merge(snapshot, into: task)
         let finished = snapshot
         snapshot.sessionRevision = 8
         snapshot.state = .running
-        store.merge(snapshot, into: task)
-        store.merge(finished, into: task)
+        sync.merge(snapshot, into: task)
+        sync.merge(finished, into: task)
         #expect(task.state == .running)
         #expect(task.sessionRevision == 8)
     }
