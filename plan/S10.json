@@ -16,7 +16,10 @@
       "text": "The user no longer sees the bug",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "human:2026-11-11 Swift 编译成功，8 项测试通过，时长保持 9435 秒"
+      ]
     }
   ]
 }
