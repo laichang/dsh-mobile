@@ -70,6 +70,8 @@ test('local offers, enrollment, restart, authenticated dispatch and revocation',
   await Promise.all([c, d].map(p => p.rpc({ case: 'listTasks', value: {} })))
   const hasQuestion = (p: typeof c) => p.events.some(f => f.kind.case === 'event' && f.kind.value.body.case === 'questionPending')
   assert.ok(hasQuestion(c) && !hasQuestion(d))
+  const unsupported = await d.rpc({ case: 'answerQuestion', value: { id: 'question' } })
+  assert.ok(unsupported.case === 'error' && unsupported.value.code === 'request/unsupported')
   const newer = await connectDevice(dir, address, b.bearer, ['questions.v1'])
   await newer.rpc({ case: 'resume', value: {} })
   assert.ok(hasQuestion(newer))

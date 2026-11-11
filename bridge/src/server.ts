@@ -403,7 +403,7 @@ function serveConnection(
       }
       case 'answerQuestion': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
-        if (!options.questions) return fail(id, 'request/unsupported', 'questions unavailable')
+        if (!options.questions || !clientQuestions) return fail(id, 'request/unsupported', 'questions unavailable')
         const answer = request.body.value
         try {
           const resolved = options.questions.answer(answer.id, answer.answers.map(a => ({ questionId: a.questionId, selected: [...a.selected], custom: a.custom })))

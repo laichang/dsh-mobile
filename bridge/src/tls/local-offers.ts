@@ -1,22 +1,22 @@
 import { createServer, request } from 'node:http'
-import { chmodSync, lstatSync, mkdirSync, realpathSync, rmSync } from 'node:fs'
+import { chmodSync, lstatSync, mkdirSync, realpathSync, rmdirSync, rmSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { connect } from 'node:net'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { offerURL, type PairingOffer } from '../pairing/offer.ts'
 
-export function offerSocket(stateDir: string) {
+export function offerSocket(stateDir: string, create = false) {
   if (!process.getuid) throw new Error('TLS enrollment requires Unix domain sockets and owner-only permissions')
   const id = createHash('sha256').update(realpathSync(stateDir)).digest('hex').slice(0, 24)
   const dir = '/tmp/dshm-pair-' + process.getuid() + '-' + id
-  mkdirSync(dir, { mode: 0o700, recursive: true })
+  if (create) mkdirSync(dir, { mode: 0o700, recursive: true })
   const st = lstatSync(dir)
   if (!st.isDirectory() || st.uid !== process.getuid() || (st.mode & 0o077)) throw new Error('unsafe pairing socket directory')
   return join(dir, 'offer.sock')
 }
 
 export async function serveOffers(stateDir: string, issue: (ttl: number) => PairingOffer) {
-  const socketPath = offerSocket(stateDir)
+  const socketPath = offerSocket(stateDir, true)
   const server = createServer((req, res) => {
     if (req.method !== 'POST' || req.url !== '/offer') { res.writeHead(404).end(); return }
     try {
@@ -39,6 +39,10 @@ export async function serveOffers(stateDir: string, issue: (ttl: number) => Pair
     await listen()
   }
   chmodSync(socketPath, 0o600)
+  server.once('close', () => {
+    // A new listener may already own the directory.
+    try { rmdirSync(dirname(socketPath)) } catch {}
+  })
   return server
 }
 

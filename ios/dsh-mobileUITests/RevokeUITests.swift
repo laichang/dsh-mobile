@@ -201,8 +201,11 @@ final class RevokeUITests: XCTestCase {
         XCTAssertEqual(waitForValue(any(app, "drawer.hosts").firstMatch, in: ["0/1"], timeout: 30), "0/1")
         XCTAssertEqual(waitForValue(any(app, "host.status").firstMatch, in: ["offline"], timeout: 30), "offline")
         let recent = app.buttons.matching(identifier: "drawer.session")
-            .matching(NSPredicate(format: "label CONTAINS %@", "TLS reconnect"))
-        XCTAssertTrue(recent.firstMatch.waitForExistence(timeout: 15))
+        XCTAssertEqual(recent.count, 2)
+        recent.firstMatch.tap()
+        let transcript = any(app, "transcript.text").firstMatch
+        XCTAssertTrue(transcript.waitForExistence(timeout: 15))
+        XCTAssertTrue((transcript.value as? String ?? "").contains("streamed through the dsh-mobile bridge"))
         app.terminate()
     }
 

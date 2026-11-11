@@ -42,6 +42,7 @@ extension Pairing {
             var host = PairedHost(name: offer.hostName, addresses: [endpoint] + offer.addresses.filter { $0 != endpoint },
                                   hostKey: offer.hostKey, pairedAt: now())
             let deviceID = entry.id.uuidString.lowercased()
+            host.id = offer.hostKey.map { String(format: "%02x", $0) }.joined()
             host.tlsDeviceID = deviceID
             let previous = hosts.load().first { $0.id == host.id }
             let key = Self.credential(pin: offer.hostKey, deviceID: deviceID)
