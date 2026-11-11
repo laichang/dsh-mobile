@@ -41,11 +41,13 @@ Held approvals: a paired phone or a DSH web client answers a request once. Set `
 
    The plugin starts with the host and listens on `0.0.0.0:47801`. Check with `lsof -nP -iTCP:47801 -sTCP:LISTEN`. While no phone is paired yet, it prints a pairing QR in DSH's log.
 
-4. Pair the phone. For a fresh QR at any time (single use, valid 10 minutes):
+4. Pair the phone. For a fresh QR at any time, run this from the dsh-mobile repository root (single use, valid 10 minutes):
 
    ```sh
    DSH_HOME=~/.dsh node bridge/lib/scripts/pair.js
    ```
+
+   Use the running host’s `DSH_HOME`. If the plugin uses a custom `stateDir`, append `--state-dir /path/to/stateDir`.
 
    In dsh-mobile, tap the QR button and scan it, then tap **Pair**. The QR lists every external IPv4 address of the host (Wi-Fi, Ethernet, Tailscale's `100.x`); the phone tries them in order, so it works on the same Wi-Fi, or over Tailscale when Tailscale is on at both the phone and the host. The link printed under the QR can be pasted into the app instead.
 
