@@ -23,10 +23,10 @@
       "title": "Align the design screens with current pairing and supported surfaces",
       "needs": [],
       "branch": "claude/s1-pre-m3",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "4ad086a",
       "why": "First-run instructions must work on the current host and remain useful when M3 changes the transport. Closes #64",
       "cuts": "Update STORY.md, design/screens.json and design/screens/08.html, design/screens/L.html, design/screens/X1.html and design/screens/P1.html with their renders. Compare the current bridge CLI and bridge/README.md with the installed DSH pairing entry. Proposed for review: direct the user to obtain a fresh code on the host via the bridge CLI and scan or paste on the phone. Preserve the current LAN and two-ended Tailscale guidance. TLS enrollment belongs to M3.",
       "not": "",
@@ -161,6 +161,11 @@
       "date": "2026-11-11",
       "title": "S7 assigned",
       "body": "Branch `claude/s7-pre-m3`, worktree `/Users/bytedance/dsh-mobile-s7`, simulator `dshm-S7`, DSHM_HOME `~/.dshm/home-s7`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S7)\"` exports them. Same resources as before."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S1 merged",
+      "body": "Merged as `4ad086a`; the plan/ rules hold on the merge commit. No open [human] items, so S1 is `done`. Kept resources because the simulator registry still points to a previous requirement."
     }
   ],
   "pending": []
