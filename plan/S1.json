@@ -6,14 +6,22 @@
       "text": "The rendered L, X1 and P1 screens and captions contain no push affordance or promise. The local Live Activity remains visible where appropriate. Share sheet and iPad are explicitly marked unbuilt in the design data. Run scripts/check-design and scripts/check-design-test.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/check-design",
+        "cmd:scripts/check-design-test"
+      ]
     },
     {
       "tier": "auto",
       "text": "Screen 08 and STORY describe the agreed, reproducible host-to-phone steps. Verify the source of the QR against the working host command, including when the startup QR is unavailable. Render with scripts/render-design 08 L X1 P1, inspect the four images and run scripts/check-design.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/check-design",
+        "commit:4cbffb2fb2517739687c16b4d3a1dfc67cda1cca"
+      ]
     }
   ]
 }
