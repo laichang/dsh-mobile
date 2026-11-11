@@ -127,7 +127,7 @@ A Cordis plugin in the user's DSH profile (install: `bridge/README.md`). It is t
 - **Close codes**: 4000 bad hello, 4001 pairing refused (unknown, expired, used, wrong secret), 4002 handshake failed, 4003 device unknown.
 - **State** in `$DSH_HOME/dsh-mobile-bridge/` (dir 0700, files 0600, atomic writes): host key, offers, device registry, approval journal.
 - Both implementations pass the official Noise test vectors and the golden transcripts in `protocol/fixtures/noise/`.
-- **TLS 1.3 tracer**: URLSession validates a pinned P-256 SPKI, leaf dates, server use and IP/DNS SANs. Redirects fail. One binary WSS message carries one protobuf frame. **Certificate signing (provisional, pending user confirmation):** local OpenSSL-compatible CLI instead of an embedded Node dependency. Provisioning, renewal and address rules: `bridge/README.md`. Current enrollment uses Noise. TLS cutover requires updating the bridge and enrolling a fresh install. Host sessions and audit remain; only the new device registry grants access.
+- **TLS 1.3 tracer**: URLSession validates a pinned P-256 SPKI, leaf dates, server use and IP/DNS SANs. Redirects fail. One binary WSS message carries one protobuf frame. The bridge signs certificates with the host’s OpenSSL-compatible CLI. Provisioning, renewal and address rules: `bridge/README.md`. Current enrollment uses Noise. TLS cutover requires updating the bridge and enrolling a fresh install. Host sessions and audit remain; only the new device registry grants access.
 
 ### 4.3 Tasks, the host log and resume
 
