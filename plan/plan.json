@@ -7,10 +7,10 @@
       "title": "Tracer bullet: List host workspaces through a Swift domain API",
       "needs": [],
       "branch": "claude/t0-a38e968",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "83b9217",
       "why": "The workspace picker proves the first host-scoped domain read from bridge to UI. Closes #72.",
       "cuts": "Map the existing workspace-list response once inside DSHCore. Use the same Swift values for the real picker and its fake. Set the mapping and shared signatures with this single read. the host management, model and session slices each move their own operations into feature-specific extensions as needed. Keep the phone workspace, reverse RPC and shared-material grants outside this milestone.\nStarting files: `ios/dsh-mobile/Features/Workspaces/WorkspaceControl.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHTestSupport/FakePickers.swift`.\nScreen references: `design/screens/01.html`, `design/screens/07.html`.",
       "not": "",
@@ -262,6 +262,11 @@
       "date": "2026-11-11",
       "title": "S1 assigned",
       "body": "Branch `claude/s1-5ef6ca7`, simulator `6197D16B-BD7A-4D29-93C3-43C0D9896699`, DSHM_HOME `~/.dshm/home-s1-6197D16B-BD7A-4D29-93C3-43C0D9896699`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S1)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "T0 merged",
+      "body": "Merged as `83b9217`; the plan/ rules hold on the merge commit. No open [human] items, so T0 is `done`."
     }
   ],
   "pending": [],
