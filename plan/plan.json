@@ -196,10 +196,10 @@
       "needs": [
         "T0"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s11-owned-cleanup",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Fix: Limit cleanup to resources owned by the recorded assignment; start a fix session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "The user reported a bug on 2026-11-11: On merged S10, cleanup deleted two historical branches (restored), old /tmp directories, and reused a prior device/home when no old registry row existed. Scope cleanup to verifiable resources of this assignment and preserve unknown older ones; test against legacy state.",
       "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
@@ -284,6 +284,11 @@
       "date": "2026-11-11",
       "title": "S10 merged",
       "body": "Merged as `8a16109`; the plan/ rules hold on the merge commit. 1 open [human] item(s), so S10 is `review`. Pending 3."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S11 assigned",
+      "body": "Branch `claude/s11-owned-cleanup`, worktree `/Users/bytedance/dsh-mobile-s11`, simulator `dshm-S11`, DSHM_HOME `~/.dshm/home-s11`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S11)\"` exports them."
     }
   ],
   "pending": [
