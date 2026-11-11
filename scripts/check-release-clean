@@ -27,9 +27,9 @@ debug_hooks = {
     'FakeBridge', 'FakeHost', 'FakeNoiseHost', 'DSHMFakeBridge', 'DSHMPresetPrompt', 'DSHMBridgePort',
     'DSHMFakeMilestones', 'DSHMResetStore', 'DSHMConnectDelay', 'DSHMResetPairing', 'DSHMFakeHold',
     'DSHMFakeScenario', 'DSHMFakeAsk', 'DSHMFakeSpeech', 'FakeTranscriber', 'DebugDeepLink',
-    'DebugLaunchOptions', 'DSHMLiveActivityProbe', 'PlaintextChannel', 'DSHM_TLS_TEST_PIN',
+    'DebugLaunchOptions', 'DSHMLiveActivityProbe', 'DSHMSeedLegacyPairing', 'DSHM_TLS_TEST_PIN',
 }
-legacy = {'Noise_IK', 'NoiseInitiator', 'NoiseResponder', 'NoiseChannel', '/plaintext'}
+legacy = {'Noise_IK', 'NoiseInitiator', 'NoiseResponder', 'NoiseChannel', 'PlaintextChannel', '/plaintext', 'ws://'}
 for config in ('Debug', 'Release'):
     app = products / (config + '-iphonesimulator') / 'dsh-mobile.app'
     info = plistlib.loads((app / 'Info.plist').read_bytes())

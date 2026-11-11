@@ -8,8 +8,9 @@ final class SessionVisibilityUITests: XCTestCase {
         func signal(_ name: String) throws { try Data().write(to: signals.appendingPathComponent(name)) }
         let port = try String(contentsOf: signals.appendingPathComponent("phone-port"), encoding: .utf8)
         let app = XCUIApplication()
-        app.launchArguments = ["-DSHMBridgePort", port, "-DSHMResetStore", "YES", "-DSHMResetPairing", "YES"]
-        launchEnrolled(app, port: port)
+        let upgrade = FileManager.default.fileExists(atPath: signals.appendingPathComponent("saved-session").path)
+        if !upgrade { app.launchArguments = ["-DSHMResetStore", "YES"] }
+        launchEnrolled(app, port: port, resetPairing: !upgrade)
         openAllTasks(app)
 
         let rows = app.buttons.matching(identifier: "tasklist.row")
