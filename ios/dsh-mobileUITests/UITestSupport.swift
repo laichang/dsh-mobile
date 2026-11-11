@@ -17,7 +17,9 @@ extension XCTestCase {
     /// Enroll on a fresh launch. The fixture may give the phone a relay port for failover tests.
     func launchEnrolled(_ app: XCUIApplication, port: String = "") {
         guard let path = env["DSHM_TLS_HANDOFF"] else { XCTFail("Run the TLS demo"); return }
-        if let index = app.launchArguments.firstIndex(of: "-DSHMBridgePort") { app.launchArguments[index + 1] = "1" }
+        if let index = app.launchArguments.firstIndex(of: "-DSHMBridgePort") {
+            app.launchArguments.removeSubrange(index...index + 1)
+        }
         if !app.launchArguments.contains("-DSHMResetPairing") { app.launchArguments += ["-DSHMResetPairing", "YES"] }
         app.launch()
         do {

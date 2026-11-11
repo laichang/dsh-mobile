@@ -17,7 +17,7 @@ final class PairingUITests: XCTestCase {
         try XCTSkipUnless(env["DSHM_PAIR_URL"] != nil, "needs a pairing link; run scripts/demo/pairing.sh")
         let link = try XCTUnwrap(env["DSHM_PAIR_URL"].flatMap(URL.init(string:)))
         let app = XCUIApplication()
-        app.launchArguments = ["-DSHMResetPairing", "YES", "-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47801"]
+        app.launchArguments = ["-DSHMResetPairing", "YES"]
         app.launch()
         // Pair.
         var reopened = openDeepLink(link)
@@ -77,6 +77,7 @@ final class PairingUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMResetPairing", "YES"]
         app.launch()
+        XCTAssertTrue(app.buttons["pairing.pasteLink"].waitForExistence(timeout: 10))
         let reopened = openDeepLink(link)
         let confirm = reopened.buttons["pairing.confirm"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 10))

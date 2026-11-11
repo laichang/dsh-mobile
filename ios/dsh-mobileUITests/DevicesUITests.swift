@@ -11,12 +11,9 @@ final class DevicesUITests: XCTestCase {
         let peer = try XCTUnwrap(env["DSHM_DEVICES_PEER"])
         let link = try XCTUnwrap(env["DSHM_PAIR_URL"].flatMap(URL.init(string:)))
         let original = XCUIApplication()
-        // The unpaired Debug fallback must not cache this real host under its loopback identity.
-        original.launchArguments = ["-DSHMResetPairing", "YES", "-DSHMResetStore", "YES",
-                                    "-DSHMBridgePort", "1"]
+        original.launchArguments = ["-DSHMResetPairing", "YES", "-DSHMResetStore", "YES"]
         original.launch()
-        openDrawer(original)
-        XCTAssertTrue(original.descendants(matching: .any)["host.channel"].waitForExistence(timeout: 15))
+        XCTAssertTrue(original.buttons["pairing.pasteLink"].waitForExistence(timeout: 15))
         XCTAssertFalse(original.buttons["host.manage"].exists)
         let app = openDeepLink(link)
         app.buttons["pairing.confirm"].tap()
