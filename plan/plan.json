@@ -58,16 +58,17 @@
       "needs": [
         "S2"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s3-a1e6a14",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "A new builder can act on the previous review without inheriting the old conversation. Closes #70",
       "cuts": "Keep the existing fresh-agent path in .claude/workflows/run-plan.js. Update scripts/brief and .agents/skills/run-plan/SKILL.md for normal and fallback coordination. Couple the handoff test to the persisted rounds from the previous slice.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S4",
@@ -299,6 +300,11 @@
       "date": "2026-11-11",
       "title": "S2 merged",
       "body": "Merged as `c0a4b93`; the plan/ rules hold on the merge commit. No open [human] items, so S2 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S3 assigned",
+      "body": "Branch `claude/s3-a1e6a14`, simulator `D14B36C0-6B79-48E0-9B8B-1A64A5DA6DED`, DSHM_HOME `~/.dshm/home-s3-D14B36C0-6B79-48E0-9B8B-1A64A5DA6DED`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S3)\"` exports them."
     }
   ],
   "pending": [
