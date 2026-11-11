@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHTestSupport
 import Foundation
 import SwiftData
@@ -60,7 +61,7 @@ import Testing
             saved.addresses = addresses
             try? hosts.update(saved)
         })
-        let store = TaskListStore(container: try TaskCache.container(url: storeURL),
+        let store = TaskListStore(cache: try TaskCache(url: storeURL),
                                   hosts: [.init(key: paired.cacheKey, connection: connection, name: paired.name)],
                                   prompt: "Which address?")
         store.backoff = (.milliseconds(20), .milliseconds(100))

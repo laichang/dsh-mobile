@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 @main
@@ -58,7 +59,7 @@ struct dsh_mobileApp: App {
                 app.closePairing()
                 showFirstTask = wasUnpaired && app.hasSavedHosts
                 // After the first pairing, 01 opens with the first task in the composer.
-                if showFirstTask, let store = app.store, store.prompt.isEmpty { store.prompt = FirstRun.suggestion }
+                if showFirstTask, let store = app.store, store.composer.prompt.isEmpty { store.composer.prompt = FirstRun.suggestion }
             }
         } else if let store = app.store {
             ShellView(store: store, showFirstTask: $showFirstTask) { app.startPairing() }

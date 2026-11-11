@@ -1,6 +1,7 @@
 import ActivityKit
 import DSHActivity
 import DSHCore
+import DSHFeatures
 import Foundation
 import Observation
 

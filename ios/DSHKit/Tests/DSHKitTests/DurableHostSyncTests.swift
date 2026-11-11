@@ -1,4 +1,5 @@
 @testable import DSHCore
+@testable import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
 import Foundation
@@ -82,7 +83,7 @@ struct DurableHostSyncTests {
         try await until { first.connectionCount == 0 && second.connectionCount == 0 }
 
         func launch() throws -> TaskListStore {
-            TaskListStore(container: try TaskCache.container(url: url), hosts: [config("a", first), config("b", second)])
+            TaskListStore(cache: try TaskCache(url: url), hosts: [config("a", first), config("b", second)])
         }
         let store = try launch()
         let key = CachedTask.key(hostKey: "a", taskID: "shared")
@@ -114,7 +115,7 @@ struct DurableHostSyncTests {
         let url = dir.appendingPathComponent("cache.store")
         let original = FakeHost()
         let replacement = FakeHost()
-        let store = TaskListStore(container: try TaskCache.container(url: url), hosts: [config("a", original)])
+        let store = TaskListStore(cache: try TaskCache(url: url), hosts: [config("a", original)])
         store.foreground()
         await waitForStore("online") { store.hosts.first?.reachability == .online }
         original.emit(chunk(1, "unfinished"), taskID: "shared")
@@ -130,7 +131,7 @@ struct DurableHostSyncTests {
             return (try? ModelContext(database).fetch(FetchDescriptor<CachedHost>()).first?.logID) == replacement.logID
         }
         store.background()
-        let reopened = TaskListStore(container: try TaskCache.container(url: url), hosts: [config("a", replacement)])
+        let reopened = TaskListStore(cache: try TaskCache(url: url), hosts: [config("a", replacement)])
         reopened.foreground()
         defer { reopened.background() }
         await waitForStore("resume on the already saved log ID") { reopened.hosts.first?.reachability == .online }

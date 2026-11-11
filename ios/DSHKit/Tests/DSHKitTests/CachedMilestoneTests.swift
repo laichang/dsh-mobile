@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHTestSupport
 import Foundation
 import SwiftData
@@ -14,8 +15,7 @@ import Testing
     func launch(_ host: FakeHost) throws -> TaskListStore {
         let connection = HostConnection(endpoint: .localBridge(), transport: host.factory)
         let store = TaskListStore(
-            container: try TaskCache.container(url: storeURL),
-            hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Three steps.")
+            cache: try TaskCache(url: storeURL), hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Three steps.")
         store.backoff = (.milliseconds(20), .milliseconds(100))
         // send() returns as soon as the host is online; under load the first connect can take
         // longer than 500 ms, and then send() gave nil. The 30 s

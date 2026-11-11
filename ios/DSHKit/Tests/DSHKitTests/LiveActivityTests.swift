@@ -1,5 +1,6 @@
 import DSHActivity
 import DSHCore
+import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
 import Foundation
@@ -83,8 +84,7 @@ final class FakeActivitySystem: LiveActivityClient {
 
     func launch(_ host: FakeHost, system: FakeActivitySystem, prompt: String = "Three steps.") throws -> TaskListStore {
         let connection = HostConnection(endpoint: .localBridge(), transport: host.factory)
-        let store = TaskListStore(container: try TaskCache.container(url: storeURL),
-                                  hosts: [.init(key: "fake:mac", connection: connection, name: "MacBook-Pro")], prompt: prompt)
+        let store = TaskListStore(cache: try TaskCache(url: storeURL), hosts: [.init(key: "fake:mac", connection: connection, name: "MacBook-Pro")], prompt: prompt)
         store.backoff = (.milliseconds(20), .milliseconds(100))
         store.sendWaitsFor = .seconds(10)
         store.liveActivities = LiveActivities(client: system, step: Self.step)

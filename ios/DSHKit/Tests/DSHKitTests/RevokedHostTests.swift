@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHTestSupport
 import Foundation
 import Testing
@@ -32,7 +33,7 @@ import Testing
 
     func launch(_ variant: FakeHosts.Variant) throws -> (TaskListStore, [FakeHost]) {
         let (configs, switchable) = FakeHosts.hosts(variant)
-        let store = TaskListStore(container: try TaskCache.container(url: storeURL), hosts: configs)
+        let store = TaskListStore(cache: try TaskCache(url: storeURL), hosts: configs)
         store.backoff = (.milliseconds(20), .milliseconds(40))
         return (store, switchable)
     }

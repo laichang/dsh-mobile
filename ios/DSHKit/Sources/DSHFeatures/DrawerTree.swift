@@ -1,3 +1,4 @@
+import DSHCore
 import Foundation
 
 /// What the workspace drawer (screen 02) shows for one host: host › workspace › session,

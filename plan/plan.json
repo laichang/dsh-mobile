@@ -141,10 +141,10 @@
         "S5"
       ],
       "branch": "claude/s6-f4d4050",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "d7d6129",
       "why": "Feature owners need typed snapshots and operations to preserve current app behavior. Closes #79.",
       "cuts": "Build DSHFeatures on the typed sync API. Put draft/send state and Live Activity orchestration with their consumers. Keep protocol-level transfers and durable writes in DSHCore. Preserve the domain-facing transcriber and activity-client contracts and inject the iOS implementations at composition.\nStarting files: `ios/DSHKit/Package.swift`, `ios/DSHKit/Sources/DSHCore/Sync/TaskListStore.swift`, `ios/dsh-mobile/Features/Voice/SpeechFrameworkTranscriber.swift`, `ios/dsh-mobile/Features/LiveActivity/ActivityKitClient.swift`.\nScreen references: `design/screens/01.html`, `design/screens/04.html`, `design/screens/05.html`, `design/screens/P1.html`, `design/screens/V1.html`, `design/screens/L.html`.",
       "not": "",
@@ -159,16 +159,17 @@
       "needs": [
         "S6"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s7-202e079",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "The compiler and normal test entry point must enforce the production dependency graph. Closes #80.",
       "cuts": "Replace aggregate DSHKit linkage with explicit target dependencies and middle-layer factories. Keep DSHActivity dependency-free and Debug fakes in test support. Use compiler-enforced access control for generated types, then check target declarations, imports and re-exports. Add the check to the normal test entry point and update ARCHITECTURE.md and the repo layout in AGENTS.md alongside the code.\nStarting files: `ios/DSHKit/Package.swift`, `ios/dsh-mobile.xcodeproj/project.pbxproj`, `ios/DSHKit/Sources/DSHActivity/TaskActivity.swift`, `ARCHITECTURE.md`, `AGENTS.md`.\nScreen references: `design/screens/04.html`, `design/screens/L.html`, `design/screens/V1.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S8",
@@ -451,6 +452,16 @@
       "date": "2026-11-11",
       "title": "S10 assigned",
       "body": "Branch `claude/s10-2232e55`, simulator `19D807B1-442C-4E01-A669-97588172E1B8`, DSHM_HOME `~/.dshm/home-s10-19D807B1-442C-4E01-A669-97588172E1B8`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S10)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S6 merged",
+      "body": "Merged as `d7d6129`; the plan/ rules hold on the merge commit. No open [human] items, so S6 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S7 assigned",
+      "body": "Branch `claude/s7-202e079`, simulator `CD1D5D80-B465-497B-8812-7228E793EC45`, DSHM_HOME `~/.dshm/home-s7-CD1D5D80-B465-497B-8812-7228E793EC45`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S7)\"` exports them."
     }
   ],
   "pending": [

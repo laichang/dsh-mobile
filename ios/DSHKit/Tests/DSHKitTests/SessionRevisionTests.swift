@@ -1,4 +1,5 @@
 @testable import DSHCore
+@testable import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
 import Foundation

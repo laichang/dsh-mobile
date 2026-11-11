@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
 import Foundation
@@ -42,7 +43,7 @@ import Testing
         let fake = FakeHost(script: script, hostName: "Photo Mac",
                             extraCapabilities: attachments ? [DSHProtocolInfo.attachmentsCapability] : [])
         let key = "fake:photo"
-        let store = TaskListStore(container: try TaskCache.container(inMemory: true), hosts: [
+        let store = TaskListStore(cache: try TaskCache(inMemory: true), hosts: [
             .init(key: key, connection: HostConnection(endpoint: .localBridge(port: 47801), transport: fake.factory), name: "Photo Mac"),
         ], prompt: "")
         store.sendWaitsFor = .seconds(2)
@@ -69,10 +70,10 @@ import Testing
         defer { store.background() }
         #expect(store.canAttach)
         let photo = try photo()
-        store.attach(photo)
-        store.prompt = "What is in this photo?"
-        let taskKey = try #require(await store.send(), "\(store.sendError ?? "")")
-        #expect(store.composerAttachments.isEmpty, "the photo is for this one task")
+        store.composer.attach(photo)
+        store.composer.prompt = "What is in this photo?"
+        let taskKey = try #require(await store.send(), "\(store.composer.sendError ?? "")")
+        #expect(store.composer.newTaskAttachments.isEmpty, "the photo is for this one task")
         #expect(fake.prompts == ["What is in this photo?"])
         let files = try #require(fake.attachments.first)
         #expect(files.count == 1)
@@ -89,11 +90,11 @@ import Testing
         let (store, fake, _) = try await launch(attachments: false)
         defer { store.background() }
         #expect(!store.canAttach)
-        store.attach(try photo())
-        store.prompt = "What is in this photo?"
+        store.composer.attach(try photo())
+        store.composer.prompt = "What is in this photo?"
         #expect(await store.send() == nil)
-        #expect(store.sendError?.contains("upload/unavailable") == true, "\(store.sendError ?? "")")
-        #expect(store.composerAttachments.count == 1)
+        #expect(store.composer.sendError?.contains("upload/unavailable") == true, "\(store.composer.sendError ?? "")")
+        #expect(store.composer.newTaskAttachments.count == 1)
         #expect(fake.prompts.isEmpty)
     }
 
@@ -152,13 +153,13 @@ import Testing
         let (store, fake, _) = try await launch()
         defer { store.background() }
         let photo = try photo()
-        for file in [photo, Self.notes, Self.unknown, Self.report] { #expect(store.attach(file)) }
-        store.removeAttachment(Self.unknown.id)
-        #expect(store.composerAttachments.map(\.attachment.name) == ["photo.jpg", "notes.txt", "report.pdf"])
-        #expect(store.composerAttachments.map(\.attachment.kind) == [.image, .file, .file])
-        store.prompt = "Read these."
-        let taskKey = try #require(await store.send(), "\(store.sendError ?? "")")
-        #expect(store.composerAttachments.isEmpty)
+        for file in [photo, Self.notes, Self.unknown, Self.report] { #expect(store.composer.attach(file)) }
+        store.composer.removeAttachment(Self.unknown.id)
+        #expect(store.composer.newTaskAttachments.map(\.attachment.name) == ["photo.jpg", "notes.txt", "report.pdf"])
+        #expect(store.composer.newTaskAttachments.map(\.attachment.kind) == [.image, .file, .file])
+        store.composer.prompt = "Read these."
+        let taskKey = try #require(await store.send(), "\(store.composer.sendError ?? "")")
+        #expect(store.composer.newTaskAttachments.isEmpty)
         let files = try #require(fake.attachments.first)
         #expect(files.map(\.name) == ["photo.jpg", "notes.txt", "report.pdf"])
         #expect(files.map(\.mediaType) == ["image/jpeg", "text/plain", "application/pdf"])
@@ -171,9 +172,9 @@ import Testing
         #expect(sent.map { $0.thumbnail != nil } == [true, false, false])
 
         // An unknown type goes too, as a file.
-        #expect(store.attach(Self.unknown))
-        store.prompt = "And this?"
-        #expect(await store.send() != nil, "\(store.sendError ?? "")")
+        #expect(store.composer.attach(Self.unknown))
+        store.composer.prompt = "And this?"
+        #expect(await store.send() != nil, "\(store.composer.sendError ?? "")")
         #expect(fake.attachments.last?.map(\.name) == ["data.xyz"])
     }
 
@@ -183,9 +184,9 @@ import Testing
         let (store, fake, _) = try await launch()
         defer { store.background() }
         let big = FileAttachment(data: Data(count: Attachments.maxBytes + 1), mediaType: "application/pdf", name: "big.pdf")
-        #expect(store.attach(big))
-        #expect(store.composerAttachments.first?.status == .tooLarge)
-        store.prompt = "Read this."
+        #expect(store.composer.attach(big))
+        #expect(store.composer.newTaskAttachments.first?.status == .tooLarge)
+        store.composer.prompt = "Read this."
         #expect(!store.canSend)
         #expect(await store.send() == nil)
         let connection = HostConnection(endpoint: .localBridge(port: 47801), transport: fake.factory)
@@ -194,13 +195,13 @@ import Testing
         await connection.disconnect()
         #expect(fake.uploadBegins == 0, "refused before the upload")
         #expect(fake.prompts.isEmpty)
-        store.removeAttachment(big.id)
+        store.composer.removeAttachment(big.id)
         #expect(store.canSend)
 
         for i in 0..<Attachments.maxCount {
-            #expect(store.attach(FileAttachment(data: Data([UInt8(i)]), mediaType: "text/plain", name: "\(i).txt")))
+            #expect(store.composer.attach(FileAttachment(data: Data([UInt8(i)]), mediaType: "text/plain", name: "\(i).txt")))
         }
-        #expect(!store.attach(Self.notes), "at most \(Attachments.maxCount) files in one message")
+        #expect(!store.composer.attach(Self.notes), "at most \(Attachments.maxCount) files in one message")
     }
 
     /// A follow-up in a completed session carries files: they reach the same task on the host, the
@@ -208,18 +209,18 @@ import Testing
     @Test func aFollowUpCarriesFilesIntoTheSameTask() async throws {
         let (store, fake, _) = try await launch(followUps: true)
         defer { store.background() }
-        store.prompt = "Hello."
+        store.composer.prompt = "Hello."
         let taskKey = try #require(await store.send())
         try await waitUntil("first turn done") { store.task(taskKey)?.state == .completed }
         let done = try #require(store.task(taskKey))
         #expect(store.canAttach(to: done))
         let target = AttachTarget.followUp(taskKey: taskKey)
         let photo = try photo()
-        #expect(store.attach(Self.notes, to: target))
-        #expect(store.attach(photo, to: target))
-        #expect(store.composerAttachments.isEmpty, "the page's files are not on composer 01")
+        #expect(store.composer.attach(Self.notes, to: target))
+        #expect(store.composer.attach(photo, to: target))
+        #expect(store.composer.newTaskAttachments.isEmpty, "the page's files are not on composer 01")
         try await store.sendFollowUp("And these?", for: done)
-        #expect(store.attachments(on: target).isEmpty)
+        #expect(store.composer.attachments(on: target).isEmpty)
         #expect(fake.followUps == ["And these?"])
         #expect(fake.followUpAttachments.first?.map(\.name) == ["notes.txt", "photo.jpg"])
         #expect(fake.followUpAttachments.first?.map(\.data) == [Self.notes.data, photo.data])

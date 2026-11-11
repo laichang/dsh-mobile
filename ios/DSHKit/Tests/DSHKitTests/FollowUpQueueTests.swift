@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
 import Foundation
@@ -148,7 +149,7 @@ import Testing
         await waitForStore("stopped") { store.task(key)?.state == .interrupted }
         #expect(store.task(key)?.blocks.followUpCount == 0)
         #expect(store.task(key)?.queue.isEmpty == true)
-        #expect(store.takeReturnedDrafts(for: key) == ["Stop here."])
+        #expect(store.composer.takeReturnedDrafts(for: key) == ["Stop here."])
     }
 
     @Test func theQueueAndItsOrderStayTheSameAfterAReconnect() async throws {
@@ -191,8 +192,8 @@ import Testing
         try await store.interrupt(try #require(store.task(key)))
         await waitForStore("stopped") { store.task(key)?.state == .interrupted }
         #expect(store.task(key)?.queue.isEmpty == true)
-        #expect(store.takeReturnedDrafts(for: key) == ["Waiting."])
-        #expect(store.takeReturnedDrafts(for: key).isEmpty, "taken once")
+        #expect(store.composer.takeReturnedDrafts(for: key) == ["Waiting."])
+        #expect(store.composer.takeReturnedDrafts(for: key).isEmpty, "taken once")
 
         let stopped = try #require(store.task(key))
         #expect(store.canFollowUp(stopped))

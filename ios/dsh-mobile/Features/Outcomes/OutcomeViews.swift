@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 import UIKit
 
@@ -237,8 +238,8 @@ private struct OutcomeCard: View {
     /// 01 with the original prompt, on the same host and workspace; the user can edit it first.
     private func retry() {
         store.chooseHost(row.hostKey)
-        if let workspace = row.workspace { store.chooseWorkspace(workspace, hostKey: row.hostKey) }
-        store.prompt = prompt
+        if let workspace = row.workspace { store.composer.chooseWorkspace(workspace, hostKey: row.hostKey) }
+        store.composer.prompt = prompt
         shell.open(.newSession)
     }
 }

@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// The details of one collapsed row, in a bottom sheet (design/screens.json: details open as sheets).

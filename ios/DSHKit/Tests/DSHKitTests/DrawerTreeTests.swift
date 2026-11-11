@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
 import Foundation
@@ -18,7 +19,7 @@ import Testing
     }
 
     func store(_ hosts: [TaskListStore.HostConfig]) throws -> TaskListStore {
-        let store = TaskListStore(container: try TaskCache.container(url: storeURL), hosts: hosts)
+        let store = TaskListStore(cache: try TaskCache(url: storeURL), hosts: hosts)
         store.backoff = (.milliseconds(20), .milliseconds(100))
         return store
     }

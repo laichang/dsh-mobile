@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import DSHTestSupport
 import Foundation
 import Testing
@@ -18,8 +19,7 @@ import Testing
 
     func launch(_ host: FakeHost) throws -> TaskListStore {
         let connection = HostConnection(endpoint: .localBridge(), transport: host.factory)
-        let store = TaskListStore(container: try TaskCache.container(url: storeURL),
-                                  hosts: [.init(key: "fake:home", connection: connection)])
+        let store = TaskListStore(cache: try TaskCache(url: storeURL), hosts: [.init(key: "fake:home", connection: connection)])
         store.backoff = (.milliseconds(20), .milliseconds(100))
         return store
     }

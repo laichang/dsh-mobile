@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// Drawer motion (design/screens.json nav and rules, screens F1–F4). A tap on a session in the drawer
