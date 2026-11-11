@@ -586,7 +586,7 @@ public actor HostConnection {
     }
 
     /// Read backwards at one DSH event cut so a concurrent Web turn cannot shift page boundaries.
-    public func readSession(_ id: String) async throws -> Dshm_V1_SessionPage {
+    public func readSession(_ id: String) async throws -> SessionHistory {
         var requestPage = Dshm_V1_ReadSession()
         requestPage.taskID = id
         var pages: [[Dshm_V1_SessionMessage]] = []
@@ -594,6 +594,9 @@ public actor HostConnection {
             try Task.checkCancellation()
             let response = try await request(.readSession(requestPage))
             guard case .sessionPage(let page) = response.body else { throw HostConnectionError.unexpectedResponse }
+            guard !requestPage.hasThroughSeq || page.throughSeq == requestPage.throughSeq else {
+                throw HostConnectionError.unexpectedResponse
+            }
             pages.append(page.messages)
             requestPage.throughSeq = page.throughSeq
             guard page.hasNextBeforeSeq else { break }
@@ -605,7 +608,7 @@ public actor HostConnection {
         var result = Dshm_V1_SessionPage()
         result.throughSeq = requestPage.throughSeq
         result.messages = pages.reversed().flatMap { $0 }
-        return result
+        return try SessionHistory(result, cacheData: result.serializedData())
     }
 
     /// Every task the host knows, newest first.

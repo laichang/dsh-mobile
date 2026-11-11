@@ -42,6 +42,13 @@ final class SessionVisibilityUITests: XCTestCase {
         }, evaluatedWith: app)
         wait(for: [completed], timeout: 90)
         XCTAssertEqual(labels(), second, "The phone must not receive the two Web turns while disconnected.")
+        app.terminate()
+        app.launchArguments = ["-DSHMBridgePort", port]
+        app.launch()
+        openAllTasks(app)
+        XCTAssertTrue(row.waitForExistence(timeout: 15))
+        row.tap()
+        verify(second)
         try signal("reconnect")
         verify(second + ["离线第三条", reply, "离线第四条", reply])
         saveShot("session-visibility-reconnected")

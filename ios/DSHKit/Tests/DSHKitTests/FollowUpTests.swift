@@ -1,4 +1,4 @@
-import DSHCore
+@testable import DSHCore
 import DSHProtocol
 import DSHTestSupport
 import Foundation
@@ -67,7 +67,7 @@ import Testing
         // A finished conversation keeps its streamed transcript, where the message sits.
         var journal = Dshm_V1_SessionMessage()
         journal.text = "First answer.\n\nSecond answer."
-        #expect(row.singleTurnTranscript([journal]) == row.transcript)
+        #expect(row.singleTurnTranscript([SessionMessage(journal)]) == row.transcript)
     }
 
     @Test func aReconnectReplaysTheSameTranscript() async throws {

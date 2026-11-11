@@ -10,11 +10,11 @@ import Testing
             externalSession: false, approvalOnly: false, approvals: [], milestones: MilestoneTimeline())
         var answer = Dshm_V1_SessionMessage()
         answer.text = "first half and second half"
-        #expect(row.singleTurnTranscript([answer]) == answer.text)
+        #expect(row.singleTurnTranscript([SessionMessage(answer)]) == answer.text)
         row.transcript = "second half"
-        #expect(row.singleTurnTranscript([answer]) == answer.text)
+        #expect(row.singleTurnTranscript([SessionMessage(answer)]) == answer.text)
         row.state = .running
-        #expect(row.singleTurnTranscript([answer]) == "second half")
+        #expect(row.singleTurnTranscript([SessionMessage(answer)]) == "second half")
     }
 
     @Test func laterTurnCanRunAtTheSameTimestampAndStaleReplayCannotFinishIt() throws {
