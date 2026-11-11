@@ -1,5 +1,9 @@
 {
   "about": "The screens of dsh-mobile as data. A screen is design/screens/<id>.html (the phone and its caption; it loads design/kit/) and its render <id>.png (scripts/render-design). A component is a shared part of design/kit/kit.js. needs: the nodes it builds on (no cycles); nav: where a user action goes; story: the STORY.md sections it serves; rules: each with the XCUITest that checks it; built: false while the code does not have it. scripts/check-design checks it.",
+  "surfaces": [
+    { "title": "Share sheet extension", "built": false },
+    { "title": "iPad layout", "built": false }
+  ],
   "nodes": [
     {
       "id": "status-bar",
@@ -678,7 +682,7 @@
       ],
       "rules": [
         {
-          "text": "A running task has a Live Activity on the lock screen",
+          "text": "A running task has a local Live Activity on the lock screen",
           "test": "testRunningTaskShowsItsLiveActivityOnTheLockScreen"
         }
       ]

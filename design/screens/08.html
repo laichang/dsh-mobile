@@ -20,8 +20,8 @@
     </div>
     <div style="margin-top:22px;font-size:13px;color:var(--t3);font-weight:500">需要：一台运行 DSH、启用了 dsh-mobile bridge 的电脑</div>
     <div class="list" style="margin-top:4px">
-      <div class="li"><span style="font:600 13px var(--mono);color:var(--t3);width:16px">1</span><div style="font-size:14.5px;line-height:1.45">DSH 启动时，终端里会打印配对二维码和链接</div></div>
-      <div class="li"><span style="font:600 13px var(--mono);color:var(--t3);width:16px">2</span><div style="font-size:14.5px;line-height:1.45">手机和电脑在同一 Wi-Fi，或用 Tailscale 这类私有网络</div></div>
+      <div class="li"><span style="font:600 13px var(--mono);color:var(--t3);width:16px">1</span><div style="font-size:14.5px;line-height:1.45">在电脑的 dsh-mobile 目录运行<br><code>node bridge/lib/scripts/pair.js</code><br>获取新的配对二维码和链接。</div></div>
+      <div class="li"><span style="font:600 13px var(--mono);color:var(--t3);width:16px">2</span><div style="font-size:14.5px;line-height:1.45">手机和电脑连同一 Wi-Fi，或两端都打开 Tailscale。</div></div>
     </div>
     <div style="margin-top:auto;margin-bottom:42px">
       <div class="btn tall primary"><svg class="i"><use href="#qr"/></svg>扫描配对二维码</div>
@@ -33,7 +33,7 @@
 </div>
 <div class="cap"><h3><i>08</i>首次启动<span class="mtag m1">M1 · 换样式</span></h3><ul>
   <li>文案和流程：讲清是什么、缺什么；扫码，没有相机就粘贴链接。</li>
-  <li>配对码来自电脑终端（不是 DSH 界面里的入口）；说明网络要求。</li>
+  <li>电脑使用运行中 bridge 的状态目录生成配对码，默认 10 分钟有效，仅可使用一次。找不到启动时的码或码已过期，就再运行一次命令。手机扫码或粘贴链接后，核对电脑并点「配对」。</li>
   <li>配对成功后进入 01，输入框里已经填好一条可编辑的第一个任务，用户改完自己发送。</li>
 </ul></div>
 </div>
