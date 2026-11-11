@@ -13,6 +13,7 @@ public final class CachedHost {
     public var logID: String
     /// Last applied `Event.host_seq` of `logID`. Stored as Int64; host seqs stay far below 2^63.
     public var lastSeq: Int64
+    var needsReconciliation = false
     public var lastConnectedAt: Date?
 
     public init(key: String, name: String) {

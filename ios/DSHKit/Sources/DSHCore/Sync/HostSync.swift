@@ -134,10 +134,11 @@ final class HostSync {
                 let resumed = try await connection.resume(logID: host.logID, afterSeq: UInt64(host.lastSeq))
                 try Task.checkCancellation()
                 if !resumed.hostName.isEmpty { host.name = resumed.hostName }
-                if resumed.reset {
+                if resumed.reset || host.needsReconciliation {
                     let tasks = try await connection.listTasks()
                     try Task.checkCancellation()
                     reconcile(tasks)
+                    host.needsReconciliation = false
                 }
                 host.lastConnectedAt = Date()
                 saveNow()
@@ -176,6 +177,7 @@ final class HostSync {
     private func apply(_ event: HostEvent) {
         if case .logReset(let logID) = event.event {
             host.logID = logID
+            host.needsReconciliation = true
             host.lastSeq = 0
             scheduleSave()
             return

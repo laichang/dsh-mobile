@@ -106,4 +106,34 @@ struct DurableHostSyncTests {
         #expect(row.blocks.items.compactMap(\.attachments).flatMap { $0 }.map(\.size) == [12])
         #expect(offline.task(other)?.transcript == "other host")
     }
+
+    @Test func restartFinishesListingAfterPersistingALogReset() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("cache.store")
+        let original = FakeHost()
+        let replacement = FakeHost()
+        let store = TaskListStore(container: try TaskCache.container(url: url), hosts: [config("a", original)])
+        store.foreground()
+        await waitForStore("online") { store.hosts.first?.reachability == .online }
+        original.emit(chunk(1, "unfinished"), taskID: "shared")
+        let key = CachedTask.key(hostKey: "a", taskID: "shared")
+        await waitForStore("old host task") { store.task(key)?.transcript == "unfinished" }
+
+        // Persist the reset in the interval before ListTasks returns.
+        var reset = Dshm_V1_Event()
+        reset.logReset.logID = replacement.logID
+        original.emit(reset, taskID: "")
+        try await until {
+            guard let database = try? TaskCache.container(url: url) else { return false }
+            return (try? ModelContext(database).fetch(FetchDescriptor<CachedHost>()).first?.logID) == replacement.logID
+        }
+        store.background()
+        let reopened = TaskListStore(container: try TaskCache.container(url: url), hosts: [config("a", replacement)])
+        reopened.foreground()
+        defer { reopened.background() }
+        await waitForStore("resume on the already saved log ID") { reopened.hosts.first?.reachability == .online }
+        #expect(reopened.task(key)?.state == .failed)
+    }
 }
