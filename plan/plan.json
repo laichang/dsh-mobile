@@ -140,16 +140,17 @@
       "needs": [
         "S5"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s6-f4d4050",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Feature owners need typed snapshots and operations to preserve current app behavior. Closes #79.",
       "cuts": "Build DSHFeatures on the typed sync API. Put draft/send state and Live Activity orchestration with their consumers. Keep protocol-level transfers and durable writes in DSHCore. Preserve the domain-facing transcriber and activity-client contracts and inject the iOS implementations at composition.\nStarting files: `ios/DSHKit/Package.swift`, `ios/DSHKit/Sources/DSHCore/Sync/TaskListStore.swift`, `ios/dsh-mobile/Features/Voice/SpeechFrameworkTranscriber.swift`, `ios/dsh-mobile/Features/LiveActivity/ActivityKitClient.swift`.\nScreen references: `design/screens/01.html`, `design/screens/04.html`, `design/screens/05.html`, `design/screens/P1.html`, `design/screens/V1.html`, `design/screens/L.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S7",
@@ -429,6 +430,11 @@
       "date": "2026-11-11",
       "title": "S14 assigned",
       "body": "Branch `claude/s14-cb74976`, simulator `29B87285-144A-4256-B1E5-0FF0CFBF6008`, DSHM_HOME `~/.dshm/home-s14-29B87285-144A-4256-B1E5-0FF0CFBF6008`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S14)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S6 assigned",
+      "body": "Branch `claude/s6-f4d4050`, simulator `81911957-071D-4A6D-A6D5-179A775A6978`, DSHM_HOME `~/.dshm/home-s6-81911957-071D-4A6D-A6D5-179A775A6978`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S6)\"` exports them."
     }
   ],
   "pending": [
