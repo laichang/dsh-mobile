@@ -1,0 +1,19 @@
+{
+  "id": "T0",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "In a disposable checkout with a fake GitHub client, a real close commit for a completed milestone plan closes only its named issues and verifies zero open issues remotely. Exercise already-closed issues, a repeated reference, and a paginated milestone. Ordinary commits and standalone plans make no GitHub calls.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "A wrong milestone, unfinished node, unexpected open issue, failed GitHub request or nonzero final open count blocks local close with a useful diagnostic. A retry handles partially completed remote updates. Run the hook regression alongside the simulator close test.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

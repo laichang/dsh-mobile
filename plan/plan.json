@@ -1,0 +1,30 @@
+{
+  "title": "Sync completed GitHub issues when closing a milestone plan",
+  "nodes": [
+    {
+      "id": "T0",
+      "kind": "tracer",
+      "title": "Tracer bullet: Close completed issues and verify the GitHub milestone on the plan-close path",
+      "needs": [],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Pre-M3 finished with eight completed issues still open on GitHub.",
+      "cuts": "Record the GitHub repository and milestone number for milestone-backed plans at creation. On the existing main plan-close commit path, read the committed plan before deletion and use its explicit Closes #N references. Preflight node completion, issue membership and any unrelated open issues before mutation. Support existing milestone plans with Closes references by resolving unambiguous metadata; fail visibly on ambiguity. Close completed in-scope issues as completed, then re-read the full milestone and require zero open issues. Leave the milestone state unchanged. Ordinary commits and standalone plans must work offline. Keep simulator cleanup and the user-owned plan close intact.",
+      "not": "",
+      "demo": null,
+      "log": []
+    }
+  ],
+  "exit": [],
+  "log": [
+    {
+      "date": "2026-11-11",
+      "title": "Plan started",
+      "body": "Sync completed GitHub issues when closing a milestone plan"
+    }
+  ],
+  "pending": []
+}
