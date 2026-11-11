@@ -1,0 +1,19 @@
+{
+  "id": "T0",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "A real close commit in a disposable clone, with the normal human-close override and a fake simctl, removes unused registered and legacy project devices, preserves defaults and active devices, and verifies the resulting inventory. An ordinary commit leaves the devices untouched.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "A failed listing, failed deletion or surviving unused simulator blocks closing. A retry succeeds after recovery without harming other devices. Run the regression through the actual hook.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}
