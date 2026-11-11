@@ -89,7 +89,7 @@ Interrupt, model switch and follow-up messages take the same outbound path as an
 | **A companion plugin (the bridge)** fills each upstream gap | Fits DSH's plugin model; the user installs it into the DSH they already run (we never install or host DSH). Upstream changes only where a plugin cannot reach |
 | **The app talks only to the bridge facade** | Upstream breaks often and app builds update slowly; the bridge absorbs the breakage |
 | **Protobuf** in `protocol/` (swift-protobuf, protobuf-es) | Typed messages in an encrypted envelope; `oneof` for events; additive evolution |
-| **App-layer E2E encryption (Noise)**, the host key delivered by QR | Every transport is untrusted (plain LAN, Tailscale). Details in §4.2 |
+| **TLS 1.3 with a QR-pinned host key** | Every transport is untrusted (plain LAN, Tailscale). Details in §4.2 |
 | **Direct reachability only**: same LAN, or Tailscale on both ends. No relay, no public tunnel | Only the user's devices reach the bridge; a relay is a server to run |
 | **No APNs push** | Needs a paid Apple account and a key on each host. The app updates while it runs; a local Live Activity covers the lock screen (§5.7) |
 | **SwiftData cache**; the host is the source of truth | Offline viewing; nothing lost across disconnects |
@@ -115,19 +115,14 @@ A Cordis plugin in the user's DSH profile (install: `bridge/README.md`). It is t
 
 ### 4.1 Listener
 
-- Its own WebSocket port, default `0.0.0.0:47801` (DSH's web server binds loopback only). Noise on every path, so a plain LAN bind is safe.
-- A plaintext channel exists only with `devPlaintext: true`, only on `/plaintext`, and only on a loopback listener. `scripts/dsh-up.mjs` (the dev host) turns it on and binds loopback.
+- Its own WebSocket port, default `0.0.0.0:47801` (DSH's web server binds loopback only). Every network connection requires TLS 1.3.
 - When the listener cannot open (port in use, no permission, address not available), the bridge writes one line with the address, the cause and the fix to stderr (tagged `[dsh-mobile-bridge]`) and to DSH's logger (`bridge/src/listen-error.ts`). `dsh web` has no console exporter for plugin loggers, so stderr is the line the user sees. DSH keeps running; the bridge does not try again until DSH restarts, and never moves to another port by itself (the phone saved the port at pairing).
 
 ### 4.2 Pairing and the encrypted wire
 
-- **Noise**: pairing `Noise_IKpsk1_25519_ChaChaPoly_SHA256` with psk = the QR's 32-byte one-time secret; reconnect `Noise_IK_25519_ChaChaPoly_SHA256`. IK because the QR already delivers the host key; psk1 so that the host refuses a wrong secret at message 1; SHA256 because CryptoKit has no BLAKE2. Own state machine on CryptoKit (Swift) and `@noble/*` (TS): `ios/DSHKit/Sources/DSHCore/Noise/`, `bridge/src/pairing/noise.ts`.
-- **Offer** = the URL `dshm://pair?v=1&n=<host name>&a=<host:port,…>&k=<host key>&i=<offer id>&s=<secret>&x=<expiry>` (k/i/s unpadded base64url, 32/16/32 bytes; x Unix seconds). The bridge prints it as a terminal QR at startup when no device is paired, and on demand with `node bridge/lib/scripts/pair.js`. The addresses are every external IPv4 of the Mac (LAN, Tailscale). An offer is single use (burnt on the first valid message 1) and expires after 10 minutes. A URL, so it can be pasted and serves as a deep link in Debug UI test builds.
-- **Wire**: the first WebSocket message is `[1, mode, offer id if pairing] ‖ Noise message 1`; the header is bound into the prologue (`"dshm/1" ‖ header`); handshake payloads are empty. Then one WebSocket binary message = one Noise transport message = one protobuf `Frame`. Noise caps a message at 65535 bytes, so files go up in parts (§4.8).
-- **Close codes**: 4000 bad hello, 4001 pairing refused (unknown, expired, used, wrong secret), 4002 handshake failed, 4003 device unknown.
-- **State** in `$DSH_HOME/dsh-mobile-bridge/` (dir 0700, files 0600, atomic writes): host key, offers, device registry, approval journal.
-- Both implementations pass the official Noise test vectors and the golden transcripts in `protocol/fixtures/noise/`.
-- **TLS 1.3**: with `DSHM_BRIDGE_TLS=1`, the CLI obtains a single-use QR from the listener over owner-only IPC. URLSession pins P-256 SPKI, checks dates, server usage and IP/DNS SANs, and rejects redirects. Each enrolled device authenticates its WSS upgrade with a Keychain bearer. The bridge stores digests and closes all sockets of a revoked device. Certificate signing, supported hosts and enrollment: `bridge/README.md`.
+- The running host issues a single-use, ten-minute offer through owner-only local IPC. The pairing CLI displays the v2 QR with advertised addresses, the P-256 SPKI pin, offer ID, secret and expiry.
+- The phone verifies the server certificate, name and pin before sending the offer to `/enroll`. Each paired phone keeps its own bearer in a ThisDeviceOnly Keychain item. The bridge authenticates the WSS upgrade against the TLS device registry. One binary message carries one protobuf frame.
+- The TLS identity and credential digests live under `$DSH_HOME/dsh-mobile-bridge/tls/`. The existing DSH session store and approvals journal survive upgrades. Legacy pairing and revocation records contribute only to audit history. Installation and certificate renewal: `bridge/README.md`.
 
 ### 4.3 Tasks, the host log and resume
 
@@ -141,7 +136,7 @@ A Cordis plugin in the user's DSH profile (install: `bridge/README.md`). It is t
 
 - The holder registers on DSH's `approval/request` waterfall with `prepend: true`, parks each request, and sends a copy down the rest of the chain (the Web/desktop forwarder) with its own abort signal. The first answer wins (phone or browser); the other copy is withdrawn. A downstream `unavailable` means "nobody else", and the bridge keeps holding. Why: an appended answerer never sees a request (the Web forwarder holds it first); prepend alone hides the request from a user at the computer; removing the Web forwarder breaks the Web UI. Upstream says sibling order is "not a policy-priority mechanism", so a test pins this behavior. The desktop app is not verified.
 - Each request gets a host-generated UUID (a tool call ID can repeat). The holder joins the call ID and tool name with the committed assistant message to show the original arguments. A phone can deny a request without arguments; it can allow one operation when the details are there. Answers are allow once or deny; there is no "always allow".
-- The first decision is written to `approvals.jsonl` before release, with the Noise device ID for phone answers. A Web/desktop answer exposes only its outcome, so those entries name the owner and DSH client together.
+- The first decision is written to `approvals.jsonl` before release, with the authenticated device ID for phone answers. A Web/desktop answer exposes only its outcome, so those entries name the owner and DSH client together.
 - `approvalTimeoutMs` (default 24 hours) settles a request as rejected, never allowed. An interrupt cancels held requests before its acknowledgement.
 
 ### 4.5 Agent questions
@@ -168,7 +163,7 @@ A Cordis plugin in the user's DSH profile (install: `bridge/README.md`). It is t
 
 ### 4.8 Attachments
 
-- `UploadBegin { upload_id, media_type, name, size, sha256 }` → `UploadAck`; `UploadChunk { index, data }` → `UploadAck`, one part at a time, 48 KiB of data each (under the Noise limit); `UploadEnd` → `UploadStaged`. Then `CreateTask.upload_ids` or `SendMessage.upload_ids` names them. Each request waits for its response, so there is no window or flow control.
+- `UploadBegin { upload_id, media_type, name, size, sha256 }` → `UploadAck`; `UploadChunk { index, data }` → `UploadAck`, one part at a time, 48 KiB of data each; `UploadEnd` → `UploadStaged`. Then `CreateTask.upload_ids` or `SendMessage.upload_ids` names them. Each request waits for its response, so there is no window or flow control.
 - Limits: at most 5 per message, each at most 20 MiB (the bridge keeps staged files in memory). The bridge checks size and SHA-256 at the end; refusals are `upload/…` error codes.
 - Uploads belong to the connection and are used up by the request that names them.
 - JPEG, PNG, WebP and GIF go into the prompt as images (`ctx.fileUploads.uploadImageStream`); other files are staged with `uploadStream`, and the model gets the name and the path. Parts keep the user's order.
@@ -183,7 +178,7 @@ A Cordis plugin in the user's DSH profile (install: `bridge/README.md`). It is t
 
 ### 4.10 Devices, audit and the upstream guard
 
-- **Devices** (`devices.v1`): both screens use the selected online host’s `HostDeviceManagement` API. Paired Noise devices have equal rights. Revocation atomically removes the static-key fingerprint and records the action, then closes that device’s sockets.
+- **Devices** (`devices.v1`): both screens use the selected online host’s `HostDeviceManagement` API. Enrolled devices have equal rights. Revocation atomically removes the bearer digest and records the action, then closes that device’s sockets.
 - **Audit**: pairing and revoke history together with the approval journal, 50 entries per page (`ListAudit`).
 - **Upstream guard**: the bridge supports exactly the verified DSH release (`0.2.2-rc.1`), read from the running launcher's app-boot manifest. The loader range is broad, so a host with another DSH can still pair and answer Hello; then the bridge injects no DSH services, registers no holder and refuses other requests, and the phone shows the installed and supported versions. CI runs the bridge suite on the pinned runtime and, non-blocking, on DSH's default branch (`scripts/ci/bridge-upstream`).
 
@@ -198,7 +193,7 @@ Features (SwiftUI views + @Observable stores)
 Theme
    DSHTheme (base tokens) + Theme+<feature>.swift files
 DSHCore (DSHKit)
-   HostConnection, SecureChannel (Noise over WebSocket), Pairing, TaskListStore (Sync)
+   HostConnection, TLS WebSocket, Pairing, TaskListStore (Sync)
   , Milestones, Transcript, Outcome, FollowUpQueue, Questions, Attachments, Dictation, LiveActivities
 Persistence
    SwiftData: CachedHost (cursor), CachedTask (transcript, milestones, blocks, attachments, read state)
@@ -209,11 +204,10 @@ DSHProtocol
 ```
 
 - **Design as data (provisional, pending user confirmation):** `design/screens.json`: screens and shared parts (needs, nav, STORY sections, rules with XCUITests). A screen is `design/screens/<id>.html` on `design/kit/` (png: `scripts/render-design`); `scripts/check-design` checks them and the theme names. Not chosen: one board.
-- **One `HostConnection` per paired host.** Each address attempt negotiates fresh Noise keys. Each generation owns its cipher, ordered writer and receive loop. The loop correlates responses by ID, delivers events to the store and ignores incoming requests.
+- **One `HostConnection` per paired host.** Each address attempt negotiates a pinned TLS connection. Each generation owns its ordered writer and receive loop. The loop correlates responses by ID, delivers events to the store and ignores incoming requests.
 - **`HostSync`** owns one host’s connection loop and SwiftData context. It resumes from its saved cursor and backs off on disconnect. Backgrounding flushes each host and closes its socket; foregrounding waits for shutdown before reconnecting. `TaskListStore` combines typed host and task snapshots.
 - **Cache**: events at or below the cursor, and chunks at or below a task's chunk seq, are skipped, so replays are idempotent. Equal summary timestamps use the turn start to distinguish a resumed task from a stale replay. Each host saves pending events and their cursor together after 150 ms. A `LogReset` persists a pending `ListTasks` reconciliation, so a relaunch finishes marking lost running tasks failed.
-- **Keys**: the Noise path uses a static key (X25519) in the Keychain (`ThisDeviceOnly`, never synced), shared by all hosts. No Secure Enclave key: it does not do X25519.
-- **App Transport Security** allows cleartext loads (`NSAllowsArbitraryLoads`), the same in Debug and Release: the app uses `ws://` to the QR's IP addresses, and ATS refuses cleartext to non-local IPs such as Tailscale's 100.x. Safe because each frame is Noise-encrypted and the app talks to no other server. `NSAllowsLocalNetworking` does not cover 100.64/10, and exception domains cannot name IPs. `scripts/check-release-clean` fails when the Debug and Release Info.plist files differ.
+- The host certificate can renew under the same pinned key. A changed key requires a fresh enrollment. Both app configurations use the default App Transport Security policy. `scripts/check-release-clean` inspects built plists and binaries.
 
 ### 5.2 Hosts and connections
 
@@ -259,7 +253,7 @@ A drawer page with 等我处理 / 正在跑 / 已完成 across hosts, from the c
 
 ## 6. Protocol (`protocol/`)
 
-- **Envelope**: WebSocket binary message → Noise transport message → protobuf `Frame { oneof { Request, Response, Event } }`. Requests and responses are correlated by `id`.
+- **Envelope**: TLS 1.3 WebSocket binary message → protobuf `Frame { oneof { Request, Response, Event } }`. Requests and responses are correlated by `id`.
 - **Hello** first on every connection: `protocol_version` (the bridge supports N and N−1), capabilities, and from the host the DSH version, the supported range and `requires_bridge_update`.
 - **Evolution**: additive only; never reuse or renumber a field. Each feature's messages live in their own `.proto` file with its own block of 20 field numbers in `Request`, `Response` and `Event`; `frame.proto` has one line per message. An absent optional field means the older behavior.
 - **Capabilities** (the app hides what the bridge cannot serve):
@@ -299,7 +293,6 @@ A drawer page with 等我处理 / 正在跑 / 已完成 across hosts, from the c
 
 ## 8. Known limits and risks
 
-- The Noise code is hand-written and not audited.
 - The host log is in memory: a DSH restart loses the resume cursor (the app then reloads the list and marks lost running tasks failed).
 - Approval fan-out to the DSH desktop app is not verified.
 - Review dynamically constructed evidence paths manually.

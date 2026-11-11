@@ -2,13 +2,13 @@
 # A real DSH Web peer sends four turns. The Simulator keeps the same detail open across a connection loss.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-case "${1:-}" in ""|--shots) ;; *) echo "usage: $0 [--shots]" >&2; exit 2 ;; esac
+case "${1:-}" in ""|--shots|--upgrade) ;; *) echo "usage: $0 [--shots|--upgrade]" >&2; exit 2 ;; esac
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47810}" DSHM_WEB_PORT="${DSHM_WEB_PORT:-3283}"
 export DSHM_BRIDGE_HOST=127.0.0.1
 SIM="${DSHM_SIM:-dshm-session-visibility}"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then dest="platform=iOS Simulator,id=$SIM"; else dest="platform=iOS Simulator,name=$SIM"; fi
-logs=/tmp/dshm-s13-demo
+logs="${DSHM_DD:-/tmp/dshm-session-visibility-dd}/visibility-logs"
 mkdir -p "$logs"
 source scripts/demo/lib.sh
 demo_tls_home
@@ -24,6 +24,20 @@ mkdir -p "$base"
 export DSHM_HOME="$(mktemp -d "$base/run.XXXXXX")"
 export DSHM_VISIBILITY_SIGNALS="$(mktemp -d)"
 export TEST_RUNNER_DSHM_VISIBILITY_SIGNALS="$DSHM_VISIBILITY_SIGNALS" TEST_RUNNER_DSHM_SHOT_DIR="$DSHM_VISIBILITY_SIGNALS"
+if [[ "${1:-}" == --upgrade ]]; then
+  export DSHM_UPGRADE_SESSION="$DSHM_VISIBILITY_SIGNALS/saved-session"
+  node scripts/demo/session-visibility-web.mjs --seed-before-upgrade
+  [[ -s "$DSHM_UPGRADE_SESSION" && ! -e "$DSHM_HOME/dsh-mobile-bridge/tls" ]]
+  # simctl can retain a Keychain item across uninstall. Leave the keychain in place.
+  if xcrun simctl get_app_container "$SIM" chang.dsh-mobile app >/dev/null 2>&1; then
+    xcrun simctl uninstall "$SIM" chang.dsh-mobile
+  fi
+  scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$dest" \
+    -derivedDataPath "${DSHM_DD:-/tmp/dshm-session-visibility-dd}" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
+    -parallel-testing-enabled NO -only-testing:dsh-mobileUITests/UpgradePairingUITests/testLegacyKeyAndHostRequireFreshEnrollment --log "$logs/legacy-install.log"
+  grep -E "Test Case.*testLegacyKeyAndHostRequireFreshEnrollment.*passed" "$logs/legacy-install.log"
+  demo_no_skipped_ui "$logs/legacy-install.log"
+fi
 node scripts/demo/session-visibility-web.mjs > "$logs/web.log" 2>&1 &
 web_pid=$!
 cleanup() {

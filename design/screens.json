@@ -447,8 +447,12 @@
           "test": "testChineseWelcomeAndGuide"
         },
         {
-          "text": "A pasted link pairs, then 01 opens with an editable first task",
+          "text": "A fresh link pairs, then 01 opens with an editable first task",
           "test": "testPastedLinkPairsAndOpensTheFirstTask"
+        },
+        {
+          "text": "An installation with a legacy pairing requires fresh enrollment",
+          "test": "testLegacyKeyAndHostRequireFreshEnrollment"
         }
       ]
     },

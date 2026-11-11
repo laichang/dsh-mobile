@@ -1,7 +1,7 @@
 // Real Web gateway peer. The Simulator signals when the detail is open and when the app is offline.
 import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, realpathSync, readFileSync, writeFileSync } from 'node:fs'
 import { createConnection, createServer } from 'node:net'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -16,10 +16,14 @@ const port = process.env.DSHM_WEB_PORT
 const dsh = join(runtime, 'node_modules/.bin/dsh')
 const env = { ...process.env, DSH_HOME: home }
 const bridge = fileURLToPath(new URL('../../bridge', import.meta.url))
-const add = spawnSync(dsh, ['plugin', '--profile', 'web', 'add', bridge], { env, encoding: 'utf8' })
-assert.equal(add.status, 0, add.stderr || add.stdout)
+const seed = process.argv.includes('--seed-before-upgrade')
+if (!seed) {
+  const add = spawnSync(dsh, ['plugin', '--profile', 'web', 'add', bridge], { env, encoding: 'utf8' })
+  assert.equal(add.status, 0, add.stderr || add.stdout)
+}
 const documents = join(home, 'Documents')
 mkdirSync(documents, { recursive: true })
+mkdirSync(join(home, 'profiles/web'), { recursive: true })
 writeFileSync(join(home, 'profiles/web/cordis.patch.yml'),
   '- id: workspace-controller\n  config:\n    documentsDirectory: ' + JSON.stringify(documents) + '\n')
 
@@ -88,7 +92,10 @@ try {
   }
   const { workspace } = await rpc('workspace/initializeDefault', {})
   assert.ok(workspace.path.startsWith(realpathSync(documents) + '/'), workspace.path)
-  const { sessionId } = await rpc('session/create', { request: { workspaceId: workspace.workspaceId } })
+  const saved = process.env.DSHM_UPGRADE_SESSION
+  const resume = saved && !seed
+  const sessionId = resume ? readFileSync(saved, 'utf8') :
+    (await rpc('session/create', { request: { workspaceId: workspace.workspaceId } })).sessionId
   async function send(text, turn) {
     const { accepted } = await rpc('session/prompt', { request: {
       requestId: crypto.randomUUID(), sessionId, mode: 'queue', content: [{ type: 'text', text }],
@@ -102,21 +109,27 @@ try {
     }, 'Web turn ' + turn, 40_000)
     console.log('Web turn ' + turn + ' completed in ' + sessionId)
   }
-  await rpc('session/rename', { request: { sessionId, title: '网页会话' } })
-  await send('网页第一条', 1)
-  signal('first-ready')
-  await gate('detail-open')
-  await send('网页第二条', 2)
-  await gate('disconnect')
-  online = false
-  assert.ok(clients.size > 0, 'phone must be connected when we drop its socket')
-  for (const phone of clients) phone.destroy()
-  await send('离线第三条', 3)
-  await send('离线第四条', 4)
-  signal('offline-complete')
-  await gate('reconnect')
-  online = true
-  await gate('verified')
+  if (!resume) {
+    await rpc('session/rename', { request: { sessionId, title: '网页会话' } })
+    await send('网页第一条', 1)
+  }
+  if (seed) {
+    writeFileSync(saved, sessionId)
+  } else {
+    signal('first-ready')
+    await gate('detail-open')
+    await send('网页第二条', 2)
+    await gate('disconnect')
+    online = false
+    assert.ok(clients.size > 0, 'phone must be connected when we drop its socket')
+    for (const phone of clients) phone.destroy()
+    await send('离线第三条', 3)
+    await send('离线第四条', 4)
+    signal('offline-complete')
+    await gate('reconnect')
+    online = true
+    await gate('verified')
+  }
 } finally {
   relay.close()
   for (const phone of clients) phone.destroy()

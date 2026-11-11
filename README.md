@@ -11,7 +11,7 @@ Dispatch tasks, watch progress, approve risky actions, and get results back from
 [![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](ios/)
 [![TypeScript](https://img.shields.io/badge/bridge-TypeScript-3178C6?logo=typescript&logoColor=white)](bridge/)
 [![Protobuf](https://img.shields.io/badge/protocol-protobuf-4285F4)](protocol/)
-[![E2E: Noise](https://img.shields.io/badge/E2E-Noise_IK-2ea44f)](#security)
+[![E2E: TLS 1.3](https://img.shields.io/badge/E2E-TLS_1.3-2ea44f)](#security)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm_Noncommercial-blue)](#license)
 [![Status: preview](https://img.shields.io/badge/status-preview-orange)](#status)
 
@@ -59,7 +59,7 @@ The phone does exactly four things: **dispatch, watch, decide, receive.** It nev
 - 📂 **Workspace picker.** The host's default, recent workspaces, or any absolute path on that host.
 - ⏹️ **Interrupt any time.**
 - 📴 **Survives bad networks.** A per-host event log with resume cursors: kill the app, lose Wi-Fi, reopen, and you see exactly what you missed. Nothing is lost.
-- 🔐 **End-to-end encrypted.** Pair once by QR. Every frame is Noise-encrypted, on the LAN or over Tailscale alike. No relay and no server of ours: the phone talks straight to your hosts.
+- 🔐 **End-to-end encrypted.** Pair once by QR. Each connection uses TLS 1.3 with a pinned host key, on the LAN or over Tailscale alike. No relay and no server of ours: the phone talks straight to your hosts.
 - 💬 **Talk to a running task.** Follow-up messages wait for the next turn or go in now; answer the agent's questions from a card or the composer; attach photos and files; dictate on the device.
 - 🔒 **Live Activity.** Each running task ticks on the lock screen (local only, no push).
 - 🧾 **Devices and audit.** See every paired device, revoke a lost phone, and review who approved what, when, from which device.
@@ -128,7 +128,7 @@ scripts/demo/all-tasks.sh
    dsh plugin --profile web add /path/to/dsh-mobile/bridge
    ```
 
-2. **Restart DSH** (`dsh web`). The bridge listens on `0.0.0.0:47801` and prints a pairing QR while no phone is paired.
+2. **Restart DSH** (`dsh web`). The bridge listens on `0.0.0.0:47801`.
 3. **Build the app** to your iPhone. Create `ios/Config/Signing.local.xcconfig` (git ignores it) with your own team and bundle ID prefix, then open `ios/dsh-mobile.xcodeproj` and run. A free Apple developer account is enough.
 
    ```
@@ -136,9 +136,9 @@ scripts/demo/all-tasks.sh
    DSHM_BUNDLE_ID_PREFIX = com.example
    ```
 
-4. **Scan the QR** in the app. The phone tries each of the host's addresses, so the same Wi-Fi works as it is. Away from that Wi-Fi, turn on Tailscale on both the phone and the computer.
+4. **Generate a QR on the host** with `node bridge/lib/scripts/pair.js`, then scan it in the app. The phone tries each of the host's addresses, so the same Wi-Fi works as it is. Away from that Wi-Fi, turn on Tailscale on both the phone and the computer.
 
-Need a fresh QR later (single use, valid 10 minutes)?
+To update, keep the existing DSH profile and bridge state, update and restart the bridge, then install the matching app. Use a fresh QR to regain access to the host’s existing sessions:
 
 ```bash
 node bridge/lib/scripts/pair.js
@@ -148,14 +148,11 @@ Full install, configuration and state-file details: [bridge/README.md](bridge/RE
 
 ## Security
 
-- **Noise protocol, end to end.** Pairing uses `Noise_IKpsk1_25519_ChaChaPoly_SHA256`: the QR carries the host's static key and a one-time 32-byte secret. Reconnects use `Noise_IK`. Implemented on CryptoKit (Swift) and `@noble/*` (TS), and both pass the official Noise test vectors plus shared golden transcripts.
+- **Pinned TLS 1.3.** The QR identifies the host by the SHA-256 digest of its P-256 public key. The phone validates certificate dates and the address before enrollment or reconnect.
 - **Single-use, short-lived pairing codes.** A QR burns on first use and expires after 10 minutes, so a leaked screenshot is worth little.
-- **Per-device keys and revocation.** The phone's key stays in the Keychain on this device only, never synced. Revoking a device closes its sockets at once and rejects reconnects.
+- **Per-device keys and revocation.** The device bearer stays in the Keychain on this device only, never synced. Revoking a device closes its sockets at once and rejects reconnects.
 - **Fail closed.** Approvals that nobody answers are never allowed; a timeout rejects.
-- **No debug hooks in Release.** Plaintext channels, fake bridges and test launch arguments are Debug-only, and `scripts/check-release-clean` proves it.
-
-> [!WARNING]
-> The Noise implementation is hand-rolled and **has not been independently audited**. Reviews are very welcome.
+- **No debug hooks in Release.** Fake bridges and test launch arguments are Debug-only, and `scripts/check-release-clean` proves it.
 
 ## Status
 
@@ -194,8 +191,8 @@ evidence/       screenshots cited by the current plan (only while one is in prog
 | Command | What it does |
 |---|---|
 | `scripts/bootstrap` | Set up a Mac and prove the round trip works |
-| `cd ios/DSHKit && swift test` | Protocol, Noise, store and sync tests on the Mac |
-| `cd bridge && pnpm test` | Bridge tests against `FakeDSH`, golden fixtures, Noise vectors |
+| `cd ios/DSHKit && swift test` | Protocol, TLS, store and sync tests on the Mac |
+| `cd bridge && pnpm test` | Bridge tests against `FakeDSH`, golden fixtures and TLS enrollment |
 | `scripts/codegen` | Regenerate Swift + TS from `protocol/*.proto` (`--check` fails if anything changes) |
 | `scripts/demo/<feature>.sh` | Drive one feature end to end in the Simulator |
 | `node scripts/dsh-up.mjs` | Start a local DSH + bridge with the mock model |
@@ -208,7 +205,7 @@ git config core.hooksPath .githooks
 
 ## Contributing
 
-Issues and PRs are welcome, especially Noise/crypto reviews, real-device testing, and bridge support for new DSH releases.
+Issues and PRs are welcome, especially TLS reviews, real-device testing, and bridge support for new DSH releases.
 
 By submitting a contribution, you agree that the maintainer may license it under the project license and under separate commercial licenses.
 
@@ -218,7 +215,7 @@ Before writing code, read [AGENTS.md](AGENTS.md) (it applies to humans too): the
 
 - [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), the agent runtime this app steers
 - [Cordis](https://github.com/cordiverse/cordis), the plugin framework DSH and the bridge are built on
-- [Noise Protocol Framework](https://noiseprotocol.org/), [swift-protobuf](https://github.com/apple/swift-protobuf), [protobuf-es](https://github.com/bufbuild/protobuf-es), [@noble](https://paulmillr.com/noble/)
+- [swift-protobuf](https://github.com/apple/swift-protobuf), [protobuf-es](https://github.com/bufbuild/protobuf-es)
 
 ## License
 
