@@ -78,10 +78,10 @@
         "S2"
       ],
       "branch": "claude/s4-0abf811",
-      "status": "review",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "User reviews, applies, commits and merges protected acceptance hook patch on claude/s4-0abf811",
-      "merge": null,
+      "next": "—",
+      "merge": "c11a0f0",
       "why": "The M3 physical iPhone check needs reliable human acceptance and an unambiguous terminal prompt. Closes #67",
       "cuts": "Use the existing command parser in the Claude/Codex hook path and adjust the confirmation in scripts/plan. Update .claude/hooks/plan-guard, its header, scripts/refusal-test, scripts/plan-test and their duplicated terminal-test helper. The user reviews, commits and merges protected hook changes.",
       "not": "",
@@ -327,6 +327,11 @@
       "date": "2026-11-11",
       "title": "S6 merged",
       "body": "Merged as `ee3765f`; the plan/ rules hold on the merge commit. No open [human] items, so S6 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S4 merged",
+      "body": "Merged as `c11a0f0`; the plan/ rules hold on the merge commit. No open [human] items, so S4 is `done`."
     }
   ],
   "pending": [
