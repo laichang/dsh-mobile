@@ -215,16 +215,17 @@
       "needs": [
         "S9"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s10-2232e55",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Existing users must regain access to host history after updating and enrolling again. Closes #83.",
       "cuts": "Ship the TLS-only plugin, CLI and iOS app together. Remove the Swift and TypeScript Noise implementations, their runtime dependencies and the real Debug cleartext route. Replace the old arbitrary-loads assertion in `scripts/check-release-clean` with checks of the built products. Have the reviewer inspect each protected evidence change. Keep the existing bridge state root and DSH session store. Put the TLS identity and new device registry in a separate subdirectory or files under that root. Read legacy device records only to reconstruct pairing audit; merge that history with approval records and new audit entries. Update STORY.md and the associated screens with any changed user-facing pairing or recovery steps.\nStarting files: `bridge/src/server.ts`, `bridge/scripts/pair.ts`, `bridge/README.md`, `ios/DSHKit/Sources/DSHCore/Pairing/NoiseChannel.swift`, `scripts/check-release-clean`, `ARCHITECTURE.md`, `STORY.md`, `design/screens.json`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X2.html`, `design/screens/X3.html`, `design/screens/04.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S11",
@@ -445,6 +446,11 @@
       "date": "2026-11-11",
       "title": "S9 merged",
       "body": "Merged as `b9eb1c5`; the plan/ rules hold on the merge commit. No open [human] items, so S9 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S10 assigned",
+      "body": "Branch `claude/s10-2232e55`, simulator `19D807B1-442C-4E01-A669-97588172E1B8`, DSHM_HOME `~/.dshm/home-s10-19D807B1-442C-4E01-A669-97588172E1B8`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S10)\"` exports them."
     }
   ],
   "pending": [
