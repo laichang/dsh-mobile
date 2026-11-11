@@ -88,18 +88,22 @@ def check_screens(root):
         return ["design/screens.json: no nodes"]
     kit = root / "design/kit/kit.js"
     parts = set(re.findall(r'<template id=\\?"([^"\\]+)\\?"', kit.read_text())) if kit.exists() else set()
-    ids = [n.get("id") for n in nodes]
+    valid_nodes = []
+    for n in nodes:
+        if isinstance(n, dict) and isinstance(n.get("id"), str) and n["id"]:
+            valid_nodes.append(n)
+        else:
+            problems.append(f"a node has no id: {json.dumps(n, ensure_ascii=False)[:80]}")
+    nodes = valid_nodes
+    ids = [n["id"] for n in nodes]
     known = set(ids)
     for i in sorted({i for i in ids if ids.count(i) > 1}, key=str):
         problems.append(f"node {i}: the id is used more than once")
     sections = story_sections(root)
     tests = ui_tests(root)
     for n in nodes:
-        nid = n.get("id")
+        nid = n["id"]
         where = f"node {nid}"
-        if not isinstance(nid, str) or not nid:
-            problems.append(f"a node has no id: {json.dumps(n, ensure_ascii=False)[:80]}")
-            continue
         if n.get("type") not in TYPES:
             problems.append(f"{where}: type is {n.get('type')!r}, not component or screen")
         if not n.get("title"):

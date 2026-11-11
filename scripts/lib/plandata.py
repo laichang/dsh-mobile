@@ -215,11 +215,11 @@ def tree_errors(files):
             docs[path] = json.loads(text)
         except json.JSONDecodeError as e:
             errs.append(f"{path}: not JSON ({e})")
-    plan = docs.pop(PLAN_FILE, None)
-    if plan is None:
+    if PLAN_FILE not in docs:
         if PLAN_FILE not in files:
             errs.append(f"{PLAN_FILE} is missing")
         return errs
+    plan = docs.pop(PLAN_FILE)
     perr = check_against(plan, "plan", PLAN_FILE)
     errs += perr or graph_errors(plan)
     if not perr:
@@ -897,9 +897,14 @@ def ui_lines(root, sid):
         return [f"ERR\t{NO_PLAN}"]
     try:
         node = find_node(json.loads(Path(root, PLAN_FILE).read_text()), sid)
-        items = json.loads(Path(root, f"plan/{sid}.json").read_text())["items"]
+        path = f"plan/{sid}.json"
+        doc = json.loads(Path(root, path).read_text())
     except (DataError, OSError, json.JSONDecodeError, KeyError) as e:
         return [f"ERR\t{e}"]
+    errors = check_against(doc, "slice", path)
+    if errors:
+        return [f"ERR\t{errors[0]}. Next: scripts/plan lint lists all errors"]
+    items = doc["items"]
     out = [f"DEMO\t{node.get('demo') or ''}"]
     out += [f"UI\t{i}\t{' · '.join(it.get('evidence', []))}\t{it['text']}"
             for i, it in enumerate(items, 1) if it["tier"] == "ui"]
