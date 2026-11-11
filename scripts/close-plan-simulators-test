@@ -1,0 +1,74 @@
+#!/bin/bash
+# Exercise the installed pre-commit hook with a private simctl inventory.
+set -eu
+src=$(git rev-parse --show-toplevel)
+tmp=$(mktemp -d "${TMPDIR:-/tmp}/dshm-close-plan.XXXXXX")
+trap 'rm -rf "$tmp"' EXIT
+git clone -q --local "$src" "$tmp/repo"
+cd "$tmp/repo"
+git checkout -q -B main HEAD
+git config user.name test
+git config user.email test@example.com
+cp "$src/scripts/close-plan-simulators" scripts/
+cp "$src/.githooks/pre-commit" .githooks/
+git rm -rq --ignore-unmatch plan
+mkdir -p plan
+cp scripts/fixtures/fake-plan/*.json plan/
+node=$(python3 -c 'import json; print(json.load(open("plan/plan.json"))["nodes"][0]["id"])')
+branch=$(python3 -c 'import json; print(json.load(open("plan/plan.json"))["nodes"][0]["branch"])')
+export DSHM_TEST_DEVICES="$tmp/devices" DSHM_OWNERS="$tmp/owners"
+mkdir -p "$DSHM_TEST_DEVICES" "$DSHM_OWNERS" "$tmp/bin"
+export PATH="$tmp/bin:$PATH"
+# Delegate ordinary operations to the shared fake; inject faults only inside this fixture.
+export FAKE_XCRUN="$src/scripts/fixtures/simctl/xcrun" SIM_LOG="$tmp/sim.log"
+cat > "$tmp/bin/xcrun" <<'SH'
+#!/bin/sh
+echo "$*" >> "$SIM_LOG"
+case "${FAULT:-}:$2" in
+    list:list|delete:delete) exit 1 ;;
+    stuck:delete) exit 0 ;;
+    malformed:list) echo '{}'; exit 0 ;;
+    relist:list) [ "$(grep -c '^simctl list ' "$SIM_LOG")" -lt 2 ] || exit 1 ;;
+esac
+exec "$FAKE_XCRUN" "$@"
+SH
+chmod +x "$tmp/bin/xcrun"
+
+default=$(xcrun simctl create 'iPhone 17')
+active=$(xcrun simctl create 'dshm-assigned')
+held=$(xcrun simctl create 'dshm-running')
+old=$(xcrun simctl create 'dshm-legacy')
+unused=$(xcrun simctl create 'dshm-finished')
+printf '%s %s\n' "$$" "$(ps -o lstart= -p $$ | xargs | tr ' ' '_')" > "$DSHM_OWNERS/dshm-running"
+sed -i '' '/^id[[:space:]]/q' scripts/resources.tsv
+printf '%s\t%s\t0\t1\t2\t3\t4\t%s\t~/.dshm/home\t—\t2026-01-01\n' "$node" "$branch" "$active" >> scripts/resources.tsv
+printf '%s\t%s\t0\t1\t2\t3\t4\t%s\t~/.dshm/old\t—\t2025-01-01\n' "$node" "$branch-old" "$unused" >> scripts/resources.tsv
+git add -A && git commit -qm setup --allow-empty
+git config core.hooksPath .githooks
+: > "$SIM_LOG"
+git commit -q --allow-empty -m ordinary
+[ ! -s "$SIM_LOG" ]
+
+base=$(git rev-parse HEAD)
+git rm -rq plan
+sed -i '' '/^id[[:space:]]/q' scripts/resources.tsv
+git add scripts/resources.tsv
+close_commit() { CHECK_PLAN_ALLOW=1 git commit -qm 'close fixture plan'; }
+for fault in list malformed delete stuck relist; do
+    : > "$SIM_LOG"
+    if FAULT=$fault close_commit >"$tmp/out" 2>&1; then
+        echo "close succeeded with $fault" >&2; exit 1
+    fi
+    grep -q 'Next: inspect simulator' "$tmp/out"
+    [ "$(git rev-parse HEAD)" = "$base" ]
+    for keep in "$default" "$active" "$held"; do [ -f "$DSHM_TEST_DEVICES/$keep" ]; done
+    echo "ok: $fault blocks close and preserves active and default devices"
+done
+
+close_commit >"$tmp/out" 2>&1
+grep -q 'project simulator(s) remain' "$tmp/out"
+grep -q "for $branch" "$tmp/out"
+grep -q "for process $$" "$tmp/out"
+[ ! -e "$DSHM_TEST_DEVICES/$old" ] && [ ! -e "$DSHM_TEST_DEVICES/$unused" ] || exit 1
+for keep in "$default" "$active" "$held"; do [ -f "$DSHM_TEST_DEVICES/$keep" ]; done
+echo "ok: retry closes the plan and reports retained owners"

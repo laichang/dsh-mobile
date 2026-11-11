@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""Remove unused project simulators on a main commit that closes the plan."""
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+import dshm
+import plandata
+
+
+def inventory():
+    result = subprocess.run(["xcrun", "simctl", "list", "devices", "-j"], check=True,
+                            stdout=subprocess.PIPE, text=True)
+    groups = json.loads(result.stdout)["devices"]
+    if not isinstance(groups, dict):
+        raise ValueError("invalid simctl device inventory")
+    devices = {}
+    for group in groups.values():
+        if not isinstance(group, list):
+            raise ValueError("invalid simctl runtime inventory")
+        for device in group:
+            name, udid, state = device["name"], device["udid"], device["state"]
+            if not isinstance(name, str) or not dshm.SIM_UDID.fullmatch(udid) or not state:
+                raise ValueError(f"invalid simulator entry: {device!r}")
+            if name.startswith("dshm-"):
+                devices[udid] = (name, state)
+    return devices
+
+
+def owner(udid, name, assignments):
+    owners = Path(os.environ.get("DSHM_OWNERS", "/tmp/dshm-guard"))
+    for key in (udid, name):
+        if key in assignments:
+            return assignments[key]
+        if Path(key).name != key:
+            continue
+        record = owners / key
+        if record.is_file():
+            parts = record.read_text().split()
+            if len(parts) != 2 or not parts[0].isdigit():
+                raise ValueError(f"cannot identify owner in {record}")
+            pid, started = parts
+            r = subprocess.run(["ps", "-o", "lstart=", "-p", pid], capture_output=True, text=True)
+            if r.returncode not in (0, 1) or r.stderr:
+                raise ValueError(f"cannot check owner in {record}")
+            if "_".join(r.stdout.split()) == started:
+                return f"process {pid}"
+    return None
+
+
+def main():
+    if dshm.branch() != "main" or not dshm.git("diff", "--cached", "--no-renames", "--diff-filter=D",
+                                               "--name-only", "--", plandata.PLAN_FILE):
+        return
+    plan = json.loads(dshm.read_main_file(plandata.PLAN_FILE))
+    active = {(n["id"], n["branch"]) for n in plan["nodes"] if n.get("status", "todo") in dshm.ACTIVE}
+    assignments = {r["sim"]: r["branch"] for r in dshm.parse_registry(dshm.read_main_file(dshm.REGISTRY))
+                   if (r["id"], r["branch"]) in active}
+    for udid, (name, state) in inventory().items():
+        if owner(udid, name, assignments):
+            continue
+        if state != "Shutdown":
+            raise ValueError(f"{name} ({udid}) is {state} with no recorded owner")
+        subprocess.run(["xcrun", "simctl", "delete", udid], check=True)
+        print(f"plan close: removed {name} ({udid})")
+    remaining = inventory()
+    for udid, (name, _) in remaining.items():
+        held = owner(udid, name, assignments)
+        if not held:
+            raise ValueError(f"unowned {name} ({udid}) remains after cleanup")
+        print(f"plan close: kept {name} ({udid}) for {held}")
+    print(f"plan close: {len(remaining)} project simulator(s) remain")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (OSError, ValueError, TypeError, KeyError, subprocess.CalledProcessError, dshm.PlanError) as e:
+        sys.exit(f"plan close: {e}. Next: inspect simulator ownership and simctl, then retry the close commit.")
