@@ -16,7 +16,10 @@
       "text": "A wrong milestone, unfinished node, unexpected open issue, failed GitHub request or nonzero final open count blocks local close with a useful diagnostic. A retry handles partially completed remote updates. Run the hook regression alongside the simulator close test.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/close-plan-github-test"
+      ]
     }
   ]
 }
