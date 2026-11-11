@@ -1,0 +1,19 @@
+{
+  "id": "S6",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "Remove the four reported stale comments and other verified restatements in ios/ and scripts/. Preserve comments that explain rationale or external constraints. Review the diff for comment-only source changes and run scripts/check-ids.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "The same rule appears in AGENTS.md Conventions and a generated slice brief. Check the brief through scripts/brief-test and the living docs through scripts/check-docs.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

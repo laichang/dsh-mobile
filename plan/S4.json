@@ -1,0 +1,19 @@
+{
+  "id": "S4",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "Both agent hook entry points recognize acceptance by the parsed command and arguments. Ordinary read-only commands and documentation text pass. Describe the remaining enforcement limits in the hook. Run .claude/hooks/guard-test and .codex/hooks/codex-guard-test.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "For slice and exit items the prompt identifies the item number and clearly shows the exact confirmation to type. A refusal names the next step; the existing controlling-terminal requirement holds. Exercise synthetic items in scripts/refusal-test and scripts/plan-test with a shared terminal-test helper.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

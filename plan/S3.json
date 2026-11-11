@@ -1,0 +1,19 @@
+{
+  "id": "S3",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "For a rework round, scripts/brief gives the new builder the node, round and matching previous review file. The first round needs no earlier review. Exercise the brief size budget and review selection with scripts/brief-test.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "Fail one round, resume, and verify that a new builder gets the next brief with the last review and the remaining round budget. Fallback coordinator instructions also start a fresh session. Run scripts/run-plan-test and scripts/brief-test.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

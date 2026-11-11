@@ -1,0 +1,26 @@
+{
+  "id": "S2",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "The merge check sends a changed evidence helper outside its caller’s directory for review. Exercise this in a disposable fixture alongside a normal unchanged helper. Run scripts/plan-test.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "An unverified note cannot establish a trusted pass. Keep the clean merge-commit rerun authoritative. Cover ordinary verifier output and the trust boundary in scripts/plan-test.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "Resume a failed node from the committed plan in a fresh workflow run. Its previous rounds still count toward three, including across repeated restarts. A different node retains its own budget. Run scripts/run-plan-test.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

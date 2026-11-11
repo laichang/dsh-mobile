@@ -1,0 +1,152 @@
+{
+  "title": "Pre-M3 · Workflow and design cleanup",
+  "nodes": [
+    {
+      "id": "T0",
+      "kind": "tracer",
+      "title": "Tracer bullet: Allocate and release a simulator for each scheduled node",
+      "needs": [],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "M3 starts two independent iOS paths. Each node must receive a usable simulator before its first build. Closes #65",
+      "cuts": "Trace scheduler assignment through .claude/workflows/run-plan.js, scripts/slice-env, scripts/xc and scripts/plan cleanup. Reuse the registry, machine guard and ownership checks. Extend scripts/plan-test and scripts/run-plan-test.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S1",
+      "kind": "slice",
+      "title": "Align the design screens with current pairing and supported surfaces",
+      "needs": [],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "First-run instructions must work on the current host and remain useful when M3 changes the transport. Closes #64",
+      "cuts": "Update STORY.md, design/screens.json and design/screens/08.html, design/screens/L.html, design/screens/X1.html and design/screens/P1.html with their renders. Compare the current bridge CLI and bridge/README.md with the installed DSH pairing entry. Proposed for review: direct the user to obtain a fresh code on the host via the bridge CLI and scan or paste on the phone. Preserve the current LAN and two-ended Tailscale guidance. TLS enrollment belongs to M3.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S2",
+      "kind": "slice",
+      "title": "Verify merge evidence and keep the rework budget across runs",
+      "needs": [
+        "T0"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "M3 changes shared demo helpers and can span more than one workflow run. Closes #68",
+      "cuts": "Use scripts/lib/plandata.py, scripts/plan, scripts/run-plan-args and .claude/workflows/run-plan.js. Extend scripts/plan-test and scripts/run-plan-test. Coordinate the persisted round state with the next slice for fresh-session handoff.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S3",
+      "kind": "slice",
+      "title": "Hand off every rework round to a fresh build session",
+      "needs": [
+        "S2"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "A new builder can act on the previous review without inheriting the old conversation. Closes #70",
+      "cuts": "Keep the existing fresh-agent path in .claude/workflows/run-plan.js. Update scripts/brief and .agents/skills/run-plan/SKILL.md for normal and fallback coordination. Couple the handoff test to the persisted rounds from the previous slice.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S4",
+      "kind": "slice",
+      "title": "Make human acceptance checks precise",
+      "needs": [
+        "S2"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "The M3 physical iPhone check needs reliable human acceptance and an unambiguous terminal prompt. Closes #67",
+      "cuts": "Use the existing command parser in the Claude/Codex hook path and adjust the confirmation in scripts/plan. Update .claude/hooks/plan-guard, its header, scripts/refusal-test, scripts/plan-test and their duplicated terminal-test helper. The user reviews, commits and merges protected hook changes.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S5",
+      "kind": "slice",
+      "title": "Enforce test wrappers at pre-commit and in the bridge error demo",
+      "needs": [
+        "T0"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "M3 migrates real-bridge demos and needs failures to retain their exit status and short summaries. Closes #69",
+      "cuts": "Cover .githooks/pre-commit, scripts/check-wrappers, scripts/demo/bridge-errors.sh, the applicable wrapper and scripts/wrap-test. Keep the existing listener-error test selection and real-bridge UI path. The user reviews, commits and merges the protected pre-commit change.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S6",
+      "kind": "slice",
+      "title": "Remove comments that repeat code and update the contributor rules",
+      "needs": [
+        "S3"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "The next architecture change will move Swift feature code and demo helpers. Keep the source and slice brief clear before that move. Closes #66",
+      "cuts": "Start with scripts/demo/pairing.sh, scripts/demo/all-tasks.sh, scripts/demo/session-page.sh and ios/dsh-mobile/Features/Transcript/StructuredTranscriptView.swift. Inspect ios/ and scripts/ for comments that merely repeat code. Add the convention to AGENTS.md and scripts/brief after the handoff work lands.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S7",
+      "kind": "slice",
+      "title": "Remove stale process-document references from spikes",
+      "needs": [],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-11",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Readers of the archived experiments need working navigation to the current process. Closes #71",
+      "cuts": "Extend scripts/check-old-docs to cover spikes/. On the current tree the obsolete references occur in the READMEs under spikes/x1-approval/, spikes/x2-noise/, spikes/x4-midtask/ and spikes/model-failures/, and in the x1-approval and x4-midtask runner comments. Keep the existing historical-link exception.",
+      "not": "",
+      "demo": null,
+      "log": []
+    }
+  ],
+  "exit": [],
+  "log": [
+    {
+      "date": "2026-11-11",
+      "title": "Plan started",
+      "body": "Pre-M3 · Workflow and design cleanup"
+    }
+  ],
+  "pending": []
+}
