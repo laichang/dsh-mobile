@@ -114,16 +114,17 @@
       "needs": [
         "S3"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s6-b7a5515",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "The next architecture change will move Swift feature code and demo helpers. Keep the source and slice brief clear before that move. Closes #66",
       "cuts": "Start with scripts/demo/pairing.sh, scripts/demo/all-tasks.sh, scripts/demo/session-page.sh and ios/dsh-mobile/Features/Transcript/StructuredTranscriptView.swift. Inspect ios/ and scripts/ for comments that merely repeat code. Add the convention to AGENTS.md and scripts/brief after the handoff work lands.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S7",
@@ -316,6 +317,11 @@
       "date": "2026-11-11",
       "title": "S3 merged",
       "body": "Merged as `2502d13`; the plan/ rules hold on the merge commit. No open [human] items, so S3 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S6 assigned",
+      "body": "Branch `claude/s6-b7a5515`, simulator `13D75C72-5CB6-42E8-BC1D-36737D41CE06`, DSHM_HOME `~/.dshm/home-s6-13D75C72-5CB6-42E8-BC1D-36737D41CE06`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S6)\"` exports them."
     }
   ],
   "pending": [
