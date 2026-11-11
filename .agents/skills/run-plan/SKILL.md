@@ -10,6 +10,8 @@ You are the coordinator. Run the plan in `plan/` to the end without my help. Thi
 
 If `plan/plan.json` does not exist, stop and tell the user to start a requirement first (`/start-requirement <milestone>`). If `plan/` is not committed, commit it first: the user approved it when they sent this message.
 
+Before scheduling, run `scripts/plan coordinator --claim` on main. Use this chat for incoming bug reports through completion. Codex supplies `CODEX_THREAD_ID`. In Claude Code, set `CLAUDE_SESSION_ID` to the skill session ID (`${CLAUDE_SESSION_ID}`) for the claim and subsequent fix commands. Resuming in the same chat reuses the claim. If another chat owns the run, forward the report as described in AGENTS.md. Only when the user explicitly moves the run to this chat, run `scripts/plan coordinator --replace <previous-owner>` and resume.
+
 ## Run the nodes with the run-plan Workflow
 
 The nodes run through one Workflow, `.claude/workflows/run-plan.js`. Do not start a session for each slice.

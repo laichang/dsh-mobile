@@ -6,7 +6,13 @@
       "text": "Two distinct session identities sharing a checkout cannot accidentally create the same fix independently. The owner can add it. A later plan does not inherit an earlier owner. Exercise actual entry points and verify existing plan flow.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/plan-coordinator-test",
+        "cmd:scripts/plan-test",
+        "cmd:scripts/run-plan-test",
+        "cmd:scripts/check-docs"
+      ]
     }
   ]
 }
