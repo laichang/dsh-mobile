@@ -1,6 +1,5 @@
 #if DEBUG
 import CoreFoundation
-import DSHTestSupport
 import Synchronization
 
 /// Stops and starts the `FakeHosts` of `-DSHMFakeBridge hosts…` from a UI test. Debug only.

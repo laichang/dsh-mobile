@@ -38,7 +38,7 @@ import Testing
         #expect(running.milestones.completedCount == 3)
         #expect(running.milestones.todos.count == 5)
         #expect(running.milestones.activeTodo?.content == "Run the tests")
-        #expect(store.hosts.first?.capabilities.contains(DSHProtocolInfo.interruptCapability) == true)
+        #expect(store.hosts.first?.supports(.interrupt) == true)
 
         // It stays running until the stop: it ends interrupted, not completed, and its timeline
         // has no closing milestone (no fixed sleep to watch it stay running).

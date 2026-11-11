@@ -144,9 +144,24 @@ public final class CachedTask {
 }
 
 public struct TaskCache {
+    /// The cache on disk; if it can't be opened (e.g. an incompatible schema in a dev build),
+    /// start from an empty one rather than not at all. The host is the source of truth.
+    public static func onDevice() -> TaskCache {
+        if let container = try? Self() { return container }
+        let url = URL.applicationSupportDirectory.appending(path: "default.store")
+        for suffix in ["", "-shm", "-wal"] {
+            try? FileManager.default.removeItem(at: URL(filePath: url.path() + suffix))
+        }
+        if let container = try? Self() { return container }
+        return try! Self(inMemory: true)
+    }
+
+    @MainActor
+    public func erase() throws { try Self.erase(storage) }
+
     private let storage: ModelContainer
 
-    public init(_ container: ModelContainer) { storage = container }
+    package init(_ container: ModelContainer) { storage = container }
 
     public init(url: URL? = nil, inMemory: Bool = false) throws {
         storage = try Self.container(url: url, inMemory: inMemory)
@@ -157,10 +172,10 @@ public struct TaskCache {
         HostSync(config: config, container: storage)
     }
 
-    public static let models: [any PersistentModel.Type] = [CachedHost.self, CachedTask.self]
+    package static let models: [any PersistentModel.Type] = [CachedHost.self, CachedTask.self]
 
     /// The app's store on disk, or at `url` (tests), or in memory.
-    public static func container(url: URL? = nil, inMemory: Bool = false) throws -> ModelContainer {
+    package static func container(url: URL? = nil, inMemory: Bool = false) throws -> ModelContainer {
         let schema = Schema(models)
         let config = if let url {
             ModelConfiguration(schema: schema, url: url)
@@ -172,7 +187,7 @@ public struct TaskCache {
 
     /// Deletes every cached host and task (debug `-DSHMResetStore`).
     @MainActor
-    public static func erase(_ container: ModelContainer) throws {
+    package static func erase(_ container: ModelContainer) throws {
         let context = ModelContext(container)
         try context.delete(model: CachedTask.self)
         try context.delete(model: CachedHost.self)

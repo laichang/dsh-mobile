@@ -26,7 +26,7 @@ import Testing
 
     func tree(_ store: TaskListStore, _ name: String) throws -> DrawerTree {
         let host = try #require(store.hosts.first { $0.name == name })
-        return DrawerTree(rows: store.tasks, hostKey: host.key, capabilities: host.capabilities)
+        return DrawerTree(rows: store.tasks, host: host)
     }
 
     static func fixture(_ name: String) throws -> Dshm_V1_TaskSummary {
@@ -42,7 +42,7 @@ import Testing
         #expect(phone.workspace == "/work/app" && phone.hasWorkspace)
         #expect(web.workspace == "/work/app" && web.externalSession)
         // Through a host, into the cache, into one workspace of the drawer.
-        let host = FakeHost(hostName: "Mac", seed: [phone, web], extraCapabilities: [DrawerTree.capability])
+        let host = FakeHost(hostName: "Mac", seed: [phone, web], extraCapabilities: ["drawer.v1"])
         let store = try store([.init(key: "fake:mac", connection: HostConnection(
             endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory))])
         store.foreground()
@@ -100,7 +100,7 @@ import Testing
         let store = try store(FakeDrawer.hosts(.noCapability))
         store.foreground()
         try await waitUntil("six sessions") { store.tasks.count == 6 }
-        try await waitUntil("capabilities") { store.hosts.allSatisfy { !$0.capabilities.isEmpty } }
+        try await waitUntil("capabilities") { store.hosts.allSatisfy { $0.hasCapabilities } }
         let mac = try tree(store, FakeDrawer.macName)
         #expect(!mac.grouped)
         #expect(mac.workspaces.isEmpty)

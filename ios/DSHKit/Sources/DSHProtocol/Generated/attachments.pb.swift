@@ -41,8 +41,8 @@ fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobu
 }
 
 /// How a staged file entered the prompt.
-public nonisolated enum Dshm_V1_AttachmentKind: SwiftProtobuf.Enum, Swift.CaseIterable {
-  public typealias RawValue = Int
+package nonisolated enum Dshm_V1_AttachmentKind: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
   case unspecified // = 0
 
   /// An image part: the model sees the image.
@@ -52,11 +52,11 @@ public nonisolated enum Dshm_V1_AttachmentKind: SwiftProtobuf.Enum, Swift.CaseIt
   case file // = 2
   case UNRECOGNIZED(Int)
 
-  public init() {
+  package init() {
     self = .unspecified
   }
 
-  public init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .unspecified
     case 1: self = .image
@@ -65,7 +65,7 @@ public nonisolated enum Dshm_V1_AttachmentKind: SwiftProtobuf.Enum, Swift.CaseIt
     }
   }
 
-  public var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .unspecified: return 0
     case .image: return 1
@@ -75,7 +75,7 @@ public nonisolated enum Dshm_V1_AttachmentKind: SwiftProtobuf.Enum, Swift.CaseIt
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static let allCases: [Dshm_V1_AttachmentKind] = [
+  package static let allCases: [Dshm_V1_AttachmentKind] = [
     .unspecified,
     .image,
     .file,
@@ -83,107 +83,107 @@ public nonisolated enum Dshm_V1_AttachmentKind: SwiftProtobuf.Enum, Swift.CaseIt
 
 }
 
-public nonisolated struct Dshm_V1_UploadBegin: Sendable {
+package nonisolated struct Dshm_V1_UploadBegin: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Chosen by the app, unique per connection.
-  public var uploadID: String = String()
+  package var uploadID: String = String()
 
   /// Any media type, e.g. image/jpeg, text/plain, application/pdf; empty is
   /// application/octet-stream. image/jpeg, image/png, image/webp and image/gif enter as images.
-  public var mediaType: String = String()
+  package var mediaType: String = String()
 
   /// A display name for the host, e.g. "photo.jpg" or "notes.txt".
-  public var name: String = String()
+  package var name: String = String()
 
-  public var size: UInt64 = 0
+  package var size: UInt64 = 0
 
   /// SHA-256 of all the bytes, 32 bytes.
-  public var sha256: Data = Data()
+  package var sha256: Data = Data()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_UploadChunk: Sendable {
+package nonisolated struct Dshm_V1_UploadChunk: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var uploadID: String = String()
+  package var uploadID: String = String()
 
   /// 0, 1, 2, … with no gaps.
-  public var index: UInt32 = 0
+  package var index: UInt32 = 0
 
-  public var data: Data = Data()
+  package var data: Data = Data()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_UploadEnd: Sendable {
+package nonisolated struct Dshm_V1_UploadEnd: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var uploadID: String = String()
+  package var uploadID: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_UploadAck: Sendable {
+package nonisolated struct Dshm_V1_UploadAck: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var uploadID: String = String()
+  package var uploadID: String = String()
 
   /// Bytes received so far.
-  public var received: UInt64 = 0
+  package var received: UInt64 = 0
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// The file is complete and checked; CreateTask can name it until the connection closes.
-public nonisolated struct Dshm_V1_UploadStaged: Sendable {
+package nonisolated struct Dshm_V1_UploadStaged: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var uploadID: String = String()
+  package var uploadID: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// One attachment of a user message, as the transcript shows it (a chip with the name). The host
 /// keeps the bytes; the phone keeps only what it shows.
-public nonisolated struct Dshm_V1_AttachmentRef: Sendable {
+package nonisolated struct Dshm_V1_AttachmentRef: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var kind: Dshm_V1_AttachmentKind = .unspecified
+  package var kind: Dshm_V1_AttachmentKind = .unspecified
 
-  public var name: String = String()
+  package var name: String = String()
 
-  public var size: UInt64 = 0
+  package var size: UInt64 = 0
 
   /// The media type the app declared; empty when the host does not know it (a file from the journal).
-  public var mediaType: String = String()
+  package var mediaType: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -191,14 +191,14 @@ public nonisolated struct Dshm_V1_AttachmentRef: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_AttachmentKind: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0ATTACHMENT_KIND_UNSPECIFIED\0\u{1}ATTACHMENT_KIND_IMAGE\0\u{1}ATTACHMENT_KIND_FILE\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0ATTACHMENT_KIND_UNSPECIFIED\0\u{1}ATTACHMENT_KIND_IMAGE\0\u{1}ATTACHMENT_KIND_FILE\0")
 }
 
 nonisolated extension Dshm_V1_UploadBegin: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".UploadBegin"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}upload_id\0\u{3}media_type\0\u{1}name\0\u{1}size\0\u{1}sha256\0")
+  package static let protoMessageName: String = _protobuf_package + ".UploadBegin"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}upload_id\0\u{3}media_type\0\u{1}name\0\u{1}size\0\u{1}sha256\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -214,7 +214,7 @@ nonisolated extension Dshm_V1_UploadBegin: SwiftProtobuf.Message, SwiftProtobuf.
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.uploadID.isEmpty {
       try visitor.visitSingularStringField(value: self.uploadID, fieldNumber: 1)
     }
@@ -233,7 +233,7 @@ nonisolated extension Dshm_V1_UploadBegin: SwiftProtobuf.Message, SwiftProtobuf.
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_UploadBegin, rhs: Dshm_V1_UploadBegin) -> Bool {
+  package static func ==(lhs: Dshm_V1_UploadBegin, rhs: Dshm_V1_UploadBegin) -> Bool {
     if lhs.uploadID != rhs.uploadID {return false}
     if lhs.mediaType != rhs.mediaType {return false}
     if lhs.name != rhs.name {return false}
@@ -245,10 +245,10 @@ nonisolated extension Dshm_V1_UploadBegin: SwiftProtobuf.Message, SwiftProtobuf.
 }
 
 nonisolated extension Dshm_V1_UploadChunk: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".UploadChunk"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}upload_id\0\u{1}index\0\u{1}data\0")
+  package static let protoMessageName: String = _protobuf_package + ".UploadChunk"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}upload_id\0\u{1}index\0\u{1}data\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -262,7 +262,7 @@ nonisolated extension Dshm_V1_UploadChunk: SwiftProtobuf.Message, SwiftProtobuf.
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.uploadID.isEmpty {
       try visitor.visitSingularStringField(value: self.uploadID, fieldNumber: 1)
     }
@@ -275,7 +275,7 @@ nonisolated extension Dshm_V1_UploadChunk: SwiftProtobuf.Message, SwiftProtobuf.
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_UploadChunk, rhs: Dshm_V1_UploadChunk) -> Bool {
+  package static func ==(lhs: Dshm_V1_UploadChunk, rhs: Dshm_V1_UploadChunk) -> Bool {
     if lhs.uploadID != rhs.uploadID {return false}
     if lhs.index != rhs.index {return false}
     if lhs.data != rhs.data {return false}
@@ -285,10 +285,10 @@ nonisolated extension Dshm_V1_UploadChunk: SwiftProtobuf.Message, SwiftProtobuf.
 }
 
 nonisolated extension Dshm_V1_UploadEnd: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".UploadEnd"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}upload_id\0")
+  package static let protoMessageName: String = _protobuf_package + ".UploadEnd"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}upload_id\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -300,14 +300,14 @@ nonisolated extension Dshm_V1_UploadEnd: SwiftProtobuf.Message, SwiftProtobuf._M
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.uploadID.isEmpty {
       try visitor.visitSingularStringField(value: self.uploadID, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_UploadEnd, rhs: Dshm_V1_UploadEnd) -> Bool {
+  package static func ==(lhs: Dshm_V1_UploadEnd, rhs: Dshm_V1_UploadEnd) -> Bool {
     if lhs.uploadID != rhs.uploadID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -315,10 +315,10 @@ nonisolated extension Dshm_V1_UploadEnd: SwiftProtobuf.Message, SwiftProtobuf._M
 }
 
 nonisolated extension Dshm_V1_UploadAck: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".UploadAck"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}upload_id\0\u{1}received\0")
+  package static let protoMessageName: String = _protobuf_package + ".UploadAck"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}upload_id\0\u{1}received\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -331,7 +331,7 @@ nonisolated extension Dshm_V1_UploadAck: SwiftProtobuf.Message, SwiftProtobuf._M
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.uploadID.isEmpty {
       try visitor.visitSingularStringField(value: self.uploadID, fieldNumber: 1)
     }
@@ -341,7 +341,7 @@ nonisolated extension Dshm_V1_UploadAck: SwiftProtobuf.Message, SwiftProtobuf._M
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_UploadAck, rhs: Dshm_V1_UploadAck) -> Bool {
+  package static func ==(lhs: Dshm_V1_UploadAck, rhs: Dshm_V1_UploadAck) -> Bool {
     if lhs.uploadID != rhs.uploadID {return false}
     if lhs.received != rhs.received {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -350,10 +350,10 @@ nonisolated extension Dshm_V1_UploadAck: SwiftProtobuf.Message, SwiftProtobuf._M
 }
 
 nonisolated extension Dshm_V1_UploadStaged: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".UploadStaged"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}upload_id\0")
+  package static let protoMessageName: String = _protobuf_package + ".UploadStaged"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}upload_id\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -365,14 +365,14 @@ nonisolated extension Dshm_V1_UploadStaged: SwiftProtobuf.Message, SwiftProtobuf
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.uploadID.isEmpty {
       try visitor.visitSingularStringField(value: self.uploadID, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_UploadStaged, rhs: Dshm_V1_UploadStaged) -> Bool {
+  package static func ==(lhs: Dshm_V1_UploadStaged, rhs: Dshm_V1_UploadStaged) -> Bool {
     if lhs.uploadID != rhs.uploadID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -380,10 +380,10 @@ nonisolated extension Dshm_V1_UploadStaged: SwiftProtobuf.Message, SwiftProtobuf
 }
 
 nonisolated extension Dshm_V1_AttachmentRef: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".AttachmentRef"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}kind\0\u{1}name\0\u{1}size\0\u{3}media_type\0")
+  package static let protoMessageName: String = _protobuf_package + ".AttachmentRef"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}kind\0\u{1}name\0\u{1}size\0\u{3}media_type\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -398,7 +398,7 @@ nonisolated extension Dshm_V1_AttachmentRef: SwiftProtobuf.Message, SwiftProtobu
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.kind != .unspecified {
       try visitor.visitSingularEnumField(value: self.kind, fieldNumber: 1)
     }
@@ -414,7 +414,7 @@ nonisolated extension Dshm_V1_AttachmentRef: SwiftProtobuf.Message, SwiftProtobu
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_AttachmentRef, rhs: Dshm_V1_AttachmentRef) -> Bool {
+  package static func ==(lhs: Dshm_V1_AttachmentRef, rhs: Dshm_V1_AttachmentRef) -> Bool {
     if lhs.kind != rhs.kind {return false}
     if lhs.name != rhs.name {return false}
     if lhs.size != rhs.size {return false}

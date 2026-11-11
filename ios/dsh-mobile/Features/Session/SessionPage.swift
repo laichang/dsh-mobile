@@ -1,6 +1,5 @@
 import DSHCore
 import DSHFeatures
-import DSHProtocol
 import SwiftUI
 import UIKit
 
@@ -402,7 +401,7 @@ private struct SessionComposer: View {
         let host = store.hosts.first { $0.key == row?.hostKey }
         let followUp = row.map(store.canFollowUp) ?? false
         // P1: while an agent question waits, the field answers it; it is not a follow-up.
-        let question = host?.capabilities.contains(DSHProtocolInfo.questionsCapability) == true ? row?.blocks.pendingQuestion : nil
+        let question = host?.supports(.questions) == true ? row?.blocks.pendingQuestion : nil
         let typed = !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         VStack(alignment: .leading, spacing: 10) {
             if let row, !row.queue.isEmpty {
@@ -450,7 +449,7 @@ private struct SessionComposer: View {
                            read: { draft }, write: { draft = $0 })
                 }
                 if let row, !row.state.isTerminal, let host, !((followUp || question != nil) && (typed || sending)),
-                   host.reachability == .online, host.capabilities.contains(DSHProtocolInfo.interruptCapability) {
+                   host.reachability == .online, host.supports(.interrupt) {
                     Button {
                         requestingStop = true
                         Task {
@@ -611,7 +610,7 @@ struct ComposerView: View {
                     .accessibilityIdentifier("composer.hostName")
             }
             Text(verbatim: "·").foregroundStyle(DSHTheme.textTertiary).accessibilityHidden(true)
-            if let host, host.reachability == .online, host.capabilities.contains("workspaces.v1") {
+            if let host, host.reachability == .online, host.supports(.workspaces) {
                 WorkspaceControl(store: store, hostKey: key)
                     .tint(DSHTheme.textSecondary)
             } else if let host, host.reachability == .online, store.composer.workspaces[key] != nil {
@@ -635,7 +634,7 @@ struct ComposerView: View {
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.capsule)
         } else if let choice = store.composer.selections[key],
-                  store.hosts.contains(where: { $0.key == key && $0.reachability == .online && !$0.capabilities.contains("models.v1") }) {
+                  store.hosts.contains(where: { $0.key == key && $0.reachability == .online && !$0.supports(.models) }) {
             VStack(alignment: .leading) {
                 Text("This host cannot select \(choice.model).").font(.footnote)
                 Button("Use host default") { store.composer.useHostDefault(hostKey: key) }

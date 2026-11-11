@@ -1,3 +1,4 @@
+import DSHTransport
 import Foundation
 import Observation
 
@@ -24,13 +25,18 @@ public enum PairingError: Error, Equatable, CustomStringConvertible {
 public struct Pairing: Sendable {
     public let keys: any DeviceKeyStore
     public let hosts: any PairedHostStore
-    public let transport: BridgeTransportFactory
+    package let transport: BridgeTransportFactory
     /// The TCP probe after an address gave no answer (`TCPPortProbe.probe` in the app);
     /// nil in tests and with Debug's fake bridge, whose addresses are not real.
-    public let probe: PortProbe?
+    package let probe: PortProbe?
     public let now: @Sendable () -> Date
 
-    public init(keys: any DeviceKeyStore, hosts: any PairedHostStore, transport: @escaping BridgeTransportFactory,
+    public init(hosts: any PairedHostStore = FilePairedHostStore()) {
+        self.init(keys: KeychainDeviceKeyStore(), hosts: hosts, transport: WebSocketTransport.factory,
+                  probe: TCPPortProbe.probe)
+    }
+
+    package init(keys: any DeviceKeyStore, hosts: any PairedHostStore, transport: @escaping BridgeTransportFactory,
                 probe: PortProbe? = nil, now: @escaping @Sendable () -> Date = { .now }) {
         self.keys = keys
         self.hosts = hosts
@@ -69,7 +75,7 @@ public struct Pairing: Sendable {
     /// The connection to a paired host: IK over each saved address, the one that worked
     /// last first. When a different address works, it is saved first, so the next launch tries
     /// it first too.
-    public func connection(to host: PairedHost, attemptTimeout: Duration = HostConnection.defaultAttemptTimeout) throws -> HostConnection {
+    package func connection(to host: PairedHost, attemptTimeout: Duration = HostConnection.defaultAttemptTimeout) throws -> HostConnection {
         let store = hosts, id = host.id
         let saveAddresses: @Sendable ([HostEndpoint]) -> Void = { addresses in
             guard var saved = store.load().first(where: { $0.id == id }), saved.addresses != addresses else { return }

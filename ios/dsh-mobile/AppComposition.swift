@@ -1,8 +1,6 @@
 import DSHCore
 import DSHFeatures
-import DSHProtocol
 import Foundation
-import SwiftData
 import UIKit
 #if DEBUG
 import DSHTestSupport
@@ -43,7 +41,7 @@ final class AppModel {
     @ObservationIgnored private var liveActivitiesOn = true
     /// The mic key's speech to text: the Speech framework, or in Debug `-DSHMFakeSpeech`.
     let transcriber: TranscriberFactory
-    @ObservationIgnored private let container: ModelContainer
+    @ObservationIgnored private let cache: TaskCache
     @ObservationIgnored private var presetPrompt = ""
     @ObservationIgnored private var connectDelay: Duration = .zero
     /// Hosts this device lost its access to (a revoke of this device), until they are
@@ -55,13 +53,9 @@ final class AppModel {
     var revokedNotice: String?
 
     init() {
-        let keys = KeychainDeviceKeyStore()
-        let hosts = FilePairedHostStore()
-        var transport: BridgeTransportFactory = WebSocketTransport.factory
-        // After a timeout, a TCP connect tells another program on the port from no computer.
-        var probe: PortProbe? = TCPPortProbe.probe
+        var pairing = Pairing()
         var transcriber = SpeechFrameworkTranscriber.factory
-        container = Self.makeContainer()
+        cache = TaskCache.onDevice()
         #if DEBUG
         let options = DebugLaunchOptions.parse(ProcessInfo.processInfo.arguments)
         // XCUITest waits before each step until UIKit's view animations end; under load it
@@ -70,21 +64,21 @@ final class AppModel {
         // A test launch starts no Live Activities unless it asks, and ends the ones left.
         liveActivitiesOn = DebugLaunchOptions.liveActivitiesOn(ProcessInfo.processInfo.arguments)
         if options.resetPairing {
-            for host in hosts.load() { try? Pairing.removeCredential(for: host) }
-            try? hosts.removeAll()
-            try? keys.reset()
+            for host in pairing.hosts.load() { try? Pairing.removeCredential(for: host) }
+            try? pairing.hosts.removeAll()
+            try? pairing.keys.reset()
         }
         if options.resetStore {
-            try? TaskCache.erase(container)
+            try? cache.erase()
             UserDefaults.standard.removeObject(forKey: Self.preferredHostKey)
         }
-        if options.useFakeBridge { transport = FakeBridge.factory(); probe = nil }
+        if options.useFakeBridge { pairing = DebugHostFactory.pairing() }
         presetPrompt = options.presetPrompt ?? ""
         if let seconds = options.connectDelay { connectDelay = .milliseconds(Int(seconds * 1000)) }
         if let speech = options.fakeSpeech { transcriber = FakeTranscriber.factory(speech) }
         #endif
         self.transcriber = transcriber
-        pairing = Pairing(keys: keys, hosts: hosts, transport: transport, probe: probe)
+        self.pairing = pairing
         if !liveActivitiesOn { activityClient.dismissAll() }
         store = makeStore()
     }
@@ -92,7 +86,7 @@ final class AppModel {
     private func makeStore() -> TaskListStore? {
         let hosts = hostConfigs().filter { !forgottenHostKeys.contains($0.key) }
         guard !hosts.isEmpty else { return nil }
-        let store = TaskListStore(cache: TaskCache(container), hosts: hosts, prompt: presetPrompt, firstConnectDelay: connectDelay,
+        let store = TaskListStore(cache: cache, hosts: hosts, prompt: presetPrompt, firstConnectDelay: connectDelay,
                                   preferredHostKey: UserDefaults.standard.string(forKey: Self.preferredHostKey)) { key in
             UserDefaults.standard.set(key, forKey: Self.preferredHostKey)
         }
@@ -115,56 +109,16 @@ final class AppModel {
     }
 
     private func pairedConfig(_ host: PairedHost) -> TaskListStore.HostConfig? {
-        // Every saved address, the one that worked last first; a new working one is saved first.
-        guard let endpoint = host.addresses.first, let connection = try? pairing.connection(to: host) else { return nil }
-        return .init(key: host.cacheKey, connection: connection, name: host.name.isEmpty ? endpoint.description : host.name)
+        .init(paired: host, using: pairing)
     }
 
     private func hostConfigs() -> [TaskListStore.HostConfig] {
         #if DEBUG
-        let environment = ProcessInfo.processInfo.environment
-        if let encoded = environment["DSHM_TLS_TEST_PIN"], let pin = Data(base64Encoded: encoded),
-           let addresses = environment["DSHM_TLS_TEST_ADDRESSES"] {
-            let endpoints = addresses.split(separator: ",").compactMap { HostEndpoint(address: String($0)) }
-            if !endpoints.isEmpty {
-                hasSavedHosts = true
-                return [.init(key: "tls:\(encoded)", connection: .init(endpoints: endpoints, spkiSHA256: pin), name: "TLS host")]
-            }
-        }
         let options = DebugLaunchOptions.parse(ProcessInfo.processInfo.arguments)
-        if let drawer = options.fakeDrawer.flatMap(FakeDrawer.Variant.init(rawValue:)) { return FakeDrawer.hosts(drawer) }
-        if options.fakePickers { return FakePickers.hosts(hold: options.fakeHold) }
-        if let variant = options.fakeHosts.flatMap(FakeHosts.Variant.init(rawValue:)) { return fakeHosts(variant) }
-        if options.multipleFakeHosts {
-            return ["Office Mac", "Home Mac"].enumerated().map { index, name in
-                let endpoint = HostEndpoint.localBridge(port: 47801 + index)
-                var script = FakeBridge.Script(reply: ["Reply ", "from ", name], chunkDelay: .seconds(1))
-                script.holdPrompt = options.fakeHold
-                script.ask = options.fakeAsk.map { ($0, FakeApprovalSheet.asked) }
-                let fake = FakeHost(script: script,
-                                    hostName: name, reachable: index != 0 || !options.fakeBridgeOffline,
-                                    extraCapabilities: options.fakeScenario == "attachments" ? [DSHProtocolInfo.attachmentsCapability] : [],
-                                    approvals: options.fakeApprovals ? FakeApprovals.seed(for: name) : [])
-                if options.fakeApprovals { FakeApprovalSheet.watchWebAnswers(fake) }
-                return .init(key: "fake:\(name)", connection: HostConnection(endpoint: endpoint,
-                             channel: PlaintextChannel(), transport: fake.factory), name: name)
-            }
-        }
-        if options.useFakeBridge {
-            let endpoint = HostEndpoint.localBridge()
-            var script: FakeBridge.Script = options.fakeMilestones ? .threeTodos() : .init()
-            if options.fakeScenario == "coding" { script = .codingTask() }
-            if options.fakeScenario == "outcomes" { script = .outcomes() }
-            if options.fakeScenario?.hasPrefix("transcript") == true { script = FakeTranscript.script() }
-            if options.fakeScenario == "live-activity" { script = .threeTodos(delay: .seconds(5)) } // Time to lock the screen
-            if options.fakeScenario == "conversation" { script.followUpReply = ["Got it", ", ", "on it", "."] }
-            script.holdPrompt = options.fakeHold ?? script.holdPrompt
-            let fake = options.fakeScenario == "turns" ? FakeTurns.host()
-                : FakeHost(script: script, reachable: !options.fakeBridgeOffline,
-                           extraCapabilities: options.fakeScenario == "transcript" ? [FakeTranscript.capability] : [])
-            if options.fakeScenario == "outcomes" { FakeApprovalSheet.watchWebAnswers(fake) }
-            return [.init(key: "fake:\(endpoint)",
-                          connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: fake.factory))]
+        if let configs = DebugHostFactory.hosts(options: options, environment: ProcessInfo.processInfo.environment,
+                                                wake: { Task { @MainActor [weak self] in self?.store?.foreground() } }) {
+            if ProcessInfo.processInfo.environment["DSHM_TLS_TEST_PIN"] != nil { hasSavedHosts = true }
+            return configs
         }
         #endif
         let paired = pairing.hosts.load()
@@ -173,9 +127,7 @@ final class AppModel {
         #if DEBUG
         // After this device lost its last paired host, show 08, not the loopback dev path.
         guard forgottenHostKeys.isEmpty, let port = options.bridgePort else { return [] }
-        let endpoint = HostEndpoint.localBridge(port: port)
-        return [.init(key: "bridge:\(endpoint)",
-                      connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: pairing.transport))]
+        return [DebugHostFactory.loopback(port: port, pairing: pairing)]
         #else
         return []
         #endif
@@ -194,14 +146,6 @@ final class AppModel {
         store = makeStore()
         store?.foreground()
     }
-
-    #if DEBUG
-    private func fakeHosts(_ variant: FakeHosts.Variant) -> [TaskListStore.HostConfig] {
-        let (configs, switchable) = FakeHosts.hosts(variant)
-        FakeHostsSwitch.watch(switchable) { Task { @MainActor [weak self] in self?.store?.foreground() } }
-        return configs
-    }
-    #endif
 
     func startPairing(_ mode: ScannerView.Mode = .scan) {
         scannerMode = mode
@@ -232,17 +176,5 @@ final class AppModel {
             }
         }
         pairingRoute = nil
-    }
-
-    /// The cache on disk; if it can't be opened (e.g. an incompatible schema in a dev build),
-    /// start from an empty one rather than not at all. The host is the source of truth.
-    private static func makeContainer() -> ModelContainer {
-        if let container = try? TaskCache.container() { return container }
-        let url = URL.applicationSupportDirectory.appending(path: "default.store")
-        for suffix in ["", "-shm", "-wal"] {
-            try? FileManager.default.removeItem(at: URL(filePath: url.path() + suffix))
-        }
-        if let container = try? TaskCache.container() { return container }
-        return try! TaskCache.container(inMemory: true)
     }
 }

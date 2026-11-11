@@ -26,8 +26,8 @@ fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobu
   typealias Version = _2
 }
 
-public nonisolated enum Dshm_V1_MilestoneKind: SwiftProtobuf.Enum, Swift.CaseIterable {
-  public typealias RawValue = Int
+package nonisolated enum Dshm_V1_MilestoneKind: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
   case unspecified // = 0
 
   /// The agent started working on the task (DSH `turn/start`).
@@ -60,11 +60,11 @@ public nonisolated enum Dshm_V1_MilestoneKind: SwiftProtobuf.Enum, Swift.CaseIte
   case interrupted // = 10
   case UNRECOGNIZED(Int)
 
-  public init() {
+  package init() {
     self = .unspecified
   }
 
-  public init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .unspecified
     case 1: self = .started
@@ -81,7 +81,7 @@ public nonisolated enum Dshm_V1_MilestoneKind: SwiftProtobuf.Enum, Swift.CaseIte
     }
   }
 
-  public var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .unspecified: return 0
     case .started: return 1
@@ -99,7 +99,7 @@ public nonisolated enum Dshm_V1_MilestoneKind: SwiftProtobuf.Enum, Swift.CaseIte
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static let allCases: [Dshm_V1_MilestoneKind] = [
+  package static let allCases: [Dshm_V1_MilestoneKind] = [
     .unspecified,
     .started,
     .planned,
@@ -115,19 +115,19 @@ public nonisolated enum Dshm_V1_MilestoneKind: SwiftProtobuf.Enum, Swift.CaseIte
 
 }
 
-public nonisolated enum Dshm_V1_TodoStatus: SwiftProtobuf.Enum, Swift.CaseIterable {
-  public typealias RawValue = Int
+package nonisolated enum Dshm_V1_TodoStatus: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
   case unspecified // = 0
   case pending // = 1
   case inProgress // = 2
   case completed // = 3
   case UNRECOGNIZED(Int)
 
-  public init() {
+  package init() {
     self = .unspecified
   }
 
-  public init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .unspecified
     case 1: self = .pending
@@ -137,7 +137,7 @@ public nonisolated enum Dshm_V1_TodoStatus: SwiftProtobuf.Enum, Swift.CaseIterab
     }
   }
 
-  public var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .unspecified: return 0
     case .pending: return 1
@@ -148,7 +148,7 @@ public nonisolated enum Dshm_V1_TodoStatus: SwiftProtobuf.Enum, Swift.CaseIterab
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static let allCases: [Dshm_V1_TodoStatus] = [
+  package static let allCases: [Dshm_V1_TodoStatus] = [
     .unspecified,
     .pending,
     .inProgress,
@@ -158,47 +158,47 @@ public nonisolated enum Dshm_V1_TodoStatus: SwiftProtobuf.Enum, Swift.CaseIterab
 }
 
 /// One item of the agent's todo list, as DSH holds it (no id; the content is the identity).
-public nonisolated struct Dshm_V1_Todo: Sendable {
+package nonisolated struct Dshm_V1_Todo: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var content: String = String()
+  package var content: String = String()
 
-  public var status: Dshm_V1_TodoStatus = .unspecified
+  package var status: Dshm_V1_TodoStatus = .unspecified
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// One step on a task's milestone timeline, in order.
-public nonisolated struct Dshm_V1_MilestoneAdded: Sendable {
+package nonisolated struct Dshm_V1_MilestoneAdded: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var taskID: String = String()
+  package var taskID: String = String()
 
   /// Starts at 1 per task and has no gaps on one connection. Independent of AssistantChunk.seq.
-  public var seq: UInt64 = 0
+  package var seq: UInt64 = 0
 
-  public var kind: Dshm_V1_MilestoneKind = .unspecified
+  package var kind: Dshm_V1_MilestoneKind = .unspecified
 
   /// DSH's own words for this milestone: the todo's content, or the failure reason (FAILED,
   /// RETRYING). Empty when DSH has none (STARTED, PLANNED, PLAN_MODE_*, FINISHED).
-  public var text: String = String()
+  package var text: String = String()
 
   /// The agent's whole todo list right after this milestone, in DSH's order. Empty while the
   /// agent keeps no list.
-  public var todos: [Dshm_V1_Todo] = []
+  package var todos: [Dshm_V1_Todo] = []
 
   /// When DSH recorded the underlying event, Unix milliseconds.
-  public var timeMs: Int64 = 0
+  package var timeMs: Int64 = 0
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -206,18 +206,18 @@ public nonisolated struct Dshm_V1_MilestoneAdded: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_MilestoneKind: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0MILESTONE_KIND_UNSPECIFIED\0\u{1}MILESTONE_KIND_STARTED\0\u{1}MILESTONE_KIND_PLANNED\0\u{1}MILESTONE_KIND_TODO_STARTED\0\u{1}MILESTONE_KIND_TODO_DONE\0\u{1}MILESTONE_KIND_PLAN_MODE_ENTERED\0\u{1}MILESTONE_KIND_PLAN_MODE_LEFT\0\u{1}MILESTONE_KIND_FAILED\0\u{1}MILESTONE_KIND_FINISHED\0\u{1}MILESTONE_KIND_RETRYING\0\u{1}MILESTONE_KIND_INTERRUPTED\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0MILESTONE_KIND_UNSPECIFIED\0\u{1}MILESTONE_KIND_STARTED\0\u{1}MILESTONE_KIND_PLANNED\0\u{1}MILESTONE_KIND_TODO_STARTED\0\u{1}MILESTONE_KIND_TODO_DONE\0\u{1}MILESTONE_KIND_PLAN_MODE_ENTERED\0\u{1}MILESTONE_KIND_PLAN_MODE_LEFT\0\u{1}MILESTONE_KIND_FAILED\0\u{1}MILESTONE_KIND_FINISHED\0\u{1}MILESTONE_KIND_RETRYING\0\u{1}MILESTONE_KIND_INTERRUPTED\0")
 }
 
 nonisolated extension Dshm_V1_TodoStatus: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TODO_STATUS_UNSPECIFIED\0\u{1}TODO_STATUS_PENDING\0\u{1}TODO_STATUS_IN_PROGRESS\0\u{1}TODO_STATUS_COMPLETED\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TODO_STATUS_UNSPECIFIED\0\u{1}TODO_STATUS_PENDING\0\u{1}TODO_STATUS_IN_PROGRESS\0\u{1}TODO_STATUS_COMPLETED\0")
 }
 
 nonisolated extension Dshm_V1_Todo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Todo"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}content\0\u{1}status\0")
+  package static let protoMessageName: String = _protobuf_package + ".Todo"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}content\0\u{1}status\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -230,7 +230,7 @@ nonisolated extension Dshm_V1_Todo: SwiftProtobuf.Message, SwiftProtobuf._Messag
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.content.isEmpty {
       try visitor.visitSingularStringField(value: self.content, fieldNumber: 1)
     }
@@ -240,7 +240,7 @@ nonisolated extension Dshm_V1_Todo: SwiftProtobuf.Message, SwiftProtobuf._Messag
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_Todo, rhs: Dshm_V1_Todo) -> Bool {
+  package static func ==(lhs: Dshm_V1_Todo, rhs: Dshm_V1_Todo) -> Bool {
     if lhs.content != rhs.content {return false}
     if lhs.status != rhs.status {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -249,10 +249,10 @@ nonisolated extension Dshm_V1_Todo: SwiftProtobuf.Message, SwiftProtobuf._Messag
 }
 
 nonisolated extension Dshm_V1_MilestoneAdded: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".MilestoneAdded"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}seq\0\u{1}kind\0\u{1}text\0\u{1}todos\0\u{3}time_ms\0")
+  package static let protoMessageName: String = _protobuf_package + ".MilestoneAdded"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}seq\0\u{1}kind\0\u{1}text\0\u{1}todos\0\u{3}time_ms\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -269,7 +269,7 @@ nonisolated extension Dshm_V1_MilestoneAdded: SwiftProtobuf.Message, SwiftProtob
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.taskID.isEmpty {
       try visitor.visitSingularStringField(value: self.taskID, fieldNumber: 1)
     }
@@ -291,7 +291,7 @@ nonisolated extension Dshm_V1_MilestoneAdded: SwiftProtobuf.Message, SwiftProtob
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_MilestoneAdded, rhs: Dshm_V1_MilestoneAdded) -> Bool {
+  package static func ==(lhs: Dshm_V1_MilestoneAdded, rhs: Dshm_V1_MilestoneAdded) -> Bool {
     if lhs.taskID != rhs.taskID {return false}
     if lhs.seq != rhs.seq {return false}
     if lhs.kind != rhs.kind {return false}

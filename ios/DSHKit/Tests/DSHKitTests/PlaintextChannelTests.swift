@@ -1,4 +1,5 @@
 #if DEBUG
+import DSHTransport
 import DSHCore
 import Foundation
 import Testing

@@ -17,7 +17,7 @@ struct DrawerHostTree: View {
     @Environment(ShellModel.self) private var shell
 
     var body: some View {
-        let tree = DrawerTree(rows: store.tasks, hostKey: host.key, capabilities: host.capabilities)
+        let tree = DrawerTree(rows: store.tasks, host: host)
         VStack(alignment: .leading, spacing: 0) {
             DrawerHostHeader(host: host)
                 .padding(.top, 18)

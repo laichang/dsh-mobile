@@ -21,79 +21,79 @@ fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobu
 }
 
 /// Backwards pages share one fixed DSH journal cut. An absent before_seq opens the latest page.
-public nonisolated struct Dshm_V1_ReadSession: Sendable {
+package nonisolated struct Dshm_V1_ReadSession: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var taskID: String = String()
+  package var taskID: String = String()
 
-  public var throughSeq: UInt64 {
+  package var throughSeq: UInt64 {
     get {_throughSeq ?? 0}
     set {_throughSeq = newValue}
   }
   /// Returns true if `throughSeq` has been explicitly set.
-  public var hasThroughSeq: Bool {self._throughSeq != nil}
+  package var hasThroughSeq: Bool {self._throughSeq != nil}
   /// Clears the value of `throughSeq`. Subsequent reads from it will return its default value.
-  public mutating func clearThroughSeq() {self._throughSeq = nil}
+  package mutating func clearThroughSeq() {self._throughSeq = nil}
 
-  public var beforeSeq: UInt64 {
+  package var beforeSeq: UInt64 {
     get {_beforeSeq ?? 0}
     set {_beforeSeq = newValue}
   }
   /// Returns true if `beforeSeq` has been explicitly set.
-  public var hasBeforeSeq: Bool {self._beforeSeq != nil}
+  package var hasBeforeSeq: Bool {self._beforeSeq != nil}
   /// Clears the value of `beforeSeq`. Subsequent reads from it will return its default value.
-  public mutating func clearBeforeSeq() {self._beforeSeq = nil}
+  package mutating func clearBeforeSeq() {self._beforeSeq = nil}
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 
   fileprivate var _throughSeq: UInt64? = nil
   fileprivate var _beforeSeq: UInt64? = nil
 }
 
-public nonisolated struct Dshm_V1_SessionMessage: Sendable {
+package nonisolated struct Dshm_V1_SessionMessage: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var seq: UInt64 = 0
+  package var seq: UInt64 = 0
 
-  public var fromUser: Bool = false
+  package var fromUser: Bool = false
 
-  public var text: String = String()
+  package var text: String = String()
 
   /// A user message's images and files, from the DSH journal, in order.
-  public var attachments: [Dshm_V1_AttachmentRef] = []
+  package var attachments: [Dshm_V1_AttachmentRef] = []
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_SessionPage: Sendable {
+package nonisolated struct Dshm_V1_SessionPage: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var messages: [Dshm_V1_SessionMessage] = []
+  package var messages: [Dshm_V1_SessionMessage] = []
 
-  public var throughSeq: UInt64 = 0
+  package var throughSeq: UInt64 = 0
 
-  public var nextBeforeSeq: UInt64 {
+  package var nextBeforeSeq: UInt64 {
     get {_nextBeforeSeq ?? 0}
     set {_nextBeforeSeq = newValue}
   }
   /// Returns true if `nextBeforeSeq` has been explicitly set.
-  public var hasNextBeforeSeq: Bool {self._nextBeforeSeq != nil}
+  package var hasNextBeforeSeq: Bool {self._nextBeforeSeq != nil}
   /// Clears the value of `nextBeforeSeq`. Subsequent reads from it will return its default value.
-  public mutating func clearNextBeforeSeq() {self._nextBeforeSeq = nil}
+  package mutating func clearNextBeforeSeq() {self._nextBeforeSeq = nil}
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 
   fileprivate var _nextBeforeSeq: UInt64? = nil
 }
@@ -103,10 +103,10 @@ public nonisolated struct Dshm_V1_SessionPage: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_ReadSession: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ReadSession"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{3}through_seq\0\u{3}before_seq\0")
+  package static let protoMessageName: String = _protobuf_package + ".ReadSession"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{3}through_seq\0\u{3}before_seq\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -120,7 +120,7 @@ nonisolated extension Dshm_V1_ReadSession: SwiftProtobuf.Message, SwiftProtobuf.
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -137,7 +137,7 @@ nonisolated extension Dshm_V1_ReadSession: SwiftProtobuf.Message, SwiftProtobuf.
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ReadSession, rhs: Dshm_V1_ReadSession) -> Bool {
+  package static func ==(lhs: Dshm_V1_ReadSession, rhs: Dshm_V1_ReadSession) -> Bool {
     if lhs.taskID != rhs.taskID {return false}
     if lhs._throughSeq != rhs._throughSeq {return false}
     if lhs._beforeSeq != rhs._beforeSeq {return false}
@@ -147,10 +147,10 @@ nonisolated extension Dshm_V1_ReadSession: SwiftProtobuf.Message, SwiftProtobuf.
 }
 
 nonisolated extension Dshm_V1_SessionMessage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".SessionMessage"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}seq\0\u{3}from_user\0\u{1}text\0\u{2}M\u{6}attachments\0")
+  package static let protoMessageName: String = _protobuf_package + ".SessionMessage"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}seq\0\u{3}from_user\0\u{1}text\0\u{2}M\u{6}attachments\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -165,7 +165,7 @@ nonisolated extension Dshm_V1_SessionMessage: SwiftProtobuf.Message, SwiftProtob
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.seq != 0 {
       try visitor.visitSingularUInt64Field(value: self.seq, fieldNumber: 1)
     }
@@ -181,7 +181,7 @@ nonisolated extension Dshm_V1_SessionMessage: SwiftProtobuf.Message, SwiftProtob
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_SessionMessage, rhs: Dshm_V1_SessionMessage) -> Bool {
+  package static func ==(lhs: Dshm_V1_SessionMessage, rhs: Dshm_V1_SessionMessage) -> Bool {
     if lhs.seq != rhs.seq {return false}
     if lhs.fromUser != rhs.fromUser {return false}
     if lhs.text != rhs.text {return false}
@@ -192,10 +192,10 @@ nonisolated extension Dshm_V1_SessionMessage: SwiftProtobuf.Message, SwiftProtob
 }
 
 nonisolated extension Dshm_V1_SessionPage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".SessionPage"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}messages\0\u{3}through_seq\0\u{3}next_before_seq\0")
+  package static let protoMessageName: String = _protobuf_package + ".SessionPage"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}messages\0\u{3}through_seq\0\u{3}next_before_seq\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -209,7 +209,7 @@ nonisolated extension Dshm_V1_SessionPage: SwiftProtobuf.Message, SwiftProtobuf.
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -226,7 +226,7 @@ nonisolated extension Dshm_V1_SessionPage: SwiftProtobuf.Message, SwiftProtobuf.
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_SessionPage, rhs: Dshm_V1_SessionPage) -> Bool {
+  package static func ==(lhs: Dshm_V1_SessionPage, rhs: Dshm_V1_SessionPage) -> Bool {
     if lhs.messages != rhs.messages {return false}
     if lhs.throughSeq != rhs.throughSeq {return false}
     if lhs._nextBeforeSeq != rhs._nextBeforeSeq {return false}

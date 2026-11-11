@@ -1,4 +1,5 @@
 #if DEBUG
+import DSHTransport
 import DSHCore
 import DSHFeatures
 import DSHProtocol
@@ -12,13 +13,13 @@ public struct FakeDevices: Sendable {
 
     public var closeBeforeRevokeResponse = false
     public var current: String
-    public var devices: [Dshm_V1_PairedDevice]
+    package var devices: [Dshm_V1_PairedDevice]
     /// Newest first.
-    public var audit: [Dshm_V1_AuditEntry]
+    package var audit: [Dshm_V1_AuditEntry]
     /// Entries in one `AuditPage`; the rest come with "load older".
     public var pageSize: Int
 
-    public init(current: String, devices: [Dshm_V1_PairedDevice], audit: [Dshm_V1_AuditEntry], pageSize: Int = 3) {
+    package init(current: String, devices: [Dshm_V1_PairedDevice], audit: [Dshm_V1_AuditEntry], pageSize: Int = 3) {
         self.current = current
         self.devices = devices
         self.audit = audit
@@ -67,7 +68,7 @@ public struct FakeDevices: Sendable {
         return list
     }
 
-    public static func device(_ id: String, pairedDaysAgo: Int, seenMinutesAgo: Int) -> Dshm_V1_PairedDevice {
+    package static func device(_ id: String, pairedDaysAgo: Int, seenMinutesAgo: Int) -> Dshm_V1_PairedDevice {
         var device = Dshm_V1_PairedDevice()
         device.id = id
         device.pairedAtMs = ms(minutesAgo: pairedDaysAgo * 24 * 60)
@@ -75,7 +76,7 @@ public struct FakeDevices: Sendable {
         return device
     }
 
-    public static func entry(id: String, minutesAgo: Int, action: String, detail: String, device: String,
+    package static func entry(id: String, minutesAgo: Int, action: String, detail: String, device: String,
                              actor: String = "owner") -> Dshm_V1_AuditEntry {
         var entry = Dshm_V1_AuditEntry()
         entry.id = id

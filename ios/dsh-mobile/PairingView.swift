@@ -56,7 +56,7 @@ private struct OfferPairingView: View {
                 DSHWordmark().padding(.top, 12)
                 VStack(alignment: .leading, spacing: 0) {
                     row("Host", model.offer.hostName.isEmpty ? String(localized: "Unnamed host") : model.offer.hostName)
-                    row("Addresses", model.offer.addresses.map(\.description).joined(separator: "\n"))
+                    row("Addresses", model.offer.addressDescriptions.joined(separator: "\n"))
                     row("Host key", fingerprint, mono: true)
                     row("Code expires", model.offer.expiresAt.formatted(date: .omitted, time: .shortened), last: true)
                 }

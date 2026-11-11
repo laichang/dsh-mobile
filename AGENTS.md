@@ -15,7 +15,7 @@ Read on demand, not all at once:
 
 ## Repo layout
 
-- `ios/`: the iOS app. `ios/dsh-mobile.xcodeproj` (views in `ios/dsh-mobile/`, XCUITests in `ios/dsh-mobileUITests/`) and the local SwiftPM package `ios/DSHKit` (protocol, connection, store, `FakeBridge`; `swift test`)
+- `ios/`: the iOS app. `ios/dsh-mobile.xcodeproj` (views in `ios/dsh-mobile/`, XCUITests in `ios/dsh-mobileUITests/`) and the local SwiftPM package `ios/DSHKit` (DSHCore wraps protocol, transport and storage; DSHFeatures consumes DSHCore; the widget uses DSHActivity; Debug fakes live in DSHTestSupport). `scripts/swift-test` checks the layer graph with `scripts/check-layers` before testing
 - `bridge/`: the DSH companion plugin (TypeScript, pnpm; `FakeDSH` in `bridge/test/`). Install: `bridge/README.md`
 - `protocol/`: the protobuf contract between the app and the bridge (`frame.proto`, golden `fixtures/`). Regenerate code with `scripts/codegen`
 - `scripts/bootstrap`: sets up a new Mac and runs the first demo

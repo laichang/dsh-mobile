@@ -72,7 +72,7 @@ public struct MilestoneTimeline: Sendable, Equatable, Codable {
 
 extension Milestone {
     /// Maps the wire message; nil for kinds this build doesn't know (a newer bridge).
-    public init?(_ m: Dshm_V1_MilestoneAdded) {
+    package init?(_ m: Dshm_V1_MilestoneAdded) {
         let kind: Kind
         switch m.kind {
         case .started: kind = .started

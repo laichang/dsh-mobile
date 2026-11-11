@@ -1,3 +1,4 @@
+import DSHTransport
 import Foundation
 
 /// Seals and opens the frames of one established connection, in order.

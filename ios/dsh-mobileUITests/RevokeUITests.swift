@@ -216,7 +216,7 @@ final class RevokeUITests: XCTestCase {
         guard let path = env["DSHM_REFUSED_OFFER_FILE"] else { throw XCTSkip("run the TLS enrollment demo") }
         let offer = try PairingOffer(string: String(contentsOfFile: path, encoding: .utf8))
         let store = InMemoryPairedHostStore()
-        let pairing = Pairing(keys: KeychainDeviceKeyStore(), hosts: store, transport: WebSocketTransport.factory)
+        let pairing = Pairing(hosts: store)
         do {
             _ = try await pairing.pair(offer)
             XCTFail("unexpected enrollment")
