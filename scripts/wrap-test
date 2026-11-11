@@ -85,6 +85,12 @@ EOF
   scripts/pnpm-test --dir "$P" > "$W/pnpm.out" 2>&1; rc=$?
   expect_one_error "pnpm-test, failing node:test test" "$W/pnpm.out" 1 $rc
 
+  echo "import test from 'node:test'; test('selected pass', () => {})" > "$P/test/pass.test.js"
+  scripts/pnpm-test --dir "$P" --node-test test/pass.test.js > "$W/selected.out" 2>&1; rc=$?
+  expect_pass_short "pnpm-test, selected file" "$W/selected.out" "$rc"
+  scripts/pnpm-test --dir "$P" --node-test test/a.test.js > "$W/selected-fail.out" 2>&1; rc=$?
+  expect_one_error "pnpm-test, selected failing file" "$W/selected-fail.out" 1 "$rc"
+
   # --- xcodebuild: a recorded log of a failing UI test (a real run takes minutes) ------------
   X="$W/xc-failing.log"
   cat > "$X" <<EOF
@@ -115,6 +121,7 @@ xcodebuild test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
   -destination "$DEST" > "$LOGS/ui.log" 2>&1
 demo_part dshkit swift test --package-path ios/DSHKit --filter X
 (cd bridge && corepack pnpm test) > "$log" 2>&1
+demo_part listener node --test lib/test/listen-errors.test.js
 cat <<'TXT'
 $ swift test
 TXT
@@ -124,15 +131,27 @@ EOF
 scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile --log "$LOGS/ui.log"
 demo_part dshkit scripts/swift-test --filter X
 scripts/pnpm-test --log "$log"
+demo_part listener scripts/pnpm-test --node-test lib/test/listen-errors.test.js
 EOF
   scripts/check-wrappers "$D/raw.sh" > "$W/check.out" 2>&1; rc=$?
   n=$(grep -c ': runs ' "$W/check.out")
-  if [ $rc = 1 ] && [ "$n" = 3 ] && grep -q 'raw.sh:4: runs xcodebuild' "$W/check.out" \
-    && grep -q 'raw.sh:6: runs swift test' "$W/check.out" && grep -q 'raw.sh:7: runs pnpm test' "$W/check.out"; then
-    ok "check-wrappers fails on raw xcodebuild, swift test and pnpm test (3 lines, exit 1)"
+  if [ $rc = 1 ] && [ "$n" = 4 ] && grep -q 'raw.sh:4: runs xcodebuild' "$W/check.out" \
+    && grep -q 'raw.sh:6: runs swift test' "$W/check.out" && grep -q 'raw.sh:7: runs pnpm test' "$W/check.out" \
+    && grep -q 'raw.sh:8: runs node --test' "$W/check.out"; then
+    ok "check-wrappers fails on raw xcodebuild, swift test, pnpm test and node --test (4 lines, exit 1)"
   else bad "check-wrappers on raw calls (exit $rc, $n lines):"; cat "$W/check.out"; fi
   if scripts/check-wrappers "$D/wrapped.sh" > "$W/check2.out" 2>&1; then ok "check-wrappers passes wrapped calls"
   else bad "check-wrappers on wrapped calls:"; cat "$W/check2.out"; fi
+  git init -q "$D/index"
+  mkdir -p "$D/index/scripts/demo"
+  (
+    cd "$D/index" || exit 1
+    cp "$D/raw.sh" scripts/demo/example.sh && git add scripts/demo/example.sh || exit 1
+    cp "$D/wrapped.sh" scripts/demo/example.sh || exit 1
+    "$ROOT/scripts/check-wrappers" --staged > "$W/index.out" 2>&1 && exit 1
+    grep -q 'scripts/demo/example.sh:8: runs node --test' "$W/index.out" || exit 1
+    git add scripts/demo/example.sh && "$ROOT/scripts/check-wrappers" --staged
+  ) && ok "wrapper check reads the staged demo" || bad "staged wrapper check"
   if scripts/check-wrappers > "$W/check3.out" 2>&1; then ok "check-wrappers passes scripts/demo/*.sh and scripts/review"
   else bad "check-wrappers on this repository:"; cat "$W/check3.out"; fi
 else
