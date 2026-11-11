@@ -16,3 +16,4 @@ S8	claude/s8-status-next	3	47813	3286	47843	3316	dshm-S8	~/.dshm/home-s8	D174-D1
 S9	claude/s9-input-diagnostics	3	47813	3286	47843	3316	dshm-S9	~/.dshm/home-s9	D177-D179	2026-11-11
 S2	claude/s2-pre-m3	0	47810	3283	47840	3313	dshm-S2-180	~/.dshm/home-s2-180	D180-D182	2026-11-11
 S5	claude/s5-pre-m3	1	47811	3284	47841	3314	dshm-S5-183	~/.dshm/home-s5-183	D183-D185	2026-11-11
+S10	claude/s10-fake-turn-duration	2	47812	3285	47842	3315	dshm-S10	~/.dshm/home-s10	D186-D188	2026-11-11
