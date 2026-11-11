@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CDE500000000000000000001 /* DSHKit in Frameworks */ = {isa = PBXBuildFile; productRef = D5A100000000000000000002 /* DSHKit */; };
 		D5A100000000000000000003 /* DSHKit in Frameworks */ = {isa = PBXBuildFile; productRef = D5A100000000000000000002 /* DSHKit */; };
 		D5A100000000000000000101 /* DSHActivity in Frameworks */ = {isa = PBXBuildFile; productRef = D5A10000000000000000010F /* DSHActivity */; };
 		D5A100000000000000000102 /* LiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D5A100000000000000000104 /* LiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -81,6 +82,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CDE500000000000000000001 /* DSHKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -162,6 +164,7 @@
 			);
 			name = "dsh-mobileUITests";
 			packageProductDependencies = (
+				D5A100000000000000000002 /* DSHKit */,
 			);
 			productName = "dsh-mobileUITests";
 			productReference = D5A100000000000000000005 /* dsh-mobileUITests.xctest */;
@@ -425,7 +428,8 @@
 				DEVELOPMENT_TEAM = R9JF9M64R9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Config/Debug-Info.plist";
+				DSHM_DEBUG_APP_PLIST = "Config/Debug-Info.plist";
+				INFOPLIST_FILE = "$(DSHM_DEBUG_APP_PLIST)";
 				INFOPLIST_KEY_NSCameraUsageDescription = "dsh-mobile scans the pairing QR code your DSH host shows, and takes the photos you attach to a task.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "dsh-mobile connects to DSH on your Mac over your local network.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "dsh-mobile listens when you tap the mic key, to write what you say into the message field.";

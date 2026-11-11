@@ -14,10 +14,15 @@ public protocol SecureChannel: Sendable {
     var name: String { get }
     /// The WebSocket path on the bridge for this channel.
     var path: String { get }
+    func url(for endpoint: HostEndpoint) -> URL
     /// Throws if this channel may not be used to reach `endpoint`. Checked before any socket opens.
     func validate(_ endpoint: HostEndpoint) throws
     /// Runs the handshake (if any) over a freshly opened transport.
     func establish(over transport: any BridgeTransport) async throws -> any FrameCipher
+}
+
+extension SecureChannel {
+    public func url(for endpoint: HostEndpoint) -> URL { endpoint.webSocketURL(path: path) }
 }
 
 #if DEBUG

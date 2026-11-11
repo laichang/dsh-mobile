@@ -110,3 +110,12 @@ Layout:
 - `src/channel.ts` is the dev-only `PlaintextChannel`.
 - `src/pairing/` is Noise (`noise.ts`, ported from the X2 spike), the wire header (`wire.ts`), the handshake (`handshake.ts`), offers and the QR (`offer.ts`, `announce.ts`) and the on-disk store (`store.ts`).
 - `test/fake-dsh.ts` is `FakeDSH`.
+
+
+### TLS transport tracer
+
+The TLS identity helper stores one P-256 PKCS#8 key under an owner-only directory. It invokes the host's OpenSSL-compatible CLI to sign a 90-day self-signed leaf. On startup or an address change, call the helper with the advertised hosts and load the returned key and certificate into the HTTPS listener. It renews within seven days of expiry or when a required SAN is missing. Renewal preserves the key and its SHA-256 DER SubjectPublicKeyInfo pin. Signing was verified on macOS with the system LibreSSL executable and OpenSSL. Linux and Windows provisioning have yet to be verified.
+
+The TLS enrollment QR needs the pin and the same addresses used for the certificate. For a wildcard bind the existing listener announcement enumerates LAN and VPN IP addresses. A specific bind advertises its configured IP or DNS name. Include each advertised IP as an IP SAN and each DNS name as a DNS SAN. A DNS address can resolve to a new IP under the same certificate. To advertise a new literal IP, renew the certificate under the same key. The phone retries the saved addresses and promotes the one that succeeds. If every address fails, the hosts sheet shows each error and offers a new pairing.
+
+`scripts/demo/pinned-tls.sh` exercises the production Swift transport under strict ATS on an iOS simulator. The existing QR enrollment flow still uses Noise.

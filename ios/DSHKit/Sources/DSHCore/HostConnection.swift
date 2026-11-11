@@ -331,7 +331,7 @@ public actor HostConnection {
     /// Opens the transport and runs the handshake, within `attemptTimeout`.
     private func handshake(_ endpoint: HostEndpoint) async throws -> (any BridgeTransport, any FrameCipher) {
         let channel = self.channel, makeTransport = self.makeTransport, timeout = attemptTimeout, probe = self.probe
-        let url = endpoint.webSocketURL(path: channel.path)
+        let url = channel.url(for: endpoint)
         let opened = OpenedTransport()
         return try await withThrowingTaskGroup(of: (any BridgeTransport, any FrameCipher)?.self) { group in
             group.addTask {
