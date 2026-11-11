@@ -24,6 +24,7 @@ scripts/review, scripts/slice-env and scripts/status.
 
 import datetime
 import fnmatch
+import hashlib
 import importlib.util
 import json
 import os
@@ -350,12 +351,27 @@ def note(root, commit):
     return data if isinstance(data, dict) else {}
 
 
+def _receipt(root, sid, commit):
+    common = _git(root, "rev-parse", "--path-format=absolute", "--git-common-dir", check=True)
+    return Path(common.stdout.strip(), "dshm-verify", commit, sid)
+
+
+def _digest(results):
+    return hashlib.sha256(json.dumps(results, sort_keys=True).encode()).hexdigest()
+
+
 def results_for(root, sid, commit):
     """The results of `scripts/plan verify` for sid at commit, or None. A note in any other shape
     (no runs, another verifier, another commit) counts for nothing."""
     res = note(root, commit).get(sid)
     if (not isinstance(res, dict) or check_against(res, "results", "note") or res["commit"] != commit
-            or res["verifier"] != VERIFIER):
+            or res["verifier"] != VERIFIER or res["slice"] != sid):
+        return None
+    # Fetched or edited notes need corroboration from this repository's verification run.
+    try:
+        if _receipt(root, sid, commit).read_text() != _digest(res):
+            return None
+    except FileNotFoundError:
         return None
     return res
 
@@ -370,6 +386,11 @@ def _store(root, commit, sid, results):
     data[sid] = results
     _git(root, "notes", f"--ref={NOTES_REF}", "add", "-f", "-F", "-", commit, check=True,
          input=json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    receipt = _receipt(root, sid, commit)
+    receipt.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", dir=receipt.parent, delete=False) as tmp:
+        tmp.write(_digest(results))
+    os.replace(tmp.name, receipt)
 
 
 def cmd_problem(argv, cwd):
@@ -600,6 +621,9 @@ def evidence_files(root, items, commits):
             r = _git(root, "cat-file", "-p", f"{c}:{f}")
             if r.returncode == 0:
                 for w in PATH_RE.findall(r.stdout):
+                    relative = posixpath.normpath(posixpath.join(posixpath.dirname(f), w))
+                    if known(relative):
+                        named.add(relative)
                     parts = w.split("/")     # $ROOT/scripts/x names scripts/x
                     named.update(c for c in ("/".join(parts[i:]).lstrip("./") for i in range(len(parts)))
                                  if ("/" in c or "." in c) and known(c))

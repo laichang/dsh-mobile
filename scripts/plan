@@ -490,6 +490,12 @@ def cmd_fix(p, a):
 def cmd_assign(p, a):
     need_main()
     node = p.node(a.id)
+    if a.round is not None:
+        previous = node.get("round", 0)
+        if not a.schedule or not previous < a.round <= 3:
+            raise PlanError(f"cannot start {a.id} round {a.round} after {previous}. "
+                            "Next: refresh scripts/run-plan-args and check the three-round limit")
+        node["round"] = a.round
     if a.schedule:
         a.branch = node["branch"] or f"claude/{a.id.lower()}-{dshm.git('rev-parse', '--short', 'HEAD')}"
     if not a.branch or not re.search(rf"(^|/){a.id.lower()}(-|$)", a.branch):
@@ -505,6 +511,8 @@ def cmd_assign(p, a):
         raise PlanError("assign has no --dry-run (it writes the registry). Next: scripts/slice-env --list")
     row, new = se.assign(a.id, a.branch, a.decisions, p.root)
     if a.schedule and not new and node["branch"] == a.branch and node.get("status") == "doing":
+        if a.round is not None:
+            p.save(a, f"Plan: {a.id} round {a.round}")
         return start_branch(a.branch)
     p.extra_files.append(dshm.REGISTRY)
     node["branch"] = a.branch
@@ -858,6 +866,7 @@ def main():
     sp = add("pending", cmd_pending); sp.add_argument("slice"); sp.add_argument("kind"); sp.add_argument("item")
     sp.add_argument("--branch", default="main"); sp.add_argument("--commit-ref")
     sp = add("assign", cmd_assign); sp.add_argument("id"); sp.add_argument("--branch")
+    sp.add_argument("--round", type=int, help="reserve this build round before it starts")
     sp.add_argument("--schedule", action="store_true", help="assign and create the scheduler branch")
     sp.add_argument("--worktree"); sp.add_argument("--from", dest="from_commit")
     sp.add_argument("--decisions", type=int, default=dshm.DECISION_BLOCK, help=argparse.SUPPRESS)

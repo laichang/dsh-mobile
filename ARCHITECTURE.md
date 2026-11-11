@@ -287,7 +287,7 @@ A drawer page with 等我处理 / 正在跑 / 已完成 across hosts, from the c
 - **DSHKit**: `swift test` on the Mac. `FakeHost` / `FakeBridge` (`DSHTestSupport`) is a fake bridge process whose tasks and log outlive connections, with scripts for milestones, approvals, questions, follow-ups, outcomes and turns. It closes and refuses with 4003 like the bridge.
 - **Bridge**: `FakeDSH` (`bridge/test/`), and live checks against real DSH with its mock model (`scripts/dsh-up.mjs`).
 - **Output wrappers (provisional, pending user confirmation):** `scripts/xc <action>`, `scripts/swift-test`, `scripts/pnpm-test` log to `/tmp/dshm-*` and emit JSON counts and first errors as `file:line` (`scripts/lib/wrap.py`). `scripts/check-wrappers` enforces their use in demos and review. `xcbeautify` and `xcpretty` lack JSON.
-- **Plan data (provisional, pending user confirmation):** `scripts/plan verify` checks `cmd:` evidence on the branch. `scripts/plan merge` rechecks the merge commit with target tools and items from `plan/*.json`, requiring review of changes to commands, their directories and `scripts/lib/`. `.claude/workflows/run-plan.js` (`scripts/run-plan-args`) schedules ≤3 nodes, ≤3 fresh rounds each.
+- **Plan data (provisional, pending user confirmation):** `scripts/plan verify` records local receipts for branch evidence notes. `scripts/plan merge` reruns target items on the clean merge commit. Changed commands, their directories, literal helper paths and `scripts/lib/` need review. `.claude/workflows/run-plan.js` (`scripts/run-plan-args`) schedules ≤3 concurrent nodes and commits each build round (≤3 per node).
 - **Slice brief (provisional, pending user confirmation):** a build agent reads `scripts/brief <ID>`, not the docs (`scripts/brief-test`).
 - **UI tests** use `scripts/demo/<name>.sh` or `scripts/review` with the disk, CPU and device guard in `scripts/demo/lib.sh`. The scheduler creates each node’s simulator before build and releases it on merge.
 - **Debug-only entry points**, behind `#if DEBUG` and the Debug Info.plist; `scripts/check-release-clean` proves a Release build has none:
@@ -300,5 +300,5 @@ A drawer page with 等我处理 / 正在跑 / 已完成 across hosts, from the c
 - The Noise code is hand-written and not audited.
 - The host log is in memory: a DSH restart loses the resume cursor (the app then reloads the list and marks lost running tasks failed).
 - Approval fan-out to the DSH desktop app is not verified.
-- The merge step does not protect a helper reached via `../`; `scripts/plan passed` trusts any note.
+- Review dynamically constructed evidence paths manually.
 - Not built yet (STORY.md wants them; screens with `built: false` in `design/screens.json`): contact by other channels, artifact preview and share-out, the share extension, attachments while a task runs, and a later answer to a question that DSH's timed mode continued.
