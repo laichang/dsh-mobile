@@ -1,4 +1,5 @@
 import DSHCore
+import DSHProtocol
 import SwiftUI
 import UIKit
 
