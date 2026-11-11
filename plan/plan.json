@@ -267,10 +267,10 @@
       "kind": "slice",
       "title": "Fix: Match Debug and Release first launch",
       "needs": [],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s13-first-pairing",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Fix: Match Debug and Release first launch; start a fix session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "The user reported a bug on 2026-11-11: An unpaired Debug install opens an offline session instead of the first pairing screen.",
       "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
@@ -378,6 +378,11 @@
       "date": "2026-11-11",
       "title": "S5 assigned",
       "body": "Branch `claude/s5-636278c`, simulator `5FAAF192-E5D2-4A60-83B4-40B8D91DF539`, DSHM_HOME `~/.dshm/home-s5-5FAAF192-E5D2-4A60-83B4-40B8D91DF539`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S5)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S13 assigned",
+      "body": "Branch `claude/s13-first-pairing`, worktree `/Users/bytedance/.codex/worktrees/debug-first-pairing/dsh-mobile`, simulator `C343FB93-4A6B-4F37-8CB6-929FDF0B0FBB`, DSHM_HOME `~/.dshm/home-s13-C343FB93-4A6B-4F37-8CB6-929FDF0B0FBB`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S13)\"` exports them."
     }
   ],
   "pending": [
