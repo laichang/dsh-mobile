@@ -28,8 +28,8 @@ fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobu
 }
 
 /// Where a task stands, as the unified list shows it (STORY principle 4).
-public nonisolated enum Dshm_V1_TaskState: SwiftProtobuf.Enum, Swift.CaseIterable {
-  public typealias RawValue = Int
+package nonisolated enum Dshm_V1_TaskState: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
   case unspecified // = 0
   case running // = 1
 
@@ -40,11 +40,11 @@ public nonisolated enum Dshm_V1_TaskState: SwiftProtobuf.Enum, Swift.CaseIterabl
   case interrupted // = 5
   case UNRECOGNIZED(Int)
 
-  public init() {
+  package init() {
     self = .unspecified
   }
 
-  public init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .unspecified
     case 1: self = .running
@@ -56,7 +56,7 @@ public nonisolated enum Dshm_V1_TaskState: SwiftProtobuf.Enum, Swift.CaseIterabl
     }
   }
 
-  public var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .unspecified: return 0
     case .running: return 1
@@ -69,7 +69,7 @@ public nonisolated enum Dshm_V1_TaskState: SwiftProtobuf.Enum, Swift.CaseIterabl
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static let allCases: [Dshm_V1_TaskState] = [
+  package static let allCases: [Dshm_V1_TaskState] = [
     .unspecified,
     .running,
     .waitingOnUser,
@@ -80,239 +80,239 @@ public nonisolated enum Dshm_V1_TaskState: SwiftProtobuf.Enum, Swift.CaseIterabl
 
 }
 
-public nonisolated struct Dshm_V1_TaskSummary: @unchecked Sendable {
+package nonisolated struct Dshm_V1_TaskSummary: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var taskID: String {
+  package var taskID: String {
     get {_storage._taskID}
     set {_uniqueStorage()._taskID = newValue}
   }
 
   /// What the user asked for (the prompt), as sent.
-  public var title: String {
+  package var title: String {
     get {_storage._title}
     set {_uniqueStorage()._title = newValue}
   }
 
-  public var state: Dshm_V1_TaskState {
+  package var state: Dshm_V1_TaskState {
     get {_storage._state}
     set {_uniqueStorage()._state = newValue}
   }
 
-  public var createdAtMs: Int64 {
+  package var createdAtMs: Int64 {
     get {_storage._createdAtMs}
     set {_uniqueStorage()._createdAtMs = newValue}
   }
 
-  public var updatedAtMs: Int64 {
+  package var updatedAtMs: Int64 {
     get {_storage._updatedAtMs}
     set {_uniqueStorage()._updatedAtMs = newValue}
   }
 
   /// Why it failed, when state is FAILED.
-  public var message: String {
+  package var message: String {
     get {_storage._message}
     set {_uniqueStorage()._message = newValue}
   }
 
   /// When state is FAILED: DSH's failure class, as TaskEnded.failure_code.
-  public var failureCode: String {
+  package var failureCode: String {
     get {_storage._failureCode}
     set {_uniqueStorage()._failureCode = newValue}
   }
 
   /// Current requests, including any older than the retained log.
-  public var pendingApprovals: [Dshm_V1_ApprovalPending] {
+  package var pendingApprovals: [Dshm_V1_ApprovalPending] {
     get {_storage._pendingApprovals}
     set {_uniqueStorage()._pendingApprovals = newValue}
   }
 
   /// A session started on another client appears only while it needs a decision.
-  public var approvalOnly: Bool {
+  package var approvalOnly: Bool {
     get {_storage._approvalOnly}
     set {_uniqueStorage()._approvalOnly = newValue}
   }
 
   /// Last selection reported by DSH, including when its event is older than the retained log.
-  public var modelSelection: Dshm_V1_ModelSelection {
+  package var modelSelection: Dshm_V1_ModelSelection {
     get {_storage._modelSelection ?? Dshm_V1_ModelSelection()}
     set {_uniqueStorage()._modelSelection = newValue}
   }
   /// Returns true if `modelSelection` has been explicitly set.
-  public var hasModelSelection: Bool {_storage._modelSelection != nil}
+  package var hasModelSelection: Bool {_storage._modelSelection != nil}
   /// Clears the value of `modelSelection`. Subsequent reads from it will return its default value.
-  public mutating func clearModelSelection() {_uniqueStorage()._modelSelection = nil}
+  package mutating func clearModelSelection() {_uniqueStorage()._modelSelection = nil}
 
   /// Committed DSH journal cursor; changes invalidate a cached detail page.
-  public var sessionRevision: UInt64 {
+  package var sessionRevision: UInt64 {
     get {_storage._sessionRevision ?? 0}
     set {_uniqueStorage()._sessionRevision = newValue}
   }
   /// Returns true if `sessionRevision` has been explicitly set.
-  public var hasSessionRevision: Bool {_storage._sessionRevision != nil}
+  package var hasSessionRevision: Bool {_storage._sessionRevision != nil}
   /// Clears the value of `sessionRevision`. Subsequent reads from it will return its default value.
-  public mutating func clearSessionRevision() {_uniqueStorage()._sessionRevision = nil}
+  package mutating func clearSessionRevision() {_uniqueStorage()._sessionRevision = nil}
 
-  public var externalSession: Bool {
+  package var externalSession: Bool {
     get {_storage._externalSession}
     set {_uniqueStorage()._externalSession = newValue}
   }
 
   /// Short result for the latest turn. Empty suppresses a stale or long inline answer.
-  public var latestReply: String {
+  package var latestReply: String {
     get {_storage._latestReply ?? String()}
     set {_uniqueStorage()._latestReply = newValue}
   }
   /// Returns true if `latestReply` has been explicitly set.
-  public var hasLatestReply: Bool {_storage._latestReply != nil}
+  package var hasLatestReply: Bool {_storage._latestReply != nil}
   /// Clears the value of `latestReply`. Subsequent reads from it will return its default value.
-  public mutating func clearLatestReply() {_uniqueStorage()._latestReply = nil}
+  package mutating func clearLatestReply() {_uniqueStorage()._latestReply = nil}
 
   /// The drawer (drawer.v1, fields 280–299): the absolute directory of the session's workspace on the
   /// host, from the DSH session (`cwd`) or the phone's CreateTask. Absent when the host does not know it.
-  public var workspace: String {
+  package var workspace: String {
     get {_storage._workspace ?? String()}
     set {_uniqueStorage()._workspace = newValue}
   }
   /// Returns true if `workspace` has been explicitly set.
-  public var hasWorkspace: Bool {_storage._workspace != nil}
+  package var hasWorkspace: Bool {_storage._workspace != nil}
   /// Clears the value of `workspace`. Subsequent reads from it will return its default value.
-  public mutating func clearWorkspace() {_uniqueStorage()._workspace = nil}
+  package mutating func clearWorkspace() {_uniqueStorage()._workspace = nil}
 
   /// The latest turn (fields 540–559): when the session's latest turn started (its `turn/start`, else its user
   /// message), Unix milliseconds. The done footer's 用时 runs from here to updated_at_ms. Absent from
   /// an older bridge: the app counts from created_at_ms, as before.
-  public var turnStartedAtMs: Int64 {
+  package var turnStartedAtMs: Int64 {
     get {_storage._turnStartedAtMs ?? 0}
     set {_uniqueStorage()._turnStartedAtMs = newValue}
   }
   /// Returns true if `turnStartedAtMs` has been explicitly set.
-  public var hasTurnStartedAtMs: Bool {_storage._turnStartedAtMs != nil}
+  package var hasTurnStartedAtMs: Bool {_storage._turnStartedAtMs != nil}
   /// Clears the value of `turnStartedAtMs`. Subsequent reads from it will return its default value.
-  public mutating func clearTurnStartedAtMs() {_uniqueStorage()._turnStartedAtMs = nil}
+  package mutating func clearTurnStartedAtMs() {_uniqueStorage()._turnStartedAtMs = nil}
 
   /// Agent questions (questions.v1, fields 380–399): every question the task waits on now, including
   /// any older than the retained log, as for approvals. A pending question makes the task
   /// WAITING_ON_USER.
-  public var pendingQuestions: [Dshm_V1_QuestionPending] {
+  package var pendingQuestions: [Dshm_V1_QuestionPending] {
     get {_storage._pendingQuestions}
     set {_uniqueStorage()._pendingQuestions = newValue}
   }
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 /// Request: every task this bridge knows, newest first.
-public nonisolated struct Dshm_V1_ListTasks: Sendable {
+package nonisolated struct Dshm_V1_ListTasks: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// Response to ListTasks.
-public nonisolated struct Dshm_V1_TaskList: Sendable {
+package nonisolated struct Dshm_V1_TaskList: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var tasks: [Dshm_V1_TaskSummary] = []
+  package var tasks: [Dshm_V1_TaskSummary] = []
 
-  public var logID: String = String()
+  package var logID: String = String()
 
   /// The host's own name (e.g. its hostname), so the app can name it when it is offline.
-  public var hostName: String = String()
+  package var hostName: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// Request: send me every logged event after `after_seq` of log `log_id`, then keep me
 /// subscribed to live events. `log_id` empty and `after_seq` 0 on first contact.
 /// If the bridge can't continue from there (other log, or the events were trimmed), it first
 /// sends a `LogReset` event, then replays everything it still has.
-public nonisolated struct Dshm_V1_Resume: Sendable {
+package nonisolated struct Dshm_V1_Resume: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var logID: String = String()
+  package var logID: String = String()
 
-  public var afterSeq: UInt64 = 0
+  package var afterSeq: UInt64 = 0
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// Response to Resume, sent after the replayed events.
-public nonisolated struct Dshm_V1_Resumed: Sendable {
+package nonisolated struct Dshm_V1_Resumed: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var logID: String = String()
+  package var logID: String = String()
 
   /// The last host_seq in the log when the replay ended (0 if the log is empty).
-  public var headSeq: UInt64 = 0
+  package var headSeq: UInt64 = 0
 
-  public var hostName: String = String()
+  package var hostName: String = String()
 
   /// True when a LogReset preceded the replay.
-  public var reset: Bool = false
+  package var reset: Bool = false
 
   /// How many events were replayed.
-  public var replayed: UInt64 = 0
+  package var replayed: UInt64 = 0
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// Event: a task was created or changed state.
-public nonisolated struct Dshm_V1_TaskUpserted: Sendable {
+package nonisolated struct Dshm_V1_TaskUpserted: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var task: Dshm_V1_TaskSummary {
+  package var task: Dshm_V1_TaskSummary {
     get {_task ?? Dshm_V1_TaskSummary()}
     set {_task = newValue}
   }
   /// Returns true if `task` has been explicitly set.
-  public var hasTask: Bool {self._task != nil}
+  package var hasTask: Bool {self._task != nil}
   /// Clears the value of `task`. Subsequent reads from it will return its default value.
-  public mutating func clearTask() {self._task = nil}
+  package mutating func clearTask() {self._task = nil}
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 
   fileprivate var _task: Dshm_V1_TaskSummary? = nil
 }
 
 /// Event: the app's cursor doesn't apply; what follows is a replay of log `log_id` from its
 /// oldest retained event. Carries no host_seq.
-public nonisolated struct Dshm_V1_LogReset: Sendable {
+package nonisolated struct Dshm_V1_LogReset: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var logID: String = String()
+  package var logID: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -320,12 +320,12 @@ public nonisolated struct Dshm_V1_LogReset: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_TaskState: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TASK_STATE_UNSPECIFIED\0\u{1}TASK_STATE_RUNNING\0\u{1}TASK_STATE_WAITING_ON_USER\0\u{1}TASK_STATE_COMPLETED\0\u{1}TASK_STATE_FAILED\0\u{1}TASK_STATE_INTERRUPTED\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TASK_STATE_UNSPECIFIED\0\u{1}TASK_STATE_RUNNING\0\u{1}TASK_STATE_WAITING_ON_USER\0\u{1}TASK_STATE_COMPLETED\0\u{1}TASK_STATE_FAILED\0\u{1}TASK_STATE_INTERRUPTED\0")
 }
 
 nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".TaskSummary"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0\u{4}L\u{2}session_revision\0\u{3}external_session\0\u{3}latest_reply\0\u{2}\u{12}workspace\0\u{4}d\u{1}pending_questions\0\u{4}(failure_code\0\u{4}x\u{1}turn_started_at_ms\0")
+  package static let protoMessageName: String = _protobuf_package + ".TaskSummary"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}title\0\u{1}state\0\u{3}created_at_ms\0\u{3}updated_at_ms\0\u{1}message\0\u{4}J\u{1}pending_approvals\0\u{3}approval_only\0\u{4}'model_selection\0\u{4}L\u{2}session_revision\0\u{3}external_session\0\u{3}latest_reply\0\u{2}\u{12}workspace\0\u{4}d\u{1}pending_questions\0\u{4}(failure_code\0\u{4}x\u{1}turn_started_at_ms\0")
 
   fileprivate class _StorageClass {
     var _taskID: String = String()
@@ -380,7 +380,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     return _storage
   }
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     _ = _uniqueStorage()
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       while let fieldNumber = try decoder.nextFieldNumber() {
@@ -410,7 +410,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every if/case branch local when no optimizations
@@ -468,7 +468,7 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_TaskSummary, rhs: Dshm_V1_TaskSummary) -> Bool {
+  package static func ==(lhs: Dshm_V1_TaskSummary, rhs: Dshm_V1_TaskSummary) -> Bool {
     if lhs._storage !== rhs._storage {
       let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
         let _storage = _args.0
@@ -499,29 +499,29 @@ nonisolated extension Dshm_V1_TaskSummary: SwiftProtobuf.Message, SwiftProtobuf.
 }
 
 nonisolated extension Dshm_V1_ListTasks: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ListTasks"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+  package static let protoMessageName: String = _protobuf_package + ".ListTasks"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     // Load everything into unknown fields
     while try decoder.nextFieldNumber() != nil {}
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ListTasks, rhs: Dshm_V1_ListTasks) -> Bool {
+  package static func ==(lhs: Dshm_V1_ListTasks, rhs: Dshm_V1_ListTasks) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
 nonisolated extension Dshm_V1_TaskList: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".TaskList"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}tasks\0\u{3}log_id\0\u{3}host_name\0")
+  package static let protoMessageName: String = _protobuf_package + ".TaskList"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}tasks\0\u{3}log_id\0\u{3}host_name\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -535,7 +535,7 @@ nonisolated extension Dshm_V1_TaskList: SwiftProtobuf.Message, SwiftProtobuf._Me
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.tasks.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.tasks, fieldNumber: 1)
     }
@@ -548,7 +548,7 @@ nonisolated extension Dshm_V1_TaskList: SwiftProtobuf.Message, SwiftProtobuf._Me
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_TaskList, rhs: Dshm_V1_TaskList) -> Bool {
+  package static func ==(lhs: Dshm_V1_TaskList, rhs: Dshm_V1_TaskList) -> Bool {
     if lhs.tasks != rhs.tasks {return false}
     if lhs.logID != rhs.logID {return false}
     if lhs.hostName != rhs.hostName {return false}
@@ -558,10 +558,10 @@ nonisolated extension Dshm_V1_TaskList: SwiftProtobuf.Message, SwiftProtobuf._Me
 }
 
 nonisolated extension Dshm_V1_Resume: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Resume"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}log_id\0\u{3}after_seq\0")
+  package static let protoMessageName: String = _protobuf_package + ".Resume"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}log_id\0\u{3}after_seq\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -574,7 +574,7 @@ nonisolated extension Dshm_V1_Resume: SwiftProtobuf.Message, SwiftProtobuf._Mess
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.logID.isEmpty {
       try visitor.visitSingularStringField(value: self.logID, fieldNumber: 1)
     }
@@ -584,7 +584,7 @@ nonisolated extension Dshm_V1_Resume: SwiftProtobuf.Message, SwiftProtobuf._Mess
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_Resume, rhs: Dshm_V1_Resume) -> Bool {
+  package static func ==(lhs: Dshm_V1_Resume, rhs: Dshm_V1_Resume) -> Bool {
     if lhs.logID != rhs.logID {return false}
     if lhs.afterSeq != rhs.afterSeq {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -593,10 +593,10 @@ nonisolated extension Dshm_V1_Resume: SwiftProtobuf.Message, SwiftProtobuf._Mess
 }
 
 nonisolated extension Dshm_V1_Resumed: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Resumed"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}log_id\0\u{3}head_seq\0\u{3}host_name\0\u{1}reset\0\u{1}replayed\0")
+  package static let protoMessageName: String = _protobuf_package + ".Resumed"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}log_id\0\u{3}head_seq\0\u{3}host_name\0\u{1}reset\0\u{1}replayed\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -612,7 +612,7 @@ nonisolated extension Dshm_V1_Resumed: SwiftProtobuf.Message, SwiftProtobuf._Mes
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.logID.isEmpty {
       try visitor.visitSingularStringField(value: self.logID, fieldNumber: 1)
     }
@@ -631,7 +631,7 @@ nonisolated extension Dshm_V1_Resumed: SwiftProtobuf.Message, SwiftProtobuf._Mes
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_Resumed, rhs: Dshm_V1_Resumed) -> Bool {
+  package static func ==(lhs: Dshm_V1_Resumed, rhs: Dshm_V1_Resumed) -> Bool {
     if lhs.logID != rhs.logID {return false}
     if lhs.headSeq != rhs.headSeq {return false}
     if lhs.hostName != rhs.hostName {return false}
@@ -643,10 +643,10 @@ nonisolated extension Dshm_V1_Resumed: SwiftProtobuf.Message, SwiftProtobuf._Mes
 }
 
 nonisolated extension Dshm_V1_TaskUpserted: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".TaskUpserted"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}task\0")
+  package static let protoMessageName: String = _protobuf_package + ".TaskUpserted"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}task\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -658,7 +658,7 @@ nonisolated extension Dshm_V1_TaskUpserted: SwiftProtobuf.Message, SwiftProtobuf
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -669,7 +669,7 @@ nonisolated extension Dshm_V1_TaskUpserted: SwiftProtobuf.Message, SwiftProtobuf
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_TaskUpserted, rhs: Dshm_V1_TaskUpserted) -> Bool {
+  package static func ==(lhs: Dshm_V1_TaskUpserted, rhs: Dshm_V1_TaskUpserted) -> Bool {
     if lhs._task != rhs._task {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -677,10 +677,10 @@ nonisolated extension Dshm_V1_TaskUpserted: SwiftProtobuf.Message, SwiftProtobuf
 }
 
 nonisolated extension Dshm_V1_LogReset: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".LogReset"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}log_id\0")
+  package static let protoMessageName: String = _protobuf_package + ".LogReset"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}log_id\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -692,14 +692,14 @@ nonisolated extension Dshm_V1_LogReset: SwiftProtobuf.Message, SwiftProtobuf._Me
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.logID.isEmpty {
       try visitor.visitSingularStringField(value: self.logID, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_LogReset, rhs: Dshm_V1_LogReset) -> Bool {
+  package static func ==(lhs: Dshm_V1_LogReset, rhs: Dshm_V1_LogReset) -> Bool {
     if lhs.logID != rhs.logID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

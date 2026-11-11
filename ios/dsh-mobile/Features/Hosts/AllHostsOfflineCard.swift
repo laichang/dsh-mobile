@@ -63,7 +63,7 @@ private struct OfflineHostLine: View {
                     .foregroundStyle(DSHTheme.textPrimary)
                     .lineLimit(1)
                 if let reason = host.offlineReason, let kind = reason.kind {
-                    kind.sentence(port: reason.endpoint.port)
+                    kind.sentence(port: reason.port)
                         .font(.footnote)
                         .foregroundStyle(kind.computerAnswers ? DSHTheme.amber : DSHTheme.textTertiary)
                         .lineLimit(2)

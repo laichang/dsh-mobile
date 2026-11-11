@@ -1,3 +1,4 @@
+import DSHTransport
 import DSHProtocol
 import Foundation
 import SwiftData

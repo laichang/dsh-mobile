@@ -1,6 +1,5 @@
 import DSHCore
 import DSHFeatures
-import DSHProtocol
 import SwiftUI
 
 /// The settings button at the bottom of the drawer, beside pairing (screen 02).
@@ -38,7 +37,7 @@ struct DrawerSettingsSheet: View {
                 }
                 Section("About") {
                     LabeledContent("Version", value: Self.version)
-                    LabeledContent("Protocol", value: "\(DSHProtocolInfo.version)")
+                    LabeledContent("Protocol", value: "\(HostProtocol.version)")
                 }
             }
             .navigationTitle("Settings")

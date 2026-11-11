@@ -42,7 +42,7 @@ public struct QueuedMessage: Codable, Equatable, Sendable, Identifiable {
         self.time = time
     }
 
-    public init(_ wire: Dshm_V1_QueuedMessage) {
+    package init(_ wire: Dshm_V1_QueuedMessage) {
         self.init(id: wire.messageID, taskID: wire.taskID, text: wire.text, placement: Placement(wire: wire.placement),
                   time: Date(timeIntervalSince1970: TimeInterval(wire.timeMs) / 1000))
     }

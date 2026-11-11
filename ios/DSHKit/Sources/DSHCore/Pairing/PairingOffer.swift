@@ -1,3 +1,4 @@
+import DSHTransport
 import Foundation
 
 /// The pairing offer a bridge shows as a QR code, parsed from its
@@ -10,7 +11,8 @@ import Foundation
 public struct PairingOffer: Sendable, Equatable {
     public var hostName: String
     /// Tried in order.
-    public var addresses: [HostEndpoint]
+    public var addressDescriptions: [String] { addresses.map(\.description) }
+    package var addresses: [HostEndpoint]
     public var hostKey: [UInt8]
     public var offerID: [UInt8]
     public var secret: [UInt8]

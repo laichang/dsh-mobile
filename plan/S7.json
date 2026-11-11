@@ -6,21 +6,38 @@
       "text": "The production graph passes with zero per-feature exemptions. A seeded reverse dependency, a feature-to-foundation shortcut and a public protobuf typealias each fail the appropriate check. `cmd:scripts/check-layers` **new**, `cmd:scripts/check-layers-test` **new**",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/check-layers",
+        "cmd:scripts/check-layers-test"
+      ]
     },
     {
       "tier": "auto",
       "text": "Business code consumes typed operations and availability. Raw transports, SwiftData containers and wire capability strings stay behind the boundary. The widget links only DSHActivity. Codegen, Swift, bridge golden tests and Debug/Release checks pass; Release contains no test entry points. `cmd:scripts/check-layers`, `cmd:scripts/codegen --check`, `cmd:scripts/swift-test`, `cmd:scripts/pnpm-test`, `cmd:scripts/check-release-clean`",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/demo/round-trip.sh",
+        "cmd:scripts/check-layers",
+        "cmd:scripts/codegen --check",
+        "cmd:scripts/swift-test",
+        "cmd:scripts/pnpm-test",
+        "cmd:scripts/check-release-clean"
+      ]
     },
     {
       "tier": "ui",
       "text": "The real-DSH round trip, Live Activity and voice smoke tests pass with the final composition. `cmd:scripts/demo/round-trip.sh`, `cmd:scripts/demo/live-activity.sh`, `cmd:scripts/demo/voice.sh`",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/demo/round-trip.sh",
+        "cmd:scripts/demo/live-activity.sh",
+        "cmd:scripts/demo/voice.sh"
+      ]
     }
   ]
 }

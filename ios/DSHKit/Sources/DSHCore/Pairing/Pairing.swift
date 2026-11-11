@@ -1,3 +1,4 @@
+import DSHTransport
 import Foundation
 import Observation
 
@@ -22,11 +23,15 @@ public struct Pairing: Sendable {
     public let hosts: any PairedHostStore
     /// The TCP probe after an address gave no answer (`TCPPortProbe.probe` in the app);
     /// nil in tests and with Debug's fake bridge, whose addresses are not real.
-    public let probe: PortProbe?
+    package let probe: PortProbe?
     public let now: @Sendable () -> Date
 
-    public init(hosts: any PairedHostStore,
-                probe: PortProbe? = nil, now: @escaping @Sendable () -> Date = { .now }) {
+    public init(hosts: any PairedHostStore = FilePairedHostStore()) {
+        self.init(hosts: hosts, probe: TCPPortProbe.probe)
+    }
+
+    package init(hosts: any PairedHostStore,
+                probe: PortProbe?, now: @escaping @Sendable () -> Date = { .now }) {
         self.hosts = hosts
         self.probe = probe
         self.now = now
@@ -38,7 +43,7 @@ public struct Pairing: Sendable {
         return try await enroll(offer)
     }
 
-    public func connection(to host: PairedHost, attemptTimeout: Duration = HostConnection.defaultAttemptTimeout) throws -> HostConnection {
+    package func connection(to host: PairedHost, attemptTimeout: Duration = HostConnection.defaultAttemptTimeout) throws -> HostConnection {
         let store = hosts, id = host.id
         let saveAddresses: @Sendable ([HostEndpoint]) -> Void = { addresses in
             guard var saved = store.load().first(where: { $0.id == id }), saved.addresses != addresses else { return }

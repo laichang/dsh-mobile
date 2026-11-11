@@ -6,7 +6,7 @@ import Synchronization
 
 /// What the app learns about a task, in order. Each turn ends with one `.ended`; with
 /// `conversation.v1` a `.userMessage` can start another turn after it.
-public enum TaskEvent: Sendable, Equatable {
+package enum TaskEvent: Sendable, Equatable {
     case chunk(taskID: String, seq: UInt64, text: String)
     /// `code`: DSH's failure class for a model failure (`QUOTA`, `AUTH`, …); empty otherwise.
     case ended(taskID: String, status: TaskEndStatus, message: String, code: String = "")
@@ -52,7 +52,7 @@ public enum TaskEndStatus: Sendable, Equatable {
 }
 
 /// One event from a host, with its place in the host's event log.
-public struct HostEvent: Sendable, Equatable {
+package struct HostEvent: Sendable, Equatable {
     /// Per-host monotonic sequence number; 0 when the event isn't logged (`.logReset`).
     public var hostSeq: UInt64
     public var event: TaskEvent
@@ -223,9 +223,9 @@ public actor HostConnection {
     private let eventContinuation: AsyncStream<HostEvent>.Continuation
 
     /// Every event from this host, across reconnects, for as long as the connection object lives.
-    public nonisolated let events: AsyncStream<HostEvent>
+    package nonisolated let events: AsyncStream<HostEvent>
     /// Capabilities from the bridge's Hello; empty until connected.
-    public private(set) var capabilities: [String] = []
+    package private(set) var capabilities: [String] = []
     /// The host refused this device with close 4003 (device unknown), on a live
     /// connection (the close after a revoke) or on a reconnect (the device credential check). A revoked
     /// device stays refused, so `TaskListStore` does not retry it. Cleared by a connect that works.
@@ -240,7 +240,7 @@ public actor HostConnection {
         }
     }
 
-    public init(endpoint: HostEndpoint, channelName: String = "In-process", transport: @escaping BridgeTransportFactory) {
+    package init(endpoint: HostEndpoint, channelName: String = "In-process", transport: @escaping BridgeTransportFactory) {
         self.init(endpoints: [endpoint], channelName: channelName, transport: transport)
     }
 
@@ -250,7 +250,7 @@ public actor HostConnection {
     ///     program that holds the port from a computer that is not reachable (`TCPPortProbe.probe`).
     ///   - onAddressesChange: called with the new order when a different address than the first
     ///     worked, so the caller can save it (`Pairing.connection(to:)`).
-    public init(endpoints: [HostEndpoint], channelName: String = "In-process", transport: @escaping BridgeTransportFactory,
+    package init(endpoints: [HostEndpoint], channelName: String = "In-process", transport: @escaping BridgeTransportFactory,
                 attemptTimeout: Duration = HostConnection.defaultAttemptTimeout,
                 probe: PortProbe? = nil,
                 onAddressesChange: (@Sendable ([HostEndpoint]) -> Void)? = nil) {

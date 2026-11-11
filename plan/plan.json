@@ -160,10 +160,10 @@
         "S6"
       ],
       "branch": "claude/s7-202e079",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "c3ec3ba",
       "why": "The compiler and normal test entry point must enforce the production dependency graph. Closes #80.",
       "cuts": "Replace aggregate DSHKit linkage with explicit target dependencies and middle-layer factories. Keep DSHActivity dependency-free and Debug fakes in test support. Use compiler-enforced access control for generated types, then check target declarations, imports and re-exports. Add the check to the normal test entry point and update ARCHITECTURE.md and the repo layout in AGENTS.md alongside the code.\nStarting files: `ios/DSHKit/Package.swift`, `ios/dsh-mobile.xcodeproj/project.pbxproj`, `ios/DSHKit/Sources/DSHActivity/TaskActivity.swift`, `ARCHITECTURE.md`, `AGENTS.md`.\nScreen references: `design/screens/04.html`, `design/screens/L.html`, `design/screens/V1.html`.",
       "not": "",
@@ -226,7 +226,7 @@
       "not": "",
       "demo": null,
       "log": [],
-      "round": 1
+      "round": 2
     },
     {
       "id": "S11",
@@ -462,6 +462,11 @@
       "date": "2026-11-11",
       "title": "S7 assigned",
       "body": "Branch `claude/s7-202e079`, simulator `CD1D5D80-B465-497B-8812-7228E793EC45`, DSHM_HOME `~/.dshm/home-s7-CD1D5D80-B465-497B-8812-7228E793EC45`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S7)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S7 merged",
+      "body": "Merged as `c3ec3ba`; the plan/ rules hold on the merge commit. No open [human] items, so S7 is `done`."
     }
   ],
   "pending": [

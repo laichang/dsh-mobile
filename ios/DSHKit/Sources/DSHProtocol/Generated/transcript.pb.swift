@@ -32,8 +32,8 @@ fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobu
   typealias Version = _2
 }
 
-public nonisolated enum Dshm_V1_TranscriptBlockState: SwiftProtobuf.Enum, Swift.CaseIterable {
-  public typealias RawValue = Int
+package nonisolated enum Dshm_V1_TranscriptBlockState: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
   case unspecified // = 0
 
   /// Thinking still streams, or the tool call has no result yet.
@@ -46,11 +46,11 @@ public nonisolated enum Dshm_V1_TranscriptBlockState: SwiftProtobuf.Enum, Swift.
   case failed // = 3
   case UNRECOGNIZED(Int)
 
-  public init() {
+  package init() {
     self = .unspecified
   }
 
-  public init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .unspecified
     case 1: self = .running
@@ -60,7 +60,7 @@ public nonisolated enum Dshm_V1_TranscriptBlockState: SwiftProtobuf.Enum, Swift.
     }
   }
 
-  public var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .unspecified: return 0
     case .running: return 1
@@ -71,7 +71,7 @@ public nonisolated enum Dshm_V1_TranscriptBlockState: SwiftProtobuf.Enum, Swift.
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static let allCases: [Dshm_V1_TranscriptBlockState] = [
+  package static let allCases: [Dshm_V1_TranscriptBlockState] = [
     .unspecified,
     .running,
     .done,
@@ -81,73 +81,73 @@ public nonisolated enum Dshm_V1_TranscriptBlockState: SwiftProtobuf.Enum, Swift.
 }
 
 /// The model's reasoning in one step.
-public nonisolated struct Dshm_V1_ThinkingBlock: Sendable {
+package nonisolated struct Dshm_V1_ThinkingBlock: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// From the first reasoning chunk to the end of the reasoning, by DSH's chunk timestamps.
   /// 0 while RUNNING.
-  public var durationMs: UInt64 = 0
+  package var durationMs: UInt64 = 0
 
   /// The reasoning text itself, cut to the first 8,000 characters. The app shows it only in the sheet.
-  public var text: String = String()
+  package var text: String = String()
 
-  public var truncated: Bool = false
+  package var truncated: Bool = false
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// One tool call.
-public nonisolated struct Dshm_V1_ToolBlock: Sendable {
+package nonisolated struct Dshm_V1_ToolBlock: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// DSH's tool name, as the model called it (`read`, `edit`, `write`, `bash`, `grep`, …).
-  public var tool: String = String()
+  package var tool: String = String()
 
   /// What the call acts on, from its arguments: `file_path` / `path` for file tools, `command`
   /// for shells, `pattern` for searches. Empty when the arguments name none.
-  public var target: String = String()
+  package var target: String = String()
 
   /// From the result's diff (DSH `tool/result` meta `diffs`). 0 for tools that change no file.
-  public var linesAdded: UInt32 = 0
+  package var linesAdded: UInt32 = 0
 
-  public var linesRemoved: UInt32 = 0
+  package var linesRemoved: UInt32 = 0
 
   /// The raw arguments JSON as the model produced it, cut to the first 4,000 characters (sheet only).
-  public var arguments: String = String()
+  package var arguments: String = String()
 
-  public var argumentsTruncated: Bool = false
+  package var argumentsTruncated: Bool = false
 
   /// DSH's user-facing reason when the result is an error (FAILED).
-  public var error: String = String()
+  package var error: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// One block was added or changed. A later event with the same `block_id` replaces the block;
 /// it keeps the block's place in the transcript.
-public nonisolated struct Dshm_V1_TranscriptBlock: Sendable {
+package nonisolated struct Dshm_V1_TranscriptBlock: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var taskID: String = String()
+  package var taskID: String = String()
 
   /// Unique within the task: the DSH tool call id, or the assistant attempt and block index.
-  public var blockID: String = String()
+  package var blockID: String = String()
 
-  public var state: Dshm_V1_TranscriptBlockState = .unspecified
+  package var state: Dshm_V1_TranscriptBlockState = .unspecified
 
-  public var kind: Dshm_V1_TranscriptBlock.OneOf_Kind? = nil
+  package var kind: Dshm_V1_TranscriptBlock.OneOf_Kind? = nil
 
-  public var thinking: Dshm_V1_ThinkingBlock {
+  package var thinking: Dshm_V1_ThinkingBlock {
     get {
       if case .thinking(let v)? = kind {return v}
       return Dshm_V1_ThinkingBlock()
@@ -155,7 +155,7 @@ public nonisolated struct Dshm_V1_TranscriptBlock: Sendable {
     set {kind = .thinking(newValue)}
   }
 
-  public var tool: Dshm_V1_ToolBlock {
+  package var tool: Dshm_V1_ToolBlock {
     get {
       if case .tool(let v)? = kind {return v}
       return Dshm_V1_ToolBlock()
@@ -164,17 +164,17 @@ public nonisolated struct Dshm_V1_TranscriptBlock: Sendable {
   }
 
   /// When DSH recorded the start of the block, Unix milliseconds.
-  public var timeMs: Int64 = 0
+  package var timeMs: Int64 = 0
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public nonisolated enum OneOf_Kind: Equatable, Sendable {
+  package nonisolated enum OneOf_Kind: Equatable, Sendable {
     case thinking(Dshm_V1_ThinkingBlock)
     case tool(Dshm_V1_ToolBlock)
 
   }
 
-  public init() {}
+  package init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -182,14 +182,14 @@ public nonisolated struct Dshm_V1_TranscriptBlock: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_TranscriptBlockState: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TRANSCRIPT_BLOCK_STATE_UNSPECIFIED\0\u{1}TRANSCRIPT_BLOCK_STATE_RUNNING\0\u{1}TRANSCRIPT_BLOCK_STATE_DONE\0\u{1}TRANSCRIPT_BLOCK_STATE_FAILED\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TRANSCRIPT_BLOCK_STATE_UNSPECIFIED\0\u{1}TRANSCRIPT_BLOCK_STATE_RUNNING\0\u{1}TRANSCRIPT_BLOCK_STATE_DONE\0\u{1}TRANSCRIPT_BLOCK_STATE_FAILED\0")
 }
 
 nonisolated extension Dshm_V1_ThinkingBlock: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ThinkingBlock"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}duration_ms\0\u{1}text\0\u{1}truncated\0")
+  package static let protoMessageName: String = _protobuf_package + ".ThinkingBlock"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}duration_ms\0\u{1}text\0\u{1}truncated\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -203,7 +203,7 @@ nonisolated extension Dshm_V1_ThinkingBlock: SwiftProtobuf.Message, SwiftProtobu
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.durationMs != 0 {
       try visitor.visitSingularUInt64Field(value: self.durationMs, fieldNumber: 1)
     }
@@ -216,7 +216,7 @@ nonisolated extension Dshm_V1_ThinkingBlock: SwiftProtobuf.Message, SwiftProtobu
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ThinkingBlock, rhs: Dshm_V1_ThinkingBlock) -> Bool {
+  package static func ==(lhs: Dshm_V1_ThinkingBlock, rhs: Dshm_V1_ThinkingBlock) -> Bool {
     if lhs.durationMs != rhs.durationMs {return false}
     if lhs.text != rhs.text {return false}
     if lhs.truncated != rhs.truncated {return false}
@@ -226,10 +226,10 @@ nonisolated extension Dshm_V1_ThinkingBlock: SwiftProtobuf.Message, SwiftProtobu
 }
 
 nonisolated extension Dshm_V1_ToolBlock: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ToolBlock"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}tool\0\u{1}target\0\u{3}lines_added\0\u{3}lines_removed\0\u{1}arguments\0\u{3}arguments_truncated\0\u{1}error\0")
+  package static let protoMessageName: String = _protobuf_package + ".ToolBlock"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}tool\0\u{1}target\0\u{3}lines_added\0\u{3}lines_removed\0\u{1}arguments\0\u{3}arguments_truncated\0\u{1}error\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -247,7 +247,7 @@ nonisolated extension Dshm_V1_ToolBlock: SwiftProtobuf.Message, SwiftProtobuf._M
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.tool.isEmpty {
       try visitor.visitSingularStringField(value: self.tool, fieldNumber: 1)
     }
@@ -272,7 +272,7 @@ nonisolated extension Dshm_V1_ToolBlock: SwiftProtobuf.Message, SwiftProtobuf._M
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ToolBlock, rhs: Dshm_V1_ToolBlock) -> Bool {
+  package static func ==(lhs: Dshm_V1_ToolBlock, rhs: Dshm_V1_ToolBlock) -> Bool {
     if lhs.tool != rhs.tool {return false}
     if lhs.target != rhs.target {return false}
     if lhs.linesAdded != rhs.linesAdded {return false}
@@ -286,10 +286,10 @@ nonisolated extension Dshm_V1_ToolBlock: SwiftProtobuf.Message, SwiftProtobuf._M
 }
 
 nonisolated extension Dshm_V1_TranscriptBlock: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".TranscriptBlock"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{3}block_id\0\u{1}state\0\u{1}thinking\0\u{1}tool\0\u{3}time_ms\0")
+  package static let protoMessageName: String = _protobuf_package + ".TranscriptBlock"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{3}block_id\0\u{1}state\0\u{1}thinking\0\u{1}tool\0\u{3}time_ms\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -330,7 +330,7 @@ nonisolated extension Dshm_V1_TranscriptBlock: SwiftProtobuf.Message, SwiftProto
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -361,7 +361,7 @@ nonisolated extension Dshm_V1_TranscriptBlock: SwiftProtobuf.Message, SwiftProto
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_TranscriptBlock, rhs: Dshm_V1_TranscriptBlock) -> Bool {
+  package static func ==(lhs: Dshm_V1_TranscriptBlock, rhs: Dshm_V1_TranscriptBlock) -> Bool {
     if lhs.taskID != rhs.taskID {return false}
     if lhs.blockID != rhs.blockID {return false}
     if lhs.state != rhs.state {return false}

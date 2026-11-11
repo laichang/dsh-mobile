@@ -1,4 +1,5 @@
 #if DEBUG
+import DSHTransport
 import DSHCore
 import DSHFeatures
 import DSHProtocol

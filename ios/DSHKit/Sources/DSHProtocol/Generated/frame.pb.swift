@@ -35,19 +35,19 @@ fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobu
   typealias Version = _2
 }
 
-public nonisolated enum Dshm_V1_TaskStatus: SwiftProtobuf.Enum, Swift.CaseIterable {
-  public typealias RawValue = Int
+package nonisolated enum Dshm_V1_TaskStatus: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
   case unspecified // = 0
   case completed // = 1
   case failed // = 2
   case interrupted // = 3
   case UNRECOGNIZED(Int)
 
-  public init() {
+  package init() {
     self = .unspecified
   }
 
-  public init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .unspecified
     case 1: self = .completed
@@ -57,7 +57,7 @@ public nonisolated enum Dshm_V1_TaskStatus: SwiftProtobuf.Enum, Swift.CaseIterab
     }
   }
 
-  public var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .unspecified: return 0
     case .completed: return 1
@@ -68,7 +68,7 @@ public nonisolated enum Dshm_V1_TaskStatus: SwiftProtobuf.Enum, Swift.CaseIterab
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static let allCases: [Dshm_V1_TaskStatus] = [
+  package static let allCases: [Dshm_V1_TaskStatus] = [
     .unspecified,
     .completed,
     .failed,
@@ -78,14 +78,14 @@ public nonisolated enum Dshm_V1_TaskStatus: SwiftProtobuf.Enum, Swift.CaseIterab
 }
 
 /// One binary WebSocket message carries one Frame over pinned TLS 1.3.
-public nonisolated struct Dshm_V1_Frame: Sendable {
+package nonisolated struct Dshm_V1_Frame: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var kind: Dshm_V1_Frame.OneOf_Kind? = nil
+  package var kind: Dshm_V1_Frame.OneOf_Kind? = nil
 
-  public var request: Dshm_V1_Request {
+  package var request: Dshm_V1_Request {
     get {
       if case .request(let v)? = kind {return v}
       return Dshm_V1_Request()
@@ -93,7 +93,7 @@ public nonisolated struct Dshm_V1_Frame: Sendable {
     set {kind = .request(newValue)}
   }
 
-  public var response: Dshm_V1_Response {
+  package var response: Dshm_V1_Response {
     get {
       if case .response(let v)? = kind {return v}
       return Dshm_V1_Response()
@@ -101,7 +101,7 @@ public nonisolated struct Dshm_V1_Frame: Sendable {
     set {kind = .response(newValue)}
   }
 
-  public var event: Dshm_V1_Event {
+  package var event: Dshm_V1_Event {
     get {
       if case .event(let v)? = kind {return v}
       return Dshm_V1_Event()
@@ -109,31 +109,31 @@ public nonisolated struct Dshm_V1_Frame: Sendable {
     set {kind = .event(newValue)}
   }
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public nonisolated enum OneOf_Kind: Equatable, Sendable {
+  package nonisolated enum OneOf_Kind: Equatable, Sendable {
     case request(Dshm_V1_Request)
     case response(Dshm_V1_Response)
     case event(Dshm_V1_Event)
 
   }
 
-  public init() {}
+  package init() {}
 }
 
 /// App → bridge. Correlated with its Response by `id`.
-public nonisolated struct Dshm_V1_Request: Sendable {
+package nonisolated struct Dshm_V1_Request: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Chosen by the sender, unique per connection, never 0.
-  public var id: UInt64 = 0
+  package var id: UInt64 = 0
 
-  public var body: Dshm_V1_Request.OneOf_Body? = nil
+  package var body: Dshm_V1_Request.OneOf_Body? = nil
 
   /// 2–19
-  public var hello: Dshm_V1_Hello {
+  package var hello: Dshm_V1_Hello {
     get {
       if case .hello(let v)? = body {return v}
       return Dshm_V1_Hello()
@@ -141,7 +141,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .hello(newValue)}
   }
 
-  public var createTask: Dshm_V1_CreateTask {
+  package var createTask: Dshm_V1_CreateTask {
     get {
       if case .createTask(let v)? = body {return v}
       return Dshm_V1_CreateTask()
@@ -150,7 +150,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
   }
 
   /// 40–59 (durable_list.proto)
-  public var listTasks: Dshm_V1_ListTasks {
+  package var listTasks: Dshm_V1_ListTasks {
     get {
       if case .listTasks(let v)? = body {return v}
       return Dshm_V1_ListTasks()
@@ -158,7 +158,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .listTasks(newValue)}
   }
 
-  public var resume: Dshm_V1_Resume {
+  package var resume: Dshm_V1_Resume {
     get {
       if case .resume(let v)? = body {return v}
       return Dshm_V1_Resume()
@@ -166,7 +166,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .resume(newValue)}
   }
 
-  public var answerApproval: Dshm_V1_AnswerApproval {
+  package var answerApproval: Dshm_V1_AnswerApproval {
     get {
       if case .answerApproval(let v)? = body {return v}
       return Dshm_V1_AnswerApproval()
@@ -174,7 +174,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .answerApproval(newValue)}
   }
 
-  public var interrupt: Dshm_V1_Interrupt {
+  package var interrupt: Dshm_V1_Interrupt {
     get {
       if case .interrupt(let v)? = body {return v}
       return Dshm_V1_Interrupt()
@@ -182,7 +182,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .interrupt(newValue)}
   }
 
-  public var getModelCatalog: Dshm_V1_GetModelCatalog {
+  package var getModelCatalog: Dshm_V1_GetModelCatalog {
     get {
       if case .getModelCatalog(let v)? = body {return v}
       return Dshm_V1_GetModelCatalog()
@@ -190,7 +190,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .getModelCatalog(newValue)}
   }
 
-  public var selectModel: Dshm_V1_SelectModel {
+  package var selectModel: Dshm_V1_SelectModel {
     get {
       if case .selectModel(let v)? = body {return v}
       return Dshm_V1_SelectModel()
@@ -198,7 +198,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .selectModel(newValue)}
   }
 
-  public var listWorkspaces: Dshm_V1_ListWorkspaces {
+  package var listWorkspaces: Dshm_V1_ListWorkspaces {
     get {
       if case .listWorkspaces(let v)? = body {return v}
       return Dshm_V1_ListWorkspaces()
@@ -206,7 +206,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .listWorkspaces(newValue)}
   }
 
-  public var listDevices: Dshm_V1_ListDevices {
+  package var listDevices: Dshm_V1_ListDevices {
     get {
       if case .listDevices(let v)? = body {return v}
       return Dshm_V1_ListDevices()
@@ -214,7 +214,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .listDevices(newValue)}
   }
 
-  public var revokeDevice: Dshm_V1_RevokeDevice {
+  package var revokeDevice: Dshm_V1_RevokeDevice {
     get {
       if case .revokeDevice(let v)? = body {return v}
       return Dshm_V1_RevokeDevice()
@@ -222,7 +222,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .revokeDevice(newValue)}
   }
 
-  public var listAudit: Dshm_V1_ListAudit {
+  package var listAudit: Dshm_V1_ListAudit {
     get {
       if case .listAudit(let v)? = body {return v}
       return Dshm_V1_ListAudit()
@@ -230,7 +230,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .listAudit(newValue)}
   }
 
-  public var readSession: Dshm_V1_ReadSession {
+  package var readSession: Dshm_V1_ReadSession {
     get {
       if case .readSession(let v)? = body {return v}
       return Dshm_V1_ReadSession()
@@ -238,7 +238,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .readSession(newValue)}
   }
 
-  public var sendMessage: Dshm_V1_SendMessage {
+  package var sendMessage: Dshm_V1_SendMessage {
     get {
       if case .sendMessage(let v)? = body {return v}
       return Dshm_V1_SendMessage()
@@ -247,7 +247,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
   }
 
   /// conversation.proto
-  public var editQueue: Dshm_V1_EditQueue {
+  package var editQueue: Dshm_V1_EditQueue {
     get {
       if case .editQueue(let v)? = body {return v}
       return Dshm_V1_EditQueue()
@@ -255,7 +255,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .editQueue(newValue)}
   }
 
-  public var answerQuestion: Dshm_V1_AnswerQuestion {
+  package var answerQuestion: Dshm_V1_AnswerQuestion {
     get {
       if case .answerQuestion(let v)? = body {return v}
       return Dshm_V1_AnswerQuestion()
@@ -263,7 +263,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .answerQuestion(newValue)}
   }
 
-  public var uploadBegin: Dshm_V1_UploadBegin {
+  package var uploadBegin: Dshm_V1_UploadBegin {
     get {
       if case .uploadBegin(let v)? = body {return v}
       return Dshm_V1_UploadBegin()
@@ -271,7 +271,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .uploadBegin(newValue)}
   }
 
-  public var uploadChunk: Dshm_V1_UploadChunk {
+  package var uploadChunk: Dshm_V1_UploadChunk {
     get {
       if case .uploadChunk(let v)? = body {return v}
       return Dshm_V1_UploadChunk()
@@ -280,7 +280,7 @@ public nonisolated struct Dshm_V1_Request: Sendable {
   }
 
   /// attachments.proto
-  public var uploadEnd: Dshm_V1_UploadEnd {
+  package var uploadEnd: Dshm_V1_UploadEnd {
     get {
       if case .uploadEnd(let v)? = body {return v}
       return Dshm_V1_UploadEnd()
@@ -288,9 +288,9 @@ public nonisolated struct Dshm_V1_Request: Sendable {
     set {body = .uploadEnd(newValue)}
   }
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public nonisolated enum OneOf_Body: Equatable, Sendable {
+  package nonisolated enum OneOf_Body: Equatable, Sendable {
     /// 2–19
     case hello(Dshm_V1_Hello)
     case createTask(Dshm_V1_CreateTask)
@@ -317,21 +317,21 @@ public nonisolated struct Dshm_V1_Request: Sendable {
 
   }
 
-  public init() {}
+  package init() {}
 }
 
 /// Bridge → app, answering the Request with the same id.
-public nonisolated struct Dshm_V1_Response: Sendable {
+package nonisolated struct Dshm_V1_Response: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var requestID: UInt64 = 0
+  package var requestID: UInt64 = 0
 
-  public var body: Dshm_V1_Response.OneOf_Body? = nil
+  package var body: Dshm_V1_Response.OneOf_Body? = nil
 
   /// 2–19
-  public var error: Dshm_V1_Error {
+  package var error: Dshm_V1_Error {
     get {
       if case .error(let v)? = body {return v}
       return Dshm_V1_Error()
@@ -339,7 +339,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .error(newValue)}
   }
 
-  public var hello: Dshm_V1_Hello {
+  package var hello: Dshm_V1_Hello {
     get {
       if case .hello(let v)? = body {return v}
       return Dshm_V1_Hello()
@@ -347,7 +347,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .hello(newValue)}
   }
 
-  public var taskCreated: Dshm_V1_TaskCreated {
+  package var taskCreated: Dshm_V1_TaskCreated {
     get {
       if case .taskCreated(let v)? = body {return v}
       return Dshm_V1_TaskCreated()
@@ -356,7 +356,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
   }
 
   /// 40–59 (durable_list.proto)
-  public var taskList: Dshm_V1_TaskList {
+  package var taskList: Dshm_V1_TaskList {
     get {
       if case .taskList(let v)? = body {return v}
       return Dshm_V1_TaskList()
@@ -364,7 +364,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .taskList(newValue)}
   }
 
-  public var resumed: Dshm_V1_Resumed {
+  package var resumed: Dshm_V1_Resumed {
     get {
       if case .resumed(let v)? = body {return v}
       return Dshm_V1_Resumed()
@@ -372,7 +372,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .resumed(newValue)}
   }
 
-  public var approvalResolved: Dshm_V1_ApprovalResolved {
+  package var approvalResolved: Dshm_V1_ApprovalResolved {
     get {
       if case .approvalResolved(let v)? = body {return v}
       return Dshm_V1_ApprovalResolved()
@@ -380,7 +380,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .approvalResolved(newValue)}
   }
 
-  public var interruptAccepted: Dshm_V1_InterruptAccepted {
+  package var interruptAccepted: Dshm_V1_InterruptAccepted {
     get {
       if case .interruptAccepted(let v)? = body {return v}
       return Dshm_V1_InterruptAccepted()
@@ -388,7 +388,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .interruptAccepted(newValue)}
   }
 
-  public var workspaceList: Dshm_V1_WorkspaceList {
+  package var workspaceList: Dshm_V1_WorkspaceList {
     get {
       if case .workspaceList(let v)? = body {return v}
       return Dshm_V1_WorkspaceList()
@@ -396,7 +396,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .workspaceList(newValue)}
   }
 
-  public var modelCatalog: Dshm_V1_ModelCatalog {
+  package var modelCatalog: Dshm_V1_ModelCatalog {
     get {
       if case .modelCatalog(let v)? = body {return v}
       return Dshm_V1_ModelCatalog()
@@ -404,7 +404,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .modelCatalog(newValue)}
   }
 
-  public var modelSelected: Dshm_V1_ModelSelected {
+  package var modelSelected: Dshm_V1_ModelSelected {
     get {
       if case .modelSelected(let v)? = body {return v}
       return Dshm_V1_ModelSelected()
@@ -412,7 +412,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .modelSelected(newValue)}
   }
 
-  public var deviceList: Dshm_V1_DeviceList {
+  package var deviceList: Dshm_V1_DeviceList {
     get {
       if case .deviceList(let v)? = body {return v}
       return Dshm_V1_DeviceList()
@@ -420,7 +420,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .deviceList(newValue)}
   }
 
-  public var auditPage: Dshm_V1_AuditPage {
+  package var auditPage: Dshm_V1_AuditPage {
     get {
       if case .auditPage(let v)? = body {return v}
       return Dshm_V1_AuditPage()
@@ -428,7 +428,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .auditPage(newValue)}
   }
 
-  public var sessionPage: Dshm_V1_SessionPage {
+  package var sessionPage: Dshm_V1_SessionPage {
     get {
       if case .sessionPage(let v)? = body {return v}
       return Dshm_V1_SessionPage()
@@ -436,7 +436,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .sessionPage(newValue)}
   }
 
-  public var messageAccepted: Dshm_V1_MessageAccepted {
+  package var messageAccepted: Dshm_V1_MessageAccepted {
     get {
       if case .messageAccepted(let v)? = body {return v}
       return Dshm_V1_MessageAccepted()
@@ -445,7 +445,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
   }
 
   /// conversation.proto
-  public var queueEdited: Dshm_V1_QueueEdited {
+  package var queueEdited: Dshm_V1_QueueEdited {
     get {
       if case .queueEdited(let v)? = body {return v}
       return Dshm_V1_QueueEdited()
@@ -453,7 +453,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .queueEdited(newValue)}
   }
 
-  public var questionResolved: Dshm_V1_QuestionResolved {
+  package var questionResolved: Dshm_V1_QuestionResolved {
     get {
       if case .questionResolved(let v)? = body {return v}
       return Dshm_V1_QuestionResolved()
@@ -461,7 +461,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .questionResolved(newValue)}
   }
 
-  public var uploadAck: Dshm_V1_UploadAck {
+  package var uploadAck: Dshm_V1_UploadAck {
     get {
       if case .uploadAck(let v)? = body {return v}
       return Dshm_V1_UploadAck()
@@ -470,7 +470,7 @@ public nonisolated struct Dshm_V1_Response: Sendable {
   }
 
   /// attachments.proto
-  public var uploadStaged: Dshm_V1_UploadStaged {
+  package var uploadStaged: Dshm_V1_UploadStaged {
     get {
       if case .uploadStaged(let v)? = body {return v}
       return Dshm_V1_UploadStaged()
@@ -478,9 +478,9 @@ public nonisolated struct Dshm_V1_Response: Sendable {
     set {body = .uploadStaged(newValue)}
   }
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public nonisolated enum OneOf_Body: Equatable, Sendable {
+  package nonisolated enum OneOf_Body: Equatable, Sendable {
     /// 2–19
     case error(Dshm_V1_Error)
     case hello(Dshm_V1_Hello)
@@ -506,19 +506,19 @@ public nonisolated struct Dshm_V1_Response: Sendable {
 
   }
 
-  public init() {}
+  package init() {}
 }
 
 /// Bridge → app, unsolicited.
-public nonisolated struct Dshm_V1_Event: Sendable {
+package nonisolated struct Dshm_V1_Event: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var body: Dshm_V1_Event.OneOf_Body? = nil
+  package var body: Dshm_V1_Event.OneOf_Body? = nil
 
   /// 1–19
-  public var assistantChunk: Dshm_V1_AssistantChunk {
+  package var assistantChunk: Dshm_V1_AssistantChunk {
     get {
       if case .assistantChunk(let v)? = body {return v}
       return Dshm_V1_AssistantChunk()
@@ -526,7 +526,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .assistantChunk(newValue)}
   }
 
-  public var taskEnded: Dshm_V1_TaskEnded {
+  package var taskEnded: Dshm_V1_TaskEnded {
     get {
       if case .taskEnded(let v)? = body {return v}
       return Dshm_V1_TaskEnded()
@@ -535,7 +535,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
   }
 
   /// 60–79
-  public var milestoneAdded: Dshm_V1_MilestoneAdded {
+  package var milestoneAdded: Dshm_V1_MilestoneAdded {
     get {
       if case .milestoneAdded(let v)? = body {return v}
       return Dshm_V1_MilestoneAdded()
@@ -544,7 +544,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
   }
 
   /// 40–59 (durable_list.proto)
-  public var taskUpserted: Dshm_V1_TaskUpserted {
+  package var taskUpserted: Dshm_V1_TaskUpserted {
     get {
       if case .taskUpserted(let v)? = body {return v}
       return Dshm_V1_TaskUpserted()
@@ -552,7 +552,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .taskUpserted(newValue)}
   }
 
-  public var logReset: Dshm_V1_LogReset {
+  package var logReset: Dshm_V1_LogReset {
     get {
       if case .logReset(let v)? = body {return v}
       return Dshm_V1_LogReset()
@@ -560,7 +560,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .logReset(newValue)}
   }
 
-  public var approvalPending: Dshm_V1_ApprovalPending {
+  package var approvalPending: Dshm_V1_ApprovalPending {
     get {
       if case .approvalPending(let v)? = body {return v}
       return Dshm_V1_ApprovalPending()
@@ -568,7 +568,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .approvalPending(newValue)}
   }
 
-  public var approvalResolved: Dshm_V1_ApprovalResolved {
+  package var approvalResolved: Dshm_V1_ApprovalResolved {
     get {
       if case .approvalResolved(let v)? = body {return v}
       return Dshm_V1_ApprovalResolved()
@@ -576,7 +576,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .approvalResolved(newValue)}
   }
 
-  public var modelSelected: Dshm_V1_ModelSelected {
+  package var modelSelected: Dshm_V1_ModelSelected {
     get {
       if case .modelSelected(let v)? = body {return v}
       return Dshm_V1_ModelSelected()
@@ -585,7 +585,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
   }
 
   /// transcript.proto
-  public var transcriptBlock: Dshm_V1_TranscriptBlock {
+  package var transcriptBlock: Dshm_V1_TranscriptBlock {
     get {
       if case .transcriptBlock(let v)? = body {return v}
       return Dshm_V1_TranscriptBlock()
@@ -593,7 +593,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .transcriptBlock(newValue)}
   }
 
-  public var userMessage: Dshm_V1_UserMessage {
+  package var userMessage: Dshm_V1_UserMessage {
     get {
       if case .userMessage(let v)? = body {return v}
       return Dshm_V1_UserMessage()
@@ -602,7 +602,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
   }
 
   /// conversation.proto
-  public var queuedMessage: Dshm_V1_QueuedMessage {
+  package var queuedMessage: Dshm_V1_QueuedMessage {
     get {
       if case .queuedMessage(let v)? = body {return v}
       return Dshm_V1_QueuedMessage()
@@ -611,7 +611,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
   }
 
   /// questions.proto
-  public var questionPending: Dshm_V1_QuestionPending {
+  package var questionPending: Dshm_V1_QuestionPending {
     get {
       if case .questionPending(let v)? = body {return v}
       return Dshm_V1_QuestionPending()
@@ -619,7 +619,7 @@ public nonisolated struct Dshm_V1_Event: Sendable {
     set {body = .questionPending(newValue)}
   }
 
-  public var questionResolved: Dshm_V1_QuestionResolved {
+  package var questionResolved: Dshm_V1_QuestionResolved {
     get {
       if case .questionResolved(let v)? = body {return v}
       return Dshm_V1_QuestionResolved()
@@ -629,11 +629,11 @@ public nonisolated struct Dshm_V1_Event: Sendable {
 
   /// Per-host monotonic sequence number in the bridge's event log (durable_list.proto), from 1.
   /// 0 when the event isn't logged (LogReset).
-  public var hostSeq: UInt64 = 0
+  package var hostSeq: UInt64 = 0
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public nonisolated enum OneOf_Body: Equatable, Sendable {
+  package nonisolated enum OneOf_Body: Equatable, Sendable {
     /// 1–19
     case assistantChunk(Dshm_V1_AssistantChunk)
     case taskEnded(Dshm_V1_TaskEnded)
@@ -656,136 +656,136 @@ public nonisolated struct Dshm_V1_Event: Sendable {
 
   }
 
-  public init() {}
+  package init() {}
 }
 
 /// First request on every connection; the bridge answers with its own Hello.
-public nonisolated struct Dshm_V1_Hello: Sendable {
+package nonisolated struct Dshm_V1_Hello: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Incremented on breaking changes; the bridge supports N and N-1.
-  public var protocolVersion: UInt32 = 0
+  package var protocolVersion: UInt32 = 0
 
-  public var capabilities: [String] = []
+  package var capabilities: [String] = []
 
   /// Host response only. Older bridges omit these fields.
-  public var dshVersion: String = String()
+  package var dshVersion: String = String()
 
-  public var supportedDshRange: String = String()
+  package var supportedDshRange: String = String()
 
-  public var requiresBridgeUpdate: Bool = false
+  package var requiresBridgeUpdate: Bool = false
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_Error: Sendable {
+package nonisolated struct Dshm_V1_Error: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Stable, machine-readable, e.g. "hello/version-unsupported".
-  public var code: String = String()
+  package var code: String = String()
 
   /// Human-readable detail; never shown as the only explanation.
-  public var message: String = String()
+  package var message: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// Start a task: one DSH session + one prompt.
-public nonisolated struct Dshm_V1_CreateTask: Sendable {
+package nonisolated struct Dshm_V1_CreateTask: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var prompt: String = String()
+  package var prompt: String = String()
 
-  public var modelSelection: Dshm_V1_ModelSelection {
+  package var modelSelection: Dshm_V1_ModelSelection {
     get {_modelSelection ?? Dshm_V1_ModelSelection()}
     set {_modelSelection = newValue}
   }
   /// Returns true if `modelSelection` has been explicitly set.
-  public var hasModelSelection: Bool {self._modelSelection != nil}
+  package var hasModelSelection: Bool {self._modelSelection != nil}
   /// Clears the value of `modelSelection`. Subsequent reads from it will return its default value.
-  public mutating func clearModelSelection() {self._modelSelection = nil}
+  package mutating func clearModelSelection() {self._modelSelection = nil}
 
   /// Absolute directory on the host; absent uses its configured default.
-  public var workspace: String {
+  package var workspace: String {
     get {_workspace ?? String()}
     set {_workspace = newValue}
   }
   /// Returns true if `workspace` has been explicitly set.
-  public var hasWorkspace: Bool {self._workspace != nil}
+  package var hasWorkspace: Bool {self._workspace != nil}
   /// Clears the value of `workspace`. Subsequent reads from it will return its default value.
-  public mutating func clearWorkspace() {self._workspace = nil}
+  package mutating func clearWorkspace() {self._workspace = nil}
 
   /// Staged uploads (attachments.proto), in prompt order.
-  public var uploadIds: [String] = []
+  package var uploadIds: [String] = []
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 
   fileprivate var _modelSelection: Dshm_V1_ModelSelection? = nil
   fileprivate var _workspace: String? = nil
 }
 
-public nonisolated struct Dshm_V1_TaskCreated: Sendable {
+package nonisolated struct Dshm_V1_TaskCreated: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var taskID: String = String()
+  package var taskID: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 /// A piece of assistant text, in order. `seq` starts at 1 per task and has no
 /// gaps (the bridge numbers it per task, not per connection).
-public nonisolated struct Dshm_V1_AssistantChunk: Sendable {
+package nonisolated struct Dshm_V1_AssistantChunk: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var taskID: String = String()
+  package var taskID: String = String()
 
-  public var seq: UInt64 = 0
+  package var seq: UInt64 = 0
 
-  public var text: String = String()
+  package var text: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_TaskEnded: Sendable {
+package nonisolated struct Dshm_V1_TaskEnded: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var taskID: String = String()
+  package var taskID: String = String()
 
-  public var status: Dshm_V1_TaskStatus = .unspecified
+  package var status: Dshm_V1_TaskStatus = .unspecified
 
   /// Why it failed, when status is FAILED. For a model failure: DSH's text as it is.
-  public var message: String = String()
+  package var message: String = String()
 
   /// Model failures (fields 420–439): DSH's stable failure class when status is FAILED
   /// (`AUTH`, `QUOTA`, `ACCOUNT_QUOTA`, `RATE_LIMIT`, `INVALID_REQUEST`, `HTTP_404`, …); empty when
   /// DSH gave none. The app chooses its own text for some codes and shows `message` for the others.
-  public var failureCode: String = String()
+  package var failureCode: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -793,14 +793,14 @@ public nonisolated struct Dshm_V1_TaskEnded: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_TaskStatus: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TASK_STATUS_UNSPECIFIED\0\u{1}TASK_STATUS_COMPLETED\0\u{1}TASK_STATUS_FAILED\0\u{1}TASK_STATUS_INTERRUPTED\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TASK_STATUS_UNSPECIFIED\0\u{1}TASK_STATUS_COMPLETED\0\u{1}TASK_STATUS_FAILED\0\u{1}TASK_STATUS_INTERRUPTED\0")
 }
 
 nonisolated extension Dshm_V1_Frame: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Frame"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}request\0\u{1}response\0\u{1}event\0")
+  package static let protoMessageName: String = _protobuf_package + ".Frame"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}request\0\u{1}response\0\u{1}event\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -850,7 +850,7 @@ nonisolated extension Dshm_V1_Frame: SwiftProtobuf.Message, SwiftProtobuf._Messa
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -873,7 +873,7 @@ nonisolated extension Dshm_V1_Frame: SwiftProtobuf.Message, SwiftProtobuf._Messa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_Frame, rhs: Dshm_V1_Frame) -> Bool {
+  package static func ==(lhs: Dshm_V1_Frame, rhs: Dshm_V1_Frame) -> Bool {
     if lhs.kind != rhs.kind {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -881,10 +881,10 @@ nonisolated extension Dshm_V1_Frame: SwiftProtobuf.Message, SwiftProtobuf._Messa
 }
 
 nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Request"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0\u{4}%list_tasks\0\u{1}resume\0\u{4}'answer_approval\0\u{2}\u{14}interrupt\0\u{4}\u{14}get_model_catalog\0\u{3}select_model\0\u{4}\u{13}list_workspaces\0\u{4}<list_devices\0\u{3}revoke_device\0\u{3}list_audit\0\u{4}:read_session\0\u{4}d\u{1}send_message\0\u{3}edit_queue\0\u{4}\u{13}answer_question\0\u{4}\u{14}upload_begin\0\u{3}upload_chunk\0\u{3}upload_end\0")
+  package static let protoMessageName: String = _protobuf_package + ".Request"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}create_task\0\u{4}%list_tasks\0\u{1}resume\0\u{4}'answer_approval\0\u{2}\u{14}interrupt\0\u{4}\u{14}get_model_catalog\0\u{3}select_model\0\u{4}\u{13}list_workspaces\0\u{4}<list_devices\0\u{3}revoke_device\0\u{3}list_audit\0\u{4}:read_session\0\u{4}d\u{1}send_message\0\u{3}edit_queue\0\u{4}\u{13}answer_question\0\u{4}\u{14}upload_begin\0\u{3}upload_chunk\0\u{3}upload_end\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1143,7 +1143,7 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1233,7 +1233,7 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_Request, rhs: Dshm_V1_Request) -> Bool {
+  package static func ==(lhs: Dshm_V1_Request, rhs: Dshm_V1_Request) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.body != rhs.body {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1242,10 +1242,10 @@ nonisolated extension Dshm_V1_Request: SwiftProtobuf.Message, SwiftProtobuf._Mes
 }
 
 nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Response"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0\u{4}$task_list\0\u{1}resumed\0\u{4}'approval_resolved\0\u{4}\u{14}interrupt_accepted\0\u{4}\u{14}model_catalog\0\u{3}model_selected\0\u{4}\u{13}workspace_list\0\u{4}<device_list\0\u{4}\u{2}audit_page\0\u{4}:session_page\0\u{4}d\u{1}message_accepted\0\u{3}queue_edited\0\u{4}\u{13}question_resolved\0\u{4}\u{14}upload_ack\0\u{3}upload_staged\0")
+  package static let protoMessageName: String = _protobuf_package + ".Response"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}request_id\0\u{1}error\0\u{1}hello\0\u{3}task_created\0\u{4}$task_list\0\u{1}resumed\0\u{4}'approval_resolved\0\u{4}\u{14}interrupt_accepted\0\u{4}\u{14}model_catalog\0\u{3}model_selected\0\u{4}\u{13}workspace_list\0\u{4}<device_list\0\u{4}\u{2}audit_page\0\u{4}:session_page\0\u{4}d\u{1}message_accepted\0\u{3}queue_edited\0\u{4}\u{13}question_resolved\0\u{4}\u{14}upload_ack\0\u{3}upload_staged\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1491,7 +1491,7 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1577,7 +1577,7 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_Response, rhs: Dshm_V1_Response) -> Bool {
+  package static func ==(lhs: Dshm_V1_Response, rhs: Dshm_V1_Response) -> Bool {
     if lhs.requestID != rhs.requestID {return false}
     if lhs.body != rhs.body {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1586,10 +1586,10 @@ nonisolated extension Dshm_V1_Response: SwiftProtobuf.Message, SwiftProtobuf._Me
 }
 
 nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Event"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}&host_seq\0\u{3}task_upserted\0\u{3}log_reset\0\u{4}\u{12}milestone_added\0\u{4}\u{14}approval_pending\0\u{3}approval_resolved\0\u{4}'model_selected\0\u{4}\\\u{3}transcript_block\0\u{4}\u{14}user_message\0\u{3}queued_message\0\u{4}\u{13}question_pending\0\u{3}question_resolved\0")
+  package static let protoMessageName: String = _protobuf_package + ".Event"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assistant_chunk\0\u{3}task_ended\0\u{4}&host_seq\0\u{3}task_upserted\0\u{3}log_reset\0\u{4}\u{12}milestone_added\0\u{4}\u{14}approval_pending\0\u{3}approval_resolved\0\u{4}'model_selected\0\u{4}\\\u{3}transcript_block\0\u{4}\u{14}user_message\0\u{3}queued_message\0\u{4}\u{13}question_pending\0\u{3}question_resolved\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1770,7 +1770,7 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1839,7 +1839,7 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_Event, rhs: Dshm_V1_Event) -> Bool {
+  package static func ==(lhs: Dshm_V1_Event, rhs: Dshm_V1_Event) -> Bool {
     if lhs.body != rhs.body {return false}
     if lhs.hostSeq != rhs.hostSeq {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1848,10 +1848,10 @@ nonisolated extension Dshm_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Messa
 }
 
 nonisolated extension Dshm_V1_Hello: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Hello"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}protocol_version\0\u{1}capabilities\0\u{4}n\u{3}dsh_version\0\u{3}supported_dsh_range\0\u{3}requires_bridge_update\0")
+  package static let protoMessageName: String = _protobuf_package + ".Hello"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}protocol_version\0\u{1}capabilities\0\u{4}n\u{3}dsh_version\0\u{3}supported_dsh_range\0\u{3}requires_bridge_update\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1867,7 +1867,7 @@ nonisolated extension Dshm_V1_Hello: SwiftProtobuf.Message, SwiftProtobuf._Messa
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.protocolVersion != 0 {
       try visitor.visitSingularUInt32Field(value: self.protocolVersion, fieldNumber: 1)
     }
@@ -1886,7 +1886,7 @@ nonisolated extension Dshm_V1_Hello: SwiftProtobuf.Message, SwiftProtobuf._Messa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_Hello, rhs: Dshm_V1_Hello) -> Bool {
+  package static func ==(lhs: Dshm_V1_Hello, rhs: Dshm_V1_Hello) -> Bool {
     if lhs.protocolVersion != rhs.protocolVersion {return false}
     if lhs.capabilities != rhs.capabilities {return false}
     if lhs.dshVersion != rhs.dshVersion {return false}
@@ -1898,10 +1898,10 @@ nonisolated extension Dshm_V1_Hello: SwiftProtobuf.Message, SwiftProtobuf._Messa
 }
 
 nonisolated extension Dshm_V1_Error: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Error"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}code\0\u{1}message\0")
+  package static let protoMessageName: String = _protobuf_package + ".Error"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}code\0\u{1}message\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1914,7 +1914,7 @@ nonisolated extension Dshm_V1_Error: SwiftProtobuf.Message, SwiftProtobuf._Messa
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.code.isEmpty {
       try visitor.visitSingularStringField(value: self.code, fieldNumber: 1)
     }
@@ -1924,7 +1924,7 @@ nonisolated extension Dshm_V1_Error: SwiftProtobuf.Message, SwiftProtobuf._Messa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_Error, rhs: Dshm_V1_Error) -> Bool {
+  package static func ==(lhs: Dshm_V1_Error, rhs: Dshm_V1_Error) -> Bool {
     if lhs.code != rhs.code {return false}
     if lhs.message != rhs.message {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1933,10 +1933,10 @@ nonisolated extension Dshm_V1_Error: SwiftProtobuf.Message, SwiftProtobuf._Messa
 }
 
 nonisolated extension Dshm_V1_CreateTask: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".CreateTask"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}prompt\0\u{4}w\u{1}model_selection\0\u{2}\u{14}workspace\0\u{4}D\u{4}upload_ids\0")
+  package static let protoMessageName: String = _protobuf_package + ".CreateTask"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}prompt\0\u{4}w\u{1}model_selection\0\u{2}\u{14}workspace\0\u{4}D\u{4}upload_ids\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1951,7 +1951,7 @@ nonisolated extension Dshm_V1_CreateTask: SwiftProtobuf.Message, SwiftProtobuf._
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1971,7 +1971,7 @@ nonisolated extension Dshm_V1_CreateTask: SwiftProtobuf.Message, SwiftProtobuf._
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_CreateTask, rhs: Dshm_V1_CreateTask) -> Bool {
+  package static func ==(lhs: Dshm_V1_CreateTask, rhs: Dshm_V1_CreateTask) -> Bool {
     if lhs.prompt != rhs.prompt {return false}
     if lhs._modelSelection != rhs._modelSelection {return false}
     if lhs._workspace != rhs._workspace {return false}
@@ -1982,10 +1982,10 @@ nonisolated extension Dshm_V1_CreateTask: SwiftProtobuf.Message, SwiftProtobuf._
 }
 
 nonisolated extension Dshm_V1_TaskCreated: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".TaskCreated"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0")
+  package static let protoMessageName: String = _protobuf_package + ".TaskCreated"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1997,14 +1997,14 @@ nonisolated extension Dshm_V1_TaskCreated: SwiftProtobuf.Message, SwiftProtobuf.
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.taskID.isEmpty {
       try visitor.visitSingularStringField(value: self.taskID, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_TaskCreated, rhs: Dshm_V1_TaskCreated) -> Bool {
+  package static func ==(lhs: Dshm_V1_TaskCreated, rhs: Dshm_V1_TaskCreated) -> Bool {
     if lhs.taskID != rhs.taskID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -2012,10 +2012,10 @@ nonisolated extension Dshm_V1_TaskCreated: SwiftProtobuf.Message, SwiftProtobuf.
 }
 
 nonisolated extension Dshm_V1_AssistantChunk: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".AssistantChunk"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}seq\0\u{1}text\0")
+  package static let protoMessageName: String = _protobuf_package + ".AssistantChunk"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}seq\0\u{1}text\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -2029,7 +2029,7 @@ nonisolated extension Dshm_V1_AssistantChunk: SwiftProtobuf.Message, SwiftProtob
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.taskID.isEmpty {
       try visitor.visitSingularStringField(value: self.taskID, fieldNumber: 1)
     }
@@ -2042,7 +2042,7 @@ nonisolated extension Dshm_V1_AssistantChunk: SwiftProtobuf.Message, SwiftProtob
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_AssistantChunk, rhs: Dshm_V1_AssistantChunk) -> Bool {
+  package static func ==(lhs: Dshm_V1_AssistantChunk, rhs: Dshm_V1_AssistantChunk) -> Bool {
     if lhs.taskID != rhs.taskID {return false}
     if lhs.seq != rhs.seq {return false}
     if lhs.text != rhs.text {return false}
@@ -2052,10 +2052,10 @@ nonisolated extension Dshm_V1_AssistantChunk: SwiftProtobuf.Message, SwiftProtob
 }
 
 nonisolated extension Dshm_V1_TaskEnded: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".TaskEnded"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}status\0\u{1}message\0\u{4}a\u{6}failure_code\0")
+  package static let protoMessageName: String = _protobuf_package + ".TaskEnded"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}status\0\u{1}message\0\u{4}a\u{6}failure_code\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -2070,7 +2070,7 @@ nonisolated extension Dshm_V1_TaskEnded: SwiftProtobuf.Message, SwiftProtobuf._M
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.taskID.isEmpty {
       try visitor.visitSingularStringField(value: self.taskID, fieldNumber: 1)
     }
@@ -2086,7 +2086,7 @@ nonisolated extension Dshm_V1_TaskEnded: SwiftProtobuf.Message, SwiftProtobuf._M
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_TaskEnded, rhs: Dshm_V1_TaskEnded) -> Bool {
+  package static func ==(lhs: Dshm_V1_TaskEnded, rhs: Dshm_V1_TaskEnded) -> Bool {
     if lhs.taskID != rhs.taskID {return false}
     if lhs.status != rhs.status {return false}
     if lhs.message != rhs.message {return false}

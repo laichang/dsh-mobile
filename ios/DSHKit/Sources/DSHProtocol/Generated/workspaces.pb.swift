@@ -20,29 +20,29 @@ fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobu
   typealias Version = _2
 }
 
-public nonisolated struct Dshm_V1_ListWorkspaces: Sendable {
+package nonisolated struct Dshm_V1_ListWorkspaces: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_WorkspaceList: Sendable {
+package nonisolated struct Dshm_V1_WorkspaceList: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var defaultPath: String = String()
+  package var defaultPath: String = String()
 
   /// DSH directories, newest first, excluding the default.
-  public var recentPaths: [String] = []
+  package var recentPaths: [String] = []
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -50,29 +50,29 @@ public nonisolated struct Dshm_V1_WorkspaceList: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_ListWorkspaces: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ListWorkspaces"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+  package static let protoMessageName: String = _protobuf_package + ".ListWorkspaces"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     // Load everything into unknown fields
     while try decoder.nextFieldNumber() != nil {}
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ListWorkspaces, rhs: Dshm_V1_ListWorkspaces) -> Bool {
+  package static func ==(lhs: Dshm_V1_ListWorkspaces, rhs: Dshm_V1_ListWorkspaces) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
 nonisolated extension Dshm_V1_WorkspaceList: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".WorkspaceList"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}default_path\0\u{3}recent_paths\0")
+  package static let protoMessageName: String = _protobuf_package + ".WorkspaceList"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}default_path\0\u{3}recent_paths\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -85,7 +85,7 @@ nonisolated extension Dshm_V1_WorkspaceList: SwiftProtobuf.Message, SwiftProtobu
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.defaultPath.isEmpty {
       try visitor.visitSingularStringField(value: self.defaultPath, fieldNumber: 1)
     }
@@ -95,7 +95,7 @@ nonisolated extension Dshm_V1_WorkspaceList: SwiftProtobuf.Message, SwiftProtobu
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_WorkspaceList, rhs: Dshm_V1_WorkspaceList) -> Bool {
+  package static func ==(lhs: Dshm_V1_WorkspaceList, rhs: Dshm_V1_WorkspaceList) -> Bool {
     if lhs.defaultPath != rhs.defaultPath {return false}
     if lhs.recentPaths != rhs.recentPaths {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

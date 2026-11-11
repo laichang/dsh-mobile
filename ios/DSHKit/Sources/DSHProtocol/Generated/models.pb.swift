@@ -20,194 +20,194 @@ fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobu
   typealias Version = _2
 }
 
-public nonisolated struct Dshm_V1_ModelSelection: Sendable {
+package nonisolated struct Dshm_V1_ModelSelection: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var provider: String = String()
+  package var provider: String = String()
 
-  public var model: String = String()
+  package var model: String = String()
 
-  public var reasoningEffort: String {
+  package var reasoningEffort: String {
     get {_reasoningEffort ?? String()}
     set {_reasoningEffort = newValue}
   }
   /// Returns true if `reasoningEffort` has been explicitly set.
-  public var hasReasoningEffort: Bool {self._reasoningEffort != nil}
+  package var hasReasoningEffort: Bool {self._reasoningEffort != nil}
   /// Clears the value of `reasoningEffort`. Subsequent reads from it will return its default value.
-  public mutating func clearReasoningEffort() {self._reasoningEffort = nil}
+  package mutating func clearReasoningEffort() {self._reasoningEffort = nil}
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 
   fileprivate var _reasoningEffort: String? = nil
 }
 
-public nonisolated struct Dshm_V1_ModelEffort: Sendable {
+package nonisolated struct Dshm_V1_ModelEffort: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var id: String = String()
+  package var id: String = String()
 
-  public var name: String = String()
+  package var name: String = String()
 
-  public var description_p: String = String()
+  package var description_p: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_CatalogModel: Sendable {
+package nonisolated struct Dshm_V1_CatalogModel: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var id: String = String()
+  package var id: String = String()
 
-  public var name: String = String()
+  package var name: String = String()
 
-  public var description_p: String = String()
+  package var description_p: String = String()
 
-  public var efforts: [Dshm_V1_ModelEffort] = []
+  package var efforts: [Dshm_V1_ModelEffort] = []
 
-  public var defaultEffort: String {
+  package var defaultEffort: String {
     get {_defaultEffort ?? String()}
     set {_defaultEffort = newValue}
   }
   /// Returns true if `defaultEffort` has been explicitly set.
-  public var hasDefaultEffort: Bool {self._defaultEffort != nil}
+  package var hasDefaultEffort: Bool {self._defaultEffort != nil}
   /// Clears the value of `defaultEffort`. Subsequent reads from it will return its default value.
-  public mutating func clearDefaultEffort() {self._defaultEffort = nil}
+  package mutating func clearDefaultEffort() {self._defaultEffort = nil}
 
-  public var badgeText: String = String()
+  package var badgeText: String = String()
 
-  public var badgeTranslations: Dictionary<String,String> = [:]
+  package var badgeTranslations: Dictionary<String,String> = [:]
 
-  public var badgeTone: String = String()
+  package var badgeTone: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 
   fileprivate var _defaultEffort: String? = nil
 }
 
-public nonisolated struct Dshm_V1_ModelGroup: Sendable {
+package nonisolated struct Dshm_V1_ModelGroup: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var id: String = String()
+  package var id: String = String()
 
-  public var name: String = String()
+  package var name: String = String()
 
-  public var models: [Dshm_V1_CatalogModel] = []
+  package var models: [Dshm_V1_CatalogModel] = []
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_ModelCatalogFailure: Sendable {
+package nonisolated struct Dshm_V1_ModelCatalogFailure: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var id: String = String()
+  package var id: String = String()
 
-  public var name: String = String()
+  package var name: String = String()
 
-  public var message: String = String()
+  package var message: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_GetModelCatalog: Sendable {
+package nonisolated struct Dshm_V1_GetModelCatalog: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 }
 
-public nonisolated struct Dshm_V1_ModelCatalog: Sendable {
+package nonisolated struct Dshm_V1_ModelCatalog: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var defaultSelection: Dshm_V1_ModelSelection {
+  package var defaultSelection: Dshm_V1_ModelSelection {
     get {_defaultSelection ?? Dshm_V1_ModelSelection()}
     set {_defaultSelection = newValue}
   }
   /// Returns true if `defaultSelection` has been explicitly set.
-  public var hasDefaultSelection: Bool {self._defaultSelection != nil}
+  package var hasDefaultSelection: Bool {self._defaultSelection != nil}
   /// Clears the value of `defaultSelection`. Subsequent reads from it will return its default value.
-  public mutating func clearDefaultSelection() {self._defaultSelection = nil}
+  package mutating func clearDefaultSelection() {self._defaultSelection = nil}
 
-  public var groups: [Dshm_V1_ModelGroup] = []
+  package var groups: [Dshm_V1_ModelGroup] = []
 
-  public var failures: [Dshm_V1_ModelCatalogFailure] = []
+  package var failures: [Dshm_V1_ModelCatalogFailure] = []
 
-  public var routableProviders: [String] = []
+  package var routableProviders: [String] = []
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 
   fileprivate var _defaultSelection: Dshm_V1_ModelSelection? = nil
 }
 
-public nonisolated struct Dshm_V1_SelectModel: Sendable {
+package nonisolated struct Dshm_V1_SelectModel: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var taskID: String = String()
+  package var taskID: String = String()
 
-  public var selection: Dshm_V1_ModelSelection {
+  package var selection: Dshm_V1_ModelSelection {
     get {_selection ?? Dshm_V1_ModelSelection()}
     set {_selection = newValue}
   }
   /// Returns true if `selection` has been explicitly set.
-  public var hasSelection: Bool {self._selection != nil}
+  package var hasSelection: Bool {self._selection != nil}
   /// Clears the value of `selection`. Subsequent reads from it will return its default value.
-  public mutating func clearSelection() {self._selection = nil}
+  package mutating func clearSelection() {self._selection = nil}
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 
   fileprivate var _selection: Dshm_V1_ModelSelection? = nil
 }
 
 /// The acknowledged selection in a response, or a durable DSH model/selection in the host log.
-public nonisolated struct Dshm_V1_ModelSelected: Sendable {
+package nonisolated struct Dshm_V1_ModelSelected: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var taskID: String = String()
+  package var taskID: String = String()
 
-  public var selection: Dshm_V1_ModelSelection {
+  package var selection: Dshm_V1_ModelSelection {
     get {_selection ?? Dshm_V1_ModelSelection()}
     set {_selection = newValue}
   }
   /// Returns true if `selection` has been explicitly set.
-  public var hasSelection: Bool {self._selection != nil}
+  package var hasSelection: Bool {self._selection != nil}
   /// Clears the value of `selection`. Subsequent reads from it will return its default value.
-  public mutating func clearSelection() {self._selection = nil}
+  package mutating func clearSelection() {self._selection = nil}
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  package init() {}
 
   fileprivate var _selection: Dshm_V1_ModelSelection? = nil
 }
@@ -217,10 +217,10 @@ public nonisolated struct Dshm_V1_ModelSelected: Sendable {
 fileprivate nonisolated let _protobuf_package = "dshm.v1"
 
 nonisolated extension Dshm_V1_ModelSelection: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ModelSelection"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}provider\0\u{1}model\0\u{3}reasoning_effort\0")
+  package static let protoMessageName: String = _protobuf_package + ".ModelSelection"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}provider\0\u{1}model\0\u{3}reasoning_effort\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -234,7 +234,7 @@ nonisolated extension Dshm_V1_ModelSelection: SwiftProtobuf.Message, SwiftProtob
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -251,7 +251,7 @@ nonisolated extension Dshm_V1_ModelSelection: SwiftProtobuf.Message, SwiftProtob
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ModelSelection, rhs: Dshm_V1_ModelSelection) -> Bool {
+  package static func ==(lhs: Dshm_V1_ModelSelection, rhs: Dshm_V1_ModelSelection) -> Bool {
     if lhs.provider != rhs.provider {return false}
     if lhs.model != rhs.model {return false}
     if lhs._reasoningEffort != rhs._reasoningEffort {return false}
@@ -261,10 +261,10 @@ nonisolated extension Dshm_V1_ModelSelection: SwiftProtobuf.Message, SwiftProtob
 }
 
 nonisolated extension Dshm_V1_ModelEffort: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ModelEffort"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}name\0\u{1}description\0")
+  package static let protoMessageName: String = _protobuf_package + ".ModelEffort"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}name\0\u{1}description\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -278,7 +278,7 @@ nonisolated extension Dshm_V1_ModelEffort: SwiftProtobuf.Message, SwiftProtobuf.
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.id.isEmpty {
       try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
     }
@@ -291,7 +291,7 @@ nonisolated extension Dshm_V1_ModelEffort: SwiftProtobuf.Message, SwiftProtobuf.
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ModelEffort, rhs: Dshm_V1_ModelEffort) -> Bool {
+  package static func ==(lhs: Dshm_V1_ModelEffort, rhs: Dshm_V1_ModelEffort) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.name != rhs.name {return false}
     if lhs.description_p != rhs.description_p {return false}
@@ -301,10 +301,10 @@ nonisolated extension Dshm_V1_ModelEffort: SwiftProtobuf.Message, SwiftProtobuf.
 }
 
 nonisolated extension Dshm_V1_CatalogModel: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".CatalogModel"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}name\0\u{1}description\0\u{1}efforts\0\u{3}default_effort\0\u{3}badge_text\0\u{3}badge_translations\0\u{3}badge_tone\0")
+  package static let protoMessageName: String = _protobuf_package + ".CatalogModel"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}name\0\u{1}description\0\u{1}efforts\0\u{3}default_effort\0\u{3}badge_text\0\u{3}badge_translations\0\u{3}badge_tone\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -323,7 +323,7 @@ nonisolated extension Dshm_V1_CatalogModel: SwiftProtobuf.Message, SwiftProtobuf
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -355,7 +355,7 @@ nonisolated extension Dshm_V1_CatalogModel: SwiftProtobuf.Message, SwiftProtobuf
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_CatalogModel, rhs: Dshm_V1_CatalogModel) -> Bool {
+  package static func ==(lhs: Dshm_V1_CatalogModel, rhs: Dshm_V1_CatalogModel) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.name != rhs.name {return false}
     if lhs.description_p != rhs.description_p {return false}
@@ -370,10 +370,10 @@ nonisolated extension Dshm_V1_CatalogModel: SwiftProtobuf.Message, SwiftProtobuf
 }
 
 nonisolated extension Dshm_V1_ModelGroup: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ModelGroup"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}name\0\u{1}models\0")
+  package static let protoMessageName: String = _protobuf_package + ".ModelGroup"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}name\0\u{1}models\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -387,7 +387,7 @@ nonisolated extension Dshm_V1_ModelGroup: SwiftProtobuf.Message, SwiftProtobuf._
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.id.isEmpty {
       try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
     }
@@ -400,7 +400,7 @@ nonisolated extension Dshm_V1_ModelGroup: SwiftProtobuf.Message, SwiftProtobuf._
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ModelGroup, rhs: Dshm_V1_ModelGroup) -> Bool {
+  package static func ==(lhs: Dshm_V1_ModelGroup, rhs: Dshm_V1_ModelGroup) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.name != rhs.name {return false}
     if lhs.models != rhs.models {return false}
@@ -410,10 +410,10 @@ nonisolated extension Dshm_V1_ModelGroup: SwiftProtobuf.Message, SwiftProtobuf._
 }
 
 nonisolated extension Dshm_V1_ModelCatalogFailure: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ModelCatalogFailure"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}name\0\u{1}message\0")
+  package static let protoMessageName: String = _protobuf_package + ".ModelCatalogFailure"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}name\0\u{1}message\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -427,7 +427,7 @@ nonisolated extension Dshm_V1_ModelCatalogFailure: SwiftProtobuf.Message, SwiftP
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.id.isEmpty {
       try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
     }
@@ -440,7 +440,7 @@ nonisolated extension Dshm_V1_ModelCatalogFailure: SwiftProtobuf.Message, SwiftP
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ModelCatalogFailure, rhs: Dshm_V1_ModelCatalogFailure) -> Bool {
+  package static func ==(lhs: Dshm_V1_ModelCatalogFailure, rhs: Dshm_V1_ModelCatalogFailure) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.name != rhs.name {return false}
     if lhs.message != rhs.message {return false}
@@ -450,29 +450,29 @@ nonisolated extension Dshm_V1_ModelCatalogFailure: SwiftProtobuf.Message, SwiftP
 }
 
 nonisolated extension Dshm_V1_GetModelCatalog: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".GetModelCatalog"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+  package static let protoMessageName: String = _protobuf_package + ".GetModelCatalog"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     // Load everything into unknown fields
     while try decoder.nextFieldNumber() != nil {}
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_GetModelCatalog, rhs: Dshm_V1_GetModelCatalog) -> Bool {
+  package static func ==(lhs: Dshm_V1_GetModelCatalog, rhs: Dshm_V1_GetModelCatalog) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
 nonisolated extension Dshm_V1_ModelCatalog: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ModelCatalog"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}default_selection\0\u{1}groups\0\u{1}failures\0\u{3}routable_providers\0")
+  package static let protoMessageName: String = _protobuf_package + ".ModelCatalog"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}default_selection\0\u{1}groups\0\u{1}failures\0\u{3}routable_providers\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -487,7 +487,7 @@ nonisolated extension Dshm_V1_ModelCatalog: SwiftProtobuf.Message, SwiftProtobuf
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -507,7 +507,7 @@ nonisolated extension Dshm_V1_ModelCatalog: SwiftProtobuf.Message, SwiftProtobuf
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ModelCatalog, rhs: Dshm_V1_ModelCatalog) -> Bool {
+  package static func ==(lhs: Dshm_V1_ModelCatalog, rhs: Dshm_V1_ModelCatalog) -> Bool {
     if lhs._defaultSelection != rhs._defaultSelection {return false}
     if lhs.groups != rhs.groups {return false}
     if lhs.failures != rhs.failures {return false}
@@ -518,10 +518,10 @@ nonisolated extension Dshm_V1_ModelCatalog: SwiftProtobuf.Message, SwiftProtobuf
 }
 
 nonisolated extension Dshm_V1_SelectModel: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".SelectModel"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}selection\0")
+  package static let protoMessageName: String = _protobuf_package + ".SelectModel"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}selection\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -534,7 +534,7 @@ nonisolated extension Dshm_V1_SelectModel: SwiftProtobuf.Message, SwiftProtobuf.
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -548,7 +548,7 @@ nonisolated extension Dshm_V1_SelectModel: SwiftProtobuf.Message, SwiftProtobuf.
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_SelectModel, rhs: Dshm_V1_SelectModel) -> Bool {
+  package static func ==(lhs: Dshm_V1_SelectModel, rhs: Dshm_V1_SelectModel) -> Bool {
     if lhs.taskID != rhs.taskID {return false}
     if lhs._selection != rhs._selection {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -557,10 +557,10 @@ nonisolated extension Dshm_V1_SelectModel: SwiftProtobuf.Message, SwiftProtobuf.
 }
 
 nonisolated extension Dshm_V1_ModelSelected: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ModelSelected"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}selection\0")
+  package static let protoMessageName: String = _protobuf_package + ".ModelSelected"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}task_id\0\u{1}selection\0")
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -573,7 +573,7 @@ nonisolated extension Dshm_V1_ModelSelected: SwiftProtobuf.Message, SwiftProtobu
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -587,7 +587,7 @@ nonisolated extension Dshm_V1_ModelSelected: SwiftProtobuf.Message, SwiftProtobu
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Dshm_V1_ModelSelected, rhs: Dshm_V1_ModelSelected) -> Bool {
+  package static func ==(lhs: Dshm_V1_ModelSelected, rhs: Dshm_V1_ModelSelected) -> Bool {
     if lhs.taskID != rhs.taskID {return false}
     if lhs._selection != rhs._selection {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

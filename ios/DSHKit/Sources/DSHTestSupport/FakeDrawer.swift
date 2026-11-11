@@ -1,4 +1,5 @@
 #if DEBUG
+import DSHTransport
 import DSHCore
 import DSHFeatures
 import DSHProtocol
@@ -54,7 +55,7 @@ public enum FakeDrawer {
             let fake = FakeHost(script: .init(reply: ["Reply ", "from ", name], chunkDelay: .milliseconds(200)),
                                 hostName: name, reachable: reachable,
                                 seed: sessions.map { summary($0, workspace: capable) },
-                                extraCapabilities: capable ? [DrawerTree.capability] : [])
+                                extraCapabilities: capable ? ["drawer.v1"] : [])
             let endpoint = HostEndpoint.localBridge(port: 47801 + index)
             return .init(key: "fake:\(name)", connection: HostConnection(endpoint: endpoint, transport: fake.factory), name: name)
         }

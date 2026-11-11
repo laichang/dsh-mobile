@@ -1,3 +1,4 @@
+import DSHTransport
 import Foundation
 
 extension URL {

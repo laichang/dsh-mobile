@@ -90,7 +90,7 @@ public struct MessageAttachment: Codable, Equatable, Sendable {
         self.thumbnail = thumbnail
     }
 
-    public init(_ wire: Dshm_V1_AttachmentRef) {
+    package init(_ wire: Dshm_V1_AttachmentRef) {
         self.init(kind: wire.kind == .image ? .image : .file, name: wire.name, size: Int(clamping: wire.size),
                   mediaType: wire.mediaType)
     }

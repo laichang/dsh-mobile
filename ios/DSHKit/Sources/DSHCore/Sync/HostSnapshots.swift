@@ -1,3 +1,4 @@
+import DSHTransport
 import Foundation
 
 extension HostSync {
@@ -7,7 +8,12 @@ extension HostSync {
         let connection: HostConnection
         public var name: String?
 
-        public init(key: String, connection: HostConnection, name: String? = nil) {
+        public init?(paired host: PairedHost, using pairing: Pairing) {
+            guard let endpoint = host.addresses.first, let connection = try? pairing.connection(to: host) else { return nil }
+            self.init(key: host.cacheKey, connection: connection, name: host.name.isEmpty ? endpoint.description : host.name)
+        }
+
+        package init(key: String, connection: HostConnection, name: String? = nil) {
             self.key = key
             self.name = name
             self.connection = connection
@@ -44,9 +50,10 @@ extension HostSync {
         /// The negotiated channel shown in the host status row.
         public var channelName: String
         public var isEncrypted: Bool { channelName == "TLS 1.3" }
-        public var capabilities: [String]
+        var capabilities: [String]
         /// The address of the host in use while online, or the last one that worked.
-        public var address: HostEndpoint? = nil
+        package var address: HostEndpoint? = nil
+        public var addressDescription: String? { address?.description }
         /// While offline, the last error of each address of the host, in the order tried.
         public var addressFailures: [AddressFailure] = []
 

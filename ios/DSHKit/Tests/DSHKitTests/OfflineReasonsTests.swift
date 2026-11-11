@@ -1,3 +1,4 @@
+import DSHTransport
 @testable import DSHCore
 import DSHTestSupport
 import Foundation
