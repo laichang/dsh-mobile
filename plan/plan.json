@@ -24,10 +24,10 @@
       "title": "Extract the transport boundary",
       "needs": [],
       "branch": "claude/s1-5ef6ca7",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "e63c1f5",
       "why": "Both delivery lines need a stable byte channel and one owner for response and event dispatch. Closes #73.",
       "cuts": "Move ordered WebSocket I/O, endpoint probing and generic key storage into DSHTransport. Keep the working connection path while T1 brings up TLS. DSHCore owns protocol-level upload, one inbound dispatcher per connection generation, cancellation, refusal handling and address selection. The transport can carry messages in either direction without decoding a protobuf frame. Keep one protobuf frame per binary WebSocket message. Each side announces its own supported features in Hello; DSHCore correlates responses while dispatching events independently.\nStarting files: `ios/DSHKit/Package.swift`, `ios/DSHKit/Sources/DSHCore/BridgeTransport.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHCore/SecureChannel.swift`, `protocol/frame.proto`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X3.html`.",
       "not": "",
@@ -42,16 +42,17 @@
       "needs": [
         "S1"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/t1-f391f77",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Prove iPhone trust and address changes before moving device registration to TLS. Closes #74.",
       "cuts": "Connect the production iOS transport to a real Node HTTPS/WebSocket listener. Require TLS 1.3 at both ends. The QR identifies a host by SHA-256 of the P-256 DER SubjectPublicKeyInfo (SPKI). Define how the bridge issues and renews its certificate on supported host platforms, how IP and DNS addresses reach the QR, and how certificate names/SANs are validated as addresses change. Record any new signing dependency for user review. Try URLSession first; evaluate Network.framework against the same checks if needed.\nStarting files: `bridge/src/server.ts`, `bridge/scripts/pair.ts`, `ios/DSHKit/Package.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X3.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S2",
@@ -79,16 +80,17 @@
       "needs": [
         "T0"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s3-4d1d106",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Users must retain the selected provider, model and reasoning effort across the boundary. Closes #76.",
       "cuts": "Translate provider groups, model choices, optional reasoning effort, availability, defaults and errors at the host boundary. Keep picker draft and display decisions in the feature. Apply the same mapping to live and cached selections.\nStarting files: `ios/dsh-mobile/Features/Models/ModelControl.swift`, `ios/DSHKit/Sources/DSHCore/Models.swift`, `ios/DSHKit/Tests/DSHKitTests/PickerTests.swift`.\nScreen references: `design/screens/01.html`, `design/screens/M.html`, `design/screens/X4.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S4",
@@ -273,6 +275,21 @@
       "date": "2026-11-11",
       "title": "S2 assigned",
       "body": "Branch `claude/s2-7c569b0`, simulator `A3D5FA03-BF1B-438A-8889-F54AE28B23BD`, DSHM_HOME `~/.dshm/home-s2-A3D5FA03-BF1B-438A-8889-F54AE28B23BD`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S2)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S3 assigned",
+      "body": "Branch `claude/s3-4d1d106`, simulator `55EFAA4C-D381-4378-B6F6-EFE2FC4A4D6B`, DSHM_HOME `~/.dshm/home-s3-55EFAA4C-D381-4378-B6F6-EFE2FC4A4D6B`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S3)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S1 merged",
+      "body": "Merged as `e63c1f5`; the plan/ rules hold on the merge commit. No open [human] items, so S1 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "T1 assigned",
+      "body": "Branch `claude/t1-f391f77`, simulator `A96B1CF6-AF10-4CB8-A1D3-85155723DAC7`, DSHM_HOME `~/.dshm/home-t1-A96B1CF6-AF10-4CB8-A1D3-85155723DAC7`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env T1)\"` exports them."
     }
   ],
   "pending": [],
