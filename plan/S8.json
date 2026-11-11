@@ -16,7 +16,10 @@
       "text": "The user no longer sees the bug",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "human:2026-11-11 状态页完整输出，活动切片的 next 显示回归通过"
+      ]
     }
   ]
 }
