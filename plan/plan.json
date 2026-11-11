@@ -161,10 +161,10 @@
       "title": "Fix: Report malformed plan, design and review inputs",
       "needs": [],
       "branch": "claude/s9-input-diagnostics",
-      "status": "doing",
+      "status": "review",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "User accepts 1 [human] item (pending)",
+      "merge": "aec6b8f",
       "why": "The user reported a bug on 2026-11-11: plan lint accepts JSON null, check-design crashes on a missing node ID, and review crashes on a UI item missing text.",
       "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
       "not": "Other changes. Report other bugs to the coordinator as new fix slices.",
@@ -218,6 +218,11 @@
       "date": "2026-11-11",
       "title": "S9 assigned",
       "body": "Branch `claude/s9-input-diagnostics`, worktree `/Users/bytedance/.codex/worktrees/s8-status-next/dsh-mobile`, simulator `dshm-S9`, DSHM_HOME `~/.dshm/home-s9`, bridge 47813, web 3286; second host 47843/3316. `eval \"$(scripts/slice-env S9)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S9 merged",
+      "body": "Merged as `aec6b8f`; the plan/ rules hold on the merge commit. 1 open [human] item(s), so S9 is `review`. Pending 2."
     }
   ],
   "pending": [
@@ -228,6 +233,14 @@
       "item": "The user no longer sees the bug",
       "branch": "main",
       "ref": "8558397"
+    },
+    {
+      "n": 2,
+      "slice": "S9",
+      "kind": "[human]",
+      "item": "The user no longer sees the bug",
+      "branch": "main",
+      "ref": "aec6b8f"
     }
   ]
 }
