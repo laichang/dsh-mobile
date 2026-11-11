@@ -250,10 +250,10 @@
         "S6"
       ],
       "branch": "claude/s7-plan-dir",
-      "status": "doing",
-      "updated": "2026-11-10",
-      "next": "Slice owner builds (§8)",
-      "merge": null,
+      "status": "done",
+      "updated": "2026-11-11",
+      "next": "—",
+      "merge": "84774e3",
       "why": "Closes #63. The last slice: plan/ replaces PLAN.md, and scripts replace WORKFLOW.md.",
       "cuts": "- `scripts/plan` and `scripts/check-plan` read only `plan/`. A one-time import moves this run's PLAN.md into `plan/`, so the coordinator can record the merge of this slice.\n- A short process section in AGENTS.md: the decisions that stay with the user, never go around the hooks, the entry commands. AGENTS.md in ASD-STE100.\n- Each refusal of a script or hook tells the next step.\n- Remove WORKFLOW.md and `scripts/lib/plan-template.md`; update the `/start-requirement` and `/run-plan` skills.",
       "not": "",
@@ -497,6 +497,11 @@
       "date": "2026-11-10",
       "title": "S7 assigned",
       "body": "Branch `claude/s7-plan-dir`, simulator `dshm-S7`, DSHM_HOME `~/.dshm/home-s7`, bridge 47810, web 3283; second host 47840/3313. Decision numbers D171–D173. `eval \"$(scripts/slice-env S7)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S7 merged",
+      "body": "Merged as `84774e3`; the plan/ rules hold on the merge commit. `scripts/review S7` at `da4b93f`: `RESULT: ?`, no flaky part (`/tmp/dshm-review/S7-da4b93f.txt`). No open [human] items, so S7 is `done`."
     }
   ],
   "pending": [
