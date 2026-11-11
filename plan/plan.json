@@ -77,16 +77,17 @@
       "needs": [
         "S2"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s4-0abf811",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "The M3 physical iPhone check needs reliable human acceptance and an unambiguous terminal prompt. Closes #67",
       "cuts": "Use the existing command parser in the Claude/Codex hook path and adjust the confirmation in scripts/plan. Update .claude/hooks/plan-guard, its header, scripts/refusal-test, scripts/plan-test and their duplicated terminal-test helper. The user reviews, commits and merges protected hook changes.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S5",
@@ -305,6 +306,11 @@
       "date": "2026-11-11",
       "title": "S3 assigned",
       "body": "Branch `claude/s3-a1e6a14`, simulator `D14B36C0-6B79-48E0-9B8B-1A64A5DA6DED`, DSHM_HOME `~/.dshm/home-s3-D14B36C0-6B79-48E0-9B8B-1A64A5DA6DED`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S3)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S4 assigned",
+      "body": "Branch `claude/s4-0abf811`, simulator `8892F9BC-3FB7-4971-8156-C178D4F50021`, DSHM_HOME `~/.dshm/home-s4-8892F9BC-3FB7-4971-8156-C178D4F50021`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S4)\"` exports them."
     }
   ],
   "pending": [
