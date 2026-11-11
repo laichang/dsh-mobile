@@ -200,9 +200,9 @@
         "T0"
       ],
       "branch": "claude/s11-owned-cleanup",
-      "status": "review",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "User accepts 1 [human] item (pending)",
+      "next": "人工验收已记录",
       "merge": "d86e7a3",
       "why": "The user reported a bug on 2026-11-11: On merged S10, cleanup deleted two historical branches (restored), old /tmp directories, and reused a prior device/home when no old registry row existed. Scope cleanup to verifiable resources of this assignment and preserve unknown older ones; test against legacy state.",
       "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
