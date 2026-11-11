@@ -17,7 +17,10 @@
       "text": "The user no longer sees the bug",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "human:2026-11-11 隔离测试确认只清理本次分配的资源，历史分支、同名旧设备、旧 home 和未登记临时文件均保留"
+      ]
     }
   ]
 }
