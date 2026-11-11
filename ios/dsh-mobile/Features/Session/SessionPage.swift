@@ -126,7 +126,7 @@ private struct SessionTranscript: View {
     let store: TaskListStore
     let taskKey: String
     @Environment(ShellModel.self) private var shell
-    @State private var history: Dshm_V1_SessionPage?
+    @State private var history: SessionHistory?
     @State private var historyError: String?
     @State private var retry = 0
     /// Finished and not read when the page opened: it opens at the start of the final answer.
@@ -295,8 +295,8 @@ private struct SessionTranscript: View {
     }
 
     /// A journal message's files; the first message also gets this phone's thumbnails.
-    static func attachments(of message: Dshm_V1_SessionMessage, first: Bool, row: TaskListStore.TaskRow) -> [MessageAttachment] {
-        let host = message.attachments.map(MessageAttachment.init)
+    static func attachments(of message: SessionMessage, first: Bool, row: TaskListStore.TaskRow) -> [MessageAttachment] {
+        let host = message.attachments
         guard first else { return host }
         return host.isEmpty ? row.attachments : host.keepingThumbnails(of: row.attachments)
     }

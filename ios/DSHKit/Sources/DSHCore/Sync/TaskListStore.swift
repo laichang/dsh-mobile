@@ -115,7 +115,7 @@ public final class TaskListStore {
 
         /// Chunks stream the first phone turn. Its committed journal restores text after a truncated replay.
         /// A conversation with follow-ups keeps its streamed transcript, where the messages sit.
-        public func singleTurnTranscript(_ messages: [Dshm_V1_SessionMessage]) -> String {
+        public func singleTurnTranscript(_ messages: [SessionMessage]) -> String {
             guard state.isTerminal, blocks.followUpCount == 0 else { return transcript }
             let reply = messages.filter { !$0.fromUser }.map(\.text).joined(separator: "\n\n")
             return reply.isEmpty || transcript.contains(reply) ? transcript : reply
@@ -924,19 +924,21 @@ public final class TaskListStore {
         refresh()
     }
 
-    public func cachedHistory(for row: TaskRow) -> Dshm_V1_SessionPage? {
+    public func cachedHistory(for row: TaskRow) -> SessionHistory? {
         let record = taskRecord(hostKey: row.hostKey, taskID: row.taskID, title: row.title)
-        return record.sessionHistory.flatMap { try? Dshm_V1_SessionPage(serializedBytes: $0) }
+        return record.history
     }
 
-    public func readHistory(for row: TaskRow) async throws -> Dshm_V1_SessionPage? {
+    public func readHistory(for row: TaskRow) async throws -> SessionHistory? {
         let cached = cachedHistory(for: row)
         guard let revision = row.sessionRevision, cached.map({ $0.throughSeq < revision }) ?? true,
               let link = links.first(where: { $0.key == row.hostKey }), link.reachability == .online,
               link.capabilities?.contains("sessions.v1") == true else { return cached }
         let page = try await link.connection.readSession(row.taskID)
         try Task.checkCancellation()
-        taskRecord(hostKey: row.hostKey, taskID: row.taskID, title: row.title).sessionHistory = try page.serializedData()
+        let record = taskRecord(hostKey: row.hostKey, taskID: row.taskID, title: row.title)
+        if let newer = record.history, newer.throughSeq >= page.throughSeq { return newer }
+        record.sessionHistory = page.cacheData
         scheduleSave()
         return page
     }

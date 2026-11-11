@@ -1,5 +1,4 @@
 import DSHCore
-import DSHProtocol
 import SwiftUI
 import UIKit
 
@@ -28,7 +27,7 @@ enum OutcomeAnchor {
     }
 
     /// The text to try again with: the user's first message, else the task's title.
-    static func retryPrompt(_ row: TaskListStore.TaskRow, messages: [Dshm_V1_SessionMessage]) -> String {
+    static func retryPrompt(_ row: TaskListStore.TaskRow, messages: [SessionMessage]) -> String {
         messages.first(where: \.fromUser)?.text ?? row.title
     }
 }

@@ -43,6 +43,7 @@ public final class CachedTask {
     public var sessionRevision: Int64?
     public var externalSession: Bool = false
     public var sessionHistory: Data?
+    var history: SessionHistory? { sessionHistory.flatMap { try? SessionHistory(cacheData: $0) } }
     public var modelSelectionData: Data?
     /// Highest `AssistantChunk.seq` appended to `transcript`, so a replay never appends twice.
     public var lastChunkSeq: Int64

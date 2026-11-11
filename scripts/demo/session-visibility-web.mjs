@@ -102,6 +102,7 @@ try {
     }, 'Web turn ' + turn, 40_000)
     console.log('Web turn ' + turn + ' completed in ' + sessionId)
   }
+  await rpc('session/rename', { request: { sessionId, title: '网页会话' } })
   await send('网页第一条', 1)
   signal('first-ready')
   await gate('detail-open')
