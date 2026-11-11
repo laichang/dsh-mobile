@@ -177,10 +177,10 @@
         "T1"
       ],
       "branch": "claude/s8-34dc87a",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "89a8c8c",
       "why": "Each enrolled phone needs independent authentication, reconnect and revocation. Closes #81.",
       "cuts": "Use a versioned QR with the bridge key fingerprint, addresses, expiry and a single-use random enrollment secret. The bridge is the only writer of offers. The CLI requests each QR over owner-only local IPC. Record the platforms on which IPC access control and certificate provisioning were verified. Issue a random per-device bearer over the pinned connection, store it under a distinct ThisDeviceOnly Keychain service, and store its digest on the bridge. Use the Authorization header on the WebSocket upgrade. Redact secrets, reject redirects and gate task, event and management access on live registry membership. If the other device-management change has already landed, rerun self-revocation from both entry points on the integrated code.\nStarting files: `bridge/src/server.ts`, `bridge/scripts/pair.ts`, `ios/DSHKit/Sources/DSHCore/Pairing/DeviceIdentity.swift`, `ios/DSHKit/Sources/DSHCore/Pairing/PairingOffer.swift`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X2.html`, `design/screens/X3.html`.",
       "not": "",
@@ -383,6 +383,11 @@
       "date": "2026-11-11",
       "title": "S13 assigned",
       "body": "Branch `claude/s13-first-pairing`, worktree `/Users/bytedance/.codex/worktrees/debug-first-pairing/dsh-mobile`, simulator `C343FB93-4A6B-4F37-8CB6-929FDF0B0FBB`, DSHM_HOME `~/.dshm/home-s13-C343FB93-4A6B-4F37-8CB6-929FDF0B0FBB`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S13)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S8 merged",
+      "body": "Merged as `89a8c8c`; the plan/ rules hold on the merge commit. No open [human] items, so S8 is `done`."
     }
   ],
   "pending": [
