@@ -544,6 +544,8 @@ Append-only, dated.
 
 - **2026-11-11 · S7 round 2 at 9a6a638 fixes F1-F5 without guard edits; open gap: an agent with a pseudo-terminal can pass accept's typed check. Drafted /tmp/dshm-s7-accept-hook.patch (plan-guard denies 'plan accept' from an agent; guard-test 0, refusal-test 0 in a scratch clone). Waiting for the user to apply it; then a new verifier.**
 
+- **2026-11-11 · User committed the accept hook on the S7 branch (da4b93f). Separate verifier, round 2, started on da4b93f.**
+
 ## 9. Pending user confirmation
 
 Kept by the coordinating session on `main`. It lists provisional `Dxx` entries, dependencies, downloads, and open `[human]` items that wait for the user (WORKFLOW.md §9).
