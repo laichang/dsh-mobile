@@ -7,6 +7,7 @@ set -uo pipefail
 SRC="$(git rev-parse --show-toplevel)"
 T=$(cd "$(mktemp -d "${TMPDIR:-/tmp}/dshm-refusal-test.XXXXXX")" && pwd -P)
 trap 'rm -rf "$T"' EXIT
+export DSHM_TEST_DEVICES="$T/devices" PATH="$SRC/scripts/fixtures/simctl:$PATH"
 FAIL=0
 NEXT='Next|[Aa]sk the user|[Tt]ell the user'
 ok()  { printf '  ok    %s\n' "$1"; }

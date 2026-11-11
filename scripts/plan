@@ -490,7 +490,9 @@ def cmd_fix(p, a):
 def cmd_assign(p, a):
     need_main()
     node = p.node(a.id)
-    if not re.search(rf"(^|/){a.id.lower()}(-|$)", a.branch):
+    if a.schedule:
+        a.branch = node["branch"] or f"claude/{a.id.lower()}-{dshm.git('rev-parse', '--short', 'HEAD')}"
+    if not a.branch or not re.search(rf"(^|/){a.id.lower()}(-|$)", a.branch):
         raise PlanError(f"the branch of {a.id} names it (claude/{a.id.lower()}-…), not {a.branch}. "
                         f"Next: give such a branch")
     import importlib.machinery
@@ -502,6 +504,8 @@ def cmd_assign(p, a):
     if a.dry_run:
         raise PlanError("assign has no --dry-run (it writes the registry). Next: scripts/slice-env --list")
     row, new = se.assign(a.id, a.branch, a.decisions, p.root)
+    if a.schedule and not new and node["branch"] == a.branch and node.get("status") == "doing":
+        return start_branch(a.branch)
     p.extra_files.append(dshm.REGISTRY)
     node["branch"] = a.branch
     set_state(node, "doing", "Slice owner builds")
@@ -515,7 +519,14 @@ def cmd_assign(p, a):
     if a.note:
         body += " " + a.note.strip()
     p.doc.setdefault("log", []).append(entry(f"{a.id} assigned", body))
-    return p.save(a, f"Plan: assign {a.id}")
+    rc = p.save(a, f"Plan: assign {a.id}")
+    return start_branch(a.branch) if a.schedule and rc == 0 else rc
+
+
+def start_branch(branch):
+    if not dshm.git("show-ref", "--verify", "--hash", f"refs/heads/{branch}", check=False):
+        dshm.git("branch", branch, "HEAD")
+    return 0
 
 
 def review_line(sid, short):
@@ -564,6 +575,11 @@ def cmd_merged(p, a):
         raise PlanError("plan/ of the merge commit breaks the rules:\n" + "\n".join(errs)
                         + "\nNext: ask the user; a merge that breaks plan/ needs their review")
     node = p.node(a.id)
+    if node.get("merge") == short and node.get("status") in ("done", "review"):
+        print(f"plan: {a.id} merge {short} already recorded")
+        if not a.keep:
+            cleanup(root, a.id, full, cleanup_dry(a))
+        return 0
     open_human = [it["text"] for it in p.items(a.id)["items"]
                   if it["tier"] == "human" and not any(e.startswith("human:") for e in it.get("evidence", []))]
 
@@ -642,6 +658,11 @@ def cleanup(root, sid, target, dry):
     reg = [r for r in dshm.parse_registry((root / dshm.REGISTRY).read_text()) if r["id"] == sid] \
         if (root / dshm.REGISTRY).exists() else []
     row = reg[-1] if reg else {}
+    if reg and (root / plandata.PLAN_FILE).exists():
+        branch = plandata.find_node(plandata.read_plan(root), sid).get("branch")
+        if row["branch"] != branch:
+            print(f"plan: cleanup: resources belong to {row['branch']}, not the current assignment; left them in place")
+            return
     left = 0
 
     # 1. Simulator dshm-<ID> (each device with that name, by UDID).
@@ -674,8 +695,9 @@ def cleanup(root, sid, target, dry):
     # 3. Worktrees and branches of the slice, only when merged into <target> and clean.
     here = {str(root), str(dshm.main_checkout())}
     wts = dshm.worktree_entries(cwd=root)
-    branches = dshm.slice_branches(sid, cwd=root)
     reg_branch = row.get("branch")
+    historical = {r["branch"] for r in reg[:-1] if r["branch"] != reg_branch}
+    branches = [b for b in dshm.slice_branches(sid, cwd=root) if b not in historical]
     if reg_branch and reg_branch not in branches and \
             dshm.git("rev-parse", "--verify", "-q", f"refs/heads/{reg_branch}", cwd=root, check=False):
         branches.append(reg_branch)
@@ -835,7 +857,8 @@ def main():
     sp.add_argument("--needs")
     sp = add("pending", cmd_pending); sp.add_argument("slice"); sp.add_argument("kind"); sp.add_argument("item")
     sp.add_argument("--branch", default="main"); sp.add_argument("--commit-ref")
-    sp = add("assign", cmd_assign); sp.add_argument("id"); sp.add_argument("--branch", required=True)
+    sp = add("assign", cmd_assign); sp.add_argument("id"); sp.add_argument("--branch")
+    sp.add_argument("--schedule", action="store_true", help="assign and create the scheduler branch")
     sp.add_argument("--worktree"); sp.add_argument("--from", dest="from_commit")
     sp.add_argument("--decisions", type=int, default=dshm.DECISION_BLOCK, help=argparse.SUPPRESS)
     sp.add_argument("--note")
