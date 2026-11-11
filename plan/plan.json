@@ -122,10 +122,10 @@
         "S4"
       ],
       "branch": "claude/s5-636278c",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "17a9017",
       "why": "Replay and durable data must stay consistent per host when the phone disconnects. Closes #78.",
       "cuts": "Keep the SwiftData models in DSHCore. Give each host a single sync owner for its connection loop, replay cursor and writes. Save each applied set of events and its cursor together. Supply typed snapshots/events for consumers. S6 moves feature state after this boundary works.\nStarting files: `ios/DSHKit/Sources/DSHCore/Sync/TaskCache.swift`, `ios/DSHKit/Sources/DSHCore/Sync/TaskListStore.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`.\nScreen references: `design/screens/02.html`, `design/screens/03.html`, `design/screens/04.html`, `design/screens/X3.html`.",
       "not": "",
@@ -400,6 +400,11 @@
       "date": "2026-11-11",
       "title": "S13 merged",
       "body": "Merged as `1a35c9b`; the plan/ rules hold on the merge commit. 1 open [human] item(s), so S13 is `review`. Pending 2."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S5 merged",
+      "body": "Merged as `17a9017`; the plan/ rules hold on the merge commit. No open [human] items, so S5 is `done`."
     }
   ],
   "pending": [
