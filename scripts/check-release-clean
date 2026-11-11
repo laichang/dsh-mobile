@@ -1,43 +1,64 @@
 #!/bin/bash
-# Proves a Release build carries none of the debug-only testability entry points
-#: FakeBridge, the -DSHM* launch arguments, and the dshm://pair deep link;
-# and no PlaintextChannel: Release talks to a bridge only over Noise.
-# And both builds carry the same ATS keys.
-# Also checks the Debug build *does* carry them, so a passing result means something.
+# Inspect what the two build configurations actually ship.
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DD="${DSHM_RELEASE_DD:-/tmp/dshm-release-check-dd}" # per worktree, so parallel slices don't share a build DB
-MARKERS=(FakeBridge FakeHost FakeNoiseHost DSHMFakeBridge DSHMPresetPrompt DSHMBridgePort DSHMFakeMilestones DSHMResetStore DSHMConnectDelay DSHMResetPairing DSHMFakeHold DSHMFakeScenario DSHMFakeAsk DSHMFakeSpeech FakeTranscriber DebugDeepLink DebugLaunchOptions DSHMLiveActivityProbe PlaintextChannel /plaintext)
+cd "$(dirname "$0")/.."
+export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
+run=$(mktemp -d)
+trap 'rm -rf "$run"' EXIT
+dd="${DSHM_RELEASE_DD:-$run/dd}"
+for config in Debug Release; do
+  scripts/xc build -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -configuration "$config" \
+    -destination 'generic/platform=iOS Simulator' -derivedDataPath "$dd" \
+    -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates CODE_SIGNING_ALLOWED=NO --log "$run/$config.log" || {
+      tail -20 "$run/$config.log"; exit 1
+    }
+done
 
-build() {
-  xcodebuild build -project "$ROOT/ios/dsh-mobile.xcodeproj" -scheme dsh-mobile -configuration "$1" \
-    -destination 'generic/platform=iOS Simulator' -derivedDataPath "$DD" \
-    -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates CODE_SIGNING_ALLOWED=NO >/tmp/dshm-release-check-$1.log 2>&1 \
-    || { tail -20 /tmp/dshm-release-check-$1.log; exit 1; }
-  echo "$DD/Build/Products/$1-iphonesimulator/dsh-mobile.app"
+(cd bridge && corepack pnpm install --frozen-lockfile >/dev/null && corepack pnpm build)
+python3 - "$dd/Build/Products" <<'PY'
+import json
+import plistlib
+import subprocess
+import sys
+from pathlib import Path
+
+products = Path(sys.argv[1])
+debug_hooks = {
+    'FakeBridge', 'FakeHost', 'FakeNoiseHost', 'DSHMFakeBridge', 'DSHMPresetPrompt', 'DSHMBridgePort',
+    'DSHMFakeMilestones', 'DSHMResetStore', 'DSHMConnectDelay', 'DSHMResetPairing', 'DSHMFakeHold',
+    'DSHMFakeScenario', 'DSHMFakeAsk', 'DSHMFakeSpeech', 'FakeTranscriber', 'DebugDeepLink',
+    'DebugLaunchOptions', 'DSHMLiveActivityProbe', 'DSHMSeedLegacyPairing', 'DSHM_TLS_TEST_PIN',
 }
-
-scan() { # app → prints markers found in any Mach-O inside, and URL schemes
-  local app=$1 found=()
-  local binaries; binaries=$(find "$app" -type f -exec sh -c 'file -b "$1" | grep -q Mach-O' _ {} \; -print)
-  for m in "${MARKERS[@]}"; do
-    for b in $binaries; do grep -q -- "$m" < <(strings -a "$b") && { found+=("$m"); break; }; done
-  done
-  /usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes' "$app/Info.plist" >/dev/null 2>&1 && found+=("CFBundleURLTypes")
-  echo "${found[*]:-}"
-}
-
-# ATS behaves the same in both: the phone reaches the bridge at any IP in the QR.
-ats() { plutil -extract NSAppTransportSecurity xml1 -o - "$1/Info.plist" 2>/dev/null || echo none; }
-release_app=$(build Release)
-debug_app=$(build Debug)
-release=$(scan "$release_app")
-debug=$(scan "$debug_app")
-[ "$(ats "$release_app")" = "$(ats "$debug_app")" ] || { echo "check-release-clean: FAIL, NSAppTransportSecurity differs between Debug and Release" >&2; exit 1; }
-[ "$(plutil -extract NSAppTransportSecurity.NSAllowsArbitraryLoads raw -o - "$release_app/Info.plist" 2>/dev/null)" = true ] \
-  || { echo "check-release-clean: FAIL, Release lacks NSAllowsArbitraryLoads" >&2; exit 1; }
-echo "Debug carries:   ${debug:-<none>}"
-echo "Release carries: ${release:-<none>}"
-[ -n "$debug" ] || { echo "check-release-clean: Debug has no markers; the check is broken" >&2; exit 1; }
-[ -z "$release" ] || { echo "check-release-clean: FAIL, Release contains: $release" >&2; exit 1; }
-echo "check-release-clean: OK, Release contains none of the testability entry points"
+legacy = {'Noise_IK', 'NoiseInitiator', 'NoiseResponder', 'NoiseChannel', 'PlaintextChannel', '/plaintext', 'ws://'}
+for config in ('Debug', 'Release'):
+    app = products / (config + '-iphonesimulator') / 'dsh-mobile.app'
+    info = plistlib.loads((app / 'Info.plist').read_bytes())
+    if 'NSAppTransportSecurity' in info or 'CFBundleURLTypes' in info:
+        sys.exit(f'{config} ships an ATS override or URL scheme')
+    binaries = [p for p in app.rglob('*') if p.is_file()
+                and b'Mach-O' in subprocess.check_output(['file', '-b', p])]
+    if not binaries:
+        sys.exit(f'No Mach-O binaries found in {app}')
+    strings = b'\n'.join(subprocess.check_output(['strings', '-a', p]) for p in binaries)
+    def found(markers):
+        return sorted(m for m in markers if m.encode() in strings)
+    obsolete, hooks = found(legacy), found(debug_hooks)
+    if obsolete or (config == 'Release' and hooks):
+        sys.exit(f'{config}: unexpected markers {obsolete + (hooks if config == "Release" else [])}')
+    if config == 'Debug' and not hooks:
+        sys.exit('Debug build has no expected testability markers')
+    if b'/enroll' not in strings or b'Authorization' not in strings:
+        sys.exit(f'{config}: missing TLS enrollment or authenticated upgrade')
+    print(f'{config}: {len(binaries)} Mach-O products checked')
+bridge = Path('bridge')
+manifest = json.loads((bridge / 'package.json').read_text())
+if any(name.startswith('@noble/') for name in manifest['dependencies']):
+    sys.exit('Bridge still has a legacy crypto runtime dependency')
+files = [*(bridge / 'lib/src').rglob('*.js'), bridge / 'lib/scripts/pair.js']
+if not (bridge / 'lib/src/index.js').is_file():
+    sys.exit('Bridge entry point missing')
+for path in files:
+    if any(marker in path.read_text() for marker in legacy | {'@noble/', 'devPlaintext'}):
+        sys.exit(f'Legacy transport in bridge build: {path}')
+PY
+echo 'check-release-clean: product checks passed'

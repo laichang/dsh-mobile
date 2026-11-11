@@ -252,7 +252,6 @@ demo_tls_on_exit() {
 
 # Each network demo gets a disposable host profile. Nested demos get their own as well.
 demo_tls_home() {
-  export DSHM_BRIDGE_TLS=1
   local base="${DSHM_HOME:-${TMPDIR:-/tmp}}"
   mkdir -p "$base"
   demo_tls_profile="$(mktemp -d "$base/demo.XXXXXXXX")" || return 1

@@ -43,7 +43,7 @@ final class PinnedTLSTests: XCTestCase {
             } catch {}
         }
         let dead = try endpoint("ip", "127.0.0.1")
-        XCTAssertThrowsError(try WebSocketTransport.pinnedTLS(url: dead.webSocketURL(), spkiSHA256: fixture.pin))
+        XCTAssertThrowsError(try WebSocketTransport.pinnedTLS(url: URL(string: "ws://127.0.0.1")!, spkiSHA256: fixture.pin))
         let dns = try endpoint("renewed", "localhost")
         let connection = HostConnection(endpoints: [dead, dns], spkiSHA256: fixture.pin, authorization: sentinel)
         try await connection.connect()

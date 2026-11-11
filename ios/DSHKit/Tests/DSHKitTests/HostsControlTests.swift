@@ -106,8 +106,7 @@ import Testing
         var devices = FakeHosts.macDevices()
         devices.closeBeforeRevokeResponse = true
         let host = FakeHost(devices: devices)
-        let connection = HostConnection(endpoint: .localBridge(port: 47801), channel: PlaintextChannel(),
-                                        transport: host.factory)
+        let connection = HostConnection(endpoint: .localBridge(port: 47801), transport: host.factory)
         try await connection.connect()
         let list = try await connection.listDevices()
         let current = try #require(list.first { $0.isCurrent })

@@ -181,11 +181,8 @@ private final class OpenedTransport: Sendable {
     func close() async { await transport.withLock { $0 }?.close() }
 }
 
-/// One connection to one host's bridge (ARCHITECTURE §4). Owns the transport, runs the
-/// channel's handshake, correlates requests with responses, and publishes events. Frames are
-/// sealed and sent in order from one outbox, so Noise nonces never go out of order. It can
-/// be connected again after it drops; reconnect policy and the resume cursor live in
-/// `TaskListStore`. Each connect runs a fresh handshake (over Noise: IK reconnect).
+/// One connection to one host's bridge. It correlates requests with responses and sends frames
+/// in order. The store owns reconnect policy and the resume cursor.
 ///
 /// A host can have more than one address (LAN, Tailscale). Each connect tries them one at a
 /// time, the address that worked last first, each with `attemptTimeout`.
@@ -202,7 +199,6 @@ public actor HostConnection {
     public nonisolated let endpoints: [HostEndpoint]
     public nonisolated let channelName: String
     public nonisolated let attemptTimeout: Duration
-    private let channel: any SecureChannel
     /// Asked after an address gave no answer in `attemptTimeout`; nil: no probe.
     private let probe: PortProbe?
     private let makeTransport: BridgeTransportFactory
@@ -216,7 +212,6 @@ public actor HostConnection {
     public private(set) var addressFailures: [AddressFailure] = []
 
     private var transport: (any BridgeTransport)?
-    private var cipher: (any FrameCipher)?
     private var outbox: OrderedWriter?
     private var connecting: Task<Void, any Error>?
     /// Bumped per transport, so a finished receive loop never tears down a newer connection.
@@ -232,21 +227,21 @@ public actor HostConnection {
     /// Capabilities from the bridge's Hello; empty until connected.
     package private(set) var capabilities: [String] = []
     /// The host refused this device with close 4003 (device unknown), on a live
-    /// connection (the close after a revoke) or on a reconnect (the Noise handshake). A revoked
+    /// connection (the close after a revoke) or on a reconnect (the device credential check). A revoked
     /// device stays refused, so `TaskListStore` does not retry it. Cleared by a connect that works.
     public private(set) var deviceRevoked = false
 
     /// Whether `error` is the host's refusal of this device (close 4003 device unknown).
     public static func isDeviceRefusal(_ error: any Error) -> Bool {
         switch error {
-        case NoiseChannelError.deviceUnknown, HostConnectionError.deviceRevoked: true
-        case BridgeTransportError.closed(let code, _): code == PairingWire.CloseCode.deviceUnknown.rawValue
+        case HostConnectionError.deviceRevoked: true
+        case BridgeTransportError.closed(let code, _): code == 4003
         default: false
         }
     }
 
-    package init(endpoint: HostEndpoint, channel: any SecureChannel, transport: @escaping BridgeTransportFactory) {
-        self.init(endpoints: [endpoint], channel: channel, transport: transport)
+    package init(endpoint: HostEndpoint, channelName: String = "In-process", transport: @escaping BridgeTransportFactory) {
+        self.init(endpoints: [endpoint], channelName: channelName, transport: transport)
     }
 
     /// - Parameters:
@@ -255,7 +250,7 @@ public actor HostConnection {
     ///     program that holds the port from a computer that is not reachable (`TCPPortProbe.probe`).
     ///   - onAddressesChange: called with the new order when a different address than the first
     ///     worked, so the caller can save it (`Pairing.connection(to:)`).
-    package init(endpoints: [HostEndpoint], channel: any SecureChannel, transport: @escaping BridgeTransportFactory,
+    package init(endpoints: [HostEndpoint], channelName: String = "In-process", transport: @escaping BridgeTransportFactory,
                 attemptTimeout: Duration = HostConnection.defaultAttemptTimeout,
                 probe: PortProbe? = nil,
                 onAddressesChange: (@Sendable ([HostEndpoint]) -> Void)? = nil) {
@@ -266,16 +261,14 @@ public actor HostConnection {
         self.attemptTimeout = attemptTimeout
         self.probe = probe
         self.onAddressesChange = onAddressesChange
-        self.channel = channel
-        self.channelName = channel.name
+        self.channelName = channelName
         self.makeTransport = transport
         (events, eventContinuation) = AsyncStream.makeStream(of: HostEvent.self)
     }
 
     public var isConnected: Bool { transport != nil && connecting == nil }
 
-    /// Validates the endpoint against the channel, opens the transport, runs the channel's
-    /// handshake, and exchanges Hello.
+    /// Opens the transport and exchanges Hello.
     public func connect() async throws {
         if let connecting { return try await connecting.value }
         if transport != nil { return }
@@ -288,9 +281,6 @@ public actor HostConnection {
     /// Tries each address, the one that worked last first, until one connects. Throws
     /// `.unreachable` with the error of each address when none does.
     private func open() async throws {
-        // Before any socket opens: a channel that may not reach one of the addresses (Debug's
-        // plaintext channel and a non-loopback address) is a wrong configuration, not a dead address.
-        for endpoint in addresses { try channel.validate(endpoint) }
         var failures: [AddressFailure] = []
         for endpoint in addresses {
             try Task.checkCancellation()
@@ -319,27 +309,27 @@ public actor HostConnection {
     }
 
     /// The host answered at this address, so another address would get the same answer: it
-    /// revoked this device (4003), refused the pairing code (4001), or needs a DSH update. Or the
+    /// revoked this device (4003) or needs a DSH update. Or the
     /// caller gave up (cancelled).
     static func endsTheSearch(_ error: any Error) -> Bool {
         switch error {
-        case HostConnectionError.bridgeUpdateRequired, NoiseChannelError.pairingRejected, is CancellationError: true
+        case HostConnectionError.bridgeUpdateRequired, is CancellationError: true
         default: isDeviceRefusal(error)
         }
     }
 
     /// Opens the transport and runs the handshake, within `attemptTimeout`.
-    private func handshake(_ endpoint: HostEndpoint) async throws -> (any BridgeTransport, any FrameCipher) {
-        let channel = self.channel, makeTransport = self.makeTransport, timeout = attemptTimeout, probe = self.probe
-        let url = channel.url(for: endpoint)
+    private func handshake(_ endpoint: HostEndpoint) async throws -> any BridgeTransport {
+        let makeTransport = self.makeTransport, timeout = attemptTimeout, probe = self.probe
+        let url = endpoint.webSocketURL()
         let opened = OpenedTransport()
-        return try await withThrowingTaskGroup(of: (any BridgeTransport, any FrameCipher)?.self) { group in
+        return try await withThrowingTaskGroup(of: (any BridgeTransport)?.self) { group in
             group.addTask {
                 let t = try await makeTransport(url)
                 opened.set(t)
                 do {
                     try Task.checkCancellation()
-                    return (t, try await channel.establish(over: t))
+                    return t
                 } catch {
                     await t.close()
                     throw error
@@ -367,9 +357,8 @@ public actor HostConnection {
 
     private func open(_ endpoint: HostEndpoint) async throws {
         let t: any BridgeTransport
-        let established: any FrameCipher
         do {
-            (t, established) = try await handshake(endpoint)
+            t = try await handshake(endpoint)
         } catch {
             try Task.checkCancellation()
             throw refusal(error)
@@ -381,11 +370,10 @@ public actor HostConnection {
         generation += 1
         let gen = generation
         transport = t
-        cipher = established
         outbox = OrderedWriter(transport: t) { error in
             await self.teardown(generation: gen, cause: error)
         }
-        receiveLoop = Task { await self.receive(from: t, cipher: established, generation: gen) }
+        receiveLoop = Task { await self.receive(from: t, generation: gen) }
         do {
             var hello = Dshm_V1_Hello()
             hello.protocolVersion = DSHProtocolInfo.version
@@ -625,7 +613,6 @@ public actor HostConnection {
     private func teardown(generation gen: Int, cause: (any Error)? = nil) async {
         guard gen == generation, let t = transport else { return }
         transport = nil
-        cipher = nil
         outbox?.stop()
         outbox = nil
         receiveLoop?.cancel()
@@ -640,7 +627,7 @@ public actor HostConnection {
 
     func request(_ body: Dshm_V1_Request.OneOf_Body) async throws -> Dshm_V1_Response {
         try Task.checkCancellation()
-        guard let outbox, let cipher else { throw HostConnectionError.notConnected }
+        guard let outbox else { throw HostConnectionError.notConnected }
         let id = nextRequestID
         nextRequestID += 1
         var frame = Dshm_V1_Frame()
@@ -648,8 +635,7 @@ public actor HostConnection {
         request.id = id
         request.body = body
         frame.request = request
-        // Sealed here, inside the actor, and queued in the same step: outbox order = nonce order.
-        let bytes = try cipher.seal(try frame.serializedBytes())
+        let bytes = try frame.serializedBytes() as Data
         let response = try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 pending[id] = continuation
@@ -672,11 +658,11 @@ public actor HostConnection {
         for continuation in waiting.values { continuation.resume(throwing: error) }
     }
 
-    private func receive(from transport: any BridgeTransport, cipher: any FrameCipher, generation gen: Int) async {
+    private func receive(from transport: any BridgeTransport, generation gen: Int) async {
         while !Task.isCancelled {
             let frame: Dshm_V1_Frame
             do {
-                let bytes = try cipher.open(try await transport.receive())
+                let bytes = try await transport.receive()
                 frame = try Dshm_V1_Frame(serializedBytes: bytes)
             } catch {
                 // A close 4003 here is the host revoking this device (bridge/src/server.ts).

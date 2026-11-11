@@ -20,7 +20,7 @@ import Testing
     }
 
     @Test func followUpCanResumeAtTheStopTimestampWithoutARevision() throws {
-        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: FakeHost().factory)
+        let connection = HostConnection(endpoint: .localBridge(), transport: FakeHost().factory)
         let sync = HostSync(config: .init(key: "Mac", connection: connection), container: try TaskCache.container(inMemory: true))
         let start = Date()
         let stop = start.addingTimeInterval(1)
@@ -39,7 +39,7 @@ import Testing
     }
 
     @Test func laterTurnCanRunAtTheSameTimestampAndStaleReplayCannotFinishIt() throws {
-        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: FakeHost().factory)
+        let connection = HostConnection(endpoint: .localBridge(), transport: FakeHost().factory)
         let sync = HostSync(config: .init(key: "Mac", connection: connection), container: try TaskCache.container(inMemory: true))
         let now = Date()
         let task = CachedTask(hostKey: "Mac", taskID: "one session", title: "First turn", createdAt: now)

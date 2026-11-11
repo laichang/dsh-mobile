@@ -14,7 +14,7 @@ import Testing
     static let second = ["Second ", "answer."]
 
     func launch(_ host: FakeHost, url: URL) throws -> TaskListStore {
-        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
+        let connection = HostConnection(endpoint: .localBridge(), transport: host.factory)
         let store = TaskListStore(cache: try TaskCache(url: url), hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Say hello.")
         store.backoff = (.milliseconds(20), .milliseconds(100))
         store.sendWaitsFor = .seconds(30) // a deadline: send() returns once the host is online

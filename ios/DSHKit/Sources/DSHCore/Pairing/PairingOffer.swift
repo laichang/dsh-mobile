@@ -5,11 +5,10 @@ import Foundation
 /// `dshm://pair?…` URL. The same URL is the Debug-only deep link, so the Simulator can pair
 /// without a camera. Written by bridge/src/pairing/offer.ts:
 ///
-///     dshm://pair?v=1&n=<host name>&a=<host:port>,<host:port>&k=<host key>&i=<offer id>&s=<secret>&x=<expiry>
+///     dshm://pair?v=2&n=<host name>&a=<host:port>,<host:port>&k=<host key>&i=<offer id>&s=<secret>&x=<expiry>
 ///
 /// k, i and s are unpadded base64url (32, 16 and 32 bytes); x is Unix seconds.
 public struct PairingOffer: Sendable, Equatable {
-    public var usesTLS = false
     public var hostName: String
     /// Tried in order.
     public var addressDescriptions: [String] { addresses.map(\.description) }
@@ -27,7 +26,7 @@ public struct PairingOffer: Sendable, Equatable {
         public var description: String {
             switch self {
             case .notAPairingLink: "not a dsh-mobile pairing code"
-            case .unsupportedVersion(let v): "unsupported pairing code version \(v)"
+            case .unsupportedVersion(let v): "unsupported pairing code version \(v). Generate a new pairing code on the updated host."
             case .badField(let f): "pairing code field \(f) is missing or malformed"
             }
         }
@@ -49,29 +48,27 @@ public struct PairingOffer: Sendable, Equatable {
         // The bridge writes the query with URLSearchParams (form encoding: space is "+").
         func decode(_ s: String) -> String { s.replacingOccurrences(of: "+", with: " ").removingPercentEncoding ?? s }
         for item in components.percentEncodedQueryItems ?? [] { q[decode(item.name)] = decode(item.value ?? "") }
-        guard ["1", "2"].contains(q["v"]) else { throw .unsupportedVersion(q["v"] ?? "none") }
+        guard q["v"] == "2" else { throw .unsupportedVersion(q["v"] ?? "none") }
         func bytes(_ key: String, _ length: Int) throws(ParseError) -> [UInt8] {
             guard let s = q[key], let b = Self.base64URLDecode(s), b.count == length else { throw .badField(key) }
             return b
         }
-        let addresses = (q["a"] ?? "").split(separator: ",").compactMap { HostEndpoint(address: String($0)) }
-        guard !addresses.isEmpty else { throw .badField("a") }
-        if q["v"] == "2" {
-            guard addresses.allSatisfy({ endpoint in
-                guard let url = URL(string: "https://" + endpoint.description, encodingInvalidCharacters: false) else { return false }
-                return url.host(percentEncoded: false) == endpoint.host && url.port == endpoint.port
-                    && url.user == nil && url.password == nil && url.query == nil && url.fragment == nil && url.path.isEmpty
-            }) else { throw .badField("a") }
-        }
+        let parts = (q["a"] ?? "").split(separator: ",", omittingEmptySubsequences: false)
+        let addresses = parts.compactMap { HostEndpoint(address: String($0)) }
+        guard !addresses.isEmpty, addresses.count == parts.count else { throw .badField("a") }
+        guard addresses.allSatisfy({ endpoint in
+            guard let url = URL(string: "https://" + endpoint.description, encodingInvalidCharacters: false) else { return false }
+            return url.host(percentEncoded: false)?.trimmingCharacters(in: CharacterSet(charactersIn: "[]")) == endpoint.host && url.port == endpoint.port
+                && url.user == nil && url.password == nil && url.query == nil && url.fragment == nil && url.path.isEmpty
+        }) else { throw .badField("a") }
         guard let x = q["x"].flatMap(TimeInterval.init), x.isFinite, x > 0 else { throw .badField("x") }
         self.init(
             hostName: q["n"] ?? "",
             addresses: addresses,
-            hostKey: try bytes("k", PairingWire.keyLength),
-            offerID: try bytes("i", PairingWire.offerIDLength),
-            secret: try bytes("s", PairingWire.secretLength),
+            hostKey: try bytes("k", 32),
+            offerID: try bytes("i", 16),
+            secret: try bytes("s", 32),
             expiresAt: Date(timeIntervalSince1970: x))
-        usesTLS = q["v"] == "2"
     }
 
     public init(string: String) throws(ParseError) {

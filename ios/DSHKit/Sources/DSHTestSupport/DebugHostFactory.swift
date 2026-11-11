@@ -7,13 +7,7 @@ import Foundation
 
 public enum DebugHostFactory {
     public static func pairing() -> Pairing {
-        Pairing(keys: KeychainDeviceKeyStore(), hosts: FilePairedHostStore(), transport: FakeBridge.factory())
-    }
-
-    public static func loopback(port: Int, pairing: Pairing) -> HostSync.HostConfig {
-        let endpoint = HostEndpoint.localBridge(port: port)
-        return .init(key: "bridge:\(endpoint)", connection: HostConnection(endpoint: endpoint,
-                     channel: PlaintextChannel(), transport: pairing.transport))
+        Pairing(hosts: FilePairedHostStore(), probe: nil)
     }
 
     @MainActor
@@ -45,7 +39,7 @@ public enum DebugHostFactory {
                                     approvals: options.fakeApprovals ? FakeApprovals.seed(for: name) : [])
                 if options.fakeApprovals { FakeApprovalSheet.watchWebAnswers(fake) }
                 return .init(key: "fake:\(name)", connection: HostConnection(endpoint: endpoint,
-                             channel: PlaintextChannel(), transport: fake.factory), name: name)
+                             transport: fake.factory), name: name)
             }
         }
         if options.useFakeBridge {
@@ -62,7 +56,7 @@ public enum DebugHostFactory {
                            extraCapabilities: options.fakeScenario == "transcript" ? [FakeTranscript.capability] : [])
             if options.fakeScenario == "outcomes" { FakeApprovalSheet.watchWebAnswers(fake) }
             return [.init(key: "fake:\(endpoint)",
-                          connection: HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: fake.factory))]
+                          connection: HostConnection(endpoint: endpoint, transport: fake.factory))]
         }
         return nil
     }

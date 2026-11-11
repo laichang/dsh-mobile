@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { ListenerInfo } from '../pairing/store.ts'
+import type { ListenerInfo } from '../pairing/announce.ts'
 import type { PairingOffer } from '../pairing/offer.ts'
 
 interface Device { id: string; digest: string; pairedAt: number; lastSeenAt: number }
@@ -46,7 +46,15 @@ export class TLSRegistry {
 
   has(id: string) { return this.data.devices.some(d => d.id === id) }
   devices() { return this.data.devices }
-  pairingHistory() { return this.data.history }
+  pairingHistory(): Audit[] {
+    const path = join(this.dir, 'devices.json')
+    if (!existsSync(path)) return this.data.history
+    const legacy = JSON.parse(readFileSync(path, 'utf8')) as { id: string; offerId: string; pairedAt: number }[] | { history: Audit[] }
+    const rows = Array.isArray(legacy) ? legacy.map(d => ({
+      id: 'pair:' + d.offerId, atMs: d.pairedAt, actor: 'owner', device: d.id, action: 'Device paired', detail: d.id,
+    })) : legacy.history
+    return [...this.data.history, ...rows.map(row => ({ ...row, id: 'legacy:' + row.id }))]
+  }
 
   seen(id: string) {
     this.write(this.data.devices.map(d => d.id === id ? { ...d, lastSeenAt: this.now() } : d))

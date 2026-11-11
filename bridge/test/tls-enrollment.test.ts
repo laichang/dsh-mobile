@@ -9,7 +9,6 @@ import { setTimeout as delay } from 'node:timers/promises'
 import { test } from 'node:test'
 import { DshTasks } from '../src/dsh.ts'
 import { SUPPORTED_DSH } from '../src/compatibility.ts'
-import { PairingStore } from '../src/pairing/store.ts'
 import { QuestionHolder } from '../src/questions/holder.ts'
 import { startBridgeServer } from '../src/server.ts'
 import { offerSocket } from '../src/tls/local-offers.ts'
@@ -23,7 +22,6 @@ test('local offers, enrollment, restart, authenticated dispatch and revocation',
     const bridge = await startBridgeServer({ host: '127.0.0.1', port: 0, tlsStateDir: dir, tasks,
       questions: new QuestionHolder(() => {}), dshVersion: SUPPORTED_DSH })
     const address = '127.0.0.1:' + bridge.port
-    new PairingStore(dir).writeListener({ hostName: 'test', addresses: [address], tls: true })
     return { bridge, address }
   }
   let { bridge, address } = await start()

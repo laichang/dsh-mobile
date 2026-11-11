@@ -8,13 +8,12 @@ import Synchronization
 import Testing
 
 /// A reconnect tries every saved address of a host. The Mac is
-/// a `FakeNoiseHost` in front of a `FakeHost`; its two addresses are two routes to it (a LAN
+/// an in-process `FakeHost`; its two addresses are two routes to it (a LAN
 /// address and a Tailscale one), and a route can die (refused) or go silent (no answer).
 @MainActor
 @Suite(.serialized) struct ReconnectTests {
     let storeURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("dshm-reconnect-\(UUID().uuidString).store")
-    let keys = InMemoryDeviceKeyStore()
     let hosts = InMemoryPairedHostStore()
     static let lan = HostEndpoint(host: "192.168.1.5", port: 47801)
     static let tailscale = HostEndpoint(host: "100.79.171.34", port: 47801)
@@ -36,22 +35,10 @@ import Testing
                 switch self.states.withLock({ $0[key] ?? .up }) {
                 case .up: return try await mac(url)
                 case .refused: throw URLError(.cannotConnectToHost)
-                case .silent: return SilentTransport()
+                case .silent: try await Task.sleep(for: .seconds(60)); throw URLError(.timedOut)
                 }
             }
         }
-    }
-
-    /// An address that takes the connection and never answers (a LAN address off the LAN).
-    final class SilentTransport: BridgeTransport {
-        private let closed = AsyncStream<Void>.makeStream()
-
-        func send(_ message: Data) async throws {}
-        func receive() async throws -> Data {
-            for await _ in closed.stream {}
-            throw URLError(.networkConnectionLost)
-        }
-        func close() async { closed.continuation.finish() }
     }
 
     /// Waits on the store with no polling: `waitForStore` in StoreWait.swift. A short
@@ -60,21 +47,23 @@ import Testing
         await waitForStore(what, timeout: max(timeout, .seconds(30)), sourceLocation: sourceLocation, condition)
     }
 
-    /// The Mac, paired over its LAN address first: saved as [LAN, Tailscale].
-    func pairedMac(_ routes: Routes, reply: [String] = ["over ", "tailscale"]) async throws
-        -> (Pairing, PairedHost, FakeNoiseHost) {
-        let noise = FakeNoiseHost()
-        let bridge = FakeHost(script: .init(reply: reply, chunkDelay: .milliseconds(5)))
-        let pairing = Pairing(keys: keys, hosts: hosts, transport: routes.factory(noise.factory(host: bridge)))
-        let paired = try await pairing.pair(await noise.makeOffer(addresses: [Self.lan, Self.tailscale]))
-        #expect(paired.addresses == [Self.lan, Self.tailscale])
-        return (pairing, paired, noise)
+    func pairedMac(_ routes: Routes) throws -> (BridgeTransportFactory, PairedHost) {
+        let bridge = FakeHost(script: .init(reply: ["over ", "tailscale"], chunkDelay: .milliseconds(5)))
+        var paired = PairedHost(name: "Fake Mac", addresses: [Self.lan, Self.tailscale], hostKey: [1])
+        paired.tlsDeviceID = UUID().uuidString
+        try hosts.save(paired)
+        return (routes.factory(bridge.factory), paired)
     }
 
-    /// A store as `AppModel` builds it for a paired host (`Pairing.connection(to:)`).
-    func launch(_ pairing: Pairing, _ paired: PairedHost) throws -> TaskListStore {
-        let connection = try pairing.connection(to: paired, attemptTimeout: .milliseconds(300))
-        let store = TaskListStore(cache: try TaskCache(url: storeURL), hosts: [.init(key: "noise:\(paired.id)", connection: connection, name: paired.name)],
+    func launch(_ factory: @escaping BridgeTransportFactory, _ paired: PairedHost) throws -> TaskListStore {
+        let hosts = self.hosts
+        let connection = HostConnection(endpoints: paired.addresses, transport: factory, attemptTimeout: .milliseconds(300), onAddressesChange: { addresses in
+            var saved = paired
+            saved.addresses = addresses
+            try? hosts.update(saved)
+        })
+        let store = TaskListStore(cache: try TaskCache(url: storeURL),
+                                  hosts: [.init(key: paired.cacheKey, connection: connection, name: paired.name)],
                                   prompt: "Which address?")
         store.backoff = (.milliseconds(20), .milliseconds(100))
         store.sendWaitsFor = .seconds(5)
@@ -85,7 +74,7 @@ import Testing
     /// takes a task, and saves Tailscale first. The next launch tries Tailscale first.
     @Test func deadFirstAddressFallsThroughToTheSecondAndIsSavedFirst() async throws {
         let routes = Routes()
-        let (pairing, paired, noise) = try await pairedMac(routes)
+        let (pairing, paired) = try pairedMac(routes)
         routes.set(Self.lan, .silent)
 
         let store = try launch(pairing, paired)
@@ -106,14 +95,13 @@ import Testing
         try await waitUntil("online again") { reopened.hosts.first?.reachability == .online }
         #expect(reopened.hosts.first?.address == Self.tailscale)
         #expect(routes.tries(Self.lan) == lanTries) // Tailscale first: the LAN address was not tried
-        #expect(await noise.refusals.isEmpty)
     }
 
     /// Every address fails: the host is offline, with the last error of each address. The saved
     /// order stays as it was.
     @Test func allAddressesDeadShowTheHostOfflineWithTheErrorOfEach() async throws {
         let routes = Routes()
-        let (pairing, paired, _) = try await pairedMac(routes)
+        let (pairing, paired) = try pairedMac(routes)
         routes.set(Self.lan, .refused)
         routes.set(Self.tailscale, .silent)
 
@@ -141,27 +129,13 @@ import Testing
     /// there, and the other address is not tried.
     @Test func revokedAtTheFirstAddressDoesNotTryTheNext() async throws {
         let routes = Routes()
-        let noise = FakeNoiseHost()
-        let stranger = Pairing(keys: InMemoryDeviceKeyStore(), hosts: InMemoryPairedHostStore(),
-                               transport: routes.factory(noise.factory()))
-        let unknown = PairedHost(name: "Fake Mac", addresses: [Self.lan, Self.tailscale], hostKey: noise.hostKey.publicKey)
-        let connection = try stranger.connection(to: unknown, attemptTimeout: .milliseconds(300))
-        await #expect(throws: NoiseChannelError.deviceUnknown) { try await connection.connect() }
+        let connection = HostConnection(endpoints: [Self.lan, Self.tailscale], transport: routes.factory { _ in
+            throw HostConnectionError.deviceRevoked
+        })
+        await #expect(throws: HostConnectionError.deviceRevoked) { try await connection.connect() }
         #expect(await connection.deviceRevoked)
         #expect(routes.tries(Self.lan) == 1)
         #expect(routes.tries(Self.tailscale) == 0)
     }
 
-    /// Pairing uses the same loop: a silent first address in the QR costs one timeout, not 60 s.
-    @Test func pairingFallsThroughASilentAddress() async throws {
-        let routes = Routes()
-        routes.set(Self.lan, .silent)
-        let noise = FakeNoiseHost()
-        let pairing = Pairing(keys: keys, hosts: hosts, transport: routes.factory(noise.factory()))
-        let clock = ContinuousClock()
-        let start = clock.now
-        let paired = try await pairing.pair(await noise.makeOffer(addresses: [Self.lan, Self.tailscale]))
-        #expect(paired.addresses == [Self.tailscale, Self.lan])
-        #expect(clock.now - start < HostConnection.defaultAttemptTimeout + .seconds(2))
-    }
 }

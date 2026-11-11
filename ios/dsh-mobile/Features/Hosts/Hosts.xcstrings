@@ -252,12 +252,12 @@
         }
       }
     },
-    "Not encrypted (debug)": {
+    "In-process test host": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "未加密（调试）"
+            "value": "应用内测试主机"
           }
         }
       }

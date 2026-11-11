@@ -26,7 +26,7 @@ import Testing
             var summary = FakeTurns.summary()
             summary.sessionRevision = revision
             let host = FakeHost(seed: [summary], journals: [summary.taskID: page])
-            let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
+            let connection = HostConnection(endpoint: .localBridge(), transport: host.factory)
             let store = TaskListStore(cache: try TaskCache(url: url), hosts: [.init(key: "host", connection: connection)])
             store.foreground()
             await waitForStore("updated session") { store.task(key)?.sessionRevision == revision && store.hosts.first?.reachability == .online }
@@ -42,7 +42,7 @@ import Testing
             MessageAttachment(kind: .file, name: "notes.txt", size: 0)
         ])
         store.background()
-        let disconnected = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: FakeHost().factory)
+        let disconnected = HostConnection(endpoint: .localBridge(), transport: FakeHost().factory)
         let offline = TaskListStore(cache: try TaskCache(url: url), hosts: [.init(key: "host", connection: disconnected)])
         let savedRow = try #require(offline.task(key))
         let saved = try #require(try await offline.readHistory(for: savedRow))

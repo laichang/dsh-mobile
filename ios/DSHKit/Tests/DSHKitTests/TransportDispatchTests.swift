@@ -47,7 +47,7 @@ import Testing
     @MainActor @Test func requestTowardPhoneIsIgnoredBetweenCallAndReply() async throws {
         let pipe = Pipe()
         pipe.allowClose.fire()
-        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: { _ in pipe })
+        let connection = HostConnection(endpoint: .localBridge(), transport: { _ in pipe })
         var outbound = pipe.outgoing.stream.makeAsyncIterator()
         let store = TaskStore(connection: connection, prompt: "hello")
         let sending = Task { await store.send() }
@@ -67,7 +67,7 @@ import Testing
     @Test func concurrentCallsKeepWireOrderAndMatchRepliesByID() async throws {
         let pipe = Pipe()
         pipe.allowClose.fire()
-        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: { _ in pipe })
+        let connection = HostConnection(endpoint: .localBridge(), transport: { _ in pipe })
         var outbound = pipe.outgoing.stream.makeAsyncIterator()
         let connect = Task { try await connection.connect() }
         let hello = try #require(await outbound.next())
@@ -92,8 +92,7 @@ import Testing
         let old = Pipe(), replacement = Pipe()
         replacement.allowClose.fire()
         let available = Mutex([old, replacement])
-        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(),
-                                        transport: { _ in available.withLock { $0.removeFirst() } })
+        let connection = HostConnection(endpoint: .localBridge(), transport: { _ in available.withLock { $0.removeFirst() } })
         var first = old.outgoing.stream.makeAsyncIterator()
         let connect = Task { try await connection.connect() }
         let hello = try #require(await first.next())

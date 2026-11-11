@@ -153,8 +153,7 @@ public enum FakeHosts {
         }
         let configs = hosts.enumerated().map { index, host in
             TaskListStore.HostConfig(key: "fake:\(host.0)", connection: HostConnection(
-                endpoint: HostEndpoint.localBridge(port: 47801 + index), channel: PlaintextChannel(),
-                transport: host.1.factory), name: host.0)
+                endpoint: HostEndpoint.localBridge(port: 47801 + index), transport: host.1.factory), name: host.0)
         }
         return (configs, hosts.filter { $0.0 != hkName }.map(\.1))
     }

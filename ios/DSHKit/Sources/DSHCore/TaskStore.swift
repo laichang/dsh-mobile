@@ -43,7 +43,7 @@ public final class TaskStore {
         self.prompt = prompt
     }
 
-    /// "noise" or (Debug) "plaintext": shown in the status row, checked by UI tests.
+    /// Transport shown in the status row.
     public var channelName: String { connection.channelName }
     public var endpoint: HostEndpoint { connection.endpoint }
 

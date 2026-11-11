@@ -5,16 +5,6 @@
      Release builds have no URL scheme; scripts/check-release-clean verifies that. -->
 <plist version="1.0">
 <dict>
-	<!-- The bridge is reached by plain ws:// at the IP addresses in the
-	     pairing QR (LAN, Tailscale 100.x, any other interface of the Mac). ATS refuses cleartext to
-	     IPs outside the local ranges, and NSExceptionDomains cannot name IP addresses. Every frame is
-	     Noise-encrypted, and the app talks to no other server. Same key in Debug and
-	     Release (scripts/check-release-clean compares them). -->
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

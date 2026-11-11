@@ -26,7 +26,6 @@ let package = Package(
         // TaskActivityState, and TaskActivityAttributes where ActivityKit exists.
         .target(name: "DSHActivity"),
         .target(name: "DSHTransport"),
-        // HostConnection, SecureChannel, PlaintextChannel, TaskStore.
         .target(name: "DSHCore", dependencies: ["DSHProtocol", "DSHTransport", .product(name: "SwiftProtobuf", package: "swift-protobuf")]),
         .target(name: "DSHFeatures", dependencies: ["DSHCore", "DSHActivity"]),
         // FakeBridge and other debug-only test doubles. Compiled out of Release (#if DEBUG).

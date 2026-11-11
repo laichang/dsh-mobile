@@ -11,7 +11,7 @@
 [![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](ios/)
 [![TypeScript](https://img.shields.io/badge/bridge-TypeScript-3178C6?logo=typescript&logoColor=white)](bridge/)
 [![Protobuf](https://img.shields.io/badge/protocol-protobuf-4285F4)](protocol/)
-[![E2E: Noise](https://img.shields.io/badge/E2E-Noise_IK-2ea44f)](#安全)
+[![E2E: TLS 1.3](https://img.shields.io/badge/E2E-TLS_1.3-2ea44f)](#安全)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm_Noncommercial-blue)](#许可证)
 [![Status: preview](https://img.shields.io/badge/status-preview-orange)](#现状)
 
@@ -59,7 +59,7 @@ DSH 常驻在你自己的机器上：家里的 Mac、公司的 Windows、NAT 后
 - 📂 **工作区选择**：执行端的默认工作区、最近用过的工作区，或该机器上任意一个绝对路径。
 - ⏹️ **随时打断**。
 - 📴 **不怕断网**：每台执行端有一条带续传游标的事件日志。杀掉 App、断开 Wi-Fi、再打开，错过的内容一条不少地补回来。
-- 🔐 **端到端加密**：扫一次二维码完成配对，此后每一帧都经过 Noise 加密，局域网、Tailscale 一视同仁。没有中转服务器，也没有我们自己的服务器：手机直连你的执行端。
+- 🔐 **端到端加密**：扫一次二维码完成配对，此后每次连接都经 TLS 1.3 加密并核对主机密钥，局域网、Tailscale 一视同仁。没有中转服务器，也没有我们自己的服务器：手机直连你的执行端。
 - 💬 **任务进行中也能说话**：追加的消息排到下一轮，或者立即发送；在卡片或输入框里回答 Agent 的提问；带照片和文件；在手机上本地语音输入。
 - 🔒 **实时活动**：每个正在跑的任务在锁屏上计时（只在本机更新，不用推送）。
 - 🧾 **设备与审计**：查看所有已配对设备，手机丢了随时吊销；谁、什么时候、在哪台设备上批准了什么，都有记录。
@@ -128,7 +128,7 @@ scripts/demo/all-tasks.sh
    dsh plugin --profile web add /path/to/dsh-mobile/bridge
    ```
 
-2. **重启 DSH**（`dsh web`）。bridge 监听 `0.0.0.0:47801`，还没有手机配对时会在日志里打印配对二维码。
+2. **重启 DSH**（`dsh web`）。bridge 监听 `0.0.0.0:47801`。
 3. **构建 App** 到你的 iPhone：新建 `ios/Config/Signing.local.xcconfig`（已被 git 忽略），填上你自己的 Team 和 Bundle ID 前缀，再打开 `ios/dsh-mobile.xcodeproj` 运行。免费的 Apple 开发者账号就够了。
 
    ```
@@ -136,9 +136,9 @@ scripts/demo/all-tasks.sh
    DSHM_BUNDLE_ID_PREFIX = com.example
    ```
 
-4. **在 App 里扫码**。二维码里包含执行端的所有地址，手机会逐个尝试，同一 Wi-Fi 或 Tailscale 都能连上。
+4. **在主机运行 `node bridge/lib/scripts/pair.js` 获取二维码，再在 App 里扫码**。二维码里包含执行端的所有地址，手机会逐个尝试，同一 Wi-Fi 或 Tailscale 都能连上。
 
-之后需要新的二维码（一次性，10 分钟内有效）：
+升级时保留原 DSH 配置和 bridge 状态目录，先更新 bridge 并重启 DSH，再安装配套 App。重新扫码后可打开原有会话。获取新码（一次性，10 分钟有效）：
 
 ```bash
 node bridge/lib/scripts/pair.js
@@ -148,14 +148,11 @@ node bridge/lib/scripts/pair.js
 
 ## 安全
 
-- **端到端 Noise 协议**：配对使用 `Noise_IKpsk1_25519_ChaChaPoly_SHA256`，二维码携带执行端的静态公钥和一个一次性的 32 字节密钥；重连使用 `Noise_IK`。Swift 端基于 CryptoKit，TS 端基于 `@noble/*`，两端都通过了官方 Noise 测试向量和共享的 golden transcripts。
+- **TLS 1.3 与主机身份校验**：二维码携带主机 P-256 公钥的 SHA-256 指纹。手机在注册和重连时校验证书有效期、用途、地址和公钥。
 - **一次性、短时效的配对码**：二维码首次使用即作废，10 分钟后过期，截图泄露也没多大用。
-- **每台设备独立密钥，可吊销**：手机的密钥只存在本机 Keychain，不同步、不备份。吊销设备会立即断开它的连接并拒绝重连。
+- **每台设备独立凭据，可吊销**：手机的设备凭据只存在本机 Keychain，不同步、不备份。吊销设备会立即断开它的连接并拒绝重连。
 - **失败即关闭**：没人回答的审批永远不会放行，超时即拒绝。
-- **Release 版本不含调试入口**：明文通道、FakeBridge、测试用启动参数只存在于 Debug 构建，`scripts/check-release-clean` 负责证明这一点。
-
-> [!WARNING]
-> Noise 实现是自己写的，**尚未经过独立安全审计**。非常欢迎审阅。
+- **Release 版本不含调试入口**：FakeBridge、测试用启动参数只存在于 Debug 构建，`scripts/check-release-clean` 负责证明这一点。
 
 ## 现状
 
@@ -194,8 +191,8 @@ evidence/       当前计划引用的截图（仅在需求进行中存在）
 | 命令 | 作用 |
 |---|---|
 | `scripts/bootstrap` | 配置一台 Mac，并验证端到端来回可以跑通 |
-| `cd ios/DSHKit && swift test` | 在 Mac 上跑协议、Noise、store、同步相关测试 |
-| `cd bridge && pnpm test` | 针对 `FakeDSH`、golden fixtures、Noise 向量的 bridge 测试 |
+| `cd ios/DSHKit && swift test` | 在 Mac 上跑协议、TLS、store、同步相关测试 |
+| `cd bridge && pnpm test` | 针对 `FakeDSH`、golden fixtures、TLS 注册的 bridge 测试 |
 | `scripts/codegen` | 从 `protocol/*.proto` 重新生成 Swift + TS（`--check` 在有变化时失败） |
 | `scripts/demo/<feature>.sh` | 在模拟器里端到端演示某个功能 |
 | `node scripts/dsh-up.mjs` | 用 mock 模型启动本地 DSH + bridge |
@@ -208,7 +205,7 @@ git config core.hooksPath .githooks
 
 ## 参与贡献
 
-欢迎提 Issue 和 PR，尤其是 Noise/密码学审阅、真机测试，以及让 bridge 支持新的 DSH 版本。
+欢迎提 Issue 和 PR，尤其是 TLS 审阅、真机测试，以及让 bridge 支持新的 DSH 版本。
 
 提交贡献即表示你同意维护者可以按本项目许可证、以及单独的商业许可证授权你的贡献。
 
@@ -218,7 +215,7 @@ git config core.hooksPath .githooks
 
 - [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)：本 App 所驾驭的 Agent 运行时
 - [Cordis](https://github.com/cordiverse/cordis)：DSH 与 bridge 所基于的插件框架
-- [Noise Protocol Framework](https://noiseprotocol.org/)、[swift-protobuf](https://github.com/apple/swift-protobuf)、[protobuf-es](https://github.com/bufbuild/protobuf-es)、[@noble](https://paulmillr.com/noble/)
+- [swift-protobuf](https://github.com/apple/swift-protobuf)、[protobuf-es](https://github.com/bufbuild/protobuf-es)
 
 ## 许可证
 

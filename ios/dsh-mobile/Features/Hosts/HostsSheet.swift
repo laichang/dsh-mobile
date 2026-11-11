@@ -205,7 +205,7 @@ struct HostDot: View {
     }
 }
 
-/// "🔒 End-to-end encrypted" on a Noise channel; Debug's loopback path says it is not encrypted.
+/// Shows whether the app talks to a real enrolled host or an in-process fixture.
 struct HostChannelLabel: View {
     let host: TaskListStore.HostStatus
 
@@ -215,7 +215,7 @@ struct HostChannelLabel: View {
                 .foregroundStyle(DSHTheme.green)
                 .labelStyle(.tightIcon)
         } else {
-            Label { Text("Not encrypted (debug)", tableName: "Hosts") } icon: { Image(systemName: "lock.open") }
+            Label { Text("In-process test host", tableName: "Hosts") } icon: { Image(systemName: "lock.open") }
                 .foregroundStyle(DSHTheme.textSecondary)
                 .labelStyle(.tightIcon)
         }

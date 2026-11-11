@@ -44,8 +44,7 @@ import Testing
                             extraCapabilities: attachments ? [DSHProtocolInfo.attachmentsCapability] : [])
         let key = "fake:photo"
         let store = TaskListStore(cache: try TaskCache(inMemory: true), hosts: [
-            .init(key: key, connection: HostConnection(endpoint: .localBridge(port: 47801), channel: PlaintextChannel(),
-                                                       transport: fake.factory), name: "Photo Mac"),
+            .init(key: key, connection: HostConnection(endpoint: .localBridge(port: 47801), transport: fake.factory), name: "Photo Mac"),
         ], prompt: "")
         store.sendWaitsFor = .seconds(2)
         store.foreground()
@@ -103,7 +102,7 @@ import Testing
     /// task cannot name an upload that is not staged.
     @Test func wrongHashAndMissingPartAreRefused() async throws {
         let fake = FakeHost(extraCapabilities: [DSHProtocolInfo.attachmentsCapability])
-        let bridge = try await fake.factory(URL(string: "ws://127.0.0.1:47801/plaintext")!)
+        let bridge = try await fake.factory(URL(string: "wss://127.0.0.1:47801/")!)
         let (fixture, data) = try Self.fixture()
         let parts = Attachments.parts(of: data)
         var nextID: UInt64 = 1
@@ -190,7 +189,7 @@ import Testing
         store.composer.prompt = "Read this."
         #expect(!store.canSend)
         #expect(await store.send() == nil)
-        let connection = HostConnection(endpoint: .localBridge(port: 47801), channel: PlaintextChannel(), transport: fake.factory)
+        let connection = HostConnection(endpoint: .localBridge(port: 47801), transport: fake.factory)
         try await connection.connect()
         await #expect(throws: HostConnectionError.self) { _ = try await connection.upload(big) }
         await connection.disconnect()

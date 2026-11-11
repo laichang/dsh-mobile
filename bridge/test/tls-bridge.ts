@@ -8,7 +8,7 @@ import { redeem } from './tls-client.ts'
 
 export type TestBridge = Awaited<ReturnType<typeof startTestBridge>>
 
-export async function startTestBridge(options: BridgeServerOptions) {
+export async function startTestBridge(options: Omit<BridgeServerOptions, 'tlsStateDir'>) {
   const dir = mkdtempSync(join(tmpdir(), 'dshm-test-host-'))
   try {
     const server = await startBridgeServer({ ...options, tlsStateDir: dir })

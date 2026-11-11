@@ -46,6 +46,8 @@ public struct AddressFailure: Sendable, Equatable, CustomStringConvertible {
         guard ns.domain == NSURLErrorDomain else { return String(describing: error) }
         let name: String? = switch ns.code {
         case NSURLErrorAppTransportSecurityRequiresSecureConnection: "App Transport Security"
+        case NSURLErrorServerCertificateUntrusted, NSURLErrorServerCertificateHasBadDate, NSURLErrorUserCancelledAuthentication:
+            "host identity could not be verified. Check the host and scan a new pairing code"
         case NSURLErrorCannotConnectToHost: "connection refused"
         case NSURLErrorTimedOut: "timed out"
         case NSURLErrorNotConnectedToInternet: "no network"
@@ -61,7 +63,7 @@ public struct AddressFailure: Sendable, Equatable, CustomStringConvertible {
     /// - Refused (`NSURLErrorCannotConnectToHost`): nothing listens.
     /// - An HTTP answer without the upgrade (`NSURLErrorBadServerResponse`), a connection that the
     ///   peer drops during the handshake (`NSURLErrorNetworkConnectionLost`), or a WebSocket peer
-    ///   that is no bridge (`NoiseChannelError.notABridge`, a text message): another program.
+    ///   that is no bridge (a text message): another program.
     /// - No answer in time: the TCP probe decides (`AddressTimeout.port`); with no probe, not reachable.
     public static func kind(for error: any Error) -> Kind? {
         switch error {
@@ -71,7 +73,7 @@ public struct AddressFailure: Sendable, Equatable, CustomStringConvertible {
             case .refused?: .nothingListens
             case .noAnswer?, nil: .notReachable
             }
-        case NoiseChannelError.notABridge, BridgeTransportError.unexpectedTextMessage:
+        case BridgeTransportError.unexpectedTextMessage:
             return .otherProgram
         default:
             break
@@ -80,7 +82,7 @@ public struct AddressFailure: Sendable, Equatable, CustomStringConvertible {
         guard ns.domain == NSURLErrorDomain else { return nil }
         return switch ns.code {
         case NSURLErrorCannotConnectToHost: .nothingListens
-        case NSURLErrorBadServerResponse, NSURLErrorNetworkConnectionLost: .otherProgram
+        case NSURLErrorBadServerResponse, NSURLErrorNetworkConnectionLost, NSURLErrorSecureConnectionFailed: .otherProgram
         case NSURLErrorTimedOut: .notReachable
         default: nil
         }

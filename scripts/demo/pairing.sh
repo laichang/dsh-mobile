@@ -36,14 +36,14 @@ source scripts/demo/lib.sh
 demo_tls_home
 demo_prepare_bridge
 
-step "bridge tests (node:test: Noise vectors, golden transcripts, pairing against FakeDSH)"
+step "bridge enrollment and task tests"
 demo_bridge_tests "$LOGS/bridge-test.log"
 
-step "DSHKit tests (swift test: NoiseChannel, pairing against FakeNoiseHost, PlaintextChannel)"
+step "DSHKit pairing and connection tests"
 demo_swift_tests "$LOGS/swift-test.log"
 
 if [ $RELEASE = 1 ]; then
-  step "Release carries no PlaintextChannel or other debug entry points"
+  step "check the Debug and Release transport and entry points"
   scripts/check-release-clean
 fi
 

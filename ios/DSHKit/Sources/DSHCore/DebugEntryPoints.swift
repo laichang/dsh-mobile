@@ -15,8 +15,6 @@ public enum DebugLaunchOptions {
     public static let fakeBridgeKey = "DSHMFakeBridge"
     /// `-DSHMPresetPrompt <text>`: pre-fill the composer.
     public static let presetPromptKey = "DSHMPresetPrompt"
-    /// `-DSHMBridgePort <port>`: loopback bridge port (default 47801).
-    public static let bridgePortKey = "DSHMBridgePort"
     /// `-DSHMFakeMilestones YES`: with the FakeBridge, script a three-todo task.
     public static let fakeMilestonesKey = "DSHMFakeMilestones"
     /// `-DSHMResetStore YES`: start with an empty task cache.
@@ -67,7 +65,6 @@ public enum DebugLaunchOptions {
     public struct Options: Equatable, Sendable {
         public var useFakeBridge = false
         public var presetPrompt: String?
-        public var bridgePort: Int?
         public var fakeMilestones = false
         public var multipleFakeHosts = false
         public var fakeBridgeOffline = false
@@ -90,14 +87,13 @@ public enum DebugLaunchOptions {
         public var uikitAnimations = true
 
         public init(
-            useFakeBridge: Bool = false, presetPrompt: String? = nil, bridgePort: Int? = nil,
+            useFakeBridge: Bool = false, presetPrompt: String? = nil,
             fakeMilestones: Bool = false,
             fakeBridgeOffline: Bool = false, resetStore: Bool = false, connectDelay: Double? = nil,
             resetPairing: Bool = false, fakeHold: String? = nil
         ) {
             self.useFakeBridge = useFakeBridge
             self.presetPrompt = presetPrompt
-            self.bridgePort = bridgePort
             self.fakeMilestones = fakeMilestones
             self.fakeBridgeOffline = fakeBridgeOffline
             self.resetStore = resetStore
@@ -134,7 +130,6 @@ public enum DebugLaunchOptions {
         if let v = values[resetStoreKey] { options.resetStore = yes.contains(v) }
         options.connectDelay = values[connectDelayKey].flatMap(Double.init)
         options.presetPrompt = values[presetPromptKey]
-        options.bridgePort = values[bridgePortKey].flatMap(Int.init)
         if let v = values[fakeMilestonesKey] { options.fakeMilestones = yes.contains(v) }
         if let v = values[resetPairingKey] { options.resetPairing = yes.contains(v) }
         options.fakeHold = values[fakeHoldKey]

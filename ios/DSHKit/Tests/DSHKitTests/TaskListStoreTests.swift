@@ -30,7 +30,7 @@ import Testing
 
     /// A store as the app builds it on launch: the cache on disk, one host, nothing running yet.
     func launch(_ host: FakeHost, prompt: String = "Count to five.") throws -> TaskListStore {
-        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
+        let connection = HostConnection(endpoint: .localBridge(), transport: host.factory)
         let store = TaskListStore(
             cache: try TaskCache(url: storeURL), hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: prompt)
         store.backoff = (.milliseconds(20), .milliseconds(100))
@@ -139,8 +139,7 @@ import Testing
             context.insert(row)
         }
         try context.save()
-        let link = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(),
-                                  transport: FakeHost(reachable: false).factory)
+        let link = HostConnection(endpoint: .localBridge(), transport: FakeHost(reachable: false).factory)
         let store = TaskListStore(cache: TaskCache(container), hosts: [.init(key: "paired-mac", connection: link, name: "Paired Mac")])
         store.foreground()
         defer { store.background() }
@@ -152,7 +151,7 @@ import Testing
     @Test func hostsWithTheSameNameRemainDistinguishable() throws {
         let links = [47801, 47802].map { port in
             let endpoint = HostEndpoint.localBridge(port: port)
-            let connection = HostConnection(endpoint: endpoint, channel: PlaintextChannel(), transport: FakeHost().factory)
+            let connection = HostConnection(endpoint: endpoint, transport: FakeHost().factory)
             return TaskListStore.HostConfig(key: endpoint.description, connection: connection, name: "Mac")
         }
         let store = TaskListStore(cache: try TaskCache(inMemory: true), hosts: links)
@@ -162,8 +161,8 @@ import Testing
     @Test func composerChoicesStayWithTheirHost() async throws {
         let home = FakeHost(), office = FakeHost()
         let store = TaskListStore(cache: try TaskCache(inMemory: true), hosts: [
-            .init(key: "home", connection: .init(endpoint: .localBridge(), channel: PlaintextChannel(), transport: home.factory)),
-            .init(key: "office", connection: .init(endpoint: .localBridge(), channel: PlaintextChannel(), transport: office.factory))
+            .init(key: "home", connection: .init(endpoint: .localBridge(), transport: home.factory)),
+            .init(key: "office", connection: .init(endpoint: .localBridge(), transport: office.factory))
         ], prompt: "Run on office", preferredHostKey: "home")
         store.foreground()
         defer { store.background() }
@@ -185,8 +184,8 @@ import Testing
         let home = FakeHost(hostName: "Home Mac")
         let office = FakeHost(hostName: "Office Mac", incompatibleDsh: ("0.2.2-alpha.3", "0.2.2-rc.1"))
         let store = TaskListStore(cache: try TaskCache(inMemory: true), hosts: [
-            .init(key: "home", connection: .init(endpoint: .localBridge(), channel: PlaintextChannel(), transport: home.factory), name: home.hostName),
-            .init(key: "office", connection: .init(endpoint: .localBridge(), channel: PlaintextChannel(), transport: office.factory), name: office.hostName)
+            .init(key: "home", connection: .init(endpoint: .localBridge(), transport: home.factory), name: home.hostName),
+            .init(key: "office", connection: .init(endpoint: .localBridge(), transport: office.factory), name: office.hostName)
         ], prompt: "Use this repo", preferredHostKey: "office")
         let selection = ModelSelection(provider: "office", model: "office-model", effort: nil)
         store.composer.selections["office"] = selection
@@ -212,8 +211,7 @@ import Testing
     @Test func offlineSelectionNeverSendsToAnotherHost() async throws {
         let home = FakeHost(hostName: "Home Mac"), office = FakeHost(reachable: false)
         func config(_ key: String, name: String, host: FakeHost) -> TaskListStore.HostConfig {
-            .init(key: key, connection: HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(),
-                                                       transport: host.factory), name: name)
+            .init(key: key, connection: HostConnection(endpoint: .localBridge(), transport: host.factory), name: name)
         }
         let store = TaskListStore(cache: try TaskCache(inMemory: true), hosts: [config("home", name: "Home Mac", host: home),
                                           config("office", name: "Office Mac", host: office)],

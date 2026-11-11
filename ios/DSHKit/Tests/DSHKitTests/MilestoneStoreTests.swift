@@ -13,7 +13,7 @@ import Testing
 
     func makeStore(_ script: FakeBridge.Script) -> TaskStore {
         let connection = HostConnection(
-            endpoint: .localBridge(), channel: PlaintextChannel(), transport: FakeBridge.factory(script: script))
+            endpoint: .localBridge(), transport: FakeBridge.factory(script: script))
         return TaskStore(connection: connection, prompt: "Do it in three steps.")
     }
 

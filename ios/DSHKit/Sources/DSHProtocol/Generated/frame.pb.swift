@@ -77,8 +77,7 @@ package nonisolated enum Dshm_V1_TaskStatus: SwiftProtobuf.Enum, Swift.CaseItera
 
 }
 
-/// One WebSocket binary message carries exactly one Frame (inside the
-/// SecureChannel; plaintext only on loopback).
+/// One binary WebSocket message carries one Frame over pinned TLS 1.3.
 package nonisolated struct Dshm_V1_Frame: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for

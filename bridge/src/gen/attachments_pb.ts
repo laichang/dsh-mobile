@@ -1,5 +1,4 @@
-// Attachments: a file larger than one Noise message (65535 bytes) goes to the
-// host in parts before the CreateTask or SendMessage that uses it.
+// Attachments are sent to the host in bounded chunks before the CreateTask or SendMessage that uses it.
 // Capability "attachments.v1".
 //
 //   UploadBegin  → UploadAck      the bridge checks the declared size

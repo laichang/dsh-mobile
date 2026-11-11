@@ -6,7 +6,7 @@ import UIKit
 import DSHTestSupport
 #endif
 
-/// Each paired host syncs over its own Noise connection into the shared task list.
+/// Each paired host syncs over its own TLS connection into the shared task list.
 @MainActor
 @Observable
 final class AppModel {
@@ -46,7 +46,7 @@ final class AppModel {
     @ObservationIgnored private var connectDelay: Duration = .zero
     /// Hosts this device lost its access to (a revoke of this device), until they are
     /// paired again. A paired host also leaves the file; this set keeps a fake host
-    /// out of the store, says each revoke once, and keeps the Debug loopback away from 08.
+    /// out of the store and reports each revoke once.
     @ObservationIgnored private var forgottenHostKeys: Set<String> = []
     /// The host that revoked this phone without a revoke from this phone's hosts sheet
     /// (another client, or the close came first). The root says so once.
@@ -66,7 +66,9 @@ final class AppModel {
         if options.resetPairing {
             for host in pairing.hosts.load() { try? Pairing.removeCredential(for: host) }
             try? pairing.hosts.removeAll()
-            try? pairing.keys.reset()
+        }
+        if ProcessInfo.processInfo.arguments.contains("-DSHMSeedLegacyPairing") {
+            try! LegacyPairingFixture.install(in: pairing.hosts)
         }
         if options.resetStore {
             try? cache.erase()
@@ -123,14 +125,7 @@ final class AppModel {
         #endif
         let paired = pairing.hosts.load()
         hasSavedHosts = !paired.isEmpty
-        if !paired.isEmpty { return paired.compactMap(pairedConfig) }
-        #if DEBUG
-        // After this device lost its last paired host, show 08, not the loopback dev path.
-        guard forgottenHostKeys.isEmpty, let port = options.bridgePort else { return [] }
-        return [DebugHostFactory.loopback(port: port, pairing: pairing)]
-        #else
-        return []
-        #endif
+        return paired.compactMap(pairedConfig)
     }
 
     /// This device lost its access to the host (it revoked itself): forget the pairing

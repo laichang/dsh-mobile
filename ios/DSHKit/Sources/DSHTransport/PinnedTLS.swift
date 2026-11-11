@@ -1,9 +1,11 @@
 import CryptoKit
 import Foundation
 import Security
+import Synchronization
 
 /// One private session per connection. Its trust anchor and credentials never cross host boundaries.
 private final class PinnedServer: NSObject, URLSessionTaskDelegate {
+    let rejectedIdentity = Mutex(false)
     let pin: Data
     let host: String
     init(pin: Data, host: String) { self.pin = pin; self.host = host }
@@ -19,6 +21,9 @@ private final class PinnedServer: NSObject, URLSessionTaskDelegate {
               let trust = challenge.protectionSpace.serverTrust,
               let chain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
               let leaf = chain.first, accepts(leaf, trust: trust) else {
+            if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
+                rejectedIdentity.withLock { $0 = true }
+            }
             completionHandler(.cancelAuthenticationChallenge, nil)
             return
         }
@@ -59,7 +64,14 @@ extension WebSocketTransport {
         guard let url = request.url, url.scheme == "https" else { throw URLError(.badURL) }
         let session = try session(for: url, pin: spkiSHA256)
         defer { session.finishTasksAndInvalidate() }
-        let (bytes, response) = try await session.data(for: request)
+        let bytes: Data, response: URLResponse
+        do { (bytes, response) = try await session.data(for: request) }
+        catch {
+            if (session.delegate as? PinnedServer)?.rejectedIdentity.withLock({ $0 }) == true {
+                throw URLError(.serverCertificateUntrusted)
+            }
+            throw error
+        }
         guard let http = response as? HTTPURLResponse, http.url == url else { throw URLError(.badServerResponse) }
         return (bytes, http)
     }

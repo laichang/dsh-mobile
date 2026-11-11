@@ -1,15 +1,12 @@
-import { WebSocket } from 'ws'
 import { startTestBridge, type TestBridge } from './tls-bridge.ts'
 import assert from 'node:assert/strict'
 import { after, describe, test } from 'node:test'
 import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
-import { PlaintextChannel, isLoopbackAddress } from '../src/channel.ts'
 import { DshTasks } from '../src/dsh.ts'
 import { FrameSchema, TaskStatus, type Frame } from '../src/gen/frame_pb.ts'
 import { TaskState } from '../src/gen/durable_list_pb.ts'
 import { MilestoneKind } from '../src/gen/milestones_pb.ts'
-import { PLAINTEXT_PATH, startBridgeServer, type BridgeServer } from '../src/server.ts'
 import { FakeDSH, type FakeDSHOptions } from './fake-dsh.ts'
 
 /** A minimal test client: send Requests, collect every Frame received. */
@@ -37,7 +34,7 @@ async function connect(server: Pick<TestBridge, 'socket'>) {
   }
 }
 
-const servers: BridgeServer[] = []
+const servers: TestBridge[] = []
 after(async () => { await Promise.all(servers.map((s) => s.close())) })
 
 async function bridgeWith(options: FakeDSHOptions = {}, dshVersion = SUPPORTED_DSH) {
@@ -274,33 +271,5 @@ describe('BridgeAgainstFakeDSH', () => {
     assert.ok(f.kind.case === 'response' && f.kind.value.body.case === 'error')
     assert.equal(f.kind.value.body.value.code, 'task/create-failed')
     assert.equal(f.kind.value.body.value.message, 'no default model')
-  })
-})
-
-describe('PlaintextChannelBridge', () => {
-  test('plaintextCannotReadOrChangeDeviceManagement', async () => {
-    const server = await startBridgeServer({ dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0,
-      channel: new PlaintextChannel(), tasks: new DshTasks(new FakeDSH(), '/tmp/dshm-ws') })
-    servers.push(server)
-    const client = await connect({ socket: async () => new WebSocket('ws://127.0.0.1:' + server.port + PLAINTEXT_PATH) })
-    client.send({ kind: { case: 'request', value: { id: 1n, body: { case: 'hello', value: { protocolVersion: 1 } } } } })
-    client.send({ kind: { case: 'request', value: { id: 2n, body: { case: 'listDevices', value: {} } } } })
-    client.send({ kind: { case: 'request', value: { id: 3n, body: { case: 'revokeDevice', value: { deviceId: 'victim' } } } } })
-    client.send({ kind: { case: 'request', value: { id: 4n, body: { case: 'listAudit', value: {} } } } })
-    await client.until(fs => fs.length === 4)
-    assert.ok(client.frames.slice(1).every(f => f.kind.case === 'response'
-      && f.kind.value.body.case === 'error' && f.kind.value.body.value.code === 'devices/forbidden'))
-    client.close()
-  })
-
-  test('refusesNonLoopbackAddress', async () => {
-    const channel = new PlaintextChannel()
-    for (const host of ['0.0.0.0', '192.168.1.10', '10.0.0.1', '::', 'example.com', 'localhost']) {
-      assert.throws(() => channel.assertListenAddress(host), /refuses non-loopback/, host)
-      await assert.rejects(
-        startBridgeServer({ dshVersion: SUPPORTED_DSH, host, port: 0, channel, tasks: new DshTasks(new FakeDSH(), '/tmp') }),
-        /refuses non-loopback/, host)
-    }
-    for (const host of ['127.0.0.1', '127.1.2.3', '::1', '[::1]']) assert.ok(isLoopbackAddress(host), host)
   })
 })

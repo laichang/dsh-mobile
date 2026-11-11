@@ -83,7 +83,7 @@ final class FakeActivitySystem: LiveActivityClient {
     }
 
     func launch(_ host: FakeHost, system: FakeActivitySystem, prompt: String = "Three steps.") throws -> TaskListStore {
-        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
+        let connection = HostConnection(endpoint: .localBridge(), transport: host.factory)
         let store = TaskListStore(cache: try TaskCache(url: storeURL), hosts: [.init(key: "fake:mac", connection: connection, name: "MacBook-Pro")], prompt: prompt)
         store.backoff = (.milliseconds(20), .milliseconds(100))
         store.sendWaitsFor = .seconds(10)

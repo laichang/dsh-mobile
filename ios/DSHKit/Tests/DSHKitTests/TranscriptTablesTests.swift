@@ -132,7 +132,7 @@ import Testing
         }
         let host = FakeHost(script: script)
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("dshm-s28-\(UUID().uuidString).store")
-        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
+        let connection = HostConnection(endpoint: .localBridge(), transport: host.factory)
         let store = TaskListStore(cache: try TaskCache(url: url), hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)],
                                   prompt: FakeBridge.tablesPrompt)
         store.backoff = (.milliseconds(20), .milliseconds(100))

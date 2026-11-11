@@ -22,7 +22,7 @@ import Testing
         title: "", tool: "bash", arguments: #"{"command":"rm -rf ~/Desktop/Q3/tmp"}"#, reason: "Remove the images")
 
     func launch(_ host: FakeHost) throws -> TaskListStore {
-        let connection = HostConnection(endpoint: .localBridge(), channel: PlaintextChannel(), transport: host.factory)
+        let connection = HostConnection(endpoint: .localBridge(), transport: host.factory)
         let store = TaskListStore(cache: try TaskCache(url: storeURL), hosts: [.init(key: "fake:home", connection: connection)])
         store.backoff = (.milliseconds(20), .milliseconds(100))
         return store
