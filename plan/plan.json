@@ -6,16 +6,17 @@
       "kind": "tracer",
       "title": "Tracer bullet: List host workspaces through a Swift domain API",
       "needs": [],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/t0-a38e968",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "The workspace picker proves the first host-scoped domain read from bridge to UI. Closes #72.",
       "cuts": "Map the existing workspace-list response once inside DSHCore. Use the same Swift values for the real picker and its fake. Set the mapping and shared signatures with this single read. the host management, model and session slices each move their own operations into feature-specific extensions as needed. Keep the phone workspace, reverse RPC and shared-material grants outside this milestone.\nStarting files: `ios/dsh-mobile/Features/Workspaces/WorkspaceControl.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHTestSupport/FakePickers.swift`.\nScreen references: `design/screens/01.html`, `design/screens/07.html`.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S1",
@@ -250,6 +251,11 @@
       "date": "2026-11-11",
       "title": "Plan started",
       "body": "M3 · Three-layer mobile architecture and TLS 1.3"
+    },
+    {
+      "date": "2026-11-11",
+      "title": "T0 assigned",
+      "body": "Branch `claude/t0-a38e968`, simulator `E2E05E75-0562-4887-A5C4-99A7856725D3`, DSHM_HOME `~/.dshm/home-t0-E2E05E75-0562-4887-A5C4-99A7856725D3`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env T0)\"` exports them."
     }
   ],
   "pending": [],
