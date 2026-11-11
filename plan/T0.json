@@ -6,7 +6,10 @@
       "text": "In a disposable checkout with a fake GitHub client, a real close commit for a completed milestone plan closes only its named issues and verifies zero open issues remotely. Exercise already-closed issues, a repeated reference, and a paginated milestone. Ordinary commits and standalone plans make no GitHub calls.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/close-plan-github-test"
+      ]
     },
     {
       "tier": "auto",
