@@ -13,3 +13,4 @@ S4	claude/s4-design-as-data	1	47811	3284	47841	3314	dshm-S4	~/.dshm/home-s4	D165
 S5	claude/s5-remove-ids	0	47810	3283	47840	3313	dshm-S5	~/.dshm/home-s5	D168-D170	2026-11-10
 S7	claude/s7-plan-dir	0	47810	3283	47840	3313	dshm-S7	~/.dshm/home-s7	D171-D173	2026-11-10
 S8	claude/s8-status-next	3	47813	3286	47843	3316	dshm-S8	~/.dshm/home-s8	D174-D176	2026-11-11
+S9	claude/s9-input-diagnostics	3	47813	3286	47843	3316	dshm-S9	~/.dshm/home-s9	D177-D179	2026-11-11
