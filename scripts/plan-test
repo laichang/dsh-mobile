@@ -107,6 +107,11 @@ pyok "plan.json names the requirement and has no nodes" 'P["title"] == "Test · 
 pyok "the plan log starts" 'P["log"][0]["title"] == "Plan started"'
 clean "new --commit commits plan/" plan
 refused "new when a plan exists is refused" scripts/plan new "Another"
+echo null > plan/plan.json
+scripts/plan lint > "$T/null-plan.out" 2>&1
+[ $? = 1 ] && ok "lint rejects a null plan" || bad "lint accepted a null plan"
+has "lint identifies the invalid plan" "$T/null-plan.out" "plan/plan.json: must be object"
+git restore plan/plan.json
 expect "lint of a new plan" 0 scripts/plan lint
 expect "add tracer" 0 scripts/plan add tracer "thin path" --why "Why." --cuts "Cuts." --done "[auto] The path works"
 pyok "the first tracer is T0, todo" 'N["T0"]["kind"] == "tracer" and N["T0"]["title"] == "Tracer bullet: thin path" and N["T0"]["status"] == "todo" and N["T0"]["branch"] is None'
@@ -119,6 +124,13 @@ expect "add spike" 0 scripts/plan add spike "a question" --why "Why." --cuts "Cu
 pyok "the first spike is X1" 'N["X1"]["kind"] == "spike" and N["X1"]["title"] == "Spike: a question" and N["X1"]["needs"] == []'
 expect "add slice" 0 scripts/plan add slice "Feature" --why "Why." --cuts $'- one\n- two' --done "[ui] It shows" --needs "T0, X1"
 pyok "the first slice is S1, with Needs as given" 'N["S1"]["title"] == "Feature" and N["S1"]["needs"] == ["T0", "X1"]'
+cp plan/S1.json "$T/valid-slice.json"
+python3 -c 'import json; p="plan/S1.json"; d=json.load(open(p)); del d["items"][0]["text"]; open(p,"w").write(json.dumps(d))'
+scripts/review S1 --dry-run > "$T/invalid-review.out" 2>&1
+[ $? = 2 ] && ok "review rejects malformed UI items" || bad "review returned the wrong status for a malformed item"
+has "review identifies the slice, item and missing field" "$T/invalid-review.out" "plan/S1.json.items[0]: text is missing"
+lacks "review reports the validation error without a traceback" "$T/invalid-review.out" "Traceback"
+mv "$T/valid-slice.json" plan/S1.json
 pyok "a multi-line value stays as it is" 'N["S1"]["cuts"] == "- one\n- two"'
 scripts/plan dag --json > "$T/dag0.json" 2>&1
 python3 -c 'import json,sys; g=json.load(open(sys.argv[1])); assert g["order"].index("S1") > max(g["order"].index("T0"), g["order"].index("X1")); assert {"from":"X1","to":"S1"} in g["edges"]' "$T/dag0.json" \
