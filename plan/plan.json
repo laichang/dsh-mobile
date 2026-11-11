@@ -144,10 +144,10 @@
       "kind": "slice",
       "title": "Fix: Show the next action for active slices in status",
       "needs": [],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s8-status-next",
+      "status": "doing",
       "updated": "2026-11-11",
-      "next": "Fix: Show the next action for active slices in status; start a fix session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "The user reported a bug on 2026-11-11: scripts/status exits with KeyError on next when it prints an active slice.",
       "cuts": "Find the cause. Fix it. Add a test that fails without the fix.",
@@ -187,6 +187,11 @@
       "date": "2026-11-11",
       "title": "S7 merged",
       "body": "Merged as `14abd73`; the plan/ rules hold on the merge commit. No open [human] items, so S7 is `done`. User reviewed checker changes; kept resources from previous requirement."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S8 assigned",
+      "body": "Branch `claude/s8-status-next`, simulator `dshm-S8`, DSHM_HOME `~/.dshm/home-s8`, bridge 47813, web 3286; second host 47843/3316. `eval \"$(scripts/slice-env S8)\"` exports them."
     }
   ],
   "pending": []
