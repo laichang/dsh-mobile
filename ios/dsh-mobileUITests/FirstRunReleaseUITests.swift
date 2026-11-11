@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 
 @MainActor
@@ -39,7 +40,9 @@ final class FirstRunReleaseUITests: XCTestCase {
         saveShot("first-run-release-guide")
         let link = app.textFields["pairing.paste"]
         link.tap()
-        link.typeText(url)
+        UIPasteboard.general.string = url
+        link.typeKey("v", modifierFlags: .command)
+        UIPasteboard.general.items = []
         app.buttons["pairing.pasteUse"].tap()
         let pair = app.buttons["pairing.confirm"]
         XCTAssertTrue(pair.waitForExistence(timeout: 10))
@@ -51,7 +54,7 @@ final class FirstRunReleaseUITests: XCTestCase {
         openDrawer(app)
         let channel = app.descendants(matching: .any)["host.channel"]
         XCTAssertTrue(channel.waitForExistence(timeout: 10))
-        XCTAssertEqual(channel.value as? String, "noise")
+        XCTAssertEqual(channel.value as? String, "TLS 1.3")
         // The earlier session from another device is in the drawer, under its host.
         let existing = app.buttons.matching(identifier: "drawer.session")
             .matching(NSPredicate(format: "label CONTAINS %@", "Earlier task from another device"))

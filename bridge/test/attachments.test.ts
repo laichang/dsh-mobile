@@ -1,18 +1,17 @@
 /**
- * Attachments against FakeDSH, over the Noise listener: the golden photo
- * (protocol/fixtures/attachments, also read by the Swift tests) goes up in several Noise
+ * Attachments against FakeDSH, over the TLS listener: the golden photo
+ * (protocol/fixtures/attachments, also read by the Swift tests) goes up in several WebSocket
  * messages, arrives byte-identical, is staged through `fileUploads`, and enters the first prompt
  * as an image part. Text, PDF and other files enter as file parts with their names, in order, in
  * a first prompt and in a follow-up. A wrong hash, a missing part or a file over the limit is refused.
  */
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { after, describe, test } from 'node:test'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
-import { WebSocket } from 'ws'
+import { startTestBridge } from './tls-bridge.ts'
 import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { DshTasks } from '../src/dsh.ts'
 import { FrameSchema, RequestSchema, type Frame } from '../src/gen/frame_pb.ts'
@@ -20,16 +19,10 @@ import { ATTACHMENTS_CAPABILITY, MAX_UPLOAD_BYTES, MAX_UPLOADS_PER_CONNECTION, P
 import { AttachmentKind } from '../src/gen/attachments_pb.ts'
 import { TaskStatus } from '../src/gen/frame_pb.ts'
 import { CONVERSATION_CAPABILITY } from '../src/server.ts'
-import { makeOffer } from '../src/pairing/announce.ts'
-import { NoiseInitiator, NoiseResponder, type NoiseSession } from '../src/pairing/handshake.ts'
-import { generateKeyPair } from '../src/pairing/noise.ts'
-import { PairingStore } from '../src/pairing/store.ts'
-import { startBridgeServer, type BridgeServer } from '../src/server.ts'
+import { type BridgeServer } from '../src/server.ts'
 import { FakeDSH } from './fake-dsh.ts'
 import { FIXTURES_DIR } from './fixtures.ts'
 
-/** Noise caps one transport message at 65535 bytes, 16 of them the tag. */
-const NOISE_MAX_PLAINTEXT = 65535 - 16
 
 interface UploadFixture {
   file: string; name: string; mediaType: string; size: number; sha256: string; partSize: number
@@ -46,42 +39,23 @@ function parts(data: Uint8Array, size = PART_SIZE): Uint8Array[] {
 }
 
 const servers: BridgeServer[] = []
-const dirs: string[] = []
 after(async () => {
   await Promise.all(servers.map((s) => s.close()))
-  for (const d of dirs) rmSync(d, { recursive: true, force: true })
 })
 
-/** A paired phone on a Noise bridge over FakeDSH; records the size of every sealed message it sends. */
 async function phone() {
-  const dir = mkdtempSync(join(tmpdir(), 'dshm-attachments-'))
-  dirs.push(dir)
-  const store = new PairingStore(dir)
-  store.writeListener({ hostName: 'test-mac', addresses: ['127.0.0.1:1'] })
   const dsh = new FakeDSH({ reply: ['I see', ' a photo.'] })
-  const server = await startBridgeServer({
-    dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0, noise: new NoiseResponder(store),
+  const server = await startTestBridge({
+    dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0,
     tasks: new DshTasks(dsh, '/tmp/dshm-ws'),
   })
   servers.push(server)
-  const offer = makeOffer(store)
-  const initiator = NoiseInitiator.pair({ s: generateKeyPair(), hostKey: offer.hostKey, offerId: offer.offerId, secret: offer.secret })
-  const ws = new WebSocket(`ws://127.0.0.1:${server.port}/`)
-  ws.binaryType = 'nodebuffer'
+  const ws = await server.socket()
   const frames: Frame[] = []
   const sent: number[] = []
-  let session: NoiseSession | undefined
   let wake: (() => void) | undefined
-  const ready = new Promise<void>((resolve, reject) => {
-    ws.on('message', (data: Buffer) => {
-      if (!session) { try { session = initiator.finish(new Uint8Array(data)); resolve() } catch (e) { reject(e) } return }
-      frames.push(fromBinary(FrameSchema, session.open(new Uint8Array(data))))
-      wake?.()
-    })
-    ws.on('close', (code) => reject(new Error(`closed ${code}`)))
-  })
-  ws.on('open', () => ws.send(initiator.first))
-  await ready
+  ws.on('message', (data: Buffer) => { frames.push(fromBinary(FrameSchema, data)); wake?.() })
+  await new Promise<void>((resolve, reject) => { ws.once('open', resolve); ws.once('error', reject) })
   let nextId = 1n
   const c = {
     dsh, frames, sent,
@@ -89,10 +63,8 @@ async function phone() {
     async request(body: MessageInitShape<typeof RequestSchema>['body']) {
       const id = nextId++
       const plain = toBinary(FrameSchema, create(FrameSchema, { kind: { case: 'request', value: { id, body } } }))
-      assert.ok(plain.length <= NOISE_MAX_PLAINTEXT, `frame of ${plain.length} bytes does not fit one Noise message`)
-      const sealed = session!.seal(plain)
-      sent.push(sealed.length)
-      ws.send(sealed)
+      sent.push(plain.length)
+      ws.send(plain)
       const deadline = Date.now() + 3000
       for (;;) {
         const r = frames.find((f) => f.kind.case === 'response' && f.kind.value.requestId === id)
@@ -164,7 +136,7 @@ describe('Attachments', () => {
     assert.ok(fixture.parts.length >= 3)
   })
 
-  test('photoOfSeveralNoiseMessagesArrivesByteIdenticalAndEntersTheFirstPromptAsAnImage', async () => {
+  test('photoOfSeveralWebSocketMessagesArrivesByteIdenticalAndEntersTheFirstPromptAsAnImage', async () => {
     const c = await phone()
     try {
       const staged = await upload(c, 'upload-1', photo)

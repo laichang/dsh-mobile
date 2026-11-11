@@ -8,7 +8,7 @@
 # hosts sheet names the address in use. Then the script stops DSH, and the app shows the host
 # offline with the error of each address.
 #
-#   scripts/demo/reconnect.sh           DSHKit tests, then the UI tests on real DSH (Noise)
+#   scripts/demo/reconnect.sh           DSHKit tests, then the UI tests on real DSH (TLS)
 #   scripts/demo/reconnect.sh --shots   also refresh the screenshots in evidence/reconnect/ (1/3 size)
 #   DSHM_RESUME=1                      skip the parts that passed for the same code (lib.sh demo_part)
 #
@@ -25,6 +25,7 @@ export DSHM_SIM="${DSHM_SIM:-iPhone 17 Pro}" DSHM_DD="${DSHM_DD:-/tmp/dshm-recon
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
 source scripts/demo/lib.sh
+demo_tls_home
 LOGS=/tmp/dshm-reconnect-$DSHM_BRIDGE_PORT; mkdir -p "$LOGS"
 SIM="$DSHM_SIM"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
@@ -53,7 +54,7 @@ ui_part() { # name, then -only-testing selectors
   local args=() t
   for t in "$@"; do args+=("-only-testing:dsh-mobileUITests/$t"); done
   step "UI: $name (log: $LOGS/ui-$name.log)"
-  if demo_part "ui-$name" scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+  if demo_part "ui-$name" demo_tls_ui test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
       -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" \
       --log "$LOGS/ui-$name.log"; then
     grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui-$name.log" || true
@@ -69,9 +70,9 @@ for p in "$DSHM_BRIDGE_PORT" "$DSHM_SECOND_BRIDGE_PORT"; do
   if lsof -nP -iTCP:"$p" -sTCP:LISTEN >/dev/null 2>&1; then echo "port $p is in use" >&2; exit 1; fi
 done
 
-step "real DSH + bridge with Noise only (web $DSHM_WEB_PORT, bridge $DSHM_BRIDGE_PORT, $DSHM_HOME)"
+step "real DSH + bridge with TLS (web $DSHM_WEB_PORT, bridge $DSHM_BRIDGE_PORT, $DSHM_HOME)"
 mkdir -p "$DSHM_HOME"
-DSHM_BRIDGE_DEV_PLAINTEXT=0 node scripts/dsh-up.mjs > "$LOGS/dsh-up.log" 2>&1 &
+node scripts/dsh-up.mjs > "$LOGS/dsh-up.log" 2>&1 &
 DSH_PID=$!
 for _ in $(seq 1 240); do lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null 2>&1 && break; sleep 0.5; done
 lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null || { tail -20 "$LOGS/dsh-up.log"; echo "bridge did not come up" >&2; exit 1; }

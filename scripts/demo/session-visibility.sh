@@ -5,12 +5,13 @@ cd "$(dirname "$0")/../.."
 case "${1:-}" in ""|--shots) ;; *) echo "usage: $0 [--shots]" >&2; exit 2 ;; esac
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47810}" DSHM_WEB_PORT="${DSHM_WEB_PORT:-3283}"
-export DSHM_BRIDGE_HOST=127.0.0.1 DSHM_BRIDGE_DEV_PLAINTEXT=1
+export DSHM_BRIDGE_HOST=127.0.0.1
 SIM="${DSHM_SIM:-dshm-session-visibility}"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then dest="platform=iOS Simulator,id=$SIM"; else dest="platform=iOS Simulator,name=$SIM"; fi
 logs=/tmp/dshm-s13-demo
 mkdir -p "$logs"
 source scripts/demo/lib.sh
+demo_tls_home
 demo_prepare_bridge
 demo_bridge_tests "$logs/bridge.log"
 demo_swift_tests "$logs/swift.log"
@@ -37,7 +38,7 @@ for _ in $(seq 1 240); do
   sleep 0.5
 done
 [ -e "$DSHM_VISIBILITY_SIGNALS/first-ready" ] || { cat "$logs/web.log"; exit 1; }
-scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$dest" \
+demo_tls_ui test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$dest" \
   -derivedDataPath "${DSHM_DD:-/tmp/dshm-session-visibility-dd}" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
   -jobs 4 -parallel-testing-enabled NO -only-testing:dsh-mobileUITests/SessionVisibilityUITests --log "$logs/ui.log" || {
     grep -E 'error:|Test Case|failed' "$logs/ui.log"; cat "$logs/web.log"; exit 1;

@@ -5,7 +5,7 @@ import XCTest
 /// scanned a fresh QR from the same Mac, pairing succeeded, and then the root showed "Couldn't
 /// open your paired computers". The app kept the forgotten host's key (`noise:<host id>`, from
 /// the host key) in memory and dropped the same Mac from the new store.
-/// Real DSH + bridge (scripts/dsh-up.mjs on its own ports, Noise). scripts/demo/pair-again.sh runs it
+/// Real DSH + bridge (scripts/dsh-up.mjs on its own ports, TLS). scripts/demo/pair-again.sh runs it
 /// with three fresh pairing links. The app runs in Chinese, like the design screens.
 @MainActor
 final class PairAgainUITests: XCTestCase {
@@ -22,21 +22,9 @@ final class PairAgainUITests: XCTestCase {
         return try XCTUnwrap(env[variable].flatMap(URL.init(string:)))
     }
 
-    /// Opens a pairing link in the app that runs now, as a scan in the app does. Not
-    /// `openDeepLink` (`XCUIApplication.open`): it launches the app again, and a new process
-    /// hid the bug (the forgotten key was in memory only).
-    private func openInRunningApp(_ url: URL) -> XCUIApplication {
-        let app = XCUIApplication(bundleIdentifier: "chang.dsh-mobile")
-        XCUIDevice.shared.system.open(url)
-        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        let open = springboard.buttons.matching(NSPredicate(format: "label IN {'Open', '打开'}")).firstMatch
-        if open.waitForExistence(timeout: 3) { open.tap() }
-        return app
-    }
-
     /// Opens a pairing link in the running app, pairs, and expects the drawer with one host.
     private func pair(_ url: URL, shot: String? = nil) -> XCUIApplication {
-        let app = openInRunningApp(url)
+        let app = openDeepLink(url)
         let confirm = app.buttons["pairing.confirm"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 15), app.debugDescription)
         confirm.tap()

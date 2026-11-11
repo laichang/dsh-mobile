@@ -9,7 +9,7 @@ final class SessionVisibilityUITests: XCTestCase {
         let port = try String(contentsOf: signals.appendingPathComponent("phone-port"), encoding: .utf8)
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMBridgePort", port, "-DSHMResetStore", "YES", "-DSHMResetPairing", "YES"]
-        app.launch()
+        launchEnrolled(app, port: port)
         openAllTasks(app)
 
         let rows = app.buttons.matching(identifier: "tasklist.row")

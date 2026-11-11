@@ -1,14 +1,13 @@
+import { startTestBridge } from './tls-bridge.ts'
 import assert from 'node:assert/strict'
 import { after, describe, test } from 'node:test'
 import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
-import { WebSocket } from 'ws'
-import { PlaintextChannel } from '../src/channel.ts'
 import { DshTasks } from '../src/dsh.ts'
 import { FrameSchema, type Frame } from '../src/gen/frame_pb.ts'
 import { MilestoneKind, TodoStatus, type MilestoneAdded } from '../src/gen/milestones_pb.ts'
 import { MilestoneMapper } from '../src/milestones/mapper.ts'
-import { PLAINTEXT_PATH, startBridgeServer, type BridgeServer } from '../src/server.ts'
+import { type BridgeServer } from '../src/server.ts'
 import { FAKE_DSH_EPOCH_MS, FakeDSH, type FakeDSHOptions } from './fake-dsh.ts'
 
 const servers: BridgeServer[] = []
@@ -16,12 +15,12 @@ after(async () => { await Promise.all(servers.map((s) => s.close())) })
 
 /** Runs one task through the real bridge server against FakeDSH; returns every frame received. */
 async function runTask(options: FakeDSHOptions): Promise<Frame[]> {
-  const server = await startBridgeServer({
+  const server = await startTestBridge({
     dshVersion: SUPPORTED_DSH,
-    host: '127.0.0.1', port: 0, channel: new PlaintextChannel(), tasks: new DshTasks(new FakeDSH(options), '/tmp/dshm-ws'),
+    host: '127.0.0.1', port: 0, tasks: new DshTasks(new FakeDSH(options), '/tmp/dshm-ws'),
   })
   servers.push(server)
-  const ws = new WebSocket(`ws://127.0.0.1:${server.port}${PLAINTEXT_PATH}`)
+  const ws = await server.socket()
   ws.binaryType = 'nodebuffer'
   const frames: Frame[] = []
   const done = new Promise<void>((resolve, reject) => {

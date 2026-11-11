@@ -9,7 +9,7 @@ final class ModelsUITests: XCTestCase {
         app.launchArguments = ["-DSHMBridgePort", try XCTUnwrap(env["DSHM_BRIDGE_PORT"]),
                                "-DSHMResetPairing", "YES", "-DSHMResetStore", "YES",
                                "-DSHMPresetPrompt", "Introduce yourself in one sentence."]
-        app.launch()
+        launchEnrolled(app)
         let picker = app.buttons["model.open"]
         XCTAssertTrue(picker.waitForExistence(timeout: 15))
         picker.tap()

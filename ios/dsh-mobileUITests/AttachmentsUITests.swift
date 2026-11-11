@@ -14,7 +14,7 @@ final class AttachmentsUITests: XCTestCase {
         app.launchArguments = ["-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47801",
                                "-DSHMResetPairing", "YES", "-DSHMResetStore", "YES",
                                "-DSHMPresetPrompt", prompt]
-        app.launch()
+        launchEnrolled(app)
         return app
     }
 

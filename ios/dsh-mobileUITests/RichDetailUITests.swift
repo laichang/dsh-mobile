@@ -11,10 +11,10 @@ final class RichDetailUITests: XCTestCase {
     private func launch(prompt: String? = nil) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47811", "-DSHMResetPairing", "YES",
+        app.launchArguments = ["-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47811",
                                "-DSHMPresetPrompt", prompt ?? offlineMarker]
         if prompt != nil { app.launchArguments += ["-DSHMResetStore", "YES"] }
-        app.launch()
+        if prompt != nil { launchEnrolled(app) } else { app.launch() }
         // #22: each part of scripts/demo/rich-detail.sh is its own xcodebuild run, which installs
         // the app again. A Live Activity of the part before can make liveactivitiesd open the app
         // in the background just then, and XCTest's launch takes that process, which has none of

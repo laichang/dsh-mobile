@@ -32,6 +32,7 @@ export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
 SIM="$DSHM_SIM"
 source scripts/demo/lib.sh
+demo_tls_home
 LOGS="/tmp/dshm-model-failures-${DSHM_SIM}"; mkdir -p "$LOGS" "$DSHM_HOME"
 export DSHM_FAILURE_SHOTS="${DSHM_FAILURE_SHOTS:-$LOGS/shots}"; mkdir -p "$DSHM_FAILURE_SHOTS"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
@@ -58,7 +59,7 @@ case "$PART" in
       sleep 0.5
     done
     [ -e "$DSHM_FAILURE_SIGNALS/bridge-port" ] || { cat "$LOGS/host.log"; exit 1; }
-    scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+    demo_tls_ui test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
       -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO -only-testing:"$REAL" --log "$LOGS/ui-real.log" \
       || { grep -E "error:|Test Case.*(passed|failed)" "$LOGS/ui-real.log"; cat "$LOGS/host.log"; exit 1; }
     grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui-real.log"

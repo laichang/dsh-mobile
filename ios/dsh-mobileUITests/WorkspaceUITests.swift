@@ -8,7 +8,7 @@ final class WorkspaceUITests: XCTestCase {
         let repos = try XCTUnwrap(env["DSHM_WORKSPACES_REPOS"])
         let port = try XCTUnwrap(env["DSHM_BRIDGE_PORT"])
         app.launchArguments = ["-DSHMBridgePort", port, "-DSHMResetPairing", "YES", "-DSHMResetStore", "YES"]
-        app.launch()
+        launchEnrolled(app)
         let open = app.buttons["workspace.open"]
         XCTAssertTrue(open.waitForExistence(timeout: 15))
         open.tap()

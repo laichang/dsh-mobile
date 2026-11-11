@@ -7,7 +7,7 @@ export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47819}" DSHM_WEB_PORT="${DSHM_WEB_P
 export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-first-run-release}"
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 SIM="${DSHM_SIM:-dshm-first-run-release}"
-LOGS=/tmp/dshm-s11
+LOGS="/tmp/dshm-s11-${DSHM_BRIDGE_PORT:-47801}"
 mkdir -p "$LOGS" "$DSHM_HOME"
 PROFILE=$(mktemp -d "$DSHM_HOME/first-run.XXXXXX")
 SHOTS=$(mktemp -d)
@@ -25,6 +25,7 @@ cleanup() {
 trap cleanup EXIT
 
 source scripts/demo/lib.sh
+demo_tls_home
 demo_prepare_bridge
 demo_bridge_tests "$LOGS/bridge.log"
 demo_swift_tests "$LOGS/swift.log"
@@ -39,7 +40,7 @@ if xcrun simctl get_app_container "$SIM" chang.dsh-mobile app >/dev/null 2>&1; t
   xcrun simctl uninstall "$SIM" chang.dsh-mobile
 fi
 if lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null; then echo "Release first run bridge port is busy" >&2; exit 1; fi
-DSHM_HOME="$PROFILE" DSHM_BRIDGE_DEV_PLAINTEXT=0 node scripts/dsh-up.mjs > "$LOGS/host.log" 2>&1 &
+DSHM_HOME="$PROFILE" node scripts/dsh-up.mjs > "$LOGS/host.log" 2>&1 &
 host_pid=$!
 for _ in $(seq 1 180); do
   lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null && break
@@ -49,14 +50,14 @@ done
 lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null || { echo "Release first run host did not start"; exit 1; }
 pair_url() { DSH_HOME="$PROFILE" node bridge/lib/scripts/pair.js --url-only; }
 # An existing DSH account may already have tasks when this phone pairs for the first time.
-node bridge/lib/scripts/client.js --identity "$SHOTS/peer.json" --pair "$(pair_url)" 'Earlier task from another device' > "$LOGS/peer.log"
+demo_tls_client "$PROFILE" "$PROFILE/peer.json" 'Earlier task from another device' > "$LOGS/peer.log"
 
 export TEST_RUNNER_DSHM_PAIR_URL="$(pair_url)" TEST_RUNNER_DSHM_SHOT_DIR="$SHOTS"
 # Run the unpaired language check first, before the end-to-end case pairs the simulator.
 run_ui() {
   local test=$1
   local log="$LOGS/$test.log"
-  scripts/xc test-without-building "${args[@]}" -only-testing:"dsh-mobileUITests/FirstRunReleaseUITests/$test" \
+  demo_tls_ui test-without-building "${args[@]}" -only-testing:"dsh-mobileUITests/FirstRunReleaseUITests/$test" \
     --log "$log" || { grep -E 'error:|Test Case' "$log" | tail -20; exit 1; }
   grep -E "Test Case.*$test.*passed" "$log"
   demo_no_skipped_ui "$log"

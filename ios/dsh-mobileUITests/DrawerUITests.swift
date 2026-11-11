@@ -153,7 +153,7 @@ final class DrawerUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN",
                                "-DSHMBridgePort", port, "-DSHMResetStore", "YES", "-DSHMResetPairing", "YES"]
-        app.launch()
+        launchEnrolled(app, port: port)
 
         // The phone picks the workspace of the Web session, then sends its own task there.
         let open = app.buttons["workspace.open"]

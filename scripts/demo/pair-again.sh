@@ -6,7 +6,7 @@
 # dropped the same Mac (same host key, same `noise:<host id>`) from the new store.
 #
 #   scripts/demo/pair-again.sh          PairAgainUITests on a real DSH + bridge (scripts/dsh-up.mjs on
-#                                its own ports, Noise, three fresh pairing links: pair, revoke this
+#                                its own ports, TLS, three fresh pairing links: pair, revoke this
 #                                device in X2, 08, pair again, drawer; revoke again, pair again),
 #                                then the revoke checks so its behaviour stays: RevokeUITests on the
 #                                fakes and on a real bridge (its second ports), the hosts sheet revoke seam,
@@ -33,7 +33,8 @@ NODE24="$HOME/.nvm/versions/node/v24.14.0/bin"
 [ -d "$HOME/.dshm/bin" ] && export PATH="$HOME/.dshm/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
 source scripts/demo/lib.sh
-LOGS=/tmp/dshm-s30; mkdir -p "$LOGS"
+demo_tls_home
+LOGS="/tmp/dshm-s30-${DSHM_BRIDGE_PORT:-47801}"; mkdir -p "$LOGS"
 SIM="$DSHM_SIM"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 
@@ -51,7 +52,7 @@ ui_part() { # name, then -only-testing selectors
   local args=() t
   for t in "$@"; do args+=("-only-testing:dsh-mobileUITests/$t"); done
   step "UI: $name (log: $LOGS/ui-$name.log)"
-  if demo_part "ui-$name" scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+  if demo_part "ui-$name" demo_tls_ui test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
       -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO "${args[@]}" \
       --log "$LOGS/ui-$name.log"; then
     grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui-$name.log" || true

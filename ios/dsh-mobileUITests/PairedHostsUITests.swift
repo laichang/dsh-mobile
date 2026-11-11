@@ -19,7 +19,7 @@ final class PairedHostsUITests: XCTestCase {
         var currentDevice: String?
         for index in 0...1 {
             let port = try XCTUnwrap(env["DSHM_MULTIHOST_PORT_\(index)"])
-            // The two distinct Noise keys have the same system hostname; their endpoints distinguish them.
+            // The two distinct TLS identities have the same system hostname; their endpoints distinguish them.
             openDrawer(app)
             let manage = app.buttons.matching(identifier: "host.manage")
                 .matching(NSPredicate(format: "label ENDSWITH %@", ":\(port))")).firstMatch
@@ -28,7 +28,7 @@ final class PairedHostsUITests: XCTestCase {
             manage.tap()
             let current = app.staticTexts["device.current"]
             XCTAssertTrue(current.waitForExistence(timeout: 10))
-            if let currentDevice { XCTAssertEqual(current.label, currentDevice) }
+            if let currentDevice { XCTAssertNotEqual(current.label, currentDevice) }
             currentDevice = current.label
             XCTAssertEqual(app.staticTexts["device.id.\(peer)"].exists, index == 0)
             app.buttons["sheet.done"].tap()

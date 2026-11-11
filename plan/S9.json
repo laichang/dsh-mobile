@@ -6,14 +6,23 @@
       "text": "The shared setup creates isolated host/device state and runs fresh enrollment. The demo inventory catches remaining live bridge connections using legacy or cleartext setup. Exercise the migrated suites through their normal wrappers. `cmd:scripts/demo/check-tls-demos.sh` **new**",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/demo/check-tls-demos.sh"
+      ]
     },
     {
       "tier": "ui",
       "text": "Run the real bridge round trip, attachment transfer, failover and revocation using the common TLS setup. `cmd:scripts/demo/round-trip.sh`, `cmd:scripts/demo/attachments.sh`, `cmd:scripts/demo/reconnect.sh`, `cmd:scripts/demo/revoke.sh`",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/demo/round-trip.sh",
+        "cmd:scripts/demo/attachments.sh",
+        "cmd:scripts/demo/reconnect.sh",
+        "cmd:scripts/demo/revoke.sh"
+      ]
     }
   ]
 }

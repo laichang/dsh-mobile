@@ -8,7 +8,8 @@ export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-approvals}"
 SIM="${DSHM_SIM:-dshm-approvals}"
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 source scripts/demo/lib.sh
-LOGS=/tmp/dshm-s4; mkdir -p "$LOGS"
+demo_tls_home
+LOGS="/tmp/dshm-s4-${DSHM_BRIDGE_PORT:-47801}"; mkdir -p "$LOGS"
 FIXTURE=$(mktemp -d)
 mkdir -p "$DSHM_HOME"
 # Keep X1's loopback test-control plugin out of the normal DSH profile.
@@ -33,7 +34,7 @@ if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; 
 export TEST_RUNNER_DSHM_APPROVALS_CONTROL="$(awk '/^approvals-host: ready / { print $3; exit }' "$LOGS/host.log")"
 export TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT" TEST_RUNNER_DSHM_APPROVALS_COMMAND="$DSHM_APPROVALS_COMMAND"
 export TEST_RUNNER_DSHM_SHOT_DIR="$FIXTURE"
-scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+DSHM_ENROLL_HOME="$PROFILE" demo_tls_ui test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "${DSHM_DD:-/tmp/dshm-approvals-dd}" -parallel-testing-enabled NO -jobs 4 \
   -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates -only-testing:dsh-mobileUITests/ApprovalUITests \
   --log "$LOGS/uitest.log" || { grep -E 'error:|Test Case' "$LOGS/uitest.log" | tail -24; exit 1; }

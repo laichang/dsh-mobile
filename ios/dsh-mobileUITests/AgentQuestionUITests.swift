@@ -13,7 +13,7 @@ final class AgentQuestionUITests: XCTestCase {
         app.launchArguments = ["-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47800"]
         if let prompt { app.launchArguments += ["-DSHMPresetPrompt", prompt] }
         if reset { app.launchArguments += ["-DSHMResetStore", "YES", "-DSHMResetPairing", "YES"] }
-        app.launch()
+        if reset { launchEnrolled(app) } else { app.launch() }
         return app
     }
 
@@ -125,7 +125,7 @@ final class AgentQuestionUITests: XCTestCase {
         app.launchArguments = ["-DSHMBridgePort", env["DSHM_BRIDGE_PORT"] ?? "47800",
                                "-DSHMPresetPrompt", "用本周的笔记写一份周报",
                                "-DSHMResetStore", "YES", "-DSHMResetPairing", "YES"]
-        app.launch()
+        launchEnrolled(app)
         let send = app.buttons["composer.send"]
         XCTAssertTrue(send.waitForExistence(timeout: 20))
         send.tap()

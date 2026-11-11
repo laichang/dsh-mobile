@@ -39,7 +39,8 @@ NODE24="$HOME/.nvm/versions/node/v24.14.0/bin"
 [ -d "$HOME/.dshm/bin" ] && export PATH="$HOME/.dshm/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
 source scripts/demo/lib.sh
-LOGS=/tmp/dshm-attachments; mkdir -p "$LOGS"
+demo_tls_home
+LOGS="/tmp/dshm-attachments-${DSHM_BRIDGE_PORT:-47801}"; mkdir -p "$LOGS"
 SIM="$DSHM_SIM"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 SHOT_DIR="$(mktemp -d)"
@@ -83,7 +84,7 @@ SINCE="$(date +%s)"
 
 step "UI: attach one photo on 01 and send (log: $LOGS/ui.log)"
 export TEST_RUNNER_DSHM_REAL_DSH=1 TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT"
-if demo_part attachments-ui scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+if demo_part attachments-ui demo_tls_ui test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
     -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO \
     -only-testing:dsh-mobileUITests/AttachmentsUITests/testAttachOnePhotoAndSend --log "$LOGS/ui.log"; then
   grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui.log" || true
@@ -102,7 +103,7 @@ node scripts/demo/attachments-check.mjs "$DSHM_HOME" "$SINCE" "What is in this p
 if [ $ALL = 1 ]; then
   SINCE="$(date +%s)"
   step "UI: a photo, a .txt and a .pdf on 01, one removed; a file on a follow-up (log: $LOGS/ui-files.log)"
-  if demo_part attachments-ui-files scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
+  if demo_part attachments-ui-files demo_tls_ui test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
       -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO \
       -only-testing:dsh-mobileUITests/AttachmentsUITests/testAttachPhotoTextAndPDFRemoveOneAndSend \
       -only-testing:dsh-mobileUITests/AttachmentsUITests/testAttachFileToFollowUp --log "$LOGS/ui-files.log"; then

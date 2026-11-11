@@ -1,7 +1,7 @@
 #!/bin/bash
 # Demo and checks: first run (design screen 08, STORY §6).
 # A fresh Release install on the slice simulator, a real DSH with the bridge (scripts/dsh-up.mjs,
-# Noise only), and a pairing link from bridge/lib/scripts/pair.js. The UI test pastes the link on
+# TLS), and a pairing link from bridge/lib/scripts/pair.js. The UI test pastes the link on
 # 08, pairs, and checks that 01 opens with the first task in the composer, edits it, and sends it.
 #
 #   scripts/demo/first-run.sh          bridge build, Release build, FirstRunUITests, and the seam:
@@ -29,7 +29,7 @@ export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47810}" DSHM_WEB_PORT="${DSHM_WEB_P
 export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-first-run}"
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 SIM="$DSHM_SIM"
-LOGS=/tmp/dshm-s22
+LOGS="/tmp/dshm-s22-${DSHM_BRIDGE_PORT:-47801}"
 mkdir -p "$LOGS" "$DSHM_HOME"
 step() { printf '\n== %s\n' "$*"; }
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
@@ -38,6 +38,8 @@ args=(-project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -configuration Releas
       -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates)
 
 # The UI part (run through demo_part below): fresh install, a real host, the first run UI test.
+source scripts/demo/lib.sh
+demo_tls_home
 if [ "$PART" = ui ]; then
   PROFILE=$(mktemp -d "$DSHM_HOME/first-run.XXXXXX")
   host_pid=""
@@ -51,7 +53,7 @@ if [ "$PART" = ui ]; then
     xcrun simctl uninstall "$SIM" chang.dsh-mobile
   fi
   if lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null; then echo "first run bridge port is busy" >&2; exit 1; fi
-  DSHM_HOME="$PROFILE" DSHM_BRIDGE_DEV_PLAINTEXT=0 node scripts/dsh-up.mjs > "$LOGS/host.log" 2>&1 &
+  DSHM_HOME="$PROFILE" node scripts/dsh-up.mjs > "$LOGS/host.log" 2>&1 &
   host_pid=$!
   for _ in $(seq 1 180); do
     lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null && break
@@ -62,15 +64,12 @@ if [ "$PART" = ui ]; then
   TEST_RUNNER_DSHM_PAIR_URL="$(DSH_HOME="$PROFILE" node bridge/lib/scripts/pair.js --url-only)"
   export TEST_RUNNER_DSHM_PAIR_URL TEST_RUNNER_DSHM_SHOT_DIR="$FIRST_RUN_SHOT_DIR"
   log="$LOGS/ui.log"
-  scripts/xc test-without-building "${args[@]}" -only-testing:dsh-mobileUITests/FirstRunUITests \
+  demo_tls_ui test-without-building "${args[@]}" -only-testing:dsh-mobileUITests/FirstRunUITests \
     --log "$log" || { grep -E 'error:|Test Case' "$log" | tail -20; exit 1; }
   grep -E "Test Case.*(passed|failed|skipped)" "$log"
-  source scripts/demo/lib.sh
   demo_no_skipped_ui "$log"
   exit 0
 fi
-
-source scripts/demo/lib.sh
 
 step "bridge build (pnpm install, codegen check, tsc)"
 demo_prepare_bridge

@@ -5,7 +5,7 @@ cd "$(dirname "$0")/../.."
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47818}" DSHM_WEB_PORT="${DSHM_WEB_PORT:-3291}"
 SIM="${DSHM_SIM:-dshm-upstream-version}"
-export DSHM_BRIDGE_HOST=127.0.0.1 DSHM_BRIDGE_DEV_PLAINTEXT=1
+export DSHM_BRIDGE_HOST=127.0.0.1
 profile_parent="${DSHM_HOME:-$HOME/.dshm/home-upstream-version}"
 mkdir -p "$profile_parent"
 export DSH_HOME="$(mktemp -d "$profile_parent/demo.XXXXXX")"
@@ -21,6 +21,7 @@ pid=''
 cleanup() { if [ -n "$pid" ]; then kill "$pid" 2>/dev/null || true; wait "$pid" || true; fi; rm -rf "$DSH_HOME"; }
 trap cleanup EXIT
 source scripts/demo/lib.sh
+demo_tls_home
 demo_prepare_bridge
 demo_bridge_tests "$logs/bridge.log"
 demo_swift_tests "$logs/swift.log"
@@ -35,7 +36,7 @@ done
 lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null || { echo "Out-of-range DSH failed to start; see $logs/host.log"; exit 1; }
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 export TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT" TEST_RUNNER_DSHM_SHOT_DIR="$DSH_HOME"
-scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+DSHM_ENROLL_HOME="$DSH_HOME" demo_tls_ui test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "${DSHM_DD:-/tmp/dshm-upstream-version-dd}" -parallel-testing-enabled NO -jobs 4 \
   -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates -only-testing:dsh-mobileUITests/UpstreamUITests \
   --log "$logs/ui.log" || { grep -E 'error:|Test Case' "$logs/ui.log" | tail -20; exit 1; }

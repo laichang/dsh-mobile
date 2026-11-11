@@ -7,7 +7,7 @@ final class UpstreamUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMBridgePort", port, "-DSHMResetPairing", "YES", "-DSHMResetStore", "YES",
                                "-DSHMPresetPrompt", "Keep this task for after the update"]
-        app.launch()
+        launchEnrolled(app)
         openDrawer(app)
         let host = app.descendants(matching: .any)["host.status"]
         waitForValue(host, in: ["bridgeUpdateRequired"], timeout: 20)

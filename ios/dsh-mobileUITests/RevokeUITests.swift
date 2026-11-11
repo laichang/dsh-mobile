@@ -147,7 +147,7 @@ final class RevokeUITests: XCTestCase {
         }
     }
 
-    /// The hosts sheet path on a real bridge (scripts/dsh-up.mjs on its own ports, Noise): pair,
+    /// The hosts sheet path on a real bridge (scripts/dsh-up.mjs on its own ports, TLS): pair,
     /// revoke this device in X2. The bridge answers, then closes with 4003 and refuses the phone.
     func testRevokeThisDeviceInHostsSheetOnTheRealBridgeOpens08AndStays() throws {
         let app = try pairWithRealBridge("DSHM_REVOKE_PAIR_URL")

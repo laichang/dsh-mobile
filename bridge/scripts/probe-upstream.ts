@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import { WebSocket } from 'ws'
+import { issue, redeem } from '../test/tls-client.ts'
 import { FrameSchema, type RequestSchema } from '../src/gen/frame_pb.ts'
 import { ApprovalDecision, ApprovalOutcome } from '../src/gen/approvals_pb.ts'
 import { SUPPORTED_DSH } from '../src/compatibility.ts'
@@ -20,7 +21,12 @@ async function control(path: string, body?: object) {
   return result
 }
 
-const socket = new WebSocket('ws://127.0.0.1:' + process.env.DSHM_BRIDGE_PORT + '/plaintext')
+const dir = join(process.env.DSHM_HOME!, 'dsh-mobile-bridge')
+const offer = await issue(dir)
+const peer = await redeem(dir, offer)
+const socket = new WebSocket('wss://' + offer.searchParams.get('a')!.split(',')[0], {
+  ca: readFileSync(join(dir, 'tls/host-cert.pem')), headers: { authorization: 'Bearer ' + peer.bearer },
+})
 const messages = on(socket, 'message', { signal: AbortSignal.timeout(90_000) })
 let id = 0n
 function send(body: MessageInitShape<typeof RequestSchema>['body']) {
@@ -75,7 +81,7 @@ try {
     const audit = readFileSync(join(process.env.DSHM_HOME!, 'dsh-mobile-bridge', 'approvals.jsonl'), 'utf8')
       .trim().split('\n').map(line => JSON.parse(line)).filter(entry => entry.id === pendingId)
     assert.equal(audit.length, 1)
-    assert.equal(audit[0].device, winner === 'phone' ? 'dev loopback' : 'DSH client')
+    assert.equal(audit[0].device, winner === 'phone' ? peer.id : 'DSH client')
     console.log('One approval on both clients; ' + winner + ' answered first')
   }
 } finally {

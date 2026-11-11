@@ -23,6 +23,7 @@ export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home}"
 SIM="${DSHM_SIM:-iPhone 17 Pro}"
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 source scripts/demo/lib.sh
+demo_tls_home
 LOGS=/tmp/dshm-questions-$DSHM_BRIDGE_PORT; mkdir -p "$LOGS"
 SHOTDIR=$(mktemp -d)
 mkdir -p "$DSHM_HOME"
@@ -53,7 +54,7 @@ grep -q 'questions-host: ready' "$LOGS/host.log" || { echo "questions host did n
 printf '\n== %s\n' "UI test in the Simulator ($SIM)"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 export TEST_RUNNER_DSHM_QUESTIONS_HOST=1 TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT" TEST_RUNNER_DSHM_SHOT_DIR="$SHOTDIR"
-scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+DSHM_ENROLL_HOME="$PROFILE" demo_tls_ui test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "${DSHM_DD:-/tmp/dshm-questions-dd}" -parallel-testing-enabled NO -jobs 4 \
   -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates -only-testing:"$ONLY" \
   --log "$LOGS/uitest.log" || { grep -E 'error:|Test Case|XCTAssert' "$LOGS/uitest.log" | tail -24; exit 1; }

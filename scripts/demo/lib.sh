@@ -212,7 +212,8 @@ demo_part() {
   local dir="${DSHM_STATE:-/tmp/dshm-state/$(basename "$(git rev-parse --show-toplevel)")}/$(dshm_code_key)"
   local tries=$(( ${DSHM_PART_RETRIES:-0} + 1 )) i
   mkdir -p "$dir"
-  if [ "${DSHM_RESUME:-0}" = 1 ] && [ -f "$dir/$name.ok" ]; then
+  # A new TLS fixture has fresh offers, sessions and devices. Recreate its UI state on a resumed run.
+  if [ "$1" != demo_tls_ui ] && [ "${DSHM_RESUME:-0}" = 1 ] && [ -f "$dir/$name.ok" ]; then
     printf '\n== part %s: skip, it passed for this code\n' "$name"; return 0
   fi
   rm -f "$dir/$name.has-parts"
@@ -237,3 +238,65 @@ demo_part() {
   printf '\n== part %s: FAILED\n' "$name"
   return 1
 }
+
+# Each network demo gets a disposable host profile. Nested demos get their own as well.
+demo_tls_home() {
+  export DSHM_BRIDGE_TLS=1
+  local base="${DSHM_HOME:-${TMPDIR:-/tmp}}"
+  mkdir -p "$base"
+  DSHM_HOME="$(mktemp -d "$base/demo.XXXXXXXX")"
+  export DSHM_HOME
+}
+
+# The simulator drives enrollment through the app's normal deep link. Hand off secrets in
+# private files so xcodebuild's environment dump and XCTest's activity log contain only paths.
+demo_tls_ui() (
+  umask 077
+  local handoff sim key value
+  handoff=$(mktemp -d)
+  sim="${SIM:-${DSHM_SIM:?set DSHM_SIM}}"
+  export TEST_RUNNER_DSHM_TLS_HANDOFF="$handoff"
+  for key in $(compgen -A variable TEST_RUNNER_DSHM_); do
+    value=${!key}
+    case "$value" in
+      dshm://pair*)
+        printf '%s' "$value" > "$handoff/${key#TEST_RUNNER_}"
+        unset "$key"
+        ;;
+    esac
+  done
+  (
+    while :; do
+      if [[ -f "$handoff/enroll" ]]; then
+        port=$(cat "$handoff/enroll")
+        rm "$handoff/enroll"
+        node bridge/lib/scripts/pair.js --url-only --state-dir "${DSHM_ENROLL_HOME:-$DSHM_HOME}/dsh-mobile-bridge" |
+          node -e '
+            const url = new URL(require("node:fs").readFileSync(0, "utf8").trim());
+            if (url.searchParams.get("v") !== "2") process.exit(1);
+            if (process.argv[1]) {
+              const port = Number(process.argv[1]);
+              if (!Number.isInteger(port) || port < 1 || port > 65535) process.exit(1);
+              url.searchParams.set("a", "127.0.0.1:" + port);
+            }
+            process.stdout.write(url.href);
+          ' "$port" > "$handoff/new" || exit 1
+        mv "$handoff/new" "$handoff/open"
+      fi
+      if [[ -f "$handoff/open" ]]; then
+        xcrun simctl openurl "$sim" "$(cat "$handoff/open")" >/dev/null 2>&1 || exit 1
+        rm -f "$handoff/open"
+      fi
+      sleep 0.1
+    done
+  ) &
+  local watcher=$!
+  trap 'kill "$watcher" 2>/dev/null || true; wait "$watcher" 2>/dev/null || true; rm -rf "$handoff"' EXIT
+  if [[ " $* " != *" -parallel-testing-enabled "* ]]; then set -- "$@" -parallel-testing-enabled NO; fi
+  scripts/xc "$@"
+)
+
+demo_tls_client() (
+  cd bridge
+  node lib/test/demo-client.js "$1/dsh-mobile-bridge" "$2" "$3"
+)

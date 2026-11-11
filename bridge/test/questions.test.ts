@@ -1,8 +1,7 @@
+import { startTestBridge, type TestBridge } from './tls-bridge.ts'
 import assert from 'node:assert/strict'
 import { after, describe, test } from 'node:test'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
-import { WebSocket } from 'ws'
-import { PlaintextChannel } from '../src/channel.ts'
 import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { DshTasks } from '../src/dsh.ts'
 import { FrameSchema, type Frame, type RequestSchema } from '../src/gen/frame_pb.ts'
@@ -11,7 +10,7 @@ import { QuestionHolder, type AskAnswer, type AskItem } from '../src/questions/h
 import { HostLog } from '../src/tasks/host-log.ts'
 import { TaskHub } from '../src/tasks/task-hub.ts'
 import { TaskState } from '../src/gen/durable_list_pb.ts'
-import { PLAINTEXT_PATH, QUESTIONS_CAPABILITY, startBridgeServer, type BridgeServer } from '../src/server.ts'
+import { QUESTIONS_CAPABILITY, type BridgeServer } from '../src/server.ts'
 import { FakeDSH } from './fake-dsh.ts'
 
 const TEMPLATES: AskItem[] = [{
@@ -19,8 +18,8 @@ const TEMPLATES: AskItem[] = [{
   options: [{ label: '公司模板.pptx', description: 'the company one' }, { label: '简洁版.pptx' }],
 }]
 
-async function connect(port: number) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}${PLAINTEXT_PATH}`)
+async function connect(server: TestBridge) {
+  const ws = await server.socket()
   ws.binaryType = 'nodebuffer'
   const frames: Frame[] = []
   ws.on('message', (data: Buffer) => { frames.push(fromBinary(FrameSchema, new Uint8Array(data))) })
@@ -69,10 +68,10 @@ async function setup(web?: (req: Parameters<FakeDSH['waterfall']>[2]) => Promise
   const questions = new QuestionHolder(e => hub.questionChanged(e))
   questions.register(dsh)
   if (web) dsh.on('user-questions/request', req => web(req))
-  const server = await startBridgeServer({ dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0,
-    channel: new PlaintextChannel(), tasks, hub, questions })
+  const server = await startTestBridge({ dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0,
+    tasks, hub, questions })
   servers.push(server)
-  const client = await connect(server.port)
+  const client = await connect(server)
   const hello = client.request({ case: 'hello', value: { protocolVersion: 1, capabilities: [QUESTIONS_CAPABILITY] } })
   const caps = await client.until(fs => { const r = response(fs, hello); return r?.case === 'hello' ? r.value.capabilities : undefined })
   assert.ok(caps.includes(QUESTIONS_CAPABILITY))
@@ -184,7 +183,7 @@ describe('Questions', () => {
     assert.equal(hub.list()[0].state, TaskState.WAITING_ON_USER)
 
     // A phone that comes later: the summary still has the question, and its replay too while retained.
-    const later = await connect(server.port)
+    const later = await connect(server)
     const hello = later.request({ case: 'hello', value: { protocolVersion: 1, capabilities: [QUESTIONS_CAPABILITY] } })
     await later.until(fs => response(fs, hello))
     const list = later.request({ case: 'listTasks', value: {} })
@@ -197,7 +196,7 @@ describe('Questions', () => {
     assert.deepEqual(replayed.task?.pendingQuestions.map(q => q.id), [pending.id])
 
     // An app without questions.v1 cannot answer: for it the task runs, with no question.
-    const old = await connect(server.port)
+    const old = await connect(server)
     const oldHello = old.request({ case: 'hello', value: { protocolVersion: 1 } })
     await old.until(fs => response(fs, oldHello))
     const oldList = old.request({ case: 'listTasks', value: {} })
@@ -226,9 +225,9 @@ describe('Questions', () => {
     const hub = new TaskHub(tasks)
     const questions = new QuestionHolder(e => hub.questionChanged(e))
     questions.register(dsh)
-    const server = await startBridgeServer({ dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0, channel: new PlaintextChannel(), tasks, hub, questions })
+    const server = await startTestBridge({ dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0, tasks, hub, questions })
     servers.push(server)
-    const client = await connect(server.port)
+    const client = await connect(server)
     client.request({ case: 'hello', value: { protocolVersion: 1 } })
     client.request({ case: 'createTask', value: { prompt: 'old app' } })
     await client.until(fs => hub.list()[0])

@@ -28,7 +28,8 @@ NODE24="$HOME/.nvm/versions/node/v24.14.0/bin"
 [ -d "$HOME/.dshm/bin" ] && export PATH="$HOME/.dshm/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
 source scripts/demo/lib.sh
-LOGS=/tmp/dshm-s3; mkdir -p "$LOGS"
+demo_tls_home
+LOGS="/tmp/dshm-s3-${DSHM_BRIDGE_PORT:-47801}"; mkdir -p "$LOGS"
 DD="${DSHM_DD:-/tmp/dshm-milestones-dd}"
 
 demo_prepare_bridge
@@ -44,16 +45,18 @@ cleanup() { [ -n "$DSH_PID" ] && kill "$DSH_PID" 2>/dev/null || true; }
 trap cleanup EXIT
 if [ $FAKE_ONLY = 0 ]; then
   (cd bridge && corepack pnpm build >/dev/null)
-  if ! lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
-    step "starting real DSH + bridge (scripts/demo/milestones-host.mjs, $DSHM_HOME, web $DSHM_WEB_PORT, bridge $PORT)"
-    node scripts/demo/milestones-host.mjs > /tmp/dshm-s3-host.log 2>&1 &
-    DSH_PID=$!
-    for _ in $(seq 1 240); do lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1 && break; sleep 0.5; done
-    lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null || { cat /tmp/dshm-s3-host.log; echo "bridge did not come up" >&2; exit 1; }
+  if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "The assigned bridge port is in use" >&2
+    exit 1
   fi
+  step "starting real DSH + bridge (scripts/demo/milestones-host.mjs, $DSHM_HOME, web $DSHM_WEB_PORT, bridge $PORT)"
+  node scripts/demo/milestones-host.mjs > "$LOGS/host.log" 2>&1 &
+  DSH_PID=$!
+  for _ in $(seq 1 240); do lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1 && break; sleep 0.5; done
+  lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null || { cat "$LOGS/host.log"; echo "bridge did not come up" >&2; exit 1; }
   step "bridge inside real DSH sends the milestone timeline to a CLI client"
-  node bridge/lib/scripts/client.js --port "$PORT" "Summarize this project in three steps." 2>&1 | tee /tmp/dshm-s3-client.log
-  got=$(grep -oE "milestone [0-9]+ [A-Z_]+ \[[PIC]*\]" /tmp/dshm-s3-client.log | cut -d' ' -f3- | tr '\n' ' ')
+  demo_tls_client "$DSHM_HOME" "$DSHM_HOME/cli.json" "Summarize this project in three steps." 2>&1 | tee "$LOGS/client.log"
+  got=$(grep -oE "milestone [0-9]+ [A-Z_]+ \[[PIC]*\]" "$LOGS/client.log" | cut -d' ' -f3- | tr '\n' ' ')
   want="STARTED [] PLANNED [IPP] TODO_STARTED [IPP] TODO_DONE [CIP] TODO_STARTED [CIP] TODO_DONE [CCI] TODO_STARTED [CCI] TODO_DONE [CCC] FINISHED [CCC] "
   [ "$got" = "$want" ] || { echo "unexpected milestones: $got" >&2; exit 1; }
   echo "milestones as expected"
@@ -66,7 +69,7 @@ export TEST_RUNNER_DSHM_SHOT_DIR="$SHOT_DIR" TEST_RUNNER_DSHM_BRIDGE_PORT="$PORT
 ONLY=(-only-testing:dsh-mobileUITests/MilestonesUITests)
 if [ $FAKE_ONLY = 0 ]; then export TEST_RUNNER_DSHM_REAL_DSH=1
 else ONLY+=(-skip-testing:dsh-mobileUITests/MilestonesUITests/testMilestonesAgainstRealDSH); fi
-scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+demo_tls_ui test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates "${ONLY[@]}" \
   --log "$LOGS/uitest.log" || { grep -E "error:|Test Case" "$LOGS/uitest.log"; exit 1; }
 grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/uitest.log"

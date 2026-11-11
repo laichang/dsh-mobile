@@ -4,8 +4,8 @@ import XCTest
 final class DevicesUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
-    // The companion CLI device dispatches a held request over Noise. The demo script then
-    // attempts IK with its original key and requires the real bridge's device-unknown refusal.
+    // The companion CLI device dispatches a held request over TLS. The demo script then
+    // reconnects with its original bearer and requires the bridge to refuse the upgrade.
     func testAuditAndRevokeAnotherPairedDevice() throws {
         try XCTSkipUnless(env["DSHM_DEVICES_PEER"] != nil, "run scripts/demo/devices.sh")
         let peer = try XCTUnwrap(env["DSHM_DEVICES_PEER"])

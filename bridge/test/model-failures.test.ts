@@ -1,3 +1,4 @@
+import { startTestBridge, type TestBridge } from './tls-bridge.ts'
 /**
  * Model failures, against FakeDSH replaying what real DSH 0.2.2-rc.1
  * emitted for each failure (`test/fixtures/model-failures/<case>.json`: every follow frame, recorded
@@ -9,8 +10,6 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { after, describe, test } from 'node:test'
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
-import { WebSocket } from 'ws'
-import { PlaintextChannel } from '../src/channel.ts'
 import { SUPPORTED_DSH } from '../src/compatibility.ts'
 import { DshTasks, type FollowFrame } from '../src/dsh.ts'
 import { MessageMode } from '../src/gen/conversation_pb.ts'
@@ -18,7 +17,7 @@ import { FrameSchema, TaskStatus, type Event, type Frame, type Response } from '
 import { MilestoneKind } from '../src/gen/milestones_pb.ts'
 import { TaskState } from '../src/gen/durable_list_pb.ts'
 import { failureOf } from '../src/milestones/mapper.ts'
-import { CONVERSATION_CAPABILITY, PLAINTEXT_PATH, startBridgeServer, type BridgeServer } from '../src/server.ts'
+import { CONVERSATION_CAPABILITY, type BridgeServer } from '../src/server.ts'
 import { FakeDSH, type FakeDSHOptions } from './fake-dsh.ts'
 
 type RequestBody = NonNullable<MessageInitShape<typeof FrameSchema>['kind']> extends infer K
@@ -58,8 +57,8 @@ function ends(f: Fixture) {
     ? [(frame.event.data as { reason: { kind: string; error?: { message: string; code: string } } }).reason] : [])
 }
 
-async function connect(port: number) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}${PLAINTEXT_PATH}`)
+async function connect(server: TestBridge) {
+  const ws = await server.socket()
   ws.binaryType = 'nodebuffer'
   const frames: Frame[] = []
   ws.on('message', (data: Buffer) => { frames.push(fromBinary(FrameSchema, new Uint8Array(data))) })
@@ -93,8 +92,8 @@ after(async () => { await Promise.all(servers.map((s) => s.close())) })
 
 async function bridgeWith(options: FakeDSHOptions) {
   const dsh = new FakeDSH(options)
-  const server = await startBridgeServer({
-    dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0, channel: new PlaintextChannel(),
+  const server = await startTestBridge({
+    dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0,
     tasks: new DshTasks(dsh, '/tmp/dshm-ws'), hostName: 'test-mac',
   })
   servers.push(server)
@@ -107,7 +106,7 @@ const endedCount = (fs: Frame[]) => fs.filter((f) => f.kind.case === 'event' && 
 async function failedTask(name: string) {
   const recorded = fixture(name)
   const { dsh, server } = await bridgeWith({ recorded: turns(recorded) })
-  const client = await connect(server.port)
+  const client = await connect(server)
   const created = await client.call({ case: 'createTask', value: { prompt: `X1 case ${name}: say hello` } })
   assert.equal(created.body.case, 'taskCreated')
   const taskId = created.body.value.taskId
@@ -182,7 +181,7 @@ describe('ModelFailuresAgainstFakeDSH', () => {
   test('aRateLimitThatClearsCompletesTheTask', async () => {
     const recorded = fixture('rate-limit-recovers')
     const { server } = await bridgeWith({ recorded: turns(recorded) })
-    const client = await connect(server.port)
+    const client = await connect(server)
     const created = await client.call({ case: 'createTask', value: { prompt: 'X1 case rate-limit-recovers: say hello' } })
     assert.equal(created.body.case, 'taskCreated')
     await client.until((fs) => endedCount(fs) === 1)
@@ -198,7 +197,7 @@ describe('ModelFailuresAgainstFakeDSH', () => {
   test('aModelTheHostDoesNotListIsRefusedWithTheTextOfDSHAndNothingIsSwapped', async () => {
     const recorded = fixture('model-unlisted')
     const { dsh, server } = await bridgeWith({})
-    const client = await connect(server.port)
+    const client = await connect(server)
     const refused = await client.call({ case: 'createTask', value: { prompt: 'X1 case model-unlisted: say hello',
       modelSelection: { provider: recorded.selection!.provider, model: recorded.selection!.model } } })
     assert.ok(refused.body.case === 'error')

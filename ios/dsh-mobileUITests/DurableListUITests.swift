@@ -21,7 +21,7 @@ final class DurableListUITests: XCTestCase {
     private func launch(_ arguments: [String]) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"] + arguments
-        app.launch()
+        if arguments.contains("-DSHMBridgePort") && arguments.contains("-DSHMResetStore") { launchEnrolled(app) } else { app.launch() }
         return app
     }
 

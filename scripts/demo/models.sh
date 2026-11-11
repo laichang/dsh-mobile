@@ -9,25 +9,28 @@ SIM="${DSHM_SIM:-dshm-models}"
 DD="${DSHM_DD:-/tmp/dshm-models-dd}"
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 source scripts/demo/lib.sh
-LOGS=/tmp/dshm-s6
+demo_tls_home
+LOGS="/tmp/dshm-s6-${DSHM_BRIDGE_PORT:-47801}"
 mkdir -p "$LOGS"
 demo_prepare_bridge
 demo_bridge_tests "$LOGS/bridge.log"
 demo_swift_tests "$LOGS/swift.log"
-if ! lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
-  node scripts/demo/durable-list-host.mjs > "$LOGS/host.log" 2>&1 &
-  host_pid=$!
-  trap 'kill "$host_pid" 2>/dev/null || true' EXIT
-  for _ in $(seq 1 240); do
-    lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null 2>&1 && break
-    kill -0 "$host_pid" 2>/dev/null || { tail -12 "$LOGS/host.log"; exit 1; }
-    sleep 0.5
-  done
-  lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null
+if lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+  echo "The assigned bridge port is in use" >&2
+  exit 1
 fi
+node scripts/demo/durable-list-host.mjs > "$LOGS/host.log" 2>&1 &
+host_pid=$!
+trap 'kill "$host_pid" 2>/dev/null || true' EXIT
+for _ in $(seq 1 240); do
+  lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null 2>&1 && break
+  kill -0 "$host_pid" 2>/dev/null || { tail -12 "$LOGS/host.log"; exit 1; }
+  sleep 0.5
+done
+lsof -nP -iTCP:"$DSHM_BRIDGE_PORT" -sTCP:LISTEN >/dev/null
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 export TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT" TEST_RUNNER_DSHM_SHOT_DIR="$(mktemp -d)"
-scripts/xc test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
+demo_tls_ui test -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST" \
   -derivedDataPath "$DD" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
   -parallel-testing-enabled NO -only-testing:dsh-mobileUITests/ModelsUITests --log "$LOGS/ui.log" || {
     grep -E 'error:|Test Case|failed' "$LOGS/ui.log"; exit 1;

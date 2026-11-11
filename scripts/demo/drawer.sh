@@ -27,16 +27,17 @@ done
 export DSHM_BRIDGE_PORT="${DSHM_BRIDGE_PORT:-47811}" DSHM_WEB_PORT="${DSHM_WEB_PORT:-3284}"
 export DSHM_HOME="${DSHM_HOME:-$HOME/.dshm/home-drawer}" DSHM_SIM="${DSHM_SIM:-dshm-drawer}"
 export DSHM_DD="${DSHM_DD:-/tmp/dshm-drawer-dd}"
-export DSHM_BRIDGE_HOST=127.0.0.1 DSHM_BRIDGE_DEV_PLAINTEXT=1
+export DSHM_BRIDGE_HOST=127.0.0.1
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 step() { printf '\n== %s\n' "$*"; }
 source scripts/demo/lib.sh
+demo_tls_home
 LOGS="/tmp/dshm-s14-${DSHM_SIM}"; mkdir -p "$LOGS" "$DSHM_HOME"
 export DSHM_DRAWER_SHOTS="${DSHM_DRAWER_SHOTS:-$LOGS/shots}"; mkdir -p "$DSHM_DRAWER_SHOTS"
 SIM="$DSHM_SIM"
 if [[ "$SIM" =~ ^[0-9A-F-]{36}$ ]]; then DEST="platform=iOS Simulator,id=$SIM"; else DEST="platform=iOS Simulator,name=$SIM"; fi
 export TEST_RUNNER_DSHM_SHOT_DIR="$DSHM_DRAWER_SHOTS"
-UI=(scripts/xc test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST"
+UI=(demo_tls_ui test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile -destination "$DEST"
   -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO)
 REAL=dsh-mobileUITests/DrawerUITests/testWebAndPhoneSessionsShareAWorkspaceWithRealDSH
 
