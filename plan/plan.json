@@ -62,10 +62,10 @@
         "T0"
       ],
       "branch": "claude/s2-7c569b0",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-11",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "92882d6",
       "why": "Both host-management entry points must act on the same selected host and device. Closes #75.",
       "cuts": "Route both the drawer and the hosts sheet through the selected host's device, audit-page and revocation operations in DSHCore. Interpret support and refusal once. Each feature owns its views and local interaction state. If the other device-management change has already landed, rerun self-revocation from both entry points on the integrated code.\nStarting files: `ios/dsh-mobile/Features/Devices/DeviceManagementView.swift`, `ios/dsh-mobile/Features/Hosts/HostActions.swift`, `ios/dsh-mobile/Features/Hosts/HostsSheet.swift`, `ios/DSHKit/Sources/DSHCore/HostConnection.swift`.\nScreen references: `design/screens/02.html`, `design/screens/H.html`, `design/screens/X2.html`, `design/screens/08.html`.",
       "not": "",
@@ -346,6 +346,11 @@
       "date": "2026-11-11",
       "title": "S8 assigned",
       "body": "Branch `claude/s8-34dc87a`, simulator `01D1AB02-25B2-45EA-ADD2-CB06DB1A0BB5`, DSHM_HOME `~/.dshm/home-s8-01D1AB02-25B2-45EA-ADD2-CB06DB1A0BB5`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S8)\"` exports them."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "S2 merged",
+      "body": "Merged as `92882d6`; the plan/ rules hold on the merge commit. No open [human] items, so S2 is `done`."
     }
   ],
   "pending": [
