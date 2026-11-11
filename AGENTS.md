@@ -57,6 +57,13 @@ The scripts and the hooks hold the rules. When a script or a hook refuses, read 
 - Record a merge: `scripts/plan merged <ID> <merge-commit>`.
 - Report a bug: on a plan, `scripts/plan fix`. With no plan, open a GitHub issue.
 
+### Close a plan
+
+- Before the user removes `plan/` or clears `scripts/resources.tsv`, list the devices with `xcrun simctl list devices -j`.
+- Compare the `dshm-*` devices with the registry and active assignments. Run `scripts/plan cleanup <ID>` for each completed assignment with a remaining registered simulator.
+- Delete each remaining unused project simulator by its UDID. Keep devices needed by another assignment and all default Xcode devices. If ownership is unclear, report the device for review.
+- List the devices again. Report the count of remaining project simulators and the reason for each one kept.
+
 ### Decisions that stay with the user
 
 Only the user does these things:
