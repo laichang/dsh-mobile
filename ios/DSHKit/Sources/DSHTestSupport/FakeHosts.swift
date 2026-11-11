@@ -9,6 +9,7 @@ import Foundation
 public struct FakeDevices: Sendable {
     public static let capability = "devices.v1"
 
+    public var closeBeforeRevokeResponse = false
     public var current: String
     public var devices: [Dshm_V1_PairedDevice]
     /// Newest first.
