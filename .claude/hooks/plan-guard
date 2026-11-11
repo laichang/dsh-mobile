@@ -19,7 +19,10 @@ Bash (it parses the command with the parser of git-guard):
     that names it and writes files) -> deny: use scripts/plan, or the Edit tool, which this hook
     checks.
   * a write to a guard file -> ask, as for Edit.
-Other hooks (codex-guard) call bash_writes() and edit_decision().
+  * running plan accept -> deny. Read-only arguments can quote the command.
+The shared parser checks literal shell commands and common wrappers. It does not evaluate
+dynamic shell or interpreter code. Human acceptance also requires a controlling terminal.
+Codex applies the same bash_decision().
 """
 
 import fnmatch
@@ -27,6 +30,7 @@ import importlib.util
 import json
 import os
 import re
+import shlex
 import sys
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
@@ -167,8 +171,8 @@ def git_guard():
     return mod
 
 
-def bash_writes(cmd, cwd=None, depth=0, gg=None):
-    """[(kind, rel)] for each write to plan/<name>.json ('plan') or a guard file ('guard')."""
+def bash_actions(cmd, cwd=None, depth=0, gg=None):
+    """Protected writes and human-acceptance commands in a shell script."""
     gg = gg or git_guard()
     cwd = cwd or os.getcwd()
     hits = []
@@ -180,6 +184,17 @@ def bash_writes(cmd, cwd=None, depth=0, gg=None):
 
     for seg, bodies, pipeline in gg.shell_segments(cmd):
         assigns, prog, args = gg.command_of(seg)
+        if prog == "plan" and args[:1] == ["accept"]:
+            hits.append(("accept", ""))
+        if prog == "script" and depth < 4:
+            # BSD script takes a transcript path followed by the command.
+            positional = [i for i, arg in enumerate(args) if not arg.startswith("-")]
+            if "-c" in args or "--command" in args:
+                for i, arg in enumerate(args[:-1]):
+                    if arg in ("-c", "--command"):
+                        hits += bash_actions(args[i + 1], cwd, depth + 1, gg)
+            elif positional:
+                hits += bash_actions(shlex.join(args[positional[0] + 1:]), cwd, depth + 1, gg)
         for j, t in enumerate(seg):
             if t in REDIRECTS and j + 1 < len(seg):
                 target(seg[j + 1])
@@ -215,11 +230,14 @@ def bash_writes(cmd, cwd=None, depth=0, gg=None):
             continue
         if prog in gg.SHELLS:
             for script in gg.shell_script_args(prog, args) + [b for b in bodies if b]:
-                hits += bash_writes(script, cwd, depth + 1, gg)
+                hits += bash_actions(script, cwd, depth + 1, gg)
         elif prog == "eval":
-            hits += bash_writes(" ".join(args), cwd, depth + 1, gg)
+            hits += bash_actions(" ".join(args), cwd, depth + 1, gg)
         elif gg.INTERPRETER.match(prog or ""):
             code = "\n".join(args + bodies)
+            if (len(plain) >= 2 and os.path.basename(plain[0]) == "plan" and plain[1] == "accept"
+                    or gg.CODE_ACTS.search(code) and ACCEPT_TEXT.search(code)):
+                hits.append(("accept", ""))
             if CODE_WRITES.search(code):
                 for lit in PLAN_TEXT.findall(code):
                     target(lit)
@@ -229,16 +247,14 @@ def bash_writes(cmd, cwd=None, depth=0, gg=None):
         if len(pipeline) > 1:
             later = [gg.command_of(s) for s in pipeline[pipeline.index(seg) + 1:]]
             if any(p in gg.SHELLS and gg.reads_stdin_as_code(p, a) for _, p, a in later):
-                hits += bash_writes(" ".join(args), cwd, depth + 1, gg)
+                hits += bash_actions(" ".join(args), cwd, depth + 1, gg)
     return hits
 
 
 def bash_decision(cmd, cwd=None):
-    if ACCEPT_TEXT.search(cmd):
+    hits = bash_actions(cmd, cwd)
+    if any(kind == "accept" for kind, _ in hits):
         return "deny", ACCEPT_REASON
-    if "plan/" not in cmd and not GUARD_TEXT.search(cmd):
-        return None
-    hits = bash_writes(cmd, cwd)
     if any(k == "plan" for k, _ in hits):
         return "deny", PLAN_REASON
     guards = [rel for k, rel in hits if k == "guard"]
