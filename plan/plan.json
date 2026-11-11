@@ -237,10 +237,10 @@
         "S10"
       ],
       "branch": "claude/s11-615812b",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "b14ee3e",
       "why": "Both independently shippable lines must pass together before the physical-device exit. Closes #84.",
       "cuts": "Run the milestone exit checks after both delivery lines merge. Exercise the final paired host flow through the production bridge. The later of host management and TLS enrollment must also cover self-revocation through both management entry points.\nStarting files: `ios/DSHKit/Package.swift`, `scripts/check-release-clean`, `scripts/demo/round-trip.sh`, `scripts/demo/revoke.sh`.\nScreen references: `design/screens/08.html`, `design/screens/H.html`, `design/screens/X2.html`, `design/screens/04.html`.",
       "not": "",
@@ -478,6 +478,11 @@
       "date": "2026-11-12",
       "title": "S11 assigned",
       "body": "Branch `claude/s11-615812b`, simulator `8BAB7E30-6952-4F0F-A71C-7B46885F69D5`, DSHM_HOME `~/.dshm/home-s11-8BAB7E30-6952-4F0F-A71C-7B46885F69D5`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S11)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S11 merged",
+      "body": "Merged as `b14ee3e`; the plan/ rules hold on the merge commit. No open [human] items, so S11 is `done`."
     }
   ],
   "pending": [
