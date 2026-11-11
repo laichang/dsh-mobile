@@ -1,5 +1,5 @@
 #!/bin/bash
-# Demo and checks: the workspace drawer. Re-runnable evidence for its checks.
+# Demo and checks: the workspace drawer.
 #
 #   scripts/demo/drawer.sh            bridge tests, swift test, the FakeBridge drawer UI tests, and the
 #                                  real-DSH demo (a Web session and a phone session in one workspace)

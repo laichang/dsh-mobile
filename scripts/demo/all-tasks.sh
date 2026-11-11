@@ -1,6 +1,6 @@
 #!/bin/bash
-# Demo and checks: 所有任务 (design screen 03). Re-runnable evidence for
-# Re-runnable evidence for its checks. FakeBridge only: two in-process hosts, each with a task that waits on an
+# Demo and checks: 所有任务 (design screen 03).
+# FakeBridge only: two in-process hosts, each with a task that waits on an
 # approval (`-DSHMFakeBridge approvals`); no DSH and no port is needed.
 #
 #   scripts/demo/all-tasks.sh          swift test, AllTasksUITests, and the FakeBridge UI tests of

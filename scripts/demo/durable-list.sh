@@ -1,5 +1,5 @@
 #!/bin/bash
-# Demo and checks, end to end. Re-runnable evidence for its checks.
+# Demo and checks, end to end.
 #
 #   scripts/demo/durable-list.sh             all checks + UI tests, including kill/reopen against real DSH
 #   scripts/demo/durable-list.sh --fake-only skip anything that needs DSH (CI-like)

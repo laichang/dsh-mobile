@@ -1,6 +1,6 @@
 #!/bin/bash
-# Demo and checks: the session page (screen 04). Re-runnable evidence for
-# Re-runnable evidence for its checks. Everything runs against the in-process FakeBridge; no DSH is needed.
+# Demo and checks: the session page (screen 04).
+# Everything runs against the in-process FakeBridge; no DSH is needed.
 #
 #   scripts/demo/session-page.sh          swift test (with the FakeBridge coding task), SessionPageUITests,
 #                                and the shell and milestone UI tests that use the same page

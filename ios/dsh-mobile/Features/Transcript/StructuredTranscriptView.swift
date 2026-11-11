@@ -22,7 +22,6 @@ struct StructuredTranscriptView: View {
                     case .text(let piece):
                         TranscriptView(source: piece)
                     case .user(let item):
-                        // A follow-up, under the answer before it, with its files.
                         if case .userMessage(let text) = item.kind {
                             // A message sent now is RUNNING until DSH gives it to the agent.
                             UserBubble(text: text, attachments: item.attachments ?? [], pending: item.state == .running)
@@ -34,7 +33,6 @@ struct StructuredTranscriptView: View {
                             QuestionCard(store: store, row: row, question: question, answersBelow: true).id(item.id)
                         }
                     case .tools(let items):
-                        // Screen 04: consecutive tool calls sit together under a hairline on the left.
                         VStack(alignment: .leading, spacing: 0) {
                             ForEach(items) { item in TranscriptBlockRow(taskKey: row.key, item: item) }
                         }
@@ -133,7 +131,7 @@ struct TranscriptBlockRow: View {
                 .padding(.vertical, 6)
                 .contentShape(Rectangle())
             case .userMessage(let text):
-                UserBubble(text: text, pending: item.state == .running) // Groups() draws it as a bubble, not as a row
+                UserBubble(text: text, pending: item.state == .running)
             }
         }
         .buttonStyle(.plain)
@@ -172,7 +170,6 @@ extension TranscriptItem {
         }
     }
 
-    /// The file name for a path, else the target as is (a command, a pattern).
     var shortTarget: String {
         guard case .tool(let tool) = kind else { return "" }
         let fileTools: Set = ["read", "read_image", "edit", "write", "str_replace_editor", "apply_patch"]

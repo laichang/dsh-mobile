@@ -1,6 +1,6 @@
 #!/bin/bash
-# Demo and checks: done and failed (screens 06 and X1). Re-runnable evidence
-# Re-runnable evidence for its checks. Everything runs against the in-process FakeBridge; no DSH is needed.
+# Demo and checks: done and failed (screens 06 and X1).
+# Everything runs against the in-process FakeBridge; no DSH is needed.
 #
 #   scripts/demo/outcomes.sh          swift test (with the FakeBridge outcomes scenario), OutcomesUITests,
 #                                and SessionPageUITests (the seam: the same session page)

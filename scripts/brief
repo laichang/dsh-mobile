@@ -99,6 +99,7 @@ RULES = [
     "Never `git commit --no-verify`/`-n`, never change `core.hooksPath`, never set `CHECK_PLAN_ALLOW`.",
     "Do not edit guard files: `scripts/check-plan`, `.githooks/`, `.claude/hooks/`, `.claude/settings.json`, `.codex/`.",
     "Use the wrappers above; never bare `xcodebuild`, `swift test` or `pnpm test`.",
+    "Delete comments that repeat the code. Keep comments that explain a reason or an external constraint.",
     "Docs tell the current state. No decision IDs (D<number>) and no slice IDs in docs or code. "
     "ARCHITECTURE.md stays short (`scripts/check-docs`).",
     "Do not wait for the user. At a choice, take your recommendation, write it in ARCHITECTURE.md as current state "

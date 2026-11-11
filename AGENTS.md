@@ -40,6 +40,7 @@ Read on demand, not all at once:
 
 ## Conventions
 
+- Delete comments that repeat the code. Keep comments that explain a reason or an external constraint.
 - Write AGENTS.md and other agent-facing docs in English. The Process section follows the ASD-STE100 style: short sentences, one instruction in each sentence, active voice.
 
 ## Process
