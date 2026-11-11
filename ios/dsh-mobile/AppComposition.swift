@@ -120,6 +120,15 @@ final class AppModel {
 
     private func hostConfigs() -> [TaskListStore.HostConfig] {
         #if DEBUG
+        let environment = ProcessInfo.processInfo.environment
+        if let encoded = environment["DSHM_TLS_TEST_PIN"], let pin = Data(base64Encoded: encoded),
+           let addresses = environment["DSHM_TLS_TEST_ADDRESSES"] {
+            let endpoints = addresses.split(separator: ",").compactMap { HostEndpoint(address: String($0)) }
+            if !endpoints.isEmpty {
+                hasSavedHosts = true
+                return [.init(key: "tls:\(encoded)", connection: .init(endpoints: endpoints, spkiSHA256: pin), name: "TLS host")]
+            }
+        }
         let options = DebugLaunchOptions.parse(ProcessInfo.processInfo.arguments)
         if let drawer = options.fakeDrawer.flatMap(FakeDrawer.Variant.init(rawValue:)) { return FakeDrawer.hosts(drawer) }
         if options.fakePickers { return FakePickers.hosts(hold: options.fakeHold) }

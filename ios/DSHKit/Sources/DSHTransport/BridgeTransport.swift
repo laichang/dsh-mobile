@@ -24,7 +24,16 @@ public enum BridgeTransportError: Error, Equatable {
 public final class WebSocketTransport: BridgeTransport {
     private let task: URLSessionWebSocketTask
 
+    private let ownedSession: URLSession?
+
+    init(request: URLRequest, ownedSession: URLSession) {
+        self.ownedSession = ownedSession
+        task = ownedSession.webSocketTask(with: request)
+        task.resume()
+    }
+
     public init(url: URL, session: URLSession = .shared) {
+        self.ownedSession = nil
         task = session.webSocketTask(with: url)
         task.resume()
     }
@@ -58,5 +67,6 @@ public final class WebSocketTransport: BridgeTransport {
 
     public func close() async {
         task.cancel(with: .normalClosure, reason: nil)
+        ownedSession?.invalidateAndCancel()
     }
 }
