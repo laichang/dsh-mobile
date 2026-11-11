@@ -502,6 +502,11 @@
       "date": "2026-11-11",
       "title": "S7 merged",
       "body": "Merged as `84774e3`; the plan/ rules hold on the merge commit. `scripts/review S7` at `da4b93f`: `RESULT: ?`, no flaky part (`/tmp/dshm-review/S7-da4b93f.txt`). No open [human] items, so S7 is `done`."
+    },
+    {
+      "date": "2026-11-11",
+      "title": "Logs from main's PLAN.md after the import (kept in git history at b2e2d93): S7 built in a visible session; hook patches by the user (a1e2190, da4b93f); review FAIL at a1e2190 (F1-F5), PASS at da4b93f (/tmp/dshm-review/S7-da4b93f.txt); merged by the user with CHECK_PLAN_ALLOW (84774e3). For the end issue list: accept hook matches raw text (quoting bypasses, read-only false positives), plan-guard header misses the accept deny, notty() copied in two tests",
+      "body": ""
     }
   ],
   "pending": [
