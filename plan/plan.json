@@ -267,7 +267,10 @@
       "text": "The user reads the context use of one slice session in this run that started from `scripts/brief`, and it is under about 40% of the window",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "human:2026-11-11 52%, over target; rework rounds should run in fresh sessions (issue)"
+      ]
     },
     {
       "tier": "human",
