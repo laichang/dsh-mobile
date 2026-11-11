@@ -16,7 +16,10 @@
       "text": "A failed listing, failed deletion or surviving unused simulator blocks closing. A retry succeeds after recovery without harming other devices. Run the regression through the actual hook.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/close-plan-simulators-test"
+      ]
     }
   ]
 }
