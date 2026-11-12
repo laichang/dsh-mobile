@@ -118,16 +118,17 @@
       "needs": [
         "T0"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s6-0e59536",
+      "status": "doing",
       "updated": "2026-11-12",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "With a single reader per connection generation, an enqueued reply must not overtake a preceding replay event while Core maps it.",
       "cuts": "Starting in `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHTransport/OrderedWriter.swift` and `ios/DSHKit/Tests/DSHKitTests/TransportDispatchTests.swift`, move correlation, request IDs, cancellation, ordered writes, receive loop and generation-scoped close to DSHTransport. It may depend on DSHProtocol. Switch dispatch ownership once and migrate one read-only command. Await Core's ordered mapping and yield before resolving a later response. Keep Hello negotiation, the 4003 meaning and raw-to-domain event mapping in Core. Match `bridge/src/server.ts` and `ios/DSHKit/Sources/DSHCore/Sync/HostSync.swift`. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S7",
@@ -291,6 +292,11 @@
       "date": "2026-11-12",
       "title": "S4 assigned",
       "body": "Branch `claude/s4-f432a0a`, simulator `11BC352F-17B7-412F-95B8-7F4F76DD7B2F`, DSHM_HOME `~/.dshm/home-s4-11BC352F-17B7-412F-95B8-7F4F76DD7B2F`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S4)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S6 assigned",
+      "body": "Branch `claude/s6-0e59536`, simulator `05783431-A95B-48BF-AA06-B9E351C7250F`, DSHM_HOME `~/.dshm/home-s6-05783431-A95B-48BF-AA06-B9E351C7250F`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S6)\"` exports them."
     }
   ],
   "pending": []
