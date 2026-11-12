@@ -64,8 +64,10 @@ final class AttachmentsUITests: XCTestCase {
                 XCTAssertTrue(browse.waitForExistence(timeout: 5), app.debugDescription)
                 browse.tap()
             }
-            if !file.waitForExistence(timeout: 3) {
-                XCTAssertTrue(here.waitForExistence(timeout: 5), app.debugDescription)
+            // Browse can restore the last folder directly. Its cells arrive asynchronously.
+            let loaded = expectation(for: NSPredicate { _, _ in file.exists || here.exists }, evaluatedWith: nil)
+            XCTAssertEqual(XCTWaiter().wait(for: [loaded], timeout: 20), .completed, app.debugDescription)
+            if !file.exists {
                 here.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             }
         }
