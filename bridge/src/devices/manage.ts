@@ -1,5 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { approvalAudit } from '../approvals/audit.ts'
 import type { AuditEntry } from '../gen/devices_pb.ts'
 interface DeviceStore {
   readonly dir: string
@@ -17,15 +16,9 @@ export function deviceList(store: DeviceStore, currentDeviceId: string) {
 
 export function auditPage(store: DeviceStore, beforeId: string) {
   const records: Record[] = store.pairingHistory().map(row => ({ ...row, atMs: BigInt(row.atMs) }))
-  // The approvals service already persists the authenticated answerer and the exact tool arguments before a tool can run.
-  const file = join(store.dir, 'approvals.jsonl')
-  if (existsSync(file)) {
-    for (const line of readFileSync(file, 'utf8').split('\n')) {
-      if (!line) continue
-      const a = JSON.parse(line)
-      records.push({ id: 'approval:' + a.id, atMs: BigInt(Date.parse(a.when)), actor: a.by, device: a.device,
-        action: 'Approval ' + a.outcome.toLowerCase(), detail: [a.tool, a.argumentsJson || a.reason].filter(Boolean).join(' ') })
-    }
+  for (const a of approvalAudit(store.dir).read()) {
+    records.push({ id: 'approval:' + a.id, atMs: BigInt(Date.parse(a.when)), actor: a.by, device: a.device,
+      action: 'Approval ' + a.outcome.toLowerCase(), detail: [a.tool, a.argumentsJson || a.reason].filter(Boolean).join(' ') })
   }
   records.sort((a, b) => b.atMs > a.atMs ? 1 : b.atMs < a.atMs ? -1 : a.id.localeCompare(b.id))
   const start = beforeId ? records.findIndex(r => r.id === beforeId) + 1 : 0

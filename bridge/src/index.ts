@@ -3,6 +3,7 @@
  * Install and enable: see bridge/README.md.
  */
 import { runtimeDshVersion, supportsDsh } from './compatibility.ts'
+import { approvalAudit } from './approvals/audit.ts'
 import { ApprovalHolder, type ApprovalContext } from './approvals/holder.ts'
 import { QuestionHolder, type QuestionContext } from './questions/holder.ts'
 import { SessionDirectory, type SessionReader } from './sessions/directory.ts'
@@ -70,7 +71,7 @@ export function apply(ctx: PluginContext, config: Config = {}) {
     const hub = new TaskHub(tasks)
     const sessions = supported ? new SessionDirectory(ctx.sessionController, hub, log) : undefined
     const stopSessions = sessions && ctx.on('session/event', (session, event) => sessions.changed(session.id, event))
-    const approvals = new ApprovalHolder(join(c.stateDir, 'approvals.jsonl'), event => hub.approvalChanged(event, !tasks.sessions.has(event.taskId)), c.approvalTimeoutMs)
+    const approvals = new ApprovalHolder(approvalAudit(c.stateDir).append, event => hub.approvalChanged(event, !tasks.sessions.has(event.taskId)), c.approvalTimeoutMs)
     const unregister = supported ? approvals.register(ctx) : undefined
     const questions = new QuestionHolder(event => hub.questionChanged(event))
     const unregisterQuestions = supported ? questions.register(ctx) : undefined
