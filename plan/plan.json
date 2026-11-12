@@ -194,16 +194,17 @@
       "needs": [
         "T0"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s10-540ee85",
+      "status": "doing",
       "updated": "2026-11-12",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Approval decisions and the device audit view must agree on saved fields and keep reading history from existing bridge installations.",
       "cuts": "Use `bridge/src/approvals/holder.ts`, `bridge/src/devices/manage.ts` and `bridge/test/approvals.test.ts`. Inject a typed append operation into ApprovalHolder and serve device audit pages from the matching reader. Keep approvals.jsonl, its fields, order and existing pairing history. Use synthetic fixture records. Update ARCHITECTURE.md alongside the implemented bridge boundary.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S11",
@@ -308,6 +309,11 @@
       "date": "2026-11-12",
       "title": "S2 assigned",
       "body": "Branch `claude/s2-045b1d9`, simulator `0165165B-7FF8-4DF8-9494-601D020335F2`, DSHM_HOME `~/.dshm/home-s2-0165165B-7FF8-4DF8-9494-601D020335F2`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S2)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S10 assigned",
+      "body": "Branch `claude/s10-540ee85`, simulator `89625462-B541-4DAA-83F1-5257DFA0D26B`, DSHM_HOME `~/.dshm/home-s10-89625462-B541-4DAA-83F1-5257DFA0D26B`, bridge 47813, web 3286; second host 47843/3316. `eval \"$(scripts/slice-env S10)\"` exports them."
     }
   ],
   "pending": []
