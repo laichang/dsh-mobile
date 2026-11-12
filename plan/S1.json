@@ -6,21 +6,30 @@
       "text": "Seed two hosts and credentials. Inject one read failure before revocation. The operation reports failure, the original file is byte-identical and both credentials survive. Restore reads and retry. Only the target enrollment is removed and the other host actually reconnects.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test --filter PairedHostFileTests"
+      ]
     },
     {
       "tier": "auto",
       "text": "A missing file permits first pairing. Corrupt JSON, protected or unreadable files, and other I/O failures abort mutation before a file write or credential deletion. Preserve already committed pending work for retry.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test --filter PairedHostFileTests"
+      ]
     },
     {
       "tier": "auto",
       "text": "Concurrent edits for different enrollments preserve both changes and records hidden from the displayed list. Readers observe complete revisions across atomic replacement.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test --filter PairedHostFileTests"
+      ]
     }
   ]
 }
