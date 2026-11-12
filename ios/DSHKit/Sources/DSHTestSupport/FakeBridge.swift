@@ -27,6 +27,7 @@ public final class FakeBridge: BridgeTransport {
 
     public struct Script: Sendable {
         public var reply: [String]
+        public var firstUploadFailureDelay: Duration?
         public var chunkDelay: Duration
         /// Lets a test inspect the streamed prefix before the remaining chunks are delivered.
         public var afterFirstChunk: (@Sendable () async -> Void)?
@@ -667,6 +668,13 @@ public final class FakeHost: Sendable {
             case .uploadBegin(let begin)? where takesAttachments:
                 // Any media type; the four image types enter as images, the rest as files.
                 s.uploadBegins += 1
+                if s.uploadBegins == 1, let delay = script.firstUploadFailureDelay {
+                    Task {
+                        try? await Task.sleep(for: delay)
+                        bridge.deliver(Self.uploadError(id, "upload/unavailable", "Please retry the upload."))
+                    }
+                    return
+                }
                 if conn.uploads[begin.uploadID] != nil || begin.uploadID.isEmpty || begin.sha256.count != 32 || begin.size == 0 {
                     bridge.deliver(Self.uploadError(id, "upload/invalid", "Bad upload."))
                 } else if conn.uploads.count >= Attachments.maxCount {

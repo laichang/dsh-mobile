@@ -390,8 +390,11 @@ private struct SessionComposer: View {
     let taskKey: String
     @State private var requestingStop = false
     @State private var stopError: String?
-    @State private var draft = ""
-    @State private var sending = false
+    private var draft: String {
+        get { store.composer.sessionDrafts[taskKey] ?? "" }
+        nonmutating set { store.composer.sessionDrafts[taskKey] = newValue.isEmpty ? nil : newValue }
+    }
+    private var sending: Bool { store.sendingSessionMessages.contains(taskKey) }
     @State private var sendError: String?
     @State private var dictation = Dictation()
     @FocusState private var editing: Bool
@@ -420,7 +423,7 @@ private struct SessionComposer: View {
                 DictationNotice(dictation: dictation)
                 TextField(question != nil ? "Answer the agent…"
                             : row?.state.isTerminal == false ? "Add a message for the next turn" : "Reply to your agent",
-                          text: $draft, axis: .vertical)
+                          text: Binding(get: { draft }, set: { draft = $0 }), axis: .vertical)
                     .lineLimit(1...5)
                     .focused($editing)
                     .foregroundStyle(DSHTheme.textPrimary)
@@ -468,11 +471,11 @@ private struct SessionComposer: View {
                     .accessibilityLabel("Stop")
                     .accessibilityIdentifier("task.interrupt")
                 } else if let row, let question {
-                    SendKey(enabled: typed && !sending, sending: sending) { answer(question, for: row) }
+                    SendKey(enabled: typed && !sending, sending: sending) { submit(row, answering: question) }
                         .accessibilityLabel("Answer")
                         .accessibilityIdentifier("session.send")
                 } else if followUp, let row {
-                    SendKey(enabled: typed && !sending, sending: sending) { send(row) }
+                    SendKey(enabled: typed && !sending, sending: sending) { submit(row) }
                         .accessibilityLabel("Send")
                         .accessibilityIdentifier("session.send")
                 } else {
@@ -482,7 +485,7 @@ private struct SessionComposer: View {
             }
         }
         .composerChrome()
-        .onChange(of: taskKey) { dictation.cancel(); draft = ""; sendError = nil }
+        .onChange(of: taskKey) { dictation.cancel(); sendError = nil }
         .onDisappear { dictation.cancel() }
         // Follow-ups that a stop gave back come back into the field, to send again or not.
         .task(id: "\(taskKey)/\(store.composer.returnedDrafts[taskKey]?.count ?? 0)") {
@@ -499,39 +502,17 @@ private struct SessionComposer: View {
 }
 
 extension SessionComposer {
-    /// The message goes to the host; the page shows it when the host logs it.
-    private func send(_ row: TaskListStore.TaskRow) {
-        dictation.cancel() // The field as it is now is what goes
-        let text = draft
-        sending = true
-        sendError = nil
-        Task {
-            defer { sending = false }
-            do {
-                try await store.sendFollowUp(text, for: row)
-                draft = ""
-                editing = false
-            } catch {
-                sendError = String(localized: "The message was not sent: \(String(describing: error))")
-            }
-        }
-    }
-
-    /// P1: the typed text answers the waiting question; the card shows it when the host
-    /// resolves the question, and the task continues.
-    private func answer(_ question: AgentQuestion, for row: TaskListStore.TaskRow) {
+    private func submit(_ row: TaskListStore.TaskRow, answering question: AgentQuestion? = nil) {
         dictation.cancel()
-        let text = draft
-        sending = true
         sendError = nil
         Task {
-            defer { sending = false }
             do {
-                try await store.answerQuestion(question, hostKey: row.hostKey, typed: text)
-                draft = ""
+                try await store.submitDraft(for: row, answering: question)
                 editing = false
             } catch {
-                sendError = String(localized: "The answer was not sent: \(String(describing: error))")
+                sendError = question == nil
+                    ? String(localized: "The message was not sent: \(String(describing: error))")
+                    : String(localized: "The answer was not sent: \(String(describing: error))")
             }
         }
     }

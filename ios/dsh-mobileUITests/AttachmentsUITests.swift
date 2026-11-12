@@ -46,7 +46,8 @@ final class AttachmentsUITests: XCTestCase {
         XCTAssertTrue(photo.waitForExistence(timeout: 30), app.debugDescription)
         // The picker's cells report "not hittable" to XCUITest; a tap at the cell's centre works.
         photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-        XCTAssertTrue(chip(app, "photo.jpg").waitForExistence(timeout: 10), app.debugDescription)
+        // The picker dismisses before its out-of-process thumbnail transfer completes.
+        XCTAssertTrue(chip(app, "photo.jpg").waitForExistence(timeout: 60), app.debugDescription)
     }
 
     /// Picks `name` (e.g. "notes.txt") in the system document picker. The demo puts the files in
@@ -64,8 +65,10 @@ final class AttachmentsUITests: XCTestCase {
                 XCTAssertTrue(browse.waitForExistence(timeout: 5), app.debugDescription)
                 browse.tap()
             }
-            if !file.waitForExistence(timeout: 3) {
-                XCTAssertTrue(here.waitForExistence(timeout: 5), app.debugDescription)
+            // Browse can restore the last folder directly. Its cells arrive asynchronously.
+            let loaded = expectation(for: NSPredicate { _, _ in file.exists || here.exists }, evaluatedWith: nil)
+            XCTAssertEqual(XCTWaiter().wait(for: [loaded], timeout: 20), .completed, app.debugDescription)
+            if !file.exists {
                 here.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             }
         }
@@ -154,6 +157,22 @@ final class AttachmentsUITests: XCTestCase {
             XCTAssertFalse(element(app, "approval.pending").exists)
             XCTAssertFalse(element(app, "followup.queued").exists)
         }
+    }
+
+    func testRetryAfterUploadFailureKeepsPhotoAndDraft() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-DSHMFakeBridge", "YES", "-DSHMFakeScenario", "retry-upload",
+                               "-DSHMResetStore", "YES", "-DSHMPresetPrompt", "Retry this photo"]
+        app.launch()
+        attachPhoto(app)
+        app.buttons["composer.send"].tap()
+        XCTAssertTrue(element(app, "attachment.progress").waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(element(app, "attachment.error").waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(chip(app, "photo.jpg").exists)
+        XCTAssertEqual(app.textFields["composer.prompt"].value as? String, "Retry this photo")
+        app.buttons["composer.send"].tap()
+        XCTAssertTrue(element(app, "session.message.user.photo").waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertEqual(waitForValue(element(app, "task.status"), in: ["completed"], timeout: 20), "completed")
     }
 
     func testAttachOnePhotoAndSend() throws {

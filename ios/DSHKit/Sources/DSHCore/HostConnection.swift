@@ -265,6 +265,14 @@ package actor HostConnection {
         (events, eventContinuation) = AsyncStream.makeStream(of: HostEvent.self)
     }
 
+    /// The bridge drops staged uploads when this socket closes. A failed batch can release all
+    /// five slots without interrupting the host's replay stream or another composer's send.
+    func attachmentConnection() -> HostConnection {
+        HostConnection(endpoints: addresses, channelName: channelName, enrollment: enrollment,
+                       transport: makeTransport, attemptTimeout: attemptTimeout, probe: probe,
+                       deliverEvent: { _, _, _ in })
+    }
+
     public var isConnected: Bool { dispatcher != nil && connecting == nil }
 
     /// Opens the transport and exchanges Hello.

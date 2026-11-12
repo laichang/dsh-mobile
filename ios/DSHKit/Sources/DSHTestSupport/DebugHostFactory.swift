@@ -46,6 +46,8 @@ public enum DebugHostFactory {
         if options.useFakeBridge {
             let endpoint = HostEndpoint.localBridge()
             var script: FakeBridge.Script = options.fakeMilestones ? .threeTodos() : .init()
+            let retryUpload = options.fakeScenario == "retry-upload"
+            if retryUpload { script.firstUploadFailureDelay = .seconds(3) }
             if options.fakeScenario == "coding" { script = .codingTask() }
             if options.fakeScenario == "outcomes" { script = .outcomes() }
             if options.fakeScenario?.hasPrefix("transcript") == true { script = FakeTranscript.script() }
@@ -54,7 +56,7 @@ public enum DebugHostFactory {
             script.holdPrompt = options.fakeHold ?? script.holdPrompt
             let fake = options.fakeScenario == "turns" ? FakeTurns.host()
                 : FakeHost(script: script, reachable: !options.fakeBridgeOffline,
-                           extraCapabilities: options.fakeScenario == "transcript" ? [FakeTranscript.capability] : [])
+                           extraCapabilities: retryUpload ? [DSHProtocolInfo.attachmentsCapability] : (options.fakeScenario == "transcript" ? [FakeTranscript.capability] : []))
             if options.fakeScenario == "outcomes" { FakeApprovalSheet.watchWebAnswers(fake) }
             return [.init(key: "fake:\(endpoint)",
                           connection: HostConnection(endpoint: endpoint, transport: fake.factory))]

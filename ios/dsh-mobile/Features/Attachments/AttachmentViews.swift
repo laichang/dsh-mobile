@@ -46,10 +46,10 @@ struct AttachMenu: View {
         .photosPicker(isPresented: $choosingPhoto, selection: $photo, matching: .images, photoLibrary: .shared())
         .fileImporter(isPresented: $choosingFile, allowedContentTypes: [.item]) { result in
             guard case .success(let url) = result else { return }
-            load { AttachmentReader.file(at: url) }
+            load { try? Attachments.file(at: url) }
         }
         .fullScreenCover(isPresented: $takingPhoto) {
-            CameraPicker { data in load { PhotoTranscoder.attachment(from: data) } }
+            CameraPicker { data in load { Attachments.photo(from: data) } }
                 .ignoresSafeArea()
         }
         .onChange(of: photo) { _, picked in
@@ -59,7 +59,7 @@ struct AttachMenu: View {
             Task {
                 let data = try? await picked.loadTransferable(type: Data.self)
                 loading = false
-                if let file = data.flatMap({ PhotoTranscoder.attachment(from: $0) }) { store.composer.attach(file, to: target) }
+                if let data { load { Attachments.photo(from: data) } }
             }
         }
     }
@@ -72,6 +72,10 @@ struct AttachMenu: View {
             if let file { store.composer.attach(file, to: target) }
         }
     }
+}
+
+private func attachmentSizeText(_ bytes: Int) -> String {
+    ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
 }
 
 /// The files on a composer, in order: one chip each, with its upload progress or its error, and
@@ -107,7 +111,7 @@ struct AttachmentChip: View {
 
     private var failure: String? {
         switch item.status {
-        case .tooLarge: String(localized: "Larger than \(Attachments.sizeText(Attachments.maxBytes))")
+        case .tooLarge: String(localized: "Larger than \(attachmentSizeText(Attachments.maxBytes))")
         case .failed(let message): message
         case .ready, .uploading: nil
         }
@@ -120,7 +124,7 @@ struct AttachmentChip: View {
                 if let thumbnail = file.thumbnail {
                     PhotoThumbnail(data: thumbnail, size: 56)
                 } else {
-                    FileCard(name: file.name, detail: Attachments.sizeText(file.size), compact: true)
+                    FileCard(name: file.name, detail: attachmentSizeText(file.size), compact: true)
                 }
             }
             .overlay {
@@ -224,7 +228,7 @@ struct MessageAttachmentsView: View {
             ForEach(files.indices, id: \.self) { index in
                 let file = files[index]
                 FileCard(name: file.name.isEmpty ? String(localized: "File") : file.name,
-                         detail: [file.typeLabel, file.size > 0 ? Attachments.sizeText(file.size) : nil]
+                         detail: [file.typeLabel, file.size > 0 ? attachmentSizeText(file.size) : nil]
                             .compactMap { $0 }.joined(separator: " · "))
                     .frame(maxWidth: 260, alignment: .trailing)
                     .accessibilityElement(children: .ignore)
@@ -254,52 +258,6 @@ struct PhotoThumbnail: View {
     }
 }
 
-/// Turns any photo (HEIC, PNG, …, from the library, the camera or Files) into what the host takes
-///: a JPEG, at most `maxSide` pixels on its long side, and a small thumbnail JPEG.
-enum PhotoTranscoder {
-    static let maxSide: CGFloat = 2048
-    static let thumbnailSide: CGFloat = 240
-
-    static func attachment(from data: Data, name: String = "photo.jpg") -> FileAttachment? {
-        guard let image = UIImage(data: data),
-              let jpeg = resized(image, maxSide: maxSide).jpegData(compressionQuality: 0.8),
-              let thumbnail = resized(image, maxSide: thumbnailSide).jpegData(compressionQuality: 0.7) else { return nil }
-        return FileAttachment(data: jpeg, mediaType: "image/jpeg", name: name, thumbnail: thumbnail)
-    }
-
-    private static func resized(_ image: UIImage, maxSide: CGFloat) -> UIImage {
-        let longest = max(image.size.width, image.size.height)
-        let scale = min(1, maxSide / max(longest, 1))
-        let size = CGSize(width: (image.size.width * scale).rounded(), height: (image.size.height * scale).rounded())
-        let format = UIGraphicsImageRendererFormat.default()
-        format.scale = 1
-        return UIGraphicsImageRenderer(size: size, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
-    }
-}
-
-/// Reads a file the user picked in Files. An image goes as a photo (`PhotoTranscoder`);
-/// any other file goes as its bytes, with its media type from the extension. A file over the
-/// limit is not read: its chip says it is too large.
-enum AttachmentReader {
-    static func file(at url: URL) -> FileAttachment? {
-        let scoped = url.startAccessingSecurityScopedResource()
-        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-        let name = url.lastPathComponent
-        let type = UTType(filenameExtension: url.pathExtension)
-        let mediaType = type?.preferredMIMEType ?? "application/octet-stream"
-        let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-        if size > Attachments.maxBytes {
-            return FileAttachment(data: Data(), mediaType: mediaType, name: name, size: size)
-        }
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        if type?.conforms(to: .image) == true,
-           let photo = PhotoTranscoder.attachment(from: data, name: (name as NSString).deletingPathExtension + ".jpg") {
-            return photo
-        }
-        return FileAttachment(data: data, mediaType: mediaType, name: name)
-    }
-}
-
 /// The system camera, for one photo.
 struct CameraPicker: UIViewControllerRepresentable {
     let taken: (Data) -> Void
@@ -321,7 +279,12 @@ struct CameraPicker: UIViewControllerRepresentable {
         init(_ parent: CameraPicker) { self.parent = parent }
 
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            if let image = info[.originalImage] as? UIImage, let data = image.jpegData(compressionQuality: 0.9) { parent.taken(data) }
+            if let image = info[.originalImage] as? UIImage {
+                NSItemProvider(object: image).loadDataRepresentation(forTypeIdentifier: UTType.jpeg.identifier) { data, _ in
+                    guard let data else { return }
+                    Task { @MainActor in self.parent.taken(data) }
+                }
+            }
             parent.dismiss()
         }
 

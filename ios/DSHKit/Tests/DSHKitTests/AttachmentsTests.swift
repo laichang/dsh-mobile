@@ -63,6 +63,25 @@ import Testing
         #expect(parts.count >= 3, "the photo needs several Noise messages")
     }
 
+    @Test func pickedFilesUsePlatformReadersAndRespectTheLimitBeforeLoadingBytes() throws {
+        let (fixture, _) = try Self.fixture()
+        let image = try Attachments.file(at: Self.dir.appending(path: fixture.file))
+        #expect(image.kind == .image)
+        #expect(image.thumbnail?.starts(with: [0xff, 0xd8]) == true)
+        #expect(image.data.starts(with: [0xff, 0xd8]))
+
+        let url = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString + ".txt")
+        try Self.notes.data.write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        #expect(try Attachments.file(at: url).data == Self.notes.data)
+        let handle = try FileHandle(forWritingTo: url)
+        try handle.truncate(atOffset: UInt64(Attachments.maxBytes + 1))
+        try handle.close()
+        let refused = try Attachments.file(at: url)
+        #expect(refused.isTooLarge)
+        #expect(refused.data.isEmpty)
+    }
+
     /// Attach the golden photo and send: it goes up in parts, each frame fits one Noise message,
     /// the host gets it byte-identical, the task names it, and the row keeps the thumbnail.
     @Test func photoGoesUpInPartsBeforeTheTaskAndTheRowKeepsItsThumbnail() async throws {
@@ -93,7 +112,7 @@ import Testing
         store.composer.attach(try photo())
         store.composer.prompt = "What is in this photo?"
         #expect(await store.send() == nil)
-        #expect(store.composer.sendError?.contains("upload/unavailable") == true, "\(store.composer.sendError ?? "")")
+        #expect(store.composer.sendError?.contains(MessageSendError.unavailable.description) == true, "\(store.composer.sendError ?? "")")
         #expect(store.composer.newTaskAttachments.count == 1)
         #expect(fake.prompts.isEmpty)
     }
@@ -191,7 +210,7 @@ import Testing
         #expect(await store.send() == nil)
         let connection = HostConnection(endpoint: .localBridge(port: 47801), transport: fake.factory)
         try await connection.connect()
-        await #expect(throws: HostConnectionError.self) { _ = try await connection.upload(big) }
+        await #expect(throws: MessageSendError.tooLarge(big.name)) { _ = try await connection.upload(big) }
         await connection.disconnect()
         #expect(fake.uploadBegins == 0, "refused before the upload")
         #expect(fake.prompts.isEmpty)
@@ -202,6 +221,38 @@ import Testing
             #expect(store.composer.attach(FileAttachment(data: Data([UInt8(i)]), mediaType: "text/plain", name: "\(i).txt")))
         }
         #expect(!store.composer.attach(Self.notes), "at most \(Attachments.maxCount) files in one message")
+    }
+
+    @Test func aRejectedOrCancelledBatchLeavesOtherMessagesAndUploadSlotsIntact() async throws {
+        let fake = FakeHost(extraCapabilities: [DSHProtocolInfo.attachmentsCapability])
+        let connection = HostConnection(endpoint: .localBridge(), transport: fake.factory)
+        let link = HostSync(config: .init(key: "test", connection: connection), cache: try TaskCache(inMemory: true))
+        let files = Array(repeating: Self.notes, count: Attachments.maxCount)
+        let photo = try photo()
+        let large = FileAttachment(data: Data(), mediaType: "application/pdf", name: "large", size: Attachments.maxBytes + 1)
+        func create(_ text: String, _ files: [FileAttachment]) async throws -> String {
+            try await link.createTask(prompt: text, selection: nil, workspace: nil, attachments: files) { _, _ in }
+        }
+        await #expect(throws: MessageSendError.tooMany) { _ = try await create("too many", files + [photo]) }
+        await #expect(throws: MessageSendError.tooLarge("large")) { _ = try await create("too large", [photo, large]) }
+        #expect(fake.uploadBegins == 0)
+
+        let cancelled = Task {
+            try await link.createTask(prompt: "cancelled", selection: nil, workspace: nil, attachments: [photo]) { _, progress in
+                if case .success(let fraction) = progress, fraction > 0 { withUnsafeCurrentTask { $0?.cancel() } }
+            }
+        }
+        let kept = try await create("kept", files)
+        await #expect(throws: CancellationError.self) { _ = try await cancelled.value }
+        #expect(fake.prompts == ["kept"])
+        #expect(fake.attachments.first?.map(\.name) == files.map(\.name))
+        let row = try #require(link.rows(hostName: "Test").first { $0.key == kept })
+        let begins = fake.uploadBegins
+        await #expect(throws: MessageSendError.tooLarge("large")) {
+            try await link.sendFollowUp("too large", for: row, attachments: [photo, large]) { _, _ in }
+        }
+        #expect(fake.uploadBegins == begins)
+        #expect(fake.followUps.isEmpty)
     }
 
     /// A follow-up in a completed session carries files: they reach the same task on the host, the
@@ -219,7 +270,9 @@ import Testing
         #expect(store.composer.attach(Self.notes, to: target))
         #expect(store.composer.attach(photo, to: target))
         #expect(store.composer.newTaskAttachments.isEmpty, "the page's files are not on composer 01")
-        try await store.sendFollowUp("And these?", for: done)
+        store.composer.sessionDrafts[taskKey] = "And these?"
+        try await store.submitDraft(for: done, answering: nil)
+        #expect(store.composer.sessionDrafts[taskKey] == nil)
         #expect(store.composer.attachments(on: target).isEmpty)
         #expect(fake.followUps == ["And these?"])
         #expect(fake.followUpAttachments.first?.map(\.name) == ["notes.txt", "photo.jpg"])

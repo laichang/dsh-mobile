@@ -59,6 +59,10 @@ with tempfile.TemporaryDirectory() as temp:
     shortcut.write_text("@_exported\nimport DSHCore\n")
     expect(check, "re-export attribute")
 
+    shortcut.write_text('throw HostConnectionError.bridge(code: "upload/too-large", message: "Too large")\n')
+    expect(check, "use Core commands and attachment readers")
+    shortcut.write_text("let scoped = url.startAccessingSecurityScopedResource()\n")
+    expect(check, "use Core commands and attachment readers")
     shortcut.unlink()
     reader = fixture / "ios/DSHKit/Sources/DSHCore/Reader.swift"
     reader.parent.mkdir(parents=True, exist_ok=True)

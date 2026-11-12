@@ -445,34 +445,51 @@ public final class HostSync {
 
     package func createTask(prompt: String, selection: ModelSelection?, workspace: String?,
                             attachments: [FileAttachment], progress: @escaping UploadProgress) async throws -> String {
-        let ids = try await upload(attachments, progress: progress)
-        let taskID = try await connection.createTask(prompt: prompt, selection: selection, workspace: workspace, uploadIDs: ids)
+        let taskID = try await send(attachments, progress: progress) { host, ids in
+            try await host.createTask(prompt: prompt, selection: selection, workspace: workspace, uploadIDs: ids)
+        }
         return recordCreatedTask(taskID, title: prompt, attachments: attachments.map(\.sent))
     }
 
     package func sendFollowUp(_ text: String, for row: TaskRow, attachments: [FileAttachment],
                               progress: @escaping UploadProgress) async throws {
-        let ids = try await upload(attachments, progress: progress)
-        let messageID = try await connection.sendMessage(taskID: row.taskID, text: text,
-                                                         mode: row.state.isTerminal ? .steer : .queue, uploadIDs: ids)
+        let messageID = try await send(attachments, progress: progress) { host, ids in
+            try await host.sendMessage(taskID: row.taskID, text: text, mode: row.state.isTerminal ? .steer : .queue,
+                                       uploadIDs: ids)
+        }
         if attachments.contains(where: { $0.thumbnail != nil }) {
             keepThumbnails(attachments.map(\.sent), messageID: messageID, taskKey: row.key)
         }
     }
 
-    private func upload(_ files: [FileAttachment], progress: @escaping UploadProgress) async throws -> [String] {
-        var ids: [String] = []
-        for file in files {
-            progress(file.id, .success(0))
-            do {
-                let id = try await connection.upload(file) { progress(file.id, .success($0)) }
-                ids.append(id)
-            } catch {
-                progress(file.id, .failure(error))
-                throw error
+    private func send(_ files: [FileAttachment], progress: @escaping UploadProgress,
+                      command: (HostConnection, [String]) async throws -> String) async throws -> String {
+        guard !files.isEmpty else { return try await command(connection, []) }
+        guard files.count <= Attachments.maxCount else { throw MessageSendError.tooMany }
+        if let large = files.first(where: \.isTooLarge) { throw MessageSendError.tooLarge(large.name) }
+        let host = await connection.attachmentConnection()
+        try await host.connect()
+        do {
+            var ids: [String] = []
+            for file in files {
+                try Task.checkCancellation()
+                progress(file.id, .success(0))
+                do {
+                    let id = try await host.upload(file) { progress(file.id, .success($0)) }
+                    ids.append(id)
+                } catch {
+                    progress(file.id, .failure(error))
+                    throw error
+                }
             }
+            try Task.checkCancellation()
+            let result = try await command(host, ids)
+            await host.disconnect()
+            return result
+        } catch {
+            await host.disconnect()
+            throw error
         }
-        return ids
     }
 
     /// The follow-up's row gets the thumbnails of its images, now or when its `UserMessage` arrives.

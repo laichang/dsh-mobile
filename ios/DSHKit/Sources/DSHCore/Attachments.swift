@@ -1,4 +1,5 @@
-import CryptoKit
+import DSHPlatform
+import UniformTypeIdentifiers
 import DSHProtocol
 import Foundation
 
@@ -18,17 +19,37 @@ public enum Attachments {
 
     /// The parts of `data`, in order, each at most `partSize` bytes.
     public static func parts(of data: Data, size: Int = partSize) -> [Data] {
-        stride(from: 0, to: data.count, by: size).map { offset in
-            let start = data.startIndex + offset
-            return data.subdata(in: start..<min(start + size, data.endIndex))
-        }
+        AttachmentIO.parts(of: data, size: size)
     }
 
-    public static func sha256(_ data: Data) -> Data { Data(SHA256.hash(data: data)) }
+    public static func sha256(_ data: Data) -> Data { AttachmentIO.sha256(data) }
 
-    /// "20 MB", "340 KB", "12 B" for a chip.
-    public static func sizeText(_ bytes: Int) -> String {
-        ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
+    public static func photo(from data: Data, name: String = "photo.jpg") -> FileAttachment? {
+        guard let photo = AttachmentIO.photo(data) else { return nil }
+        return FileAttachment(data: photo.jpeg, mediaType: "image/jpeg", name: name, thumbnail: photo.thumbnail)
+    }
+
+    public static func file(at url: URL) throws -> FileAttachment {
+        let (data, size, type) = try AttachmentIO.read(url, limit: maxBytes)
+        if size <= maxBytes, type?.conforms(to: .image) == true,
+           let photo = photo(from: data, name: url.deletingPathExtension().lastPathComponent + ".jpg") {
+            return photo
+        }
+        return FileAttachment(data: data, mediaType: type?.preferredMIMEType ?? "application/octet-stream",
+                              name: url.lastPathComponent, size: size)
+    }
+}
+
+public enum MessageSendError: Error, Equatable, CustomStringConvertible {
+    case tooLarge(String), tooMany, unavailable, sendInProgress
+
+    public var description: String {
+        switch self {
+        case .tooLarge(let name): "\(name) exceeds the per-file limit."
+        case .tooMany: "A message accepts up to \(Attachments.maxCount) attachments."
+        case .unavailable: "This host cannot take attachments."
+        case .sendInProgress: "This message is already being sent."
+        }
     }
 }
 
@@ -63,7 +84,7 @@ public struct FileAttachment: Sendable, Equatable, Identifiable {
     public var kind: AttachmentKind { Attachments.isImage(mediaType) ? .image : .file }
 
     /// Over `Attachments.maxBytes`: refused before the upload.
-    public var isTooLarge: Bool { size > Attachments.maxBytes }
+    public var isTooLarge: Bool { max(size, data.count) > Attachments.maxBytes }
 
     /// What the sent message shows for it.
     public var sent: MessageAttachment {
