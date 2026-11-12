@@ -49,7 +49,8 @@ struct HostDetailView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel(host?.name ?? "")
         .accessibilityIdentifier("host.detail")
-        .task(id: store.deviceManagement(for: hostKey) != nil) { await load() }
+        .onChange(of: host == nil) { _, removed in if removed { shell.sheet = nil } }
+        .task(id: store.deviceManagement(for: hostKey) == nil ? nil : host?.enrollment) { await load() }
         .alert(confirmTitle, isPresented: Binding(get: { target != nil }, set: { if !$0 { target = nil } }),
                presenting: target) { device in
             Button(role: .destructive) { revoke(device) } label: { Text("Revoke", tableName: "Hosts") }
@@ -167,9 +168,8 @@ struct HostDetailView: View {
         Task {
             do {
                 switch try await connection.revokeDevice(device) {
-                case .thisDevice:
-                    shell.sheet = nil
-                    actions.forget(hostKey)
+                case .thisDevice(let origin):
+                    if actions.forget(origin) { shell.sheet = nil }
                 case .remaining(let devices):
                     list = devices
                     await load()

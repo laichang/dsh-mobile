@@ -44,13 +44,11 @@ final class AppModel {
     @ObservationIgnored private let cache: TaskCache
     @ObservationIgnored private var presetPrompt = ""
     @ObservationIgnored private var connectDelay: Duration = .zero
-    /// Hosts this device lost its access to (a revoke of this device), until they are
-    /// paired again. A paired host also leaves the file; this set keeps a fake host
-    /// out of the store and reports each revoke once.
-    @ObservationIgnored private var forgottenHostKeys: Set<String> = []
+    /// In-process hosts also need to stay forgotten when the store is reconstructed.
+    @ObservationIgnored private var forgotten = ForgottenEnrollments()
     /// The host that revoked this phone without a revoke from this phone's hosts sheet
     /// (another client, or the close came first). The root says so once.
-    var revokedNotice: String?
+    var revokedNotice: TaskListStore.HostStatus?
     var pairingRemovalError: String?
 
     init() {
@@ -65,7 +63,7 @@ final class AppModel {
         // A test launch starts no Live Activities unless it asks, and ends the ones left.
         liveActivitiesOn = DebugLaunchOptions.liveActivitiesOn(ProcessInfo.processInfo.arguments)
         if options.resetPairing {
-            for host in pairing.hosts.load() { try? pairing.forget(cacheKey: host.cacheKey) }
+            for origin in pairing.hosts.load().compactMap(\.enrollment) { try? pairing.forget(origin) }
             try? pairing.hosts.removeAll()
         }
         if ProcessInfo.processInfo.arguments.contains("-DSHMSeedLegacyPairing") {
@@ -83,11 +81,12 @@ final class AppModel {
         self.transcriber = transcriber
         self.pairing = pairing
         if !liveActivitiesOn { activityClient.dismissAll() }
+        do { try pairing.retryPendingRemovals() } catch { pairingRemovalError = error.localizedDescription }
         store = makeStore()
     }
 
     private func makeStore() -> TaskListStore? {
-        let hosts = hostConfigs().filter { !forgottenHostKeys.contains($0.key) }
+        let hosts = hostConfigs().filter { !forgotten.enrollments.contains($0.enrollment) }
         guard !hosts.isEmpty else { return nil }
         let store = TaskListStore(cache: cache, hosts: hosts, prompt: presetPrompt, firstConnectDelay: connectDelay,
                                   preferredHostKey: UserDefaults.standard.string(forKey: Self.preferredHostKey)) { key in
@@ -101,8 +100,7 @@ final class AppModel {
     /// A host refused this device with close 4003, so it was revoked. Forget it as
     /// after a revoke from the hosts sheet, and say so once.
     private func hostRevoked(_ host: TaskListStore.HostStatus) {
-        guard !forgottenHostKeys.contains(host.key) else { return }
-        if forgetHost(host.key) { revokedNotice = host.name }
+        if forgetHost(host.enrollment) { revokedNotice = host }
     }
 
     func retrySavedHosts() {
@@ -129,20 +127,27 @@ final class AppModel {
     }
 
     /// This device lost its access to the host (it revoked itself): forget the pairing
-    /// and rebuild the store without it. With no host left, the root shows 08 (`WelcomeView`).
+    /// and retire its connection. With no host left, the root shows 08 (`WelcomeView`).
     @discardableResult
-    func forgetHost(_ key: String) -> Bool {
-        guard !forgottenHostKeys.contains(key) else { return true }
+    func forgetHost(_ origin: HostEnrollment) -> Bool {
+        let removed: Bool
         do {
-            try pairing.forget(cacheKey: key)
+            // Debug's in-process hosts do not have a stored pairing or credential.
+            removed = try forgotten.forget(origin) { [pairing] in
+                $0.hostKey.isEmpty ? true : try pairing.forget($0)
+            }
         } catch {
             pairingRemovalError = error.localizedDescription
             return false
         }
-        forgottenHostKeys.insert(key)
-        store?.background()
-        store = makeStore()
-        store?.foreground()
+        guard removed else { return false }
+        if !origin.hostKey.isEmpty,
+           store?.hosts.contains(where: { $0.enrollment.hostKey == origin.hostKey && $0.enrollment != origin }) == true {
+            return false
+        }
+        store?.forget(origin)
+        if store?.hosts.isEmpty == true { store = nil }
+        hasSavedHosts = !pairing.hosts.load().isEmpty
         return true
     }
 
@@ -163,9 +168,7 @@ final class AppModel {
 
     func closePairing() {
         if case .offer(let model)? = pairingRoute, case .paired(let paired) = model.state {
-            // The same Mac paired again after a revoke has the same key (the id comes
-            // from the host key). It is a new pairing: keep it, and let a later revoke forget it again.
-            forgottenHostKeys.remove(paired.cacheKey)
+            if revokedNotice?.enrollment.hostKey == paired.hostKey { revokedNotice = nil }
             if let store, store.hosts.contains(where: { $0.isEncrypted }), let config = pairedConfig(paired) {
                 store.connectPairedHost(config)
             } else {

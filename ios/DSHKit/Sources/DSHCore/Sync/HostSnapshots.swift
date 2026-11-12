@@ -4,7 +4,7 @@ import DSHProtocol
 
 extension HostSync {
     package func status(named name: String) -> HostStatus {
-        .init(key: key, name: name, reachability: reachability, lastConnectedAt: host.lastConnectedAt,
+        .init(enrollment: enrollment, key: key, name: name, reachability: reachability, lastConnectedAt: host.lastConnectedAt,
               channelName: connection.channelName, capabilities: capabilities ?? [], address: address,
               addressFailures: addressFailures)
     }
@@ -34,6 +34,7 @@ extension HostSync {
     /// One configured host: how to reach it and the key its cache rows use.
     public struct HostConfig: Sendable {
         public var key: String
+        public var enrollment: HostEnrollment { connection.enrollment }
         public var commands: any HostCommands { connection }
         let connection: HostConnection
         public var name: String?
@@ -72,6 +73,7 @@ extension HostSync {
     }
 
     public struct HostStatus: Identifiable, Equatable, Sendable {
+        public let enrollment: HostEnrollment
         public var id: String { key }
         public var key: String
         public var name: String

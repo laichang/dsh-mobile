@@ -95,8 +95,11 @@ public final class TaskListStore {
     private func observe(_ link: HostSync) {
         link.changed = { [weak self] in self?.refresh() }
         link.online = { [weak self, key = link.key] in await self?.refreshCatalog(hostKey: key) }
-        link.revoked = { [weak self, weak link] in
-            if let link { self?.dropRevoked(link) }
+        link.revoked = { [weak self] status in
+            guard let self else { return }
+            forget(status.enrollment)
+            revokedHosts.append(status)
+            onHostRevoked(status)
         }
         link.returnedDraft = { [weak self] key, text in self?.composer.returnedDrafts[key, default: []].append(text) }
     }
@@ -287,21 +290,16 @@ public final class TaskListStore {
         return false
     }
 
-    /// The host revoked this device. Drop it like a host that was never configured (its
-    /// rows go too; the cache stays on disk until the app forgets the host), and say so once.
-    private func dropRevoked(_ link: HostSync) {
-        guard let index = links.firstIndex(where: { $0 === link }) else { return }
-        let status = hosts.first { $0.key == link.key }
+    /// A delayed revoke can retire only the link created for that registration.
+    public func forget(_ origin: HostEnrollment) {
+        guard let index = links.firstIndex(where: { $0.enrollment == origin }) else { return }
+        let link = links.remove(at: index)
         link.retire()
-        links.remove(at: index)
         modelHosts.remove(link.key)
         catalogs[link.key] = nil
         if composer.hostKey == link.key { composer.hostKey = links.last?.key }
         updateAllHostsOffline()
         refresh()
-        guard let status else { return }
-        revokedHosts.append(status)
-        onHostRevoked(status)
     }
 
     /// No host can take a task (screen X3). True once every host has failed to connect
@@ -351,4 +349,18 @@ public final class TaskListStore {
         liveActivities?.sync(tasks, onlineHosts: Set(hosts.filter { $0.reachability == .online }.map(\.key)))
     }
 
+}
+
+/// Remembers which registration already caused a notice or dismissal in this installation's UI.
+public struct ForgottenEnrollments {
+    public private(set) var enrollments: Set<HostEnrollment> = []
+
+    public init() {}
+
+    public mutating func forget(_ origin: HostEnrollment, removing: (HostEnrollment) throws -> Bool) rethrows -> Bool {
+        guard !enrollments.contains(origin) else { return false }
+        let wasCurrent = try removing(origin)
+        enrollments.insert(origin)
+        return wasCurrent
+    }
 }

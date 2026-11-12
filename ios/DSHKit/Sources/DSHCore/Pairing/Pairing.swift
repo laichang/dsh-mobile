@@ -43,15 +43,36 @@ public struct Pairing: Sendable {
         return try await enroll(offer)
     }
 
-    public func forget(cacheKey: String) throws {
-        try forget(cacheKey: cacheKey, deletingCredential: Self.removeCredential)
+    @discardableResult
+    public func forget(_ enrollment: HostEnrollment) throws -> Bool {
+        try forget(enrollment, deletingCredential: Self.deleteCredential)
     }
 
-    func forget(cacheKey: String, deletingCredential: (PairedHost) throws -> Void) throws {
-        for host in try hosts.retire(cacheKey: cacheKey) {
-            try deletingCredential(host)
-            try hosts.acknowledgeRemoval(of: host)
+    @discardableResult
+    func forget(_ enrollment: HostEnrollment, deletingCredential: (HostEnrollment) throws -> Void) throws -> Bool {
+        let removed = try hosts.retire(enrollment)
+        try deletingCredential(enrollment)
+        try hosts.acknowledgeRemoval(of: enrollment)
+        return removed
+    }
+
+    public func retryPendingRemovals() throws {
+        try retryPendingRemovals(deletingCredential: Self.deleteCredential)
+    }
+
+    func retryPendingRemovals(deletingCredential: (HostEnrollment) throws -> Void) throws {
+        var firstError: (any Error)?
+        for enrollment in try hosts.pendingRemovals() {
+            do {
+                try deletingCredential(enrollment)
+                try hosts.acknowledgeRemoval(of: enrollment)
+            } catch { firstError = firstError ?? error }
         }
+        if let firstError { throw firstError }
+    }
+
+    private static func deleteCredential(_ enrollment: HostEnrollment) throws {
+        try credential(pin: enrollment.hostKey, deviceID: enrollment.tlsDeviceID).reset()
     }
 
     package func connection(to host: PairedHost, attemptTimeout: Duration = HostConnection.defaultAttemptTimeout) throws -> HostConnection {
@@ -63,7 +84,7 @@ public struct Pairing: Sendable {
         }
         guard let deviceID = host.tlsDeviceID else { throw PairingError.unreachable(["Scan a new pairing code from the host."]) }
         let pin = Data(host.hostKey), key = Self.credential(pin: host.hostKey, deviceID: deviceID)
-        return HostConnection(endpoints: host.addresses, channelName: "TLS 1.3", transport: { url in
+        return HostConnection(endpoints: host.addresses, channelName: "TLS 1.3", enrollment: host.enrollment, transport: { url in
             guard let data = try key.read(), let bearer = String(data: data, encoding: .utf8) else {
                 throw PairingError.unreachable(["device credential unavailable"])
             }

@@ -7,6 +7,7 @@ import DSHPlatform
 @MainActor
 public final class HostSync {
     package let key: String
+    package var enrollment: HostEnrollment { connection.enrollment }
     let connection: HostConnection
     package var commands: any HostCommands { connection }
     package var endpointDescription: String { connection.endpoint.description }
@@ -31,7 +32,7 @@ public final class HostSync {
     private var pendingThumbnails: [String: [MessageAttachment]] = [:]
     package var changed: () -> Void = {}
     package var online: () async -> Void = {}
-    package var revoked: () -> Void = {}
+    package var revoked: (HostStatus) -> Void = { _ in }
     package var returnedDraft: (String, String) -> Void = { _, _ in }
 
     package init(config: HostConfig, cache: TaskCache, beforeSave: @escaping () throws -> Void = {}) {
@@ -158,7 +159,7 @@ public final class HostSync {
             }
             // A refusal of this device (close 4003) is final, not transient.
             if await connection.deviceRevoked {
-                revoked()
+                revoked(status(named: name))
                 break
             }
             setReachability(failure)
