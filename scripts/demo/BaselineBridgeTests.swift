@@ -10,10 +10,12 @@ final class BaselineBridgeTests: XCTestCase {
         let file = try XCTUnwrap(ProcessInfo.processInfo.environment["DSHM_COMPAT_PEER"])
         continueAfterFailure = false
         let offer = try String(contentsOf: URL(filePath: file + ".offer"), encoding: .utf8)
-        XCUIApplication().launch()
+        let freshApp = XCUIApplication()
+        freshApp.launch()
+        XCTAssertTrue(freshApp.buttons["pairing.pasteLink"].waitForExistence(timeout: 20), freshApp.debugDescription)
         let app = openDeepLink(try XCTUnwrap(URL(string: offer)))
         let confirm = app.buttons["pairing.confirm"]
-        XCTAssertTrue(confirm.waitForExistence(timeout: 15))
+        XCTAssertTrue(confirm.waitForExistence(timeout: 15), app.debugDescription)
         confirm.tap()
         let status = app.descendants(matching: .any)["pairing.status"]
         XCTAssertEqual(waitForValue(status, in: ["paired", "failed"], timeout: 30), "paired", status.label)
