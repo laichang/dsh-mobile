@@ -197,6 +197,7 @@ public actor HostConnection {
     public nonisolated let endpoint: HostEndpoint
     /// Every address, as configured.
     public nonisolated let endpoints: [HostEndpoint]
+    package nonisolated let enrollment: HostEnrollment
     public nonisolated let channelName: String
     public nonisolated let attemptTimeout: Duration
     /// Asked after an address gave no answer in `attemptTimeout`; nil: no probe.
@@ -250,11 +251,13 @@ public actor HostConnection {
     ///     program that holds the port from a computer that is not reachable (`TCPPortProbe.probe`).
     ///   - onAddressesChange: called with the new order when a different address than the first
     ///     worked, so the caller can save it (`Pairing.connection(to:)`).
-    package init(endpoints: [HostEndpoint], channelName: String = "In-process", transport: @escaping BridgeTransportFactory,
+    package init(endpoints: [HostEndpoint], channelName: String = "In-process", enrollment: HostEnrollment? = nil, transport: @escaping BridgeTransportFactory,
                 attemptTimeout: Duration = HostConnection.defaultAttemptTimeout,
                 probe: PortProbe? = nil,
                 onAddressesChange: (@Sendable ([HostEndpoint]) -> Void)? = nil) {
         precondition(!endpoints.isEmpty, "a host connection needs at least one address")
+        // In-process hosts have no TLS credential and are recreated by the debug launch fixture.
+        self.enrollment = enrollment ?? HostEnrollment(hostKey: [], tlsDeviceID: endpoints[0].description)
         self.endpoint = endpoints[0]
         self.endpoints = endpoints
         self.addresses = endpoints

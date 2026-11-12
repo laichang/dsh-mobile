@@ -23,7 +23,7 @@ public struct DeviceAuditPage: Sendable {
 }
 
 public enum DeviceRevocation: Sendable {
-    case thisDevice
+    case thisDevice(HostEnrollment)
     case remaining([PairedDevice])
 }
 
@@ -43,13 +43,15 @@ extension HostConnection: HostDeviceManagement {
     }
 
     public func revokeDevice(_ device: PairedDevice) async throws -> DeviceRevocation {
+        // A row can outlive the pairing that listed its devices.
+        let revokesOrigin = device.isCurrent && (enrollment.hostKey.isEmpty || enrollment.tlsDeviceID == device.id)
         do {
             let response = try await request(.revokeDevice(.with { $0.deviceID = device.id }))
             let remaining = try response.pairedDevices()
-            return device.isCurrent ? .thisDevice : .remaining(remaining)
-        } catch where device.isCurrent && Self.isDeviceRefusal(error) {
+            return revokesOrigin ? .thisDevice(enrollment) : .remaining(remaining)
+        } catch where revokesOrigin && Self.isDeviceRefusal(error) {
             // The host can close this phone's socket before its revoke response arrives.
-            return .thisDevice
+            return .thisDevice(enrollment)
         }
     }
 

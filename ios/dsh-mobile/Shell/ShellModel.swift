@@ -163,17 +163,22 @@ private struct MilestoneTimelineSheet: View {
 }
 
 private struct DevicesSheet: View {
+    @Environment(ShellModel.self) private var shell
     let store: TaskListStore
     let hostKey: String
 
     var body: some View {
         NavigationStack {
             if let connection = store.deviceManagement(for: hostKey) {
-                DeviceManagementView(hostKey: hostKey, host: store.hosts.first { $0.key == hostKey }?.name ?? "", connection: connection)
+                DeviceManagementView(host: store.hosts.first { $0.key == hostKey }?.name ?? "", connection: connection)
+                    .id(store.hosts.first { $0.key == hostKey }?.enrollment)
                     .toolbar { SheetDoneButton() }
             } else {
                 Text("This host has no device management.").foregroundStyle(.secondary)
             }
+        }
+        .onChange(of: store.hosts.contains { $0.key == hostKey }) { _, exists in
+            if !exists { shell.sheet = nil }
         }
     }
 }

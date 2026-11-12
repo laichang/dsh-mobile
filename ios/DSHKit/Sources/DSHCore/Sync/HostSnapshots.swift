@@ -5,6 +5,7 @@ extension HostSync {
     /// One configured host: how to reach it and the key its cache rows use.
     public struct HostConfig: Sendable {
         public var key: String
+        public var enrollment: HostEnrollment { connection.enrollment }
         let connection: HostConnection
         public var name: String?
 
@@ -42,6 +43,7 @@ extension HostSync {
     }
 
     public struct HostStatus: Identifiable, Equatable, Sendable {
+        public let enrollment: HostEnrollment
         public var id: String { key }
         public var key: String
         public var name: String

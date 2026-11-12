@@ -2,7 +2,6 @@ import DSHCore
 import SwiftUI
 
 struct DeviceManagementView: View {
-    let hostKey: String
     let host: String
     let connection: any HostDeviceManagement
     @State private var list: [PairedDevice]?
@@ -51,7 +50,7 @@ struct DeviceManagementView: View {
                 Task {
                     do {
                         switch try await connection.revokeDevice(device) {
-                        case .thisDevice: actions.forget(hostKey)
+                        case .thisDevice(let origin): _ = actions.forget(origin)
                         case .remaining(let devices): list = devices
                         }
                         error = nil

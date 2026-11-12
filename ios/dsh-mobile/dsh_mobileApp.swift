@@ -22,7 +22,7 @@ struct dsh_mobileApp: App {
                     Button(role: .cancel) {} label: { Text("OK", tableName: "Hosts") }
                 } message: {
                     if let error = app.pairingRemovalError { Text(verbatim: error) }
-                    else { Text("\(app.revokedNotice ?? "") revoked this phone's access. To use it again, pair it again.", tableName: "Hosts") }
+                    else { Text("\(app.revokedNotice?.name ?? "") revoked this phone's access. To use it again, pair it again.", tableName: "Hosts") }
                 }
                 .sheet(isPresented: $app.showingScanner) {
                     ScannerView(mode: app.scannerMode, found: { app.openPairingCode($0) }, cancel: { app.showingScanner = false })

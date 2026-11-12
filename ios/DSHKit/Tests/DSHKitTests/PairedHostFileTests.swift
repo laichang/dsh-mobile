@@ -21,23 +21,23 @@ struct PairedHostFileTests {
         try store.save(a)
         try store.save(b)
         let original = try Data(contentsOf: file)
-        func credential(_ host: PairedHost) -> URL { dir.appending(path: host.tlsDeviceID!) }
-        for host in [a, b] { try Data(host.name.utf8).write(to: credential(host)) }
+        func credential(_ origin: HostEnrollment) -> URL { dir.appending(path: origin.tlsDeviceID) }
+        for host in [a, b] { try Data(host.name.utf8).write(to: credential(host.enrollment!)) }
         let pairing = Pairing(hosts: store)
 
         try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
         #expect(throws: CocoaError.self) {
-            try pairing.forget(cacheKey: a.cacheKey) { try FileManager.default.removeItem(at: credential($0)) }
+            try pairing.forget(a.enrollment!) { try FileManager.default.removeItem(at: credential($0)) }
         }
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
         #expect(try Data(contentsOf: file) == original)
-        for host in [a, b] { #expect(try Data(contentsOf: credential(host)) == Data(host.name.utf8)) }
+        for host in [a, b] { #expect(try Data(contentsOf: credential(host.enrollment!)) == Data(host.name.utf8)) }
 
-        try pairing.forget(cacheKey: a.cacheKey) { try FileManager.default.removeItem(at: credential($0)) }
-        #expect(!FileManager.default.fileExists(atPath: credential(a).path))
+        try pairing.forget(a.enrollment!) { try FileManager.default.removeItem(at: credential($0)) }
+        #expect(!FileManager.default.fileExists(atPath: credential(a.enrollment!).path))
         #expect(store.load() == [b])
         let survivor = try #require(store.load().first)
-        let key = credential(survivor), bridge = FakeHost(hostName: "other host")
+        let key = credential(survivor.enrollment!), bridge = FakeHost(hostName: "other host")
         let connection = HostConnection(endpoints: survivor.addresses, transport: { url in
             guard try Data(contentsOf: key) == Data(b.name.utf8) else { throw URLError(.userAuthenticationRequired) }
             return try await bridge.factory(url)
@@ -55,20 +55,20 @@ struct PairedHostFileTests {
         try store.save(a)
         let pairing = Pairing(hosts: store)
         #expect(throws: CocoaError.self) {
-            try pairing.forget(cacheKey: a.cacheKey) { _ in throw CocoaError(.fileReadNoPermission) }
+            try pairing.forget(a.enrollment!) { _ in throw CocoaError(.fileReadNoPermission) }
         }
         #expect(store.load().isEmpty)
         try store.save(b)
         let pending = try Data(contentsOf: file)
         try Data("invalid".utf8).write(to: file)
         for change in [{ try store.save(a) }, { try store.update(b) }, { try store.remove(id: a.id) },
-                       { try store.removeAll() }, { try store.acknowledgeRemoval(of: a) }] {
+                       { try store.removeAll() }, { try store.acknowledgeRemoval(of: a.enrollment!) }] {
             #expect(throws: DecodingError.self) { try change() }
             #expect(try Data(contentsOf: file) == Data("invalid".utf8))
         }
         try pending.write(to: file)
         var retried: [String] = []
-        try Pairing(hosts: store).forget(cacheKey: a.cacheKey) { retried.append($0.tlsDeviceID!) }
+        try Pairing(hosts: store).forget(a.enrollment!) { retried.append($0.tlsDeviceID) }
         #expect(retried == [a.tlsDeviceID!])
         #expect(store.load() == [b])
         try FileManager.default.removeItem(at: file)
