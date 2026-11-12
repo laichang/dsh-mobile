@@ -259,10 +259,10 @@
         "S12"
       ],
       "branch": "claude/s13-c0c5f78",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "fed19cf",
       "why": "Each component can ship on its own, and the two final implementations must still interoperate when deployed together.",
       "cuts": "Use the exact baseline `61b5416` and record the candidate revisions at both ends of every run. Exercise production client and bridge paths with test credentials. Use `protocol/fixtures`, `bridge/test/fixtures.test.ts`, `ios/DSHKit/Tests/DSHKitTests/GoldenFixturesTests.swift`, `scripts/check-fixtures-same` and `scripts/demo/round-trip.sh`. Roll code back in reverse dependency order, verifying that the remaining graph builds after each step; the bridge follows its own dependencies. When switching iOS builds, uninstall, reinstall and pair again.",
       "not": "",
@@ -417,6 +417,11 @@
       "date": "2026-11-12",
       "title": "S13 assigned",
       "body": "Branch `claude/s13-c0c5f78`, simulator `55FD1625-17A4-4739-A4E3-C480C79FDB04`, DSHM_HOME `~/.dshm/home-s13-55FD1625-17A4-4739-A4E3-C480C79FDB04`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S13)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S13 merged",
+      "body": "Merged as `fed19cf`; the plan/ rules hold on the merge commit. No open [human] items, so S13 is `done`."
     }
   ],
   "pending": []
