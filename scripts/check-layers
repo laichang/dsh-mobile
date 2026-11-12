@@ -87,6 +87,8 @@ for name, allowed in {**layers, **clients}.items():
                 reason = "raw transport, persistence or wire detail"
             if name == "DSHCore" and re.search(r"\.receive\(\s*\)", code):
                 reason = "Core must receive events through the transport dispatcher"
+            if name == "DSHCore" and file.parent.name == "Pairing" and re.search(r"\b(?:FileManager|FileHandle|Data\(contentsOf:)|\.write\(to:", code):
+                reason = "paired-host file I/O belongs to DSHPlatform"
             if reason:
                 errors.append(f"{file.relative_to(root)}:{lineno}: {reason}")
 if errors:

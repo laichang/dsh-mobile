@@ -41,6 +41,11 @@ with tempfile.TemporaryDirectory() as temp:
     persistence.write_text("import SwiftData\n")
     expect(check, "SwiftData outside DSHPlatform")
     persistence.unlink()
+    pairing = persistence.parent / "Pairing/PairedHosts.swift"
+    pairing.parent.mkdir()
+    pairing.write_text("let records = try Data(contentsOf: url)\n")
+    expect(check, "paired-host file I/O belongs to DSHPlatform")
+    pairing.unlink()
     shortcut = fixture / "ios/DSHKit/Sources/DSHFeatures/Shortcut.swift"
     shortcut.parent.mkdir(parents=True)
     shortcut.write_text("import DSHTransport\n")
