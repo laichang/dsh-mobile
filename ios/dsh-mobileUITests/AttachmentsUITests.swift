@@ -46,7 +46,8 @@ final class AttachmentsUITests: XCTestCase {
         XCTAssertTrue(photo.waitForExistence(timeout: 30), app.debugDescription)
         // The picker's cells report "not hittable" to XCUITest; a tap at the cell's centre works.
         photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-        XCTAssertTrue(chip(app, "photo.jpg").waitForExistence(timeout: 10), app.debugDescription)
+        // The picker dismisses before its out-of-process thumbnail transfer completes.
+        XCTAssertTrue(chip(app, "photo.jpg").waitForExistence(timeout: 60), app.debugDescription)
     }
 
     /// Picks `name` (e.g. "notes.txt") in the system document picker. The demo puts the files in
