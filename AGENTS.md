@@ -61,7 +61,7 @@ The scripts and the hooks hold the rules. When a script or a hook refuses, read 
 ### Close a plan
 
 - The user commits removal of the plan on main. The pre-commit hook runs `scripts/close-plan-simulators` against the committed registry and the live device list.
-- For a GitHub milestone, the hook closes the issues named by completed nodes and verifies that the milestone has zero open issues.
+- For a GitHub milestone, the hook closes the issues named by completed nodes. After it verifies zero open issues, it closes the milestone and confirms its state on GitHub.
 - If cleanup or GitHub synchronization fails, read the diagnostic, resolve the reported failure, and retry the close commit.
 
 ### Decisions that stay with the user

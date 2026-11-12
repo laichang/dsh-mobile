@@ -64,4 +64,9 @@ def sync(plan):
     remaining = [n for n, state in issues().items() if state == "open"]
     if remaining:
         raise ValueError(f"milestone {milestone} still has open issues: {sorted(remaining)}")
-    print(f"plan close: verified zero open issues in {repo} milestone {milestone}")
+    path = f"milestones/{milestone}"
+    if api(repo, path)["state"] != "closed":
+        api(repo, path, "--method", "PATCH", "-f", "state=closed")
+        if api(repo, path)["state"] != "closed":
+            raise ValueError(f"milestone {milestone} is still open after the close request")
+    print(f"plan close: verified zero open issues in closed {repo} milestone {milestone}")

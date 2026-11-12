@@ -22,7 +22,7 @@ The argument is the milestone, for example `M2`: $ARGUMENTS. With no argument, u
    - If a host installation or runtime requirement changes materially, include the target platforms, recommended approach and assumptions in the plan review. Record how the tracer will test each open assumption and what to do if it fails.
    - In `--why` of each slice, write the issues that it closes: "Closes #N". Each issue of the milestone is in one slice, or you tell the user why not.
    - Give a slice with `[ui]` items that have only `test:` pointers its demo: `--demo scripts/demo/<feature>.sh`.
-4. Run `scripts/plan lint` and `scripts/plan dag`.
+4. Run `scripts/plan lint --github-milestone "laichang/dsh-mobile#<milestone number>"` with the number selected in step 2. Resolve any binding mismatch before presenting the plan. Run `scripts/plan dag`.
 5. Report to the user, then stop:
    - the graph (`scripts/plan dag`), and one line for each tracer, spike and slice;
    - which issue goes where, and the questions that you have.
