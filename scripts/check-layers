@@ -73,9 +73,9 @@ for name, allowed in {**layers, **clients}.items():
                 debug[-1] = False
             elif code == "#endif" and debug:
                 debug.pop()
-            match = imports.search(code)
+            matches = list(imports.finditer(code))
             reason = "re-export attribute" if re.search(r"@_exported\b", code) else None
-            if match:
+            for match in matches:
                 module = match[1]
                 if module == "SwiftData" and name != "DSHPlatform":
                     reason = "SwiftData outside DSHPlatform"
@@ -83,7 +83,7 @@ for name, allowed in {**layers, **clients}.items():
                     reason = f"undeclared import {module}"
                 elif module == "DSHTestSupport" and name == "dsh-mobile" and not any(debug):
                     reason = "test support outside DEBUG"
-            if name in ("DSHFeatures", "dsh-mobile", "LiveActivity") and (low_level.search(code) or match and match[1] == "SwiftData"):
+            if name in ("DSHFeatures", "dsh-mobile", "LiveActivity") and (low_level.search(code) or any(m[1] == "SwiftData" for m in matches)):
                 reason = "raw transport, persistence or wire detail"
             if name == "DSHCore" and re.search(r"\.receive\(\s*\)", code):
                 reason = "Core must receive events through the transport dispatcher"
@@ -91,7 +91,7 @@ for name, allowed in {**layers, **clients}.items():
                 reason = "paired-host file I/O belongs to DSHPlatform"
             if name in ("DSHFeatures", "dsh-mobile") and ("HostConnectionError.bridge(" in code or "startAccessingSecurityScopedResource(" in code):
                 reason = "use Core commands and attachment readers"
-            if name in layers and (match and match[1] == "Speech" or re.search(r"\b(?:AVAudioSession|SpeechAnalyzer)\b", code)):
+            if name in layers and (any(m[1] == "Speech" for m in matches) or re.search(r"\b(?:AVAudioSession|SpeechAnalyzer)\b", code)):
                 reason = "speech recognition belongs to the iOS app adapter"
             if name == "DSHCore" and re.search(r"\b(?:enum (?:DebugLaunchOptions|DebugDeepLink|CJKEmphasis)|struct TranscriptBlocks|class TaskStore)\b", code):
                 reason = "presentation, debug launch options and test clients belong with their callers"

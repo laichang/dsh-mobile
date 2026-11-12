@@ -115,6 +115,7 @@ func pairing(_ link: String, _ host: PairedHost) throws -> (String, String, [Str
         fixture.write_text("""import DSHTransport
 public typealias EndpointList = [HostEndpoint?]
 public struct Probe {
+    public struct Nested { public var endpoints: [EndpointList] { [] } }
     public init(_ value: EndpointList) {}
     public var value: EndpointList { [] }
     public func result() -> HostEndpoint? { nil }
@@ -127,7 +128,7 @@ public enum Payload { case endpoint(HostEndpoint) }
                         "-emit-module-path", scratch / "Fixture.swiftmodule", *flags, fixture], check=True)
         seeded = leaks(export("Fixture", ["-I", str(scratch)], scratch))
         for symbol in ["Probe.init(_:)", "Probe.value", "Probe.result()", "Probe.subscript(_:)",
-                       "Payload.endpoint", "EndpointList"]:
+                       "Payload.endpoint", "EndpointList", "Probe.Nested.endpoints"]:
             if not any(line.startswith(symbol + " [") and line.endswith(" -> DSHTransport.HostEndpoint")
                        for line in seeded):
                 raise SystemExit(f"missing fixture leak: {symbol}\n" + "\n".join(seeded))
@@ -140,18 +141,17 @@ public enum Payload { case endpoint(HostEndpoint) }
     actual = leaks(rows)
     reference = root / "scripts/core-api" / (args.platform + ".txt")
     expected = reference.read_text().splitlines()
-    # When a leak is removed the external client should no longer compile its raw access.
-    for symbol, body in [
-        ("PairedHost.addresses", "func address(_ host: PairedHost) { _ = host.addresses.first?.webSocketURL() }"),
-        ("CachedTask.stateRaw", "func state(_ task: CachedTask) { _ = task.stateRaw }"),
+    if expected:
+        raise SystemExit(f"{reference}: the production API permits no exceptions")
+    for body, diagnostic in [
+        ("func address(_ host: PairedHost) { _ = host.addresses.first?.webSocketURL() }",
+         "'addresses' is inaccessible due to 'package' protection level"),
+        ("func state(_ task: CachedTask) { _ = task.stateRaw }", "cannot find type 'CachedTask' in scope"),
     ]:
         probe.write_text("import DSHCore\n" + body + "\n")
         result = subprocess.run(["xcrun", "swiftc", "-typecheck", *flags, probe], capture_output=True, text=True)
-        exposed = any(line.startswith(symbol + " [") for line in expected)
-        if (result.returncode == 0) != exposed:
-            raise SystemExit(f"{symbol} compiler exit {result.returncode}, allowlisted={exposed}\n{result.stderr}")
-        if symbol == "PairedHost.addresses" and "'addresses' is inaccessible due to 'package' protection level" not in result.stderr:
-            raise SystemExit(f"expected the endpoint access check to fail at host.addresses\n{result.stderr}")
+        if result.returncode == 0 or diagnostic not in result.stderr:
+            raise SystemExit(f"expected {diagnostic}\n{result.stderr}")
         print(f"{args.platform}: {body} compiler exit {result.returncode}")
     delta = difference(expected, actual)
     if delta:

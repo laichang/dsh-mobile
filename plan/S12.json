@@ -6,28 +6,48 @@
       "text": "Both macOS and iOS inventories have zero forbidden references and empty exception lists. The exported-API checker still rejects failing or incomplete dumps and initializer, result, property and nested-type leak fixtures. External clients read business snapshots; both the WebSocket-URL and CachedTask probes fail for the intended compiler diagnostic.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/check-core-api macos --self-test",
+        "cmd:scripts/check-core-api ios --self-test"
+      ]
     },
     {
       "tier": "auto",
       "text": "Run scripts/check-layers and scripts/check-layers-test against actual SwiftPM dependencies, source imports and Xcode targets. Verify no business target imports a foundation target, the widget only links DSHActivity and Release excludes fake and debug code.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/check-layers",
+        "cmd:scripts/check-layers-test",
+        "cmd:scripts/check-release-clean"
+      ]
     },
     {
       "tier": "auto",
       "text": "Run scripts/swift-test --package-path ios/DSHKit, the iOS simulator build, scripts/check-release-clean and scripts/check-docs. ARCHITECTURE.md describes the merged graph. Distinguish changes from failures already recorded at 61b5416.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test --package-path ios/DSHKit",
+        "cmd:scripts/xc build -destination 'generic/platform=iOS Simulator'",
+        "cmd:scripts/check-release-clean",
+        "cmd:scripts/check-docs"
+      ]
     },
     {
       "tier": "auto",
       "text": "The new iOS app against the bridge at 61b5416 completes Hello, Resume, ListTasks, approval and queue operations with negotiated capabilities. Verify the same-install offline/reconnect and revocation regression tests still pass.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/demo/baseline-ios-bridge.sh --baseline-bridge",
+        "cmd:scripts/demo/durable-list.sh",
+        "cmd:scripts/demo/revoke.sh"
+      ]
     }
   ]
 }

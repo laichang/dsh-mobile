@@ -107,7 +107,7 @@ Interrupt, model switch and follow-up messages take the same outbound path as an
 - Generated code is committed; `scripts/codegen --check` fails when regeneration changes a file. Xcode builds without a codegen toolchain, and protocol changes show in review.
 - Bridge: pnpm, pinned by `packageManager` (Node ≥ 24.9, as DSH requires); tests use `node:test`.
 - Swift: DSHCore wraps transport, protobuf and DSHPlatform storage. DSHFeatures uses Core and DSHActivity. The widget links only DSHActivity. Debug composition imports launch options and factories from DSHTestSupport. `scripts/swift-test` checks the layers before macOS tests.
-- `scripts/check-core-api macos` and `scripts/check-core-api ios` compile DSHCore and inspect its external signatures with the Swift API digester. A per-platform allowlist identifies the declaration and referenced type of each existing exposure. Adding a reference or leaving a repaired one in the allowlist fails the check.
+- `scripts/check-core-api macos` and `scripts/check-core-api ios` compile DSHCore and inspect its external signatures with the Swift API digester. Both platforms require empty exception lists. External clients can read domain snapshots and paired-host descriptions. Compiler probes reject raw transport addresses and SwiftData records.
 - Dependencies are pinned to exact versions (`ios/DSHKit/Package.swift`, `bridge/package.json`).
 
 ## 4. Bridge plugin (`bridge/`)
