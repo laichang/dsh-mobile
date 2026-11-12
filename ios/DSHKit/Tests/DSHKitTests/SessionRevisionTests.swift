@@ -2,6 +2,7 @@
 @testable import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
+import DSHPlatform
 import Foundation
 import Testing
 
@@ -21,7 +22,7 @@ import Testing
 
     @Test func followUpCanResumeAtTheStopTimestampWithoutARevision() throws {
         let connection = HostConnection(endpoint: .localBridge(), transport: FakeHost().factory)
-        let sync = HostSync(config: .init(key: "Mac", connection: connection), container: try TaskCache.container(inMemory: true))
+        let sync = HostSync(config: .init(key: "Mac", connection: connection), cache: try TaskCache(inMemory: true))
         let start = Date()
         let stop = start.addingTimeInterval(1)
         let task = CachedTask(hostKey: "Mac", taskID: "session", title: "First turn", createdAt: start)
@@ -40,7 +41,7 @@ import Testing
 
     @Test func laterTurnCanRunAtTheSameTimestampAndStaleReplayCannotFinishIt() throws {
         let connection = HostConnection(endpoint: .localBridge(), transport: FakeHost().factory)
-        let sync = HostSync(config: .init(key: "Mac", connection: connection), container: try TaskCache.container(inMemory: true))
+        let sync = HostSync(config: .init(key: "Mac", connection: connection), cache: try TaskCache(inMemory: true))
         let now = Date()
         let task = CachedTask(hostKey: "Mac", taskID: "one session", title: "First turn", createdAt: now)
         var snapshot = TaskSnapshot(taskID: task.taskID, title: task.title, state: .completed,

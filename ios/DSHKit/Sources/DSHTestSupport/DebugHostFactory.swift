@@ -27,6 +27,7 @@ public enum DebugHostFactory {
             FakeHostsSwitch.watch(switchable, wake: wake)
             return configs
         }
+        if let scenario = options.fakeScenario.flatMap(DurableHostScenario.init(rawValue:)) { return scenario.hosts() }
         if options.multipleFakeHosts {
             return ["Office Mac", "Home Mac"].enumerated().map { index, name in
                 let endpoint = HostEndpoint.localBridge(port: 47801 + index)

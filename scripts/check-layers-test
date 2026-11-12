@@ -31,6 +31,16 @@ with tempfile.TemporaryDirectory() as temp:
                                          '.target(name: "DSHTransport", dependencies: ["DSHCore"])'))
     expect(check, "DSHTransport: found")
     manifest.write_text(original)
+    platform = fixture / "ios/DSHKit/Sources/DSHPlatform/Leak.swift"
+    platform.parent.mkdir(parents=True)
+    platform.write_text("import DSHCore\n")
+    expect(check, "undeclared import DSHCore")
+    platform.unlink()
+    persistence = fixture / "ios/DSHKit/Sources/DSHCore/Persistence.swift"
+    persistence.parent.mkdir(parents=True)
+    persistence.write_text("import SwiftData\n")
+    expect(check, "SwiftData outside DSHPlatform")
+    persistence.unlink()
     shortcut = fixture / "ios/DSHKit/Sources/DSHFeatures/Shortcut.swift"
     shortcut.parent.mkdir(parents=True)
     shortcut.write_text("import DSHTransport\n")
@@ -42,7 +52,7 @@ with tempfile.TemporaryDirectory() as temp:
 
     shortcut.unlink()
     reader = fixture / "ios/DSHKit/Sources/DSHCore/Reader.swift"
-    reader.parent.mkdir(parents=True)
+    reader.parent.mkdir(parents=True, exist_ok=True)
     reader.write_text("let bytes = try await pipe.receive()\n")
     expect(check, "through the transport dispatcher")
 

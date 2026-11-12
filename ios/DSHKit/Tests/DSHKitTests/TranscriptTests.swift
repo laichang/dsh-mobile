@@ -3,7 +3,6 @@ import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
 import Foundation
-import SwiftData
 import Testing
 
 /// The Swift half of the transcript fixtures (the TS half: bridge/test/transcript.test.ts,

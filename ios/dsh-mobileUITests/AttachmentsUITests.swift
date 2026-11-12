@@ -83,6 +83,79 @@ final class AttachmentsUITests: XCTestCase {
             .matching(NSPredicate(format: "label == %@", name)).firstMatch
     }
 
+    private let durableNames = ["Home Mac", "Office Mac"]
+
+    private func launchDurable(_ scenario: String) -> XCUIApplication {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US",
+                               "-DSHMFakeBridge", "multi", "-DSHMFakeScenario", scenario]
+        app.launch()
+        return app
+    }
+
+    private func element(_ app: XCUIApplication, _ id: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(identifier: id).firstMatch
+    }
+
+    private func inspect(_ app: XCUIApplication, _ name: String, pending: Bool) {
+        if pending {
+            let sheet = element(app, "approval.sheet")
+            XCTAssertTrue(sheet.waitForExistence(timeout: 15), app.debugDescription)
+            sheet.swipeDown(velocity: .fast)
+            XCTAssertTrue(sheet.waitForNonExistence(timeout: 5), app.debugDescription)
+        }
+        let journal = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Journal on " + name)).firstMatch
+        XCTAssertTrue(journal.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(element(app, "session.message.user.photo").exists, app.debugDescription)
+    }
+
+    private func openDurable(_ app: XCUIApplication, _ name: String) {
+        openAllTasks(app)
+        let row = app.buttons.matching(identifier: "tasklist.row").matching(NSPredicate(format: "label CONTAINS %@", "Session on " + name)).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10), app.debugDescription)
+        row.tap()
+    }
+
+    func testCreateSessionsOnTwoHosts() throws {
+        try XCTSkipUnless(env["DSHM_DURABLE_HOSTS"] == "1", "run scripts/demo/durable-two-hosts.sh")
+        let app = launchDurable("durable")
+        for name in durableNames {
+            if name != durableNames.first { newSession(app) }
+            let picker = app.buttons["composer.host"]
+            XCTAssertTrue(picker.waitForExistence(timeout: 15))
+            if !picker.label.contains(name) { picker.tap(); app.buttons[name].tap() }
+            attachPhoto(app)
+            send(app, "Session on " + name)
+            inspect(app, name, pending: true)
+            XCTAssertTrue(element(app, "approval.pending").waitForExistence(timeout: 10))
+            send(app, "Queued for " + name, field: "session.followUp", send: "session.send")
+            XCTAssertEqual(element(app, "followup.queued").label, "Queued for " + name)
+        }
+        app.terminate()
+    }
+
+    func testRestoreSessionsOfflineAndReconnect() throws {
+        try XCTSkipUnless(env["DSHM_DURABLE_HOSTS"] == "1", "run scripts/demo/durable-two-hosts.sh")
+        var app = launchDurable("durable-offline")
+        for name in durableNames {
+            openDurable(app, name)
+            inspect(app, name, pending: true)
+            XCTAssertTrue(element(app, "approval.pending").exists)
+            XCTAssertEqual(element(app, "followup.queued").label, "Queued for " + name)
+        }
+        saveShot("durable-two-hosts-offline")
+        app.terminate()
+        app = launchDurable("durable-reconnected")
+        for name in durableNames {
+            openDurable(app, name)
+            XCTAssertEqual(waitForValue(element(app, "task.status"), in: ["completed"], timeout: 20), "completed")
+            inspect(app, name, pending: false)
+            XCTAssertFalse(element(app, "approval.pending").exists)
+            XCTAssertFalse(element(app, "followup.queued").exists)
+        }
+    }
+
     func testAttachOnePhotoAndSend() throws {
         let app = try launch(prompt: "What is in this photo?")
         attachPhoto(app)

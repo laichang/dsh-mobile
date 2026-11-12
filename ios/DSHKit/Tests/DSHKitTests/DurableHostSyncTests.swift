@@ -2,8 +2,8 @@
 @testable import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
+import DSHPlatform
 import Foundation
-import SwiftData
 import Testing
 
 @MainActor
@@ -21,8 +21,7 @@ struct DurableHostSyncTests {
     }
 
     private func cursor(_ url: URL, _ key: String) throws -> Int64? {
-        let context = ModelContext(try TaskCache.container(url: url))
-        return try context.fetch(FetchDescriptor<CachedHost>(predicate: #Predicate { $0.key == key })).first?.lastSeq
+        try CacheStorage(url: url).session(hostKey: key, name: key).host.lastSeq
     }
 
     private func until(_ condition: () -> Bool, sourceLocation: SourceLocation = #_sourceLocation) async throws {
@@ -41,19 +40,18 @@ struct DurableHostSyncTests {
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let url = dir.appendingPathComponent("cache.store")
-        let container = try TaskCache.container(url: url)
+        let cache = try TaskCache(url: url)
         let first = FakeHost(extraCapabilities: ["approvals.v1", "transcript.v1"])
         let second = FakeHost()
         var interrupt = false
         var rejected = 0
-        let a = HostSync(config: config("a", first), container: container) { context in
+        let a = HostSync(config: config("a", first), cache: cache) {
             if interrupt {
                 rejected += 1
                 throw CocoaError(.fileWriteOutOfSpace)
             }
-            try context.save()
         }
-        let b = HostSync(config: config("b", second), container: container)
+        let b = HostSync(config: config("b", second), cache: cache)
         let backoff: (Duration, Duration) = (.milliseconds(20), .milliseconds(50))
         for link in [a, b] { link.start(firstConnectDelay: .zero, backoff: backoff) }
         try await until { a.reachability == .online && b.reachability == .online }
@@ -113,8 +111,8 @@ struct DurableHostSyncTests {
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let url = dir.appendingPathComponent("cache.store")
-        let original = FakeHost()
-        let replacement = FakeHost()
+        let original = FakeHost(extraCapabilities: ["approvals.v1", "transcript.v1"])
+        let replacement = FakeHost(extraCapabilities: ["approvals.v1", "transcript.v1"])
         let store = TaskListStore(cache: try TaskCache(url: url), hosts: [config("a", original)])
         store.foreground()
         await waitForStore("online") { store.hosts.first?.reachability == .online }
@@ -127,14 +125,50 @@ struct DurableHostSyncTests {
         reset.logReset.logID = replacement.logID
         original.emit(reset, taskID: "")
         try await until {
-            guard let database = try? TaskCache.container(url: url) else { return false }
-            return (try? ModelContext(database).fetch(FetchDescriptor<CachedHost>()).first?.logID) == replacement.logID
+            (try? CacheStorage(url: url).session(hostKey: "a", name: "a").host.logID) == replacement.logID
         }
+        // A resume at zero would fetch this prefix, which is outside the committed batch.
+        var prefix = chunk(1, "already discarded")
+        prefix.assistantChunk.taskID = "prefix"
+        replacement.emit(prefix, taskID: "prefix")
+        replacement.emit(prefix, taskID: "prefix")
+        var summary = Dshm_V1_Event()
+        summary.taskUpserted.task.taskID = "finished"
+        summary.taskUpserted.task.state = .completed
+        summary.taskUpserted.task.sessionRevision = 7
+        summary.taskUpserted.task.updatedAtMs = 500
+        var message = Dshm_V1_Event()
+        message.userMessage.taskID = "finished"
+        message.userMessage.messageID = "m1"
+        message.userMessage.text = "once"
+        var pending = Dshm_V1_Event()
+        pending.approvalPending.taskID = "finished"
+        pending.approvalPending.id = "one approval"
+        for event in [summary, message, pending] {
+            original.emit(event, taskID: "finished")
+            replacement.emit(event, taskID: "finished")
+        }
+        let finished = CachedTask.key(hostKey: "a", taskID: "finished")
+        await waitForStore("pending approval before shutdown") { store.task(finished)?.approvals.count == 1 }
+        store.markRead(finished)
         store.background()
+        let saved = try CacheStorage(url: url).session(hostKey: "a", name: "a").host
+        #expect(saved.needsReconciliation)
+        #expect(saved.lastSeq == 5)
+        for event in [message, pending] { replacement.emit(event, taskID: "finished") }
         let reopened = TaskListStore(cache: try TaskCache(url: url), hosts: [config("a", replacement)])
         reopened.foreground()
-        defer { reopened.background() }
         await waitForStore("resume on the already saved log ID") { reopened.hosts.first?.reachability == .online }
         #expect(reopened.task(key)?.state == .failed)
+        let row = try #require(reopened.task(finished))
+        #expect(row.blocks.followUpCount == 1)
+        #expect(row.approvals.map(\.id) == ["one approval"])
+        #expect(row.sessionRevision == 7)
+        #expect(!row.unread)
+        #expect(reopened.task("a\nprefix") == nil)
+        reopened.background()
+        let persisted = try CacheStorage(url: url).session(hostKey: "a", name: "a").host
+        #expect(!persisted.needsReconciliation)
+        #expect(persisted.lastSeq == Int64(replacement.head))
     }
 }

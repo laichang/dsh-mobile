@@ -13,7 +13,8 @@ layers = {
     "DSHActivity": set(),
     "DSHTransport": {"DSHProtocol"},
     "DSHProtocol": {"SwiftProtobuf"},
-    "DSHCore": {"DSHTransport", "DSHProtocol", "SwiftProtobuf"},
+    "DSHPlatform": set(),
+    "DSHCore": {"DSHPlatform", "DSHTransport", "DSHProtocol", "SwiftProtobuf"},
     "DSHFeatures": {"DSHCore", "DSHActivity"},
     "DSHTestSupport": {"DSHCore", "DSHFeatures", "DSHProtocol", "DSHTransport", "SwiftProtobuf"},
 }
@@ -76,7 +77,9 @@ for name, allowed in {**layers, **clients}.items():
             reason = "re-export attribute" if re.search(r"@_exported\b", code) else None
             if match:
                 module = match[1]
-                if (module.startswith("DSH") or module in {"SwiftProtobuf", "SystemCallbackDoubles"}) and module not in allowed:
+                if module == "SwiftData" and name != "DSHPlatform":
+                    reason = "SwiftData outside DSHPlatform"
+                elif (module.startswith("DSH") or module in {"SwiftProtobuf", "SystemCallbackDoubles"}) and module not in allowed:
                     reason = f"undeclared import {module}"
                 elif module == "DSHTestSupport" and name == "dsh-mobile" and not any(debug):
                     reason = "test support outside DEBUG"

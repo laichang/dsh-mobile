@@ -1,25 +1,25 @@
 import DSHTransport
 import DSHProtocol
 import Foundation
-import SwiftData
+import DSHPlatform
 
 /// Serializes one host's reconnects and saves its replay cursor with the rows it covers.
 @MainActor
 public final class HostSync {
     package let key: String
-    private let connection: HostConnection
+    let connection: HostConnection
     package var commands: any HostCommands { connection }
     package var endpointDescription: String { connection.endpoint.description }
     package func uses(_ config: HostConfig) -> Bool { connection === config.connection }
     package func supports(_ capability: HostCapability) -> Bool { capabilities?.contains(capability.name) == true }
-    private let commit: (ModelContext) throws -> Void
-    private let context: ModelContext
-    private let host: CachedHost
+    private let beforeSave: () throws -> Void
+    let storage: HostStorage
+    let host: CachedHost
     package var name: String { host.name }
     private(set) var capabilities: [String]?
     package private(set) var reachability: Reachability = .connecting
-    private var address: HostEndpoint?
-    private var addressFailures: [AddressFailure] = []
+    var address: HostEndpoint?
+    var addressFailures: [AddressFailure] = []
     private var loop: Task<Void, Never>?
     private var shutdown: Task<Void, Never>?
     private var events: Task<Void, Never>?
@@ -34,22 +34,13 @@ public final class HostSync {
     package var revoked: () -> Void = {}
     package var returnedDraft: (String, String) -> Void = { _, _ in }
 
-    init(config: HostConfig, container: ModelContainer,
-         commit: @escaping (ModelContext) throws -> Void = { try $0.save() }) {
-        self.commit = commit
+    package init(config: HostConfig, cache: TaskCache, beforeSave: @escaping () throws -> Void = {}) {
+        self.beforeSave = beforeSave
         key = config.key
         connection = config.connection
-        context = ModelContext(container)
-        context.autosaveEnabled = false
-        let hostKey = config.key
-        let descriptor = FetchDescriptor<CachedHost>(predicate: #Predicate { $0.key == hostKey })
-        if let record = try? context.fetch(descriptor).first {
-            host = record
-            if record.lastConnectedAt == nil, let name = config.name { record.name = name }
-        } else {
-            host = CachedHost(key: config.key, name: config.name ?? config.connection.endpoint.description)
-            context.insert(host)
-        }
+        storage = cache.storage.session(hostKey: key, name: config.name ?? connection.endpoint.description)
+        host = storage.host
+        if host.lastConnectedAt == nil, let name = config.name { host.name = name }
         saveNow()
     }
 
@@ -301,11 +292,11 @@ public final class HostSync {
             if !task.approvals.contains(where: { $0.id == approval.id }) { task.approvals.append(approval) }
         case .approvalResolved(let taskID, let id):
             let key = CachedTask.key(hostKey: self.key, taskID: taskID)
-            if let task = try? context.fetch(FetchDescriptor<CachedTask>(predicate: #Predicate { $0.key == key })).first {
+            if let task = storage.task(key: key) {
                 // Count each pending approval once, when it is resolved.
                 if task.approvals.contains(where: { $0.id == id }) { task.approvalsAnswered += 1 }
                 task.approvals.removeAll { $0.id == id }
-                if task.approvalOnly && task.approvals.isEmpty { context.delete(task) }
+                if task.approvalOnly && task.approvals.isEmpty { storage.delete(task) }
             }
         case .logReset:
             break
@@ -323,10 +314,10 @@ public final class HostSync {
             let task = taskRecord(taskID: snapshot.taskID, title: snapshot.title)
             merge(snapshot, into: task)
         }
-        for task in cachedTasks()
+        for task in storage.tasks()
         where !known.contains(task.taskID) {
             if task.approvalOnly {
-                context.delete(task)
+                storage.delete(task)
                 continue
             }
             guard !task.state.isTerminal, task.logID != listing.logID else { continue }
@@ -386,7 +377,7 @@ public final class HostSync {
     /// The user saw this session as it is now. A finished session loses its unread mark
     /// until the host reports a newer change. Stored in the cache, on this phone only.
     package func markRead(_ key: String) {
-        guard let task = try? context.fetch(FetchDescriptor<CachedTask>(predicate: #Predicate { $0.key == key })).first,
+        guard let task = storage.task(key: key),
               task.state.isTerminal, task.readThrough.map({ $0 < task.updatedAt }) ?? true else { return }
         task.readThrough = task.updatedAt
         scheduleSave()
@@ -414,21 +405,16 @@ public final class HostSync {
 
     // MARK: - Cache
 
-    private func cachedTasks() -> [CachedTask] {
-        let hostKey = key
-        return (try? context.fetch(FetchDescriptor<CachedTask>(predicate: #Predicate { $0.hostKey == hostKey }))) ?? []
-    }
-
     private func taskRecord(taskID: String, title: String) -> CachedTask {
         let hostKey = self.key
         let key = CachedTask.key(hostKey: hostKey, taskID: taskID)
-        if let task = try? context.fetch(FetchDescriptor<CachedTask>(predicate: #Predicate { $0.key == key })).first {
+        if let task = storage.task(key: key) {
             return task
         }
         // Until the host's summary arrives: sorted as new, and any host state is newer.
         let task = CachedTask(hostKey: hostKey, taskID: taskID, title: title, createdAt: Date())
         task.updatedAt = .distantPast
-        context.insert(task)
+        storage.insert(task)
         return task
     }
 
@@ -451,7 +437,7 @@ public final class HostSync {
     }
 
     private func flush() throws {
-        if context.hasChanges { try commit(context) }
+        try storage.flush(beforeSave: beforeSave)
     }
 
     package typealias UploadProgress = @MainActor @Sendable (UUID, Result<Double, any Error>) -> Void
@@ -491,7 +477,7 @@ public final class HostSync {
     /// The follow-up's row gets the thumbnails of its images, now or when its `UserMessage` arrives.
     private func keepThumbnails(_ sent: [MessageAttachment], messageID: String, taskKey: String) {
         let rowID = TranscriptItem.userMessageID(messageID)
-        guard let task = try? context.fetch(FetchDescriptor<CachedTask>(predicate: #Predicate { $0.key == taskKey })).first else { return }
+        guard let task = storage.task(key: taskKey) else { return }
         var blocks = structuredTranscript(of: task)
         guard var item = blocks.items.first(where: { $0.id == rowID }) else {
             pendingThumbnails[taskKey + "\n" + rowID] = sent
@@ -506,14 +492,14 @@ public final class HostSync {
         }
     }
 
-    private func structuredTranscript(of task: CachedTask) -> StructuredTranscript {
+    func structuredTranscript(of task: CachedTask) -> StructuredTranscript {
         if let cached = structuredTranscripts[task.key] { return cached }
         let decoded = task.structuredTranscript
         structuredTranscripts[task.key] = decoded
         return decoded
     }
 
-    private func timeline(of task: CachedTask) -> MilestoneTimeline {
+    func timeline(of task: CachedTask) -> MilestoneTimeline {
         if let cached = timelines[task.key] { return cached }
         let decoded = task.milestones
         timelines[task.key] = decoded
@@ -534,31 +520,4 @@ public final class HostSync {
         saveNow()
     }
 
-    package func status(named name: String) -> HostStatus {
-        .init(key: key, name: name, reachability: reachability, lastConnectedAt: host.lastConnectedAt,
-              channelName: connection.channelName, capabilities: capabilities ?? [], address: address,
-              addressFailures: addressFailures)
-    }
-
-    package func rows(hostName: String) -> [TaskRow] {
-        cachedTasks().compactMap { t in
-            let supportsApprovals = capabilities?.contains(DSHProtocolInfo.approvalsCapability)
-            if t.approvalOnly && supportsApprovals == false { return nil }
-            return TaskRow(
-                key: t.key, hostKey: t.hostKey, hostName: hostName, taskID: t.taskID,
-                title: t.title, state: t.state, message: t.message, transcript: t.transcript,
-                createdAt: t.createdAt, updatedAt: t.updatedAt,
-                latestReply: t.latestReply, sessionRevision: t.sessionRevision.map(UInt64.init), externalSession: t.externalSession,
-                approvalOnly: t.approvalOnly, approvals: supportsApprovals == false ? [] : t.approvals,
-                milestones: timeline(of: t),
-                modelSelection: t.modelSelectionData.flatMap { (try? Dshm_V1_ModelSelection(serializedBytes: $0)).map(ModelSelection.init) },
-                workspace: t.workspace, unread: t.state.isTerminal && (t.readThrough.map { $0 < t.updatedAt } ?? true),
-                approvalsAnswered: t.approvalsAnswered,
-                blocks: capabilities?.contains(DSHProtocolInfo.transcriptCapability) == false
-                    ? structuredTranscript(of: t).userMessagesOnly : structuredTranscript(of: t),
-                turnStartedAt: t.turnStartedAt,
-                queue: t.queueData.isEmpty ? [] : t.followUpQueue.messages, attachments: t.sentAttachments,
-                failureCode: t.failureCode)
-        }
-    }
 }

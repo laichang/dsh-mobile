@@ -358,7 +358,7 @@ public final class FakeHost: Sendable {
     private let incompatibleDsh: (installed: String, supported: String)?
     /// Task ids are unique across FakeHost instances (like DSH session ids), so a task cached by
     /// an earlier app launch never collides with a new one that happens to be numbered the same.
-    private let taskIDPrefix = "fake-\(UUID().uuidString.prefix(8).lowercased())-task"
+    private let taskIDPrefix: String
     private let script: FakeBridge.Script
     /// Capabilities this host adds to the base ones (for example `drawer.v1`).
     private let extraCapabilities: [String]
@@ -438,7 +438,9 @@ public final class FakeHost: Sendable {
                 incompatibleDsh: (installed: String, supported: String)? = nil,
                 seed: [Dshm_V1_TaskSummary] = [], extraCapabilities: [String] = [],
                 approvals: [FakeBridge.PendingApproval] = [], pickers: FakeBridge.Pickers? = nil,
-                devices: FakeDevices? = nil, journals: [String: Dshm_V1_SessionPage] = [:]) {
+                devices: FakeDevices? = nil, journals: [String: Dshm_V1_SessionPage] = [:],
+                taskIDPrefix: String = "fake-\(UUID().uuidString.prefix(8).lowercased())-task") {
+        self.taskIDPrefix = taskIDPrefix
         self.pickers = pickers
         self.journals = journals
         self.incompatibleDsh = incompatibleDsh
@@ -642,6 +644,7 @@ public final class FakeHost: Sendable {
                 bridge.deliver(Self.response(id, .taskCreated(created)))
                 var summary = Dshm_V1_TaskSummary()
                 summary.taskID = taskID
+                if let journal = journals[taskID] { summary.sessionRevision = journal.throughSeq }
                 summary.title = create.prompt
                 summary.state = .running
                 summary.createdAtMs = Self.nowMs()
