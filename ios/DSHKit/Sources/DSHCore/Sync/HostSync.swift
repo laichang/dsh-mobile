@@ -53,9 +53,10 @@ public final class HostSync {
         saveNow()
     }
 
-    package func start(firstConnectDelay: Duration, backoff: (initial: Duration, max: Duration)) {
+    package func start(firstConnectDelay: Duration, backoff: (initial: Duration, max: Duration),
+                       eventStream: AsyncStream<HostEvent>? = nil) {
         if events == nil {
-            let stream = connection.events
+            let stream = eventStream ?? connection.events
             events = Task { [weak self] in
                 for await event in stream {
                     guard let self else { break }

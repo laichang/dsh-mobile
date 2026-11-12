@@ -181,8 +181,7 @@ private final class OpenedTransport: Sendable {
     func close() async { await transport.withLock { $0 }?.close() }
 }
 
-/// One connection to one host's bridge. It correlates requests with responses and sends frames
-/// in order. The store owns reconnect policy and the resume cursor.
+/// One connection to one host's bridge. It negotiates Hello and maps host commands and events. The store owns reconnect policy and the resume cursor.
 ///
 /// A host can have more than one address (LAN, Tailscale). Each connect tries them one at a
 /// time, the address that worked last first, each with `attemptTimeout`.
@@ -211,14 +210,10 @@ public actor HostConnection {
     /// The last error of each address from the last connect that failed; empty after one that worked.
     public private(set) var addressFailures: [AddressFailure] = []
 
-    private var transport: (any BridgeTransport)?
-    private var outbox: OrderedWriter?
+    private var dispatcher: FrameDispatcher?
     private var connecting: Task<Void, any Error>?
-    /// Bumped per transport, so a finished receive loop never tears down a newer connection.
-    private var generation = 0
-    private var receiveLoop: Task<Void, Never>?
-    private var nextRequestID: UInt64 = 1
-    private var pending: [UInt64: CheckedContinuation<Dshm_V1_Response, any Error>] = [:]
+    package typealias EventDelivery = @Sendable (isolated HostConnection, Dshm_V1_Event, FrameDispatcher) async -> Void
+    private let deliverEvent: EventDelivery
     private var disconnectWaiters: [CheckedContinuation<Void, Never>] = []
     private let eventContinuation: AsyncStream<HostEvent>.Continuation
 
@@ -253,12 +248,14 @@ public actor HostConnection {
     package init(endpoints: [HostEndpoint], channelName: String = "In-process", transport: @escaping BridgeTransportFactory,
                 attemptTimeout: Duration = HostConnection.defaultAttemptTimeout,
                 probe: PortProbe? = nil,
+                deliverEvent: @escaping EventDelivery = { host, event, session in host.yield(event, from: session) },
                 onAddressesChange: (@Sendable ([HostEndpoint]) -> Void)? = nil) {
         precondition(!endpoints.isEmpty, "a host connection needs at least one address")
         self.endpoint = endpoints[0]
         self.endpoints = endpoints
         self.addresses = endpoints
         self.attemptTimeout = attemptTimeout
+        self.deliverEvent = deliverEvent
         self.probe = probe
         self.onAddressesChange = onAddressesChange
         self.channelName = channelName
@@ -266,12 +263,12 @@ public actor HostConnection {
         (events, eventContinuation) = AsyncStream.makeStream(of: HostEvent.self)
     }
 
-    public var isConnected: Bool { transport != nil && connecting == nil }
+    public var isConnected: Bool { dispatcher != nil && connecting == nil }
 
     /// Opens the transport and exchanges Hello.
     public func connect() async throws {
         if let connecting { return try await connecting.value }
-        if transport != nil { return }
+        if dispatcher != nil { return }
         let attempt = Task { try await self.open() }
         connecting = attempt
         defer { if connecting == attempt { connecting = nil } }
@@ -367,13 +364,13 @@ public actor HostConnection {
             await t.close()
             throw CancellationError()
         }
-        generation += 1
-        let gen = generation
-        transport = t
-        outbox = OrderedWriter(transport: t) { error in
-            await self.teardown(generation: gen, cause: error)
+        let session = FrameDispatcher(transport: t) { [weak self] session, event in
+            guard let self else { return }
+            await self.deliverEvent(self, event, session)
+        } onClose: { [weak self] session, error in
+            await self?.didClose(session, cause: error)
         }
-        receiveLoop = Task { await self.receive(from: t, generation: gen) }
+        dispatcher = session
         do {
             var hello = Dshm_V1_Hello()
             hello.protocolVersion = DSHProtocolInfo.version
@@ -390,13 +387,12 @@ public actor HostConnection {
                 throw HostConnectionError.bridgeUpdateRequired(version: theirs.dshVersion, supported: theirs.supportedDshRange)
             }
             try Task.checkCancellation()
-            guard gen == generation, transport != nil else { throw HostConnectionError.disconnected }
+            guard dispatcher === session else { throw HostConnectionError.disconnected }
             capabilities = theirs.capabilities
             deviceRevoked = false
         } catch {
-            let failure = gen == generation ? refusal(error) : error
-            await teardown(generation: gen)
-            throw failure
+            await session.close()
+            throw error
         }
     }
 
@@ -466,12 +462,6 @@ public actor HostConnection {
             throw HostConnectionError.unexpectedResponse
         }
         return uploadID
-    }
-
-    public func listWorkspaces() async throws -> WorkspaceList {
-        let response = try await request(.listWorkspaces(.init()))
-        guard case .workspaceList(let list)? = response.body else { throw HostConnectionError.unexpectedResponse }
-        return WorkspaceList(defaultPath: list.defaultPath, recentPaths: list.recentPaths)
     }
 
     public func interrupt(taskID: String) async throws {
@@ -597,91 +587,52 @@ public actor HostConnection {
 
     /// Returns once the current transport is gone (immediately if there is none).
     public func waitUntilDisconnected() async {
-        if transport == nil { return }
+        if dispatcher == nil { return }
         await withCheckedContinuation { disconnectWaiters.append($0) }
     }
 
     public func disconnect() async {
         connecting?.cancel()
         connecting = nil
-        generation += 1
-        await teardown(generation: generation)
+        if let session = dispatcher {
+            didClose(session, cause: FrameDispatcher.Failure.disconnected)
+            await session.close()
+        }
     }
 
-    // MARK: - Internals
+    private static func domainError(_ error: any Error) -> any Error {
+        switch error {
+        case FrameDispatcher.Failure.receive(let cause):
+            return isDeviceRefusal(cause) ? HostConnectionError.deviceRevoked : HostConnectionError.disconnected
+        case FrameDispatcher.Failure.disconnected: return HostConnectionError.disconnected
+        default: return isDeviceRefusal(error) ? HostConnectionError.deviceRevoked : error
+        }
+    }
 
-    private func teardown(generation gen: Int, cause: (any Error)? = nil) async {
-        guard gen == generation, let t = transport else { return }
-        transport = nil
-        outbox?.stop()
-        outbox = nil
-        receiveLoop?.cancel()
-        receiveLoop = nil
-        if let cause { _ = refusal(cause) }
-        failPending(deviceRevoked ? HostConnectionError.deviceRevoked : cause ?? HostConnectionError.disconnected)
-        let waiters = disconnectWaiters
-        disconnectWaiters = []
-        for waiter in waiters { waiter.resume() }
-        await t.close()
+    private func didClose(_ session: FrameDispatcher, cause: any Error) {
+        guard dispatcher === session else { return }
+        dispatcher = nil
+        _ = refusal(Self.domainError(cause))
+        for waiter in disconnectWaiters { waiter.resume() }
+        disconnectWaiters.removeAll()
     }
 
     func request(_ body: Dshm_V1_Request.OneOf_Body) async throws -> Dshm_V1_Response {
         try Task.checkCancellation()
-        guard let outbox else { throw HostConnectionError.notConnected }
-        let id = nextRequestID
-        nextRequestID += 1
-        var frame = Dshm_V1_Frame()
-        var request = Dshm_V1_Request()
-        request.id = id
-        request.body = body
-        frame.request = request
-        let bytes = try frame.serializedBytes() as Data
-        let response = try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { continuation in
-                pending[id] = continuation
-                outbox.send(bytes)
-            }
-        } onCancel: {
-            Task { await self.resolve(id, with: .failure(CancellationError())) }
+        guard let dispatcher else { throw HostConnectionError.notConnected }
+        let response: Dshm_V1_Response
+        do {
+            response = try await dispatcher.request(body)
+        } catch {
+            throw Self.domainError(error)
         }
         if case .error(let e)? = response.body { throw HostConnectionError.bridge(code: e.code, message: e.message) }
         return response
     }
 
-    private func resolve(_ id: UInt64, with result: Result<Dshm_V1_Response, any Error>) {
-        pending.removeValue(forKey: id)?.resume(with: result)
-    }
-
-    private func failPending(_ error: any Error) {
-        let waiting = pending
-        pending = [:]
-        for continuation in waiting.values { continuation.resume(throwing: error) }
-    }
-
-    private func receive(from transport: any BridgeTransport, generation gen: Int) async {
-        while !Task.isCancelled {
-            let frame: Dshm_V1_Frame
-            do {
-                let bytes = try await transport.receive()
-                frame = try Dshm_V1_Frame(serializedBytes: bytes)
-            } catch {
-                // A close 4003 here is the host revoking this device (bridge/src/server.ts).
-                if gen == generation, Self.isDeviceRefusal(error) { deviceRevoked = true }
-                break
-            }
-            guard gen == generation else { break }
-            switch frame.kind {
-            case .response(let response)?:
-                resolve(response.requestID, with: .success(response))
-            case .event(let event)?:
-                if let e = Self.taskEvent(event.body) {
-                    eventContinuation.yield(HostEvent(hostSeq: event.hostSeq, e))
-                }
-            case .request?, nil:
-                break
-            }
-        }
-        await teardown(generation: gen)
+    package func yield(_ event: Dshm_V1_Event, from session: FrameDispatcher) {
+        guard dispatcher === session, let mapped = Self.taskEvent(event.body) else { return }
+        eventContinuation.yield(HostEvent(hostSeq: event.hostSeq, mapped))
     }
 
     private static func taskEvent(_ body: Dshm_V1_Event.OneOf_Body?) -> TaskEvent? {
