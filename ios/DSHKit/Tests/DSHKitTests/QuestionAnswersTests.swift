@@ -80,7 +80,9 @@ import Testing
         #expect(store.task(key)?.drawerMark == .waiting)
         #expect(store.canAnswerQuestions(hostKey: try #require(store.task(key)).hostKey))
 
-        try await store.answerQuestion(question, hostKey: try #require(store.task(key)).hostKey, typed: " 用去年的模板 ")
+        store.composer.sessionDrafts[key] = " 用去年的模板 "
+        try await store.submitDraft(for: #require(store.task(key)), answering: question)
+        #expect(store.composer.sessionDrafts[key] == nil)
         let given = try #require(host.questionAnswers.last)
         #expect(given.answers.map(\.questionID) == ["q1"])
         #expect(given.answers.map(\.custom) == ["用去年的模板"])

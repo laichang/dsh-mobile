@@ -209,6 +209,21 @@ public final class TaskListStore {
         }
     }
 
+    public private(set) var sendingSessionMessages: Set<String> = []
+
+    public func submitDraft(for row: TaskRow, answering question: AgentQuestion?) async throws {
+        guard let text = composer.sessionDrafts[row.key],
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        if let question {
+            guard sendingSessionMessages.insert(row.key).inserted else { throw MessageSendError.sendInProgress }
+            defer { sendingSessionMessages.remove(row.key) }
+            try await answerQuestion(question, hostKey: row.hostKey, typed: text)
+        } else {
+            try await sendFollowUp(text, for: row)
+        }
+        if composer.sessionDrafts[row.key] == text { composer.sessionDrafts[row.key] = nil }
+    }
+
     /// Sends `text` into the DSH session of `row`. The user message and the new turn arrive as host
     /// events, so the page shows them in order, and a reconnect replays them. While the task
     /// runs, the message waits in its queue (`QUEUE`): the next turn, unless the user sends it now.
@@ -221,13 +236,12 @@ public final class TaskListStore {
             throw HostConnectionError.notConnected
         }
         let target = AttachTarget.followUp(taskKey: row.key)
-        guard composer.attachmentsCanSend(on: target) else {
-            throw HostConnectionError.bridge(code: "upload/too-large",
-                                             message: "Remove the files larger than \(Attachments.sizeText(Attachments.maxBytes)).")
-        }
-        try await link.sendFollowUp(trimmed, for: row, attachments: composer.attachments(on: target).map(\.attachment),
+        guard sendingSessionMessages.insert(row.key).inserted else { throw MessageSendError.sendInProgress }
+        defer { sendingSessionMessages.remove(row.key) }
+        let files = composer.attachments(on: target).map(\.attachment)
+        try await link.sendFollowUp(trimmed, for: row, attachments: files,
                                     progress: composer.uploadProgress(on: target))
-        composer.setAttachments([], on: target)
+        composer.consume(files, on: target)
     }
 
     /// "立即发送": the waiting message goes in at the next step of the running turn.

@@ -55,6 +55,7 @@ extension HostConnection: HostCommands {
     /// Starts a task; its output arrives on `events`.
     public func createTask(prompt: String, selection: ModelSelection? = nil, workspace: String? = nil,
                            uploadIDs: [String] = []) async throws -> String {
+        guard uploadIDs.count <= Attachments.maxCount else { throw MessageSendError.tooMany }
         var create = Dshm_V1_CreateTask()
         create.prompt = prompt
         create.uploadIds = uploadIDs
@@ -82,11 +83,10 @@ extension HostConnection: HostCommands {
     public func upload(_ file: FileAttachment,
                        progress: @escaping @MainActor @Sendable (Double) -> Void = { _ in }) async throws -> String {
         guard capabilities.contains(DSHProtocolInfo.attachmentsCapability) else {
-            throw HostConnectionError.bridge(code: "upload/unavailable", message: "This host cannot take attachments.")
+            throw MessageSendError.unavailable
         }
         guard !file.isTooLarge else {
-            throw HostConnectionError.bridge(code: "upload/too-large",
-                                             message: "\(file.name) is larger than \(Attachments.sizeText(Attachments.maxBytes)).")
+            throw MessageSendError.tooLarge(file.name)
         }
         let uploadID = UUID().uuidString.lowercased()
         var begin = Dshm_V1_UploadBegin()
@@ -126,6 +126,7 @@ extension HostConnection: HostCommands {
     @discardableResult
     public func sendMessage(taskID: String, text: String, mode: FollowUpMode = .steer,
                             uploadIDs: [String] = []) async throws -> String {
+        guard uploadIDs.count <= Attachments.maxCount else { throw MessageSendError.tooMany }
         var message = Dshm_V1_SendMessage()
         message.taskID = taskID
         message.text = text

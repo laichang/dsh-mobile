@@ -12,6 +12,7 @@ public final class TaskComposer {
         self.hostKey = hostKey
     }
 
+    public var sessionDrafts: [String: String] = [:]
     public var prompt: String
     /// The files on composer 01, in order: sent to the host before the task, then dropped.
     public private(set) var newTaskAttachments: [ComposerAttachment] = []
@@ -88,6 +89,11 @@ public final class TaskComposer {
         }
     }
 
+    func consume(_ files: [FileAttachment], on target: AttachTarget) {
+        let sent = Set(files.map(\.id))
+        setAttachments(attachments(on: target).filter { !sent.contains($0.id) }, on: target)
+    }
+
     /// Whether a composer's files can go: none is over the limit.
     func attachmentsCanSend(on target: AttachTarget) -> Bool {
         !attachments(on: target).contains { $0.status == .tooLarge }
@@ -102,6 +108,7 @@ public final class TaskComposer {
     @discardableResult
     func send(on link: HostSync, waitOnline: (HostSync) async -> Bool, hostName: () -> String) async -> String? {
         let text = prompt
+        let files = newTaskAttachments.map(\.attachment)
         let selection = selections[link.key]
         let workspace = workspaces[link.key]
         isSending = true
@@ -118,10 +125,10 @@ public final class TaskComposer {
         }
         do {
             let key = try await link.createTask(prompt: text, selection: selection, workspace: workspace,
-                                                attachments: newTaskAttachments.map(\.attachment),
+                                                attachments: files,
                                                 progress: uploadProgress(on: .composer))
-            prompt = ""
-            newTaskAttachments = []
+            if prompt == text { prompt = "" }
+            consume(files, on: .composer)
             workspaces[link.key] = nil // A workspace choice is for this one new session.
             return key
         } catch {

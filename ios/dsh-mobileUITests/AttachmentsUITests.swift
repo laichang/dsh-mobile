@@ -156,6 +156,22 @@ final class AttachmentsUITests: XCTestCase {
         }
     }
 
+    func testRetryAfterUploadFailureKeepsPhotoAndDraft() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-DSHMFakeBridge", "YES", "-DSHMFakeScenario", "retry-upload",
+                               "-DSHMResetStore", "YES", "-DSHMPresetPrompt", "Retry this photo"]
+        app.launch()
+        attachPhoto(app)
+        app.buttons["composer.send"].tap()
+        XCTAssertTrue(element(app, "attachment.progress").waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(element(app, "attachment.error").waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(chip(app, "photo.jpg").exists)
+        XCTAssertEqual(app.textFields["composer.prompt"].value as? String, "Retry this photo")
+        app.buttons["composer.send"].tap()
+        XCTAssertTrue(element(app, "session.message.user.photo").waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertEqual(waitForValue(element(app, "task.status"), in: ["completed"], timeout: 20), "completed")
+    }
+
     func testAttachOnePhotoAndSend() throws {
         let app = try launch(prompt: "What is in this photo?")
         attachPhoto(app)

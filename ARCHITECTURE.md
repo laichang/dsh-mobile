@@ -165,12 +165,10 @@ A Cordis plugin in the user's DSH profile (install: `bridge/README.md`). It is t
 
 ### 4.8 Attachments
 
-- `UploadBegin { upload_id, media_type, name, size, sha256 }` → `UploadAck`; `UploadChunk { index, data }` → `UploadAck`, one part at a time, 48 KiB of data each; `UploadEnd` → `UploadStaged`. Then `CreateTask.upload_ids` or `SendMessage.upload_ids` names them. Each request waits for its response, so there is no window or flow control.
-- Limits: at most 5 per message, each at most 20 MiB (the bridge keeps staged files in memory). The bridge checks size and SHA-256 at the end; refusals are `upload/…` error codes.
-- Uploads belong to the connection and are used up by the request that names them.
-- JPEG, PNG, WebP and GIF go into the prompt as images (`ctx.fileUploads.uploadImageStream`); other files are staged with `uploadStream`, and the model gets the name and the path. Parts keep the user's order.
-- While a task runs, a message carries text only; the bridge refuses files for a running task.
-- `AttachmentRef { kind, name, size, media_type }` is on `UserMessage` and `SessionMessage`, so the bubble shows attachments after a resume, on another phone, and for a session read from the journal. Golden fixture: `protocol/fixtures/attachments/`.
+- DSHPlatform reads security-scoped files, resizes images, encodes JPEG, chunks bytes and computes SHA-256. Features keep drafts, selection, progress and retry. Views own pickers, chips and localized sizes.
+- Core checks the whole batch before upload (5 files, 20 MiB each). Each attachment send opens a dedicated authenticated connection. It sends `UploadBegin`, 48 KiB `UploadChunk`s and `UploadEnd`, awaiting each acknowledgement. Only then does `CreateTask` or `SendMessage` reference the staged IDs in order. Closing the socket discards a failed or cancelled batch independently of other sends.
+- The bridge checks length and SHA-256. JPEG, PNG, WebP and GIF enter the prompt as images. Other files provide a name and staged path. Running sessions accept text only.
+- `AttachmentRef` in user messages and journal history preserves the bubble across reconnects and devices. The sending phone retains its local thumbnail. Golden bytes live in `protocol/fixtures/attachments/`.
 
 ### 4.9 Models, workspaces, failures
 

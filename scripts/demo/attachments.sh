@@ -86,6 +86,7 @@ step "UI: attach one photo on 01 and send (log: $LOGS/ui.log)"
 export TEST_RUNNER_DSHM_REAL_DSH=1 TEST_RUNNER_DSHM_BRIDGE_PORT="$DSHM_BRIDGE_PORT"
 if demo_part attachments-ui demo_tls_ui test-without-building -project ios/dsh-mobile.xcodeproj -scheme dsh-mobile \
     -destination "$DEST" -derivedDataPath "$DSHM_DD" -parallel-testing-enabled NO \
+    -only-testing:dsh-mobileUITests/AttachmentsUITests/testRetryAfterUploadFailureKeepsPhotoAndDraft \
     -only-testing:dsh-mobileUITests/AttachmentsUITests/testAttachOnePhotoAndSend --log "$LOGS/ui.log"; then
   grep -E "Test Case.*(passed|failed|skipped)" "$LOGS/ui.log" || true
 else
