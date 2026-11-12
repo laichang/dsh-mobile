@@ -214,16 +214,17 @@
       "needs": [
         "S10"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s11-216b887",
+      "status": "doing",
       "updated": "2026-11-12",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "The bridge can ship independently when task and approval use cases are independent of wire types and existing phones still complete the same operations.",
       "cuts": "In `bridge/src/tasks/task-hub.ts`, start with userMessage, then migrate task summaries, approvals, questions and queue events to domain types. Map to protobuf when appending to `bridge/src/tasks/host-log.ts`. Keep DSH service adaptation with the business foundation, TLS/WS, raw files, generated types and serialization in the foundation layer. Decode requests in `bridge/src/server.ts` and compose in `bridge/src/index.ts`. Cover `bridge/test/conversation.test.ts`, `bridge/test/durable-list.test.ts` and `bridge/test/tls-upgrade.test.ts`. Update ARCHITECTURE.md alongside the implemented bridge boundary.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S12",
@@ -335,6 +336,11 @@
       "date": "2026-11-12",
       "title": "S7 merged",
       "body": "Merged as `c12c478`; the plan/ rules hold on the merge commit. No open [human] items, so S7 is `done`."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S11 assigned",
+      "body": "Branch `claude/s11-216b887`, simulator `DEABB0A9-1D40-416A-946D-F6B3793DDB45`, DSHM_HOME `~/.dshm/home-s11-DEABB0A9-1D40-416A-946D-F6B3793DDB45`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S11)\"` exports them."
     }
   ],
   "pending": []
