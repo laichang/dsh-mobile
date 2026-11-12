@@ -122,10 +122,15 @@ final class PairingUITests: XCTestCase {
         XCTAssertTrue(channel.waitForExistence(timeout: 10))
         XCTAssertEqual(channel.value as? String, "TLS 1.3")
         app.buttons["drawer.allTasks"].tap()
-        let row = app.buttons.matching(NSPredicate(format: "identifier == 'tasklist.row' AND label CONTAINS %@", prompt)).firstMatch
+        // Completed rows show the generated title. The journal retains the original prompt.
+        let row = app.buttons.matching(identifier: "tasklist.row").firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 30), app.debugDescription)
         saveShot("pairing-resumed-over-tls-list")
         row.tap()
+        let submitted = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'session.message.user' AND label == %@", prompt)
+        ).firstMatch
+        XCTAssertTrue(submitted.waitForExistence(timeout: 30), app.debugDescription)
         let status = app.descendants(matching: .any)["task.status"]
         XCTAssertEqual(waitForValue(status, in: ["completed"], timeout: 30), "completed", status.label)
         let transcript = app.descendants(matching: .any)["transcript.text"]

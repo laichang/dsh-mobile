@@ -1,5 +1,5 @@
 import DSHTransport
-import DSHCore
+@testable import DSHCore
 import XCTest
 
 @MainActor

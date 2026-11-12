@@ -6,6 +6,7 @@ extension HostSync {
     public struct HostConfig: Sendable {
         public var key: String
         public var enrollment: HostEnrollment { connection.enrollment }
+        public var commands: any HostCommands { connection }
         let connection: HostConnection
         public var name: String?
 

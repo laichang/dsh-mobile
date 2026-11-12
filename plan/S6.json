@@ -6,28 +6,40 @@
       "text": "One connection generation has one receive loop, writer and pending request table. Concurrent reversed replies match request IDs. Cancelling or closing completes each affected waiter exactly once and an old socket closing leaves the replacement connection operational.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test --filter TransportDispatchTests"
+      ]
     },
     {
       "tier": "auto",
       "text": "Use explicit gates to deliver LogReset, replay event 1, replay event 2 and Resumed. Pause mapping of event 2 and prove the peer has sent Resumed. While paused, resume() is pending and HostSync has not sent ListTasks.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test --filter ReplayDispatchTests"
+      ]
     },
     {
       "tier": "auto",
       "text": "Release the mapper and record LogReset, event 1, event 2 entering the business AsyncStream, resume() returning, then ListTasks when required. Hold consumer processing and the batch flush separately: resume() can return while both are still paused.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test --filter ReplayDispatchTests"
+      ]
     },
     {
       "tier": "auto",
       "text": "The migrated read-only command, existing command families and replay share that same dispatcher during migration. Hello success, unsupported version and close-code handling retain their Core behavior.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test"
+      ]
     }
   ]
 }

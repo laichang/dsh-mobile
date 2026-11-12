@@ -11,7 +11,7 @@ root = Path(__file__).resolve().parents[1]
 package = root / "ios/DSHKit"
 layers = {
     "DSHActivity": set(),
-    "DSHTransport": set(),
+    "DSHTransport": {"DSHProtocol"},
     "DSHProtocol": {"SwiftProtobuf"},
     "DSHCore": {"DSHTransport", "DSHProtocol", "SwiftProtobuf"},
     "DSHFeatures": {"DSHCore", "DSHActivity"},
@@ -82,6 +82,8 @@ for name, allowed in {**layers, **clients}.items():
                     reason = "test support outside DEBUG"
             if name in ("DSHFeatures", "dsh-mobile", "LiveActivity") and (low_level.search(code) or match and match[1] == "SwiftData"):
                 reason = "raw transport, persistence or wire detail"
+            if name == "DSHCore" and re.search(r"\.receive\(\s*\)", code):
+                reason = "Core must receive events through the transport dispatcher"
             if reason:
                 errors.append(f"{file.relative_to(root)}:{lineno}: {reason}")
 if errors:
