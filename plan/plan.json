@@ -102,16 +102,17 @@
         "S3",
         "S4"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s5-b3dcbae",
+      "status": "doing",
       "updated": "2026-11-12",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Both the new foundation target and the tested enrollment lifecycle must exist before moving file I/O across the boundary.",
       "cuts": "Extract raw file I/O and atomic storage from `ios/DSHKit/Sources/DSHCore/Pairing/PairedHosts.swift` into DSHPlatform. Keep registration policy, origin comparisons and credential decisions in Core, with comparison and write performed in one serialized mutation. Preserve preferred-host configuration and existing TLS/Keychain implementations. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S6",
@@ -367,6 +368,11 @@
       "date": "2026-11-12",
       "title": "S3 merged",
       "body": "Merged as `95552ff`; the plan/ rules hold on the merge commit. No open [human] items, so S3 is `done`."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S5 assigned",
+      "body": "Branch `claude/s5-b3dcbae`, simulator `0B7F3D85-C864-4DCF-80C5-E07A27DD0C0F`, DSHM_HOME `~/.dshm/home-s5-0B7F3D85-C864-4DCF-80C5-E07A27DD0C0F`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S5)\"` exports them."
     }
   ],
   "pending": []
