@@ -195,10 +195,10 @@
         "T0"
       ],
       "branch": "claude/s10-540ee85",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "ed5d02e",
       "why": "Approval decisions and the device audit view must agree on saved fields and keep reading history from existing bridge installations.",
       "cuts": "Use `bridge/src/approvals/holder.ts`, `bridge/src/devices/manage.ts` and `bridge/test/approvals.test.ts`. Inject a typed append operation into ApprovalHolder and serve device audit pages from the matching reader. Keep approvals.jsonl, its fields, order and existing pairing history. Use synthetic fixture records. Update ARCHITECTURE.md alongside the implemented bridge boundary.",
       "not": "",
@@ -319,6 +319,11 @@
       "date": "2026-11-12",
       "title": "S6 merged",
       "body": "Merged as `1b4b54a`; the plan/ rules hold on the merge commit. No open [human] items, so S6 is `done`."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S10 merged",
+      "body": "Merged as `ed5d02e`; the plan/ rules hold on the merge commit. No open [human] items, so S10 is `done`."
     }
   ],
   "pending": []
