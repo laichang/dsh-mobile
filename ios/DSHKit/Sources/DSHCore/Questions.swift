@@ -82,16 +82,29 @@ public struct AgentQuestion: Codable, Equatable, Sendable {
                               kind: .question(AgentQuestion(requestID: wire.id, items: items)), time: time)
     }
 
-    /// The same question, closed by `QuestionResolved`.
-    package func resolved(_ wire: Dshm_V1_QuestionResolved) -> AgentQuestion {
-        var copy = self
-        copy.outcome = switch wire.outcome {
-        case .answered: .answered
-        case .answeredElsewhere: .answeredElsewhere
-        default: .cancelled
+    package struct Resolution: Equatable, Sendable {
+        let id: String
+        let taskID: String
+        let outcome: Outcome
+        let answers: [String: [String]]
+
+        package init(_ wire: Dshm_V1_QuestionResolved) {
+            id = wire.id
+            taskID = wire.taskID
+            outcome = switch wire.outcome {
+            case .answered: .answered
+            case .answeredElsewhere: .answeredElsewhere
+            default: .cancelled
+            }
+            answers = Dictionary(wire.answers.map { ($0.questionID, $0.selected + ($0.custom.isEmpty ? [] : [$0.custom])) },
+                                 uniquingKeysWith: { first, _ in first })
         }
-        copy.answers = Dictionary(wire.answers.map { ($0.questionID, $0.selected + ($0.custom.isEmpty ? [] : [$0.custom])) },
-                                  uniquingKeysWith: { a, _ in a })
+    }
+
+    package func resolved(_ resolution: Resolution) -> AgentQuestion {
+        var copy = self
+        copy.outcome = resolution.outcome
+        copy.answers = resolution.answers
         return copy
     }
 

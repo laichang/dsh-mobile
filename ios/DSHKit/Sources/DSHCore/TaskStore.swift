@@ -38,7 +38,11 @@ public final class TaskStore {
     private var currentTaskID: String?
     private var eventsTask: Task<Void, Never>?
 
-    public init(connection: HostConnection, prompt: String = "") {
+    public convenience init(host: HostSync.HostConfig, prompt: String = "") {
+        self.init(connection: host.connection, prompt: prompt)
+    }
+
+    package init(connection: HostConnection, prompt: String = "") {
         self.connection = connection
         self.prompt = prompt
     }
