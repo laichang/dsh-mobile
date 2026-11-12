@@ -7,10 +7,10 @@
       "title": "Tracer bullet: WP0 · Capture the two-platform public API and a clean-install round trip",
       "needs": [],
       "branch": "claude/t0-f223ab5",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "5c022c1",
       "why": "Pin the comparison to 61b5416 before changing a target or a public declaration. Record the current SwiftPM and Xcode target dependencies, linked products and test results, including any existing failures.",
       "cuts": "Start at `ios/DSHKit/Package.swift`, `ios/dsh-mobile.xcodeproj/project.pbxproj`, `scripts/check-layers`, `scripts/check-layers-test` and `scripts/demo/round-trip.sh`. Use swift-api-digester -dump-sdk -module DSHCore on the actual macOS 15 and iOS 26 builds with their respective SDK, target and module search paths. Identify declarations and referenced types by module and symbol, including DSHTransport, DSHProtocol, SwiftProtobuf, DSHPlatform, SwiftData and Core's own raw connection and cache entities. Exercise the production pairing and task path with test credentials.",
       "not": "",
@@ -274,6 +274,11 @@
       "date": "2026-11-12",
       "title": "T0 assigned",
       "body": "Branch `claude/t0-f223ab5`, simulator `C99D08EE-1320-463F-B9B9-9B5A379ED59E`, DSHM_HOME `~/.dshm/home-t0-C99D08EE-1320-463F-B9B9-9B5A379ED59E`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env T0)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "T0 merged",
+      "body": "Merged as `5c022c1`; the plan/ rules hold on the merge commit. No open [human] items, so T0 is `done`."
     }
   ],
   "pending": []
