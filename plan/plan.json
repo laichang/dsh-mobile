@@ -181,10 +181,10 @@
         "S7"
       ],
       "branch": "claude/s9-c6ca2d2",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "11b317c",
       "why": "The app, its widget and the Mac package build have different runtime capabilities. Keep their boundaries explicit while preserving the current screens.",
       "cuts": "Move `ios/DSHKit/Sources/DSHCore/TranscriptBlocks.swift` and `ios/DSHKit/Sources/DSHCore/CJKEmphasis.swift` to shared feature presentation. Keep StructuredTranscript, questions, approvals, queue, history, milestones, models, workspaces and result semantics in Core. Keep `ios/dsh-mobile/Features/Voice/SpeechFrameworkTranscriber.swift` and ActivityKitClient as app adapters. Features retains `ios/DSHKit/Sources/DSHFeatures/Dictation.swift`, TranscriberFactory, drafts, grouping/drawer, outcomes and Live Activity lifecycle. Leave SystemCallback in place with its current single production caller. Inspect `ios/DSHKit/Sources/DSHCore/TaskStore.swift`, `ios/DSHKit/Sources/DSHCore/DebugEntryPoints.swift`, package products, spikes, scripts and documented clients before narrowing access. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
@@ -390,6 +390,11 @@
       "date": "2026-11-12",
       "title": "S9 assigned",
       "body": "Branch `claude/s9-c6ca2d2`, simulator `B08590F9-B5B8-4150-AD10-546F3A867FB5`, DSHM_HOME `~/.dshm/home-s9-B08590F9-B5B8-4150-AD10-546F3A867FB5`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S9)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S9 merged",
+      "body": "Merged as `11b317c`; the plan/ rules hold on the merge commit. No open [human] items, so S9 is `done`."
     }
   ],
   "pending": []
