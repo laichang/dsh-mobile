@@ -239,10 +239,10 @@
         "S9"
       ],
       "branch": "claude/s12-788f2d5",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "ea013d8",
       "why": "Both compiled platforms and the shipped app and widget must enforce the reviewed three-layer graph. iOS sign-off is independent of the new bridge.",
       "cuts": "Use `ios/DSHKit/Package.swift`, `ios/dsh-mobile.xcodeproj/project.pbxproj`, `scripts/check-layers`, `scripts/check-layers-test`, `scripts/check-release-clean` and `ARCHITECTURE.md`. Business targets depend on DSHCore and the DSHActivity contract with the widget limited to DSHActivity. Core can use DSHTransport, DSHProtocol, DSHPlatform and explicit SwiftProtobuf primitives. Transport may depend on Protocol, Protocol on SwiftProtobuf, and DSHPlatform on Apple SDKs. Verify real package products, source imports, actual Xcode links, production/debug configurations and external API. Consumers can use system UI frameworks in their layer. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
@@ -406,6 +406,11 @@
       "date": "2026-11-12",
       "title": "S12 assigned",
       "body": "Branch `claude/s12-788f2d5`, simulator `E42FF25F-6F0D-4A3A-A14A-1C956FFB697E`, DSHM_HOME `~/.dshm/home-s12-E42FF25F-6F0D-4A3A-A14A-1C956FFB697E`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S12)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S12 merged",
+      "body": "Merged as `ea013d8`; the plan/ rules hold on the merge commit. No open [human] items, so S12 is `done`."
     }
   ],
   "pending": []
