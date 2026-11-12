@@ -72,13 +72,13 @@ pnpm --dir bridge build
 dsh plugin --profile web add "$PWD/bridge"
 ```
 
-重启这个 profile 的 DSH（`dsh web`）。在同一台机器上另开终端，使用相同的 `DSH_HOME`，从仓库根目录生成配对码：
+回到运行 DSH 的终端，按 Ctrl+C，再运行原来的启动命令（本例为 `dsh web`）。保持 DSH 运行，在这台电脑上另开终端，进入 dsh-mobile 项目目录（里面有 `bridge` 文件夹），运行：
 
 ```sh
 node bridge/lib/scripts/pair.js
 ```
 
-终端会显示二维码和配对链接。每个码限用一次，10 分钟内有效。模拟器和真机分别配对时，再运行一次命令即可。自定义端口或状态目录见 [Bridge 安装说明](bridge/README.md)。
+终端会显示二维码和配对链接。每个码限用一次，10 分钟内有效。模拟器和真机分别配对时，再运行一次命令即可。如果你启动 DSH 时指定过数据目录（例如 `DSH_HOME=/work/dsh dsh web`），发码时也用那个目录（`DSH_HOME=/work/dsh node bridge/lib/scripts/pair.js`）。默认安装可以直接使用上面的命令。自定义端口或状态目录见 [Bridge 安装说明](bridge/README.md)。
 
 ### 连接方式
 

@@ -74,7 +74,7 @@ pnpm --dir bridge build
 dsh plugin --profile web add "$PWD/bridge"
 ```
 
-Restart DSH with that profile (`dsh web`). Open another terminal on the same host, use the same `DSH_HOME`, and generate a pairing code from the repository root.
+In the terminal running DSH, press Ctrl+C and repeat your startup command (`dsh web` in this example). Leave it running. Open another terminal on that computer, go to the dsh-mobile folder containing `bridge`, and run the following command.
 
 ```sh
 node bridge/lib/scripts/pair.js

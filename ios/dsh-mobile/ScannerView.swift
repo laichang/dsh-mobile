@@ -21,7 +21,7 @@ struct ScannerView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("On your computer, find the pairing code in the terminal where DSH started. Keep your phone on the same Wi-Fi or connect through a private network such as Tailscale.")
+                    Text("Scan the code from the pairing command in your computer’s terminal, or paste its link. Use the same Wi-Fi or connect both devices to Tailscale.")
                         .accessibilityIdentifier("pairing.guide")
                     if mode == .paste {
                         EmptyView()
@@ -48,7 +48,7 @@ struct ScannerView: View {
                     }
                     DisclosureGroup("Need a pairing code?") {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("For a fresh code, run this command from the dsh-mobile project folder on your computer.")
+                            Text("On the computer running DSH, open another terminal in the dsh-mobile folder (the one containing bridge). Run the command below and scan the QR code it prints. If the code expires, run it again.")
                             Text(verbatim: pairingCommand)
                                 .font(.footnote.monospaced())
                                 .contextMenu {
@@ -56,6 +56,7 @@ struct ScannerView: View {
                                         UIPasteboard.general.string = pairingCommand
                                     }
                                 }
+                            Text(AppModel.legacyPairingGuide)
                             Link("Bridge setup instructions", destination: URL(string: "https://github.com/laichang/dsh-mobile/blob/main/bridge/README.md")!)
                                 .accessibilityIdentifier("pairing.setupInstructions")
                         }

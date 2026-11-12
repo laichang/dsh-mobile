@@ -34,7 +34,7 @@ struct WelcomeView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("firstRun.requiresHost")
                         .padding(.top, 24)
-                    Step(number: 1, text: Text("When DSH starts, its terminal prints a pairing QR code and a link.", tableName: "FirstRun"))
+                    Step(number: 1, text: Text("Keep DSH running. Open another terminal on the computer to generate a pairing code.", tableName: "FirstRun"))
                         .padding(.top, 8)
                     Divider().overlay(DSHTheme.hairline)
                     Step(number: 2, text: Text("Keep the phone and the computer on the same Wi-Fi, or connect them through a private network such as Tailscale.",

@@ -32,6 +32,23 @@ final class FirstRunUITests: XCTestCase {
         XCTAssertEqual(field.value as? String, command)
     }
 
+    func testLegacyLinkExplainsHowToGenerateCurrentCode() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-DSHMResetPairing", "YES", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launch()
+        app.buttons["pairing.pasteLink"].tap()
+        let field = app.textFields["pairing.paste"]
+        field.tap()
+        field.typeText("dshm://pair?v=1")
+        app.buttons["pairing.pasteUse"].tap()
+
+        let status = app.descendants(matching: .any)["pairing.status"]
+        XCTAssertTrue(status.waitForExistence(timeout: 5), app.debugDescription)
+        for step in ["pnpm --dir bridge build", "Ctrl+C", "dsh web", "node bridge/lib/scripts/pair.js", "v=1"] {
+            XCTAssertTrue(status.label.contains(step), status.label)
+        }
+    }
+
     func testUnpairedLaunchShowsPairing() {
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMResetPairing", "YES"]
