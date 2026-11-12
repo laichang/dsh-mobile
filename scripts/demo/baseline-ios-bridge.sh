@@ -5,6 +5,7 @@ cd "$(dirname "$0")/../.."
 export PATH="$HOME/.dshm/bin:$HOME/.nvm/versions/node/v24.14.0/bin:$PATH"
 : "${DSHM_SIM:?set the assigned simulator}" "${DSHM_BRIDGE_PORT:?set the assigned bridge port}"
 scripts/slice-env --check-sim "$DSHM_SIM"
+source scripts/demo/lib.sh
 umask 077
 scratch=$(mktemp -d)
 pid=''
@@ -12,7 +13,7 @@ cleanup() {
   if [[ -n "$pid" ]]; then kill "$pid" 2>/dev/null || true; wait "$pid" || true; fi
   rm -rf "$scratch"
 }
-trap cleanup EXIT
+demo_tls_on_exit cleanup
 baseline=61b54169a58e7a20e9ca243dc96a6739b816e14a
 candidate=$(git rev-parse HEAD)
 ios_rev=$baseline
@@ -51,17 +52,13 @@ const pin = Buffer.from(offer.searchParams.get('k'), 'base64url').toString('base
 writeFileSync(process.env.TEST_RUNNER_DSHM_COMPAT_PEER, JSON.stringify({ address, pin, bearer }))
 JS
 )
-# Boot the assigned simulator before querying the previous installation.
-xcrun simctl bootstatus "$DSHM_SIM" -b >/dev/null
 if xcrun simctl get_app_container "$DSHM_SIM" chang.dsh-mobile data >/dev/null 2>&1; then
   xcrun simctl uninstall "$DSHM_SIM" chang.dsh-mobile
 fi
 if xcrun simctl get_app_container "$DSHM_SIM" chang.dsh-mobile data >/dev/null 2>&1; then
   echo "previous app container still present" >&2; exit 1
 fi
-conditions='$(inherited)'
-if [[ "$ios_rev" == "$baseline" ]]; then conditions+=' DSHM_BASELINE_CLIENT'; fi
-scripts/xc test "SWIFT_ACTIVE_COMPILATION_CONDITIONS=$conditions" -project "$scratch/ios/dsh-mobile.xcodeproj" -scheme dsh-mobile \
+demo_tls_ui test -project "$scratch/ios/dsh-mobile.xcodeproj" -scheme dsh-mobile \
   -destination "platform=iOS Simulator,id=$DSHM_SIM" -derivedDataPath "$scratch/build" \
   -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates -parallel-testing-enabled NO \
   -only-testing:dsh-mobileUITests/BaselineBridgeTests --log "$scratch/test.log" || \

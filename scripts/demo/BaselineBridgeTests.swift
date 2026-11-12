@@ -1,19 +1,35 @@
+import DSHTransport
 @testable import DSHCore
 import XCTest
 
+@MainActor
 final class BaselineBridgeTests: XCTestCase {
+    struct Peer: Decodable { let address: String, pin: Data, bearer: String }
+
     func testApprovalAndQueueOverPinnedTLS() async throws {
         let file = try XCTUnwrap(ProcessInfo.processInfo.environment["DSHM_COMPAT_PEER"])
-        let pairing = Pairing()
+        continueAfterFailure = false
         let offer = try String(contentsOf: URL(filePath: file + ".offer"), encoding: .utf8)
-        let host = try await pairing.pair(PairingOffer(string: offer))
-        let config = try XCTUnwrap(HostSync.HostConfig(paired: host, using: pairing))
-        #if DSHM_BASELINE_CLIENT
-        let connection = config.connection
-        #else
-        let connection = config.commands
-        #endif
+        XCUIApplication().launch()
+        let app = openDeepLink(try XCTUnwrap(URL(string: offer)))
+        let confirm = app.buttons["pairing.confirm"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 15))
+        confirm.tap()
+        let status = app.descendants(matching: .any)["pairing.status"]
+        XCTAssertEqual(waitForValue(status, in: ["paired", "failed"], timeout: 30), "paired", status.label)
+        app.buttons["pairing.done"].tap()
+        openDrawer(app)
+        let channel = app.descendants(matching: .any)["host.channel"]
+        XCTAssertTrue(channel.waitForExistence(timeout: 20))
+        XCTAssertEqual(channel.value as? String, "TLS 1.3")
+
+        let peer = try JSONDecoder().decode(Peer.self, from: Data(contentsOf: URL(filePath: file)))
+        let connection = HostConnection(endpoints: [try XCTUnwrap(HostEndpoint(address: peer.address))],
+                                        spkiSHA256: peer.pin, authorization: "Bearer " + peer.bearer)
         try await connection.connect()
+        let capabilities = await connection.capabilities
+        XCTAssertTrue(capabilities.contains("approvals.v1"))
+        XCTAssertTrue(capabilities.contains("conversation.v2"))
         let resumed = try await connection.resume(logID: "", afterSeq: 0)
         let listing = try await connection.listTasks()
         XCTAssertFalse(resumed.logID.isEmpty)
