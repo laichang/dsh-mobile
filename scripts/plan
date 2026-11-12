@@ -338,6 +338,10 @@ def cmd_lint(p, a):
     errors = plandata.tree_errors(plandata.worktree_files(p.root))
     if not p.exists:
         errors = [plandata.NO_PLAN] + errors
+    elif not errors and a.github_milestone:
+        target = p.doc.get("github_milestone")
+        if (target or "").lower() != a.github_milestone.lower():
+            errors.append(f"expected GitHub milestone {a.github_milestone}, found {target or 'no binding'}")
     for e in errors:
         print(f"plan lint: {e}")
     if not errors:
@@ -876,7 +880,7 @@ def main():
     claim.add_argument("--replace", metavar="OLD-OWNER", help="transfer a claim after a user-requested handoff")
     sp = add("show", cmd_show); sp.add_argument("id")
     sp = add("title", cmd_title); sp.add_argument("--milestone")
-    add("lint", cmd_lint)
+    sp = add("lint", cmd_lint); sp.add_argument("--github-milestone", metavar="OWNER/REPO#N")
     sp = add("dag", cmd_dag); sp.add_argument("--json", action="store_true")
     sp = add("passed", cmd_passed); sp.add_argument("id"); sp.add_argument("--json", action="store_true")
     sp.add_argument("--base", default="HEAD")
