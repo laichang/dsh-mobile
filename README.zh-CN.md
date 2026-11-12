@@ -20,13 +20,13 @@
 
 <table>
   <tr>
-    <td align="center"><img src="evidence/T1/t1-session-page.png" width="200" alt="会话页与里程碑卡片"/><br/><sub>里程碑级的实时进度</sub></td>
-    <td align="center"><img src="evidence/S14/s14-drawer.png" width="200" alt="按执行端与工作区分组的抽屉"/><br/><sub>所有执行端、工作区、会话</sub></td>
-    <td align="center"><img src="evidence/S15/s15-all-tasks.png" width="200" alt="所有任务与待审批项"/><br/><sub>说清楚影响的审批</sub></td>
+    <td align="center"><img src="design/screens/04.png" width="200" alt="会话页与里程碑卡片"/><br/><sub>里程碑级的实时进度</sub></td>
+    <td align="center"><img src="design/screens/02.png" width="200" alt="按执行端与工作区分组的抽屉"/><br/><sub>所有执行端、工作区、会话</sub></td>
+    <td align="center"><img src="design/screens/03.png" width="200" alt="所有任务与待审批项"/><br/><sub>查看所有执行端的任务</sub></td>
   </tr>
 </table>
 
-<sub>App 在 iOS 模拟器中的真实截图，由各功能的演示脚本生成。</sub>
+<sub>界面设计稿来自 <a href="design/screens/">design/screens</a>。</sub>
 
 </div>
 

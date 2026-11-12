@@ -20,13 +20,13 @@ English · [简体中文](README.zh-CN.md)
 
 <table>
   <tr>
-    <td align="center"><img src="evidence/T1/t1-session-page.png" width="200" alt="Session page with milestone card"/><br/><sub>Live progress as milestones</sub></td>
-    <td align="center"><img src="evidence/S14/s14-drawer.png" width="200" alt="Drawer grouped by host and workspace"/><br/><sub>Every host, workspace, session</sub></td>
-    <td align="center"><img src="evidence/S15/s15-all-tasks.png" width="200" alt="All tasks with pending approvals"/><br/><sub>Approvals that say what they do</sub></td>
+    <td align="center"><img src="design/screens/04.png" width="200" alt="Session page with milestone card"/><br/><sub>Live progress as milestones</sub></td>
+    <td align="center"><img src="design/screens/02.png" width="200" alt="Drawer grouped by host and workspace"/><br/><sub>Every host, workspace, session</sub></td>
+    <td align="center"><img src="design/screens/03.png" width="200" alt="All tasks with pending approvals"/><br/><sub>Tasks across all hosts</sub></td>
   </tr>
 </table>
 
-<sub>Real screenshots of the app in the iOS Simulator, taken by its demo scripts.</sub>
+<sub>Screen designs from <a href="design/screens/">design/screens</a>.</sub>
 
 </div>
 
