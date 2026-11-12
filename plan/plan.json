@@ -45,10 +45,10 @@
         "S1"
       ],
       "branch": "claude/s2-045b1d9",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "badfbaf",
       "why": "A host can pair again while revocation of its old device is in flight. Scope cleanup, connection teardown and UI feedback to the enrollment that was revoked.",
       "cuts": "Capture immutable host key and tlsDeviceID in Core at connection creation or revocation initiation, before awaiting a result. Carry it through local .thisDevice and remote close 4003 in `ios/DSHKit/Sources/DSHCore/HostDeviceManagement.swift`, `ios/DSHKit/Sources/DSHCore/Sync/HostSync.swift`, `ios/DSHKit/Sources/DSHFeatures/TaskListStore.swift`, `ios/dsh-mobile/Features/Hosts/HostActions.swift` and `ios/dsh-mobile/AppComposition.swift`. Cover HostDetailView and DeviceManagementView. Never replace the captured ID with a lookup by host key. Persist cleanup intent before removing credentials, then acknowledge the matching pending item. Keep the existing preferred-host UserDefaults key. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
@@ -351,6 +351,11 @@
       "date": "2026-11-12",
       "title": "S11 merged",
       "body": "Merged as `f738012`; the plan/ rules hold on the merge commit. No open [human] items, so S11 is `done`."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S2 merged",
+      "body": "Merged as `badfbaf`; the plan/ rules hold on the merge commit. No open [human] items, so S2 is `done`."
     }
   ],
   "pending": []
