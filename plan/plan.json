@@ -120,10 +120,10 @@
         "T0"
       ],
       "branch": "claude/s6-0e59536",
-      "status": "review",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Review the changed layer checker and fixture at cbde7d6 before merge",
-      "merge": null,
+      "next": "—",
+      "merge": "1b4b54a",
       "why": "With a single reader per connection generation, an enqueued reply must not overtake a preceding replay event while Core maps it.",
       "cuts": "Starting in `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHTransport/OrderedWriter.swift` and `ios/DSHKit/Tests/DSHKitTests/TransportDispatchTests.swift`, move correlation, request IDs, cancellation, ordered writes, receive loop and generation-scoped close to DSHTransport. It may depend on DSHProtocol. Switch dispatch ownership once and migrate one read-only command. Await Core's ordered mapping and yield before resolving a later response. Keep Hello negotiation, the 4003 meaning and raw-to-domain event mapping in Core. Match `bridge/src/server.ts` and `ios/DSHKit/Sources/DSHCore/Sync/HostSync.swift`. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
@@ -314,6 +314,11 @@
       "date": "2026-11-12",
       "title": "S10 assigned",
       "body": "Branch `claude/s10-540ee85`, simulator `89625462-B541-4DAA-83F1-5257DFA0D26B`, DSHM_HOME `~/.dshm/home-s10-89625462-B541-4DAA-83F1-5257DFA0D26B`, bridge 47813, web 3286; second host 47843/3316. `eval \"$(scripts/slice-env S10)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S6 merged",
+      "body": "Merged as `1b4b54a`; the plan/ rules hold on the merge commit. No open [human] items, so S6 is `done`."
     }
   ],
   "pending": []
