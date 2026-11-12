@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Seed prohibited edges and a protobuf leak, and require the intended diagnostic."""
 from pathlib import Path
+import json
 import shutil
 import subprocess
 import tempfile
@@ -31,6 +32,17 @@ with tempfile.TemporaryDirectory() as temp:
                                          '.target(name: "DSHTransport", dependencies: ["DSHCore"])'))
     expect(check, "DSHTransport: found")
     manifest.write_text(original)
+    project = fixture / "ios/dsh-mobile.xcodeproj/project.pbxproj"
+    saved_project = project.read_bytes()
+    graph = json.loads(subprocess.check_output(["plutil", "-convert", "json", "-o", "-", project]))
+    objects = graph["objects"]
+    widget = next(t for t in objects.values() if t.get("name") == "LiveActivity" and t["isa"] == "PBXNativeTarget")
+    frameworks = next(objects[i] for i in widget["buildPhases"] if objects[i]["isa"] == "PBXFrameworksBuildPhase")
+    core = next(i for i, f in objects.items() if f.get("productRef") and objects[f["productRef"]]["productName"] == "DSHCore")
+    frameworks["files"].append(core)
+    project.write_text(json.dumps(graph))
+    expect(check, "LiveActivity linked products")
+    project.write_bytes(saved_project)
     platform = fixture / "ios/DSHKit/Sources/DSHPlatform/Leak.swift"
     platform.parent.mkdir(parents=True)
     platform.write_text("import DSHCore\n")
@@ -54,6 +66,8 @@ with tempfile.TemporaryDirectory() as temp:
     shortcut.parent.mkdir(parents=True)
     shortcut.write_text("import DSHTransport\n")
     expect(check, "undeclared import DSHTransport")
+    shortcut.write_text("import Foundation; import DSHPlatform\n")
+    expect(check, "undeclared import DSHPlatform")
     shortcut.write_text("@_exported import DSHCore\n")
     expect(check, "re-export attribute")
     shortcut.write_text("@_exported\nimport DSHCore\n")

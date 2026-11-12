@@ -99,17 +99,17 @@ public struct AddressFailure: Sendable, Equatable, CustomStringConvertible {
 }
 
 /// One address gave no answer within `HostConnection.attemptTimeout`.
-public struct AddressTimeout: Error, Equatable, CustomStringConvertible {
-    public var after: Duration
+struct AddressTimeout: Error, Equatable, CustomStringConvertible {
+    var after: Duration
     /// What a plain TCP connect to the address found after the timeout; nil when not probed.
-    public var port: PortProbeResult?
+    var port: PortProbeResult?
 
-    public init(after: Duration, port: PortProbeResult? = nil) {
+    init(after: Duration, port: PortProbeResult? = nil) {
         self.after = after
         self.port = port
     }
 
-    public var description: String {
+    var description: String {
         let seconds = Double(after.components.seconds) + Double(after.components.attoseconds) / 1e18
         let base = "no answer in \(seconds.formatted(.number.precision(.fractionLength(0...1)))) s"
         return switch port {
