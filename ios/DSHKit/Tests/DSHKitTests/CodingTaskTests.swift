@@ -3,7 +3,6 @@ import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
 import Foundation
-import SwiftData
 import Testing
 
 /// The FakeBridge coding task behind the session-page UI tests: it stops at "3 / 5" with

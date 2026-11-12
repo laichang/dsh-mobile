@@ -3,7 +3,6 @@ import DSHCore
 import DSHFeatures
 import DSHTestSupport
 import Foundation
-import SwiftData
 import Synchronization
 import Testing
 

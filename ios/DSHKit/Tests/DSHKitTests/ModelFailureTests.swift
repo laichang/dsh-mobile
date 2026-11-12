@@ -3,7 +3,6 @@
 import DSHProtocol
 import DSHTestSupport
 import Foundation
-import SwiftData
 import Testing
 
 /// A model failure, against `FakeHost`: the task ends failed with DSH's text and its

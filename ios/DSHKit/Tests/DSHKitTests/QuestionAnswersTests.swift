@@ -2,6 +2,7 @@
 @testable import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
+import DSHPlatform
 import Foundation
 import Testing
 

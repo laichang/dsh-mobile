@@ -106,12 +106,11 @@ struct ReplayDispatchTests {
         let url = dir.appendingPathComponent("tasks.store")
         var holdFlush = false
         let flushAttempted = Wake()
-        let sync = HostSync(config: config, container: try TaskCache.container(url: url)) { context in
+        let sync = HostSync(config: config, cache: try TaskCache(url: url)) {
             if holdFlush {
                 flushAttempted.fire()
                 throw CocoaError(.fileWriteOutOfSpace)
             }
-            try context.save()
         }
         let (gated, input) = AsyncStream<HostEvent>.makeStream()
         let process = Wake(), yielded = Wake()

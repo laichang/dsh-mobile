@@ -243,7 +243,7 @@ final class FakeActivitySystem: LiveActivityClient {
         store.background()
 
         // The cache is erased (a reset), and the app starts again with a host that has no tasks.
-        try TaskCache.erase(try TaskCache.container(url: storeURL))
+        try TaskCache(url: storeURL).erase()
         let reopened = try launch(FakeHost(reachable: false), system: system)
         defer { reopened.background() }
         #expect(system.activities[key] == nil)
