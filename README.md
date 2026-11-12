@@ -2,18 +2,17 @@
 
 # dsh-mobile
 
-**Your agent works on your own machine. You steer from your phone.**
+**DeepSeek Harness mobile client**
 
 The native iOS client for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH).
 Dispatch tasks, watch progress, approve risky actions, and get results back from every machine you run DSH on.
 
-[![iOS 26](https://img.shields.io/badge/iOS-26-000000?logo=apple&logoColor=white)](#requirements)
+[![iOS 26](https://img.shields.io/badge/iOS-26-000000?logo=apple&logoColor=white)](#quick-start)
 [![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](ios/)
 [![TypeScript](https://img.shields.io/badge/bridge-TypeScript-3178C6?logo=typescript&logoColor=white)](bridge/)
 [![Protobuf](https://img.shields.io/badge/protocol-protobuf-4285F4)](protocol/)
 [![E2E: TLS 1.3](https://img.shields.io/badge/E2E-TLS_1.3-2ea44f)](#security)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm_Noncommercial-blue)](#license)
-[![Status: preview](https://img.shields.io/badge/status-preview-orange)](#status)
 
 English · [简体中文](README.zh-CN.md)
 
@@ -33,20 +32,6 @@ English · [简体中文](README.zh-CN.md)
 
 ---
 
-## Why
-
-DSH lives on your machines: the Mac at home, the PC at work, a cloud box behind NAT. It can read and write files, run commands, drive a browser. It has a Web UI and a desktop app, but no phone app.
-
-Real tasks take minutes, not seconds:
-
-> *"Turn the Q3 report on my desktop into slides and email them to me."*
-> *"Fix the failing CI test in that repo and open a PR."*
-> *"I'm at the airport. Compress yesterday's footage and upload it."*
-
-You don't want to sit and watch. You want to hand it off, get pinged when it needs you, and approve the `rm -rf` from wherever you are. That's dsh-mobile.
-
-The phone does exactly four things: **dispatch, watch, decide, receive.** It never calls a model API and never holds an API key. Every request runs on your own hardware.
-
 ## Features
 
 - 📱 **One entry point.** The app opens on a blank session, ready to type. Quick questions come back inline; long jobs turn into trackable tasks.
@@ -64,87 +49,65 @@ The phone does exactly four things: **dispatch, watch, decide, receive.** It nev
 - 🔒 **Live Activity.** Each running task ticks on the lock screen (local only, no push).
 - 🧾 **Devices and audit.** See every paired device, revoke a lost phone, and review who approved what, when, from which device.
 
-## How it works
+## Architecture
 
+```mermaid
+flowchart LR
+    app["dsh-mobile<br/>iPhone or Simulator"]
+    subgraph host["Your machine · DSH process"]
+        bridge["Bridge plugin"]
+        dsh["DeepSeek Harness"]
+        bridge <-->|Tasks, progress and approvals| dsh
+    end
+    app <-->|"Protobuf / WebSocket / TLS 1.3"| bridge
 ```
- ┌─ iPhone ─────────────┐                              ┌─ your machine (×N) ─────────────────────┐
- │ dsh-mobile (SwiftUI) │   E2E-encrypted protobuf     │ DSH host process                        │
- │ SwiftData cache      │◄───── one WebSocket ────────►│  └ bridge plugin (TypeScript, Cordis)   │
- └──────────────────────┘   LAN / Tailscale            │     • pairing + device registry         │
-                                                       │     • approval holder                   │
-                                                       │     • milestone mapper · resume log     │
-                                                       └─────────────────────────────────────────┘
-```
-
-DSH has no pairing, no push, no relay, and no stable public wire API yet. So this repo ships **three pieces**:
-
-| Piece | Where | What it is |
-|---|---|---|
-| **iOS app** | [`ios/`](ios/) | SwiftUI, Swift 6 strict concurrency, `@Observable` stores, SwiftData cache. Logic lives in the `DSHKit` Swift package. |
-| **Bridge plugin** | [`bridge/`](bridge/) | A Cordis plugin you install into the DSH you already run. It opens its own listener and absorbs upstream API churn, so the app never speaks DSH's internal protocol. |
-| **Protocol** | [`protocol/`](protocol/) | The only contract between the two: `.proto` files, codegen for Swift and TS, and golden fixtures that both sides test against. |
-
-Read [ARCHITECTURE.md](ARCHITECTURE.md) for the full design and the reasons behind it.
 
 ## Quick start
 
-### Requirements
+Both the Simulator and the iPhone connect to your own DSH installation. Start with a host that can already run tasks using your configured model. The bridge supports DSH `0.2.2-rc.1` and requires Node ≥ 24.9, pnpm and an OpenSSL-compatible command-line tool.
 
-- macOS with **Xcode 26** and an **iOS 26** Simulator runtime
-- [nvm](https://github.com/nvm-sh/nvm) (bootstrap installs Node 24 and pnpm for you)
-- **No model API key.** The demos use DSH's own mock LLM server.
+On the **machine running DSH**, build the bridge from the repository root and add it to the profile you use. This example uses the `web` profile.
 
-### 1. Try it in the Simulator
-
-```bash
-git clone https://github.com/laichang/dsh-mobile.git
+```sh
+pnpm --dir bridge install
+pnpm --dir bridge build
+dsh plugin --profile web add "$PWD/bridge"
 ```
 
-```bash
-cd dsh-mobile && scripts/bootstrap
+Restart DSH with that profile (`dsh web`). Open another terminal on the same host, use the same `DSH_HOME`, and generate a pairing code from the repository root.
+
+```sh
+node bridge/lib/scripts/pair.js
 ```
 
-`bootstrap` installs everything it needs under `~/.dshm` (your `~/.dsh` is left alone), builds the bridge, starts a real DSH `0.2.2-rc.1` with the mock model, and runs the first end-to-end round trip in the Simulator. It ends with:
+The terminal prints a QR code and a pairing link. Each code is valid for 10 minutes and can be used once. Run the command again to pair a second device. For a custom port or state directory, see the [bridge installation guide](bridge/README.md).
 
-```
-bootstrap: done. The T0 round trip runs on this Mac.
-```
+### Connection options
 
-Each feature has its own re-runnable demo, for example:
+Before pairing, check the `Addresses:` line in the host terminal. The app tries those addresses in order. The bridge uses TCP port `47801` by default.
 
-```bash
-scripts/demo/all-tasks.sh
-```
+- **Local network.** Connect the iPhone to the same LAN as the host. The host can use Ethernet. Make sure the phone can reach the listed LAN address and port, for example `192.168.1.20:47801`.
+- **Remote access to a home or office host.** Connect the host and iPhone to the same Tailscale network and allow the phone to reach the bridge port. With Tailscale active on the host, start or restart DSH and generate a fresh pairing code. Once the host’s Tailscale address appears in the list, the phone can pair and connect over cellular or another Wi-Fi network.
+- **Direct public access.** If the host has a public IPv4 address on its own network interface, check that it appears in the list. Allow the client to reach the bridge port through the host firewall and any cloud security group. If the public IP belongs to a router or cloud NAT, port forwarding alone leaves that address out of the pairing code and TLS certificate. Use the Tailscale option above for that setup.
 
-### 2. Use it with your own DSH
+### Simulator
 
-1. **Install the bridge** into the DSH profile you run (Node ≥ 24.9, pnpm on `PATH`):
+1. On your Mac, open `ios/dsh-mobile.xcodeproj` in Xcode 26. Select the `dsh-mobile` scheme and an iOS 26 simulator, then press ⌘R.
+2. Copy the link below the QR code in the terminal. On the app’s welcome screen, tap **Paste a pairing link**, paste the link and confirm pairing.
+3. Send a task such as “List the files in the current workspace.” Check that the app displays the result from your DSH host.
 
-   ```bash
-   cd bridge && pnpm install && pnpm build
-   ```
+### Physical iPhone
 
-   ```bash
-   dsh plugin --profile web add /path/to/dsh-mobile/bridge
-   ```
+1. On your iPhone running iOS 26, use one of the connection options above to reach your DSH host.
+2. On your Mac, create `ios/Config/Signing.local.xcconfig`. Replace the example values with your Apple development team ID and bundle ID prefix.
 
-2. **Restart DSH** (`dsh web`). The bridge listens on `0.0.0.0:47801`.
-3. **Build the app** to your iPhone. Create `ios/Config/Signing.local.xcconfig` (git ignores it) with your own team and bundle ID prefix, then open `ios/dsh-mobile.xcodeproj` and run. A free Apple developer account is enough.
-
-   ```
+   ```xcconfig
    DEVELOPMENT_TEAM = ABCDE12345
    DSHM_BUNDLE_ID_PREFIX = com.example
    ```
 
-4. **Generate a QR on the host** with `node bridge/lib/scripts/pair.js`, then scan it in the app. The phone tries each of the host's addresses, so the same Wi-Fi works as it is. Away from that Wi-Fi, turn on Tailscale on both the phone and the computer.
-
-To update, keep the existing DSH profile and bridge state, update and restart the bridge, then install the matching app. Use a fresh QR to regain access to the host’s existing sessions:
-
-```bash
-node bridge/lib/scripts/pair.js
-```
-
-Full install, configuration and state-file details: [bridge/README.md](bridge/README.md).
+3. Open `ios/dsh-mobile.xcodeproj` in Xcode 26. Select the `dsh-mobile` scheme and your connected iPhone, then press ⌘R to install and run the app.
+4. From the app’s welcome screen, scan the QR code in the host terminal and confirm pairing. Send a task and check that the result from your DSH host appears on the iPhone.
 
 ## Security
 
@@ -152,56 +115,6 @@ Full install, configuration and state-file details: [bridge/README.md](bridge/RE
 - **Single-use, short-lived pairing codes.** A QR burns on first use and expires after 10 minutes, so a leaked screenshot is worth little.
 - **Per-device keys and revocation.** The device bearer stays in the Keychain on this device only, never synced. Revoking a device closes its sockets at once and rejects reconnects.
 - **Fail closed.** Approvals that nobody answers are never allowed; a timeout rejects.
-- **No debug hooks in Release.** Fake bridges and test launch arguments are Debug-only, and `scripts/check-release-clean` proves it.
-
-## Status
-
-Built and in use: everything under Features. Not built yet: risk tiers with Face ID for the top tier, plan alignment and pre-authorization, artifact preview and share-out, the share extension. Open work is in the [issues](https://github.com/laichang/dsh-mobile/issues).
-
-**Out of scope:** installing or hosting DSH for you, on-device models (they would plug in later as a "this phone" host), calling model APIs from the phone, push notifications (APNs), a relay server, and guessing the host from the prompt.
-
-> [!NOTE]
-> DSH itself is a developer preview. The bridge supports DSH **`0.2.2-rc.1`** exactly. On any other version it still pairs and tells the app which versions are installed and supported, so you know what to update.
-
-## Built with agents
-
-This repo was planned, built and reviewed by AI coding agents (Claude Code and Codex) working in parallel, under one human's direction. The process itself is part of the project:
-
-- **[STORY.md](STORY.md)**: product vision and the nine design principles (in Chinese). Every principle maps to a screen in **[design/screens.json](design/screens.json)**.
-- **The plan** ([M1's, at tag `m1`](https://github.com/laichang/dsh-mobile/blob/m1/PLAN.md)): a tracer bullet first, then vertical slices. Each "Done when" item has a tier (`[auto]`, `[ui]`, `[human]`) and evidence that must resolve, checked by a pre-commit hook. A plan file exists only while a requirement is in progress; everything else is a [GitHub issue](https://github.com/laichang/dsh-mobile/issues).
-- **The process** ([AGENTS.md "Process"](AGENTS.md#process), the plan data in `plan/`, `scripts/`, the [run-plan Workflow](.claude/workflows/run-plan.js)): a coordinator runs each node through a fresh build agent, a separate verifier and a merge step that reruns the evidence on the merge commit; the scripts and hooks hold the rules, and some decisions stay with the human.
-- **[`evidence/`](https://github.com/laichang/dsh-mobile/tree/m1/evidence)** (at tag `m1`): the screenshots behind each completed M1 slice.
-
-If you're curious how far long-horizon agentic development can go on a real native app, start with AGENTS.md "Process" and `scripts/plan`.
-
-## Project layout
-
-```
-ios/            SwiftUI app · DSHKit package (protocol, connection, store, FakeBridge)
-bridge/         DSH companion plugin (TypeScript, pnpm, node:test, FakeDSH)
-protocol/       frame.proto + golden fixtures · regenerate with scripts/codegen
-design/         screens (screens.json, screens/<id>.html → png, kit/), app icon
-spikes/         X1–X4 experiments behind key decisions
-scripts/        bootstrap · demo/<feature>.sh · codegen · check-plan · review
-evidence/       screenshots cited by the current plan (only while one is in progress)
-```
-
-## Development
-
-| Command | What it does |
-|---|---|
-| `scripts/bootstrap` | Set up a Mac and prove the round trip works |
-| `cd ios/DSHKit && swift test` | Protocol, TLS, store and sync tests on the Mac |
-| `cd bridge && pnpm test` | Bridge tests against `FakeDSH`, golden fixtures and TLS enrollment |
-| `scripts/codegen` | Regenerate Swift + TS from `protocol/*.proto` (`--check` fails if anything changes) |
-| `scripts/demo/<feature>.sh` | Drive one feature end to end in the Simulator |
-| `node scripts/dsh-up.mjs` | Start a local DSH + bridge with the mock model |
-
-Enable the repo's git hooks after cloning:
-
-```bash
-git config core.hooksPath .githooks
-```
 
 ## Contributing
 
@@ -210,12 +123,6 @@ Issues and PRs are welcome, especially TLS reviews, real-device testing, and bri
 By submitting a contribution, you agree that the maintainer may license it under the project license and under separate commercial licenses.
 
 Before writing code, read [AGENTS.md](AGENTS.md) (it applies to humans too): the code is the source of truth, and STORY, the screens and ARCHITECTURE change together with it. Product and UX changes should follow the principles in [STORY.md](STORY.md).
-
-## Acknowledgements
-
-- [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), the agent runtime this app steers
-- [Cordis](https://github.com/cordiverse/cordis), the plugin framework DSH and the bridge are built on
-- [swift-protobuf](https://github.com/apple/swift-protobuf), [protobuf-es](https://github.com/bufbuild/protobuf-es)
 
 ## License
 

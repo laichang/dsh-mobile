@@ -2,18 +2,17 @@
 
 # dsh-mobile
 
-**你的 Agent 在你自己的机器上干活，你在手机上掌舵。**
+**DeepSeek Harness 手机端**
 
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）的原生 iOS 客户端。
 在手机上给每一台装了 DSH 的机器下任务、看进度、批准高危操作、拿回结果。
 
-[![iOS 26](https://img.shields.io/badge/iOS-26-000000?logo=apple&logoColor=white)](#环境要求)
+[![iOS 26](https://img.shields.io/badge/iOS-26-000000?logo=apple&logoColor=white)](#快速开始)
 [![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](ios/)
 [![TypeScript](https://img.shields.io/badge/bridge-TypeScript-3178C6?logo=typescript&logoColor=white)](bridge/)
 [![Protobuf](https://img.shields.io/badge/protocol-protobuf-4285F4)](protocol/)
 [![E2E: TLS 1.3](https://img.shields.io/badge/E2E-TLS_1.3-2ea44f)](#安全)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm_Noncommercial-blue)](#许可证)
-[![Status: preview](https://img.shields.io/badge/status-preview-orange)](#现状)
 
 [English](README.md) · 简体中文
 
@@ -33,20 +32,6 @@
 
 ---
 
-## 为什么做这个
-
-DSH 常驻在你自己的机器上：家里的 Mac、公司的 Windows、NAT 后面的云服务器。它能读写文件、执行命令、操作浏览器。它有 Web 端和桌面端，但没有手机端。
-
-真实的任务往往要跑几分钟到几十分钟：
-
-> 「把我桌面上那个季度报表整理成 PPT，做完发我邮箱」
-> 「帮我把 xxx 仓库的 CI 跑挂的那个测试修了，提个 PR」
-> 「我现在在机场，把昨天下载的那些素材压缩一下传到网盘」
-
-你不想一直盯着。你想把活交出去，需要你的时候再被叫回来，在哪儿都能批准那条 `rm -rf`。这就是 dsh-mobile。
-
-手机只做四件事：**下达任务、观察进度、做决策、接收结果。** 它不直接调用模型 API，也不管理 API Key，所有请求都在你自己的机器上执行。
-
 ## 功能
 
 - 📱 **一个入口**：打开 App 就是一个空白的新会话，输入框就绪。快的直接给答案，慢的自动变成可跟踪的任务。
@@ -64,87 +49,63 @@ DSH 常驻在你自己的机器上：家里的 Mac、公司的 Windows、NAT 后
 - 🔒 **实时活动**：每个正在跑的任务在锁屏上计时（只在本机更新，不用推送）。
 - 🧾 **设备与审计**：查看所有已配对设备，手机丢了随时吊销；谁、什么时候、在哪台设备上批准了什么，都有记录。
 
-## 工作原理
+## 架构图
 
+```mermaid
+flowchart LR
+    app["dsh-mobile<br/>iPhone 或模拟器"]
+    subgraph host["你的机器 · DSH 进程"]
+        bridge["Bridge 插件"]
+        dsh["DeepSeek Harness"]
+        bridge <-->|任务、进度与审批| dsh
+    end
+    app <-->|"Protobuf / WebSocket / TLS 1.3"| bridge
 ```
- ┌─ iPhone ─────────────┐                              ┌─ 你的机器（×N）─────────────────────────┐
- │ dsh-mobile (SwiftUI) │   端到端加密的 protobuf       │ DSH 主进程                              │
- │ SwiftData 缓存       │◄───── 一条 WebSocket ───────►│  └ bridge 插件 (TypeScript, Cordis)     │
- └──────────────────────┘   局域网 / Tailscale          │     • 配对 + 设备注册表                 │
-                                                       │     • 审批托管                          │
-                                                       │     • 里程碑映射 · 续传日志             │
-                                                       └─────────────────────────────────────────┘
-```
-
-DSH 目前还没有配对、推送、中继，也没有稳定公开的通信协议。所以这个仓库包含**三部分**：
-
-| 组成 | 位置 | 说明 |
-|---|---|---|
-| **iOS App** | [`ios/`](ios/) | SwiftUI、Swift 6 严格并发检查、`@Observable` store、SwiftData 缓存。逻辑都在 `DSHKit` Swift 包里。 |
-| **Bridge 插件** | [`bridge/`](bridge/) | 一个 Cordis 插件，装进你已经在用的 DSH。它开自己的监听端口，吸收上游 API 的变化，App 永远不直接对接 DSH 的内部协议。 |
-| **协议** | [`protocol/`](protocol/) | 两端之间唯一的契约：`.proto` 文件、Swift 与 TS 的代码生成、两端共同测试的 golden fixtures。 |
-
-完整设计及其理由见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
 ## 快速开始
 
-### 环境要求
+两种方式都使用你已配置好模型、能运行任务的 DSH。目前 Bridge 支持 DSH `0.2.2-rc.1`。先在 **DSH 所在机器**的仓库根目录运行以下命令（需要 Node ≥ 24.9、pnpm 和 OpenSSL 兼容的命令行工具）。这里以 `web` profile 为例：
 
-- macOS，装好 **Xcode 26** 和 **iOS 26** 模拟器运行时
-- [nvm](https://github.com/nvm-sh/nvm)（bootstrap 会帮你装好 Node 24 和 pnpm）
-- **不需要模型 API Key**，演示使用 DSH 自带的 mock LLM 服务
-
-### 1. 先在模拟器里跑起来
-
-```bash
-git clone https://github.com/laichang/dsh-mobile.git
+```sh
+pnpm --dir bridge install
+pnpm --dir bridge build
+dsh plugin --profile web add "$PWD/bridge"
 ```
 
-```bash
-cd dsh-mobile && scripts/bootstrap
+重启这个 profile 的 DSH（`dsh web`）。在同一台机器上另开终端，使用相同的 `DSH_HOME`，从仓库根目录生成配对码：
+
+```sh
+node bridge/lib/scripts/pair.js
 ```
 
-`bootstrap` 把所需的一切装到 `~/.dshm` 下（不会动你的 `~/.dsh`），构建 bridge，用 mock 模型启动一个真实的 DSH `0.2.2-rc.1`，并在模拟器里跑通第一个端到端来回。最后会输出：
+终端会显示二维码和配对链接。每个码限用一次，10 分钟内有效。模拟器和真机分别配对时，再运行一次命令即可。自定义端口或状态目录见 [Bridge 安装说明](bridge/README.md)。
 
-```
-bootstrap: done. The T0 round trip runs on this Mac.
-```
+### 连接方式
 
-每个功能都有可重复运行的演示脚本，例如：
+配对前，先看主机终端输出的 `Addresses:`。App 会依次尝试这些地址。默认端口是 Bridge 的 TCP `47801`。
 
-```bash
-scripts/demo/all-tasks.sh
-```
+- **局域网**：iPhone 连到主机所在的局域网（主机也可以用网线），确保手机能访问列表中的内网地址和端口，例如 `192.168.1.20:47801`。
+- **从外网访问家里或公司的主机**：在主机和 iPhone 上启用 Tailscale，加入同一网络，并允许手机访问 Bridge 端口。先连好主机上的 Tailscale，再启动或重启 DSH，生成新配对码。确认地址列表里有主机的 Tailscale 地址后，即可通过蜂窝网络或其他 Wi-Fi 配对和使用。
+- **公网直连**：如果主机网卡直接持有公网 IPv4 地址，确认该地址出现在列表里，并在主机防火墙及适用的云安全组中允许客户端访问 Bridge 端口。如果公网 IP 只在路由器或云 NAT 上，仅做端口转发不会把这个公网地址加入配对码和 TLS 证书；这种情况下可使用上面的 Tailscale 方式。
 
-### 2. 接入你自己的 DSH
+### 模拟器
 
-1. **安装 bridge** 到你正在用的 DSH profile（需要 Node ≥ 24.9，`PATH` 里有 pnpm）：
+1. 在 Mac 上用 Xcode 26 打开 `ios/dsh-mobile.xcodeproj`，选择 `dsh-mobile` 和一台 iOS 26 模拟器，按 ⌘R 运行。
+2. 复制终端中二维码下方的链接，在 App 欢迎页选择「粘贴配对链接」，确认配对。
+3. 发送一条任务，例如「列出当前工作区的文件名」。看到 DSH 返回的结果，即可确认连接成功。
 
-   ```bash
-   cd bridge && pnpm install && pnpm build
-   ```
+### 真机
 
-   ```bash
-   dsh plugin --profile web add /path/to/dsh-mobile/bridge
-   ```
+1. 在运行 iOS 26 的 iPhone 上，按上面的连接方式接入 DSH 主机所在的网络或使用公网直连。
+2. 在 Mac 上新建 `ios/Config/Signing.local.xcconfig`，把示例值换成自己的 Apple 开发团队 ID 和 Bundle ID 前缀：
 
-2. **重启 DSH**（`dsh web`）。bridge 监听 `0.0.0.0:47801`。
-3. **构建 App** 到你的 iPhone：新建 `ios/Config/Signing.local.xcconfig`（已被 git 忽略），填上你自己的 Team 和 Bundle ID 前缀，再打开 `ios/dsh-mobile.xcodeproj` 运行。免费的 Apple 开发者账号就够了。
-
-   ```
+   ```xcconfig
    DEVELOPMENT_TEAM = ABCDE12345
    DSHM_BUNDLE_ID_PREFIX = com.example
    ```
 
-4. **在主机运行 `node bridge/lib/scripts/pair.js` 获取二维码，再在 App 里扫码**。二维码里包含执行端的所有地址，手机会逐个尝试，同一 Wi-Fi 或 Tailscale 都能连上。
-
-升级时保留原 DSH 配置和 bridge 状态目录，先更新 bridge 并重启 DSH，再安装配套 App。重新扫码后可打开原有会话。获取新码（一次性，10 分钟有效）：
-
-```bash
-node bridge/lib/scripts/pair.js
-```
-
-完整的安装、配置和状态文件说明见 [bridge/README.md](bridge/README.md)。
+3. 在 Xcode 26 中打开 `ios/dsh-mobile.xcodeproj`，选择 `dsh-mobile` 和已连接的 iPhone，按 ⌘R 安装并运行。
+4. 在 App 欢迎页扫描主机终端里的二维码，确认配对。发送一条任务，在 iPhone 上查看这台 DSH 主机返回的结果。
 
 ## 安全
 
@@ -152,56 +113,6 @@ node bridge/lib/scripts/pair.js
 - **一次性、短时效的配对码**：二维码首次使用即作废，10 分钟后过期，截图泄露也没多大用。
 - **每台设备独立凭据，可吊销**：手机的设备凭据只存在本机 Keychain，不同步、不备份。吊销设备会立即断开它的连接并拒绝重连。
 - **失败即关闭**：没人回答的审批永远不会放行，超时即拒绝。
-- **Release 版本不含调试入口**：FakeBridge、测试用启动参数只存在于 Debug 构建，`scripts/check-release-clean` 负责证明这一点。
-
-## 现状
-
-「功能」里列的都已做好、在用。还没做：风险分级（最高一级需 Face ID）、开跑前对齐计划与预先授权、产物预览与分享出去、分享扩展。待办见 [issues](https://github.com/laichang/dsh-mobile/issues)。
-
-**暂不做**：替你安装或托管 DSH；端侧模型（将来以「本机执行端」的形式接入）；手机直接调用模型 API；推送通知（APNs）；中转服务器；根据任务内容猜执行端。
-
-> [!NOTE]
-> DSH 本身还是开发者预览版。bridge 目前只精确支持 DSH **`0.2.2-rc.1`**。遇到其他版本时仍然可以配对，并告诉 App 已安装和支持的版本，方便你知道该升级哪一边。
-
-## 由 Agent 协作构建
-
-这个仓库由 AI 编程 Agent（Claude Code 和 Codex）在一位人类的主导下并行规划、开发和评审。这套流程本身也是项目的一部分：
-
-- **[STORY.md](STORY.md)**：产品愿景和九条设计原则。每条原则都对应 **[design/screens.json](design/screens.json)** 里的一个画面。
-- **计划文件**（[M1 的计划，见 tag `m1`](https://github.com/laichang/dsh-mobile/blob/m1/PLAN.md)）：先打一发曳光弹（tracer bullet），再做纵向切片。每个「Done when」条目都有分级（`[auto]`、`[ui]`、`[human]`）和必须可解析的证据，由 pre-commit hook 检查。计划文件只在一个需求进行中时存在；其他一切都是 [GitHub issue](https://github.com/laichang/dsh-mobile/issues)。
-- **流程**（[AGENTS.md「Process」](AGENTS.md#process)、`plan/` 里的计划数据、`scripts/`、[run-plan Workflow](.claude/workflows/run-plan.js)）：协调者让每个节点依次经过全新的构建 Agent、独立的验证者和合并步骤（在合并提交上重跑证据）；规则写在脚本和 hook 里，有些决定必须留给人。
-- **[`evidence/`](evidence/)**：每个已完成切片背后的截图。
-
-如果你好奇长周期的 Agent 开发能把一个真实的原生 App 做到什么程度，从 AGENTS.md「Process」和 `scripts/plan` 读起。
-
-## 目录结构
-
-```
-ios/            SwiftUI App · DSHKit 包（协议、连接、store、FakeBridge）
-bridge/         DSH 伴随插件（TypeScript、pnpm、node:test、FakeDSH）
-protocol/       frame.proto + golden fixtures · 用 scripts/codegen 重新生成
-design/         画面（screens.json、screens/<id>.html → png、kit/）、App 图标
-spikes/         关键决策背后的 X1–X4 实验
-scripts/        bootstrap · demo/<feature>.sh · codegen · check-plan · review
-evidence/       当前计划引用的截图（仅在需求进行中存在）
-```
-
-## 开发
-
-| 命令 | 作用 |
-|---|---|
-| `scripts/bootstrap` | 配置一台 Mac，并验证端到端来回可以跑通 |
-| `cd ios/DSHKit && swift test` | 在 Mac 上跑协议、TLS、store、同步相关测试 |
-| `cd bridge && pnpm test` | 针对 `FakeDSH`、golden fixtures、TLS 注册的 bridge 测试 |
-| `scripts/codegen` | 从 `protocol/*.proto` 重新生成 Swift + TS（`--check` 在有变化时失败） |
-| `scripts/demo/<feature>.sh` | 在模拟器里端到端演示某个功能 |
-| `node scripts/dsh-up.mjs` | 用 mock 模型启动本地 DSH + bridge |
-
-clone 之后启用仓库的 git hooks：
-
-```bash
-git config core.hooksPath .githooks
-```
 
 ## 参与贡献
 
@@ -210,12 +121,6 @@ git config core.hooksPath .githooks
 提交贡献即表示你同意维护者可以按本项目许可证、以及单独的商业许可证授权你的贡献。
 
 写代码之前请先读 [AGENTS.md](AGENTS.md)（对人同样适用）：代码是唯一的事实来源，STORY、画面、ARCHITECTURE 要和代码一起改。产品和交互上的改动请遵循 [STORY.md](STORY.md) 里的原则。
-
-## 致谢
-
-- [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)：本 App 所驾驭的 Agent 运行时
-- [Cordis](https://github.com/cordiverse/cordis)：DSH 与 bridge 所基于的插件框架
-- [swift-protobuf](https://github.com/apple/swift-protobuf)、[protobuf-es](https://github.com/bufbuild/protobuf-es)
 
 ## 许可证
 
