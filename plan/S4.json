@@ -6,28 +6,43 @@
       "text": "A failed batch commits neither tasks nor cursor. A successful batch persists both. Reopen the on-disk store to verify. One host's failure leaves a second host able to commit, and background flush persists its pending batch.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test --filter DurableHostSyncTests"
+      ]
     },
     {
       "tier": "auto",
       "text": "Persist LogReset reconciliation state. Kill and relaunch during reconciliation, resume at the last committed cursor, replay duplicate events and check message counts, revisions, unread state and approvals.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/swift-test --filter DurableHostSyncTests"
+      ]
     },
     {
       "tier": "ui",
       "text": "From a fresh install create distinct sessions on two hosts with the same task ID, approvals, queues and attachments. Relaunch the same install offline, verify host-specific rows, history and thumbnails against the persisted records and cursors, then reconnect and check the resulting state.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/demo/durable-two-hosts.sh",
+        "shot:evidence/S4/durable-two-hosts-offline.png"
+      ]
     },
     {
       "tier": "auto",
       "text": "The external domain snapshot probe compiles on both platforms and the CachedTask.stateRaw probe now fails for the expected reason. SwiftData and raw persistence types stay inside DSHPlatform; its signatures and implementation do not import Core or Features.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/check-core-api macos",
+        "cmd:scripts/check-core-api ios",
+        "cmd:scripts/check-layers-test"
+      ]
     }
   ]
 }

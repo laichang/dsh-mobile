@@ -3,7 +3,6 @@
 import DSHProtocol
 import DSHTestSupport
 import Foundation
-import SwiftData
 import Testing
 
 /// A follow-up in a finished session, against `FakeHost` (`conversation.v1`): the user

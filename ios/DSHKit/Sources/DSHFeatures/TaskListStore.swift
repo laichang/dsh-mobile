@@ -84,7 +84,7 @@ public final class TaskListStore {
     public init(cache: TaskCache, hosts: [HostConfig], prompt: String = "", firstConnectDelay: Duration = .zero,
                 preferredHostKey: String? = nil, onHostChoice: @escaping (String) -> Void = { _ in }) {
         self.cache = cache
-        self.links = hosts.map { cache.sync(for: $0) }
+        self.links = hosts.map { HostSync(config: $0, cache: cache) }
         self.onHostChoice = onHostChoice
         composer = TaskComposer(prompt: prompt, hostKey: hosts.first(where: { $0.key == preferredHostKey })?.key ?? hosts.last?.key)
         self.firstConnectDelay = firstConnectDelay
@@ -110,7 +110,7 @@ public final class TaskListStore {
             return
         }
         if let existing { links[existing].retire() }
-        let link = cache.sync(for: host)
+        let link = HostSync(config: host, cache: cache)
         if let name = host.name { link.rename(name) }
         observe(link)
         if let existing { links[existing] = link } else { links.append(link) }

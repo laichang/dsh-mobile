@@ -1,28 +1,28 @@
-import DSHCore
+@testable import DSHCore
 import DSHFeatures
 import DSHProtocol
 import DSHTestSupport
+import DSHPlatform
 import Foundation
-import SwiftData
 import Testing
 
 struct ModelDomainTests {
     @MainActor
     @Test(arguments: [nil, "", "high"] as [String?])
     func reopensLegacySelectionPreservingEffort(_ effort: String?) throws {
-        let container = try TaskCache.container(inMemory: true)
-        let context = ModelContext(container)
+        let cache = try TaskCache(inMemory: true)
+        let storage = cache.storage.session(hostKey: "mac", name: "mac")
         let task = CachedTask(hostKey: "mac", taskID: "task", title: "Session", createdAt: .now)
         var selection = Dshm_V1_ModelSelection()
         selection.provider = "mock"
         selection.model = "alpha"
         if let effort { selection.reasoningEffort = effort }
         task.modelSelectionData = try selection.serializedData()
-        context.insert(task)
-        try context.save()
+        storage.insert(task)
+        try storage.flush()
 
         let connection = HostConnection(endpoint: .localBridge(), transport: FakeHost().factory)
-        let reopened = TaskListStore(cache: TaskCache(container), hosts: [.init(key: "mac", connection: connection)])
+        let reopened = TaskListStore(cache: cache, hosts: [.init(key: "mac", connection: connection)])
         #expect(reopened.task(task.key)?.modelSelection == ModelSelection(provider: "mock", model: "alpha", effort: effort))
     }
 

@@ -106,7 +106,7 @@ Interrupt, model switch and follow-up messages take the same outbound path as an
 - Codegen: `buf` + `protoc-gen-es` (pinned devDependencies of `bridge/`) and `protoc-gen-swift` built by SwiftPM from the swift-protobuf version that `ios/DSHKit` pins. One entry point: `scripts/codegen`.
 - Generated code is committed; `scripts/codegen --check` fails when regeneration changes a file. Xcode builds without a codegen toolchain, and protocol changes show in review.
 - Bridge: pnpm, pinned by `packageManager` (Node ≥ 24.9, as DSH requires); tests use `node:test`.
-- Swift: DSHCore wraps DSHTransport, package-visible protobuf messages and SwiftData. DSHFeatures consumes typed DSHCore operations and shares DSHActivity with the app. The widget links only DSHActivity. Debug composition uses DSHTestSupport factories. `scripts/swift-test` checks these boundaries before running the package tests on macOS.
+- Swift: DSHCore wraps DSHTransport, package-visible protobuf messages and DSHPlatform. DSHPlatform keeps SwiftData records and storage transactions inside the package. DSHFeatures consumes typed DSHCore operations and shares DSHActivity with the app. The widget links only DSHActivity. Debug composition uses DSHTestSupport factories. `scripts/swift-test` checks these boundaries before running the package tests on macOS.
 - `scripts/check-core-api macos` and `scripts/check-core-api ios` compile DSHCore and inspect its external signatures with the Swift API digester. A per-platform allowlist identifies the declaration and referenced type of each existing exposure. Adding a reference or leaving a repaired one in the allowlist fails the check.
 - Dependencies are pinned to exact versions (`ios/DSHKit/Package.swift`, `bridge/package.json`).
 
@@ -197,7 +197,7 @@ DSHFeatures
    TaskListStore, TaskComposer, DrawerTree, TaskOutcome, Dictation, LiveActivities
 DSHCore
    HostConnection, Pairing, HostSync, Milestones, Transcript, FollowUpQueue, Questions, Attachments
-Persistence
+DSHPlatform
    SwiftData: CachedHost (cursor), CachedTask (transcript, milestones, blocks, attachments, read state)
 DSHTransport
    Ordered WebSocket I/O, endpoint probing and device-only Keychain storage
@@ -207,7 +207,7 @@ DSHProtocol
 
 - **Design as data (provisional, pending user confirmation):** `design/screens.json`: screens and shared parts (needs, nav, STORY sections, rules with XCUITests). A screen is `design/screens/<id>.html` on `design/kit/` (png: `scripts/render-design`); `scripts/check-design` checks them and the theme names. Not chosen: one board.
 - **One `HostConnection` per paired host.** Each address attempt negotiates a pinned TLS connection. Each generation owns its ordered writer and receive loop. The loop correlates responses by ID, delivers events to the store and ignores incoming requests.
-- **`HostSync`** owns one host’s connection loop and SwiftData context. It resumes from its saved cursor and backs off on disconnect. Backgrounding flushes each host and closes its socket; foregrounding waits for shutdown before reconnecting. `TaskListStore` consumes snapshots and host commands. `TaskComposer` owns drafts, selection, upload progress and send state. HostSync stages files and records successful sends.
+- **`HostSync`** owns one host’s connection loop and maps its storage records to domain snapshots. Each host has a separate DSHPlatform session that commits changes and the replay cursor in one SwiftData save. It resumes from its saved cursor and backs off on disconnect. Backgrounding flushes each host and closes its socket; foregrounding waits for shutdown before reconnecting. `TaskListStore` consumes snapshots and host commands. `TaskComposer` owns drafts, selection, upload progress and send state. HostSync stages files and records successful sends.
 - **Cache**: events at or below the cursor, and chunks at or below a task's chunk seq, are skipped, so replays are idempotent. Equal summary timestamps use the turn start to distinguish a resumed task from a stale replay. Each host saves pending events and their cursor together after 150 ms. A `LogReset` persists a pending `ListTasks` reconciliation, so a relaunch finishes marking lost running tasks failed.
 - The host certificate can renew under the same pinned key. A changed key requires a fresh enrollment. Both app configurations use the default App Transport Security policy. `scripts/check-release-clean` inspects built plists and binaries.
 

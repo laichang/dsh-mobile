@@ -1,7 +1,36 @@
 import DSHTransport
 import Foundation
+import DSHProtocol
 
 extension HostSync {
+    package func status(named name: String) -> HostStatus {
+        .init(key: key, name: name, reachability: reachability, lastConnectedAt: host.lastConnectedAt,
+              channelName: connection.channelName, capabilities: capabilities ?? [], address: address,
+              addressFailures: addressFailures)
+    }
+
+    package func rows(hostName: String) -> [TaskRow] {
+        storage.tasks().compactMap { t in
+            let supportsApprovals = capabilities?.contains(DSHProtocolInfo.approvalsCapability)
+            if t.approvalOnly && supportsApprovals == false { return nil }
+            return TaskRow(
+                key: t.key, hostKey: t.hostKey, hostName: hostName, taskID: t.taskID,
+                title: t.title, state: t.state, message: t.message, transcript: t.transcript,
+                createdAt: t.createdAt, updatedAt: t.updatedAt,
+                latestReply: t.latestReply, sessionRevision: t.sessionRevision.map(UInt64.init), externalSession: t.externalSession,
+                approvalOnly: t.approvalOnly, approvals: supportsApprovals == false ? [] : t.approvals,
+                milestones: timeline(of: t),
+                modelSelection: t.modelSelectionData.flatMap { (try? Dshm_V1_ModelSelection(serializedBytes: $0)).map(ModelSelection.init) },
+                workspace: t.workspace, unread: t.state.isTerminal && (t.readThrough.map { $0 < t.updatedAt } ?? true),
+                approvalsAnswered: t.approvalsAnswered,
+                blocks: capabilities?.contains(DSHProtocolInfo.transcriptCapability) == false
+                    ? structuredTranscript(of: t).userMessagesOnly : structuredTranscript(of: t),
+                turnStartedAt: t.turnStartedAt,
+                queue: t.queueData.isEmpty ? [] : t.followUpQueue.messages, attachments: t.sentAttachments,
+                failureCode: t.failureCode)
+        }
+    }
+
     /// One configured host: how to reach it and the key its cache rows use.
     public struct HostConfig: Sendable {
         public var key: String

@@ -2,7 +2,6 @@ import DSHCore
 import DSHFeatures
 import DSHTestSupport
 import Foundation
-import SwiftData
 import Testing
 
 /// The durable list with milestones: a task's milestones are cached with it, so the

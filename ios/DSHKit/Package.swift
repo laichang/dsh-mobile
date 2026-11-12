@@ -26,7 +26,8 @@ let package = Package(
         // TaskActivityState, and TaskActivityAttributes where ActivityKit exists.
         .target(name: "DSHActivity"),
         .target(name: "DSHTransport"),
-        .target(name: "DSHCore", dependencies: ["DSHProtocol", "DSHTransport", .product(name: "SwiftProtobuf", package: "swift-protobuf")]),
+        .target(name: "DSHPlatform"),
+        .target(name: "DSHCore", dependencies: ["DSHPlatform", "DSHProtocol", "DSHTransport", .product(name: "SwiftProtobuf", package: "swift-protobuf")]),
         .target(name: "DSHFeatures", dependencies: ["DSHCore", "DSHActivity"]),
         // FakeBridge and other debug-only test doubles. Compiled out of Release (#if DEBUG).
         .target(name: "DSHTestSupport", dependencies: ["DSHCore", "DSHFeatures", "DSHProtocol", "DSHTransport", .product(name: "SwiftProtobuf", package: "swift-protobuf")]),
@@ -35,7 +36,7 @@ let package = Package(
         .target(name: "SystemCallbackDoubles", path: "Tests/SystemCallbackDoubles"),
         .testTarget(
             name: "DSHKitTests",
-            dependencies: ["DSHCore", "DSHFeatures", "DSHProtocol", "DSHTestSupport", "DSHActivity", "DSHTransport", "SystemCallbackDoubles", .product(name: "SwiftProtobuf", package: "swift-protobuf")]
+            dependencies: ["DSHPlatform", "DSHCore", "DSHFeatures", "DSHProtocol", "DSHTestSupport", "DSHActivity", "DSHTransport", "SystemCallbackDoubles", .product(name: "SwiftProtobuf", package: "swift-protobuf")]
         ),
     ]
 )

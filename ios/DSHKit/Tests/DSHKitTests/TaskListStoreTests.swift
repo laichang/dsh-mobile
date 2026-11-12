@@ -1,9 +1,9 @@
 import DSHTransport
-import DSHCore
+@testable import DSHCore
 import DSHFeatures
 import DSHTestSupport
+import DSHPlatform
 import Foundation
-import SwiftData
 import Testing
 
 /// Durable list + resume against `FakeHost`.
@@ -131,16 +131,16 @@ import Testing
     }
 
     @Test func cachedTasksAppearOnlyForConfiguredHostsEvenWhenOffline() async throws {
-        let container = try TaskCache.container(inMemory: true)
-        let context = ModelContext(container)
+        let cache = try TaskCache(inMemory: true)
         for host in ["old-loopback", "paired-mac"] {
             let row = CachedTask(hostKey: host, taskID: "same-id", title: host, createdAt: .now)
             if host == "old-loopback" { row.approvalOnly = true }
-            context.insert(row)
+            let storage = cache.storage.session(hostKey: host, name: host)
+            storage.insert(row)
+            try storage.flush()
         }
-        try context.save()
         let link = HostConnection(endpoint: .localBridge(), transport: FakeHost(reachable: false).factory)
-        let store = TaskListStore(cache: TaskCache(container), hosts: [.init(key: "paired-mac", connection: link, name: "Paired Mac")])
+        let store = TaskListStore(cache: cache, hosts: [.init(key: "paired-mac", connection: link, name: "Paired Mac")])
         store.foreground()
         defer { store.background() }
         try await waitUntil { store.hosts.first?.reachability == .offline }
