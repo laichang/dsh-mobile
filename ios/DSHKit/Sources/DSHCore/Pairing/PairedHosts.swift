@@ -1,3 +1,4 @@
+import DSHPlatform
 import DSHTransport
 import Foundation
 import Synchronization
@@ -91,47 +92,23 @@ private extension Array where Element == PairedHost {
 
 /// A JSON file in Application Support.
 public struct FilePairedHostStore: PairedHostStore {
-    public let url: URL
+    private let file: PairedHostFile<PairedHost>
+    public var url: URL { file.url }
 
     public init(url: URL? = nil) {
-        self.url = url ?? URL.applicationSupportDirectory.appending(path: "paired-hosts.json")
-    }
-
-    // Store values can be created independently for the same file.
-    private static let writers = Mutex(())
-
-    private func read() throws -> [PairedHost] {
-        do {
-            return try JSONDecoder().decode([PairedHost].self, from: Data(contentsOf: url))
-        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
-            return []
-        }
+        file = PairedHostFile(url: url)
     }
 
     public func load() -> [PairedHost] {
-        (try? read().filter { $0.tlsDeviceID != nil }) ?? []
-    }
-
-    @discardableResult
-    private func mutate<Result>(_ body: (inout [PairedHost]) -> Result) throws -> Result {
-        try Self.writers.withLock { _ in
-            let before = try read()
-            var after = before
-            let result = body(&after)
-            if before != after {
-                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try JSONEncoder().encode(after).write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
-            }
-            return result
-        }
+        (try? file.read().filter { $0.tlsDeviceID != nil }) ?? []
     }
 
     public func save(_ host: PairedHost) throws {
-        try mutate { $0.save(host) }
+        try file.mutate { $0.save(host) }
     }
 
     public func update(_ host: PairedHost) throws {
-        try mutate { hosts in
+        try file.mutate { hosts in
             guard let index = hosts.firstIndex(where: {
                 $0.hostKey == host.hostKey && $0.tlsDeviceID == host.tlsDeviceID && $0.pendingCredentialID == nil
             }) else { return }
@@ -140,21 +117,21 @@ public struct FilePairedHostStore: PairedHostStore {
     }
 
     public func remove(id: String) throws {
-        try mutate { $0.removeAll { $0.id == id && $0.pendingCredentialID == nil } }
+        try file.mutate { $0.removeAll { $0.id == id && $0.pendingCredentialID == nil } }
     }
 
     public func removeAll() throws {
-        try mutate { $0.removeAll { $0.pendingCredentialID == nil } }
+        try file.mutate { $0.removeAll { $0.pendingCredentialID == nil } }
     }
 
     public func retire(_ enrollment: HostEnrollment) throws -> Bool {
-        try mutate { $0.retire(enrollment) }
+        try file.mutate { $0.retire(enrollment) }
     }
 
-    public func pendingRemovals() throws -> [HostEnrollment] { try read().pendingRemovals }
+    public func pendingRemovals() throws -> [HostEnrollment] { try file.read().pendingRemovals }
 
     public func acknowledgeRemoval(of enrollment: HostEnrollment) throws {
-        try mutate { $0.acknowledge(enrollment) }
+        try file.mutate { $0.acknowledge(enrollment) }
     }
 }
 
