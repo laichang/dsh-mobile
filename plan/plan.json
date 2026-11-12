@@ -26,10 +26,10 @@
         "T0"
       ],
       "branch": "claude/s1-654b0ec",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "6f593ba",
       "why": "Losing one file read must never turn an update to one enrollment into removal of every other host.",
       "cuts": "Use the real file store in `ios/DSHKit/Sources/DSHCore/Pairing/PairedHosts.swift` and its callers in `ios/DSHKit/Sources/DSHCore/Pairing/Pairing.swift`. Serialize read, comparison, modification and atomic file replacement across all callers of a store file. Read every record for mutation. Apply visibility filters only when listing hosts. Use this contract for save, address update, remove and pending-cleanup writes. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
@@ -297,6 +297,11 @@
       "date": "2026-11-12",
       "title": "S6 assigned",
       "body": "Branch `claude/s6-0e59536`, simulator `05783431-A95B-48BF-AA06-B9E351C7250F`, DSHM_HOME `~/.dshm/home-s6-05783431-A95B-48BF-AA06-B9E351C7250F`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S6)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S1 merged",
+      "body": "Merged as `6f593ba`; the plan/ rules hold on the merge commit. No open [human] items, so S1 is `done`."
     }
   ],
   "pending": []
