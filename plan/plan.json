@@ -1,0 +1,274 @@
+{
+  "title": "Three-layer refactor of dsh-mobile and its bridge",
+  "nodes": [
+    {
+      "id": "T0",
+      "kind": "tracer",
+      "title": "Tracer bullet: WP0 · Capture the two-platform public API and a clean-install round trip",
+      "needs": [],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Pin the comparison to 61b5416 before changing a target or a public declaration. Record the current SwiftPM and Xcode target dependencies, linked products and test results, including any existing failures.",
+      "cuts": "Start at `ios/DSHKit/Package.swift`, `ios/dsh-mobile.xcodeproj/project.pbxproj`, `scripts/check-layers`, `scripts/check-layers-test` and `scripts/demo/round-trip.sh`. Use swift-api-digester -dump-sdk -module DSHCore on the actual macOS 15 and iOS 26 builds with their respective SDK, target and module search paths. Identify declarations and referenced types by module and symbol, including DSHTransport, DSHProtocol, SwiftProtobuf, DSHPlatform, SwiftData and Core's own raw connection and cache entities. Exercise the production pairing and task path with test credentials.",
+      "not": "",
+      "demo": "scripts/demo/round-trip.sh",
+      "log": []
+    },
+    {
+      "id": "S1",
+      "kind": "slice",
+      "title": "WP1 · Preserve paired hosts when their file cannot be read",
+      "needs": [
+        "T0"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Losing one file read must never turn an update to one enrollment into removal of every other host.",
+      "cuts": "Use the real file store in `ios/DSHKit/Sources/DSHCore/Pairing/PairedHosts.swift` and its callers in `ios/DSHKit/Sources/DSHCore/Pairing/Pairing.swift`. Serialize read, comparison, modification and atomic file replacement across all callers of a store file. Read every record for mutation. Apply visibility filters only when listing hosts. Use this contract for save, address update, remove and pending-cleanup writes. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S2",
+      "kind": "slice",
+      "title": "WP1 · Carry the originating enrollment through both revocation paths",
+      "needs": [
+        "S1"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "A host can pair again while revocation of its old device is in flight. Scope cleanup, connection teardown and UI feedback to the enrollment that was revoked.",
+      "cuts": "Capture immutable host key and tlsDeviceID in Core at connection creation or revocation initiation, before awaiting a result. Carry it through local .thisDevice and remote close 4003 in `ios/DSHKit/Sources/DSHCore/HostDeviceManagement.swift`, `ios/DSHKit/Sources/DSHCore/Sync/HostSync.swift`, `ios/DSHKit/Sources/DSHFeatures/TaskListStore.swift`, `ios/dsh-mobile/Features/Hosts/HostActions.swift` and `ios/dsh-mobile/AppComposition.swift`. Cover HostDetailView and DeviceManagementView. Never replace the captured ID with a lookup by host key. Persist cleanup intent before removing credentials, then acknowledge the matching pending item. Keep the existing preferred-host UserDefaults key. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
+      "not": "",
+      "demo": "scripts/demo/revoke.sh",
+      "log": []
+    },
+    {
+      "id": "S3",
+      "kind": "slice",
+      "title": "WP1 · Make direct re-pairing recoverable and reject stale address updates",
+      "needs": [
+        "S2"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Direct replacement produces an old credential even without a revoke event. An old socket may also report a successful address after its replacement is already active.",
+      "cuts": "Use `ios/DSHKit/Sources/DSHCore/Pairing/TLSEnrollment.swift`, `ios/DSHKit/Sources/DSHCore/Pairing/Pairing.swift`, `ios/DSHKit/Sources/DSHCore/Pairing/PairingOffer.swift` and `ios/DSHKit/Sources/DSHCore/HostAddresses.swift`. After obtaining B's credential, determine the actually displaced registration inside the serialized file mutation. Commit B active and A pending cleanup (old host key and tlsDeviceID) in one atomic replacement. Reuse revocation's startup cleanup. Capture enrollment identity before dialing, then compare it during the same mutation that could write addresses. Move PairingModel screen state to DSHFeatures. Core retains offer parsing, expiry, enrollment and credential matching. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S4",
+      "kind": "slice",
+      "title": "WP2 · Commit each host's task changes and cursor in one storage transaction",
+      "needs": [
+        "T0"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Core owns replay and reconciliation. Persistent records must recover together with the cursor used to request the next batch.",
+      "cuts": "Introduce the package-internal DSHPlatform target in `ios/DSHKit/Package.swift`. Move raw records, ModelContainer/ModelContext, FetchDescriptor, storage sessions and transactions out of `ios/DSHKit/Sources/DSHCore/Sync/TaskCache.swift`. In `ios/DSHKit/Sources/DSHCore/Sync/HostSync.swift` and `ios/DSHKit/Sources/DSHCore/Sync/HostSnapshots.swift`, assemble host sync and map raw timestamps, states and snapshot bytes to domain values. Remove TaskCache.sync(for:) as the composition point. Keep the existing save batching and background flush. Use DurableHostSyncTests, SessionRevisionTests, SessionHistoryTests, ReconnectTests and scripts/demo/durable-list.sh. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
+      "not": "",
+      "demo": "scripts/demo/durable-list.sh",
+      "log": []
+    },
+    {
+      "id": "S5",
+      "kind": "slice",
+      "title": "WP2 · Move the verified paired-host file implementation into DSHPlatform",
+      "needs": [
+        "S3",
+        "S4"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Both the new foundation target and the tested enrollment lifecycle must exist before moving file I/O across the boundary.",
+      "cuts": "Extract raw file I/O and atomic storage from `ios/DSHKit/Sources/DSHCore/Pairing/PairedHosts.swift` into DSHPlatform. Keep registration policy, origin comparisons and credential decisions in Core, with comparison and write performed in one serialized mutation. Preserve preferred-host configuration and existing TLS/Keychain implementations. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S6",
+      "kind": "slice",
+      "title": "WP3 · Move request dispatch and preserve the replay barrier",
+      "needs": [
+        "T0"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "With a single reader per connection generation, an enqueued reply must not overtake a preceding replay event while Core maps it.",
+      "cuts": "Starting in `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHTransport/OrderedWriter.swift` and `ios/DSHKit/Tests/DSHKitTests/TransportDispatchTests.swift`, move correlation, request IDs, cancellation, ordered writes, receive loop and generation-scoped close to DSHTransport. It may depend on DSHProtocol. Switch dispatch ownership once and migrate one read-only command. Await Core's ordered mapping and yield before resolving a later response. Keep Hello negotiation, the 4003 meaning and raw-to-domain event mapping in Core. Match `bridge/src/server.ts` and `ios/DSHKit/Sources/DSHCore/Sync/HostSync.swift`. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S7",
+      "kind": "slice",
+      "title": "WP3 · Move the remaining wire mappings behind typed host commands",
+      "needs": [
+        "S6"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Features and app pages should call domain operations without handling wire frames or the connection's raw request API.",
+      "cuts": "Migrate command families from `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHCore/HostCommands.swift` and `ios/DSHKit/Sources/DSHCore/HostDeviceManagement.swift`. Keep typed domain inputs, results, failures and event mappings in Core. DSHTransport handles frames, TLS and request lifetimes, while DSHProtocol owns the generated messages. Test with `ios/DSHKit/Tests/DSHKitTests/GoldenFixturesTests.swift` and TransportDispatchTests. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S8",
+      "kind": "slice",
+      "title": "WP4 · Separate attachment I/O, send policy and task-screen actions",
+      "needs": [
+        "S5",
+        "S7"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "The same limits, command ordering and failure outcomes should apply whether the user creates a task or continues a conversation.",
+      "cuts": "Use `ios/dsh-mobile/Features/Attachments/AttachmentViews.swift`, `ios/DSHKit/Sources/DSHCore/Attachments.swift`, `ios/DSHKit/Sources/DSHCore/Sync/HostSync.swift`, `ios/DSHKit/Sources/DSHFeatures/TaskComposer.swift` and `ios/dsh-mobile/Features/Session/SessionPage.swift`. Put security-scoped reads, image resize/JPEG, checksum and byte chunking in DSHPlatform. Core sets message limits, attachment kinds, typed local errors, upload-before-send and domain commands. Features own selection, drafts, upload progress and retry. Views own pickers, navigation, chips and localized size text. Preserve the existing product and screen rules. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
+      "not": "",
+      "demo": "scripts/demo/attachments.sh",
+      "log": []
+    },
+    {
+      "id": "S9",
+      "kind": "slice",
+      "title": "WP4 · Place presentation, dictation and debug entry points with their callers",
+      "needs": [
+        "S5",
+        "S7"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "The app, its widget and the Mac package build have different runtime capabilities. Keep their boundaries explicit while preserving the current screens.",
+      "cuts": "Move `ios/DSHKit/Sources/DSHCore/TranscriptBlocks.swift` and `ios/DSHKit/Sources/DSHCore/CJKEmphasis.swift` to shared feature presentation. Keep StructuredTranscript, questions, approvals, queue, history, milestones, models, workspaces and result semantics in Core. Keep `ios/dsh-mobile/Features/Voice/SpeechFrameworkTranscriber.swift` and ActivityKitClient as app adapters. Features retains `ios/DSHKit/Sources/DSHFeatures/Dictation.swift`, TranscriberFactory, drafts, grouping/drawer, outcomes and Live Activity lifecycle. Leave SystemCallback in place with its current single production caller. Inspect `ios/DSHKit/Sources/DSHCore/TaskStore.swift`, `ios/DSHKit/Sources/DSHCore/DebugEntryPoints.swift`, package products, spikes, scripts and documented clients before narrowing access. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
+      "not": "",
+      "demo": "scripts/demo/voice.sh",
+      "log": []
+    },
+    {
+      "id": "S10",
+      "kind": "slice",
+      "title": "WPB · Share the bridge approval audit writer and reader",
+      "needs": [
+        "T0"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Approval decisions and the device audit view must agree on saved fields and keep reading history from existing bridge installations.",
+      "cuts": "Use `bridge/src/approvals/holder.ts`, `bridge/src/devices/manage.ts` and `bridge/test/approvals.test.ts`. Inject a typed append operation into ApprovalHolder and serve device audit pages from the matching reader. Keep approvals.jsonl, its fields, order and existing pairing history. Use synthetic fixture records. Update ARCHITECTURE.md alongside the implemented bridge boundary.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S11",
+      "kind": "slice",
+      "title": "WPB · Map bridge task events at the protocol boundary and verify old iOS",
+      "needs": [
+        "S10"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "The bridge can ship independently when task and approval use cases are independent of wire types and existing phones still complete the same operations.",
+      "cuts": "In `bridge/src/tasks/task-hub.ts`, start with userMessage, then migrate task summaries, approvals, questions and queue events to domain types. Map to protobuf when appending to `bridge/src/tasks/host-log.ts`. Keep DSH service adaptation with the business foundation, TLS/WS, raw files, generated types and serialization in the foundation layer. Decode requests in `bridge/src/server.ts` and compose in `bridge/src/index.ts`. Cover `bridge/test/conversation.test.ts`, `bridge/test/durable-list.test.ts` and `bridge/test/tls-upgrade.test.ts`. Update ARCHITECTURE.md alongside the implemented bridge boundary.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S12",
+      "kind": "slice",
+      "title": "WP5 · Close the iOS API and dependency checks independently",
+      "needs": [
+        "S8",
+        "S9"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Both compiled platforms and the shipped app and widget must enforce the reviewed three-layer graph. iOS sign-off is independent of the new bridge.",
+      "cuts": "Use `ios/DSHKit/Package.swift`, `ios/dsh-mobile.xcodeproj/project.pbxproj`, `scripts/check-layers`, `scripts/check-layers-test`, `scripts/check-release-clean` and `ARCHITECTURE.md`. Business targets depend on DSHCore and the DSHActivity contract with the widget limited to DSHActivity. Core can use DSHTransport, DSHProtocol, DSHPlatform and explicit SwiftProtobuf primitives. Transport may depend on Protocol, Protocol on SwiftProtobuf, and DSHPlatform on Apple SDKs. Verify real package products, source imports, actual Xcode links, production/debug configurations and external API. Consumers can use system UI frameworks in their layer. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
+      "not": "",
+      "demo": null,
+      "log": []
+    },
+    {
+      "id": "S13",
+      "kind": "slice",
+      "title": "WP5 · Verify all three iOS–bridge version combinations",
+      "needs": [
+        "S11",
+        "S12"
+      ],
+      "branch": null,
+      "status": "todo",
+      "updated": "2026-11-12",
+      "next": "Assign it and start a session",
+      "merge": null,
+      "why": "Each component can ship on its own, and the two final implementations must still interoperate when deployed together.",
+      "cuts": "Use the exact baseline `61b5416` and record the candidate revisions at both ends of every run. Exercise production client and bridge paths with test credentials. Use `protocol/fixtures`, `bridge/test/fixtures.test.ts`, `ios/DSHKit/Tests/DSHKitTests/GoldenFixturesTests.swift`, `scripts/check-fixtures-same` and `scripts/demo/round-trip.sh`. Roll code back in reverse dependency order, verifying that the remaining graph builds after each step; the bridge follows its own dependencies. When switching iOS builds, uninstall, reinstall and pair again.",
+      "not": "",
+      "demo": null,
+      "log": []
+    }
+  ],
+  "exit": [],
+  "log": [
+    {
+      "date": "2026-11-12",
+      "title": "Plan started",
+      "body": "Three-layer refactor of dsh-mobile and its bridge"
+    },
+    {
+      "date": "2026-11-12",
+      "title": "Scope, installation policy and rollback",
+      "body": "Reviewed source baseline: 61b54169a58e7a20e9ca243dc96a6739b816e14a. Compare HEAD and relevant local changes against it before implementation. This requirement follows the reviewed three-layer design and is independent of previous GitHub milestones. For this pre-user project, switch iOS builds by uninstalling, reinstalling and pairing again. Cross-version migration of the local task database is outside acceptance. After fresh pairing, retain the same installation and its data throughout every crash, offline restart and reconnect test. Continue testing protocol compatibility across client and bridge versions, and existing bridge audit history. Use test hosts and test credentials. Preserve STORY.md and its screen behavior. Roll back merged changes in reverse dependency order and build after each step; for example, roll back affected WP5 and WP4 changes before removing WP2. Bridge delivery remains independent. Execution evidence starts with the implementation of T0."
+    }
+  ],
+  "pending": []
+}

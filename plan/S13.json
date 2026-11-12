@@ -1,0 +1,26 @@
+{
+  "id": "S13",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "Record results for baseline iOS × new bridge, new iOS × baseline bridge and new iOS × new bridge. Each pair actually exercises Hello, Resume, ListTasks, approvals and queue behavior with its negotiated capabilities. Independent component results may be reused when the recorded revisions match.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "Swift and TypeScript both decode the same shared binary fixtures. scripts/check-fixtures-same 61b5416 reports identical bytes, with protocol field numbers, capability strings, close codes and event order covered by behavior tests.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "On the integrated revisions, run scripts/check-layers, scripts/check-layers-test, scripts/swift-test --package-path ios/DSHKit, scripts/pnpm-test, scripts/check-release-clean and scripts/check-docs. Verify the paired-device round trip and distinguish any baseline failure from a new regression.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

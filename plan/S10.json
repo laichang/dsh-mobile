@@ -1,0 +1,19 @@
+{
+  "id": "S10",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "Read a file in the previous bridge format, append a new approval, interleave pairing and approval events, and page through the combined audit. Compare fields, order and cursor continuity to 61b5416.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "Fail a real append operation at the audit boundary. The pending tool cannot receive permission when the write fails; success persists the expected record before releasing the tool. The bridge tests pass against both histories.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}

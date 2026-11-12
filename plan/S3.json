@@ -1,0 +1,33 @@
+{
+  "id": "S3",
+  "items": [
+    {
+      "tier": "auto",
+      "text": "Directly pair B over A on the same host without sending a revoke. Terminate the process after the atomic file commit and before A's credential deletion. Relaunch the same installation, connect B, and verify A's local credential and A's pending item are both gone.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "Inject a Keychain deletion failure following replacement. B remains active and usable while A stays pending. Retry successfully, including when the credential was already removed; verify that the pending item clears.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "Give A and B disjoint address lists. Suspend A's address callback, persist B, then release A. Relaunch, verify B's address list and order, make only B's addresses reachable and actually reconnect. A removed registration cannot write back; a current registration still promotes its last successful address.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    },
+    {
+      "tier": "auto",
+      "text": "A package-external caller can parse an offer and read a host's identity, name and address description. The WebSocket-URL probe now fails for the intended access reason. Both platform inventories drop the PairedHost and PairingOffer/AddressFailure constructor leaks.",
+      "files": [],
+      "screens": [],
+      "passed": false
+    }
+  ]
+}
