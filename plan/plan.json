@@ -54,7 +54,7 @@
       "not": "",
       "demo": "scripts/demo/revoke.sh",
       "log": [],
-      "round": 1
+      "round": 2
     },
     {
       "id": "S3",
