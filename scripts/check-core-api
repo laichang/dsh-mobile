@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""Build and audit DSHCore's external signatures on one supported platform."""
+import argparse
+import difflib
+import json
+from pathlib import Path
+import platform
+import re
+import subprocess
+import tempfile
+
+root = Path(__file__).resolve().parents[1]
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("platform", choices=("macos", "ios"))
+parser.add_argument("--inventory", type=Path, help="save every declaration and its signature")
+parser.add_argument("--self-test", action="store_true", help="compile a client with deliberately leaky signatures")
+args = parser.parse_args()
+sdk, target = {
+    "macos": ("macosx", "macosx15.0"),
+    "ios": ("iphonesimulator", "ios26.0-simulator"),
+}[args.platform]
+sdk_path = subprocess.check_output(["xcrun", "--sdk", sdk, "--show-sdk-path"], text=True).strip()
+triple = f"{platform.machine()}-apple-{target}"
+swift = ["swift", "build", "--package-path", str(root / "ios/DSHKit"),
+         "--disable-automatic-resolution", "--triple", triple, "--sdk", sdk_path]
+subprocess.run(swift + ["--target", "DSHCore"], check=True)
+modules = Path(subprocess.check_output(swift + ["--show-bin-path"], text=True).strip()) / "Modules"
+flags = ["-sdk", sdk_path, "-target", triple, "-I", str(modules)]
+raw = {"HostConnection", "CachedHost", "CachedTask"}
+forbidden = {"DSHTransport", "DSHProtocol", "SwiftProtobuf", "DSHPlatform", "SwiftData"}
+qualified = re.compile(r"\b([A-Za-z_]\w*)\.([A-Za-z_]\w*(?:\.\w+)*)")
+
+
+def inventory(node, module, owner="", inherited=()):
+    if node.get("isInternal"):
+        return
+    label = ".".join(filter(None, (owner, node["printedName"])))
+    signatures = list(inherited)
+    if "genericSig" in node:
+        signatures.append(node["genericSig"])
+
+    def types(node):
+        yield node["printedName"]
+        usr = node.get("usr", "")
+        for module in forbidden:
+            if usr.startswith(f"s:{len(module)}{module}"):
+                yield module + "." + node["name"]
+        for child in node.get("children", []):
+            yield from types(child)
+
+    children = node.get("children", [])
+    constraints = list(signatures)
+    for child in children + node.get("conformances", []):
+        if "declKind" not in child:
+            signatures.extend(types(child))
+    if node.get("moduleName") == module and "usr" in node:
+        yield {"symbol": label, "usr": node["usr"], "types": signatures}
+    for child in children:
+        if "declKind" in child:
+            yield from inventory(child, module, label, constraints)
+
+
+def export(module, extra_flags, scratch):
+    output = scratch / (module + ".json")
+    subprocess.run(["xcrun", "swift-api-digester", "-dump-sdk", "-module", module,
+                    *extra_flags, *flags, "-o", output], check=True)
+    tree = json.loads(output.read_text())["ABIRoot"]
+    if not tree.get("children"):
+        raise SystemExit(f"{module}: empty API export")
+    return [row for child in tree["children"] for row in inventory(child, module)]
+
+
+def leaks(rows):
+    found = set()
+    for row in rows:
+        # Raw Core entities also expose ordinary Swift-typed members, e.g. stateRaw.
+        types = set(qualified.findall(" ".join(row["types"])))
+        owner = row["symbol"].split(".")[0]
+        if owner in raw:
+            types.add(("DSHCore", owner))
+        for module, name in types:
+            if module in forbidden or module == "DSHCore" and name.split(".")[0] in raw:
+                found.add(f"{row['symbol']} [{row['usr']}] -> {module}.{name}")
+    return sorted(found)
+
+
+def difference(expected, actual):
+    return "\n".join(difflib.unified_diff(expected, actual, "allowlist", "compiled API", lineterm=""))
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    scratch = Path(tmp)
+    rows = export("DSHCore", [], scratch)
+    if not any(row["symbol"] == "TaskSnapshot.title" for row in rows):
+        raise SystemExit("missing public sentinel TaskSnapshot.title")
+    if args.inventory:
+        args.inventory.write_text(json.dumps(rows, indent=2) + "\n")
+    probe = scratch / "Client.swift"
+    probe.write_text("import DSHCore\nfunc title(_ task: TaskSnapshot) -> String { task.title }\n")
+    subprocess.run(["xcrun", "swiftc", "-typecheck", *flags, probe], check=True)
+    if args.self_test:
+        fixture = scratch / "Fixture.swift"
+        fixture.write_text("""import DSHTransport
+public typealias EndpointList = [HostEndpoint?]
+public struct Probe {
+    public init(_ value: EndpointList) {}
+    public var value: EndpointList { [] }
+    public func result() -> HostEndpoint? { nil }
+    public func constrained<T: BridgeTransport>(_ value: T) {}
+    public subscript(index: Int) -> HostEndpoint? { nil }
+}
+public enum Payload { case endpoint(HostEndpoint) }
+""")
+        subprocess.run(["xcrun", "swiftc", "-emit-module", "-module-name", "Fixture",
+                        "-emit-module-path", scratch / "Fixture.swiftmodule", *flags, fixture], check=True)
+        seeded = leaks(export("Fixture", ["-I", str(scratch)], scratch))
+        for symbol in ["Probe.init(_:)", "Probe.value", "Probe.result()", "Probe.subscript(_:)",
+                       "Payload.endpoint", "EndpointList"]:
+            if not any(line.startswith(symbol + " [") and line.endswith(" -> DSHTransport.HostEndpoint")
+                       for line in seeded):
+                raise SystemExit(f"missing fixture leak: {symbol}\n" + "\n".join(seeded))
+        if not any(line.startswith("Probe.constrained(_:) [") and line.endswith(" -> DSHTransport.BridgeTransport")
+                   for line in seeded):
+            raise SystemExit("missing constrained generic reference")
+        if not difference([], seeded) or not difference(seeded, []):
+            raise SystemExit("failed to detect new or stale references")
+        print("\n".join(seeded))
+    actual = leaks(rows)
+    reference = root / "scripts/core-api" / (args.platform + ".txt")
+    expected = reference.read_text().splitlines()
+    # When a leak is removed the external client should no longer compile its raw access.
+    for symbol, body in [
+        ("PairedHost.addresses", "func address(_ host: PairedHost) { _ = host.addresses.first?.webSocketURL() }"),
+        ("CachedTask.stateRaw", "func state(_ task: CachedTask) { _ = task.stateRaw }"),
+    ]:
+        probe.write_text("import DSHCore\n" + body + "\n")
+        result = subprocess.run(["xcrun", "swiftc", "-typecheck", *flags, probe], capture_output=True, text=True)
+        exposed = any(line.startswith(symbol + " [") for line in expected)
+        if (result.returncode == 0) != exposed:
+            raise SystemExit(f"{symbol} compiler exit {result.returncode}, allowlisted={exposed}\n{result.stderr}")
+        print(f"{args.platform}: {body} compiler exit {result.returncode}")
+    delta = difference(expected, actual)
+    if delta:
+        raise SystemExit(delta)
+    print(f"{args.platform}: {len(rows)} external declarations, {len(actual)} known references")
