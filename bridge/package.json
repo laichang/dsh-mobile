@@ -22,7 +22,7 @@
     }
   },
   "scripts": {
-    "build": "rm -rf lib && tsc -p .",
+    "build": "node scripts/check-use-case-imports.mjs && rm -rf lib && tsc -p .",
     "test": "corepack pnpm build && node --test \"lib/test/**/*.test.js\"",
     "typecheck": "tsc -p . --noEmit",
     "fixtures": "tsc -p . && node lib/scripts/fixtures.js",

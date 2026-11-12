@@ -2,6 +2,8 @@
  * Terminal-first pairing UI: pick the addresses a phone can reach, make an
  * offer, and print it as a QR code plus the `dshm://pair?…` link.
  */
+import { writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { hostname, networkInterfaces } from 'node:os'
 import { renderUnicodeCompact } from 'uqr'
 import { isIP } from 'node:net'
@@ -25,6 +27,10 @@ export function reachableAddresses(host: string, port: number): string[] {
 
 export function listenerInfo(host: string, port: number): ListenerInfo {
   return { hostName: hostname().replace(/\.local$/, ''), addresses: reachableAddresses(host, port) }
+}
+
+export function saveListenerInfo(dir: string, host: string, port: number) {
+  writeFileSync(join(dir, 'listener.json'), JSON.stringify({ ...listenerInfo(host, port), tls: true }), { mode: 0o600 })
 }
 
 function isLoopbackAddress(host: string): boolean {

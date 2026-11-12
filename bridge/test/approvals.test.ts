@@ -6,7 +6,6 @@ import { test, type TestContext } from 'node:test'
 import { approvalAudit } from '../src/approvals/audit.ts'
 import { ApprovalHolder, type ApprovalRequest, type Pending, type Resolved } from '../src/approvals/holder.ts'
 import { auditPage } from '../src/devices/manage.ts'
-import { ApprovalOutcome } from '../src/gen/approvals_pb.ts'
 import { HostLog } from '../src/tasks/host-log.ts'
 import { TaskHub } from '../src/tasks/task-hub.ts'
 
@@ -31,7 +30,7 @@ test('approvalTimeoutRejectsAndEmitsTimeout', async t => {
   const { holder, events, audit } = setup(t, 10)
   const outcome = await holder.hold(req, async () => 'unavailable')
   assert.equal(outcome, 'rejected')
-  assert.equal((events[1] as Resolved).outcome, ApprovalOutcome.TIMEOUT)
+  assert.equal((events[1] as Resolved).outcome, 'TIMEOUT')
   assert.equal(JSON.parse(readFileSync(audit, 'utf8')).by, 'timeout')
 })
 
@@ -78,7 +77,7 @@ test('trimmedResumeRetainsPendingAndStaleAnswerCannotReleaseNextRequest', async 
 })
 
 test('upstreamSessionIsVisibleOnlyWhileAnApprovalIsHeld', async t => {
-  const hub = new TaskHub({ interrupt: () => assert.fail('unexpected interrupt'), start: async () => { throw new Error('unexpected bridge task') } })
+  const hub = new TaskHub({ interrupt: () => assert.fail('unexpected interrupt'), start: async () => { throw new Error('unexpected bridge task') } }, new HostLog())
   const { holder, audit } = setup(t, 10_000, event => hub.approvalChanged(event, true))
   let webAnswer!: (answer: 'allowed-once' | 'rejected') => void
   const web = () => new Promise<'allowed-once' | 'rejected'>(resolve => { webAnswer = resolve })
@@ -140,18 +139,18 @@ test('appends to a historical journal and preserves mixed audit pagination', asy
 test('a real journal write failure cancels permission; successful release observes the persisted record', async t => {
   let observed: unknown
   const { audit, holder, events } = setup(t, 10_000, event => {
-    if ('outcome' in event && event.outcome === ApprovalOutcome.ALLOWED) observed = JSON.parse(readFileSync(audit, 'utf8'))
+    if ('outcome' in event && event.outcome === 'ALLOWED') observed = JSON.parse(readFileSync(audit, 'utf8'))
   })
   const errors = t.mock.method(console, 'error', () => {})
   mkdirSync(audit)
   const denied = holder.hold(req, async () => 'unavailable')
-  assert.equal(holder.answer(events[0].id, true, 'phone').outcome, ApprovalOutcome.CANCELLED)
+  assert.equal(holder.answer(events[0].id, true, 'phone').outcome, 'CANCELLED')
   assert.equal(await denied, 'cancelled')
   assert.equal(errors.mock.calls[0].arguments[1].code, 'EISDIR')
 
   rmSync(audit, { recursive: true })
   const allowed = holder.hold(req, async () => 'unavailable')
-  assert.equal(holder.answer(events[2].id, true, 'phone').outcome, ApprovalOutcome.ALLOWED)
+  assert.equal(holder.answer(events[2].id, true, 'phone').outcome, 'ALLOWED')
   assert.equal(await allowed, 'allowed-once')
   assert.deepEqual(observed, { when: JSON.parse(readFileSync(audit, 'utf8')).when, by: 'owner', device: 'phone',
     ...events[2], outcome: 'ALLOWED' })

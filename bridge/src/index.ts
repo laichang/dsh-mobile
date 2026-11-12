@@ -7,13 +7,13 @@ import { approvalAudit } from './approvals/audit.ts'
 import { ApprovalHolder, type ApprovalContext } from './approvals/holder.ts'
 import { QuestionHolder, type QuestionContext } from './questions/holder.ts'
 import { SessionDirectory, type SessionReader } from './sessions/directory.ts'
+import { HostLog } from './tasks/host-log.ts'
 import { TaskHub } from './tasks/task-hub.ts'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { writeFileSync } from 'node:fs'
 import { describeListenError, type ListenSetting } from './listen-error.ts'
 import { DshTasks, type DshServices } from './dsh.ts'
-import { listenerInfo } from './pairing/announce.ts'
+import { saveListenerInfo } from './pairing/announce.ts'
 import { startBridgeServer, type BridgeServer } from './server.ts'
 
 export const name = 'dsh-mobile-bridge'
@@ -68,7 +68,7 @@ export function apply(ctx: PluginContext, config: Config = {}) {
     let server: BridgeServer | undefined
     let disposed = false
     const tasks = new DshTasks(ctx, c.cwd)
-    const hub = new TaskHub(tasks)
+    const hub = new TaskHub(tasks, new HostLog())
     const sessions = supported ? new SessionDirectory(ctx.sessionController, hub, log) : undefined
     const stopSessions = sessions && ctx.on('session/event', (session, event) => sessions.changed(session.id, event))
     const approvals = new ApprovalHolder(approvalAudit(c.stateDir).append, event => hub.approvalChanged(event, !tasks.sessions.has(event.taskId)), c.approvalTimeoutMs)
@@ -85,7 +85,7 @@ export function apply(ctx: PluginContext, config: Config = {}) {
       (s) => {
         if (disposed) return void s.close()
         server = s
-        writeFileSync(join(c.stateDir, 'listener.json'), JSON.stringify({ ...listenerInfo(c.host, s.port), tls: true }), { mode: 0o600 })
+        saveListenerInfo(c.stateDir, c.host, s.port)
       },
       (error) => {
         stopSessions?.(); sessions?.close()
