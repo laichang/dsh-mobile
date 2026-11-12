@@ -99,8 +99,6 @@ import Testing
         let store = TaskListStore(
             cache: try TaskCache(url: storeURL), hosts: [.init(key: "fake:127.0.0.1:47801", connection: connection)], prompt: "Fix the failing test.")
         store.backoff = (.milliseconds(20), .milliseconds(100))
-        // Long enough for a loaded Mac (other slices' simulators): a short wait made send() nil once.
-        store.sendWaitsFor = .seconds(5)
         return store
     }
 
@@ -108,6 +106,7 @@ import Testing
         let host = FakeHost(script: FakeTranscript.script(chunkDelay: .milliseconds(1)), extraCapabilities: [FakeTranscript.capability])
         let store = try launch(host)
         store.foreground()
+        try await waitUntil("host online") { store.hosts.first?.reachability == .online }
         let key = try #require(await store.send())
         try await waitUntil("the task ends") { store.task(key)?.state == .completed }
         let row = try #require(store.task(key))
@@ -139,6 +138,7 @@ import Testing
         let host = FakeHost(script: FakeTranscript.script(chunkDelay: .milliseconds(1)))
         let store = try launch(host)
         store.foreground()
+        try await waitUntil("host online") { store.hosts.first?.reachability == .online }
         let key = try #require(await store.send())
         try await waitUntil("the task ends") { store.task(key)?.state == .completed }
         #expect(store.hosts.first?.supports(.transcript) == false)

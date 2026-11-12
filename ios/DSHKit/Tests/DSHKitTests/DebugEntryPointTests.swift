@@ -1,5 +1,5 @@
 #if DEBUG
-import DSHCore
+import DSHTestSupport
 import Foundation
 import Testing
 

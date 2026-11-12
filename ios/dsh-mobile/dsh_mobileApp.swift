@@ -1,6 +1,9 @@
 import DSHCore
 import DSHFeatures
 import SwiftUI
+#if DEBUG
+import DSHTestSupport
+#endif
 
 @main
 struct dsh_mobileApp: App {

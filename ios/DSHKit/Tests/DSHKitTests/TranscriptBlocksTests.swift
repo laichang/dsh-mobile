@@ -1,4 +1,4 @@
-import DSHCore
+import DSHFeatures
 import Testing
 
 @Suite struct TranscriptBlocksTests {
