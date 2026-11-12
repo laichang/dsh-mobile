@@ -31,7 +31,7 @@ import Testing
             Issue.record("fixtures"); return
         }
         let question = try #require(AgentQuestion.pendingRow(pending).question)
-        let closed = question.resolved(resolved)
+        let closed = question.resolved(.init(resolved))
         #expect(closed.outcome == .answeredElsewhere)
         #expect(closed.answers == ["q1": ["公司模板.pptx"]])
     }
@@ -52,7 +52,7 @@ import Testing
         var blocks = StructuredTranscript()
         var row = AgentQuestion.pendingRow(pending, time: Date(timeIntervalSince1970: 0))
         blocks.upsert(row, offset: 6)
-        row.kind = .question(try #require(row.question).resolved(resolved))
+        row.kind = .question(try #require(row.question).resolved(.init(resolved)))
         row.state = .done
         blocks.upsert(row, offset: 99)
         #expect(blocks.items.map(\.offset) == [6])

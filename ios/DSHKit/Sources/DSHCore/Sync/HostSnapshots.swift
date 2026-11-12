@@ -5,6 +5,7 @@ extension HostSync {
     /// One configured host: how to reach it and the key its cache rows use.
     public struct HostConfig: Sendable {
         public var key: String
+        public var commands: any HostCommands { connection }
         let connection: HostConnection
         public var name: String?
 
