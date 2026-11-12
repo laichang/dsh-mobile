@@ -64,10 +64,10 @@
         "S2"
       ],
       "branch": "claude/s3-11ef5f3",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "95552ff",
       "why": "Direct replacement produces an old credential even without a revoke event. An old socket may also report a successful address after its replacement is already active.",
       "cuts": "Use `ios/DSHKit/Sources/DSHCore/Pairing/TLSEnrollment.swift`, `ios/DSHKit/Sources/DSHCore/Pairing/Pairing.swift`, `ios/DSHKit/Sources/DSHCore/Pairing/PairingOffer.swift` and `ios/DSHKit/Sources/DSHCore/HostAddresses.swift`. After obtaining B's credential, determine the actually displaced registration inside the serialized file mutation. Commit B active and A pending cleanup (old host key and tlsDeviceID) in one atomic replacement. Reuse revocation's startup cleanup. Capture enrollment identity before dialing, then compare it during the same mutation that could write addresses. Move PairingModel screen state to DSHFeatures. Core retains offer parsing, expiry, enrollment and credential matching. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
@@ -362,6 +362,11 @@
       "date": "2026-11-12",
       "title": "S3 assigned",
       "body": "Branch `claude/s3-11ef5f3`, simulator `5015EB23-A5F1-4626-A2E1-F0B125482826`, DSHM_HOME `~/.dshm/home-s3-5015EB23-A5F1-4626-A2E1-F0B125482826`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S3)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S3 merged",
+      "body": "Merged as `95552ff`; the plan/ rules hold on the merge commit. No open [human] items, so S3 is `done`."
     }
   ],
   "pending": []
