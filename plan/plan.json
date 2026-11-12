@@ -82,10 +82,10 @@
         "T0"
       ],
       "branch": "claude/s4-f432a0a",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "d37d49c",
       "why": "Core owns replay and reconciliation. Persistent records must recover together with the cursor used to request the next batch.",
       "cuts": "Introduce the package-internal DSHPlatform target in `ios/DSHKit/Package.swift`. Move raw records, ModelContainer/ModelContext, FetchDescriptor, storage sessions and transactions out of `ios/DSHKit/Sources/DSHCore/Sync/TaskCache.swift`. In `ios/DSHKit/Sources/DSHCore/Sync/HostSync.swift` and `ios/DSHKit/Sources/DSHCore/Sync/HostSnapshots.swift`, assemble host sync and map raw timestamps, states and snapshot bytes to domain values. Remove TaskCache.sync(for:) as the composition point. Keep the existing save batching and background flush. Use DurableHostSyncTests, SessionRevisionTests, SessionHistoryTests, ReconnectTests and scripts/demo/durable-list.sh. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
@@ -341,6 +341,11 @@
       "date": "2026-11-12",
       "title": "S11 assigned",
       "body": "Branch `claude/s11-216b887`, simulator `DEABB0A9-1D40-416A-946D-F6B3793DDB45`, DSHM_HOME `~/.dshm/home-s11-DEABB0A9-1D40-416A-946D-F6B3793DDB45`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S11)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S4 merged",
+      "body": "Merged as `d37d49c`; the plan/ rules hold on the merge commit. No open [human] items, so S4 is `done`."
     }
   ],
   "pending": []
