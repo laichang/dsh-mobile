@@ -138,16 +138,17 @@
       "needs": [
         "S6"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s7-747c0ab",
+      "status": "doing",
       "updated": "2026-11-12",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Features and app pages should call domain operations without handling wire frames or the connection's raw request API.",
       "cuts": "Migrate command families from `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHCore/HostCommands.swift` and `ios/DSHKit/Sources/DSHCore/HostDeviceManagement.swift`. Keep typed domain inputs, results, failures and event mappings in Core. DSHTransport handles frames, TLS and request lifetimes, while DSHProtocol owns the generated messages. Test with `ios/DSHKit/Tests/DSHKitTests/GoldenFixturesTests.swift` and TransportDispatchTests. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S8",
@@ -324,6 +325,11 @@
       "date": "2026-11-12",
       "title": "S10 merged",
       "body": "Merged as `ed5d02e`; the plan/ rules hold on the merge commit. No open [human] items, so S10 is `done`."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S7 assigned",
+      "body": "Branch `claude/s7-747c0ab`, simulator `B475B122-EC41-4DE8-8920-51E5ABE244CC`, DSHM_HOME `~/.dshm/home-s7-B475B122-EC41-4DE8-8920-51E5ABE244CC`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S7)\"` exports them."
     }
   ],
   "pending": []
