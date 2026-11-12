@@ -215,10 +215,10 @@
         "S10"
       ],
       "branch": "claude/s11-216b887",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "f738012",
       "why": "The bridge can ship independently when task and approval use cases are independent of wire types and existing phones still complete the same operations.",
       "cuts": "In `bridge/src/tasks/task-hub.ts`, start with userMessage, then migrate task summaries, approvals, questions and queue events to domain types. Map to protobuf when appending to `bridge/src/tasks/host-log.ts`. Keep DSH service adaptation with the business foundation, TLS/WS, raw files, generated types and serialization in the foundation layer. Decode requests in `bridge/src/server.ts` and compose in `bridge/src/index.ts`. Cover `bridge/test/conversation.test.ts`, `bridge/test/durable-list.test.ts` and `bridge/test/tls-upgrade.test.ts`. Update ARCHITECTURE.md alongside the implemented bridge boundary.",
       "not": "",
@@ -346,6 +346,11 @@
       "date": "2026-11-12",
       "title": "S4 merged",
       "body": "Merged as `d37d49c`; the plan/ rules hold on the merge commit. No open [human] items, so S4 is `done`."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S11 merged",
+      "body": "Merged as `f738012`; the plan/ rules hold on the merge commit. No open [human] items, so S11 is `done`."
     }
   ],
   "pending": []
