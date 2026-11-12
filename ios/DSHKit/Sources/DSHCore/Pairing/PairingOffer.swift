@@ -32,7 +32,7 @@ public struct PairingOffer: Sendable, Equatable {
         }
     }
 
-    public init(hostName: String, addresses: [HostEndpoint], hostKey: [UInt8], offerID: [UInt8], secret: [UInt8], expiresAt: Date) {
+    package init(hostName: String, addresses: [HostEndpoint], hostKey: [UInt8], offerID: [UInt8], secret: [UInt8], expiresAt: Date) {
         self.hostName = hostName
         self.addresses = addresses
         self.hostKey = hostKey

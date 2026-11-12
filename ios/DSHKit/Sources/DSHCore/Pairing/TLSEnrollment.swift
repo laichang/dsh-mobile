@@ -15,10 +15,10 @@ extension Pairing {
     }
 
     public static func removeCredential(for host: PairedHost) throws {
-        if let id = host.tlsDeviceID { try credential(pin: host.hostKey, deviceID: id).reset() }
+        if let enrollment = host.enrollment { try deleteCredential(enrollment) }
     }
 
-    func enroll(_ offer: PairingOffer) async throws -> PairedHost {
+    func enroll(_ offer: PairingOffer, deletingCredential: (HostEnrollment) throws -> Void = Self.deleteCredential) async throws -> PairedHost {
         struct Enrollment: Decodable { let id: UUID; let bearer: String }
         func encoded(_ value: [UInt8]) -> String {
             Data(value).base64EncodedString().replacingOccurrences(of: "+", with: "-")
@@ -45,12 +45,12 @@ extension Pairing {
             let deviceID = entry.id.uuidString.lowercased()
             host.id = offer.hostKey.map { String(format: "%02x", $0) }.joined()
             host.tlsDeviceID = deviceID
-            let previous = hosts.load().first { $0.id == host.id }
             let key = Self.credential(pin: offer.hostKey, deviceID: deviceID)
             _ = try key.readOrCreate { Data(entry.bearer.utf8) }
             do { try hosts.save(host) }
             catch { try? key.reset(); throw error }
-            if let previous, previous.tlsDeviceID != deviceID { try? Self.removeCredential(for: previous) }
+            // Once the replacement is active, failed cleanup is retried on the next launch.
+            try? retryPendingRemovals(deletingCredential: deletingCredential)
             return host
         }
         throw PairingError.unreachable(failures)

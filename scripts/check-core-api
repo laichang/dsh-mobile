@@ -98,8 +98,16 @@ with tempfile.TemporaryDirectory() as tmp:
         raise SystemExit("missing public sentinel TaskSnapshot.title")
     if args.inventory:
         args.inventory.write_text(json.dumps(rows, indent=2) + "\n")
+    if any(row["symbol"] == "PairingModel" for row in rows):
+        raise SystemExit("PairingModel belongs to DSHFeatures")
     probe = scratch / "Client.swift"
-    probe.write_text("import DSHCore\nfunc title(_ task: TaskSnapshot) -> String { task.title }\n")
+    probe.write_text("""import DSHCore
+func title(_ task: TaskSnapshot) -> String { task.title }
+func pairing(_ link: String, _ host: PairedHost) throws -> (String, String, [String], [String]) {
+    let offer = try PairingOffer(string: link)
+    return (host.id, host.name, host.addressDescriptions, offer.addressDescriptions)
+}
+""")
     subprocess.run(["xcrun", "swiftc", "-typecheck", *flags, probe], check=True)
     subprocess.run(["xcrun", "swiftc", "-typecheck", *flags, root / "scripts/core-api/HostCommandsClient.swift"], check=True)
     if args.self_test:
@@ -142,6 +150,8 @@ public enum Payload { case endpoint(HostEndpoint) }
         exposed = any(line.startswith(symbol + " [") for line in expected)
         if (result.returncode == 0) != exposed:
             raise SystemExit(f"{symbol} compiler exit {result.returncode}, allowlisted={exposed}\n{result.stderr}")
+        if symbol == "PairedHost.addresses" and "'addresses' is inaccessible due to 'package' protection level" not in result.stderr:
+            raise SystemExit(f"expected the endpoint access check to fail at host.addresses\n{result.stderr}")
         print(f"{args.platform}: {body} compiler exit {result.returncode}")
     delta = difference(expected, actual)
     if delta:

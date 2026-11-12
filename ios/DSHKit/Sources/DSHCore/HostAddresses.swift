@@ -25,13 +25,13 @@ public struct AddressFailure: Sendable, Equatable, CustomStringConvertible {
         case notReachable
     }
 
-    public init(endpoint: HostEndpoint, reason: String, kind: Kind? = nil) {
+    package init(endpoint: HostEndpoint, reason: String, kind: Kind? = nil) {
         self.endpoint = endpoint
         self.reason = reason
         self.kind = kind
     }
 
-    public init(endpoint: HostEndpoint, error: any Error) {
+    package init(endpoint: HostEndpoint, error: any Error) {
         self.init(endpoint: endpoint, reason: Self.reason(for: error), kind: Self.kind(for: error))
     }
 
