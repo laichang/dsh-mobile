@@ -27,7 +27,7 @@ with tempfile.TemporaryDirectory() as temp:
     expect(check)
     manifest = fixture / "ios/DSHKit/Package.swift"
     original = manifest.read_text()
-    manifest.write_text(original.replace('.target(name: "DSHTransport")',
+    manifest.write_text(original.replace('.target(name: "DSHTransport", dependencies: ["DSHProtocol"])',
                                          '.target(name: "DSHTransport", dependencies: ["DSHCore"])'))
     expect(check, "DSHTransport: found")
     manifest.write_text(original)
