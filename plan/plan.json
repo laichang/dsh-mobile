@@ -310,7 +310,10 @@
       "text": "After S11 passes, update the host plugin and use a fresh iPhone installation with Release trust settings. Enroll with a fresh QR, open a pre-existing host session, reconnect over LAN and over Tailscale using IP and MagicDNS, then relaunch offline and read the synced session.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "human:2026-11-12 验证通过"
+      ]
     }
   ],
   "log": [
