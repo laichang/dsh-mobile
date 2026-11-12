@@ -7,15 +7,16 @@
  * offered options, or is typed text (DSH's free-text `custom` answer), or both when multi-select.
  */
 import { randomUUID } from 'node:crypto'
-import { QuestionOutcome, type QuestionPending, type QuestionResolved } from '../gen/questions_pb.ts'
 
-export type Pending = Omit<QuestionPending, '$typeName' | '$unknown' | 'questions'> & {
+export interface Pending {
+  id: string
+  taskId: string
   questions: { id: string; text: string; header: string; detail: string; multiSelect: boolean;
     options: { label: string; description: string }[] }[]
 }
 /** One question's answer: chosen labels, and the text the user typed instead (or as well). */
 export type Answer = { questionId: string; selected: string[]; custom?: string }
-export type Resolved = Omit<QuestionResolved, '$typeName' | '$unknown' | 'answers'> & { answers: Answer[] }
+export interface Resolved { id: string; taskId: string; outcome: 'ANSWERED' | 'ANSWERED_ELSEWHERE' | 'CANCELLED'; answers: Answer[] }
 
 /** Subset of DSH's `AskUserQuestionItem` (`@deepseek-ai/dsh-user-questions/types`). */
 export interface AskItem {
@@ -52,7 +53,7 @@ function pending(taskId: string, items: readonly AskItem[]): Pending {
 }
 
 export class QuestionHolder {
-  private readonly pending = new Map<string, { request: Pending; finish: (outcome: QuestionOutcome, answers: Answer[]) => Resolved }>()
+  private readonly pending = new Map<string, { request: Pending; finish: (outcome: Resolved['outcome'], answers: Answer[]) => Resolved }>()
   private readonly copies = new WeakSet<QuestionRequest>()
 
   constructor(private readonly change: (event: Pending | Resolved) => void) {}
@@ -71,17 +72,17 @@ export class QuestionHolder {
     const request = pending(req.agent?.session.id ?? '', req.questions)
     const fanout = new AbortController()
     return new Promise((resolve, reject) => {
-      const finish = (outcome: QuestionOutcome, answers: Answer[]): Resolved => {
+      const finish = (outcome: Resolved['outcome'], answers: Answer[]): Resolved => {
         const resolved: Resolved = { id: request.id, taskId: request.taskId, outcome, answers }
         if (!this.pending.delete(request.id)) return resolved
         req.signal?.removeEventListener('abort', cancel)
         fanout.abort()
         this.change(resolved)
-        if (outcome === QuestionOutcome.CANCELLED) reject(new QuestionCancelled())
+        if (outcome === 'CANCELLED') reject(new QuestionCancelled())
         else resolve({ answers: answers.map(a => ({ id: a.questionId, selected: a.selected, ...(a.custom ? { custom: a.custom } : {}) })) })
         return resolved
       }
-      const cancel = () => finish(QuestionOutcome.CANCELLED, [])
+      const cancel = () => finish('CANCELLED', [])
       this.pending.set(request.id, { request, finish })
       this.change(request)
       if (req.signal?.aborted) { cancel(); return }
@@ -91,7 +92,7 @@ export class QuestionHolder {
       // No other answerer, or one that went away, leaves the question held for a paired phone.
       Promise.resolve().then(() => fanout.signal.aborted ? undefined : downstream(copy)).then(answer => {
         if (answer && !fanout.signal.aborted) {
-          finish(QuestionOutcome.ANSWERED_ELSEWHERE, answer.answers.map(a => ({ questionId: a.id,
+          finish('ANSWERED_ELSEWHERE', answer.answers.map(a => ({ questionId: a.id,
             selected: a.selected, ...(a.custom ? { custom: a.custom } : {}) })))
         }
       }).catch(() => {})
@@ -117,16 +118,16 @@ export class QuestionHolder {
       if (a.selected.some(label => !q.options.some(o => o.label === label))) throw new Error('Choose one of the offered options.')
       given.push({ questionId: q.id, selected: [...a.selected], ...(custom ? { custom } : {}) })
     }
-    return held.finish(QuestionOutcome.ANSWERED, given)
+    return held.finish('ANSWERED', given)
   }
 
   cancelTask(taskId: string) {
     for (const item of this.pending.values()) {
-      if (item.request.taskId === taskId) item.finish(QuestionOutcome.CANCELLED, [])
+      if (item.request.taskId === taskId) item.finish('CANCELLED', [])
     }
   }
 
   close() {
-    for (const item of this.pending.values()) item.finish(QuestionOutcome.CANCELLED, [])
+    for (const item of this.pending.values()) item.finish('CANCELLED', [])
   }
 }

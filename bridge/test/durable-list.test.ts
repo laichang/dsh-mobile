@@ -86,7 +86,7 @@ const endedCount = (fs: Frame[]) =>
 describe('HostLog', () => {
   test('sinceReturnsExactlyTheEventsAfterSeq', () => {
     const log = new HostLog(100, 'log-a')
-    for (let i = 0; i < 10; i++) log.append(`t${i % 2}`, { case: 'logReset', value: { logId: String(i) } })
+    for (let i = 0; i < 10; i++) log.append(`t${i % 2}`, { case: 'assistantChunk', value: { taskId: 't', seq: BigInt(i), text: String(i) } })
     for (const after of [0n, 1n, 5n, 9n, 10n]) {
       const r = log.since('log-a', after)
       assert.equal(r.reset, false)
@@ -96,7 +96,7 @@ describe('HostLog', () => {
 
   test('sinceResetsForAnotherLogAFutureSeqOrTrimmedEvents', () => {
     const log = new HostLog(4, 'log-a')
-    for (let i = 0; i < 10; i++) log.append('t', { case: 'logReset', value: { logId: String(i) } })
+    for (let i = 0; i < 10; i++) log.append('t', { case: 'assistantChunk', value: { taskId: 't', seq: BigInt(i), text: String(i) } })
     assert.equal(log.firstRetained, 7n)
     for (const [logId, after] of [['log-b', 8n], ['', 0n], ['log-a', 11n], ['log-a', 5n]] as const) {
       const r = log.since(logId, after)
@@ -319,7 +319,7 @@ test('waitingTaskSwitchesModelResumesBothFieldsAndInterruptCancelsApproval', asy
     assert.ok(stale.body.case === 'error' && stale.body.value.code === 'approval/refused')
     await reader.until(frames => endedCount(frames) === 1)
     assert.ok(reader.events().some(e => e.body.case === 'approvalResolved' && e.body.value.outcome === ApprovalOutcome.CANCELLED))
-    assert.equal(hub.list()[0].state, TaskState.INTERRUPTED)
+    assert.equal(hub.list()[0].state, 'INTERRUPTED')
     assert.equal(hub.list()[0].pendingApprovals.length, 0)
   } finally {
     approvals.close()

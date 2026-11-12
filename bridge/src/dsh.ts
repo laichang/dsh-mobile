@@ -4,7 +4,7 @@
  * the follow stream into plain task output. Types are structural subsets of the DSH 0.2.2-rc.1
  * `sessionController` / `workspaceController` services, so `FakeDSH` can implement them in tests.
  */
-import { catalogFrame, type HostCatalog, type Selection } from './models/catalog.ts'
+import type { HostCatalog, Selection } from './models/catalog.ts'
 import { randomUUID } from 'node:crypto'
 import { homedir } from 'node:os'
 import { isAbsolute } from 'node:path'
@@ -151,8 +151,8 @@ export class DshTasks {
     this.dsh.sessionController.cancel({ sessionId: taskId })
   }
 
-  async modelCatalog() {
-    return catalogFrame(await this.dsh.sessionController.modelCatalog())
+  modelCatalog() {
+    return this.dsh.sessionController.modelCatalog()
   }
 
   async selectModel(taskId: string, selection: Selection): Promise<Selection> {

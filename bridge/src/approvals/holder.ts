@@ -1,9 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import type { ApprovalAuditRecord } from './audit.ts'
-import { ApprovalOutcome, type ApprovalPending, type ApprovalResolved } from '../gen/approvals_pb.ts'
 
-export type Pending = Omit<ApprovalPending, '$typeName' | '$unknown'>
-export type Resolved = Omit<ApprovalResolved, '$typeName' | '$unknown'>
+export interface Pending { id: string; taskId: string; callId: string; tool: string; argumentsJson: string; reason: string }
+export interface Resolved { id: string; taskId: string; outcome: 'ALLOWED' | 'DENIED' | 'CANCELLED' | 'TIMEOUT' }
 type Outcome = 'allowed-once' | 'rejected' | 'cancelled' | 'unavailable'
 interface Block { type: string; id?: string; name?: string; arguments?: string }
 export interface ApprovalRequest {
@@ -34,7 +33,7 @@ function details(req: ApprovalRequest): Pending {
 }
 
 export class ApprovalHolder {
-  private readonly pending = new Map<string, { request: Pending; finish: (outcome: ApprovalOutcome, by: string, device: string) => Resolved }>()
+  private readonly pending = new Map<string, { request: Pending; finish: (outcome: Resolved['outcome'], by: string, device: string) => Resolved }>()
   private readonly copies = new WeakSet<ApprovalRequest>()
 
   constructor(private readonly appendAudit: (record: ApprovalAuditRecord) => void, private readonly change: (event: Pending | Resolved) => void,
@@ -54,7 +53,7 @@ export class ApprovalHolder {
     const request = details(req)
     const fanout = new AbortController()
     return new Promise(resolve => {
-      const finish = (outcome: ApprovalOutcome, by: string, device: string): Resolved => {
+      const finish = (outcome: Resolved['outcome'], by: string, device: string): Resolved => {
         const resolved = { id: request.id, taskId: request.taskId, outcome }
         if (!this.pending.delete(request.id)) return resolved
         clearTimeout(timer)
@@ -63,18 +62,18 @@ export class ApprovalHolder {
         // Persist before releasing the tool. A failed audit write can never grant permission.
         try {
           this.appendAudit({ when: new Date().toISOString(), by, device, ...request,
-            outcome: ApprovalOutcome[outcome] })
+            outcome })
         } catch (error) {
           console.error('dsh-mobile: approval audit write failed', error)
-          resolved.outcome = ApprovalOutcome.CANCELLED
+          resolved.outcome = 'CANCELLED'
         }
         this.change(resolved)
-        resolve(resolved.outcome === ApprovalOutcome.ALLOWED ? 'allowed-once' :
-          resolved.outcome === ApprovalOutcome.CANCELLED ? 'cancelled' : 'rejected')
+        resolve(resolved.outcome === 'ALLOWED' ? 'allowed-once' :
+          resolved.outcome === 'CANCELLED' ? 'cancelled' : 'rejected')
         return resolved
       }
-      const cancel = () => finish(ApprovalOutcome.CANCELLED, 'host', 'DSH')
-      const timer = setTimeout(() => finish(ApprovalOutcome.TIMEOUT, 'timeout', 'bridge'), this.timeoutMs)
+      const cancel = () => finish('CANCELLED', 'host', 'DSH')
+      const timer = setTimeout(() => finish('TIMEOUT', 'timeout', 'bridge'), this.timeoutMs)
       this.pending.set(request.id, { request, finish })
       this.change(request)
       if (req.signal?.aborted) { cancel(); return }
@@ -83,8 +82,8 @@ export class ApprovalHolder {
       this.copies.add(copy)
       // An unavailable or disconnected downstream leaves the request held for a paired phone.
       Promise.resolve().then(() => fanout.signal.aborted ? 'cancelled' : downstream(copy)).then(answer => {
-        if (answer === 'allowed-once') finish(ApprovalOutcome.ALLOWED, 'owner', 'DSH client')
-        if (answer === 'rejected') finish(ApprovalOutcome.DENIED, 'owner', 'DSH client')
+        if (answer === 'allowed-once') finish('ALLOWED', 'owner', 'DSH client')
+        if (answer === 'rejected') finish('DENIED', 'owner', 'DSH client')
       }).catch(() => {})
     })
   }
@@ -93,16 +92,16 @@ export class ApprovalHolder {
     const pending = this.pending.get(id)
     if (!pending) throw new Error('This approval has already closed.')
     if (allow && !pending.request.argumentsJson) throw new Error('Operation details are unavailable.')
-    return pending.finish(allow ? ApprovalOutcome.ALLOWED : ApprovalOutcome.DENIED, 'owner', device)
+    return pending.finish(allow ? 'ALLOWED' : 'DENIED', 'owner', device)
   }
 
   cancelTask(taskId: string, device: string) {
     for (const item of this.pending.values()) {
-      if (item.request.taskId === taskId) item.finish(ApprovalOutcome.CANCELLED, 'interrupt', device)
+      if (item.request.taskId === taskId) item.finish('CANCELLED', 'interrupt', device)
     }
   }
 
   close() {
-    for (const item of this.pending.values()) item.finish(ApprovalOutcome.CANCELLED, 'shutdown', 'bridge')
+    for (const item of this.pending.values()) item.finish('CANCELLED', 'shutdown', 'bridge')
   }
 }

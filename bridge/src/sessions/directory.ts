@@ -1,5 +1,3 @@
-import { AttachmentKind } from '../gen/attachments_pb.ts'
-import { TaskState } from '../gen/durable_list_pb.ts'
 import { failureOf, isUserInterrupt } from '../milestones/mapper.ts'
 import type { TaskHub } from '../tasks/task-hub.ts'
 
@@ -29,7 +27,7 @@ type Block = { type: string; text?: string; attachment?: { name?: string; bytes?
 /** A user message's image and file blocks, as chips. The journal has no media type for a file. */
 function attachments(content: readonly Block[] | undefined) {
   return (content ?? []).flatMap(b => b.type === 'image' || b.type === 'file' ? [{
-    kind: b.type === 'image' ? AttachmentKind.IMAGE : AttachmentKind.FILE,
+    kind: b.type === 'image' ? 'image' as const : 'file' as const,
     name: b.attachment?.name ?? '', size: BigInt(b.attachment?.bytes ?? 0), mediaType: b.attachment?.mediaType ?? '',
   }] : [])
 }
@@ -89,13 +87,13 @@ export class SessionDirectory {
           const lastTurn = page.records.findLast(({event}) => event.type === 'turn/end' || event.type === 'turn/start')?.event
           const reason = lastTurn?.type === 'turn/end' ? (lastTurn.data as { reason?: {
             kind?: string; error?: unknown; reason?: { kind?: string } } }).reason : undefined
-          const state = reason ? (reason.kind === 'completed' ? TaskState.COMPLETED :
-            isUserInterrupt(reason) ? TaskState.INTERRUPTED : TaskState.FAILED) :
-            row.running || lastTurn?.type === 'turn/start' ? TaskState.RUNNING : TaskState.COMPLETED
+          const state = reason ? (reason.kind === 'completed' ? 'COMPLETED' :
+            isUserInterrupt(reason) ? 'INTERRUPTED' : 'FAILED') :
+            row.running || lastTurn?.type === 'turn/start' ? 'RUNNING' : 'COMPLETED'
           const messages = page.records.flatMap(r => message(r.event) ?? [])
           const prompt = messages.find(m => m.fromUser)?.text
           const latest = messages.at(-1)
-          const reply = state === TaskState.COMPLETED && latest && !latest.fromUser && latest.text.length <= 280 ? latest.text : ''
+          const reply = state === 'COMPLETED' && latest && !latest.fromUser && latest.text.length <= 280 ? latest.text : ''
           const rename = page.records.findLast(({event}) => event.type === 'session/title')?.event.data as
             { source?: { kind?: string }; title?: string } | undefined
           // DSH's title wins once it has one: a user rename, or the title DSH generates after the first
@@ -107,7 +105,7 @@ export class SessionDirectory {
           const turnStart = page.records.findLast(({event}) => event.type === 'turn/start')?.event.time ??
             page.records.findLast(({event}) => message(event)?.fromUser)?.event.time
           this.hub.observeSession(row.sessionId, BigInt(page.cursor), title ?? row.sessionId,
-            state, state === TaskState.FAILED ? failureOf(reason?.kind ?? 'unknown', reason?.error) : { message: '', code: '' },
+            state, state === 'FAILED' ? failureOf(reason?.kind ?? 'unknown', reason?.error) : { message: '', code: '' },
             BigInt(at), BigInt(page.records[0]?.event.time ?? row.updatedAt), reply, hostTitle, row.cwd,
             turnStart === undefined ? undefined : BigInt(turnStart))
         } catch (error) {

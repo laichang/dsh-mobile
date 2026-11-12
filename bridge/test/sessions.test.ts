@@ -1,13 +1,12 @@
+import { HostLog } from '../src/tasks/host-log.ts'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { SessionDirectory, type SessionReader } from '../src/sessions/directory.ts'
 import { TaskHub } from '../src/tasks/task-hub.ts'
-import { TaskState } from '../src/gen/durable_list_pb.ts'
-import { AttachmentKind } from '../src/gen/attachments_pb.ts'
 
 // The journal's image and file blocks become the message's attachments, so a replay shows the chips.
 test('journalUserMessageCarriesItsImagesAndFilesAsAttachments', async () => {
-  const hub = new TaskHub({ interrupt() {}, async start() { return { taskId: 'phone', output: (async function* () {})() } } })
+  const hub = new TaskHub({ interrupt() {}, async start() { return { taskId: 'phone', output: (async function* () {})() } } }, new HostLog())
   const events = [
     { type: 'user/message', seq: 0, time: 1, data: { source: { kind: 'user' }, content: [
       { type: 'text', text: 'Read these.' },
@@ -24,7 +23,7 @@ test('journalUserMessageCarriesItsImagesAndFilesAsAttachments', async () => {
   await directory.reconcile()
   const page = await directory.read('s')
   assert.deepEqual(page.messages.map(m => [m.text, m.attachments.map(a => [a.kind, a.name, Number(a.size), a.mediaType])]), [
-    ['Read these.', [[AttachmentKind.FILE, 'notes.txt', 12, ''], [AttachmentKind.IMAGE, 'photo.jpg', 3400, 'image/jpeg']]],
+    ['Read these.', [['file', 'notes.txt', 12, ''], ['image', 'photo.jpg', 3400, 'image/jpeg']]],
     ['Done.', []],
   ])
   directory.close()
@@ -32,7 +31,7 @@ test('journalUserMessageCarriesItsImagesAndFilesAsAttachments', async () => {
 })
 
 test('webSessionsBeforeAndAfterPairingAndPhoneTaskHaveOneHostRowEach', async () => {
-  const hub = new TaskHub({ interrupt() {}, async start() { return { taskId: 'phone', output: (async function* () {})() } } })
+  const hub = new TaskHub({ interrupt() {}, async start() { return { taskId: 'phone', output: (async function* () {})() } } }, new HostLog())
   type JournalEvent = { type: string; seq: number; time: number; data: unknown }
   const journals = new Map<string, JournalEvent[]>()
   function turn(id: string, text: string) {
@@ -58,7 +57,7 @@ test('webSessionsBeforeAndAfterPairingAndPhoneTaskHaveOneHostRowEach', async () 
   turn('web-before', 'first')
   await directory.reconcile()
   assert.deepEqual(hub.list().map(row => row.title), ['first'])
-  hub.observeSession('web-after', 0n, 'web-after', TaskState.RUNNING, { message: '', code: '' }, 0n, 0n) // turn/start precedes human text
+  hub.observeSession('web-after', 0n, 'web-after', 'RUNNING', { message: '', code: '' }, 0n, 0n) // turn/start precedes human text
   turn('web-after', 'after')
   directory.changed('web-after', journals.get('web-after')!.at(-1)!)
   turn('phone', 'phone prompt')
@@ -75,7 +74,7 @@ test('webSessionsBeforeAndAfterPairingAndPhoneTaskHaveOneHostRowEach', async () 
   turn('web-before', 'after cut')
   const older = await directory.read('web-before', latest.nextBeforeSeq, latest.throughSeq)
   assert.deepEqual([...older.messages, ...latest.messages].map(m => m.text), ['first', 'reply first', 'second', 'reply second'])
-  assert.equal(hub.list().find(row => row.taskId === 'web-before')?.state, TaskState.COMPLETED)
+  assert.equal(hub.list().find(row => row.taskId === 'web-before')?.state, 'COMPLETED')
   assert.equal(hub.list().find(row => row.taskId === 'web-before')?.latestReply, 'reply second')
   const events = journals.get('web-before')!
   events.push({ type: 'session/title', seq: events.length, time: 44, data: { source: { kind: 'user' }, title: 'Release notes' } })
@@ -95,7 +94,7 @@ test('webSessionsBeforeAndAfterPairingAndPhoneTaskHaveOneHostRowEach', async () 
 // Real-iPhone bug (2026-11-07): a Web session with turns hours apart showed "用时 2小时37分钟15秒",
 // because the phone counted from the first turn. The summary now says when the latest turn started.
 test('webSessionSummarySaysWhenItsLatestTurnStarted', async () => {
-  const hub = new TaskHub({ interrupt() {}, async start() { return { taskId: 'phone', output: (async function* () {})() } } })
+  const hub = new TaskHub({ interrupt() {}, async start() { return { taskId: 'phone', output: (async function* () {})() } } }, new HostLog())
   const hour = 3_600_000
   const events: { type: string; seq: number; time: number; data: unknown }[] = []
   function emit(type: string, data: unknown, time: number) { events.push({ type, data, seq: events.length, time }) }

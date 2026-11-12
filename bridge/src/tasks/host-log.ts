@@ -8,9 +8,39 @@
  */
 import { randomUUID } from 'node:crypto'
 import type { MessageInitShape } from '@bufbuild/protobuf'
-import type { EventSchema } from '../gen/frame_pb.ts'
+import type { Attachment, TaskEvent, Summary } from './events.ts'
+import { TaskState } from '../gen/durable_list_pb.ts'
+import { QueuePlacement } from '../gen/conversation_pb.ts'
+import { AttachmentKind } from '../gen/attachments_pb.ts'
+import { ApprovalOutcome } from '../gen/approvals_pb.ts'
+import { QuestionOutcome } from '../gen/questions_pb.ts'
+import { milestoneAdded } from '../milestones/wire.ts'
+import { transcriptBlock } from '../transcript/wire.ts'
+import { TaskStatus, type EventSchema } from '../gen/frame_pb.ts'
 
 export type EventBody = MessageInitShape<typeof EventSchema>['body']
+
+export function wireAttachment(attachment: Attachment) {
+  return { ...attachment, kind: attachment.kind === 'image' ? AttachmentKind.IMAGE : AttachmentKind.FILE }
+}
+
+export function wireSummary(task: Summary) {
+  return { ...task, state: TaskState[task.state] }
+}
+
+function eventBody(event: TaskEvent): EventBody {
+  switch (event.case) {
+    case 'userMessage': return { case: event.case, value: { ...event.value, attachments: event.value.attachments?.map(wireAttachment) } }
+    case 'queuedMessage': return { case: event.case, value: { ...event.value, placement: QueuePlacement[event.value.placement] } }
+    case 'taskUpserted': return { case: event.case, value: { task: wireSummary(event.value.task) } }
+    case 'taskEnded': return { case: event.case, value: { ...event.value, status: TaskStatus[event.value.status] } }
+    case 'approvalResolved': return { case: event.case, value: { ...event.value, outcome: ApprovalOutcome[event.value.outcome] } }
+    case 'questionResolved': return { case: event.case, value: { ...event.value, outcome: QuestionOutcome[event.value.outcome] } }
+    case 'milestoneAdded': return { case: event.case, value: milestoneAdded(event.value.taskId, event.value.seq, event.value.milestone) }
+    case 'transcriptBlock': return { case: event.case, value: transcriptBlock(event.value.taskId, event.value.block) }
+    default: return event
+  }
+}
 
 export interface LoggedEvent {
   readonly seq: bigint
@@ -44,8 +74,8 @@ export class HostLog {
   get firstRetained(): bigint { return this.events[0]?.seq ?? this.headSeq + 1n }
 
   /** Numbers, stores and publishes one event. Listeners run synchronously, in order. */
-  append(taskId: string, body: EventBody): LoggedEvent {
-    const event: LoggedEvent = { seq: ++this.headSeq, taskId, body }
+  append(taskId: string, value: TaskEvent): LoggedEvent {
+    const event: LoggedEvent = { seq: ++this.headSeq, taskId, body: eventBody(value) }
     this.events.push(event)
     if (this.events.length > this.capacity) this.events.splice(0, this.events.length - this.capacity)
     for (const listener of this.listeners) listener(event)

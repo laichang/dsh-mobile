@@ -6,21 +6,32 @@
       "text": "Compare userMessage and the remaining event families with baseline fixtures. Preserve host_seq, retention, reset-before-replay, event order, response order and capability-specific filtering. Approvals, questions and queue behavior stay visible to the supported clients.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/pnpm-test"
+      ]
     },
     {
       "tier": "auto",
       "text": "A build-time import check rejects runtime imports and import type from generated protocol, ws or node:fs in use cases. Its positive adapter case and forbidden use-case cases exercise the checker. TaskHub owns domain state and the plugin entry only wires dependencies.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/pnpm-test"
+      ]
     },
     {
       "tier": "auto",
       "text": "Run scripts/pnpm-test and scripts/check-fixtures-same 61b5416. The baseline iOS client against the new bridge completes Hello, Resume, ListTasks, approval and queue operations, including legacy capability mapping. This check can run with no iOS refactor merged.",
       "files": [],
       "screens": [],
-      "passed": false
+      "passed": false,
+      "evidence": [
+        "cmd:scripts/pnpm-test",
+        "cmd:scripts/check-fixtures-same 61b5416",
+        "cmd:scripts/demo/baseline-ios-bridge.sh"
+      ]
     }
   ]
 }

@@ -3,7 +3,9 @@ import type { WebSocket } from 'ws'
 import type { ApprovalHolder } from './approvals/holder.ts'
 import type { QuestionHolder } from './questions/holder.ts'
 import { SUPPORTED_DSH, supportsDsh } from './compatibility.ts'
-import { ApprovalDecision } from './gen/approvals_pb.ts'
+import { catalogFrame } from './models/wire.ts'
+import { QuestionOutcome } from './gen/questions_pb.ts'
+import { ApprovalDecision, ApprovalOutcome } from './gen/approvals_pb.ts'
 import { TaskState } from './gen/durable_list_pb.ts'
 import { auditPage, deviceList } from './devices/manage.ts'
 import { listenTLS } from './tls/listener.ts'
@@ -14,8 +16,8 @@ import type { SessionDirectory } from './sessions/directory.ts'
 import { MILESTONES_CAPABILITY } from './milestones/wire.ts'
 import { DRAWER_CAPABILITY } from './drawer/workspace.ts'
 import { TRANSCRIPT_CAPABILITY } from './transcript/wire.ts'
-import { MessageMode, QueueAction } from './gen/conversation_pb.ts'
-import type { LoggedEvent } from './tasks/host-log.ts'
+import { MessageMode, QueueAction, QueuePlacement } from './gen/conversation_pb.ts'
+import { HostLog, wireAttachment, wireSummary, type LoggedEvent } from './tasks/host-log.ts'
 import { TaskHub, type TaskStarter } from './tasks/task-hub.ts'
 import { ATTACHMENTS_CAPABILITY, UploadError, UploadStaging, type StagedFile } from './attachments/staging.ts'
 
@@ -44,7 +46,7 @@ export interface BridgeServerOptions {
   /** The host's name in TaskList / Resumed (default: this machine's hostname). */
   hostName?: string
   /** Inject a hub (tests); by default the server makes one around `tasks`. */
-  hub?: TaskHub
+  hub?: TaskHub<HostLog>
   sessions?: SessionDirectory
   approvals?: ApprovalHolder
   /** Agent questions (`questions.v1`). */
@@ -54,12 +56,12 @@ export interface BridgeServerOptions {
 
 export interface BridgeServer {
   readonly port: number
-  readonly hub: TaskHub
+  readonly hub: TaskHub<HostLog>
   close(): Promise<void>
 }
 
 export async function startBridgeServer(options: BridgeServerOptions): Promise<BridgeServer> {
-  const hub = options.hub ?? new TaskHub(options.tasks)
+  const hub = options.hub ?? new TaskHub(options.tasks, new HostLog())
   const host = { hub, hostName: options.hostName ?? hostname(), authenticated: new Map<WebSocket, string>() }
   const server = await listenTLS(options.host, options.port, options.tlsStateDir, (ws, device, registry) => {
     host.authenticated.set(ws, device)
@@ -79,7 +81,7 @@ function withoutQuestions<T extends { state?: TaskState; pendingApprovals?: read
 }
 
 function serveConnection(
-  socket: WebSocket, device: string, options: BridgeServerOptions, host: { hub: TaskHub; hostName: string; authenticated: Map<WebSocket, string> },
+  socket: WebSocket, device: string, options: BridgeServerOptions, host: { hub: TaskHub<HostLog>; hostName: string; authenticated: Map<WebSocket, string> },
   log: (m: string) => void, store: TLSRegistry,
 ) {
   const { hub, hostName } = host
@@ -269,7 +271,7 @@ function serveConnection(
         }
         try {
           const placement = await hub.editQueue(taskId, messageId, action === QueueAction.STEER ? 'steer' : 'remove')
-          return respond(id, { case: 'queueEdited', value: { taskId, messageId, placement } })
+          return respond(id, { case: 'queueEdited', value: { taskId, messageId, placement: QueuePlacement[placement] } })
         } catch (error) {
           log(`queue edit failed: ${String(error)}`)
           return fail(id, 'queue/refused', error instanceof Error ? error.message : String(error))
@@ -292,7 +294,7 @@ function serveConnection(
         }
         if (request.body.case === 'getModelCatalog') {
           try {
-            return respond(id, { case: 'modelCatalog', value: await options.tasks.modelCatalog() })
+            return respond(id, { case: 'modelCatalog', value: catalogFrame(await options.tasks.modelCatalog()) })
           } catch (error) {
             return fail(id, 'model/catalog-failed', error instanceof Error ? error.message : String(error))
           }
@@ -340,7 +342,7 @@ function serveConnection(
         try {
           const resolved = options.questions.answer(answer.id, answer.answers.map(a => ({ questionId: a.questionId, selected: [...a.selected], custom: a.custom })))
           log(`question ${answer.id} answered by ${device}`)
-          return respond(id, { case: 'questionResolved', value: resolved })
+          return respond(id, { case: 'questionResolved', value: { ...resolved, outcome: QuestionOutcome[resolved.outcome] } })
         } catch (error) {
           return fail(id, 'question/refused', error instanceof Error ? error.message : String(error))
         }
@@ -354,7 +356,7 @@ function serveConnection(
         }
         try {
           const resolved = options.approvals.answer(answer.id, answer.decision === ApprovalDecision.ALLOW_ONCE, device)
-          return respond(id, { case: 'approvalResolved', value: resolved })
+          return respond(id, { case: 'approvalResolved', value: { ...resolved, outcome: ApprovalOutcome[resolved.outcome] } })
         } catch (error) {
           return fail(id, 'approval/refused', error instanceof Error ? error.message : String(error))
         }
@@ -363,12 +365,14 @@ function serveConnection(
         if (!helloDone || !clientSessions || !options.sessions) return fail(id, 'request/unsupported', 'Session history unavailable.')
         const req = request.body.value
         try {
-          return respond(id, { case: 'sessionPage', value: await options.sessions.read(req.taskId, req.beforeSeq, req.throughSeq) })
+          const page = await options.sessions.read(req.taskId, req.beforeSeq, req.throughSeq)
+          const messages = page.messages.map(m => ({ ...m, attachments: m.attachments.map(wireAttachment) }))
+          return respond(id, { case: 'sessionPage', value: { ...page, messages } })
         } catch (error) { return fail(id, 'session/read-failed', String(error)) }
       }
       case 'listTasks': {
         if (!helloDone) return fail(id, 'hello/required', 'send Hello first')
-        return respond(id, { case: 'taskList', value: { tasks: hub.list().filter(task => clientApprovals || !task.approvalOnly)
+        return respond(id, { case: 'taskList', value: { tasks: hub.list().map(wireSummary).filter(task => clientApprovals || !task.approvalOnly)
           .map(task => clientQuestions ? task : withoutQuestions(task))
           .flatMap(task => !clientSessions && task.externalSession ? (clientApprovals && task.pendingApprovals.length
             ? [{ ...task, title: '', approvalOnly: true }] : []) : [task]), logId: hub.log.logId, hostName } })

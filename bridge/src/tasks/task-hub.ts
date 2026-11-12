@@ -7,17 +7,11 @@
 import type { Selection } from '../models/catalog.ts'
 import type { Pending, Resolved } from '../approvals/holder.ts'
 import type * as Questions from '../questions/holder.ts'
-import { TaskStatus } from '../gen/frame_pb.ts'
-import { QueuePlacement } from '../gen/conversation_pb.ts'
-import { TaskState, type TaskSummary } from '../gen/durable_list_pb.ts'
 import { randomUUID } from 'node:crypto'
 import type { Continues, DshTasks, PromptMode, StartedTask, TaskOutput } from '../dsh.ts'
-import { HostLog } from './host-log.ts'
 import type { StagedFile } from '../attachments/staging.ts'
-import { AttachmentKind } from '../gen/attachments_pb.ts'
-import { milestoneAdded } from '../milestones/wire.ts'
 import { sessionWorkspace } from '../drawer/workspace.ts'
-import { transcriptBlock } from '../transcript/wire.ts'
+import type { State, Placement, Summary, TaskEvents } from './events.ts'
 import type { Failure } from '../milestones/mapper.ts'
 
 export interface TaskStarter {
@@ -42,13 +36,10 @@ interface Waiting {
   taskId: string
   text: string
   timeMs: bigint
-  placement: QueuePlacement.QUEUED | QueuePlacement.STEERING
+  placement: 'QUEUED' | 'STEERING'
 }
 
-type Summary = Omit<TaskSummary, '$typeName' | '$unknown' | 'pendingApprovals' | 'pendingQuestions' | 'modelSelection'>
-  & { pendingApprovals: Pending[]; pendingQuestions: Questions.Pending[]; modelSelection?: Selection }
-
-export class TaskHub {
+export class TaskHub<Log extends TaskEvents = TaskEvents> {
   private readonly summaries = new Map<string, Summary>()
   private readonly pending = new Map<string, Pending>()
   /** Agent questions that wait for an answer, by request ID. */
@@ -70,7 +61,7 @@ export class TaskHub {
 
   constructor(
     private readonly starter: TaskStarter,
-    readonly log: HostLog = new HostLog(),
+    readonly log: Log,
     private readonly now: () => number = Date.now,
   ) {}
 
@@ -86,13 +77,13 @@ export class TaskHub {
     taskId = task.taskId
     const at = BigInt(this.now())
     const summary: Summary = {
-      taskId: task.taskId, title: prompt, state: TaskState.RUNNING,
+      taskId: task.taskId, title: prompt, state: 'RUNNING',
       createdAtMs: at, updatedAtMs: at, message: '', failureCode: '', approvalOnly: false, externalSession: false,
       sessionRevision: this.summaries.get(task.taskId)?.sessionRevision, pendingApprovals: this.approvalsFor(task.taskId),
       pendingQuestions: this.questionsFor(task.taskId),
       workspace: sessionWorkspace(this.summaries.get(task.taskId)?.workspace, task.workspace ?? workspace),
     }
-    if (this.waitsOnUser(summary)) summary.state = TaskState.WAITING_ON_USER
+    if (this.waitsOnUser(summary)) summary.state = 'WAITING_ON_USER'
     this.summaries.set(task.taskId, summary)
     onCreated(task.taskId)
     this.upserted(summary)
@@ -105,7 +96,7 @@ export class TaskHub {
     const task = this.summaries.get(taskId)
     if (!task || task.approvalOnly) throw new Error('Unknown bridge task')
     // The terminal event can race a tap or a retry. Keep the outcome DSH already reported.
-    if (task.state === TaskState.RUNNING || task.state === TaskState.WAITING_ON_USER) this.starter.interrupt(taskId)
+    if (task.state === 'RUNNING' || task.state === 'WAITING_ON_USER') this.starter.interrupt(taskId)
   }
 
   /**
@@ -130,8 +121,8 @@ export class TaskHub {
       return this.sendWhileRunning(taskId, text, mode, onAccepted)
     }
     // Not while an earlier send waits. A failed task takes a new message (the user fixed the cause).
-    const afterFailure = summary.state === TaskState.FAILED
-    if ((summary.state !== TaskState.COMPLETED && summary.state !== TaskState.INTERRUPTED && !afterFailure)
+    const afterFailure = summary.state === 'FAILED'
+    if ((summary.state !== 'COMPLETED' && summary.state !== 'INTERRUPTED' && !afterFailure)
         || this.sending.has(taskId)) {
       throw new Error('Send a follow-up when the task is done.')
     }
@@ -152,11 +143,11 @@ export class TaskHub {
     this.logged.add(messageId)
     // The message's files as chips, so a replay shows them; the host keeps the bytes.
     const attachments = files.map(file => ({
-      kind: file.kind === 'image' ? AttachmentKind.IMAGE : AttachmentKind.FILE,
+      kind: file.kind,
       name: file.name, size: BigInt(file.data.length), mediaType: file.mediaType,
     }))
     this.log.append(taskId, { case: 'userMessage', value: { taskId, messageId, text, timeMs: BigInt(at), attachments } })
-    summary.state = this.waitsOnUser(summary) ? TaskState.WAITING_ON_USER : TaskState.RUNNING
+    summary.state = this.waitsOnUser(summary) ? 'WAITING_ON_USER' : 'RUNNING'
     this.turnStarted(summary, at)
     const pump = this.pump({ taskId, output }, summary).finally(() => this.running.delete(pump))
     this.running.add(pump)
@@ -177,7 +168,7 @@ export class TaskHub {
     } finally {
       if (this.inflight.get(taskId) === flight) this.inflight.delete(taskId)
     }
-    const placement = mode === 'queue' ? QueuePlacement.QUEUED : QueuePlacement.STEERING
+    const placement = mode === 'queue' ? 'QUEUED' : 'STEERING'
     const waiting: Waiting = { taskId, text, timeMs: BigInt(this.now()), placement }
     this.waiting.set(messageId, waiting)
     onAccepted(messageId)
@@ -190,23 +181,23 @@ export class TaskHub {
    * Returns its place afterwards: STEERING, REMOVED, or QUEUED when DSH could no longer steer
    * into the ending turn (the message then runs as the next turn).
    */
-  async editQueue(taskId: string, messageId: string, action: 'steer' | 'remove'): Promise<QueuePlacement> {
+  async editQueue(taskId: string, messageId: string, action: 'steer' | 'remove'): Promise<Placement> {
     if (!this.starter.editQueue) throw new Error('This host cannot change the queue.')
     const waiting = this.waiting.get(messageId)
     if (!waiting || waiting.taskId !== taskId) throw new Error('This message is no longer waiting.')
-    if (action === 'steer' && waiting.placement === QueuePlacement.STEERING) return QueuePlacement.STEERING
+    if (action === 'steer' && waiting.placement === 'STEERING') return 'STEERING'
     const done = await this.starter.editQueue(taskId, messageId, action)
     // DSH can take the message while the edit runs; then its UserMessage is logged already.
     if (this.waiting.get(messageId) !== waiting) throw new Error('This message is no longer waiting.')
     if (!done) return waiting.placement
     if (action === 'remove') {
       this.waiting.delete(messageId)
-      this.queued(messageId, waiting, QueuePlacement.REMOVED)
-      return QueuePlacement.REMOVED
+      this.queued(messageId, waiting, 'REMOVED')
+      return 'REMOVED'
     }
-    waiting.placement = QueuePlacement.STEERING
-    this.queued(messageId, waiting, QueuePlacement.STEERING)
-    return QueuePlacement.STEERING
+    waiting.placement = 'STEERING'
+    this.queued(messageId, waiting, 'STEERING')
+    return 'STEERING'
   }
 
   /**
@@ -233,13 +224,13 @@ export class TaskHub {
       for (const [messageId, waiting] of mine) {
         if (inbox.waiting.includes(messageId) || this.waiting.get(messageId) !== waiting) continue
         this.waiting.delete(messageId)
-        this.queued(messageId, waiting, QueuePlacement.REMOVED)
+        this.queued(messageId, waiting, 'REMOVED')
       }
       return [...this.waiting.values()].some(w => w.taskId === taskId)
     }
   }
 
-  private queued(messageId: string, waiting: Waiting, placement: QueuePlacement) {
+  private queued(messageId: string, waiting: Waiting, placement: Placement) {
     const { taskId, text, timeMs } = waiting
     this.log.append(taskId, { case: 'queuedMessage', value: { taskId, messageId, text, timeMs, placement } })
   }
@@ -263,7 +254,7 @@ export class TaskHub {
   /** Includes tasks paused for user input. */
   isActive(taskId: string): boolean {
     const task = this.summaries.get(taskId)
-    return !!task && !task.approvalOnly && (task.state === TaskState.RUNNING || task.state === TaskState.WAITING_ON_USER)
+    return !!task && !task.approvalOnly && (task.state === 'RUNNING' || task.state === 'WAITING_ON_USER')
   }
 
   approvalChanged(event: Pending | Resolved, external = false) {
@@ -277,7 +268,7 @@ export class TaskHub {
     let summary = this.summaries.get(event.taskId)
     if (!summary && external && !('outcome' in event)) {
       const at = BigInt(this.now())
-      summary = { taskId: event.taskId, title: '', state: TaskState.WAITING_ON_USER, createdAtMs: at,
+      summary = { taskId: event.taskId, title: '', state: 'WAITING_ON_USER', createdAtMs: at,
         updatedAtMs: at, message: '', failureCode: '', approvalOnly: true, externalSession: false, pendingApprovals: [], pendingQuestions: [] }
       this.summaries.set(event.taskId, summary)
     }
@@ -311,8 +302,8 @@ export class TaskHub {
 
   /** A request of the task came or went: WAITING_ON_USER while one waits, else RUNNING again. */
   private decisionChanged(summary: Summary) {
-    if (summary.state === TaskState.RUNNING || summary.state === TaskState.WAITING_ON_USER) {
-      summary.state = this.waitsOnUser(summary) ? TaskState.WAITING_ON_USER : TaskState.RUNNING
+    if (summary.state === 'RUNNING' || summary.state === 'WAITING_ON_USER') {
+      summary.state = this.waitsOnUser(summary) ? 'WAITING_ON_USER' : 'RUNNING'
     }
     summary.updatedAtMs = BigInt(this.now())
     this.upserted(summary)
@@ -336,7 +327,7 @@ export class TaskHub {
   }
 
   /** The DSH session ID is also CreateTask's ID, even if the journal arrives before its response. */
-  observeSession(taskId: string, revision: bigint, title: string, state: TaskState, failure: Failure,
+  observeSession(taskId: string, revision: bigint, title: string, state: State, failure: Failure,
     updatedAt: bigint, createdAt: bigint, latestReply?: string, hostTitle?: string, workspace?: string,
     turnStartedAt?: bigint) {
     const old = this.summaries.get(taskId)
@@ -355,7 +346,7 @@ export class TaskHub {
     summary.sessionRevision = revision
     summary.updatedAtMs = summary.updatedAtMs > updatedAt ? summary.updatedAtMs : updatedAt
     if (turnStartedAt !== undefined) summary.turnStartedAtMs = turnStartedAt
-    summary.state = pending.length || summary.pendingQuestions.length ? TaskState.WAITING_ON_USER : state
+    summary.state = pending.length || summary.pendingQuestions.length ? 'WAITING_ON_USER' : state
     summary.message = failure.message
     summary.failureCode = failure.code
     this.summaries.set(taskId, summary)
@@ -394,10 +385,10 @@ export class TaskHub {
           this.log.append(task.taskId, { case: 'modelSelected', value: { taskId: task.taskId, selection: out.selection } })
         } else if (out.kind === 'milestone') {
           // Milestones are logged like any other event, so Resume replays them.
-          this.log.append(task.taskId, { case: 'milestoneAdded', value: milestoneAdded(task.taskId, ++cursor.milestone, out.milestone) })
+          this.log.append(task.taskId, { case: 'milestoneAdded', value: { taskId: task.taskId, seq: ++cursor.milestone, milestone: out.milestone } })
         } else if (out.kind === 'block') {
           // Blocks are logged too, so Resume replays them in their place among the chunks.
-          this.log.append(task.taskId, { case: 'transcriptBlock', value: transcriptBlock(task.taskId, out.block) })
+          this.log.append(task.taskId, { case: 'transcriptBlock', value: { taskId: task.taskId, block: out.block } })
         } else {
           ended = true
           this.end(summary, out)
@@ -428,19 +419,14 @@ export class TaskHub {
   }
 
   private end(summary: Summary, end: Extract<TaskOutput, { kind: 'end' }>) {
-    const states = {
-      completed: [TaskState.COMPLETED, TaskStatus.COMPLETED],
-      failed: [TaskState.FAILED, TaskStatus.FAILED],
-      interrupted: [TaskState.INTERRUPTED, TaskStatus.INTERRUPTED],
-    } as const
-    const [state, status] = states[end.status]
+    const status = ({ completed: 'COMPLETED', failed: 'FAILED', interrupted: 'INTERRUPTED' } as const)[end.status]
     // Messages that still wait do not run after a stop: out of DSH's inbox, back to the composer.
     for (const [messageId, waiting] of [...this.waiting].filter(([, w]) => w.taskId === summary.taskId)) {
       this.waiting.delete(messageId)
-      this.queued(messageId, waiting, QueuePlacement.RETURNED)
+      this.queued(messageId, waiting, 'RETURNED')
       void this.starter.editQueue?.(summary.taskId, messageId, 'remove').catch(() => {})
     }
-    summary.state = state
+    summary.state = status
     summary.message = end.message ?? ''
     summary.failureCode = end.code ?? ''
     summary.updatedAtMs = BigInt(this.now())

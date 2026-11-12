@@ -64,7 +64,7 @@ async function setup(web?: (req: Parameters<FakeDSH['waterfall']>[2]) => Promise
   { ask = TEMPLATES, log }: { ask?: AskItem[]; log?: HostLog } = {}) {
   const dsh = new FakeDSH({ ask })
   const tasks = new DshTasks(dsh, '/tmp/dshm-ws')
-  const hub = new TaskHub(tasks, log)
+  const hub = new TaskHub(tasks, log ?? new HostLog())
   const questions = new QuestionHolder(e => hub.questionChanged(e))
   questions.register(dsh)
   if (web) dsh.on('user-questions/request', req => web(req))
@@ -180,7 +180,7 @@ describe('Questions', () => {
     assert.equal(upserted.task?.state, TaskState.WAITING_ON_USER)
     assert.equal(upserted.task?.pendingQuestions[0].id, pending.id)
     assert.equal(upserted.task?.pendingQuestions[0].questions[0].text, TEMPLATES[0].question)
-    assert.equal(hub.list()[0].state, TaskState.WAITING_ON_USER)
+    assert.equal(hub.list()[0].state, 'WAITING_ON_USER')
 
     // A phone that comes later: the summary still has the question, and its replay too while retained.
     const later = await connect(server)
@@ -222,7 +222,7 @@ describe('Questions', () => {
   test('appWithoutQuestionsCapabilityGetsNoCard', async () => {
     const dsh = new FakeDSH({ ask: TEMPLATES })
     const tasks = new DshTasks(dsh, '/tmp/dshm-ws')
-    const hub = new TaskHub(tasks)
+    const hub = new TaskHub(tasks, new HostLog())
     const questions = new QuestionHolder(e => hub.questionChanged(e))
     questions.register(dsh)
     const server = await startTestBridge({ dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0, tasks, hub, questions })
