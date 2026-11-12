@@ -1,4 +1,5 @@
 import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// Where a pairing code lands: from the QR scanner, a pasted link, or (Debug) the `dshm://pair?…`

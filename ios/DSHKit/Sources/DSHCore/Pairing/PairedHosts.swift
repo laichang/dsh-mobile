@@ -15,7 +15,8 @@ public struct PairedHost: Sendable, Equatable, Codable, Identifiable {
     public var id: String
     public var name: String
     /// The address that worked last first (pairing, then each reconnect), then the others from the QR.
-    public var addresses: [HostEndpoint]
+    package var addresses: [HostEndpoint]
+    public var addressDescriptions: [String] { addresses.map(\.description) }
     public var hostKey: [UInt8]
     public var tlsDeviceID: String?
     public var enrollment: HostEnrollment? {
@@ -25,7 +26,7 @@ public struct PairedHost: Sendable, Equatable, Codable, Identifiable {
     public var cacheKey: String { "tls:" + id }
     public var pairedAt: Date
 
-    public init(name: String, addresses: [HostEndpoint], hostKey: [UInt8], pairedAt: Date = .now) {
+    package init(name: String, addresses: [HostEndpoint], hostKey: [UInt8], pairedAt: Date = .now) {
         self.id = hostKey.prefix(8).map { String(format: "%02x", $0) }.joined()
         self.name = name
         self.addresses = addresses
@@ -50,6 +51,17 @@ public protocol PairedHostStore: Sendable {
 }
 
 private extension Array where Element == PairedHost {
+    mutating func save(_ host: PairedHost) {
+        for index in indices where self[index].hostKey == host.hostKey && self[index].pendingCredentialID == nil {
+            if let displaced = self[index].enrollment, displaced != host.enrollment {
+                self[index].tlsDeviceID = nil
+                self[index].pendingCredentialID = displaced.tlsDeviceID
+            }
+        }
+        removeAll { $0.hostKey == host.hostKey && $0.pendingCredentialID == nil }
+        append(host)
+    }
+
     mutating func retire(_ enrollment: HostEnrollment) -> Bool {
         if let index = firstIndex(where: { $0.enrollment == enrollment }) {
             self[index].tlsDeviceID = nil
@@ -115,10 +127,7 @@ public struct FilePairedHostStore: PairedHostStore {
     }
 
     public func save(_ host: PairedHost) throws {
-        try mutate {
-            $0.removeAll { $0.hostKey == host.hostKey && $0.pendingCredentialID == nil }
-            $0.append(host)
-        }
+        try mutate { $0.save(host) }
     }
 
     public func update(_ host: PairedHost) throws {
@@ -156,7 +165,7 @@ public final class InMemoryPairedHostStore: PairedHostStore {
 
     public func load() -> [PairedHost] { hosts.withLock { $0.filter { $0.pendingCredentialID == nil } } }
     public func save(_ host: PairedHost) throws {
-        hosts.withLock { $0 = $0.filter { $0.hostKey != host.hostKey || $0.pendingCredentialID != nil } + [host] }
+        hosts.withLock { $0.save(host) }
     }
     public func update(_ host: PairedHost) throws {
         hosts.withLock { hosts in
