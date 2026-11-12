@@ -241,22 +241,22 @@
         }
       }
     },
-    "For a v=1 link, run pnpm --dir bridge build from the updated dsh-mobile project folder. Restart DSH with the same profile, then run node bridge/lib/scripts/pair.js in another terminal with the same DSH_HOME and scan the new v=2 code.": {
+    "If the link contains v=1, it came from an older version. On the computer running DSH:\n\n1. Open another terminal in the updated dsh-mobile folder and run pnpm --dir bridge build.\n2. In the terminal running DSH, press Ctrl+C and run your usual startup command again (for example, dsh web).\n3. Back in the dsh-mobile folder, run node bridge/lib/scripts/pair.js and scan the new code.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "如果链接里是 v=1，请在更新后的 dsh-mobile 项目目录运行 pnpm --dir bridge build，用原来的 profile 重启 DSH，再在另一个终端使用相同的 DSH_HOME 运行 node bridge/lib/scripts/pair.js，扫描新生成的 v=2 码。"
+            "value": "如果链接里有 v=1，说明它是旧版生成的。请在运行 DSH 的电脑上换一个新码：\n\n1. 另开终端，进入更新后的 dsh-mobile 项目目录，运行 pnpm --dir bridge build。\n2. 回到运行 DSH 的终端，按 Ctrl+C 停止它，再执行上次的启动命令（例如 dsh web）。\n3. 回到第 1 步的终端，运行 node bridge/lib/scripts/pair.js，扫描新出现的二维码。"
           }
         }
       }
     },
-    "Keep DSH running. In another terminal, open the dsh-mobile project folder and use the same DSH_HOME. Run this command for a new or expired code.": {
+    "On the computer running DSH, open another terminal in the dsh-mobile folder (the one containing bridge). Run the command below and scan the QR code it prints. If the code expires, run it again.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "保持 DSH 运行。在另一个终端进入 dsh-mobile 项目目录，使用与 DSH 相同的 DSH_HOME，运行以下命令。配对码过期时可再次运行。"
+            "value": "在运行 DSH 的电脑上另开终端，进入 dsh-mobile 项目目录（里面有 bridge 文件夹）。运行下面的命令，扫描终端显示的二维码。码过期后再运行一次即可。"
           }
         }
       }

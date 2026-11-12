@@ -48,7 +48,7 @@ struct ScannerView: View {
                     }
                     DisclosureGroup("Need a pairing code?") {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Keep DSH running. In another terminal, open the dsh-mobile project folder and use the same DSH_HOME. Run this command for a new or expired code.")
+                            Text("On the computer running DSH, open another terminal in the dsh-mobile folder (the one containing bridge). Run the command below and scan the QR code it prints. If the code expires, run it again.")
                             Text(verbatim: pairingCommand)
                                 .font(.footnote.monospaced())
                                 .contextMenu {

@@ -45,10 +45,10 @@ Held approvals: a paired phone or a DSH web client answers a request once. Set `
 4. Pair the phone. For a fresh QR at any time, run this from the dsh-mobile repository root (single use, valid 10 minutes):
 
    ```sh
-   DSH_HOME=~/.dsh node bridge/lib/scripts/pair.js
+   node bridge/lib/scripts/pair.js
    ```
 
-   Use the running host’s `DSH_HOME`. If the plugin uses a custom `stateDir`, append `--state-dir /path/to/stateDir`.
+   By default, DSH stores its settings and data in `~/.dsh`. The pairing command uses this folder automatically. If you chose a different folder when starting DSH, set the same folder in the terminal that generates the code. For example, if you started DSH with `DSH_HOME=/work/dsh dsh web`, run `DSH_HOME=/work/dsh node bridge/lib/scripts/pair.js`. If the plugin uses a custom `stateDir`, append `--state-dir /path/to/stateDir`.
 
    In dsh-mobile, tap the QR button and scan it, then tap **Pair**. The QR lists every external IPv4 address of the host (Wi-Fi, Ethernet, Tailscale's `100.x`); the phone tries them in order, so it works on the same Wi-Fi, or over Tailscale when Tailscale is on at both the phone and the host. The link printed under the QR can be pasted into the app instead.
 

@@ -44,7 +44,7 @@ final class FirstRunUITests: XCTestCase {
 
         let status = app.descendants(matching: .any)["pairing.status"]
         XCTAssertTrue(status.waitForExistence(timeout: 5), app.debugDescription)
-        for step in ["pnpm --dir bridge build", "重启 DSH", "DSH_HOME", "node bridge/lib/scripts/pair.js", "v=2"] {
+        for step in ["pnpm --dir bridge build", "Ctrl+C", "dsh web", "node bridge/lib/scripts/pair.js", "v=1"] {
             XCTAssertTrue(status.label.contains(step), status.label)
         }
     }
