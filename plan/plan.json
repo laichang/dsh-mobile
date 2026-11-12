@@ -91,7 +91,7 @@
       "not": "",
       "demo": "scripts/demo/durable-list.sh",
       "log": [],
-      "round": 1
+      "round": 2
     },
     {
       "id": "S5",
@@ -139,16 +139,16 @@
         "S6"
       ],
       "branch": "claude/s7-747c0ab",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "c12c478",
       "why": "Features and app pages should call domain operations without handling wire frames or the connection's raw request API.",
       "cuts": "Migrate command families from `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHCore/HostCommands.swift` and `ios/DSHKit/Sources/DSHCore/HostDeviceManagement.swift`. Keep typed domain inputs, results, failures and event mappings in Core. DSHTransport handles frames, TLS and request lifetimes, while DSHProtocol owns the generated messages. Test with `ios/DSHKit/Tests/DSHKitTests/GoldenFixturesTests.swift` and TransportDispatchTests. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
       "demo": null,
       "log": [],
-      "round": 1
+      "round": 2
     },
     {
       "id": "S8",
@@ -214,16 +214,17 @@
       "needs": [
         "S10"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s11-216b887",
+      "status": "doing",
       "updated": "2026-11-12",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "The bridge can ship independently when task and approval use cases are independent of wire types and existing phones still complete the same operations.",
       "cuts": "In `bridge/src/tasks/task-hub.ts`, start with userMessage, then migrate task summaries, approvals, questions and queue events to domain types. Map to protobuf when appending to `bridge/src/tasks/host-log.ts`. Keep DSH service adaptation with the business foundation, TLS/WS, raw files, generated types and serialization in the foundation layer. Decode requests in `bridge/src/server.ts` and compose in `bridge/src/index.ts`. Cover `bridge/test/conversation.test.ts`, `bridge/test/durable-list.test.ts` and `bridge/test/tls-upgrade.test.ts`. Update ARCHITECTURE.md alongside the implemented bridge boundary.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S12",
@@ -330,6 +331,16 @@
       "date": "2026-11-12",
       "title": "S7 assigned",
       "body": "Branch `claude/s7-747c0ab`, simulator `B475B122-EC41-4DE8-8920-51E5ABE244CC`, DSHM_HOME `~/.dshm/home-s7-B475B122-EC41-4DE8-8920-51E5ABE244CC`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S7)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S7 merged",
+      "body": "Merged as `c12c478`; the plan/ rules hold on the merge commit. No open [human] items, so S7 is `done`."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S11 assigned",
+      "body": "Branch `claude/s11-216b887`, simulator `DEABB0A9-1D40-416A-946D-F6B3793DDB45`, DSHM_HOME `~/.dshm/home-s11-DEABB0A9-1D40-416A-946D-F6B3793DDB45`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S11)\"` exports them."
     }
   ],
   "pending": []

@@ -50,6 +50,12 @@ with tempfile.TemporaryDirectory() as temp:
     shortcut.write_text("@_exported\nimport DSHCore\n")
     expect(check, "re-export attribute")
 
+    shortcut.unlink()
+    reader = fixture / "ios/DSHKit/Sources/DSHCore/Reader.swift"
+    reader.parent.mkdir(parents=True)
+    reader.write_text("let bytes = try await pipe.receive()\n")
+    expect(check, "through the transport dispatcher")
+
     package = root / "ios/DSHKit"
     expect(["swift", "build", "--package-path", package, "--target", "DSHProtocol"])
     binary = subprocess.check_output(["swift", "build", "--package-path", package, "--show-bin-path"], text=True).strip()
