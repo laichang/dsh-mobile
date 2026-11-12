@@ -13,7 +13,7 @@ cleanup() {
   if [[ -n "$pid" ]]; then kill "$pid" 2>/dev/null || true; wait "$pid" || true; fi
   rm -rf "$scratch"
 }
-demo_tls_on_exit cleanup
+trap cleanup EXIT
 baseline=61b54169a58e7a20e9ca243dc96a6739b816e14a
 candidate=$(git rev-parse HEAD)
 ios_rev=$baseline
