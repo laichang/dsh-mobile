@@ -120,9 +120,9 @@
         "T0"
       ],
       "branch": "claude/s6-0e59536",
-      "status": "doing",
+      "status": "review",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
+      "next": "Review the changed layer checker and fixture at cbde7d6 before merge",
       "merge": null,
       "why": "With a single reader per connection generation, an enqueued reply must not overtake a preceding replay event while Core maps it.",
       "cuts": "Starting in `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHTransport/OrderedWriter.swift` and `ios/DSHKit/Tests/DSHKitTests/TransportDispatchTests.swift`, move correlation, request IDs, cancellation, ordered writes, receive loop and generation-scoped close to DSHTransport. It may depend on DSHProtocol. Switch dispatch ownership once and migrate one read-only command. Await Core's ordered mapping and yield before resolving a later response. Keep Hello negotiation, the 4003 meaning and raw-to-domain event mapping in Core. Match `bridge/src/server.ts` and `ios/DSHKit/Sources/DSHCore/Sync/HostSync.swift`. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
