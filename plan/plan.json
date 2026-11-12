@@ -6,16 +6,17 @@
       "kind": "tracer",
       "title": "Tracer bullet: WP0 · Capture the two-platform public API and a clean-install round trip",
       "needs": [],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/t0-f223ab5",
+      "status": "doing",
       "updated": "2026-11-12",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Pin the comparison to 61b5416 before changing a target or a public declaration. Record the current SwiftPM and Xcode target dependencies, linked products and test results, including any existing failures.",
       "cuts": "Start at `ios/DSHKit/Package.swift`, `ios/dsh-mobile.xcodeproj/project.pbxproj`, `scripts/check-layers`, `scripts/check-layers-test` and `scripts/demo/round-trip.sh`. Use swift-api-digester -dump-sdk -module DSHCore on the actual macOS 15 and iOS 26 builds with their respective SDK, target and module search paths. Identify declarations and referenced types by module and symbol, including DSHTransport, DSHProtocol, SwiftProtobuf, DSHPlatform, SwiftData and Core's own raw connection and cache entities. Exercise the production pairing and task path with test credentials.",
       "not": "",
       "demo": "scripts/demo/round-trip.sh",
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S1",
@@ -268,6 +269,11 @@
       "date": "2026-11-12",
       "title": "Scope, installation policy and rollback",
       "body": "Reviewed source baseline: 61b54169a58e7a20e9ca243dc96a6739b816e14a. Compare HEAD and relevant local changes against it before implementation. This requirement follows the reviewed three-layer design and is independent of previous GitHub milestones. For this pre-user project, switch iOS builds by uninstalling, reinstalling and pairing again. Cross-version migration of the local task database is outside acceptance. After fresh pairing, retain the same installation and its data throughout every crash, offline restart and reconnect test. Continue testing protocol compatibility across client and bridge versions, and existing bridge audit history. Use test hosts and test credentials. Preserve STORY.md and its screen behavior. Roll back merged changes in reverse dependency order and build after each step; for example, roll back affected WP5 and WP4 changes before removing WP2. Bridge delivery remains independent. Execution evidence starts with the implementation of T0."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "T0 assigned",
+      "body": "Branch `claude/t0-f223ab5`, simulator `C99D08EE-1320-463F-B9B9-9B5A379ED59E`, DSHM_HOME `~/.dshm/home-t0-C99D08EE-1320-463F-B9B9-9B5A379ED59E`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env T0)\"` exports them."
     }
   ],
   "pending": []
