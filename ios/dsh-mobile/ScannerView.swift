@@ -9,6 +9,8 @@ import VisionKit
 struct ScannerView: View {
     enum Mode { case scan, paste }
 
+    private let pairingCommand = "node bridge/lib/scripts/pair.js"
+
     var mode: Mode = .scan
     let found: (String) -> Void
     let cancel: () -> Void
@@ -47,8 +49,13 @@ struct ScannerView: View {
                     DisclosureGroup("Need a pairing code?") {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("For a fresh code, run this command from the dsh-mobile project folder on your computer.")
-                            Text(verbatim: "node bridge/lib/scripts/pair.js")
-                                .font(.footnote.monospaced()).textSelection(.enabled)
+                            Text(verbatim: pairingCommand)
+                                .font(.footnote.monospaced())
+                                .contextMenu {
+                                    Button("Copy", systemImage: "doc.on.doc") {
+                                        UIPasteboard.general.string = pairingCommand
+                                    }
+                                }
                             Link("Bridge setup instructions", destination: URL(string: "https://github.com/laichang/dsh-mobile/blob/main/bridge/README.md")!)
                                 .accessibilityIdentifier("pairing.setupInstructions")
                         }

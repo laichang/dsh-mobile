@@ -13,6 +13,25 @@ final class FirstRunUITests: XCTestCase {
     }
 
     #if DEBUG
+    func testPairingHelpCopiesFullCommand() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-DSHMResetPairing", "YES", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launch()
+        app.buttons["pairing.scan"].tap()
+        app.buttons["找不到配对码？"].tap()
+
+        let command = "node bridge/lib/scripts/pair.js"
+        UIPasteboard.general.string = "before copy"
+        app.staticTexts[command].press(forDuration: 1)
+        let copy = app.buttons["复制"]
+        copy.tap()
+        XCTAssertTrue(copy.waitForNonExistence(timeout: 5))
+        let field = app.textFields["pairing.paste"]
+        field.tap()
+        field.typeKey("v", modifierFlags: .command)
+        XCTAssertEqual(field.value as? String, command)
+    }
+
     func testUnpairedLaunchShowsPairing() {
         let app = XCUIApplication()
         app.launchArguments = ["-DSHMResetPairing", "YES"]
