@@ -160,16 +160,17 @@
         "S5",
         "S7"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s8-b84ae54",
+      "status": "doing",
       "updated": "2026-11-12",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "The same limits, command ordering and failure outcomes should apply whether the user creates a task or continues a conversation.",
       "cuts": "Use `ios/dsh-mobile/Features/Attachments/AttachmentViews.swift`, `ios/DSHKit/Sources/DSHCore/Attachments.swift`, `ios/DSHKit/Sources/DSHCore/Sync/HostSync.swift`, `ios/DSHKit/Sources/DSHFeatures/TaskComposer.swift` and `ios/dsh-mobile/Features/Session/SessionPage.swift`. Put security-scoped reads, image resize/JPEG, checksum and byte chunking in DSHPlatform. Core sets message limits, attachment kinds, typed local errors, upload-before-send and domain commands. Features own selection, drafts, upload progress and retry. Views own pickers, navigation, chips and localized size text. Preserve the existing product and screen rules. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
       "demo": "scripts/demo/attachments.sh",
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S9",
@@ -378,6 +379,11 @@
       "date": "2026-11-12",
       "title": "S5 merged",
       "body": "Merged as `d56f038`; the plan/ rules hold on the merge commit. No open [human] items, so S5 is `done`."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S8 assigned",
+      "body": "Branch `claude/s8-b84ae54`, simulator `D850C26C-EABE-4C66-93BF-DF2F659706A3`, DSHM_HOME `~/.dshm/home-s8-D850C26C-EABE-4C66-93BF-DF2F659706A3`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S8)\"` exports them."
     }
   ],
   "pending": []
