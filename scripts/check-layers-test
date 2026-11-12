@@ -40,6 +40,10 @@ with tempfile.TemporaryDirectory() as temp:
     persistence.parent.mkdir(parents=True)
     persistence.write_text("import SwiftData\n")
     expect(check, "SwiftData outside DSHPlatform")
+    persistence.write_text("struct TranscriptBlocks {}\n")
+    expect(check, "belong with their callers")
+    persistence.write_text("let audio = AVAudioSession.sharedInstance()\n")
+    expect(check, "iOS app adapter")
     persistence.unlink()
     pairing = persistence.parent / "Pairing/PairedHosts.swift"
     pairing.parent.mkdir()

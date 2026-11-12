@@ -1,4 +1,4 @@
-import DSHCore
+import DSHFeatures
 import SwiftUI
 
 /// A GFM table in the transcript (screen 04): the header row on a fill, hairlines between

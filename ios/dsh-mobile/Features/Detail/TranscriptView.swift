@@ -1,4 +1,4 @@
-import DSHCore
+import DSHFeatures
 import SwiftUI
 
 struct TranscriptView: View {
