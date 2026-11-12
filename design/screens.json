@@ -451,6 +451,10 @@
           "test": "testPastedLinkPairsAndOpensTheFirstTask"
         },
         {
+          "text": "A v1 link shows how to rebuild the bridge, restart DSH and generate a v2 code",
+          "test": "testLegacyLinkExplainsHowToGenerateCurrentCode"
+        },
+        {
           "text": "An installation with a legacy pairing requires fresh enrollment",
           "test": "testLegacyKeyAndHostRequireFreshEnrollment"
         }

@@ -71,12 +71,12 @@
         }
       }
     },
-    "When DSH starts, its terminal prints a pairing QR code and a link.": {
+    "Keep DSH running. Open another terminal on the computer to generate a pairing code.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "DSH 启动时，终端里会打印配对二维码和链接"
+            "value": "保持 DSH 运行，在电脑上另开终端生成配对码。"
           }
         }
       }

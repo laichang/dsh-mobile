@@ -241,12 +241,22 @@
         }
       }
     },
-    "For a fresh code, run this command from the dsh-mobile project folder on your computer.": {
+    "For a v=1 link, run pnpm --dir bridge build from the updated dsh-mobile project folder. Restart DSH with the same profile, then run node bridge/lib/scripts/pair.js in another terminal with the same DSH_HOME and scan the new v=2 code.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "要获取新的配对码，请在电脑的 dsh-mobile 项目目录里运行以下命令。"
+            "value": "如果链接里是 v=1，请在更新后的 dsh-mobile 项目目录运行 pnpm --dir bridge build，用原来的 profile 重启 DSH，再在另一个终端使用相同的 DSH_HOME 运行 node bridge/lib/scripts/pair.js，扫描新生成的 v=2 码。"
+          }
+        }
+      }
+    },
+    "Keep DSH running. In another terminal, open the dsh-mobile project folder and use the same DSH_HOME. Run this command for a new or expired code.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保持 DSH 运行。在另一个终端进入 dsh-mobile 项目目录，使用与 DSH 相同的 DSH_HOME，运行以下命令。配对码过期时可再次运行。"
           }
         }
       }
@@ -351,12 +361,12 @@
         }
       }
     },
-    "On your computer, find the pairing code in the terminal where DSH started. Keep your phone on the same Wi-Fi or connect through a private network such as Tailscale.": {
+    "Scan the code from the pairing command in your computer’s terminal, or paste its link. Use the same Wi-Fi or connect both devices to Tailscale.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在电脑启动 DSH 的终端中找到配对码。让手机和电脑连接同一 Wi-Fi，或使用 Tailscale 等专用网络。"
+            "value": "扫描电脑终端里发码命令生成的配对码，或粘贴链接。手机和电脑需连接同一 Wi-Fi，或两端都连接 Tailscale。"
           }
         }
       }

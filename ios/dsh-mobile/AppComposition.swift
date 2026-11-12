@@ -156,11 +156,15 @@ final class AppModel {
         showingScanner = true
     }
 
+    static let legacyPairingGuide = String(localized: "For a v=1 link, run pnpm --dir bridge build from the updated dsh-mobile project folder. Restart DSH with the same profile, then run node bridge/lib/scripts/pair.js in another terminal with the same DSH_HOME and scan the new v=2 code.")
+
     /// A scanned QR payload, a pasted link, or (Debug) a `dshm://pair?…` deep link.
     func openPairingCode(_ text: String) {
         showingScanner = false
         do {
             pairingRoute = .offer(PairingModel(offer: try PairingOffer(string: text), pairing: pairing))
+        } catch .unsupportedVersion("1") {
+            pairingRoute = .invalid(Self.legacyPairingGuide)
         } catch {
             pairingRoute = .invalid(error.description)
         }
