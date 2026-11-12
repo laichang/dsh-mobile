@@ -12,6 +12,7 @@ public struct PairedHost: Sendable, Equatable, Codable, Identifiable {
     public var addresses: [HostEndpoint]
     public var hostKey: [UInt8]
     public var tlsDeviceID: String?
+    var pendingCredentialID: String?
     public var cacheKey: String { "tls:" + id }
     public var pairedAt: Date
 
@@ -29,11 +30,24 @@ public protocol PairedHostStore: Sendable {
     func load() -> [PairedHost]
     /// Adds the host, replacing any earlier pairing with the same host key.
     func save(_ host: PairedHost) throws
-    /// Replaces the pairing with the same host key in its place (a new address order).
-    /// Does nothing if the host is not paired.
+    /// Saves the new address order of an enrollment that is still paired.
     func update(_ host: PairedHost) throws
     func removeAll() throws
     func remove(id: String) throws
+    /// Hides the pairing and returns the credentials awaiting deletion for this host.
+    func retire(cacheKey: String) throws -> [PairedHost]
+    /// Finishes persisted cleanup after credential deletion succeeds.
+    func acknowledgeRemoval(of host: PairedHost) throws
+}
+
+extension PairedHostStore {
+    public func retire(cacheKey: String) throws -> [PairedHost] {
+        guard let host = load().first(where: { $0.cacheKey == cacheKey }) else { return [] }
+        try remove(id: host.id)
+        return [host]
+    }
+
+    public func acknowledgeRemoval(of host: PairedHost) throws {}
 }
 
 /// A JSON file in Application Support.
@@ -44,31 +58,81 @@ public struct FilePairedHostStore: PairedHostStore {
         self.url = url ?? URL.applicationSupportDirectory.appending(path: "paired-hosts.json")
     }
 
+    // Store values can be created independently for the same file.
+    private static let writers = Mutex(())
+
+    private func read() throws -> [PairedHost] {
+        do {
+            return try JSONDecoder().decode([PairedHost].self, from: Data(contentsOf: url))
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            return []
+        }
+    }
+
     public func load() -> [PairedHost] {
-        guard let data = try? Data(contentsOf: url) else { return [] }
-        return (try? JSONDecoder().decode([PairedHost].self, from: data).filter { $0.tlsDeviceID != nil }) ?? []
+        (try? read().filter { $0.tlsDeviceID != nil }) ?? []
+    }
+
+    @discardableResult
+    private func mutate<Result>(_ body: (inout [PairedHost]) -> Result) throws -> Result {
+        try Self.writers.withLock { _ in
+            let before = try read()
+            var after = before
+            let result = body(&after)
+            if before != after {
+                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try JSONEncoder().encode(after).write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            }
+            return result
+        }
     }
 
     public func save(_ host: PairedHost) throws {
-        try write(load().filter { $0.hostKey != host.hostKey } + [host])
+        try mutate {
+            $0.removeAll { $0.hostKey == host.hostKey && $0.pendingCredentialID == nil }
+            $0.append(host)
+        }
     }
 
     public func update(_ host: PairedHost) throws {
-        var hosts = load()
-        guard let index = hosts.firstIndex(where: { $0.hostKey == host.hostKey }) else { return }
-        hosts[index] = host
-        try write(hosts)
+        try mutate { hosts in
+            guard let index = hosts.firstIndex(where: {
+                $0.hostKey == host.hostKey && $0.tlsDeviceID == host.tlsDeviceID && $0.pendingCredentialID == nil
+            }) else { return }
+            hosts[index].addresses = host.addresses
+        }
     }
 
-    private func write(_ hosts: [PairedHost]) throws {
-        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try JSONEncoder().encode(hosts).write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+    public func remove(id: String) throws {
+        try mutate { $0.removeAll { $0.id == id && $0.pendingCredentialID == nil } }
     }
-
-    public func remove(id: String) throws { try write(load().filter { $0.id != id }) }
 
     public func removeAll() throws {
-        if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
+        try mutate { $0.removeAll { $0.pendingCredentialID == nil } }
+    }
+
+    public func retire(cacheKey: String) throws -> [PairedHost] {
+        try mutate { hosts in
+            var pending: [PairedHost] = []
+            for index in hosts.indices where hosts[index].cacheKey == cacheKey {
+                if let deviceID = hosts[index].tlsDeviceID {
+                    hosts[index].pendingCredentialID = deviceID
+                    hosts[index].tlsDeviceID = nil
+                }
+                if let deviceID = hosts[index].pendingCredentialID {
+                    var host = hosts[index]
+                    host.tlsDeviceID = deviceID
+                    host.pendingCredentialID = nil
+                    pending.append(host)
+                }
+            }
+            return pending
+        }
+    }
+
+    public func acknowledgeRemoval(of host: PairedHost) throws {
+        guard let deviceID = host.tlsDeviceID else { return }
+        try mutate { $0.removeAll { $0.hostKey == host.hostKey && $0.pendingCredentialID == deviceID } }
     }
 }
 
@@ -83,7 +147,9 @@ public final class InMemoryPairedHostStore: PairedHostStore {
     }
     public func update(_ host: PairedHost) throws {
         hosts.withLock { hosts in
-            if let index = hosts.firstIndex(where: { $0.hostKey == host.hostKey }) { hosts[index] = host }
+            if let index = hosts.firstIndex(where: { $0.hostKey == host.hostKey && $0.tlsDeviceID == host.tlsDeviceID }) {
+                hosts[index].addresses = host.addresses
+            }
         }
     }
     public func remove(id: String) throws { hosts.withLock { $0.removeAll { $0.id == id } } }

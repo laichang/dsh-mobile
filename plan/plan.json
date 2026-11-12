@@ -26,10 +26,10 @@
         "T0"
       ],
       "branch": "claude/s1-654b0ec",
-      "status": "doing",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Slice owner builds",
-      "merge": null,
+      "next": "—",
+      "merge": "6f593ba",
       "why": "Losing one file read must never turn an update to one enrollment into removal of every other host.",
       "cuts": "Use the real file store in `ios/DSHKit/Sources/DSHCore/Pairing/PairedHosts.swift` and its callers in `ios/DSHKit/Sources/DSHCore/Pairing/Pairing.swift`. Serialize read, comparison, modification and atomic file replacement across all callers of a store file. Read every record for mutation. Apply visibility filters only when listing hosts. Use this contract for save, address update, remove and pending-cleanup writes. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
@@ -44,16 +44,17 @@
       "needs": [
         "S1"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s2-045b1d9",
+      "status": "doing",
       "updated": "2026-11-12",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "A host can pair again while revocation of its old device is in flight. Scope cleanup, connection teardown and UI feedback to the enrollment that was revoked.",
       "cuts": "Capture immutable host key and tlsDeviceID in Core at connection creation or revocation initiation, before awaiting a result. Carry it through local .thisDevice and remote close 4003 in `ios/DSHKit/Sources/DSHCore/HostDeviceManagement.swift`, `ios/DSHKit/Sources/DSHCore/Sync/HostSync.swift`, `ios/DSHKit/Sources/DSHFeatures/TaskListStore.swift`, `ios/dsh-mobile/Features/Hosts/HostActions.swift` and `ios/dsh-mobile/AppComposition.swift`. Cover HostDetailView and DeviceManagementView. Never replace the captured ID with a lookup by host key. Persist cleanup intent before removing credentials, then acknowledge the matching pending item. Keep the existing preferred-host UserDefaults key. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
       "demo": "scripts/demo/revoke.sh",
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S3",
@@ -118,16 +119,17 @@
       "needs": [
         "T0"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s6-0e59536",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Assign it and start a session",
-      "merge": null,
+      "next": "—",
+      "merge": "1b4b54a",
       "why": "With a single reader per connection generation, an enqueued reply must not overtake a preceding replay event while Core maps it.",
       "cuts": "Starting in `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHTransport/OrderedWriter.swift` and `ios/DSHKit/Tests/DSHKitTests/TransportDispatchTests.swift`, move correlation, request IDs, cancellation, ordered writes, receive loop and generation-scoped close to DSHTransport. It may depend on DSHProtocol. Switch dispatch ownership once and migrate one read-only command. Await Core's ordered mapping and yield before resolving a later response. Keep Hello negotiation, the 4003 meaning and raw-to-domain event mapping in Core. Match `bridge/src/server.ts` and `ios/DSHKit/Sources/DSHCore/Sync/HostSync.swift`. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S7",
@@ -136,16 +138,17 @@
       "needs": [
         "S6"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s7-747c0ab",
+      "status": "doing",
       "updated": "2026-11-12",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Features and app pages should call domain operations without handling wire frames or the connection's raw request API.",
       "cuts": "Migrate command families from `ios/DSHKit/Sources/DSHCore/HostConnection.swift`, `ios/DSHKit/Sources/DSHCore/HostCommands.swift` and `ios/DSHKit/Sources/DSHCore/HostDeviceManagement.swift`. Keep typed domain inputs, results, failures and event mappings in Core. DSHTransport handles frames, TLS and request lifetimes, while DSHProtocol owns the generated messages. Test with `ios/DSHKit/Tests/DSHKitTests/GoldenFixturesTests.swift` and TransportDispatchTests. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S8",
@@ -192,16 +195,17 @@
       "needs": [
         "T0"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s10-540ee85",
+      "status": "done",
       "updated": "2026-11-12",
-      "next": "Assign it and start a session",
-      "merge": null,
+      "next": "—",
+      "merge": "ed5d02e",
       "why": "Approval decisions and the device audit view must agree on saved fields and keep reading history from existing bridge installations.",
       "cuts": "Use `bridge/src/approvals/holder.ts`, `bridge/src/devices/manage.ts` and `bridge/test/approvals.test.ts`. Inject a typed append operation into ApprovalHolder and serve device audit pages from the matching reader. Keep approvals.jsonl, its fields, order and existing pairing history. Use synthetic fixture records. Update ARCHITECTURE.md alongside the implemented bridge boundary.",
       "not": "",
       "demo": null,
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S11",
@@ -291,6 +295,41 @@
       "date": "2026-11-12",
       "title": "S4 assigned",
       "body": "Branch `claude/s4-f432a0a`, simulator `11BC352F-17B7-412F-95B8-7F4F76DD7B2F`, DSHM_HOME `~/.dshm/home-s4-11BC352F-17B7-412F-95B8-7F4F76DD7B2F`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S4)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S6 assigned",
+      "body": "Branch `claude/s6-0e59536`, simulator `05783431-A95B-48BF-AA06-B9E351C7250F`, DSHM_HOME `~/.dshm/home-s6-05783431-A95B-48BF-AA06-B9E351C7250F`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S6)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S1 merged",
+      "body": "Merged as `6f593ba`; the plan/ rules hold on the merge commit. No open [human] items, so S1 is `done`."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S2 assigned",
+      "body": "Branch `claude/s2-045b1d9`, simulator `0165165B-7FF8-4DF8-9494-601D020335F2`, DSHM_HOME `~/.dshm/home-s2-0165165B-7FF8-4DF8-9494-601D020335F2`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S2)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S10 assigned",
+      "body": "Branch `claude/s10-540ee85`, simulator `89625462-B541-4DAA-83F1-5257DFA0D26B`, DSHM_HOME `~/.dshm/home-s10-89625462-B541-4DAA-83F1-5257DFA0D26B`, bridge 47813, web 3286; second host 47843/3316. `eval \"$(scripts/slice-env S10)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S6 merged",
+      "body": "Merged as `1b4b54a`; the plan/ rules hold on the merge commit. No open [human] items, so S6 is `done`."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S10 merged",
+      "body": "Merged as `ed5d02e`; the plan/ rules hold on the merge commit. No open [human] items, so S10 is `done`."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S7 assigned",
+      "body": "Branch `claude/s7-747c0ab`, simulator `B475B122-EC41-4DE8-8920-51E5ABE244CC`, DSHM_HOME `~/.dshm/home-s7-B475B122-EC41-4DE8-8920-51E5ABE244CC`, bridge 47812, web 3285; second host 47842/3315. `eval \"$(scripts/slice-env S7)\"` exports them."
     }
   ],
   "pending": []

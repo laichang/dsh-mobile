@@ -7,6 +7,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { approvalAudit } from '../src/approvals/audit.ts'
 import { ApprovalHolder } from '../src/approvals/holder.ts'
 import { ApprovalDecision, ApprovalOutcome } from '../src/gen/approvals_pb.ts'
 import { TaskHub } from '../src/tasks/task-hub.ts'
@@ -284,7 +285,7 @@ test('waitingTaskSwitchesModelResumesBothFieldsAndInterruptCancelsApproval', asy
   const dsh = new FakeDSH({ reply: ['slow response'], chunkDelayMs: 2000 })
   const tasks = new DshTasks(dsh, dir)
   const hub = new TaskHub(tasks, new HostLog(1))
-  const approvals = new ApprovalHolder(join(dir, 'audit.jsonl'), event => hub.approvalChanged(event))
+  const approvals = new ApprovalHolder(approvalAudit(dir).append, event => hub.approvalChanged(event))
   const server = await startTestBridge({ dshVersion: SUPPORTED_DSH, host: '127.0.0.1', port: 0, tasks, hub, approvals })
   servers.push(server)
   const writer = await connect(server, ['approvals.v1'])

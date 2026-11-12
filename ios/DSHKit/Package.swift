@@ -25,7 +25,7 @@ let package = Package(
         ),
         // TaskActivityState, and TaskActivityAttributes where ActivityKit exists.
         .target(name: "DSHActivity"),
-        .target(name: "DSHTransport"),
+        .target(name: "DSHTransport", dependencies: ["DSHProtocol"]),
         .target(name: "DSHPlatform"),
         .target(name: "DSHCore", dependencies: ["DSHPlatform", "DSHProtocol", "DSHTransport", .product(name: "SwiftProtobuf", package: "swift-protobuf")]),
         .target(name: "DSHFeatures", dependencies: ["DSHCore", "DSHActivity"]),

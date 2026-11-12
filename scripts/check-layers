@@ -11,7 +11,7 @@ root = Path(__file__).resolve().parents[1]
 package = root / "ios/DSHKit"
 layers = {
     "DSHActivity": set(),
-    "DSHTransport": set(),
+    "DSHTransport": {"DSHProtocol"},
     "DSHProtocol": {"SwiftProtobuf"},
     "DSHPlatform": set(),
     "DSHCore": {"DSHPlatform", "DSHTransport", "DSHProtocol", "SwiftProtobuf"},

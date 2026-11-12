@@ -51,6 +51,7 @@ final class AppModel {
     /// The host that revoked this phone without a revoke from this phone's hosts sheet
     /// (another client, or the close came first). The root says so once.
     var revokedNotice: String?
+    var pairingRemovalError: String?
 
     init() {
         var pairing = Pairing()
@@ -64,7 +65,7 @@ final class AppModel {
         // A test launch starts no Live Activities unless it asks, and ends the ones left.
         liveActivitiesOn = DebugLaunchOptions.liveActivitiesOn(ProcessInfo.processInfo.arguments)
         if options.resetPairing {
-            for host in pairing.hosts.load() { try? Pairing.removeCredential(for: host) }
+            for host in pairing.hosts.load() { try? pairing.forget(cacheKey: host.cacheKey) }
             try? pairing.hosts.removeAll()
         }
         if ProcessInfo.processInfo.arguments.contains("-DSHMSeedLegacyPairing") {
@@ -101,8 +102,7 @@ final class AppModel {
     /// after a revoke from the hosts sheet, and say so once.
     private func hostRevoked(_ host: TaskListStore.HostStatus) {
         guard !forgottenHostKeys.contains(host.key) else { return }
-        revokedNotice = host.name
-        forgetHost(host.key)
+        if forgetHost(host.key) { revokedNotice = host.name }
     }
 
     func retrySavedHosts() {
@@ -130,16 +130,20 @@ final class AppModel {
 
     /// This device lost its access to the host (it revoked itself): forget the pairing
     /// and rebuild the store without it. With no host left, the root shows 08 (`WelcomeView`).
-    func forgetHost(_ key: String) {
-        // Once per host; the revoke response and the close 4003 can both report it.
-        guard forgottenHostKeys.insert(key).inserted else { return }
-        if let host = pairing.hosts.load().first(where: { $0.cacheKey == key }) {
-            try? Pairing.removeCredential(for: host)
-            try? pairing.hosts.remove(id: host.id)
+    @discardableResult
+    func forgetHost(_ key: String) -> Bool {
+        guard !forgottenHostKeys.contains(key) else { return true }
+        do {
+            try pairing.forget(cacheKey: key)
+        } catch {
+            pairingRemovalError = error.localizedDescription
+            return false
         }
+        forgottenHostKeys.insert(key)
         store?.background()
         store = makeStore()
         store?.foreground()
+        return true
     }
 
     func startPairing(_ mode: ScannerView.Mode = .scan) {

@@ -36,8 +36,14 @@ package protocol HostCommands: HostDeviceManagement {
     func answerQuestion(id: String, answers: [String: AgentQuestion.Reply]) async throws
 }
 
-extension HostConnection: HostCommands {}
-
 public enum HostProtocol {
     public static let version = DSHProtocolInfo.version
+}
+
+extension HostConnection: HostCommands {
+    public func listWorkspaces() async throws -> WorkspaceList {
+        let response = try await request(.listWorkspaces(.init()))
+        guard case .workspaceList(let list)? = response.body else { throw HostConnectionError.unexpectedResponse }
+        return WorkspaceList(defaultPath: list.defaultPath, recentPaths: list.recentPaths)
+    }
 }

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { appendFileSync } from 'node:fs'
+import type { ApprovalAuditRecord } from './audit.ts'
 import { ApprovalOutcome, type ApprovalPending, type ApprovalResolved } from '../gen/approvals_pb.ts'
 
 export type Pending = Omit<ApprovalPending, '$typeName' | '$unknown'>
@@ -37,7 +37,7 @@ export class ApprovalHolder {
   private readonly pending = new Map<string, { request: Pending; finish: (outcome: ApprovalOutcome, by: string, device: string) => Resolved }>()
   private readonly copies = new WeakSet<ApprovalRequest>()
 
-  constructor(private readonly auditFile: string, private readonly change: (event: Pending | Resolved) => void,
+  constructor(private readonly appendAudit: (record: ApprovalAuditRecord) => void, private readonly change: (event: Pending | Resolved) => void,
     private readonly timeoutMs = 86_400_000) {
     if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2_147_483_647) throw new Error('invalid approval timeout')
   }
@@ -62,8 +62,8 @@ export class ApprovalHolder {
         fanout.abort()
         // Persist before releasing the tool. A failed audit write can never grant permission.
         try {
-          appendFileSync(this.auditFile, JSON.stringify({ when: new Date().toISOString(), by, device, ...request,
-            outcome: ApprovalOutcome[outcome] }) + '\n', { mode: 0o600 })
+          this.appendAudit({ when: new Date().toISOString(), by, device, ...request,
+            outcome: ApprovalOutcome[outcome] })
         } catch (error) {
           console.error('dsh-mobile: approval audit write failed', error)
           resolved.outcome = ApprovalOutcome.CANCELLED
