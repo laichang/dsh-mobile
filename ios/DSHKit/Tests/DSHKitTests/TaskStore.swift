@@ -1,13 +1,12 @@
-import DSHTransport
+import DSHCore
 import Foundation
 import Observation
 
-/// State behind the first single-task screen: one composer, one task at a time, in memory only. Since
-/// the durable list, the app uses `TaskListStore` (durable list + resume); this stays as the minimal client.
+/// Single-task client used by the transport, milestone and streaming tests.
 @MainActor
 @Observable
-public final class TaskStore {
-    public enum Status: Equatable, Sendable {
+final class TaskStore {
+    enum Status: Equatable, Sendable {
         case idle
         case connecting
         case running(taskID: String)
@@ -16,7 +15,7 @@ public final class TaskStore {
         case interrupted
 
         /// Stable token for UI tests (`task.status` accessibility value).
-        public var token: String {
+        var token: String {
             switch self {
             case .idle: "idle"
             case .connecting: "connecting"
@@ -28,30 +27,22 @@ public final class TaskStore {
         }
     }
 
-    public var prompt: String
-    public private(set) var transcript = ""
-    public private(set) var status: Status = .idle
+    var prompt: String
+    private(set) var transcript = ""
+    private(set) var status: Status = .idle
     /// The current task's milestones (card + timeline).
-    public private(set) var milestones = MilestoneTimeline()
+    private(set) var milestones = MilestoneTimeline()
 
     private let connection: HostConnection
     private var currentTaskID: String?
     private var eventsTask: Task<Void, Never>?
 
-    public convenience init(host: HostSync.HostConfig, prompt: String = "") {
-        self.init(connection: host.connection, prompt: prompt)
-    }
-
-    package init(connection: HostConnection, prompt: String = "") {
+    init(connection: HostConnection, prompt: String = "") {
         self.connection = connection
         self.prompt = prompt
     }
 
-    /// Transport shown in the status row.
-    public var channelName: String { connection.channelName }
-    public var endpoint: HostEndpoint { connection.endpoint }
-
-    public var canSend: Bool {
+    var canSend: Bool {
         guard !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
         switch status {
         case .connecting, .running: return false
@@ -60,7 +51,7 @@ public final class TaskStore {
     }
 
     /// Sends the composer's prompt as a new task and streams its reply into `transcript`.
-    public func send() async {
+    func send() async {
         guard canSend else { return }
         let text = prompt
         transcript = ""

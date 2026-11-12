@@ -106,7 +106,7 @@ Interrupt, model switch and follow-up messages take the same outbound path as an
 - Codegen: `buf` + `protoc-gen-es` (pinned devDependencies of `bridge/`) and `protoc-gen-swift` built by SwiftPM from the swift-protobuf version that `ios/DSHKit` pins. One entry point: `scripts/codegen`.
 - Generated code is committed; `scripts/codegen --check` fails when regeneration changes a file. Xcode builds without a codegen toolchain, and protocol changes show in review.
 - Bridge: pnpm, pinned by `packageManager` (Node ≥ 24.9, as DSH requires); tests use `node:test`.
-- Swift: DSHCore wraps DSHTransport, package-visible protobuf messages and DSHPlatform. DSHPlatform keeps SwiftData records and storage transactions inside the package. DSHFeatures consumes typed DSHCore operations and shares DSHActivity with the app. The widget links only DSHActivity. Debug composition uses DSHTestSupport factories. `scripts/swift-test` checks these boundaries before running the package tests on macOS.
+- Swift: DSHCore wraps transport, protobuf and DSHPlatform storage. DSHFeatures uses Core and DSHActivity. The widget links only DSHActivity. Debug composition imports launch options and factories from DSHTestSupport. `scripts/swift-test` checks the layers before macOS tests.
 - `scripts/check-core-api macos` and `scripts/check-core-api ios` compile DSHCore and inspect its external signatures with the Swift API digester. A per-platform allowlist identifies the declaration and referenced type of each existing exposure. Adding a reference or leaving a repaired one in the allowlist fails the check.
 - Dependencies are pinned to exact versions (`ios/DSHKit/Package.swift`, `bridge/package.json`).
 
@@ -193,7 +193,7 @@ Features (SwiftUI views + @Observable stores)
 Theme
    DSHTheme (base tokens) + Theme+<feature>.swift files
 DSHFeatures
-   TaskListStore, TaskComposer, DrawerTree, TaskOutcome, Dictation, LiveActivities
+   TaskListStore, TaskComposer, DrawerTree, TaskOutcome, Dictation, LiveActivities, TranscriptBlocks
 DSHCore
    HostConnection, Pairing, HostSync, Milestones, Transcript, FollowUpQueue, Questions, Attachments
 DSHPlatform
@@ -231,7 +231,8 @@ DSHProtocol
 
 - From the top: page bar, `MilestoneBar` (the step in progress, `done / total` finished todos, a progress line; a tap opens the timeline), a status line, the transcript, the composer. The bar and the status line do not scroll.
 - The transcript is `StructuredTranscript`: streamed text cut by thinking rows ("已思考 8 秒 ›"), tool rows (DSH's tool name · target · +/− lines), user bubbles, and question cards; a row opens its details in a sheet. Without `transcript.v1`, or for a session read from the journal, it is plain Markdown.
-- **Markdown** (`TranscriptBlocks`): Foundation attributed Markdown for prose, native rows for fenced code, diffs and terminal output, GFM pipe tables (columns sized to the widest cell up to 240 pt, the table scrolls sideways in its row), and CJK emphasis (`CJKEmphasis`: `*`/`**` pairs next to CJK text that CommonMark refuses, as DSH Web's remark-cjk-friendly renders them). No Markdown package.
+- Only streaming, milestone and dispatch tests use `TaskStore`. The app uses `TaskListStore`. No widget, spike, script or documented external client uses `TaskStore`.
+- **Markdown**: DSHFeatures’ `TranscriptBlocks` uses Foundation attributed prose and `CJKEmphasis` for Web-compatible adjacent emphasis. Native rows render fences, diffs, terminal output and horizontally scrolling GFM tables with columns up to 240 pt.
 - **Provisional, pending user confirmation**: completed blocks render once, and only the unfinished tail is parsed again as chunks arrive. On 5,000 lines in the Simulator the p95 update time fell from 12.80–15.06 ms (whole-prefix reparse) to 1.14–2.06 ms. Real-device timing is still open: `spikes/x3-markdown/run` on an iPhone.
 - **Approval sheet** (screen 05): the command (else the path, else the arguments), the reason, 拒绝 / 允许一次. It closes only when the approval leaves the task (an answer here or `ApprovalResolved` from elsewhere), so a failed answer does not hide it; a swipe leaves a one-line bar. Offline host: grey buttons with one line why.
 - **Outcome**: before the final answer, one row 已工作 · N 步 · M 次审批 (N = milestones, M = answered approvals). Done: 用时 (from the latest turn's start, `turn_started_at_ms`, else `createdAt`) and the model. Failed: a red card (screen X1) with DSH's message and the code as a tag. `AUTH` and `QUOTA` show the app's own copy; other codes show DSH's message. Stopped: the same card, neutral. Nothing is summarized.

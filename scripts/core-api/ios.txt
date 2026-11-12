@@ -1,3 +1,2 @@
 AddressTimeout.init(after:port:) [s:7DSHCore14AddressTimeoutV5after4portACs8DurationV_12DSHTransport15PortProbeResultOSgtcfc] -> DSHTransport.PortProbeResult
 AddressTimeout.port [s:7DSHCore14AddressTimeoutV4port12DSHTransport15PortProbeResultOSgvp] -> DSHTransport.PortProbeResult
-TaskStore.endpoint [s:7DSHCore9TaskStoreC8endpoint12DSHTransport12HostEndpointVvp] -> DSHTransport.HostEndpoint

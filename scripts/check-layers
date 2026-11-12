@@ -91,6 +91,10 @@ for name, allowed in {**layers, **clients}.items():
                 reason = "paired-host file I/O belongs to DSHPlatform"
             if name in ("DSHFeatures", "dsh-mobile") and ("HostConnectionError.bridge(" in code or "startAccessingSecurityScopedResource(" in code):
                 reason = "use Core commands and attachment readers"
+            if name in layers and (match and match[1] == "Speech" or re.search(r"\b(?:AVAudioSession|SpeechAnalyzer)\b", code)):
+                reason = "speech recognition belongs to the iOS app adapter"
+            if name == "DSHCore" and re.search(r"\b(?:enum (?:DebugLaunchOptions|DebugDeepLink|CJKEmphasis)|struct TranscriptBlocks|class TaskStore)\b", code):
+                reason = "presentation, debug launch options and test clients belong with their callers"
             if reason:
                 errors.append(f"{file.relative_to(root)}:{lineno}: {reason}")
 if errors:
