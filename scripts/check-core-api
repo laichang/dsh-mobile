@@ -21,7 +21,10 @@ sdk, target = {
 }[args.platform]
 sdk_path = subprocess.check_output(["xcrun", "--sdk", sdk, "--show-sdk-path"], text=True).strip()
 triple = f"{platform.machine()}-apple-{target}"
-swift = ["swift", "build", "--package-path", str(root / "ios/DSHKit"),
+package = root / "ios/DSHKit"
+# SwiftPM can reuse a build manifest for the previous SDK in a shared scratch path.
+swift = ["swift", "build", "--package-path", str(package),
+         "--scratch-path", str(package / ".build" / "api-audit" / args.platform),
          "--disable-automatic-resolution", "--triple", triple, "--sdk", sdk_path]
 subprocess.run(swift + ["--target", "DSHCore"], check=True)
 modules = Path(subprocess.check_output(swift + ["--show-bin-path"], text=True).strip()) / "Modules"
