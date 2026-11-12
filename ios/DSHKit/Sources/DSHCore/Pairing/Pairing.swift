@@ -43,10 +43,21 @@ public struct Pairing: Sendable {
         return try await enroll(offer)
     }
 
+    public func forget(cacheKey: String) throws {
+        try forget(cacheKey: cacheKey, deletingCredential: Self.removeCredential)
+    }
+
+    func forget(cacheKey: String, deletingCredential: (PairedHost) throws -> Void) throws {
+        for host in try hosts.retire(cacheKey: cacheKey) {
+            try deletingCredential(host)
+            try hosts.acknowledgeRemoval(of: host)
+        }
+    }
+
     package func connection(to host: PairedHost, attemptTimeout: Duration = HostConnection.defaultAttemptTimeout) throws -> HostConnection {
-        let store = hosts, id = host.id
+        let store = hosts
         let saveAddresses: @Sendable ([HostEndpoint]) -> Void = { addresses in
-            guard var saved = store.load().first(where: { $0.id == id }), saved.addresses != addresses else { return }
+            var saved = host
             saved.addresses = addresses
             try? store.update(saved)
         }

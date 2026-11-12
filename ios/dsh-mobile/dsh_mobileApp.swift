@@ -17,10 +17,12 @@ struct dsh_mobileApp: App {
                 .environment(\.transcriber, app.transcriber)
                 // A host revoked this phone; the app forgot it. Said once.
                 .alert(Text("Access removed", tableName: "Hosts"), isPresented: Binding(
-                    get: { app.revokedNotice != nil }, set: { if !$0 { app.revokedNotice = nil } })) {
+                    get: { app.revokedNotice != nil || app.pairingRemovalError != nil },
+                    set: { if !$0 { app.revokedNotice = nil; app.pairingRemovalError = nil } })) {
                     Button(role: .cancel) {} label: { Text("OK", tableName: "Hosts") }
                 } message: {
-                    Text("\(app.revokedNotice ?? "") revoked this phone's access. To use it again, pair it again.", tableName: "Hosts")
+                    if let error = app.pairingRemovalError { Text(verbatim: error) }
+                    else { Text("\(app.revokedNotice ?? "") revoked this phone's access. To use it again, pair it again.", tableName: "Hosts") }
                 }
                 .sheet(isPresented: $app.showingScanner) {
                     ScannerView(mode: app.scannerMode, found: { app.openPairingCode($0) }, cancel: { app.showingScanner = false })
