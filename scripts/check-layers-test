@@ -52,7 +52,7 @@ with tempfile.TemporaryDirectory() as temp:
 
     shortcut.unlink()
     reader = fixture / "ios/DSHKit/Sources/DSHCore/Reader.swift"
-    reader.parent.mkdir(parents=True)
+    reader.parent.mkdir(parents=True, exist_ok=True)
     reader.write_text("let bytes = try await pipe.receive()\n")
     expect(check, "through the transport dispatcher")
 
