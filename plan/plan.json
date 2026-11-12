@@ -80,16 +80,17 @@
       "needs": [
         "T0"
       ],
-      "branch": null,
-      "status": "todo",
+      "branch": "claude/s4-f432a0a",
+      "status": "doing",
       "updated": "2026-11-12",
-      "next": "Assign it and start a session",
+      "next": "Slice owner builds",
       "merge": null,
       "why": "Core owns replay and reconciliation. Persistent records must recover together with the cursor used to request the next batch.",
       "cuts": "Introduce the package-internal DSHPlatform target in `ios/DSHKit/Package.swift`. Move raw records, ModelContainer/ModelContext, FetchDescriptor, storage sessions and transactions out of `ios/DSHKit/Sources/DSHCore/Sync/TaskCache.swift`. In `ios/DSHKit/Sources/DSHCore/Sync/HostSync.swift` and `ios/DSHKit/Sources/DSHCore/Sync/HostSnapshots.swift`, assemble host sync and map raw timestamps, states and snapshot bytes to domain values. Remove TaskCache.sync(for:) as the composition point. Keep the existing save batching and background flush. Use DurableHostSyncTests, SessionRevisionTests, SessionHistoryTests, ReconnectTests and scripts/demo/durable-list.sh. When the Core API changes, run the WP0 signature check on both platforms and remove each repaired exception. Update ARCHITECTURE.md and layer checks in the same change as the boundary they describe.",
       "not": "",
       "demo": "scripts/demo/durable-list.sh",
-      "log": []
+      "log": [],
+      "round": 1
     },
     {
       "id": "S5",
@@ -285,6 +286,11 @@
       "date": "2026-11-12",
       "title": "S1 assigned",
       "body": "Branch `claude/s1-654b0ec`, simulator `A26F63BE-264A-4B9C-8A88-D5C556BA6196`, DSHM_HOME `~/.dshm/home-s1-A26F63BE-264A-4B9C-8A88-D5C556BA6196`, bridge 47810, web 3283; second host 47840/3313. `eval \"$(scripts/slice-env S1)\"` exports them."
+    },
+    {
+      "date": "2026-11-12",
+      "title": "S4 assigned",
+      "body": "Branch `claude/s4-f432a0a`, simulator `11BC352F-17B7-412F-95B8-7F4F76DD7B2F`, DSHM_HOME `~/.dshm/home-s4-11BC352F-17B7-412F-95B8-7F4F76DD7B2F`, bridge 47811, web 3284; second host 47841/3314. `eval \"$(scripts/slice-env S4)\"` exports them."
     }
   ],
   "pending": []
